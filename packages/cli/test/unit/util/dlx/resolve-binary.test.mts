@@ -2,7 +2,7 @@
  * Unit tests for binary path resolution utilities.
  *
  * Purpose: Tests the binary resolution logic for external tools like cdxgen,
- * sfw, etc.
+ * other bundled tools.
  *
  * Test Coverage: - resolveCdxgen function - resolvePyCli function -
  * resolveSfw function - resolveSocketPatch function.
@@ -19,7 +19,6 @@ const mockCdxgenLocalPath = vi.hoisted(() => ({
 const mockPyCliLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_PYCLI_LOCAL_PATH: '',
 }))
-const mockSfwLocalPath = vi.hoisted(() => ({ SOCKET_CLI_SFW_LOCAL_PATH: '' }))
 const mockSocketPatchLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: '',
 }))
@@ -33,10 +32,6 @@ vi.mock(
   () => mockPyCliLocalPath,
 )
 vi.mock(
-  import('../../../../src/env/socket-cli-sfw-local-path.mts'),
-  () => mockSfwLocalPath,
-)
-vi.mock(
   import('../../../../src/env/socket-cli-socket-patch-local-path.mts'),
   () => mockSocketPatchLocalPath,
 )
@@ -44,9 +39,6 @@ vi.mock(
 // Mock version getters.
 vi.mock(import('../../../../src/env/cdxgen-version.mts'), () => ({
   getCdxgenVersion: () => '10.0.0',
-}))
-vi.mock(import('../../../../src/env/sfw-version.mts'), () => ({
-  getSwfVersion: () => 'v1.12.0',
 }))
 vi.mock(import('../../../../src/env/socket-patch-version.mts'), () => ({
   getSocketPatchVersion: () => '2.0.0',
@@ -75,9 +67,6 @@ vi.mock(import('../../../../src/env/opengrep-checksums.mts'), () => ({
 vi.mock(import('../../../../src/env/socket-patch-checksums.mts'), () => ({
   requireSocketPatchChecksum: vi.fn(() => 'socket-patch-sha'),
 }))
-vi.mock(import('../../../../src/env/sfw-checksums.mts'), () => ({
-  requireSfwChecksum: vi.fn(() => 'sfw-sha'),
-}))
 
 // Mock os module.
 const mockOs = vi.hoisted(() => ({
@@ -93,7 +82,6 @@ describe('binary resolution utilities', () => {
     // Reset all local path mocks.
     mockCdxgenLocalPath.SOCKET_CLI_CDXGEN_LOCAL_PATH = ''
     mockPyCliLocalPath.SOCKET_CLI_PYCLI_LOCAL_PATH = ''
-    mockSfwLocalPath.SOCKET_CLI_SFW_LOCAL_PATH = ''
     mockSocketPatchLocalPath.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH = ''
     mockOs.platform.mockReturnValue('darwin')
     mockOs.arch.mockReturnValue('arm64')
@@ -153,43 +141,6 @@ describe('binary resolution utilities', () => {
       expect(result).toEqual({
         type: 'local',
         path: '/custom/path/socket-pycli',
-      })
-    })
-  })
-
-  describe('resolveSfw', () => {
-    it('returns github-release spec when no local path is set', async () => {
-      mockOs.platform.mockReturnValue('darwin')
-      mockOs.arch.mockReturnValue('arm64')
-
-      const { resolveSfw } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
-
-      const result = resolveSfw()
-
-      expect(result).toMatchObject({
-        type: 'github-release',
-        details: {
-          owner: 'SocketDev',
-          repo: 'sfw-free',
-          version: 'v1.12.0',
-          assetName: 'sfw-free-macos-arm64',
-          binaryName: 'sfw',
-        },
-      })
-    })
-
-    it('returns local path when SOCKET_CLI_SFW_LOCAL_PATH is set', async () => {
-      mockSfwLocalPath.SOCKET_CLI_SFW_LOCAL_PATH = '/custom/path/sfw'
-
-      const { resolveSfw } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
-
-      const result = resolveSfw()
-
-      expect(result).toEqual({
-        type: 'local',
-        path: '/custom/path/sfw',
       })
     })
   })

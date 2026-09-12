@@ -1,11 +1,38 @@
 //#region scripts/repo/gen/bootstrap/src/workspace-migration.d.mts
 export declare function migrateWorkspaceSettings(dest: string, yaml: string): string;
 //#endregion
+//#region template/base/universal/scripts/fleet/process/script-meta.d.mts
+/**
+ * A script's self-description, answered without running its side effect.
+ * `--describe` prints `describe` verbatim — one line, what the script does —
+ * so script inventories and agents can read purpose without opening the file.
+ * `-h`/`--help` prints `describe`, a blank line, then `help`, which opens
+ * with a `Usage:` line naming the sanctioned invocation and lists the flags
+ * `main()` actually parses.
+ */
+interface ScriptMeta {
+  readonly json?: 'native' | 'result' | undefined;
+  readonly describe: string;
+  readonly help: string;
+}
+//#endregion
+//#region template/base/universal/scripts/fleet/process/script-result.d.mts
+interface ScriptResult {
+  readonly exitCode: number;
+  readonly data?: unknown | undefined;
+  readonly error?: string | undefined;
+}
+//#endregion
+//#region template/base/universal/scripts/fleet/process/run-main-minimal.d.mts
+type MainFn = () => number | void | ScriptResult | Promise<number | void | ScriptResult>;
+export declare function runMainMinimal(main: MainFn, meta: ScriptMeta): void;
+//#endregion
 //#region template/base/universal/scripts/fleet/lib/conditional-config.d.mts
-type ConfigFlag = 'bundlesVendoredDeps' | 'hasGhcr' | 'hasNapi' | 'hasPrebakes' | 'hasRust' | 'isGithubAction';
+type ConfigFlag = 'bundlesVendoredDeps' | 'hasCodeql' | 'hasCratesRegistry' | 'hasGhcr' | 'hasGithubRelease' | 'hasNapi' | 'hasPrebakes' | 'hasRust' | 'isGithubAction';
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/conditional-files.d.mts
 interface ConditionalManifestGroup {
+  readonly removeWhenInactive?: boolean | undefined;
   readonly marker?: string | undefined;
   readonly capability?: string | undefined;
   readonly buildType?: string | undefined;
@@ -184,6 +211,7 @@ export interface InstallConfig {
    * (producer).
    */
   readonly fromTemplate?: boolean | undefined;
+  readonly preserveTracked?: boolean | undefined;
   readonly dryRun?: boolean | undefined;
   readonly exitCode?: boolean | undefined;
   readonly ifCurrent?: boolean | undefined;
@@ -579,7 +607,8 @@ export declare function removeTombstonedPaths(dest: string, manifest: FleetFileM
  * `.config/fleet/tsconfig.check.json`, `.gitkeep` seeds, cascade-only
  * release-excluded scripts under `scripts/fleet/` — can never be collateral.
  * Excluded conditional files without a record are pruned only when their
- * bytes match the archive. Locally customized files remain untouched.
+ * bytes match the archive or the group declares removal when inactive.
+ * Other locally customized files remain untouched.
  */
 interface PruneStaleFleetFilesOptions {
   archiveManifest?: FleetFileManifest | undefined;
@@ -588,6 +617,8 @@ export declare function pruneStaleFleetFiles(dest: string, manifest: FleetFileMa
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/install.d.mts
 export interface InstallFilesOptions {
+  preserveTracked?: boolean | undefined;
+  preservedPaths?: ReadonlySet<string> | undefined;
   /**
    * Place always-tracked surfaces even when the target exists (opt-in).
    */
@@ -621,6 +652,9 @@ export interface InstallFilesResult {
  * mid-prepare.
  */
 export declare function hasIdenticalBytes(source: string, target: string): boolean;
+export declare function isPreservedInstallPath(relative: string, options?: {
+  preservedPaths?: ReadonlySet<string> | undefined;
+} | undefined): boolean;
 export declare function installFiles(filesDir: string, dest: string, manifest: BundleManifest, options?: InstallFilesOptions | undefined): InstallFilesResult;
 /**
  * Materialize the fleet mirrors in a PRODUCER checkout from its own
@@ -644,14 +678,14 @@ export declare function installFiles(filesDir: string, dest: string, manifest: B
  */
 export declare function materializeFromLocalTemplate(dest: string, manifest: BundleManifest, options?: InstallFilesOptions | undefined): InstallFilesResult | undefined;
 /**
- * Untrack the bundle's GENERATED build outputs (`manifest.generatedPaths`)
- * from the git index after placement. The bundle SHIPS these files — placement
+ * Untrack the bundle's GENERATED build outputs (`manifest.generatedPaths`) from
+ * the git index after placement. The bundle SHIPS these files — placement
  * writes them to disk — while the fleet gitignore block ignores them and
  * `generated-outputs-are-untracked` forbids TRACKING them. A member that
- * historically committed one (fleet-pack.cjs et al., before the ignore existed)
- * heals on the next refresh: the file stays on disk, but leaves the index.
- * Non-fatal by design — a non-git dest or an already-clean index is a no-op
- * (`--ignore-unmatch`).
+ * historically committed one (fleet-pack.generated.cjs et al., before the
+ * ignore existed) heals on the next refresh: the file stays on disk, but leaves
+ * the index. Non-fatal by design — a non-git dest or an already-clean index is
+ * a no-op (`--ignore-unmatch`).
  */
 export declare function untrackGeneratedOutputs(dest: string, generatedPaths: readonly string[] | undefined): void;
 /**
@@ -826,34 +860,6 @@ export declare function assertLockStep(config: {
   readonly ref: string;
 }): boolean;
 export declare const ERR_BUNDLE_BEHIND_LOCAL = "ERR_WHEELHOUSE_BUNDLE_BEHIND_LOCAL_TEMPLATE";
-/**
- * True when a sibling wheelhouse checkout exists AND its HEAD is strictly
- * DESCENDED from the bundle's template SHA — the bundle is a frozen snapshot
- * of an older template, so unpacking it would roll the member backwards.
- *
- * `assertLockStep` only proves the bundle matches its own pin, which is a
- * self-consistency check. It cannot see that the pin itself went stale. On a
- * machine that also cascades from a local template, the two writers disagree
- * and whichever runs last wins: the cascade writes current content, then
- * `update`'s bundle pass restores the older snapshot over it. That reverted a
- * Socket catalog pin, dropped fleet rules out of CLAUDE.md, and reintroduced a
- * duplicated overrides block that broke `pnpm install` — each time reported as
- * a successful update.
- *
- * Returns false when there is no local wheelhouse (a thin member, or CI),
- * where the bundle IS the only source of truth and applying it is correct.
- * Any git failure also returns false: this guard refuses a provably stale
- * bundle, and never blocks on a question it could not answer.
- *
- * That includes an UNREACHABLE pin, which is the normal state after the fleet
- * squashes its default branch. The cascade-side twin
- * (`isPinnedBundleBehindLocalTemplate` in
- * scripts/repo/commit-cascade/fleet-pack-channel.mts) reads the same state as
- * BEHIND, and the split is deliberate: there, being wrong means delivering a
- * payload that was already current, and here it means raising
- * ERR_WHEELHOUSE_BUNDLE_BEHIND_LOCAL_TEMPLATE and failing a member's install.
- * Only one of those is safe to guess at.
- */
 export declare function isBundleBehindLocalTemplate(config: {
   readonly dest: string;
   readonly manifestTemplateSha: string;
@@ -1005,5 +1011,6 @@ export declare function runStatus(config: InstallConfig): Promise<number>;
  */
 export declare function installFleet(config: InstallConfig): Promise<number>;
 export declare function isMainModule(): boolean;
+export declare function main(): Promise<number>;
 //#endregion
-export { OCI_MANIFEST_ACCEPT as MANIFEST_ACCEPT };
+export { OCI_MANIFEST_ACCEPT as MANIFEST_ACCEPT, type ScriptMeta };

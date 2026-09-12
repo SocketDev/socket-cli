@@ -1,0 +1,206 @@
+name: 📦 Publish npm
+run-name: Publish npm
+
+# Cascade-owned — every npm-publishing repo carries the byte-identical copy
+# (adopt by copying the template once; the sync then keeps it in lock-step;
+# member edits are reverted on the next cascade). The thin dispatch shell:
+# checkout → setup-and-install → build → scripts/fleet/npm-publish.mts, which
+# owns what + how the repo publishes.
+#
+# Default flow: manual dispatch, DRY-RUN unless `publish: true`; publishes the
+# workspace's publishable packages via the fleet staged-publish script with
+# npm provenance (OIDC trusted publishing — id-token: write, no long-lived
+# npm token).
+#
+# CI reserves the version, changelog, tag and configured release before npm
+# staging. An unaccepted stage consumes the version; approval only promotes npm.
+#
+# BACKFILL: to republish prior content as a skipped GAP version — 1.4.3
+# between a live 1.4.2 and 1.4.4 — dispatch from MAIN, where this file always
+# exists, with `backfill-version` + `checkout-ref`. The checkout-ref supplies
+# the CONTENT while the workflow definition stays main's. The bump/changelog
+# gate is bypassed; hard gap-fill-only guards replace it (never-published
+# version, lower than latest, non-latest dist-tag, content declares its own
+# version) — see scripts/fleet/registry-infra/npm/backfill.mts.
+#
+# NAPI ADDON PATH: not here. A member that declares a `napi` block in
+# .config/repo/socket-wheelhouse.json receives a SEPARATE, conditionally
+# cascaded `.github/workflows/publish-npm-addons.yml` carrying the per-platform
+# `.node` build + platform-package publish. GitHub parses a workflow against
+# the repo's Actions allowlist BEFORE evaluating any job-level `if:`, so addon
+# jobs living in this fleet-wide file would force the Rust toolchain actions
+# onto every member's allowlist — and a strict-allowlist member that lacks them
+# fails the whole file at startup with zero jobs and no logs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (false = dry-run, the default).'
+        type: boolean
+        default: false
+      dist-tag:
+        description: 'npm dist-tag to publish under.'
+        type: string
+        default: 'latest'
+      backfill-version:
+        description: >-
+          Backfill a never-published GAP version below registry latest with
+          the content at checkout-ref. Bypasses the bump/changelog gate
+          behind hard gap-fill-only guards; requires checkout-ref and a
+          non-latest dist-tag.
+        type: string
+        default: ''
+      checkout-ref:
+        description: >-
+          Backfill only — the branch/tag/SHA whose CONTENT is republished.
+          The workflow definition always comes from the dispatched ref,
+          main, so historical content stays reachable.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  npm-publish:
+    name: Publish npm
+    runs-on: ubuntu-latest
+    # npm's trusted-publisher config pins this GitHub environment name; the
+    # OIDC token exchange 404s if the job runs outside it.
+    environment: npm-publish
+    permissions:
+      contents: read
+      # npm provenance / trusted publishing mints its OIDC token here.
+      id-token: write
+    env:
+      # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install —
+      # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with the
+      # inline git-fetch shape so setup-and-install can re-check-out at its own
+      # deeper default. Two npm-publish specifics: a backfill fetches the
+      # checkout-ref content ref (empty = the dispatched ref), and the fetch
+      # carries --tags — the bump derivation anchors on registry-latest + the
+      # last v-tag, and on a first-publish repo the registry has nothing, so
+      # the tags are the only anchor; a tagless shallow fetch makes the engine
+      # derive from zero (0.1.0) and trip the half-applied-bump gate on
+      # historical CHANGELOG sections that describe shipped versions.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          # Route context through env (no ${{ }} in the shell body —
+          # zizmor expression-injection). Token authorizes the fetch inline and
+          # is never persisted to .git/config.
+          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          # Backfill's content ref wins; otherwise the dispatched ref.
+          FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
+          FETCH_ARGS=(--prune --depth 1 origin "${FETCH_REF}")
+          # --tags stays on the fetch line itself so the
+          # version-derivation-jobs-have-tags gate can see it.
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --tags "${FETCH_ARGS[@]}"
+          else
+            git fetch --tags "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+
+      # `latest` is what an untagged install of the package resolves to, so it belongs
+      # to whichever branch carries the line customers actually consume. For
+      # almost every member that IS the default branch, which is the default
+      # here — those repos see no behavior change.
+      #
+      # A member whose consumable line is NOT the default branch declares it as
+      # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json —
+      # the shape being a maintenance branch shipping to users while the
+      # default branch carries a prerelease major.
+      #
+      # Read from the manifest rather than hard-coded so one file states the
+      # law for the whole fleet and each member parameterizes it.
+      - name: Guard the latest dist-tag to the consumable release line
+        if: ${{ inputs.publish == true && inputs.dist-tag == 'latest' }}
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF: ${{ github.ref }}
+        run: |
+          LATEST_BRANCH="$(node -e '
+            const fs = require("node:fs")
+            const p = ".config/repo/socket-wheelhouse.json"
+            let branch = ""
+            try {
+              branch = JSON.parse(fs.readFileSync(p, "utf8"))?.release?.latestDistTagBranch ?? ""
+            } catch {}
+            process.stdout.write(String(branch))
+          ')"
+          if [ -z "$LATEST_BRANCH" ]; then
+            LATEST_BRANCH="$DEFAULT_BRANCH"
+          fi
+          if [ "$REF" != "refs/heads/$LATEST_BRANCH" ]; then
+            echo "::error::Refusing to publish dist-tag 'latest' from $REF." >&2
+            echo "::error::Where: this dispatch, against the '$LATEST_BRANCH' consumable release line." >&2
+            echo "::error::Saw vs wanted: 'latest' requested off refs/heads/$LATEST_BRANCH; 'latest' is what an untagged install resolves to, so only the consumable line may move it." >&2
+            echo "::error::Fix: re-dispatch from $LATEST_BRANCH, or pick a prerelease dist-tag (next, beta, canary, rc). To change which branch owns 'latest', set release.latestDistTagBranch in .config/repo/socket-wheelhouse.json." >&2
+            exit 1
+          fi
+          echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
+
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Forward the backfill content ref — setup-and-install re-checks-out
+          # internally (fleet checkout falls back to the TRIGGERING ref when
+          # unset), which would silently swap the backfill content back to
+          # main's tree; the backfill gate then refuses against main's
+          # version. Empty forwards as unset, so normal dispatches keep the
+          # dispatched-ref re-checkout.
+          checkout-ref: ${{ inputs.checkout-ref }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+      - name: Run full coverage
+        # Backfill republishes already-released historical content. Its hard
+        # content checks replace current-branch qualification.
+        if: ${{ inputs.backfill-version == '' }}
+        run: pnpm run cover
+      - name: Build
+        run: pnpm run build
+      - name: 'Mint release token'
+        if: ${{ inputs.backfill-version == '' }}
+        id: release-app
+        uses: ./.github/actions/fleet/github-release-app-token
+        with:
+          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+      # The version resolver consumes a prerelease hint, uses configured odai
+      # for patch/minor, or defaults to minor. Backfills keep their version.
+      - name: Publish
+        env:
+          BACKFILL_VERSION: ${{ inputs.backfill-version }}
+          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+          RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+        # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT
+        # backfill-version is refused by the script instead of silently
+        # bump-publishing historical content.
+        run: node scripts/fleet/npm-publish.mts --tag "$DIST_TAG" ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}

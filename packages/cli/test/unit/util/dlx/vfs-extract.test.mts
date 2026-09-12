@@ -1,3 +1,15 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as NodeFs from 'node:fs'
+import {
+  areExternalToolsAvailable,
+  EXTERNAL_TOOLS,
+  extractTool,
+  getNodeSmolBasePath,
+  getToolFilePath,
+  getToolPaths,
+  isNpmPackageExtracted,
+} from '../../../../src/util/dlx/vfs-extract.mts'
+
 /**
  * Unit tests for util/dlx/vfs-extract.
  *
@@ -7,10 +19,6 @@
  *
  * Related Files: - src/util/dlx/vfs-extract.mts.
  */
-
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type * as NodeFs from 'node:fs'
 
 const mockIsSeaBinary = vi.hoisted(() => vi.fn(() => false))
 const mockExistsSync = vi.hoisted(() => vi.fn(() => false))
@@ -50,16 +58,6 @@ vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
 }))
-
-import {
-  areExternalToolsAvailable,
-  EXTERNAL_TOOLS,
-  extractTool,
-  getNodeSmolBasePath,
-  getToolFilePath,
-  getToolPaths,
-  isNpmPackageExtracted,
-} from '../../../../src/util/dlx/vfs-extract.mts'
 
 const realProcessSmol = (process as unknown as { smol?: unknown | undefined })
   .smol
@@ -175,9 +173,9 @@ describe('util/dlx/vfs-extract', () => {
       expect(result).toContain('node_modules/@cyclonedx/cdxgen/bin/cdxgen')
     })
 
-    it('returns standalone path for sfw', () => {
-      const result = getToolFilePath('sfw', '/base')
-      expect(result).toContain('node_modules/@socketsecurity/sfw-bin/sfw')
+    it('returns standalone path for trivy', () => {
+      const result = getToolFilePath('trivy', '/base')
+      expect(result).toBe('/base/trivy')
     })
 
     it('returns standalone path for socket-patch', () => {
@@ -278,12 +276,12 @@ describe('util/dlx/vfs-extract', () => {
       )
     })
 
-    it('wraps mount-failure for standalone tools (sfw)', async () => {
+    it('wraps mount-failure for standalone tools (trivy)', async () => {
       withMountReturning(async () => {
         throw new Error('vfs not found')
       })
-      await expect(extractTool('sfw')).rejects.toThrow(
-        /failed to extract sfw from the SEA VFS/,
+      await expect(extractTool('trivy')).rejects.toThrow(
+        /failed to extract trivy from the SEA VFS/,
       )
     })
 
@@ -311,13 +309,13 @@ describe('util/dlx/vfs-extract', () => {
       expect(result).toContain('cdxgen')
     })
 
-    it('returns extracted path for standalone binary (sfw)', async () => {
-      // sfw has TOOL_STANDALONE_PATHS entry; final existsSync true.
+    it('returns extracted path for standalone binary (trivy)', async () => {
+      // trivy has TOOL_STANDALONE_PATHS entry; final existsSync true.
       mockExistsSync.mockReturnValue(true)
-      withMountReturning(async () => '/extracted/sfw')
+      withMountReturning(async () => '/extracted/trivy')
 
-      const result = await extractTool('sfw')
-      expect(result).toContain('sfw')
+      const result = await extractTool('trivy')
+      expect(result).toContain('trivy')
     })
 
     it('throws when extracted path does not exist after mount', async () => {
@@ -333,10 +331,10 @@ describe('util/dlx/vfs-extract', () => {
     it('handles chmod failure silently for standalone binary', async () => {
       mockExistsSync.mockReturnValue(true)
       mockFsChmod.mockRejectedValue(new Error('EPERM'))
-      withMountReturning(async () => '/extracted/sfw')
+      withMountReturning(async () => '/extracted/trivy')
 
       // Should still succeed, chmod errors swallowed.
-      await expect(extractTool('sfw')).resolves.toBeTruthy()
+      await expect(extractTool('trivy')).resolves.toBeTruthy()
     })
 
     it('extracts standalone tool not in TOOL_STANDALONE_PATHS map by tool name', async () => {

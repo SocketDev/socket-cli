@@ -1,90 +1,26 @@
-name: 🟢 Get Green
-
-# PLAIN workflow — no gh-aw, no ANTHROPIC_API_KEY. This was a gh-aw agentic
-# workflow whose multi-turn fix step ran on a per-repo Claude key; that key is
-# retired fleet-wide (see RETIRED_SECRETS in
-# scripts/fleet/check/actions-secrets-are-declared.mts), so the escalation runs
-# keyless now, exactly like the weekly-update workflow that dispatches it.
-#
-# What replaced the agent, in order (`.claude/rules/fleet/code-first-then-ai.md`):
-#
-#   1. The DETERMINISTIC fixer. scripts/fleet/get-green.mts runs setup + tests
-#      and, on red, runs `pnpm run fix` — oxlint autofix, the formatter, the
-#      doctor's mechanical repairs — then re-tests. Post-update breakage is
-#      usually mechanical, and this clears it with a reproducible result and no
-#      model at all.
-#   2. The ON-DEVICE model, for diagnosis only. What survives the fixer gets an
-#      odai `summarize` digest of the red log tails appended to the report. The
-#      odai runner deliberately admits the summary and decision families and NOT
-#      code repair — its `patch` task stays bench-gated — so this names the
-#      failure rather than guessing at an edit.
-#   3. A HUMAN, for anything left. A logic break is reported with its digest,
-#      not attempted. Losing agentic repair is the trade: mechanical breakage
-#      still self-heals, and a real break now fails loudly with a diagnosis
-#      instead of consuming a multi-turn budget to maybe fix itself.
-#
-# The script owns the verdict, never this workflow: `--report` exits non-zero
-# on a red branch, so the PR step cannot run on an agent's (or a step's)
-# say-so.
+name: 🟢 Get green
+run-name: Get green
 
 on:
-  # Dispatched by weekly-update when tests go red after an update. A plain
-  # workflow receives workflow_dispatch identically to the gh-aw one it
-  # replaced, so the caller did not change.
   workflow_dispatch:
     inputs:
       branch:
-        description: 'The update branch with the failing changes to fix'
-        required: true
-        type: string
-      build-log:
-        description: 'Last 100 lines of the failing build output'
+        description: 'Branch to repair (defaults to the repository default branch)'
         required: false
         type: string
         default: ''
-      test-log:
-        description: 'Last 100 lines of the failing test output'
-        required: false
-        type: string
-        default: ''
-      pr-base:
-        description: 'Base branch for the PR'
-        required: false
-        type: string
-        default: 'main'
-      pr-title-prefix:
-        description: 'PR title prefix'
-        required: false
-        type: string
-        default: 'chore(deps): weekly dependency update'
-      test-setup-script:
-        description: 'Command to run before tests'
-        required: false
-        type: string
-        default: 'pnpm run build'
-      test-script:
-        # --all is explicit on purpose. `pnpm test` defaults to the MODIFIED
-        # scope, and a fresh CI checkout has no modified files, so the run would
-        # resolve to zero targets and report a green branch without testing
-        # anything. That is the one verdict this workflow exists to produce.
-        description: 'Command that must pass for the branch to be green'
-        required: false
-        type: string
-        default: 'pnpm test --all'
 
 permissions:
   contents: read
 
 concurrency:
-  group: get-green-${{ inputs.branch }}
+  group: get-green-${{ inputs.branch || github.event.repository.default_branch }}
   cancel-in-progress: false
 
 jobs:
   get-green:
+    name: Get green
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     env:
       SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:
@@ -94,33 +30,44 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
-          TRIGGER_REF: ${{ inputs.branch }}
+          TRIGGER_REF: ${{ inputs.branch || github.event.repository.default_branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
+          git check-ref-format "refs/heads/${TRIGGER_REF}"
+          git check-ref-format "refs/heads/${DEFAULT_BRANCH}"
           git init -q
           git config --local advice.detachedHead false
           git remote remove origin 2>/dev/null || true
           git remote add origin "${SERVER_URL}/${REPOSITORY}"
-          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          FETCH_ARGS=(--no-tags --prune origin "+refs/heads/${TRIGGER_REF}:refs/remotes/origin/${TRIGGER_REF}")
+          if [ "${TRIGGER_REF}" != "${DEFAULT_BRANCH}" ]; then
+            FETCH_ARGS+=("+refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}")
+          fi
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
             git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
           else
             git fetch "${FETCH_ARGS[@]}"
           fi
-          git checkout -q --detach FETCH_HEAD
+          git checkout -q --detach "refs/remotes/origin/${TRIGGER_REF}"
 
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
+          checkout: 'false'
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
 
       # Provision the on-device model. Fail-open by contract: ready=false only
       # means the digest is skipped and the run stays deterministic-only, which
       # is a weaker report, never a wrong verdict.
-      - uses: ./.github/actions/fleet/setup-odai
+      - name: 'Set up odai'
+        uses: ./.github/actions/fleet/setup-odai
         id: odai
+        with:
+          allow-fill: 'false'
 
       # The whole ladder. Exits 0 only when the branch is green AFTER the
       # deterministic fixer, so every later step is gated on a real pass.
@@ -130,32 +77,50 @@ jobs:
         env:
           # Env-var indirection: expanding an input inside `run:` is the
           # template-injection shape zizmor blocks.
-          BASE_REF: ${{ inputs.pr-base }}
+          BASE_REF: origin/${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
           ODAI_READY: ${{ steps.odai.outputs.ready }}
-          TEST_SCRIPT: ${{ inputs.test-script }}
-          TEST_SETUP_SCRIPT: ${{ inputs.test-setup-script }}
         run: |
           set -euo pipefail
           echo "on-device model ready: ${ODAI_READY}"
           node scripts/fleet/get-green.mts --report \
             --base "${BASE_REF}" \
-            --setup "${TEST_SETUP_SCRIPT}" \
-            --test "${TEST_SCRIPT}"
+            --setup "pnpm run build"
 
-      # Only reached when the step above exited 0. Whatever the fixer changed
-      # is committed here; a run that fixed nothing has an empty diff and
-      # commits nothing.
+      - name: Preserve failure evidence
+        if: ${{ failure() && steps.report.outcome == 'failure' && steps.report.outputs.diagnostics-path != '' }}
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: get-green-failure-${{ github.run_attempt }}
+          path: ${{ steps.report.outputs.diagnostics-path }}
+          if-no-files-found: error
+
+      - name: 'Mint PR token'
+        id: pr-app
+        uses: ./.github/actions/fleet/github-pr-app-token
+        with:
+          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+
       - name: Commit the mechanical fixes
         shell: bash
         env:
-          BRANCH: ${{ inputs.branch }}
-          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_BRANCH: ${{ inputs.branch || github.event.repository.default_branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ steps.pr-app.outputs.token }}
+          GH_TOKEN: ${{ steps.pr-app.outputs.token }}
           SERVER_URL: ${{ github.server_url }}
         run: |
           set -euo pipefail
-          if git diff --quiet; then
+          if git diff --quiet "origin/${SOURCE_BRANCH}" --; then
             echo "no mechanical fixes to commit — the branch was already green."
             exit 0
+          fi
+          BRANCH="${SOURCE_BRANCH}"
+          if [ "${SOURCE_BRANCH}" = "${DEFAULT_BRANCH}" ]; then
+            BRANCH="get-green/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           fi
           # Stage the catalog + lockfile pair by name, then every tracked
           # modification the fixer made. Never a blanket `git add -A`: a
@@ -165,17 +130,18 @@ jobs:
           # (build output, logs) have no place in a mechanical-fix commit.
           git add -- pnpm-workspace.yaml pnpm-lock.yaml
           git add --update -- .
-          git -c user.name='socket-bot' \
-              -c user.email='socket-bot@users.noreply.github.com' \
-              commit -m 'fix(deps): apply the deterministic autofixer after the update'
-          # The bootstrap checkout above authenticated only its own fetch via
-          # a per-invocation `-c`, so nothing landed in .git/config — this
-          # push needs its own auth the same way. The job's contents: write
-          # GITHUB_TOKEN is enough; the header is cleared in an always() step
-          # below rather than left in .git/config.
+          node scripts/fleet/github/commit.mts \
+            --parent "origin/${SOURCE_BRANCH}" --branch "${BRANCH}" --repo "${REPOSITORY}" \
+            --message 'fix: apply verified mechanical repairs'
           AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
           git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" \
-              push origin "HEAD:${BRANCH}"
+              push origin "HEAD:refs/heads/${BRANCH}"
+          OPEN_PRS="$(gh pr list --repo "${REPOSITORY}" --head "${BRANCH}" --base "${DEFAULT_BRANCH}" --state open --json number --jq 'length')"
+          if [ "${OPEN_PRS}" = "0" ]; then
+            gh pr create --repo "${REPOSITORY}" --head "${BRANCH}" --base "${DEFAULT_BRANCH}" \
+              --title 'fix: repair failing checks' \
+              --body 'Apply verified mechanical fixes. The build and full test suite pass.'
+          fi
 
       - name: Clear push credentials
         if: ${{ always() }}

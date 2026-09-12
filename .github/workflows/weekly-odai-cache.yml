@@ -1,4 +1,5 @@
-name: ✨ Weekly Odai Cache
+name: 🔁 Weekly odai cache
+run-name: Weekly odai cache
 
 # Fleet-canonical on-device model cache. The fleet's keyless-AI lane (the
 # weekly-update decision leg, every odai-driven assist) needs the on-device
@@ -15,10 +16,8 @@ name: ✨ Weekly Odai Cache
 # Unlike the fleet seam (exit 69 = clean skip), this workflow FAILS LOUD on
 # an unavailable backend: its whole job is evidence.
 #
-# Chrome installs at current stable, version logged in the receipts —
-# Google's deb pool does not retain old versions, and Chrome auto-updates
-# the model component regardless, so the receipts record versions instead
-# of pretending a pin.
+# The setup-odai composite provisions the pinned CLI and verified Chrome.
+# Both jobs exercise the published consumer entry, independent of repo builds.
 
 on:
   workflow_dispatch:
@@ -37,8 +36,8 @@ env:
 
 jobs:
   fill:
-    name: 🫗 Fill the model profile
-    runs-on: ubuntu-latest
+    name: Prepare model cache
+    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 50
     outputs:
       component-version: ${{ steps.component.outputs.version }}
@@ -78,26 +77,23 @@ jobs:
             /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
           df -h / | tail -1
 
-      - name: Install Google Chrome stable
-        shell: bash
-        run: |
-          set -euo pipefail
-          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
-          rm google-chrome-stable_current_amd64.deb
-          google-chrome-stable --version
-
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Thin-distribution CI auth: mint a contents:read-only token so the
-          # bootstrap fetch (fired by `prepare` during install) can download the
-          # fleet release bundle from the private wheelhouse. Both refs are
-          # empty on a non-thin member (var/secret unset) - the mint is skipped
-          # and the fetch no-ops. A thin member sets a dedicated read-only App's
-          # client-id var + private-key secret.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+
+      - name: Verify model CPU capacity
+        timeout-minutes: 1
+        shell: bash
+        env:
+          ODAI_CHROME_USER_DATA_DIR: /home/runner/.cache/odai/chrome-builtin
+        run: |
+          node scripts/fleet/ai/odai/diagnostics.mts --check-capacity --json
 
       # Cache the model components + activation state ONLY — the same set the
       # bridge's clone mode copies from a system profile. The rest of the
@@ -115,14 +111,17 @@ jobs:
             --key "odai-nano-Linux-x64-fill-anchor" \
             --restore-key "odai-nano-Linux-x64-"
 
-      - name: Build the CLI
-        shell: bash
-        run: pnpm run build
+      - name: Provision the pinned odai CLI
+        uses: ./.github/actions/fleet/setup-odai
+        with:
+          allow-fill: 'false'
+          restore-model-cache: 'false'
 
       # First activation of a fresh profile needs network for one keyless
       # component-metadata exchange; with a restored profile the download is
       # skipped and this doubles as the warm-path timing receipt.
-      - name: Fill + first prompt (download allowed)
+      - name: Download and activate model
+        id: fill
         shell: bash
         env:
           ODAI_CHROME_ALLOW_DOWNLOAD: '1'
@@ -137,7 +136,7 @@ jobs:
             'a template file and a member copy is a defect the next wave heals.' \
             > /tmp/on-device-model-cache-input.txt
           START="$(date +%s)"
-          node dist/cli.js summarize --backend chrome-builtin \
+          odai summarize --backend chrome-builtin \
             --input /tmp/on-device-model-cache-input.txt --timeout 240000 \
             > /tmp/on-device-model-cache-fill.json
           ELAPSED="$(( $(date +%s) - START ))"
@@ -151,8 +150,17 @@ jobs:
             console.log("summary:", r.summary)
           '
           echo "fill prompt wall time: ${ELAPSED}s"
-          node dist/cli.js backends || true
+          odai backends || true
           du -sh /home/runner/.cache/odai/chrome-builtin
+
+      - name: Diagnose model readiness
+        if: ${{ failure() && steps.fill.outcome == 'failure' }}
+        timeout-minutes: 1
+        shell: bash
+        env:
+          ODAI_CHROME_USER_DATA_DIR: /home/runner/.cache/odai/chrome-builtin
+        run: |
+          node scripts/fleet/ai/odai/diagnostics.mts --json
 
       - name: Read the component version
         id: component
@@ -167,7 +175,9 @@ jobs:
             echo "::error::Fix: read the fill-step log — availability() reasons are printed by the CLI." >&2
             exit 1
           fi
-          VERSION="$(ls "$DIR" | head -1)"
+          VERSIONS=("$DIR"/*)
+          test -e "${VERSIONS[0]}"
+          VERSION="${VERSIONS[0]##*/}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "cache-key=odai-nano-Linux-x64-${VERSION}" >> "$GITHUB_OUTPUT"
           echo "component version: ${VERSION}"
@@ -186,9 +196,9 @@ jobs:
             --key "$CACHE_KEY"
 
   verify:
-    name: 🧊 Offline verify on a fresh runner
+    name: Verify model cache
     needs: fill
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - name: Bootstrap checkout
@@ -213,37 +223,23 @@ jobs:
           fi
           git checkout -q --detach FETCH_HEAD
 
-      # This job is the CONSUMER REFERENCE SHAPE: no disk reclaim (the 22 GB
-      # free-space need is download-time only; a restore-only job holds 4.2 GB
-      # against the image's ~88 GB free, comfortably over Chrome's 10 GB model
-      # retention floor) and no unconditional Chrome upgrade. One deliberate
-      # difference from a real consumer: this repo's verify builds the CLI
-      # from HEAD to validate the checkout; consumers install the published
-      # @socketsecurity/odai instead.
-      - name: Ensure Google Chrome stable
-        shell: bash
-        run: |
-          set -euo pipefail
-          if command -v google-chrome-stable >/dev/null 2>&1; then
-            echo "preinstalled: $(google-chrome-stable --version)"
-            exit 0
-          fi
-          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
-          rm google-chrome-stable_current_amd64.deb
-          google-chrome-stable --version
-
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Thin-distribution CI auth: mint a contents:read-only token so the
-          # bootstrap fetch (fired by `prepare` during install) can download the
-          # fleet release bundle from the private wheelhouse. Both refs are
-          # empty on a non-thin member (var/secret unset) - the mint is skipped
-          # and the fetch no-ops. A thin member sets a dedicated read-only App's
-          # client-id var + private-key secret.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+
+      - name: Verify model CPU capacity
+        timeout-minutes: 1
+        shell: bash
+        env:
+          ODAI_CHROME_USER_DATA_DIR: /home/runner/.cache/odai/chrome-builtin
+        run: |
+          node scripts/fleet/ai/odai/diagnostics.mts --check-capacity --json
 
       - name: Restore the filled profile (miss = failure)
         shell: bash
@@ -259,13 +255,16 @@ jobs:
             --key "$CACHE_KEY" \
             --fail-on-miss
 
-      - name: Build the CLI
-        shell: bash
-        run: pnpm run build
+      - name: Provision the pinned odai CLI
+        uses: ./.github/actions/fleet/setup-odai
+        with:
+          allow-fill: 'false'
+          restore-model-cache: 'false'
 
-      - name: Prompt with downloads off
+      - name: Verify model offline
         shell: bash
         env:
+          ODAI_CHROME_ALLOW_DOWNLOAD: '0'
           ODAI_CHROME_USER_DATA_DIR: /home/runner/.cache/odai/chrome-builtin
         run: |
           set -euo pipefail
@@ -276,7 +275,7 @@ jobs:
             'while the default branch stays clean for other sessions.' \
             > /tmp/on-device-model-cache-verify.txt
           START="$(date +%s)"
-          node dist/cli.js summarize --backend chrome-builtin \
+          odai summarize --backend chrome-builtin \
             --input /tmp/on-device-model-cache-verify.txt --timeout 240000 \
             > /tmp/on-device-model-cache-verify.json
           ELAPSED="$(( $(date +%s) - START ))"

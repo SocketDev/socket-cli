@@ -1,37 +1,36 @@
 /**
  * @file Decision core for the fleet setup action's pnpm BOOTSTRAP path — the
  *   branch the "Install pnpm" step takes only when
- *   scripts/fleet/setup/external-tools.json is absent. A THIN member
- *   untracks the whole scripts/fleet/** payload and repopulates it from the
- *   pinned release bundle during `pnpm install` — which needs a working pnpm
- *   to run in the first place — so on a fresh thin checkout TOOLS_FILE
- *   legitimately does not exist yet, before the install that would fetch it
- *   can run.
+ *   scripts/fleet/setup/external-tools.json is absent. A THIN member untracks
+ *   the whole scripts/fleet/** payload and repopulates it from the pinned
+ *   release bundle during `pnpm install` — which needs a working pnpm to run in
+ *   the first place — so on a fresh thin checkout TOOLS_FILE legitimately does
+ *   not exist yet, before the install that would fetch it can run.
  *   package.json's `devEngines.packageManager` is the fleet's ENFORCED
  *   package-manager pin (sync-package-manager-pins.mts derives it from
- *   external-tools.json) and, unlike external-tools.json itself, it IS
- *   always tracked, even on a thin member. Corepack and its exact
- *   `packageManager` field are retired fleet-wide (no-corepack-guard,
- *   docs/fleet/agents.md/tooling.md), so devEngines.packageManager is the
- *   ONLY bootstrap source. Its `.version` is a major-bounded SemVer RANGE
- *   (e.g. `>=11.0.0 <12.0.0`), not a concrete version, so there is no single
- *   download until it is resolved against what pnpm has actually published —
- *   the semver-range functions below do that against the npm registry's own
- *   abbreviated packument (`Accept: application/vnd.npm.install-v1+json`,
- *   the same request shape npm/Corepack themselves use). Once resolved, the
- *   per-version manifest's `dist.integrity` (already SRI-shaped) verifies
- *   the download the same way `_shared/install-tool.mjs` verifies every
- *   other pinned tool — integrity checking is not weakened, only its source
- *   moves from the missing pin file to npm's registry metadata for this
- *   bootstrap-only install. The action's normal path (TOOLS_FILE present) is
- *   unchanged and stays the CI source of truth; this pnpm only has to be
- *   good enough to run the `pnpm install` that fetches TOOLS_FILE.
- *   Pure decision functions are exported for the wheelhouse unit suite; the
- *   thin CLI shell at the bottom reads inputs from env and prints decisions
- *   to stdout — same shape as the co-located plan-setup-tools.mjs and
- *   plan-setup-node.mjs. Dependency-free on purpose: it runs on the runner's
- *   system Node before any install exists, so only `node:` builtins are
- *   used. Subcommands (inputs via env, decisions on stdout):
+ *   external-tools.json) and, unlike external-tools.json itself, it IS always
+ *   tracked, even on a thin member. Corepack and its exact `packageManager`
+ *   field are retired fleet-wide (no-corepack-guard,
+ *   docs/fleet/agents.md/tooling.md), so devEngines.packageManager is the ONLY
+ *   bootstrap source. Its `.version` is a SemVer RANGE (e.g. `^11.25.0 || >=12.3.4`),
+ *   not a concrete version, so there is no single download until it is resolved
+ *   against what pnpm has actually published — the semver-range functions below
+ *   do that against the npm registry's own abbreviated packument (`Accept:
+ *   application/vnd.npm.install-v1+json`, the same request shape npm/Corepack
+ *   themselves use). Once resolved, the per-version manifest's `dist.integrity`
+ *   (already SRI-shaped) verifies the download the same way
+ *   `_shared/install-tool.mjs` verifies every other pinned tool — integrity
+ *   checking is not weakened, only its source moves from the missing pin file
+ *   to npm's registry metadata for this bootstrap-only install. The action's
+ *   normal path (TOOLS_FILE present) is unchanged and stays the CI source of
+ *   truth; this pnpm only has to be good enough to run the `pnpm install` that
+ *   fetches TOOLS_FILE. Pure decision functions are exported for the wheelhouse
+ *   unit suite; the thin CLI shell at the bottom reads inputs from env and
+ *   prints decisions to stdout — same shape as the co-located
+ *   plan-setup-tools.mjs and plan-setup-node.mjs. Dependency-free on purpose:
+ *   it runs on the runner's system Node before any install exists, so only
+ *   `node:` builtins are used. Subcommands (inputs via env, decisions on
+ *   stdout):
  *
  *   - devengines-version: DEVENGINES_NAME, DEVENGINES_VERSION_RANGE → the highest
  *     published pnpm version satisfying the range, or a non-zero exit with no
@@ -41,7 +40,7 @@
  *     `dist.integrity`.
  */
 
-import { realpathSync } from 'node:fs'
+import { readFileSync, realpathSync } from 'node:fs'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
@@ -98,11 +97,9 @@ export function parseSemverComparator(token) {
 }
 
 /**
- * Parse a whitespace-separated AND'd comparator set — the only range shape
- * the fleet ever generates (sync-package-manager-pins.mts's
- * majorBoundedRange: `>=X.0.0 <Y.0.0`). Undefined on an empty range, an OR
- * set (`||`, unsupported), or any token that doesn't parse — the caller
- * falls through to the hard-fail rather than mis-resolving.
+ * Parse one whitespace-separated comparator set, including caret bounds.
+ * OR alternatives are split by the resolver before reaching this function.
+ * Empty or unsupported comparator sets fail without widening the range.
  */
 export function parseSemverRange(range) {
   const trimmed = (range ?? '').trim()
@@ -112,6 +109,20 @@ export function parseSemverRange(range) {
   const tokens = trimmed.split(/\s+/)
   const comparators = []
   for (let i = 0, { length } = tokens; i < length; i += 1) {
+    if (tokens[i].startsWith('^')) {
+      const lower = parseSemverTriple(tokens[i].slice(1))
+      if (!lower) {
+        return undefined
+      }
+      const upper =
+        lower[0] > 0
+          ? [lower[0] + 1, 0, 0]
+          : lower[1] > 0
+            ? [0, lower[1] + 1, 0]
+            : [0, 0, lower[2] + 1]
+      comparators.push({ op: '>=', triple: lower }, { op: '<', triple: upper })
+      continue
+    }
     const comparator = parseSemverComparator(tokens[i])
     if (!comparator) {
       return undefined
@@ -143,6 +154,14 @@ export function satisfiesSemverRange(triple, comparators) {
   })
 }
 
+function parseSemverAlternatives(range) {
+  if (typeof range !== 'string') {
+    return undefined
+  }
+  const alternatives = range.split('||').map(parseSemverRange)
+  return alternatives.every(Boolean) ? alternatives : undefined
+}
+
 /**
  * The highest of `versions` (any order, `X.Y.Z` strings) satisfying `range`.
  * Undefined when the range doesn't parse or nothing in `versions` matches —
@@ -152,15 +171,20 @@ export function satisfiesSemverRange(triple, comparators) {
  * range until it is resolved against what npm has actually published.
  */
 export function resolveHighestSatisfying(range, versions) {
-  const comparators = parseSemverRange(range)
-  if (!comparators) {
+  const alternatives = parseSemverAlternatives(range)
+  if (!alternatives) {
     return undefined
   }
   let best
   let bestTriple
   for (let i = 0, { length } = versions; i < length; i += 1) {
     const triple = parseSemverTriple(versions[i])
-    if (!triple || !satisfiesSemverRange(triple, comparators)) {
+    if (
+      !triple ||
+      !alternatives.some(comparators =>
+        satisfiesSemverRange(triple, comparators),
+      )
+    ) {
       continue
     }
     if (!bestTriple || compareSemverTriples(triple, bestTriple) > 0) {
@@ -252,9 +276,39 @@ async function fetchNpmPackument(pkgName) {
   return await res.json()
 }
 
+export function readPnpmDevEngine(manifest) {
+  const value = manifest?.devEngines?.packageManager
+  const entries = Array.isArray(value) ? value : [value]
+  const matches = entries.filter(entry => entry?.name === 'pnpm')
+  if (matches.length !== 1) {
+    return undefined
+  }
+  const entry = matches[0]
+  if (
+    typeof entry.version !== 'string' ||
+    !parseSemverAlternatives(entry.version)
+  ) {
+    return undefined
+  }
+  return { __proto__: null, name: 'pnpm', version: entry.version }
+}
+
 async function main() {
   const subcommand = process.argv[2]
   switch (subcommand) {
+    case 'devengines-pin': {
+      const field = process.argv[4]
+      if (field !== 'name' && field !== 'version') {
+        return 1
+      }
+      const manifest = JSON.parse(readFileSync(process.argv[3], 'utf8'))
+      const pin = readPnpmDevEngine(manifest)
+      if (!pin) {
+        return 1
+      }
+      printLines([pin[field]])
+      return 0
+    }
     case 'devengines-version': {
       const name = env('DEVENGINES_NAME')
       const range = env('DEVENGINES_VERSION_RANGE')

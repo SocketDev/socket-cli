@@ -3,17 +3,8 @@
 // referencing another fleet repo by an escaping path. Both wrap the shared
 // AST / regex detectors so the commit-time and edit-time surfaces agree.
 
-import {
-  looksLikeDocumentation,
-  splitLines,
-  suppressionCoversLine,
-} from './scan-core.mts'
-// Cross-repo matcher + helpers shared with the edit-time cross-repo-guard.
-import {
-  CROSS_REPO_ANY_RE,
-  relativeTokenEscapesRepo,
-  repoNameForFile,
-} from './cross-repo.mts'
+import { splitLines, suppressionCoversLine } from './scan-core.mts'
+import { scanRepositoryReferences } from './cross-repo.mts'
 // Logger-leak detector — AST-based, shared with the edit-time logger-guard.
 import { findLoggerLeaks } from './logger-leaks.mts'
 
@@ -76,66 +67,14 @@ export function scanLoggerLeaks(text: string): LineHit[] {
   return [...byLine.values()].toSorted((a, b) => a.lineNumber - b.lineNumber)
 }
 
-// ── Cross-repo path scanner ────────────────────────────────────────
-//
-// Two forbidden forms catch the same mistake — referencing another
-// fleet repo by a path that escapes the current repo:
-//
-//   1. `../<fleet-repo>/…`, cross-repo relative. Hardcodes the
-//      assumption that both repos are sibling clones under the same
-//      projects root; breaks in CI sandboxes / fresh clones / non-
-//      standard layouts.
-//   2. `<abs-prefix>/projects/<fleet-repo>/…` (cross-repo absolute,
-//      where <abs-prefix> isn't already caught by scanPersonalPaths
-//      because it uses a placeholder like `${HOME}`).
-//
-// The right way is to import from the published npm package
-// (`@socketsecurity/lib-stable/...`, `@socketsecurity/registry-stable/...`).
-// Scanner detects both shapes; suppress with the canonical marker
-// `<comment-prefix> oxlint-disable-next-line socket/no-cross-repo-path`.
-
-// CROSS_REPO_ANY_RE (built from the canonical FLEET_REPO_NAMES) is imported
-// from the gate-free _shared/cross-repo.mts — the SAME regex the edit-time
-// cross-repo-guard uses, sourced from the canonical fleet-repos.mts roster
-// (was a divergent inline copy + a stale local repo list).
-
-export const scanCrossRepoPaths = (
+export function scanCrossRepoPaths(
   text: string,
   fileAbsPath: string,
-): LineHit[] => {
-  const currentRepoName = repoNameForFile(fileAbsPath)
-  const hits: LineHit[] = []
-  const lines = splitLines(text)
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    const m = line.match(CROSS_REPO_ANY_RE)
-    if (!m) {
-      continue
-    }
-    // A repo's own paths (`socket-lib/...` referenced from inside
-    // socket-lib) are fine — we only catch cross-repo escapes.
-    const matched = m[0]
-    if (currentRepoName && matched.includes(`/${currentRepoName}`)) {
-      continue
-    }
-    // A relative `..`-traversal that resolves back INSIDE this repo (e.g. an
-    // intra-repo `.claude/skills/` import, whose `skills` segment collides with
-    // the `skills` fleet-repo name) is not a cross-repo escape.
-    if (
-      fileAbsPath &&
-      matched.includes('..') &&
-      !relativeTokenEscapesRepo(matched, fileAbsPath)
-    ) {
-      continue
-    }
-    if (looksLikeDocumentation(line, CROSS_REPO_ANY_RE, 'cross-repo')) {
-      continue
-    }
-    hits.push({
-      lineNumber: i + 1,
-      line,
-      suggested: '',
-    })
-  }
-  return hits
+): LineHit[] {
+  return scanRepositoryReferences(text, fileAbsPath).map(hit => ({
+    __proto__: null,
+    lineNumber: hit.lineNumber,
+    line: hit.line,
+    suggested: '',
+  }))
 }

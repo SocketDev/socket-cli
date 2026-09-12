@@ -9,7 +9,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { downloadGitHubReleaseBinary } from '../../../../src/util/dlx/spawn.mts'
+import {
+  downloadGitHubReleaseBinary,
+  extractGitHubReleaseZip,
+} from '../../../../src/util/dlx/spawn.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDownloadBinary = vi.hoisted(() => vi.fn())
@@ -213,6 +216,27 @@ describe('downloadGitHubReleaseBinary', () => {
         assetName: 'tool.zip',
       }),
     ).rejects.toThrow(/zip-slip attack/)
+  })
+
+  it('rejects archive entries targeting a sibling with the cache-name prefix', async () => {
+    mockAdmZipGetEntries.mockReturnValue([
+      { entryName: '../cache-sibling/evil' },
+    ])
+    await expect(
+      extractGitHubReleaseZip('/tmp/archive.zip', '/tmp/cache'),
+    ).rejects.toBeInstanceOf(Error)
+    expect(mockAdmZipExtractAllTo).not.toHaveBeenCalled()
+  })
+
+  it('rejects symlinks targeting a sibling with the cache-name prefix', async () => {
+    mockAdmZipGetEntries.mockReturnValue([{ entryName: 'example-link' }])
+    mockFsReaddir.mockResolvedValue(['example-link'] as never)
+    mockFsLstat.mockResolvedValue({ isSymbolicLink: () => true } as never)
+    mockFsReadlink.mockResolvedValue('../cache-sibling/evil')
+    await expect(
+      extractGitHubReleaseZip('/tmp/archive.zip', '/tmp/cache'),
+    ).rejects.toBeInstanceOf(Error)
+    expect(mockSafeDelete).toHaveBeenCalledWith('/tmp/cache/example-link')
   })
 
   it('rejects symlinks that escape the cache dir during zip extraction', async () => {

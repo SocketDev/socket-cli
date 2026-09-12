@@ -7,6 +7,7 @@ packages:
   - '.claude/hooks/fleet/*'
   - '.claude/hooks/repo/*'
   - '.config/repo/oxlint-plugin/*'
+trustPolicyExcludePrune: true
 
 # Native post-install build scripts. These three arrive transitively via
 # @redwoodjs/agent-ci's `ssh2` (optional crypto acceleration). agent-ci's
@@ -60,12 +61,13 @@ catalog:
   '@shadscan/cli': 0.17.0
   '@sinclair/typebox': 0.34.52
   'ecc-agentshield': 1.4.0
+  'mcp-tada': 0.1.0
   'run-local-ci': 0.18.1
   # typebox 1.x — the unscoped rewrite of @sinclair/typebox. Both names are
   # pinned while the fleet migrates; the 0.x entry is deleted once no member
   # imports the scoped name. 1.3.10 is inside the 7-day soak, so it carries a
   # dated minimumReleaseAgeExclude entry above.
-  'typebox': 1.3.23
+  'typebox': 1.3.25
   '@socketregistry/packageurl-js': 1.5.2
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name when used INSIDE that same package — Node ESM treats it as a
@@ -85,7 +87,7 @@ catalog:
   '@socketsecurity/sdk': 4.1.4
   '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.4'
   '@types/mdast': 4.0.4
-  '@types/node': 26.4.0
+  '@types/node': 26.4.1
   '@types/semver': 7.8.0
   '@types/shell-quote': 1.7.5
   'compromise': 14.16.0
@@ -152,16 +154,17 @@ catalog:
   # high, GHSA-v6wh-96g9-6wx3 medium). Tracked here so the pnpm
   # override below pins every transitive `vite` (vitest, @vitest/*,
   # plugin authors) to it.
-  'typescript': 7.0.2
+  'typescript': 7.1.0-dev.20260903.1
   'vitest': 5.0.0
   '@vitest/coverage-v8': 5.0.0
-  c8: 12.0.0
+  '@bcoe/v8-coverage': 1.0.2
+  ast-v8-to-istanbul: 1.0.5
   'chrome-devtools-mcp': 1.8.0
   # Playwright MCP server — agent-driven browsing with the fleet agent-banner
   # init script (see .config/fleet/playwright/).
-  '@playwright/mcp': 0.0.79
+  '@playwright/mcp': 0.0.80
   '@vitest/ui': 5.0.0
-  'mcp-tada': 0.1.0
+  c8: 12.0.0
   # agent-ci runs a repo's GitHub Actions workflows locally in Docker so a
   # change can be validated before it's pushed (see the `agent-ci` skill).
   # The published package is a self-contained Node CLI (`dist/cli.js`) — no
@@ -312,6 +315,8 @@ catalog:
   yargs-parser: 21.1.1
   yoctocolors-cjs: 2.1.3
   zod: 4.5.4
+  '@types/node-forge': 1.3.14
+  node-forge: 1.4.0
 # pnpm v11 reads settings from this file; only auth/registry go in .npmrc.
 ignoreScripts: true
 linkWorkspacePackages: false
@@ -345,144 +350,14 @@ minimumReleaseAgeExclude:
   - '@decmpfs/*'
   - '@node-smol/*'
   - sockeye
-  # published: 2026-09-03 | removable: 2026-09-10
-  - '@mdn/browser-compat-data@8.1.0'
-  # published: 2026-09-04 | removable: 2026-09-11
-  - pnpm@12.3.4
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxc-project/types@0.148.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-android-arm-eabi@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-android-arm64@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-darwin-arm64@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-darwin-x64@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-freebsd-x64@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-arm-gnueabihf@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-arm-musleabihf@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-arm64-gnu@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-arm64-musl@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-ppc64-gnu@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-riscv64-gnu@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-riscv64-musl@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-s390x-gnu@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-x64-gnu@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-linux-x64-musl@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-openharmony-arm64@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-win32-arm64-msvc@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-win32-ia32-msvc@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxfmt/binding-win32-x64-msvc@0.66.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-android-arm-eabi@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-android-arm64@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-darwin-arm64@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-darwin-x64@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-freebsd-x64@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-arm-gnueabihf@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-arm-musleabihf@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-arm64-gnu@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-arm64-musl@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-ppc64-gnu@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-riscv64-gnu@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-riscv64-musl@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-s390x-gnu@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-x64-gnu@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-linux-x64-musl@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-openharmony-arm64@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-win32-arm64-msvc@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-win32-ia32-msvc@1.81.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - '@oxlint/binding-win32-x64-msvc@1.81.0'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-android-arm-eabi@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-android-arm64@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-darwin-arm64@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-darwin-x64@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-freebsd-x64@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-linux-arm-gnueabihf@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-linux-arm64-gnu@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-linux-arm64-musl@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-linux-ppc64-gnu@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-linux-s390x-gnu@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-linux-x64-gnu@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-linux-x64-musl@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-openharmony-arm64@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-win32-arm64-msvc@1.2.7'
-  # published: 2026-09-02 | removable: 2026-09-09
-  - '@rolldown/binding-win32-x64-msvc@1.2.7'
-  # published: 2026-09-03 | removable: 2026-09-10
-  - '@vitest/coverage-v8@5.0.0'
-  # published: 2026-09-03 | removable: 2026-09-10
-  - '@vitest/mocker@5.0.0'
-  # published: 2026-09-03 | removable: 2026-09-10
-  - '@vitest/pretty-format@5.0.0'
-  # published: 2026-09-03 | removable: 2026-09-10
-  - '@vitest/spy@5.0.0'
-  # published: 2026-09-03 | removable: 2026-09-10
-  - '@vitest/ui@5.0.0'
-  # published: 2026-09-03 | removable: 2026-09-10
-  - '@vitest/utils@5.0.0'
-  # published: 2026-09-01 | removable: 2026-09-08
-  - oxfmt@0.66.0
-  # published: 2026-09-01 | removable: 2026-09-08
-  - oxlint@1.81.0
-  # published: 2026-09-02 | removable: 2026-09-09
-  - rolldown@1.2.7
-  # published: 2026-09-03 | removable: 2026-09-10
-  - vitest@5.0.0
+  # published: 2026-09-08 | removable: 2026-09-15
+  - pnpm@12.4.0
+  # published: 2026-09-10 | removable: 2026-09-17
+  - 'mcp-tada@0.1.0'
   - 'sfw'
   - 'socket'
   - 'sdxgen'
   - 'sockeye'
-  # published: 2026-09-10 | removable: 2026-09-17
-  - 'mcp-tada@0.1.0'
 
 # Refuse transitive (sub-) deps declared via git/tarball/local-tarball
 # specs. Direct git deps in this repo are still allowed; this only
@@ -503,6 +378,9 @@ blockExoticSubdeps: true
 peerDependencyRules:
   allowedVersions:
     'type-coverage-core>typescript': '6 || 7'
+    '@socketsecurity/lib>typescript': 7.1.0-dev.20260903.1
+    '@socketsecurity/registry>typescript': 7.1.0-dev.20260903.1
+    mcp-tada>typescript: 7.1.0-dev.20260903.1
 
 # pnpm `overrides` block — two purposes:
 #
@@ -527,7 +405,7 @@ overrides:
   '@socketsecurity/lib': 'catalog:'
   '@socketsecurity/registry': 'catalog:'
   '@socketsecurity/sdk': 'catalog:'
-  '@swc/core': '1.16.1'
+  '@swc/core': '1.15.41'
   'brace-expansion@>=4': '5.0.9'
   'chalk@>=5': '5.6.2'
   'es-define-property': 'npm:@socketregistry/es-define-property@1.0.7'
@@ -547,7 +425,7 @@ overrides:
   'mime-types@>=3': '3.0.2'
   'minimatch@>=3': '10.2.6'
   'minipass@>=4': '7.1.3'
-  'postcss@>=8': '8.5.26'
+  'postcss@>=8': '8.5.27'
   'safe-buffer': 'npm:@socketregistry/safe-buffer@1.0.9'
   'safer-buffer': 'npm:@socketregistry/safer-buffer@1.0.10'
   'semver@>=5.0.0 <7.6.0': '7.8.5'
@@ -569,18 +447,45 @@ overrides:
   # `createMessageDefinition` helper signature; the public `loadSync`/`load`
   # API dockerode's session.js calls is unchanged. Collapse unscoped to 0.8.1.
   '@grpc/proto-loader': '0.8.1'
+  # Native post-install build scripts. These three arrive transitively via
+  # @redwoodjs/agent-ci's `ssh2` (optional crypto acceleration). agent-ci's
+  # published CLI (`dist/cli.js`) runs without them — verified `agent-ci --help`
+  # works with the builds skipped — so we decline to run their post-install
+  # scripts. Declining is the safe default; running native build scripts from a
+  # transitive dep is unnecessary attack surface here.
+  '@octokit/graphql': 'catalog:'
+  '@octokit/request-error': 'catalog:'
   # Dedup compat shim: @polka/url 0.5 (polka, via dtu-github-actions) vs
   # 1.0.0-next (sirv). See the patchedDependencies comment for the API break
   # + the shim that restores it.
   '@polka/url': '1.0.0-next.29'
+  '@sigstore/core': '3.2.1'
+  '@sigstore/sign': '5.0.0'
+  '@sigstore/verify': '3.1.1'
+  # Dedup: @sindresorhus/df 1 (mount-point) + 3 (xdg-trashdir) → 5.0.0, the
+  # only line that is maintained and the one that drops execa@2 (df 5 uses
+  # execa ^9.6.0, which dedups onto the 9.6.1 already in the tree). df 5 is
+  # ESM-only with named exports, so both CJS consumers carry a paired patch
+  # swapping their top-level require for a dynamic import inside the async
+  # function that already wraps the call.
+  '@sindresorhus/df': '5.0.0'
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
+  '@socketsecurity/lib-stable': 'catalog:'
+  '@socketsecurity/registry-stable': 'catalog:'
+  '@socketsecurity/sdk-stable': 'catalog:'
   # Dedup: @types/unist is types-only (no runtime), pulled transitively by the
   # markdown tooling at both v2 and v3. Collapse v2→v3 — a types-only major is
   # not type-checked transitively (skipLibCheck), so the redirect is safe and
   # drops one duplicate from the dev tree.
   '@types/unist@2': '3.0.3'
+  'aggregate-error': 'catalog:'
   # Dedup compat shim: ansi-regex 5 (CJS yargs@17 cluster) vs 6 (ESM,
   # markdownlint). See the patchedDependencies comment for the shim.
   'ansi-regex': '6.3.0'
+  # The previous transitive 1.0.2 release failed the trust policy; 1.0.4 has
+  # cleared the seven-day soak and restores the normal no-downgrade gate.
+  'ast-v8-to-istanbul': '1.0.5'
+  'brace-expansion': 'catalog:'
   # Dedup: color-convert 0.5.3 is a declared-but-unused dependency of
   # css-color-converter@2.0.0 (badge-maker) — its lib/index.js never
   # `require`s color-convert at all, so the 0.5.3 resolution is dead weight.
@@ -607,62 +512,6 @@ overrides:
   # forced onto css-tree@3.2.1 and produced correct output. Collapse unscoped
   # to 3.2.1.
   'css-tree': '3.2.1'
-  'is-interactive': 'npm:@socketregistry/is-interactive@1.0.6'
-  'is-unicode-supported': 'npm:@socketregistry/is-unicode-supported@1.0.5'
-  'json-stable-stringify': 'npm:@socketregistry/json-stable-stringify@1.0.14'
-  # Dependabot transitive-advisory pin (soaked, semver-compatible).
-  'markdown-it': '14.3.1'
-  # Dedup: picomatch 2 (micromatch, via fast-glob -> globby ->
-  # markdownlint-cli2) vs 4 (fdir/tinyglobby, via vite/vitest). micromatch's
-  # `picomatch(glob, options, returnState)` call and its
-  # `require('picomatch/lib/utils')` surface (isObject, isWindows,
-  # toPosixSlashes) are unchanged; the one behavior diff (utils.isWindows()
-  # no longer reads an options override) is never hit — neither fast-glob nor
-  # globby ever pass a `windows` option. Collapse unscoped to 4.0.4.
-  'picomatch': '4.0.7'
-  'protobufjs': '7.6.6'
-  'rolldown': 'catalog:'
-  # sharp 0.35.0 dropped its install script (source compile is opt-in); pin the
-  # logo generator's sharp to 0.35.3 so it stays on a no-build-script line — its
-  # prebuilt @img/sharp-* binaries cover the rasterize + animated-GIF encode.
-  'sharp': '0.35.4'
-  'string-width': '8.2.2'
-  # Dedup compat shim: strip-ansi 6 (CJS yargs@17 cluster) vs 7 (ESM,
-  # via string-width@8 -> markdownlint). See the patchedDependencies comment
-  # for the shim.
-  'strip-ansi': '7.2.0'
-  'vite': 'catalog:'
-  'which@>=4': '7.0.0'
-
-  # Native post-install build scripts. These three arrive transitively via
-  # @redwoodjs/agent-ci's `ssh2` (optional crypto acceleration). agent-ci's
-  # published CLI (`dist/cli.js`) runs without them — verified `agent-ci --help`
-  # works with the builds skipped — so we decline to run their post-install
-  # scripts. Declining is the safe default; running native build scripts from a
-  # transitive dep is unnecessary attack surface here.
-
-  # Repo-specific overrides below.
-  '@octokit/graphql': 'catalog:'
-  '@octokit/request-error': 'catalog:'
-  '@sigstore/core': '3.2.1'
-  '@sigstore/sign': '5.0.0'
-  '@sigstore/verify': '3.1.1'
-  # Dedup: @sindresorhus/df 1 (mount-point) + 3 (xdg-trashdir) → 5.0.0, the
-  # only line that is maintained and the one that drops execa@2 (df 5 uses
-  # execa ^9.6.0, which dedups onto the 9.6.1 already in the tree). df 5 is
-  # ESM-only with named exports, so both CJS consumers carry a paired patch
-  # swapping their top-level require for a dynamic import inside the async
-  # function that already wraps the call.
-  '@sindresorhus/df': '5.0.0'
-  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
-  '@socketsecurity/lib-stable': 'catalog:'
-  '@socketsecurity/registry-stable': 'catalog:'
-  '@socketsecurity/sdk-stable': 'catalog:'
-  'aggregate-error': 'catalog:'
-  # The previous transitive 1.0.2 release failed the trust policy; 1.0.4 has
-  # cleared the seven-day soak and restores the normal no-downgrade gate.
-  'ast-v8-to-istanbul': '1.0.5'
-  'brace-expansion': 'catalog:'
   'defu': '>=6.1.7'
   'emoji-regex': 'catalog:'
   # Dedup: execa 2 (the legacy df chain) + 9 → 10.0.0. execa 10 keeps the
@@ -681,30 +530,54 @@ overrides:
   'indent-string': 'catalog:'
   'ip-address': '>=10.7.0'
   'is-core-module': 'catalog:'
+  'is-interactive': 'npm:@socketregistry/is-interactive@1.0.6'
+  'is-unicode-supported': 'npm:@socketregistry/is-unicode-supported@1.0.5'
   'isarray': 'catalog:'
+  'json-stable-stringify': 'npm:@socketregistry/json-stable-stringify@1.0.14'
   'lodash': 'catalog:'
+  # Dependabot transitive-advisory pin (soaked, semver-compatible).
+  'markdown-it': '14.3.1'
   'npm-package-arg': 'catalog:'
   'packageurl-js': 'catalog:'
   'path-parse': 'catalog:'
+  # Dedup: picomatch 2 (micromatch, via fast-glob -> globby ->
+  # markdownlint-cli2) vs 4 (fdir/tinyglobby, via vite/vitest). micromatch's
+  # `picomatch(glob, options, returnState)` call and its
+  # `require('picomatch/lib/utils')` surface (isObject, isWindows,
+  # toPosixSlashes) are unchanged; the one behavior diff (utils.isWindows()
+  # no longer reads an options override) is never hit — neither fast-glob nor
+  # globby ever pass a `windows` option. Collapse unscoped to 4.0.4.
+  'picomatch': '4.0.7'
   'postcss': '>=8.5.26'
+  'protobufjs': '7.6.6'
   'qs': '>=6.16.0'
+  'rolldown': 'catalog:'
   'semver': 'catalog:'
   'set-function-length': 'catalog:'
+  # sharp 0.35.0 dropped its install script (source compile is opt-in); pin the
+  # logo generator's sharp to 0.35.3 so it stays on a no-build-script line — its
+  # prebuilt @img/sharp-* binaries cover the rasterize + animated-GIF encode.
+  'sharp': '0.35.4'
   'shell-quote': 'catalog:'
   'signal-exit': '4.1.0'
   'sigstore': '4.1.1'
+  'string-width': '8.2.2'
   'string_decoder': 'catalog:'
+  # Dedup compat shim: strip-ansi 6 (CJS yargs@17 cluster) vs 7 (ESM,
+  # via string-width@8 -> markdownlint). See the patchedDependencies comment
+  # for the shim.
+  'strip-ansi': '7.2.0'
   'tar': '>=7.5.22'
   'tiny-colors': 'catalog:'
   'typedarray': 'catalog:'
   'undici': 'catalog:'
+  'vite': 'catalog:'
+  'which@>=4': '7.0.0'
   'wrap-ansi': 'catalog:'
   'xml2js': 'catalog:'
   'yaml': 'catalog:'
   'yargs-parser': 'catalog:'
 
-# Auto-install missing peer deps (pnpm default). Declared explicitly
-# so a future default flip can't silently change install behavior.
 autoInstallPeers: true
 
 # Run pre/post lifecycle scripts on the workspace root (e.g.
@@ -782,6 +655,19 @@ patchedDependencies:
   # Check own-property presence in run preflight and job validation;
   # absent variables remain errors.
   run-local-ci@0.18.1: patches/run-local-ci@0.18.1.patch
+  # dedup: public runtime helpers (managed by socket-wheelhouse sync):
+  # The bundled debug loader must read DEBUG at runtime so fleet debugNs
+  # honors namespace selection, wildcards, and exclusions.
+  # Generated terminal authorization and process accessors support setup
+  # through the shared public library API without a version change.
+  '@socketsecurity/lib@7.0.1': patches/@socketsecurity__lib@7.0.1.patch
+  # dedup: coverage matcher allocation (managed by socket-wheelhouse sync):
+  # Coverage checks exclusions before matching includes.
+  # Compile exclusions once instead of once per include pattern.
+  # This preserves membership and bounds matcher memory for fleet coverage.
+  # CPU-profiled forks use the configured teardown deadline to flush profiles.
+  # Ordinary forks retain the upstream 500 ms termination grace.
+  vitest@5.0.0: patches/vitest@5.0.0.patch
 saveExact: true
 strictPeerDependencies: true
 trustPolicy: no-downgrade
@@ -795,31 +681,14 @@ enableGlobalVirtualStore: true
 # default is `false`; declared explicitly so a future default flip
 # can't silently widen the trust boundary.
 trustPolicyExclude:
-  # Rename-bridge releases (agent-ci -> run-local-ci); the bridge lines
-  # carry no provenance. Owner-directed; see the catalog note.
-  - '@redwoodjs/agent-ci@0.18.0'
-  - 'dtu-github-actions@0.18.0'
-  # Transitive dep of @vitest/coverage-v8@4.1.6. Same maintainer
-  # (ariperkkio) + same repo + provenance attestation as earlier
-  - undici@6.21.3
-  - 'compromise@14.15.0'
-  # Sibling package from the same publisher, first real release (0.18.0,
-  # 2026-08-09): no earlier attested versions exist, so the no-downgrade
-  # check has nothing to compare against and flags it. Same scoping rule:
-  # the exact tag only, so 0.18.1 re-enters the normal gate.
-  - 'run-local-ci@0.18.0'
-
-# Proceed with a node_modules purge WITHOUT an interactive confirm. The fleet
-# runs pnpm non-interactively everywhere (skills, scripts, hooks, agents, CI) —
-# no TTY. pnpm's default ABORTS a purge for lack of a TTY
-# (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY), wedging any commit whose
-# pre-commit re-checks deps after a workspace/.npmrc change. Purging
-# node_modules is safe (gitignored + regenerable). Unlike CI=true this does NOT
-# force a frozen lockfile; CI keeps owning frozen-vs-update policy.
-
-# Opt out of pnpm's packageManager-version self-check. CI installs pnpm from
-# its native bin via the shared setup workflow, not corepack, so the runner's
-# pnpm legitimately differs from the `packageManager` pin (which is
-# informational, not a version to enforce). Without this, pnpm hard-fails
-# ("This project is configured to use <pin> ... your current pnpm is <run>")
-# the moment the runner's pnpm differs from the pin.
+  - '@playwright/mcp@0.0.80'
+  - 'playwright@1.63.0-alpha-2026-08-31'
+  - 'playwright-core@1.63.0-alpha-2026-08-31'
+includeWorkspaceRoot: true
+pipelines:
+  fleet-prepare:
+    - build:oxlint-bundle
+tasks:
+  build:oxlint-bundle:
+    cache: false
+    dependsOn: []

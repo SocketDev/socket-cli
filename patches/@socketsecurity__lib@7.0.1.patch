@@ -1,0 +1,208 @@
+diff --git a/dist/external/debug.js b/dist/external/debug.js
+index d7384e9170b53f695daf77f292b6a8fc0fa64e41..2c919f66a441f357e0e04a555c4d056903b5fd99 100644
+--- a/dist/external/debug.js
++++ b/dist/external/debug.js
+@@ -693,7 +693,7 @@ var require_node = /* @__PURE__ */ __commonJSMin(((exports, module) => {
+ 	* @return {String} returns the previously persisted debug modes
+ 	* @api private
+ 	*/
+-	function load() {}
++	function load() { return process.env.DEBUG; }
+ 	/**
+ 	* Init logic for `debug` instances.
+ 	*
+diff --git adist/node/process.d.ts b/dist/node/process.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..1481a5d6d2020500978c5f18254a8c4430827fb8
+--- /dev/null
++++ b/dist/node/process.d.ts
+@@ -0,0 +1,10 @@
++/**
++ * @file Early-snapshot accessor for `node:process`. See `node/fs.ts` for the
++ *   shared rationale: the `require` runs at module load behind the runtime
++ *   `IS_NODE` guard (false in browsers → never executes there), giving a
++ *   load-time snapshot in Node while staying browser-safe. `getNodeProcess()`
++ *   returns the module object for a late, spy-able property lookup, which is
++ *   what a test needs to stand in a different pid, platform, or env.
++ */
++import type * as NodeProcess from 'node:process';
++export declare function getNodeProcess(): typeof NodeProcess;
+diff --git adist/node/process.js b/dist/node/process.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..b9bf600d4d5d39cde134aa2dadf908dce0c9e18a
+--- /dev/null
++++ b/dist/node/process.js
+@@ -0,0 +1,13 @@
++"use strict";
++/* Socket Lib - Built with rolldown */
++Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
++const require_constants_runtime = require('../constants/runtime.js');
++
++//#region src/node/process.mts
++const nodeProcess = require_constants_runtime.IS_NODE ? /*@__PURE__*/ require("process") : void 0;
++function getNodeProcess() {
++	return nodeProcess;
++}
++
++//#endregion
++exports.getNodeProcess = getNodeProcess;
+\ No newline at end of file
+diff --git adist/secrets/one-password.d.ts b/dist/secrets/one-password.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f550666ea0b08ad414444e0b1228910517a42720
+--- /dev/null
++++ b/dist/secrets/one-password.d.ts
+@@ -0,0 +1,21 @@
++import { whichSync } from '../exe/path/which.js';
++import type { ChildProcess, SpawnOptions } from 'node:child_process';
++export type OnePasswordAuthorizationStatus = 'authorized' | 'not-interactive' | 'cli-unavailable' | 'authorization-failed' | 'timed-out';
++export interface OnePasswordAuthorizationResult {
++    status: OnePasswordAuthorizationStatus;
++    exitCode?: number | undefined;
++}
++export interface OnePasswordAuthorizationOptions {
++    account: string;
++    timeoutMs?: number | undefined;
++    runtime?: {
++        env: Record<string, string | undefined>;
++        isTTY: boolean;
++        which: typeof whichSync;
++        spawn: (executable: string, args: string[], options: SpawnOptions) => ChildProcess;
++    } | undefined;
++}
++export declare function authorizeOnePasswordTerminal(options: OnePasswordAuthorizationOptions): Promise<OnePasswordAuthorizationResult>;
++export declare function getOnePasswordRuntime(): NonNullable<OnePasswordAuthorizationOptions['runtime']>;
++export declare function onePasswordLaunchStatus(error: unknown): OnePasswordAuthorizationStatus;
++export declare function validateOnePasswordAuthorization(account: string, timeoutMs: number): void;
+diff --git adist/secrets/one-password.js b/dist/secrets/one-password.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..5094e6ef773dfa951b4d52d9269d376ad9235914
+--- /dev/null
++++ b/dist/secrets/one-password.js
+@@ -0,0 +1,99 @@
++"use strict";
++/* Socket Lib - Built with rolldown */
++Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
++const require_node_child_process = require('../node/child-process.js');
++const require_node_process = require('../node/process.js');
++const require_exe_path_which = require('../exe/path/which.js');
++
++//#region src/secrets/one-password.mts
++function authorizeOnePasswordTerminal(options) {
++	const { account, timeoutMs = 12e4 } = {
++		__proto__: null,
++		...options
++	};
++	validateOnePasswordAuthorization(account, timeoutMs);
++	const runtime = options.runtime ?? getOnePasswordRuntime();
++	if (!runtime.isTTY || !runtime.spawn) return Promise.resolve({ status: "not-interactive" });
++	let executable;
++	try {
++		executable = runtime.which("op", {
++			path: runtime.env["PATH"],
++			nothrow: true
++		});
++	} catch {
++		return Promise.resolve({ status: "authorization-failed" });
++	}
++	if (typeof executable !== "string" || !executable) return Promise.resolve({ status: "cli-unavailable" });
++	const env = {};
++	for (const [name, value] of Object.entries(runtime.env)) if (!name.toUpperCase().startsWith("OP_")) env[name] = value;
++	env["OP_ACCOUNT"] = account;
++	env["OP_BIOMETRIC_UNLOCK_ENABLED"] = "true";
++	return new Promise((resolve) => {
++		let child;
++		try {
++			child = runtime.spawn(executable, [
++				"signin",
++				"--account",
++				account
++			], {
++				env,
++				shell: false,
++				stdio: [
++					"inherit",
++					"ignore",
++					"ignore"
++				]
++			});
++		} catch (error) {
++			resolve({ status: onePasswordLaunchStatus(error) });
++			return;
++		}
++		let timedOut = false;
++		const timer = setTimeout(() => {
++			timedOut = true;
++			try {
++				child.kill("SIGKILL");
++			} catch {
++				return;
++			} finally {
++				resolve({ status: "timed-out" });
++			}
++		}, timeoutMs);
++		child.once("error", (error) => {
++			clearTimeout(timer);
++			resolve({ status: timedOut ? "timed-out" : onePasswordLaunchStatus(error) });
++		});
++		child.once("close", (code) => {
++			clearTimeout(timer);
++			if (timedOut) resolve({ status: "timed-out" });
++			else if (code === 0) resolve({ status: "authorized" });
++			else resolve({
++				status: "authorization-failed",
++				...typeof code === "number" ? { exitCode: code } : {}
++			});
++		});
++	});
++}
++function getOnePasswordRuntime() {
++	const process = require_node_process.getNodeProcess();
++	const childProcess = require_node_child_process.getNodeChildProcess();
++	return {
++		env: process?.env ?? {},
++		isTTY: process?.stdin?.isTTY === true && process?.stderr?.isTTY === true,
++		spawn: childProcess?.spawn,
++		which: require_exe_path_which.whichSync
++	};
++}
++function onePasswordLaunchStatus(error) {
++	return error !== null && typeof error === "object" && "code" in error && error.code === "ENOENT" ? "cli-unavailable" : "authorization-failed";
++}
++function validateOnePasswordAuthorization(account, timeoutMs) {
++	if (typeof account !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9.-]{0,252}$/.test(account)) throw new TypeError("Expected a 1Password account address or ID");
++	if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2147483647) throw new RangeError("Expected a positive 1Password timeout within the Node timer range");
++}
++
++//#endregion
++exports.authorizeOnePasswordTerminal = authorizeOnePasswordTerminal;
++exports.getOnePasswordRuntime = getOnePasswordRuntime;
++exports.onePasswordLaunchStatus = onePasswordLaunchStatus;
++exports.validateOnePasswordAuthorization = validateOnePasswordAuthorization;
+\ No newline at end of file
+diff --git a/package.json b/package.json
+index 0b3290fdc421efb0e23052a4b670d3bd5e8ee2c0..72713475f37b8aa0ec5a4489fe14d6fc7689e156 100644
+--- a/package.json
++++ b/package.json
+@@ -2320,6 +2320,10 @@
+       "types": "./dist/node/path.d.ts",
+       "default": "./dist/node/path.js"
+     },
++    "./node/process": {
++      "types": "./dist/node/process.d.ts",
++      "default": "./dist/node/process.js"
++    },
+     "./node/timers-promises": {
+       "source": "./src/node/timers-promises.mts",
+       "types": "./dist/node/timers-promises.d.ts",
+@@ -3272,6 +3276,10 @@
+       "types": "./dist/secrets/oauth-pkce.d.ts",
+       "default": "./dist/secrets/oauth-pkce.js"
+     },
++    "./secrets/one-password": {
++      "types": "./dist/secrets/one-password.d.ts",
++      "default": "./dist/secrets/one-password.js"
++    },
+     "./secrets/patterns": {
+       "source": "./src/secrets/patterns.mts",
+       "types": "./dist/secrets/patterns.d.ts",

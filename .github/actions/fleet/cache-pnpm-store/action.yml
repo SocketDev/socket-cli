@@ -3,7 +3,7 @@
 # file bumps, cascade is: 2b → 3 → 4 → external repos. See updating-workflows
 # skill at .claude/skills/updating-workflows/.
 
-name: 'Cache pnpm Store'
+name: 'Cache pnpm store'
 description: 'Restore the pnpm content-addressable store to skip cold downloads on every CI job and matrix cell'
 
 # WHY THIS EXISTS:

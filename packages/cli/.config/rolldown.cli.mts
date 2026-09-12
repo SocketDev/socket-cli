@@ -125,7 +125,7 @@ function resolveSocketLibInternalsPlugin(): Plugin {
     // with Rolldown's generated suffixes. Normalize them before bundling.
     load(id) {
       if (
-        /[/\\]@socketsecurity[/\\](?:lib|sdk)(?:-stable)?[/\\]dist[/\\]|[/\\]socket-(?:lib|sdk-js)[/\\]dist[/\\]/.test(
+        /[/\\]@socketsecurity[/\\](?:lib|sdk)(?:-stable)?[/\\]dist[/\\]|[/\\]socket-(?:lib|sdk(?:-js)?)[/\\]dist[/\\]/.test(
           id,
         ) &&
         id.endsWith('.js')

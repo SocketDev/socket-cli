@@ -133,9 +133,7 @@ src/commands/
 │   └── ... (8 more)
 ├── organization/      Org management (5 subcommands)
 ├── npm/              npm wrapper with Socket Firewall
-├── npx/              npx wrapper with Socket Firewall
 ├── raw-npm/          Raw npm passthrough (no firewall)
-├── raw-npx/          Raw npx passthrough (no firewall)
 ├── pnpm/             pnpm wrapper
 ├── yarn/             yarn wrapper
 ├── pip/              Python pip wrapper
@@ -156,47 +154,41 @@ src/commands/
 
 ## Socket Firewall Architecture
 
-Package manager wrapping uses Socket Firewall (sfw) for security scanning:
+`socket sfw <command> [args]` runs a command through the CLI's embedded firewall.
+Package-manager commands such as `socket npm install` use the same wrapper.
 
-<details>
-<summary><b>Firewall dispatch diagram</b> - spawn path through DLX, security scanning, and registry override, plus the feature list</summary>
+1. Load the persistent CA and start a loopback proxy.
+2. Pass proxy and certificate settings to the command.
+3. Check package downloads against Socket policy before forwarding them.
+4. Close the proxy before returning the command's exit status.
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                Socket Firewall (sfw)                        │
-│                                                             │
-│  User runs: socket npm install express                     │
-│                     │                                       │
-│              ┌──────▼──────┐                               │
-│              │  npm-cli    │  Entry dispatcher              │
-│              └──────┬──────┘                               │
-│                     │                                       │
-│          ┌──────────▼──────────┐                           │
-│          │     spawnSfw()      │  Socket Firewall spawn    │
-│          └──────────┬──────────┘                           │
-│                     │                                       │
-│     ┌───────────────┼───────────────┐                      │
-│     │               │               │                      │
-│  ┌──▼──┐      ┌─────▼─────┐   ┌────▼────┐                │
-│  │ DLX │      │ Security  │   │Registry │                 │
-│  │Spawn│      │ Scanning  │   │Override │                 │
-│  └──┬──┘      └─────┬─────┘   └────┬────┘                │
-│     │               │               │                      │
-│  ┌──▼───────────────▼───────────────▼────┐                │
-│  │    Package manager with Socket        │                │
-│  │    security scanning integration       │                │
-│  └────────────────────────────────────────┘                │
-│                                                             │
-│  Features:                                                  │
-│  - Pre-install security scanning                           │
-│  - Blocking on critical vulnerabilities                    │
-│  - Registry override injection                             │
-│  - SEA and DLX execution modes                             │
-│  - VFS extraction for bundled tools                        │
-└─────────────────────────────────────────────────────────────┘
-```
+The wrapper recognizes npm, PyPI, Go, Maven, RubyGems, Cargo, and NuGet downloads.
+It supports HTTP and HTTPS upstream proxies through `SFW_UPSTREAM_PROXY`.
+`SFW_CUSTOM_REGISTRIES` adds registry hosts and path prefixes.
+`SFW_LOCAL_REGISTRY_ALIASES` identifies built-in hostnames assigned to local mirrors.
+Unknown hosts pass through in free mode and are blocked in authenticated mode.
+`SFW_UNKNOWN_HOST_ACTION` overrides that behavior. Policy failures block downloads
+unless `SFW_FAIL_ACTION=allow` is explicitly configured.
 
-</details>
+Set `SFW_CA_CERT_PATH` and `SFW_CA_KEY_PATH` together to use an existing CA.
+Otherwise, the wrapper stores its CA in `~/.socket/sfw/`. The child receives a
+certificate bundle containing the firewall CA and existing trust roots.
+Interactive commands retain their foreground terminal.
+
+Use `socket sfw ca init` to create the persistent pair, `ca path` to print its
+certificate path, and `ca trust` to install it in the system trust store.
+The trust command prints administrator commands when privileges are insufficient.
+`ca init --force` rotates the managed pair and preserves a backup.
+
+`socket sfw vlt` routes registry requests through a private loopback adapter.
+Explicit vlt registry settings stop the wrapper before execution, so a private
+registry cannot silently become the public npm registry.
+
+`SFW_JSON_REPORT_PATH` writes package decisions and the command's exit status as
+JSON. `SFW_REPORT_MESSAGE` adds a report message. Firewall telemetry is disabled.
+Known unsupported ecosystems pass through without inspection. Free-mode reports
+list the unsupported ecosystems contacted during the run.
+Service mode and standalone registry mode are unavailable.
 
 ## Build System
 
@@ -374,10 +366,10 @@ Config keys:
 
 ## Language Ecosystem Support
 
-Multi-ecosystem architecture supporting 11 package managers:
+Support for 10 package managers across six ecosystems:
 
 ```text
-JavaScript/TypeScript    npm, npx, pnpm, yarn
+JavaScript/TypeScript    npm, pnpm, yarn
 Python                   pip, uv
 Ruby                     gem, bundler
 Rust                     cargo

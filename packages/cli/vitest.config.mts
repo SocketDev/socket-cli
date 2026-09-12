@@ -64,7 +64,6 @@ if (existsSync(bundleToolsPath)) {
       INLINED_PYTHON_BUILD_TAG: tools['python']?.tag,
       INLINED_PYTHON_VERSION: tools['python']?.version,
       INLINED_SENTRY_BUILD: '',
-      INLINED_SFW_VERSION: tools['sfw']?.version,
       INLINED_SOCKET_PATCH_VERSION: tools['socket-patch']?.version,
       INLINED_SYNP_VERSION: tools['synp']?.version,
       INLINED_TRIVY_VERSION: tools['trivy']?.version,
@@ -214,6 +213,12 @@ const normalConfig = defineConfig({
       skipFull: false,
       ignoreClassMethods: ['constructor'],
       thresholds: {
+        'src/util/firewall/**': {
+          statements: 94,
+          lines: 94,
+          functions: 93,
+          branches: 90,
+        },
         'src/commands/mcp/**': {
           statements: 99,
           lines: 99,

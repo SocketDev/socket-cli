@@ -3,7 +3,7 @@
  *
  * Covers parseChecksums (dev fallback / parse / malformed) and requireChecksum
  * (dev fallback / hit / miss). The tool-specific modules (python-, opengrep-,
- * sfw-, …) all delegate to these.
+ * trivy-, …) all delegate to these.
  *
  * Related Files: - src/env/checksum-utils.mts.
  */

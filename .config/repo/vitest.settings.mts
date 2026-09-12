@@ -44,13 +44,16 @@ export interface VitestRepoConfig {
  * (.config/repo/socket-wheelhouse.json; see paths.mts's resolver order for the
  * fallbacks). `slow` = heavy suites (subprocess-per-case, e.g. hook integration
  * specs); `mid` = isolated in-process suites (env-mutating / vi.mock /
- * fs-heavy); `fast` = the implicit complement, pure in-process. The runner's
+ * fs-heavy); `fast` = pure in-process. When `fast` is declared, `mid` becomes
+ * the complement of `fast` and `slow`, so unclassified tests remain covered.
+ * Without it, `fast` remains the complement of `mid` and `slow`. The runner's
  * `--lane <fast|mid|slow>` flag (scripts/fleet/test.mts) selects one, and bare
  * `pnpm test` defaults to `fast` for a quick local loop. The lane filter is
  * active under coverage too. An unset FLEET_LANE traverses every lane; the
  * coverage runner selects each lane in turn and merges their reports.
  */
 export interface VitestLanes {
+  fast?: string[] | undefined
   mid?: string[] | undefined
   slow?: string[] | undefined
 }
@@ -131,7 +134,11 @@ export function readNonIsolatedGlobs(): string[] {
 export function readVitestLanes(): VitestLanes {
   const lanes = readVitestSettings().lanes
   return lanes !== null && typeof lanes === 'object' && !Array.isArray(lanes)
-    ? { mid: stringArray(lanes.mid), slow: stringArray(lanes.slow) }
+    ? {
+        ...(Array.isArray(lanes.fast) ? { fast: stringArray(lanes.fast) } : {}),
+        mid: stringArray(lanes.mid),
+        slow: stringArray(lanes.slow),
+      }
     : {}
 }
 

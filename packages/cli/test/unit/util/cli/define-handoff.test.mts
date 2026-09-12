@@ -1,411 +1,127 @@
-/**
- * Unit tests for `defineHandoffCommand`.
- *
- * Locks in the contract that the factory builds the same shape every existing
- * hand-off wrapper used to build by hand: a CliSubcommand with `description`,
- * `hidden`, and `run` — where `run` parses flags, filters Socket-only flags,
- * picks the binary, optionally renders dry-run, optionally tracks telemetry,
- * spawns sfw, and forwards the child's exit code or signal.
- */
-
-import EventEmitter from 'node:events'
-
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mockMeowOrExit = vi.hoisted(() => vi.fn())
-const mockFilterFlags = vi.hoisted(() => vi.fn())
-const mockSpawnSfw = vi.hoisted(() => vi.fn())
-const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
-const mockOutputDryRunExecute = vi.hoisted(() => vi.fn())
-const mockTrackSubprocessStart = vi.hoisted(() => vi.fn())
-const mockTrackSubprocessExit = vi.hoisted(() => vi.fn())
-
-vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
-  meowOrExit: mockMeowOrExit,
-}))
-
-vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
-  spawnSfw: mockSpawnSfw,
-  spawnSfwDlx: mockSpawnSfwDlx,
-}))
-
-vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
-  outputDryRunExecute: mockOutputDryRunExecute,
-}))
-
-vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
-  filterFlags: mockFilterFlags,
-}))
-
-vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
-  trackSubprocessStart: mockTrackSubprocessStart,
-  trackSubprocessExit: mockTrackSubprocessExit,
-}))
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineHandoffCommand } from '../../../../src/util/cli/define-handoff.mts'
 
-function makeChildProcess() {
-  const child = new EventEmitter()
-  const spawnPromise: unknown = Promise.resolve({
-    code: 0,
-    signal: undefined,
-    stderr: Buffer.from(''),
-    stdout: Buffer.from(''),
-  })
-  spawnPromise.process = child
-  return { child, spawnPromise }
-}
+const noChildExitCode: number | null = null
+const noChildSignal: NodeJS.Signals | null = null
 
-describe('defineHandoffCommand', () => {
+const mocks = vi.hoisted(() => ({
+  run: vi.fn(),
+  start: vi.fn(),
+  end: vi.fn(),
+  dry: vi.fn(),
+}))
+vi.mock(import('../../../../src/util/firewall/run.mts'), () => ({
+  runFirewallCommand: mocks.run,
+}))
+vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
+  trackSubprocessStart: mocks.start,
+  trackSubprocessExit: mocks.end,
+}))
+vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
+  outputDryRunExecute: mocks.dry,
+}))
+
+const context = { parentName: 'socket' }
+function makeCommand(options = {}) {
+  return defineHandoffCommand({
+    name: 'cargo',
+    description: 'Run cargo',
+    examples: ['build'],
+    ...options,
+  })
+}
+describe('firewall handoff lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFilterFlags.mockReturnValue([])
-    mockMeowOrExit.mockReturnValue({
-      flags: {},
-      input: [],
-      pkg: {},
-      showHelp: vi.fn(),
-      showVersion: vi.fn(),
-      unknownFlags: [],
-    })
-    mockTrackSubprocessStart.mockResolvedValue(123)
-    mockTrackSubprocessExit.mockResolvedValue(undefined)
+    mocks.run.mockResolvedValue({ code: 0, signal: noChildSignal })
+    mocks.start.mockResolvedValue(123)
+    mocks.end.mockResolvedValue(undefined)
+    process.exitCode = undefined
   })
-
-  describe('CliSubcommand shape', () => {
-    it('returns an object with description, hidden, and run', () => {
-      const cmd = defineHandoffCommand({
-        name: 'cargo',
-        description: 'Run cargo with sfw',
-        spawnMode: 'dlx',
-        examples: ['build'],
-      })
-      expect(cmd.description).toBe('Run cargo with sfw')
-      expect(cmd.hidden).toBe(false)
-      expect(typeof cmd.run).toBe('function')
+  afterEach(() => {
+    vi.restoreAllMocks()
+    process.exitCode = undefined
+  })
+  it('preserves description and visibility', () => {
+    expect(makeCommand()).toMatchObject({
+      description: 'Run cargo',
+      hidden: false,
     })
-
-    it('respects hidden=true', () => {
-      const cmd = defineHandoffCommand({
-        name: 'yarn',
-        description: 'Run yarn with sfw',
-        spawnMode: 'dlx',
-        hidden: true,
-        examples: [],
-      })
-      expect(cmd.hidden).toBe(true)
+    expect(makeCommand({ hidden: true }).hidden).toBe(true)
+  })
+  it('uses the selected executable', async () => {
+    await makeCommand({ binaryPicker: async () => 'cargo-custom' }).run(
+      ['build'],
+      import.meta,
+      context,
+    )
+    expect(mocks.run).toHaveBeenCalledWith(['cargo-custom', 'build'], {
+      stdio: 'inherit',
     })
   })
-
-  describe('spawn mode dispatch', () => {
-    it('uses spawnSfwDlx when spawnMode is "dlx"', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
-      mockFilterFlags.mockReturnValue(['build'])
-
-      const cmd = defineHandoffCommand({
-        name: 'cargo',
-        description: 'Run cargo',
-        spawnMode: 'dlx',
-        examples: [],
-        trackTelemetry: false,
-        supportDryRun: false,
-      })
-
-      const runPromise = cmd.run(
-        ['build'],
-        { url: import.meta.url } as ImportMeta,
-        {
-          parentName: 'socket',
-        },
-      )
-      setImmediate(() => child.emit('exit', 0, undefined))
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        await runPromise
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['cargo', 'build'], {
-          stdio: 'inherit',
-        })
-        expect(mockSpawnSfw).not.toHaveBeenCalled()
-      } finally {
-        mockExit.mockRestore()
-      }
-    })
-
-    it('uses spawnSfw when spawnMode is "auto"', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfw.mockResolvedValue({ spawnPromise })
-      mockFilterFlags.mockReturnValue(['install', 'cowsay'])
-
-      const cmd = defineHandoffCommand({
-        name: 'npm',
-        description: 'Run npm',
-        spawnMode: 'auto',
-        examples: [],
-        trackTelemetry: false,
-        supportDryRun: false,
-      })
-
-      const runPromise = cmd.run(
-        ['install', 'cowsay'],
-        { url: import.meta.url } as ImportMeta,
-        {
-          parentName: 'socket',
-        },
-      )
-      setImmediate(() => child.emit('exit', 0, undefined))
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        await runPromise
-        expect(mockSpawnSfw).toHaveBeenCalledWith(
-          ['npm', 'install', 'cowsay'],
-          {
-            stdio: 'inherit',
-          },
-        )
-        expect(mockSpawnSfwDlx).not.toHaveBeenCalled()
-      } finally {
-        mockExit.mockRestore()
-      }
+  it('does not start a child during dry run', async () => {
+    await makeCommand().run(['--dry-run', 'build'], import.meta, context)
+    expect(mocks.run).not.toHaveBeenCalled()
+    expect(mocks.dry).toHaveBeenCalledWith(
+      'sfw',
+      ['cargo', 'build'],
+      expect.any(String),
+    )
+  })
+  it('preserves child dry run after the child subcommand', async () => {
+    await makeCommand().run(['build', '--dry-run'], import.meta, context)
+    expect(mocks.run).toHaveBeenCalledWith(['cargo', 'build', '--dry-run'], {
+      stdio: 'inherit',
     })
   })
-
-  describe('binaryPicker', () => {
-    it('uses binaryPicker output as the first arg to sfw', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
-      mockFilterFlags.mockReturnValue(['install', 'flask'])
-
-      const cmd = defineHandoffCommand({
-        name: 'pip',
-        description: 'Run pip',
-        spawnMode: 'dlx',
-        examples: [],
-        binaryPicker: ctx => (ctx.invokedAs === 'pip3' ? 'pip3' : 'pip'),
-        trackTelemetry: false,
-        supportDryRun: false,
-      })
-
-      const runPromise = cmd.run(
-        ['install', 'flask'],
-        { url: import.meta.url } as ImportMeta,
-        {
-          parentName: 'socket',
-          invokedAs: 'pip3',
-        },
-      )
-      setImmediate(() => child.emit('exit', 0, undefined))
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        await runPromise
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-          ['pip3', 'install', 'flask'],
-          {
-            stdio: 'inherit',
-          },
-        )
-      } finally {
-        mockExit.mockRestore()
-      }
+  it('waits for cleanup before setting status or recording completion', async () => {
+    const completion = Promise.withResolvers<{ code: number; signal: null }>()
+    mocks.run.mockReturnValue(completion.promise)
+    const running = makeCommand().run(['build'], import.meta, context)
+    await vi.waitFor(() => expect(mocks.run).toHaveBeenCalled())
+    expect(process.exitCode).toBe(1)
+    expect(mocks.end).not.toHaveBeenCalled()
+    completion.resolve({ code: 7, signal: noChildSignal })
+    await running
+    expect(process.exitCode).toBe(7)
+    expect(mocks.end).toHaveBeenCalledWith('cargo', 123, 7)
+  })
+  it('preserves status when recording completion fails', async () => {
+    mocks.end.mockRejectedValue(new Error('example reporting failure'))
+    await makeCommand().run([], import.meta, context)
+    expect(process.exitCode).toBe(0)
+  })
+  it('skips disabled telemetry', async () => {
+    await makeCommand({ trackTelemetry: false }).run([], import.meta, context)
+    expect(mocks.start).not.toHaveBeenCalled()
+    expect(mocks.end).not.toHaveBeenCalled()
+  })
+  it('preserves child dry-run when wrapper dry-run is disabled', async () => {
+    await makeCommand({ supportDryRun: false }).run(
+      ['--dry-run'],
+      import.meta,
+      context,
+    )
+    expect(mocks.dry).not.toHaveBeenCalled()
+    expect(mocks.run).toHaveBeenCalledWith(['cargo', '--dry-run'], {
+      stdio: 'inherit',
     })
   })
-
-  describe('dry-run', () => {
-    it('renders dry-run output and bails when --dry-run is set', async () => {
-      mockMeowOrExit.mockReturnValue({
-        flags: { dryRun: true },
-        input: [],
-        pkg: {},
-        showHelp: vi.fn(),
-        showVersion: vi.fn(),
-        unknownFlags: [],
-      })
-      mockFilterFlags.mockReturnValue(['install'])
-
-      const cmd = defineHandoffCommand({
-        name: 'npm',
-        description: 'Run npm',
-        spawnMode: 'auto',
-        examples: [],
-        supportDryRun: true,
-        trackTelemetry: false,
-      })
-
-      await cmd.run(['install'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
-
-      expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
-        'sfw',
-        ['npm', 'install'],
-        'npm with Socket security scanning',
-      )
-      expect(mockSpawnSfw).not.toHaveBeenCalled()
-    })
-
-    it('skips dry-run rendering when supportDryRun is false', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
-      mockMeowOrExit.mockReturnValue({
-        flags: { dryRun: true },
-        input: [],
-        pkg: {},
-        showHelp: vi.fn(),
-        showVersion: vi.fn(),
-        unknownFlags: [],
-      })
-      mockFilterFlags.mockReturnValue([])
-
-      const cmd = defineHandoffCommand({
-        name: 'cargo',
-        description: 'Run cargo',
-        spawnMode: 'dlx',
-        examples: [],
-        supportDryRun: false,
-        trackTelemetry: false,
-      })
-
-      const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
-      setImmediate(() => child.emit('exit', 0, undefined))
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        await runPromise
-        expect(mockOutputDryRunExecute).not.toHaveBeenCalled()
-        expect(mockSpawnSfwDlx).toHaveBeenCalled()
-      } finally {
-        mockExit.mockRestore()
-      }
-    })
+  it('retains nonzero status when signal delivery is intercepted', async () => {
+    const kill = vi.spyOn(process, 'kill').mockReturnValue(true)
+    mocks.run.mockResolvedValue({ code: noChildExitCode, signal: 'SIGTERM' })
+    await makeCommand().run([], import.meta, context)
+    expect(kill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+    expect(process.exitCode).toBe(143)
   })
-
-  describe('telemetry', () => {
-    it('starts and ends telemetry span by default', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfw.mockResolvedValue({ spawnPromise })
-      mockFilterFlags.mockReturnValue([])
-
-      const cmd = defineHandoffCommand({
-        name: 'npm',
-        description: 'Run npm',
-        spawnMode: 'auto',
-        examples: [],
-      })
-
-      const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
-      setImmediate(() => child.emit('exit', 0, undefined))
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        await runPromise
-        await new Promise(resolve => setImmediate(resolve))
-        expect(mockTrackSubprocessStart).toHaveBeenCalledWith('npm')
-        expect(mockTrackSubprocessExit).toHaveBeenCalledWith('npm', 123, 0)
-      } finally {
-        mockExit.mockRestore()
-      }
+  it('retains failure for an indeterminate child result', async () => {
+    const kill = vi.spyOn(process, 'kill').mockReturnValue(true)
+    mocks.run.mockResolvedValue({
+      code: noChildExitCode,
+      signal: noChildSignal,
     })
-
-    it('skips telemetry when trackTelemetry is false', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
-      mockFilterFlags.mockReturnValue([])
-
-      const cmd = defineHandoffCommand({
-        name: 'cargo',
-        description: 'Run cargo',
-        spawnMode: 'dlx',
-        examples: [],
-        trackTelemetry: false,
-      })
-
-      const runPromise = cmd.run([], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
-      setImmediate(() => child.emit('exit', 0, undefined))
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        await runPromise
-        expect(mockTrackSubprocessStart).not.toHaveBeenCalled()
-        expect(mockTrackSubprocessExit).not.toHaveBeenCalled()
-      } finally {
-        mockExit.mockRestore()
-      }
-    })
-  })
-
-  describe('exit forwarding', () => {
-    it('forwards child exit code via process.exit', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
-      mockFilterFlags.mockReturnValue([])
-
-      const cmd = defineHandoffCommand({
-        name: 'cargo',
-        description: 'Run cargo',
-        spawnMode: 'dlx',
-        examples: [],
-        trackTelemetry: false,
-      })
-
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        void cmd.run([], { url: import.meta.url } as ImportMeta, {
-          parentName: 'socket',
-        })
-        // Wait for the listener to register, async spawn resolution.
-        await new Promise(resolve => setImmediate(resolve))
-        child.emit('exit', 42, undefined)
-        await new Promise(resolve => setImmediate(resolve))
-        expect(mockExit).toHaveBeenCalledWith(42)
-      } finally {
-        mockExit.mockRestore()
-      }
-    })
-
-    it('forwards child signal via process.kill', async () => {
-      const { child, spawnPromise } = makeChildProcess()
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise })
-      mockFilterFlags.mockReturnValue([])
-
-      const cmd = defineHandoffCommand({
-        name: 'cargo',
-        description: 'Run cargo',
-        spawnMode: 'dlx',
-        examples: [],
-        trackTelemetry: false,
-      })
-
-      const mockKill = vi
-        .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as unknown)
-      try {
-        void cmd.run([], { url: import.meta.url } as ImportMeta, {
-          parentName: 'socket',
-        })
-        await new Promise(resolve => setImmediate(resolve))
-        child.emit('exit', undefined, 'SIGINT')
-        await new Promise(resolve => setImmediate(resolve))
-        expect(mockKill).toHaveBeenCalledWith(process.pid, 'SIGINT')
-      } finally {
-        mockKill.mockRestore()
-      }
-    })
+    await makeCommand().run([], import.meta, context)
+    expect(process.exitCode).toBe(1)
+    expect(kill).not.toHaveBeenCalled()
   })
 })

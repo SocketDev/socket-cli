@@ -14,10 +14,7 @@ import { getOpengrepVersion } from '../../env/opengrep-version.mts'
 import { SOCKET_CLI_CDXGEN_LOCAL_PATH } from '../../env/socket-cli-cdxgen-local-path.mts'
 import { SOCKET_CLI_COANA_LOCAL_PATH } from '../../env/socket-cli-coana-local-path.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../../env/socket-cli-pycli-local-path.mts'
-import { SOCKET_CLI_SFW_LOCAL_PATH } from '../../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../../env/socket-cli-socket-patch-local-path.mts'
-import { requireSfwChecksum } from '../../env/sfw-checksums.mts'
-import { getSwfVersion } from '../../env/sfw-version.mts'
 import { requireSocketPatchChecksum } from '../../env/socket-patch-checksums.mts'
 import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
 import { requireTrivyChecksum } from '../../env/trivy-checksums.mts'
@@ -76,23 +73,6 @@ const SOCKET_PATCH_ASSETS: Record<string, string> = {
   'linux-x64': 'socket-patch-x86_64-unknown-linux-musl.tar.gz',
   'win32-arm64': 'socket-patch-aarch64-pc-windows-msvc.zip',
   'win32-x64': 'socket-patch-x86_64-pc-windows-msvc.zip',
-}
-
-/**
- * Platform-specific asset names for Socket Firewall (sfw-free) GitHub releases.
- * Maps Node.js `${platform}-${arch}` to the bare binary asset name (sfw ships
- * unversioned asset filenames). Windows ARM64 uses the x64 binary (emulated).
- * Mirrors the build-time PLATFORM_MAP_TOOLS sfw entries; the glibc Linux builds
- * run on musl/Alpine via the static fallback the same way socket-patch does.
- */
-const SFW_ASSETS: Record<string, string> = {
-  __proto__: undefined as unknown as string,
-  'darwin-arm64': 'sfw-free-macos-arm64',
-  'darwin-x64': 'sfw-free-macos-x86_64',
-  'linux-arm64': 'sfw-free-linux-arm64',
-  'linux-x64': 'sfw-free-linux-x86_64',
-  'win32-arm64': 'sfw-free-windows-x86_64.exe',
-  'win32-x64': 'sfw-free-windows-x86_64.exe',
 }
 
 /**
@@ -259,45 +239,6 @@ export function resolvePyCli(): BinaryResolution | { type: 'python' } {
 
   // Python CLI uses managed Python + pip install, not dlx.
   return { type: 'python' }
-}
-
-/**
- * Resolve path for Socket Firewall (sfw) binary. Checks
- * SOCKET_CLI_SFW_LOCAL_PATH environment variable first, then downloads the
- * sfw-free GitHub release binary — the same artifact SEA builds extract from
- * the VFS, so the bundled and dlx paths stay on one version + integrity.
- */
-export function resolveSfw(): BinaryResolution {
-  if (SOCKET_CLI_SFW_LOCAL_PATH) {
-    return { type: 'local', path: SOCKET_CLI_SFW_LOCAL_PATH }
-  }
-
-  const platform = os.platform()
-  const arch = os.arch()
-  const platformKey = `${platform}-${arch}`
-  const assetName = SFW_ASSETS[platformKey]
-
-  if (!assetName) {
-    throw new Error(
-      `Socket Firewall has no prebuilt binary for "${platformKey}" (supported: ${joinAnd(Object.keys(SFW_ASSETS))}); run socket-cli on a supported platform or set SOCKET_CLI_SFW_LOCAL_PATH to point at a local sfw binary`,
-    )
-  }
-
-  // SHA-256 for integrity verification. Undefined in dev (checksums not
-  // inlined); a HARD ERROR in production builds.
-  const sha256 = requireSfwChecksum(assetName)
-
-  return {
-    type: 'github-release',
-    details: {
-      assetName,
-      binaryName: 'sfw',
-      owner: 'SocketDev',
-      repo: 'sfw-free',
-      sha256,
-      version: getSwfVersion(),
-    },
-  }
 }
 
 /**

@@ -1,4 +1,5 @@
-name: 🚀 GitHub Release
+name: 🚀 GitHub release
+run-name: GitHub release
 
 # PRESET — seeded once from template/presets/ (onboarding or first cascade),
 # then repo-owned: customize what THIS repo releases. The fleet base actions
@@ -57,6 +58,7 @@ jobs:
   # fetches under it. Defaults to enabled, so a member that says nothing keeps
   # what it has.
   gate:
+    name: Check release eligibility
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.flag.outputs.enabled }}
@@ -82,9 +84,15 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       - name: Read release.github
         id: flag
-        run: node scripts/fleet/release/github-release-enabled.mts
+        run: node scripts/fleet/release/github/enabled.mts
       - name: Say so when the repo opts out
         if: steps.flag.outputs.enabled != 'true'
         run: |
@@ -92,6 +100,7 @@ jobs:
           echo 'release.github is false in .config/repo/socket-wheelhouse.json — this repo does not cut GitHub Releases. Skipping.'
 
   github-release:
+    name: Publish GitHub release
     needs: gate
     if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
@@ -100,7 +109,7 @@ jobs:
     steps:
       # First step can't call the local ./.github/actions/fleet/checkout
       # composite (nothing checked out yet); bootstrap the workspace with the
-      # same inline git-fetch shape npm-publish.yml uses, so the fleet
+      # same inline git-fetch shape publish-npm.yml uses, so the fleet
       # checkout action below can re-check-out at its own depth.
       - name: Bootstrap checkout
         shell: bash
@@ -135,10 +144,12 @@ jobs:
       - name: Checkout
         uses: ./.github/actions/fleet/checkout
         with:
-          # Authorizes a thin member's bundle hydration right after checkout.
-          # Both stay empty on a member with no payload App, skipping the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          ref: ${{ inputs.tag != '' && format('refs/tags/{0}', inputs.tag) || github.sha }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       # The resolved tag is the single input every later step trusts — it
       # feeds the registry-liveness gate as TAG and names the release cut, so
       # wrong resolution here silently bypasses the publish-before-release
@@ -172,6 +183,7 @@ jobs:
         with:
           client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
           owner: ${{ github.repository_owner }}
       # Build this repo's release assets here, then list them under the cut
       # step's `assets:` (newline-separated paths; each must exist).

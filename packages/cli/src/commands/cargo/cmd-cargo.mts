@@ -11,7 +11,6 @@ import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 export const cmdCargo = defineHandoffCommand({
   name: 'cargo',
   description: 'Run cargo with Socket Firewall security',
-  spawnMode: 'dlx',
   examples: ['install ripgrep', 'build', 'add serde'],
   // cargo did not previously emit telemetry or support --dry-run.
   trackTelemetry: false,

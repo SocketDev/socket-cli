@@ -15,17 +15,19 @@
  * formatting) ship to every wrapper at once.
  *
  * Usage: export const cmdCargo = defineHandoffCommand({ name: 'cargo',
- * description: 'Run cargo with Socket Firewall security', spawnMode: 'dlx',
+ * description: 'Run cargo with Socket Firewall security',
  * examples: ['install ripgrep', 'build', 'add serde'], })
  */
+
+import os from 'node:os'
 
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from './with-subcommands.mts'
-import { spawnSfw, spawnSfwDlx } from '../dlx/spawn.mjs'
+import { runFirewallCommand } from '../firewall/run.mts'
+import { splitFirewallArguments } from './firewall-arguments.mts'
 import { outputDryRunExecute } from '../dry-run/output.mts'
 import { getFlagApiRequirementsOutput } from '../output/formatting.mts'
-import { filterFlags } from '../process/cmd.mts'
 import {
   trackSubprocessExit,
   trackSubprocessStart,
@@ -48,13 +50,6 @@ export interface DefineHandoffCommandConfig {
    * Hide the command from `socket --help`. Defaults to false.
    */
   hidden?: boolean | undefined
-  /**
-   * Spawn strategy: - 'auto' (= spawnSfw): VFS-extract in SEA mode,
-   * dlx-download otherwise. Used by npm/npx because those binaries are bundled
-   * in the SEA. - 'dlx' (= spawnSfwDlx): always pnpm-dlx-download. Used by yarn
-   * / pip / cargo / go / etc. where the SEA doesn't bundle the binary.
-   */
-  spawnMode: 'auto' | 'dlx'
   /**
    * Examples to render under "Examples" in the help text. Each line is
    * automatically prefixed with "$ ${command} ". Pass the args portion only.
@@ -170,7 +165,6 @@ export function defineHandoffCommand(
     description,
     hidden = DEFAULT_HIDDEN,
     name,
-    spawnMode,
     supportDryRun = DEFAULT_SUPPORT_DRY_RUN,
     trackTelemetry = DEFAULT_TRACK_TELEMETRY,
   } = { __proto__: null, ...config } as typeof config
@@ -193,16 +187,21 @@ export function defineHandoffCommand(
       help: buildHelp(config, parentName),
     }
 
-    const cli = meowOrExit({ argv, config: cliConfig, importMeta, parentName })
-
-    // Pass an explicit empty `exceptions` array so test-side assertions
-    // that match the legacy 3-arg call shape stay green.
-    const filteredArgv = filterFlags(argv, cliConfig.flags, [])
+    const { wrapperArgs, commandArgs } = splitFirewallArguments(argv, {
+      explicitCommand: false,
+      supportDryRun,
+    })
+    const cli = meowOrExit({
+      argv: wrapperArgs,
+      config: cliConfig,
+      importMeta,
+      parentName,
+    })
 
     if (supportDryRun && cli.flags['dryRun']) {
       outputDryRunExecute(
         'sfw',
-        [name, ...filteredArgv],
+        [name, ...commandArgs],
         `${name} with Socket security scanning`,
       )
       return
@@ -220,64 +219,21 @@ export function defineHandoffCommand(
       ? await trackSubprocessStart(name)
       : undefined
 
-    const spawnFn = spawnMode === 'auto' ? spawnSfw : spawnSfwDlx
-    const { spawnPromise } = await spawnFn([binaryName, ...filteredArgv], {
+    const result = await runFirewallCommand([binaryName, ...commandArgs], {
       stdio: 'inherit',
     })
-
-    const { process: childProcess } = spawnPromise as unknown as {
-      process: NodeJS.Process & {
-        on: (event: string, listener: (...args: unknown[]) => void) => void
-      }
+    if (trackTelemetry && subprocessStartTime !== undefined) {
+      await trackSubprocessExit(name, subprocessStartTime, result.code).catch(
+        () => {},
+      )
     }
-    wireChildExit(childProcess, {
-      name,
-      subprocessStartTime,
-      trackTelemetry,
-    })
-
-    await spawnPromise
+    if (result.signal) {
+      process.exitCode = 128 + (os.constants.signals[result.signal] ?? 0)
+      process.kill(process.pid, result.signal)
+    } else if (typeof result.code === 'number') {
+      process.exitCode = result.code
+    }
   }
 
   return { description, hidden, run }
-}
-
-/**
- * Wire the child process's exit/signal back to the parent. Optionally flushes
- * telemetry first. Centralized so all wrappers share the same lifecycle.
- */
-export function wireChildExit(
-  childProcess: NodeJS.Process & {
-    on: (event: string, listener: (...args: unknown[]) => void) => void
-  },
-  config: {
-    name: string
-    trackTelemetry: boolean
-    subprocessStartTime: number | undefined
-  },
-): void {
-  const { name, subprocessStartTime, trackTelemetry } = {
-    __proto__: null,
-    ...config,
-  } as typeof config
-  childProcess.on(
-    'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
-      const exitProcess = () => {
-        if (signalName) {
-          process.kill(process.pid, signalName)
-        } else if (typeof code === 'number') {
-          process.exit(code)
-        }
-      }
-      if (trackTelemetry && subprocessStartTime !== undefined) {
-        // .then/.catch so the exit happens even when telemetry flush fails.
-        void trackSubprocessExit(name, subprocessStartTime, code)
-          .then(exitProcess)
-          .catch(exitProcess)
-      } else {
-        exitProcess()
-      }
-    },
-  )
 }

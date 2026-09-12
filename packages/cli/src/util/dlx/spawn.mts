@@ -40,6 +40,7 @@ import {
   extractExternalTools,
 } from './vfs-extract.mjs'
 import { InputError } from '../error/errors.mts'
+import { isPathWithinRoot } from '../trusted-executable.mts'
 
 import type { IpcObject } from '../ipc.mts'
 import type { ExternalTool } from './vfs-extract.mjs'
@@ -86,8 +87,6 @@ export { spawnCoanaDlx } from './spawn-coana.mts'
 
 export { spawnCdxgenDlx } from './spawn-cdxgen.mts'
 
-export { spawnSfwDlx } from './spawn-sfw.mts'
-
 /**
  * Helper to spawn Socket Patch. If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH
  * environment variable is set, uses the local socket-patch binary at that path
@@ -120,7 +119,6 @@ export async function downloadGitHubReleaseBinary(
 
   // Cache path: ~/.socket/_dlx/github/{owner}/{repo}/{version}/
   const cacheDir = path.join(getDlxCachePath(), 'github', owner, repo, version)
-  const normalizedCacheDir = path.resolve(cacheDir)
   const binaryPath = path.join(cacheDir, binaryFileName)
   const lockFile = path.join(cacheDir, '.downloading')
 
@@ -137,37 +135,7 @@ export async function downloadGitHubReleaseBinary(
   } catch (e: unknown) {
     const error = e as NodeJS.ErrnoException
     if (error.code === 'EEXIST') {
-      // Another process is downloading; wait for completion.
-      for (let i = 0; i < 60; i++) {
-        await new Promise(resolve => {
-          setTimeout(resolve, 1000)
-        })
-        if (existsSync(binaryPath)) {
-          return binaryPath
-        }
-        // Check if lock holder is still alive.
-        if (i % 5 === 4) {
-          try {
-            const lockPid = await fs.readFile(lockFile, 'utf8')
-            const pid = Number.parseInt(lockPid.trim(), 10)
-            if (!Number.isNaN(pid) && pid > 0) {
-              try {
-                process.kill(pid, 0)
-              } catch {
-                // Process died, lock is stale - remove and retry.
-                await safeDelete(lockFile, { force: true })
-                return downloadGitHubReleaseBinary(spec)
-              }
-            }
-          } catch {
-            // Lock file gone, retry.
-            return downloadGitHubReleaseBinary(spec)
-          }
-        }
-      }
-      throw new InputError(
-        `timed out waiting for another socket process to finish downloading ${owner}/${repo}@${version} (${assetName}); if no other socket process is running, remove stale lock files under ${path.dirname(binaryPath)} and retry`,
-      )
+      return waitForGitHubReleaseDownload(spec, { binaryPath, lockFile })
     }
     throw e
   }
@@ -192,41 +160,7 @@ export async function downloadGitHubReleaseBinary(
     const isTarGz = assetName.endsWith('.tar.gz') || assetName.endsWith('.tgz')
 
     if (isZip) {
-      // Extract zip using adm-zip, cross-platform, zero dependencies.
-      const zip = new AdmZip(result.binaryPath)
-
-      // Security: validate all entries for path traversal before extraction.
-      const entries = zip.getEntries()
-      for (let i = 0, { length } = entries; i < length; i += 1) {
-        const entry = entries[i]!
-        const entryPath = path.resolve(path.join(cacheDir, entry.entryName))
-        if (!entryPath.startsWith(normalizedCacheDir)) {
-          throw new InputError(
-            `archive entry "${entry.entryName}" resolves outside the cache dir (${normalizedCacheDir}) — this looks like a zip-slip attack; do NOT trust this release asset, report it to the upstream project, and delete ${result.binaryPath}`,
-          )
-        }
-      }
-
-      zip.extractAllTo(cacheDir, true)
-
-      // Security: validate no symlinks escape the cache directory after extraction.
-      const extractedFiles = await fs.readdir(cacheDir, { recursive: true })
-      for (let i = 0, { length } = extractedFiles; i < length; i += 1) {
-        const file = extractedFiles[i]!
-        const fullPath = path.join(cacheDir, file)
-        // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isSymbolicLink() metadata for symlink escape validation.
-        const stats = await fs.lstat(fullPath)
-        if (stats.isSymbolicLink()) {
-          const target = await fs.readlink(fullPath)
-          const resolvedTarget = path.resolve(path.dirname(fullPath), target)
-          if (!resolvedTarget.startsWith(normalizedCacheDir)) {
-            await safeDelete(fullPath, { force: true })
-            throw new InputError(
-              `extracted symlink ${file} targets ${resolvedTarget} which is outside the cache dir (${normalizedCacheDir}); do NOT trust this release asset, report it to the upstream project, and delete ${cacheDir}`,
-            )
-          }
-        }
-      }
+      await extractGitHubReleaseZip(result.binaryPath, cacheDir)
     } else if (isTarGz) {
       // Extract tar.gz using system tar.
       // Note: tar has built-in path traversal protection by default.
@@ -252,7 +186,49 @@ export async function downloadGitHubReleaseBinary(
     return binaryPath
   } finally {
     // Clean up lock file.
-    await safeDelete(lockFile, { force: true })
+    await safeDelete(lockFile)
+  }
+}
+
+export async function extractGitHubReleaseZip(
+  archivePath: string,
+  cacheDir: string,
+): Promise<void> {
+  const normalizedCacheDir = path.resolve(cacheDir)
+  // Extract zip using adm-zip, cross-platform, zero dependencies.
+  const zip = new AdmZip(archivePath)
+
+  // Security: validate all entries for path traversal before extraction.
+  const entries = zip.getEntries()
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
+    const entryPath = path.resolve(path.join(cacheDir, entry.entryName))
+    if (!isPathWithinRoot(normalizedCacheDir, entryPath)) {
+      throw new InputError(
+        `archive entry "${entry.entryName}" resolves outside the cache dir (${normalizedCacheDir}) — this looks like a zip-slip attack; do NOT trust this release asset, report it to the upstream project, and delete ${archivePath}`,
+      )
+    }
+  }
+
+  zip.extractAllTo(cacheDir, true)
+
+  // Security: validate no symlinks escape the cache directory after extraction.
+  const extractedFiles = await fs.readdir(cacheDir, { recursive: true })
+  for (let i = 0, { length } = extractedFiles; i < length; i += 1) {
+    const file = extractedFiles[i]!
+    const fullPath = path.join(cacheDir, file)
+    // oxlint-disable-next-line socket/prefer-exists-sync -- symlink type
+    const stats = await fs.lstat(fullPath)
+    if (stats.isSymbolicLink()) {
+      const target = await fs.readlink(fullPath)
+      const resolvedTarget = path.resolve(path.dirname(fullPath), target)
+      if (!isPathWithinRoot(normalizedCacheDir, resolvedTarget)) {
+        await safeDelete(fullPath)
+        throw new InputError(
+          `extracted symlink ${file} targets ${resolvedTarget} which is outside the cache dir (${normalizedCacheDir}); do NOT trust this release asset, report it to the upstream project, and delete ${cacheDir}`,
+        )
+      }
+    }
   }
 }
 
@@ -366,8 +342,6 @@ export function validatePackageName(name: string): void {
   }
 }
 
-export { spawnSfwVfs } from './spawn-sfw.mts'
-
 export { spawnCdxgenVfs } from './spawn-cdxgen.mts'
 
 export { spawnCoanaVfs } from './spawn-coana.mts'
@@ -378,8 +352,6 @@ export { spawnSocketPatchVfs } from './spawn-socket-patch.mts'
  * High-level spawn functions that auto-detect SEA vs npm CLI mode. These choose
  * between VFS extraction (SEA) and dlx download (npm CLI).
  */
-
-export { spawnSfw } from './spawn-sfw.mts'
 
 export { spawnCdxgen } from './spawn-cdxgen.mts'
 
@@ -434,3 +406,45 @@ export {
   spawnOpengrepDlx,
   spawnOpengrepVfs,
 } from './spawn-opengrep.mts'
+
+export async function waitForGitHubReleaseDownload(
+  spec: GitHubReleaseSpec,
+  config: { binaryPath: string; lockFile: string },
+): Promise<string> {
+  const { binaryPath, lockFile } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  const { owner, repo, version, assetName } = spec
+  // Another process is downloading; wait for completion.
+  for (let i = 0; i < 60; i++) {
+    await new Promise(resolve => {
+      setTimeout(resolve, 1000)
+    })
+    if (existsSync(binaryPath)) {
+      return binaryPath
+    }
+    // Check if lock holder is still alive.
+    if (i % 5 === 4) {
+      try {
+        const lockPid = await fs.readFile(lockFile, 'utf8')
+        const pid = Number.parseInt(lockPid.trim(), 10)
+        if (!Number.isNaN(pid) && pid > 0) {
+          try {
+            process.kill(pid, 0)
+          } catch {
+            // Process died, lock is stale - remove and retry.
+            await safeDelete(lockFile)
+            return downloadGitHubReleaseBinary(spec)
+          }
+        }
+      } catch {
+        // Lock file gone, retry.
+        return downloadGitHubReleaseBinary(spec)
+      }
+    }
+  }
+  throw new InputError(
+    `timed out waiting for another socket process to finish downloading ${owner}/${repo}@${version} (${assetName}); if no other socket process is running, remove stale lock files under ${path.dirname(binaryPath)} and retry`,
+  )
+}

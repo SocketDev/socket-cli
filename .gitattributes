@@ -1,8 +1,8 @@
 * text=auto eol=lf
 
 # <fleet>
-# Cascaded from socket-wheelhouse/template/base/. Don't edit locally —
-# edit upstream and re-cascade via sync-scaffolding. Marked
+# Cascaded from socket-wheelhouse/template/base/universal/. Don't edit locally —
+# edit upstream and re-cascade via commit-cascade. Marked
 # linguist-generated so GitHub PR diffs collapse them by default.
 .claude/agents/fleet linguist-generated=true
 .claude/commands/fleet linguist-generated=true
@@ -18,6 +18,7 @@
 .config/fleet/git-authors.json linguist-generated=true
 .config/fleet/lockstep.schema.json linguist-generated=true
 .config/fleet/markdownlint-rules linguist-generated=true
+.config/fleet/mcp linguist-generated=true
 .config/fleet/oxfmtrc.json linguist-generated=true
 .config/fleet/oxlint-plugin/_shared linguist-generated=true
 .config/fleet/oxlint-plugin/fleet linguist-generated=true
@@ -28,6 +29,7 @@
 .config/fleet/oxlintrc.json linguist-generated=true
 .config/fleet/playwright linguist-generated=true
 .config/fleet/pnpm-workspace.fleet.yaml linguist-generated=true
+.config/fleet/rolldown/bundle-regions.mts linguist-generated=true
 .config/fleet/rolldown/bundle-stub.mts linguist-generated=true
 .config/fleet/rolldown/hook-bundle-excluded.config.mts linguist-generated=true
 .config/fleet/rolldown/hook-bundle-snapshot.config.mts linguist-generated=true
@@ -40,17 +42,20 @@
 .config/fleet/tsconfig.check.base.json linguist-generated=true
 .config/fleet/tsconfig.check.json linguist-generated=true
 .config/fleet/vitest.coverage.fleet.config.mts linguist-generated=true
+.config/fleet/vitest.fuzz.fleet.config.mts linguist-generated=true
 .editorconfig linguist-generated=true
 .git-hooks/_shared linguist-generated=true
 .git-hooks/commit-msg linguist-generated=true
 .git-hooks/fleet linguist-generated=true
 .git-hooks/post-commit linguist-generated=true
 .git-hooks/pre-commit linguist-generated=true
+.git-hooks/pre-merge-commit linguist-generated=true
 .git-hooks/pre-push linguist-generated=true
 .github/actions/fleet/_shared linguist-generated=true
 .github/actions/fleet/cache-pnpm-store linguist-generated=true
 .github/actions/fleet/checkout linguist-generated=true
 .github/actions/fleet/cleanup-git-signing linguist-generated=true
+.github/actions/fleet/crates-io-auth linguist-generated=true
 .github/actions/fleet/debug linguist-generated=true
 .github/actions/fleet/download-artifact linguist-generated=true
 .github/actions/fleet/expose-actions-runtime linguist-generated=true
@@ -73,32 +78,41 @@
 .github/dependabot.yml linguist-generated=true
 .github/local-ci.Dockerfile linguist-generated=true
 .github/workflows/*.lock.yml linguist-generated=true merge=ours
-.github/workflows/weekly-fuzz.yml linguist-generated=true
 .github/workflows/get-green.yml linguist-generated=true
-.github/workflows/github-release.yml linguist-generated=true
-.github/workflows/npm-publish.yml linguist-generated=true
+.github/workflows/publish-npm.yml linguist-generated=true
+.github/workflows/sweep-jobs.yml linguist-generated=true
+.github/workflows/weekly-fuzz.yml linguist-generated=true
 .github/workflows/weekly-odai-cache.yml linguist-generated=true
-.github/workflows/prune-workflow-runs.yml linguist-generated=true
-.github/workflows/release-reconcile.yml linguist-generated=true
 .github/workflows/weekly-update.yml linguist-generated=true
 .github/zizmor.yml linguist-generated=true
 .mcp.json linguist-generated=true
 .npmrc linguist-generated=true
 assets/fleet/badge-follow-bluesky.svg linguist-generated=true
 assets/fleet/badge-follow-x.svg linguist-generated=true
+assets/fleet/important.LICENSE linguist-generated=true
+assets/fleet/important.svg linguist-generated=true
 assets/fleet/socket-combomark-dark.svg linguist-generated=true
 assets/fleet/socket-combomark-light.svg linguist-generated=true
-docs/agents.md/fleet linguist-generated=true
 docs/design/fleet/README.md linguist-generated=true
 docs/design/fleet/components.css linguist-generated=true
 docs/design/fleet/tokens.css linguist-generated=true
+docs/fleet/agents.md linguist-generated=true
+docs/fleet/ai-balancer.md linguist-generated=true
+docs/fleet/development linguist-generated=true
+docs/fleet/fuzzing linguist-generated=true
+docs/fleet/perf linguist-generated=true
+docs/fleet/testing linguist-generated=true
+docs/fleet/workflows linguist-generated=true
 docs/references/fleet/sfw-local-install.md linguist-generated=true
-patches/@socketsecurity__lib@6.7.0.patch linguist-generated=true
+patches/@socketsecurity__lib@7.0.1.patch linguist-generated=true
 patches/brace-expansion@5.0.9.patch linguist-generated=true
 patches/minimatch@10.2.6.patch linguist-generated=true
+patches/run-local-ci@0.18.1.patch linguist-generated=true
+patches/vitest@5.0.0.patch linguist-generated=true
 scripts/fleet linguist-generated=true
 scripts/repo/bootstrap linguist-generated=true
 test/fleet/_shared/lib linguist-generated=true
+test/fleet/common/fixture linguist-generated=true
 test/fleet/e2e/comment-voice.test.mts linguist-generated=true
 test/fleet/integration/comment-voice.test.mts linguist-generated=true
 test/fleet/nock-loopback-passthrough.test.mts linguist-generated=true
@@ -106,6 +120,7 @@ test/fleet/registry-infra/cargo/placeholder.test.mts linguist-generated=true
 test/fleet/registry-infra/npm/placeholder.test.mts linguist-generated=true
 test/fleet/scripts/setup.mts linguist-generated=true
 test/fleet/unit/comment-voice.test.mts linguist-generated=true
+*.patch whitespace=-blank-at-eol,-space-before-tab
 # </fleet>
 # <repo>
 # </repo>

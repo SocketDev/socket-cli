@@ -1,294 +1,120 @@
-import * as binModule from '@socketsecurity/lib-stable/exe/path/which'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cmdPip } from '../../../../src/commands/pip/cmd-pip.mts'
-import * as meowModule from '../../../../src/util/cli/with-subcommands.mjs'
-import * as spawnModule from '../../../../src/util/dlx/spawn.mts'
-import * as cmdModule from '../../../../src/util/process/cmd.mts'
 
-import type { CliCommandContext } from '../../../../src/util/cli/with-subcommands.mts'
+const noChildExitCode: number | null = null
+const noChildSignal: NodeJS.Signals | null = null
 
-// Mock dependencies before imports.
+const mocks = vi.hoisted(() => ({ run: vi.fn(), which: vi.fn() }))
+vi.mock(import('../../../../src/util/firewall/run.mts'), () => ({
+  runFirewallCommand: mocks.run,
+}))
 vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
-  whichReal: vi.fn(),
+  whichReal: mocks.which,
+}))
+vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
+  trackSubprocessStart: vi.fn(async () => undefined),
+  trackSubprocessExit: vi.fn(async () => undefined),
 }))
 
-vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
-  spawnSfwDlx: vi.fn(),
-}))
-
-vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
-  filterFlags: vi.fn(argv => argv),
-}))
-
-vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
-  meowOrExit: vi.fn(),
-}))
-
-const mockWhichReal = vi.mocked(binModule.whichReal)
-const mockSpawnSfwDlx = vi.mocked(spawnModule.spawnSfwDlx)
-const mockFilterFlags = vi.mocked(cmdModule.filterFlags)
-const mockMeowOrExit = vi.mocked(meowModule.meowOrExit)
-
-// Mock process methods.
-const mockProcessExit = vi
-  .spyOn(process, 'exit')
-  .mockImplementation(() => undefined as never)
-const mockProcessKill = vi.spyOn(process, 'kill').mockImplementation(() => true)
-
-describe('cmd-pip', () => {
-  const mockChildProcess = {
-    on: vi.fn(),
-    pid: 12_345,
-  }
-
-  // Create a proper promise-like object for spawnPromise.
-  const createMockSpawnResult = (
-    exitCode = 0,
-    signal?: NodeJS.Signals | undefined,
-  ) => {
-    const promise: unknown = Promise.resolve({
-      success: exitCode === 0 && !signal,
-      code: signal ? undefined : exitCode,
-      signal: signal || undefined,
-    })
-    promise.process = mockChildProcess
-    return {
-      spawnPromise: promise,
-    }
-  }
-
+const context = { parentName: 'socket' }
+describe('pip firewall integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-
-    // Reset process properties.
+    mocks.run.mockResolvedValue({ code: 0, signal: noChildSignal })
+    mocks.which.mockResolvedValue('/example/bin/pip')
     process.exitCode = undefined
-
-    // Setup default mock implementations.
-    mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
-    mockWhichReal.mockResolvedValue('/usr/bin/pip')
-    mockFilterFlags.mockImplementation(argv => argv)
-    mockChildProcess.on.mockImplementation((event, handler) => {
-      // Simulate immediate successful exit by default.
-      if (event === 'exit') {
-        // Don't call handler here, let the test control when exit is called.
-      }
-      return mockChildProcess
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+    process.exitCode = undefined
+  })
+  it('retains command metadata', () => {
+    expect(cmdPip).toMatchObject({
+      description: 'Run pip with Socket Firewall security',
+      hidden: false,
+      run: expect.any(Function),
     })
   })
-
-  describe('command structure', () => {
-    it('should export cmdPip with correct structure', () => {
-      expect(cmdPip).toBeDefined()
-      expect(cmdPip.description).toBe('Run pip with Socket Firewall security')
-      expect(cmdPip.hidden).toBe(false)
-      expect(typeof cmdPip.run).toBe('function')
+  it.each([
+    [],
+    ['install', 'example-package'],
+    ['install', 'example-package@1.2.3'],
+    ['install', '--global', 'example-package'],
+    ['exec', 'example-command'],
+    ['update'],
+    ['list'],
+    ['freeze'],
+    ['uninstall', 'example-package'],
+    ['install', '-r', 'requirements.txt'],
+    ['install', 'example-one', 'example-two'],
+  ])('forwards child arguments %j', async (...args) => {
+    await cmdPip.run(args, import.meta, context)
+    expect(mocks.run).toHaveBeenCalledWith(['pip', ...args], {
+      stdio: 'inherit',
     })
   })
-
-  describe('--help flag', () => {
-    it('should call meowOrExit with correct config for help display', async () => {
-      const argv = ['--help']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-      }
-
-      // Mock meowOrExit to prevent actual execution.
-      mockMeowOrExit.mockImplementation(() => ({
-        flags: {},
-        input: [],
-        pkg: {},
-        help: '',
-      }))
-
-      await cmdPip.run(argv, importMeta, context)
-
-      expect(mockMeowOrExit).toHaveBeenCalledWith({
-        argv,
-        config: expect.objectContaining({
-          commandName: 'pip',
-          description: 'Run pip with Socket Firewall security',
-          hidden: false,
-        }),
-        importMeta,
-        parentName: 'socket',
-      })
-    })
-
-    it('should include help text with usage examples', async () => {
-      const argv = ['--help']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-      }
-
-      mockMeowOrExit.mockImplementation(() => ({
-        flags: {},
-        input: [],
-        pkg: {},
-        help: '',
-      }))
-
-      await cmdPip.run(argv, importMeta, context)
-
-      const callArgs = mockMeowOrExit.mock.calls[0]?.[0]
-      const config = callArgs?.config
-      const help = config?.help?.('socket pip')
-
-      expect(help).toContain('Usage')
-      expect(help).toContain('$ socket pip ...')
-      expect(help).toContain('Socket Firewall')
-      expect(help).toContain('install flask')
-      expect(help).toContain('install -r requirements.txt')
-      expect(help).toContain('list')
-    })
+  it('filters wrapper prefix flags and preserves child configuration', async () => {
+    await cmdPip.run(
+      ['--config', '{}', '--no-banner', 'install', '--config', 'child.json'],
+      import.meta,
+      context,
+    )
+    expect(mocks.run).toHaveBeenCalledWith(
+      ['pip', 'install', '--config', 'child.json'],
+      { stdio: 'inherit' },
+    )
   })
-
-  describe('flag filtering', () => {
-    it('should filter out Socket CLI flags before forwarding to sfw', async () => {
-      const argv = ['install', 'flask', '--config', 'test.json', '--dry-run']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-      }
-
-      mockFilterFlags.mockReturnValue(['install', 'flask'])
-
-      await cmdPip.run(argv, importMeta, context)
-
-      expect(mockFilterFlags).toHaveBeenCalledWith(argv, expect.any(Object), [])
-
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['pip', 'install', 'flask'],
-        expect.objectContaining({
-          stdio: 'inherit',
-        }),
-      )
-    })
-
-    it('should pass all flags to filterFlags', async () => {
-      const argv = ['install', 'requests']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-      }
-
-      await cmdPip.run(argv, importMeta, context)
-
-      const callArgs = mockFilterFlags.mock.calls[0]
-      expect(callArgs?.[0]).toEqual(argv)
-      expect(callArgs?.[1]).toMatchObject({
-        animateHeader: expect.any(Object),
-        banner: expect.any(Object),
-        config: expect.any(Object),
-        dryRun: expect.any(Object),
-        help: expect.any(Object),
-        spinner: expect.any(Object),
-      })
-      expect(callArgs?.[2]).toEqual([])
-    })
+  it('forwards child flags without interpreting them as wrapper flags', async () => {
+    await cmdPip.run(['--help', '--version', '--verbose'], import.meta, context)
+    expect(mocks.run).toHaveBeenCalledWith(
+      ['pip', '--help', '--version', '--verbose'],
+      { stdio: 'inherit' },
+    )
   })
-
-  describe('binary detection (getPipBinName)', () => {
-    it('should use pip when invoked as socket pip and pip exists', async () => {
-      const argv = ['install', 'flask']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-        invokedAs: undefined,
-      }
-
-      mockWhichReal.mockResolvedValue('/usr/bin/pip')
-
-      await cmdPip.run(argv, importMeta, context)
-
-      expect(mockWhichReal).toHaveBeenCalledWith('pip', { nothrow: true })
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['pip', 'install', 'flask'],
-        expect.any(Object),
-      )
-    })
-
-    it('should use pip3 when invoked as socket pip3', async () => {
-      const argv = ['install', 'requests']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-        invokedAs: 'pip3',
-      }
-
-      mockWhichReal.mockResolvedValue('/usr/bin/pip3')
-
-      await cmdPip.run(argv, importMeta, context)
-
-      expect(mockWhichReal).toHaveBeenCalledWith('pip3', { nothrow: true })
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['pip3', 'install', 'requests'],
-        expect.any(Object),
-      )
-    })
-
-    it('should fallback to pip3 when pip does not exist', async () => {
-      const argv = ['install', 'numpy']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-      }
-
-      mockWhichReal
-        .mockResolvedValueOnce(undefined)
-        .mockResolvedValueOnce('/usr/bin/pip3')
-
-      await cmdPip.run(argv, importMeta, context)
-
-      expect(mockWhichReal).toHaveBeenCalledWith('pip', { nothrow: true })
-      expect(mockWhichReal).toHaveBeenCalledWith('pip3', { nothrow: true })
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['pip3', 'install', 'numpy'],
-        expect.any(Object),
-      )
-    })
-
-    it('should fallback to pip when pip3 does not exist but requested', async () => {
-      const argv = ['install', 'pandas']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-        invokedAs: 'pip3',
-      }
-
-      mockWhichReal
-        .mockResolvedValueOnce(undefined)
-        .mockResolvedValueOnce('/usr/bin/pip')
-
-      await cmdPip.run(argv, importMeta, context)
-
-      expect(mockWhichReal).toHaveBeenCalledWith('pip3', { nothrow: true })
-      expect(mockWhichReal).toHaveBeenCalledWith('pip', { nothrow: true })
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['pip', 'install', 'pandas'],
-        expect.any(Object),
-      )
-    })
-
-    it('should use requested binary when neither pip nor pip3 exist', async () => {
-      const argv = ['install', 'scipy']
-      const importMeta = { url: import.meta.url } as ImportMeta
-      const context: CliCommandContext = {
-        parentName: 'socket',
-      }
-
-      mockWhichReal.mockResolvedValue(undefined)
-
-      await cmdPip.run(argv, importMeta, context)
-
-      expect(mockWhichReal).toHaveBeenCalledWith('pip', { nothrow: true })
-      expect(mockWhichReal).toHaveBeenCalledWith('pip3', { nothrow: true })
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['pip', 'install', 'scipy'],
-        expect.any(Object),
-      )
-    })
+  it.each([0, 7])('propagates result %s after cleanup', async code => {
+    mocks.run.mockResolvedValue({ code, signal: noChildSignal })
+    await cmdPip.run(['install', 'example-package'], import.meta, context)
+    expect(process.exitCode).toBe(code)
   })
+  it.each(['SIGTERM', 'SIGINT'] as const)(
+    'propagates %s after cleanup',
+    async signal => {
+      const kill = vi.spyOn(process, 'kill').mockReturnValue(true)
+      mocks.run.mockResolvedValue({ code: noChildExitCode, signal })
+      await cmdPip.run([], import.meta, context)
+      expect(kill).toHaveBeenCalledWith(process.pid, signal)
+    },
+  )
+  it('retains failure status when firewall setup rejects', async () => {
+    mocks.run.mockRejectedValue(new Error('example setup failure'))
+    await expect(cmdPip.run([], import.meta, context)).rejects.toBeInstanceOf(
+      Error,
+    )
+    expect(process.exitCode).toBe(1)
+  })
+})
+
+describe('pip executable selection', () => {
+  it.each([
+    ['pip', true, true, 'pip'],
+    ['pip3', true, true, 'pip3'],
+    ['pip', false, true, 'pip3'],
+    ['pip3', false, true, 'pip'],
+    ['pip3', false, false, 'pip3'],
+  ])(
+    'selects executable for %s with availability %s/%s',
+    async (requested, primaryExists, fallbackExists, expected) => {
+      const { getPipBinName } =
+        await import('../../../../src/commands/pip/cmd-pip.mts')
+      mocks.which
+        .mockReset()
+        .mockResolvedValueOnce(
+          primaryExists ? '/example/bin/primary' : undefined,
+        )
+        .mockResolvedValueOnce(
+          fallbackExists ? '/example/bin/fallback' : undefined,
+        )
+      expect(await getPipBinName(requested)).toBe(expected)
+    },
+  )
 })

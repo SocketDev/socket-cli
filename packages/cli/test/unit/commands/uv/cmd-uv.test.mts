@@ -1,431 +1,95 @@
-/**
- * Unit Tests: Socket UV Command.
- *
- * Purpose: Tests the uv wrapper command that forwards uv operations to Socket
- * Firewall (sfw). Validates argument forwarding, flag filtering, exit code
- * handling, and signal propagation.
- *
- * Test Coverage: - Command metadata, description, hidden status - Argument
- * forwarding to sfw via spawnSfwDlx - Socket CLI flag filtering (removes
- * --config, --org, etc.) - Exit code defaults and handling - Signal propagation
- * from child process - Integration with meowOrExit for --help handling.
- *
- * Testing Approach: Mocks spawnSfwDlx to simulate child process behavior
- * without actual execution. Uses EventEmitter to simulate process exit events
- * and signal handling. Validates that Socket CLI flags are filtered out before
- * forwarding to sfw.
- *
- * Related Files: - src/commands/uv/cmd-uv.mts - UV wrapper command
- * implementation - src/util/dlx/spawn.mts - DLX spawn utilities -
- * src/util/process/cmd.mts - Flag filtering utilities.
- */
-
-import EventEmitter from 'node:events'
-
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cmdUv } from '../../../../src/commands/uv/cmd-uv.mts'
-import { setupTestEnvironment } from '../../../helpers/index.mts'
 
-const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
-const mockMeowOrExit = vi.hoisted(() => vi.fn())
-const mockFilterFlags = vi.hoisted(() => vi.fn())
+const noChildExitCode: number | null = null
+const noChildSignal: NodeJS.Signals | null = null
 
-vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
-  spawnSfwDlx: mockSpawnSfwDlx,
+const mocks = vi.hoisted(() => ({ run: vi.fn(), which: vi.fn() }))
+vi.mock(import('../../../../src/util/firewall/run.mts'), () => ({
+  runFirewallCommand: mocks.run,
+}))
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
+  whichReal: mocks.which,
+}))
+vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
+  trackSubprocessStart: vi.fn(async () => undefined),
+  trackSubprocessExit: vi.fn(async () => undefined),
 }))
 
-vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
-  meowOrExit: mockMeowOrExit,
-}))
-
-vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
-  filterFlags: mockFilterFlags,
-}))
-
-describe('cmd-uv', () => {
-  setupTestEnvironment()
-
+const context = { parentName: 'socket' }
+describe('uv firewall integration', () => {
   beforeEach(() => {
-    mockFilterFlags.mockReturnValue([])
+    vi.clearAllMocks()
+    mocks.run.mockResolvedValue({ code: 0, signal: noChildSignal })
+    mocks.which.mockResolvedValue('/example/bin/uv')
+    process.exitCode = undefined
   })
-
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdUv.description).toBe('Run uv with Socket Firewall security')
-    })
-
-    it('should not be hidden', () => {
-      expect(cmdUv.hidden).toBe(false)
-    })
-
-    it('should have a run function', () => {
-      expect(typeof cmdUv.run).toBe('function')
-    })
-
-    it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation(args => {
-        const helpText = args.config.help('socket uv')
-        expect(helpText).toContain('socket uv')
-        return {
-          flags: {},
-          help: helpText,
-          input: [],
-          pkg: {},
-          showHelp: vi.fn(),
-          showVersion: vi.fn(),
-          unknownFlags: [],
-        }
-      })
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      mockSpawnPromise.process = mockChildProcess
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-      mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdUv.run(
-        [],
-        { url: import.meta.url },
-        { parentName: 'socket' },
-      )
-      setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
-      await runPromise
-      expect(mockMeowOrExit).toHaveBeenCalled()
+  afterEach(() => {
+    vi.restoreAllMocks()
+    process.exitCode = undefined
+  })
+  it('retains command metadata', () => {
+    expect(cmdUv).toMatchObject({
+      description: 'Run uv with Socket Firewall security',
+      hidden: false,
+      run: expect.any(Function),
     })
   })
-
-  describe('run', () => {
-    it('should call meowOrExit with correct config', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue(['pip', 'install', 'flask'])
-
-      const runPromise = cmdUv.run(
-        ['pip', 'install', 'flask'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
-
-      // Simulate successful exit.
-      setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
-
-      await runPromise
-
-      expect(mockMeowOrExit).toHaveBeenCalledWith({
-        argv: ['pip', 'install', 'flask'],
-        config: expect.objectContaining({
-          commandName: 'uv',
-          description: 'Run uv with Socket Firewall security',
-          hidden: false,
-        }),
-        importMeta: { url: import.meta.url },
-        parentName: 'socket',
-      })
+  it.each([
+    [],
+    ['install', 'example-package'],
+    ['install', 'example-package@1.2.3'],
+    ['install', '--global', 'example-package'],
+    ['exec', 'example-command'],
+    ['update'],
+    ['list'],
+    ['freeze'],
+    ['uninstall', 'example-package'],
+    ['install', '-r', 'requirements.txt'],
+    ['install', 'example-one', 'example-two'],
+  ])('forwards child arguments %j', async (...args) => {
+    await cmdUv.run(args, import.meta, context)
+    expect(mocks.run).toHaveBeenCalledWith(['uv', ...args], {
+      stdio: 'inherit',
     })
-
-    it('should forward filtered arguments to spawnSfwDlx', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue(['pip', 'sync'])
-
-      const runPromise = cmdUv.run(
-        ['pip', 'sync', '--config', 'socket.config.json'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
-
-      // Simulate successful exit.
-      setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
-
-      await runPromise
-
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['uv', 'pip', 'sync'], {
-        stdio: 'inherit',
-      })
-    })
-
-    it('should filter out Socket CLI flags', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      const filteredArgs = ['run', 'script.py']
-      mockFilterFlags.mockReturnValue(filteredArgs)
-
-      const runPromise = cmdUv.run(
-        ['run', 'script.py', '--org', 'my-org'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
-
-      // Simulate successful exit.
-      setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
-
-      await runPromise
-
-      expect(mockFilterFlags).toHaveBeenCalled()
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['uv', ...filteredArgs], {
-        stdio: 'inherit',
-      })
-    })
-
-    it('should set default exit code to 1', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue(['pip', 'install', 'flask'])
-
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-
-      process.exitCode = undefined
-
-      void cmdUv.run(
-        ['pip', 'install', 'flask'],
-        { url: import.meta.url } as ImportMeta,
-        {
-          parentName: 'socket',
-        },
-      )
-
-      // Check that exit code was set to 1 before child process exits.
-      await vi.waitFor(() => {
-        expect(process.exitCode).toBe(1)
-      })
-
-      // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
-
-      // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
-
-      expect(mockExit).toHaveBeenCalledWith(0)
-
-      mockExit.mockRestore()
-    })
-
-    it('should handle child process exit with code', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue(['pip', 'install', 'flask'])
-
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-
-      void cmdUv.run(
-        ['pip', 'install', 'flask'],
-        { url: import.meta.url } as ImportMeta,
-        {
-          parentName: 'socket',
-        },
-      )
-
-      // Wait for event listeners to be registered.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
-
-      // Simulate exit with code 0.
-      mockChildProcess.emit('exit', 0, undefined)
-
-      // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
-
-      expect(mockExit).toHaveBeenCalledWith(0)
-
-      mockExit.mockRestore()
-    })
-
-    it('should handle child process exit with signal', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: undefined,
-        signal: 'SIGTERM',
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue(['pip', 'install', 'flask'])
-
-      const mockKill = vi
-        .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as unknown)
-
-      void cmdUv.run(
-        ['pip', 'install', 'flask'],
-        { url: import.meta.url } as ImportMeta,
-        {
-          parentName: 'socket',
-        },
-      )
-
-      // Wait for event listeners to be registered.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
-
-      // Simulate exit with signal.
-      mockChildProcess.emit('exit', undefined, 'SIGTERM')
-
-      // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
-
-      expect(mockKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
-
-      mockKill.mockRestore()
-    })
-
-    it('should handle empty arguments', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue([])
-
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-
-      void cmdUv.run([], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
-
-      // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
-
-      // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
-
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['uv'], { stdio: 'inherit' })
-
-      mockExit.mockRestore()
-    })
-
-    it('should handle context with parentName', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue(['--version'])
-
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-
-      void cmdUv.run(['--version'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
-
-      // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
-
-      // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
-
-      expect(mockMeowOrExit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          parentName: 'socket',
-        }),
-      )
-
-      mockExit.mockRestore()
-    })
+  })
+  it('filters wrapper prefix flags and preserves child configuration', async () => {
+    await cmdUv.run(
+      ['--config', '{}', '--no-banner', 'install', '--config', 'child.json'],
+      import.meta,
+      context,
+    )
+    expect(mocks.run).toHaveBeenCalledWith(
+      ['uv', 'install', '--config', 'child.json'],
+      { stdio: 'inherit' },
+    )
+  })
+  it('forwards child flags without interpreting them as wrapper flags', async () => {
+    await cmdUv.run(['--help', '--version', '--verbose'], import.meta, context)
+    expect(mocks.run).toHaveBeenCalledWith(
+      ['uv', '--help', '--version', '--verbose'],
+      { stdio: 'inherit' },
+    )
+  })
+  it.each([0, 7])('propagates result %s after cleanup', async code => {
+    mocks.run.mockResolvedValue({ code, signal: noChildSignal })
+    await cmdUv.run(['install', 'example-package'], import.meta, context)
+    expect(process.exitCode).toBe(code)
+  })
+  it.each(['SIGTERM', 'SIGINT'] as const)(
+    'propagates %s after cleanup',
+    async signal => {
+      const kill = vi.spyOn(process, 'kill').mockReturnValue(true)
+      mocks.run.mockResolvedValue({ code: noChildExitCode, signal })
+      await cmdUv.run([], import.meta, context)
+      expect(kill).toHaveBeenCalledWith(process.pid, signal)
+    },
+  )
+  it('retains failure status when firewall setup rejects', async () => {
+    mocks.run.mockRejectedValue(new Error('example setup failure'))
+    await expect(cmdUv.run([], import.meta, context)).rejects.toBeInstanceOf(
+      Error,
+    )
+    expect(process.exitCode).toBe(1)
   })
 })

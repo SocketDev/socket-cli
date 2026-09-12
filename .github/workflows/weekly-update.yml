@@ -1,22 +1,8 @@
-name: 🔁 Weekly Update
+name: 🔁 Weekly update
+run-name: Weekly update
 
-# PLAIN workflow — no gh-aw, no ANTHROPIC_API_KEY. The update's judgment legs
-# run on the on-device model through the odai runner (setup-odai provisions
-# Chrome + the cached ~4 GB component; every gap clean-skips on exit 69), so
-# the whole workflow is keyless by construction. The escalation it dispatches
-# when tests go red, get-green, is keyless the same way now — a plain workflow
-# running the deterministic fixer then an odai digest, no gh-aw and no
-# per-repo model key.
-#
-# Two cadences share one workflow, same as before: Monday runs the full
-# weekly update; the daily cron exists for the soaked-exclusion promotion the
-# deterministic chain owns. The weekly run is also the model cache's
-# warm-keeper — Actions caches evict after 7 idle days.
-#
-# The runner script owns the flow (check → deterministic chain → on-device
-# decisions → test → refuse-PR-on-red): scripts/fleet/weekly-update.mts.
-# This workflow owns only the CI plumbing around it: branch, push via the
-# release App token, PR creation, get-green dispatch.
+# The runner applies dependency updates, installs, and fixes before PR creation.
+# The PR App push starts downstream CI, which runs the required tests.
 
 on:
   schedule:
@@ -35,7 +21,7 @@ concurrency:
 
 jobs:
   check-updates:
-    name: 🔎 Check for updates
+    name: Check for updates
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -63,18 +49,22 @@ jobs:
           fi
           git checkout -q --detach FETCH_HEAD
 
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Authorizes a thin member's bundle download during install. Both
-          # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
 
       # The runner script IS the gate: exit 0 = actionable drift, 1 = no-op.
       - name: Run the check-updates gate
         id: gate
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           ACTIONABLE='true'
@@ -85,7 +75,7 @@ jobs:
           echo "actionable=${ACTIONABLE}" >> "$GITHUB_OUTPUT"
 
   update:
-    name: ✨ Update with on-device decisions
+    name: Update dependencies
     needs: check-updates
     if: ${{ needs.check-updates.outputs.actionable == 'true' }}
     runs-on: ubuntu-latest
@@ -115,61 +105,95 @@ jobs:
           fi
           git checkout -q --detach FETCH_HEAD
 
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Authorizes a thin member's bundle download during install. Both
-          # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
 
       # Provision the on-device model (fail-open: ready=false just means the
       # decision leg clean-skips and the run stays deterministic-only).
-      - uses: ./.github/actions/fleet/setup-odai
+      - name: 'Set up odai'
+        uses: ./.github/actions/fleet/setup-odai
+        with:
+          allow-fill: 'false'
         id: odai
 
-      # The runner: deterministic chain + on-device decisions + tests. The
-      # keyed fallback never engages in CI (no Claude CLI, no key). The script
-      # refuses PR work itself on red tests and exits 1, failing this step
-      # loudly.
-      #
-      # ONE long-lived branch, rebuilt from origin/main every run. A dated
-      # branch per run meant a new PR per run: three were open at once, each
-      # going stale behind main, each needing its own review. Resetting the
-      # same branch onto main is a rebase by construction — the PR always shows
-      # "current main plus the updates available today", never a merge conflict
-      # and never a stack of near-duplicates. What each run DID is recorded in
-      # the PR body instead (see the dated <details> blocks below).
       - name: Run the weekly update
         shell: bash
         env:
           # Env-var indirection: expanding the expression inside `run:` is the
           # template-injection shape zizmor blocks.
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GITHUB_TOKEN: ${{ github.token }}
           ODAI_READY: ${{ steps.odai.outputs.ready }}
+          SERVER_URL: ${{ github.server_url }}
         run: |
           set -euo pipefail
           echo "on-device model ready: ${ODAI_READY}"
-          git fetch --quiet origin "${DEFAULT_BRANCH}"
+          AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --quiet origin "${DEFAULT_BRANCH}"
+          if git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" ls-remote --exit-code --heads origin refs/heads/weekly-update >/dev/null; then
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --quiet origin +refs/heads/weekly-update:refs/remotes/origin/weekly-update
+          else
+            FETCH_STATUS=$?
+            if [ "${FETCH_STATUS}" != 2 ]; then exit "${FETCH_STATUS}"; fi
+          fi
           git checkout -B weekly-update "origin/${DEFAULT_BRANCH}"
           git config --local user.name 'socket-release-app[bot]'
           git config --local user.email 'socket-release-app[bot]@users.noreply.github.com'
           node scripts/fleet/weekly-update.mts
 
-      # Push + PR only after the runner passed its own tests. The release
-      # App token carries the write grant; the default GITHUB_TOKEN stays
-      # read-only for every earlier step.
-      - name: Mint release App token
-        id: release-app
-        uses: ./.github/actions/fleet/github-release-app-token
+      - name: 'Mint PR token'
+        id: pr-app
+        uses: ./.github/actions/fleet/github-pr-app-token
         with:
-          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
-          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Commit update fixes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.pr-app.outputs.token }}
+          BASE: ${{ github.event.repository.default_branch }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "$(git branch --show-current)" != weekly-update ]; then
+            echo "Refusing to commit outside the weekly-update branch." >&2
+            exit 1
+          fi
+          git add --all
+          node scripts/fleet/github/commit.mts \
+            --parent "origin/${BASE}" --branch weekly-update --repo "${REPOSITORY}" \
+            --message 'chore(deps): apply weekly update fixes'
+
+      - name: Ensure dependency labels
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.pr-app.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          LABELS="$(gh api --paginate "repos/${REPOSITORY}/labels?per_page=100" --jq '.[].name')"
+          if ! printf '%s\n' "$LABELS" | grep -Fxi dependencies >/dev/null; then
+            gh label create dependencies --repo "$REPOSITORY" \
+              --color 0366d6 --description 'Dependency updates'
+          fi
+          if ! printf '%s\n' "$LABELS" | grep -Fxi automation >/dev/null; then
+            gh label create automation --repo "$REPOSITORY" \
+              --color 1d76db --description 'Automated maintenance'
+          fi
 
       - name: Push the branch and open or refresh the PR
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          GH_TOKEN: ${{ steps.pr-app.outputs.token }}
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
           BASE: ${{ github.event.repository.default_branch }}
@@ -262,13 +286,3 @@ jobs:
                   --comment "Superseded by #${NUMBER}, the rolling dependency PR. Updates now land on one long-lived \`${BRANCH}\` branch, rebuilt from \`${BASE}\` each run, with every run recorded as a dated fold in that PR body." \
                   && echo "closed superseded PR #${OLD}." || true
               done
-
-          # Merge itself once required checks pass. Auto-merge is a no-op if the
-          # repo has it disabled, so this never hard-fails the run.
-          gh pr merge "${BRANCH}" --repo "${REPOSITORY}" --auto --squash 2>/dev/null \
-            && echo "auto-merge enabled." \
-            || echo "auto-merge unavailable (repo setting) — leaving for manual merge."
-
-      # Red tests already failed the run step above; this dispatch step then
-      # never runs. A follow-up wiring pass may dispatch get-green from the
-      # failure path once its keyless assist lands.

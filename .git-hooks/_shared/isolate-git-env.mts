@@ -26,21 +26,7 @@
  */
 
 import process from 'node:process'
-
-// The git discovery + context vars that override cwd-based repo resolution.
-// Stripping them forces every `git` spawn to resolve from its own cwd, which
-// is what prevents a tmp-fixture's writes from escaping onto the live repo.
-const LEAKY_GIT_VARS: readonly string[] = [
-  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
-  'GIT_CEILING_DIRECTORIES',
-  'GIT_COMMON_DIR',
-  'GIT_DIR',
-  'GIT_INDEX_FILE',
-  'GIT_NAMESPACE',
-  'GIT_OBJECT_DIRECTORY',
-  'GIT_PREFIX',
-  'GIT_WORK_TREE',
-]
+import { GIT_CONTEXT_VARS } from './git-context-vars.mts'
 
 export interface IsolateGitEnvOptions {
   /**
@@ -58,8 +44,8 @@ export interface IsolateGitEnvOptions {
  * files to `/dev/null`. Idempotent — safe to call or import more than once.
  */
 export function isolateGitEnv(options: IsolateGitEnvOptions = {}): void {
-  for (let i = 0, { length } = LEAKY_GIT_VARS; i < length; i += 1) {
-    delete process.env[LEAKY_GIT_VARS[i]!]
+  for (let i = 0, { length } = GIT_CONTEXT_VARS; i < length; i += 1) {
+    delete process.env[GIT_CONTEXT_VARS[i]!]
   }
   if (options.pinConfigToNull) {
     process.env['GIT_CONFIG_GLOBAL'] = '/dev/null'

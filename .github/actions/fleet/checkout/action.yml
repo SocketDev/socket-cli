@@ -6,7 +6,7 @@
 # Checkout is INLINE git-fetch here — no third-party actions/checkout@sha: git
 # init + a non-persisting auth-header fetch + checkout FETCH_HEAD, covering the
 # ref / working-directory / fetch-depth / persist-credentials=false inputs and
-# the pull_request merge ref (github.ref is refs/pull/<N>/merge on a PR). Two
+# the pull_request merge commit (github.sha on a PR). Two
 # forms of the same shape exist: this composite (used once the workspace is
 # populated) and an inline `run:` bootstrap in a job's FIRST step — that step
 # cannot call this local composite, since nothing is checked out yet for GitHub
@@ -20,6 +20,10 @@ name: 'Checkout'
 description: 'Checkout repository with sensible defaults (fetch-depth 25, persist-credentials false)'
 
 inputs:
+  checkout:
+    description: 'Fetch the requested commit; false preserves the verified checkout and hydrates its payload'
+    required: false
+    default: 'true'
   fetch-depth:
     # 25 is a CI-speed heuristic: deeper than any git operation fleet CI
     # performs (version-bump scans, changed-file walks, PR base-ref diffs)
@@ -29,7 +33,7 @@ inputs:
     required: false
     default: '25'
   ref:
-    description: 'Git ref to checkout'
+    description: 'Git ref to checkout (defaults to the event commit)'
     required: false
     default: ''
   working-directory:
@@ -38,19 +42,15 @@ inputs:
     default: '.'
   payload-token-client-id:
     description: >-
-      Client ID of the GitHub App that mints the fleet-pack-distribution read-only
-      payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default)
-      skips the mint: a non-thin member's payload is already present, so
-      "Detect thin fleet payload" below never asks for a token. A thin member
-      sets this so the early hydration below can authenticate the
-      `gh release download` fallback if the anonymous GHCR pull fails.
+      Existing PR App Client ID. Pass vars.SOCKET_PR_CLIENT_ID. The optional
+      private release fallback mints only when both credentials are present.
+      Public GHCR hydration remains anonymous.
     required: false
     default: ''
   payload-token-private-key:
     description: >-
-      Private key of the payload-token GitHub App — pass
-      secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY. Only consumed when
-      payload-token-client-id is set AND hydration is needed.
+      Existing PR App private key. Pass secrets.SOCKET_PR_APP_PRIVATE_KEY.
+      An absent key skips the optional mint and leaves public GHCR available.
     required: false
     default: ''
 
@@ -58,12 +58,14 @@ runs:
   using: 'composite'
   steps:
     - name: Clear git extraheader config
+      if: inputs.checkout == 'true'
       shell: bash
       run: |
         # Clear any extraheader config that may cause duplicate Authorization headers.
         git config --global --unset-all "http.https://github.com/.extraheader" 2>/dev/null || true
 
     - name: Checkout code
+      if: inputs.checkout == 'true'
       shell: bash
       env:
         # Route every workflow-context value through env so no ${{ }} expands
@@ -76,9 +78,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         SERVER_URL: ${{ github.server_url }}
         REPOSITORY: ${{ github.repository }}
-        # github.ref is the triggering ref — on a pull_request it is the merge
-        # ref refs/pull/<N>/merge, so this also covers the PR-merge case.
-        TRIGGER_REF: ${{ github.ref }}
+        TRIGGER_REF: ${{ github.sha }}
       run: |
         set -euo pipefail
         DEST="${CHECKOUT_DEST:-.}"
@@ -91,7 +91,7 @@ runs:
         git config --local advice.detachedHead false
         git remote remove origin 2>/dev/null || true
         git remote add origin "${SERVER_URL}/${REPOSITORY}"
-        # Explicit inputs.ref wins; otherwise the triggering ref.
+        # Explicit inputs.ref wins; otherwise the event commit.
         FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
         # fetch-depth 0 = full history + tags; >0 = shallow, tag-free (CI speed).
         if [ "${CHECKOUT_FETCH_DEPTH}" = "0" ]; then
@@ -135,20 +135,8 @@ runs:
         fi
 
     - name: Detect thin fleet payload
-      # A THIN member's whole scripts/fleet/** payload ships ONLY via the
-      # release bundle. Without the hydration below, it lands no earlier than
-      # `pnpm install`'s `prepare` lifecycle — several steps after this one —
-      # so every reader in between ("Install zizmor" below, SFW's own install
-      # manifest, and whichever reader turns out to be next) would fail
-      # against a tree that genuinely lacks it.
-      #
-      # Detect that state ONCE, from the two signals that together mean
-      # "thin member, not yet hydrated": the payload's own anchor file is
-      # missing, AND the dep-0 fetcher that can hydrate it is present — proof
-      # this member is wired for thin distribution at all. A non-thin member
-      # (payload already present) and a member carrying no fetcher (a
-      # packaging bug, caught by "Install zizmor"'s own hard-fail below) both
-      # read `needed=false`, so the mint + hydrate steps that follow no-op.
+      # Producers refresh from the checked-out template even when a previous
+      # revision left payload files. Consumers hydrate only a missing payload.
       id: detect-hydration
       shell: bash
       env:
@@ -157,8 +145,9 @@ runs:
         set -euo pipefail
         DEST="${CHECKOUT_DEST:-.}"
         NEEDED=false
-        if [ ! -f "${DEST}/scripts/fleet/setup/external-tools.json" ] \
-          && [ -f "${DEST}/scripts/repo/bootstrap/fleet.mjs" ]; then
+        if [ -f "${DEST}/scripts/repo/bootstrap/fleet.mjs" ] \
+          && { [ -d "${DEST}/template/base/universal" ] \
+            || [ ! -f "${DEST}/scripts/fleet/setup/external-tools.json" ]; }; then
           NEEDED=true
         fi
         echo "needed=${NEEDED}" >> "${GITHUB_OUTPUT}"
@@ -166,13 +155,13 @@ runs:
     - name: Mint fleet payload read token
       # Scoped contents:read mint for the hydration fetch below. Gated on
       # BOTH hydration actually being needed AND the caller having provisioned
-      # the payload App credentials, so a non-thin checkout — most callers of
+      # the PR App credentials, so a non-thin checkout — most callers of
       # this action — never mints a token it has no use for. Mirrors
       # setup-and-install's own later mint (for the `pnpm install`-time
       # fetch), scoped identically (contents:read on the wheelhouse repo
       # alone) — see github-payload-app-token's own description.
       id: payload-token
-      if: steps.detect-hydration.outputs.needed == 'true' && inputs.payload-token-client-id != ''
+      if: steps.detect-hydration.outputs.needed == 'true' && inputs.payload-token-client-id != '' && inputs.payload-token-private-key != ''
       uses: ./.github/actions/fleet/github-payload-app-token
       with:
         client-id: ${{ inputs.payload-token-client-id }}
@@ -279,7 +268,6 @@ runs:
         NS="tools"
         node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
         ZIZMOR_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS zizmor version)"
-        ZIZMOR_DIR="${RUNNER_TEMP:-/tmp}/zizmor-bin"
         # zizmor upstream does NOT publish musl or win-arm64 binaries
         # — see external-tools.json zizmor._notes. On those platforms
         # we gracefully skip the install (below) and stash a sentinel
@@ -308,15 +296,15 @@ runs:
           exit 0
         fi
         INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS zizmor platforms "$PLATFORM_KEY" integrity)"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
+        ZIZMOR_URL="https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/${ASSET}"
+        ZIZMOR_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/zizmor-bin" "$ZIZMOR_URL" "$INTEGRITY")"
         ZIZMOR_BIN="$ZIZMOR_DIR/zizmor"
         [[ "$ASSET" == *.zip ]] && ZIZMOR_BIN="$ZIZMOR_DIR/zizmor.exe"
-        # Shared installer: fetches, integrity-verifies (SRI), extracts.
-        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
+        node "$INSTALL_TOOL" "$ZIZMOR_URL" "$INTEGRITY" "$ZIZMOR_DIR" --cache
         if [ ! -x "$ZIZMOR_BIN" ]; then
-          node "$INSTALL_TOOL" \
-            "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/${ASSET}" \
-            "$INTEGRITY" \
-            "$ZIZMOR_DIR"
+          echo "Zizmor install failed at $ZIZMOR_BIN: expected the verified executable. Check the pinned release asset." >&2
+          exit 1
         fi
         echo "$ZIZMOR_DIR" >> "${GITHUB_PATH:-/dev/null}"
         # Export canonical zizmor provenance in the shared SOCKET_TOOL_*
