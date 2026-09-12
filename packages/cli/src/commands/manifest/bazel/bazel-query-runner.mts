@@ -7,9 +7,6 @@ import type { RepoProbe } from './bazel-repo-discovery.mts'
 const logger = getDefaultLogger()
 
 export type BazelQueryOptions = {
-  bin: string
-  cwd: string
-  invocationFlags: string[]
   bazelRc?: string | undefined
   bazelFlags?: string | undefined
   bazelOutputBase?: string | undefined
@@ -22,6 +19,12 @@ export type BazelQueryOptions = {
   outputUserRoot?: string | undefined
   env?: NodeJS.ProcessEnv | undefined
   verbose?: boolean | undefined
+} & BazelQueryRequired
+
+export type BazelQueryRequired = {
+  bin: string
+  cwd: string
+  invocationFlags: string[]
 }
 
 export type BazelQueryResult = {
@@ -154,7 +157,12 @@ export function buildMavenProbeFor(config: BazelQueryOptions): RepoProbe {
       config,
       `bazel cquery probe @${repoName}`,
     )
-    return { code: result.code, stderr: result.stderr, stdout: result.stdout }
+    return {
+      __proto__: null,
+      code: result.code,
+      stderr: result.stderr,
+      stdout: result.stdout,
+    }
   }
 }
 
@@ -169,7 +177,12 @@ export function buildPypiProbeFor(config: BazelQueryOptions): RepoProbe {
   return async (hubName: string) => {
     const queryStr = `@${hubName}//...`
     const result = await runBazelQuery(queryStr, config)
-    return { code: result.code, stderr: result.stderr, stdout: result.stdout }
+    return {
+      __proto__: null,
+      code: result.code,
+      stderr: result.stderr,
+      stdout: result.stdout,
+    }
   }
 }
 
