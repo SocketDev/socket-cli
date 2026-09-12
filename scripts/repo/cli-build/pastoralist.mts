@@ -20,12 +20,12 @@ export async function copyPastoralistAssets(
   packageRoot: string,
   options: CopyPastoralistAssetsOptions = {},
 ): Promise<string[]> {
-  const { sourceEntry: configuredSourceEntry } = {
+  const opts = {
     __proto__: null,
     ...options,
-  }
+  } as CopyPastoralistAssetsOptions
   const sourceEntry =
-    configuredSourceEntry ?? fileURLToPath(import.meta.resolve('pastoralist'))
+    opts.sourceEntry ?? fileURLToPath(import.meta.resolve('pastoralist'))
   const sourceDist = path.dirname(sourceEntry)
   const sourcePackage = path.dirname(sourceDist)
   const destination = path.join(packageRoot, 'dist', 'pastoralist')
