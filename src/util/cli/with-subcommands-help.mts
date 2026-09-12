@@ -20,6 +20,7 @@
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
+import { NPM } from '@socketsecurity/lib-stable/constants/package-managers'
 import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 
@@ -28,7 +29,6 @@ import {
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../constants/cli.mts'
-import { NPM } from '../../constants/agents.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { socketPackageLink } from '../terminal/link.mts'

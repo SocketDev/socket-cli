@@ -16,7 +16,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'raw-npx'
 
-const description = 'Run pnpm exec without the Socket wrapper'
+const description = 'Run npm exec without the Socket wrapper'
 
 const hidden = false
 

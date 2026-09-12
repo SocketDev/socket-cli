@@ -30,7 +30,7 @@ describe('npx firewall integration', () => {
   })
   it('retains command metadata', () => {
     expect(cmdNpx).toMatchObject({
-      description: 'Run pnpm exec with Socket Firewall security',
+      description: 'Run npm exec with Socket Firewall security',
       hidden: false,
       run: expect.any(Function),
     })
