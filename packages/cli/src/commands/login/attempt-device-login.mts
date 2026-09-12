@@ -9,6 +9,7 @@ import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { isUrl } from '@socketsecurity/lib-stable/url/predicates'
 
@@ -111,12 +112,13 @@ export async function attemptDeviceLogin(
   let deviceAuth: DeviceAuthorizationResponse
   try {
     spinner?.start('Requesting a device code from Socket…')
-    deviceAuth = await postForm<DeviceAuthorizationResponse>(
+    deviceAuth = await postForm(
       deviceAuthorizationUrl,
       new URLSearchParams({
         client_id: clientId,
         scope: DEFAULT_DEVICE_LOGIN_SCOPES,
       }),
+      parseDeviceAuthorizationResponse,
       effectiveApiProxy,
     )
     spinner?.successAndStop('Requested a device code from Socket')
@@ -173,6 +175,53 @@ export async function attemptDeviceLogin(
   })
 }
 
+export function parseDeviceAuthorizationResponse(
+  value: unknown,
+): DeviceAuthorizationResponse {
+  if (
+    !isObject(value) ||
+    typeof value['device_code'] !== 'string' ||
+    typeof value['user_code'] !== 'string' ||
+    typeof value['verification_uri'] !== 'string' ||
+    typeof value['verification_uri_complete'] !== 'string' ||
+    typeof value['expires_in'] !== 'number' ||
+    (value['interval'] !== undefined && typeof value['interval'] !== 'number')
+  ) {
+    throw new DeviceLoginError('invalid_response')
+  }
+  return {
+    device_code: value['device_code'],
+    user_code: value['user_code'],
+    verification_uri: value['verification_uri'],
+    verification_uri_complete: value['verification_uri_complete'],
+    expires_in: value['expires_in'],
+    interval: value['interval'],
+  }
+}
+
+export function parseDeviceTokenSuccessResponse(
+  value: unknown,
+): DeviceTokenSuccessResponse {
+  if (
+    !isObject(value) ||
+    typeof value['access_token'] !== 'string' ||
+    typeof value['token_type'] !== 'string' ||
+    typeof value['expires_in'] !== 'number' ||
+    (value['refresh_token'] !== undefined &&
+      typeof value['refresh_token'] !== 'string') ||
+    (value['scope'] !== undefined && typeof value['scope'] !== 'string')
+  ) {
+    throw new DeviceLoginError('invalid_response')
+  }
+  return {
+    access_token: value['access_token'],
+    token_type: value['token_type'],
+    expires_in: value['expires_in'],
+    refresh_token: value['refresh_token'],
+    scope: value['scope'],
+  }
+}
+
 export async function pollForDeviceToken(
   tokenUrl: URL,
   clientId: string,
@@ -195,13 +244,14 @@ export async function pollForDeviceToken(
     await sleep(currentInterval * 1000)
 
     try {
-      return await postForm<DeviceTokenSuccessResponse>(
+      return await postForm(
         tokenUrl,
         new URLSearchParams({
           grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
           client_id: clientId,
           device_code: deviceCode,
         }),
+        parseDeviceTokenSuccessResponse,
         apiProxy,
       )
     } catch (e) {
@@ -224,6 +274,7 @@ export async function pollForDeviceToken(
 export async function postForm<T>(
   url: URL,
   body: URLSearchParams,
+  parse: (value: unknown) => T,
   apiProxy?: string | undefined,
 ): Promise<T> {
   const response: HttpResponse | { status: number; text: () => string } =
@@ -235,18 +286,17 @@ export async function postForm<T>(
           method: 'POST',
         })
   const parsed: unknown = JSON.parse(response.text())
-  const json = (
-    parsed !== null && typeof parsed === 'object' ? parsed : {}
-  ) as Record<string, unknown>
+  const json = isObject(parsed) ? parsed : {}
   if (response.status < 200 || response.status >= 300) {
+    const oauthError = json['error']
     throw new DeviceLoginError(
-      String(json['error'] ?? 'unknown_error'),
+      typeof oauthError === 'string' ? oauthError : 'unknown_error',
       typeof json['error_description'] === 'string'
         ? json['error_description']
         : undefined,
     )
   }
-  return json as T
+  return parse(json)
 }
 
 /**

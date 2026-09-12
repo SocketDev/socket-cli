@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   trust: vi.fn(),
   store: vi.fn(),
 }))
+const mockStdoutWrite = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/firewall/config.mts'), () => ({
   readFirewallConfig: mocks.config,
 }))
@@ -28,7 +29,10 @@ vi.mock(import('../../../../src/util/firewall/ca-trust.mts'), () => ({
 }))
 beforeEach(() => {
   vi.resetAllMocks()
-  vi.spyOn(process.stdout, 'write').mockReturnValue(true)
+  mockStdoutWrite.mockReturnValue(true)
+  vi.spyOn(process.stdout, 'write').mockImplementation((...args) =>
+    mockStdoutWrite(...args),
+  )
   mocks.config.mockResolvedValue({ caDirectory: '/example' })
   mocks.ensure.mockResolvedValue({
     certificatePath: '/example/ca.crt',
@@ -53,15 +57,16 @@ describe('firewall CA command', () => {
     await runFirewallCaCommand(['init', '--json'])
     expect(mocks.ensure).toHaveBeenCalledWith({ directory: '/example' })
     expect(mocks.rotate).not.toHaveBeenCalled()
-    expect(
-      JSON.parse(vi.mocked(process.stdout.write).mock.calls[0]![0] as string),
-    ).toEqual({ command: 'init', certificatePath: '/example/ca.crt' })
+    expect(JSON.parse(mockStdoutWrite.mock.calls[0]![0] as string)).toEqual({
+      command: 'init',
+      certificatePath: '/example/ca.crt',
+    })
   })
   it('rotates only on explicit force and reports the backup', async () => {
     await runFirewallCaCommand(['init', '--force'])
     expect(mocks.rotate).toHaveBeenCalledWith({ directory: '/example' })
     expect(mocks.ensure).not.toHaveBeenCalled()
-    expect(process.stdout.write).toHaveBeenCalledWith(
+    expect(mockStdoutWrite).toHaveBeenCalledWith(
       expect.stringContaining('/example/backup'),
     )
   })
@@ -72,7 +77,7 @@ describe('firewall CA command', () => {
       keyPath: '/example/ca.key',
     })
     expect(mocks.ensure).not.toHaveBeenCalled()
-    expect(process.stdout.write).toHaveBeenCalledWith('/example/ca.crt\n')
+    expect(mockStdoutWrite).toHaveBeenCalledWith('/example/ca.crt\n')
   })
   it('uses externally configured paths and refuses their rotation', async () => {
     mocks.config.mockResolvedValue({
@@ -123,7 +128,7 @@ describe('firewall CA command', () => {
     async ({ args }) => {
       await runFirewallCaCommand(args)
       expect(mocks.config).not.toHaveBeenCalled()
-      expect(process.stdout.write).toHaveBeenCalled()
+      expect(mockStdoutWrite).toHaveBeenCalled()
     },
   )
 })

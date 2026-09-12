@@ -44,7 +44,8 @@ function readLeafAuthorityIdentifier(
   const sequence = forge.asn1.fromDer(extension.value)
   const identifier = (sequence.value as forge.asn1.Asn1[]).find(
     item =>
-      item.tagClass === forge.asn1.Class.CONTEXT_SPECIFIC && item.type === 0,
+      item.tagClass === forge.asn1.Class.CONTEXT_SPECIFIC &&
+      item.type === forge.asn1.Type.NONE,
   )
   return forge.util.bytesToHex(identifier!.value as string)
 }

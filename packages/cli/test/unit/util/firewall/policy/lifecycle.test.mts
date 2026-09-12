@@ -62,7 +62,13 @@ describe('firewall policy lifecycle', () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockImplementation(async url => {
-        const purl = decodeURIComponent(String(url).split('/purl/')[1]!)
+        const requestUrl =
+          typeof url === 'string'
+            ? url
+            : url instanceof URL
+              ? url.href
+              : url.url
+        const purl = decodeURIComponent(requestUrl.split('/purl/')[1]!)
         return responseForVersion(purl.split('@')[1]!)
       })
     const policy = createFirewallPolicy({ fetch, cacheCapacity: 2 })
