@@ -169,6 +169,13 @@ export function parseCqueryJsonproto(
   if (!stdout.trim()) {
     return { artifacts: [], unresolvedLabels: [] }
   }
+  const records = parseTargetsToRawArtifactRecords(
+    parseJsonprotoOutputTargets(stdout),
+  )
+  return resolveArtifactRecords(records, repoName, workspaceRelPath)
+}
+
+export function parseJsonprotoOutputTargets(stdout: string): JsonprotoTarget[] {
   // Bazel 5+ emits a single JSON envelope; older versions stream one target
   // per line. Try envelope-first, then fall back to per-line.
   const targets: JsonprotoTarget[] = []
@@ -187,24 +194,34 @@ export function parseCqueryJsonproto(
     // Fall through to per-line scanning.
   }
   if (!targets.length) {
-    // Line separator tolerant of Windows CRLF output.
-    const lines = stdout.split(/\r?\n/)
-    for (let i = 0, { length } = lines; i < length; i += 1) {
-      const trimmed = lines[i]!.trim()
-      if (!trimmed) {
-        continue
+    targets.push(...parseJsonprotoStreamTargets(stdout))
+  }
+  return targets
+}
+
+export function parseJsonprotoStreamTargets(stdout: string): JsonprotoTarget[] {
+  const targets: JsonprotoTarget[] = []
+  const lines = stdout.split(/\r?\n/)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const trimmed = lines[i]!.trim()
+    if (!trimmed) {
+      continue
+    }
+    try {
+      const parsed = JSON.parse(trimmed) as JsonprotoTarget
+      if (parsed?.rule) {
+        targets.push(parsed)
       }
-      try {
-        const parsed = JSON.parse(trimmed) as JsonprotoTarget
-        if (parsed?.rule) {
-          targets.push(parsed)
-        }
-      } catch {
-        // Skip malformed lines.
-      }
+    } catch {
+      // Skip malformed lines.
     }
   }
-  // First pass: collect coordinate-bearing rules with their raw edge labels.
+  return targets
+}
+
+export function parseTargetsToRawArtifactRecords(
+  targets: JsonprotoTarget[],
+): RawArtifactRecord[] {
   const records: RawArtifactRecord[] = []
   for (let i = 0, { length } = targets; i < length; i += 1) {
     const target = targets[i]!
@@ -227,34 +244,7 @@ export function parseCqueryJsonproto(
       ruleName: ruleNameFromLabel(rule.name),
     })
   }
-  // Second pass: resolve edge labels against this repo's own targets.
-  const index = buildLabelCoordIndex(records)
-  const provenance = workspaceRelPath
-    ? `${workspaceRelPath}:${repoName}`
-    : repoName
-  const out: ExtractedArtifact[] = []
-  const unresolved = new Set<string>()
-  for (let i = 0, { length } = records; i < length; i += 1) {
-    const rec = records[i]!
-    const deps = new Set<string>()
-    for (let j = 0, edgeCount = rec.edgeLabels.length; j < edgeCount; j += 1) {
-      const label = rec.edgeLabels[j]!
-      const resolution = resolveDepLabel(label, index)
-      if (resolution.kind === 'coord') {
-        deps.add(resolution.coord)
-      } else if (resolution.kind === 'unresolved') {
-        unresolved.add(label)
-      }
-    }
-    out.push({
-      deps: [...deps],
-      mavenCoordinates: rec.coord,
-      ruleKind: rec.ruleKind,
-      ruleName: rec.ruleName,
-      sourceRepo: provenance,
-    })
-  }
-  return { artifacts: out, unresolvedLabels: [...unresolved] }
+  return records
 }
 
 // Reads a `LABEL_LIST` jsonproto attribute. Bazel serializes label lists into
@@ -345,6 +335,40 @@ export function repoPrefixOfLabel(label: string): string | undefined {
     return undefined
   }
   return label.slice(0, sep + 2)
+}
+
+export function resolveArtifactRecords(
+  records: RawArtifactRecord[],
+  repoName: string,
+  workspaceRelPath: string,
+): ParseCqueryResult {
+  const index = buildLabelCoordIndex(records)
+  const provenance = workspaceRelPath
+    ? `${workspaceRelPath}:${repoName}`
+    : repoName
+  const out: ExtractedArtifact[] = []
+  const unresolved = new Set<string>()
+  for (let i = 0, { length } = records; i < length; i += 1) {
+    const rec = records[i]!
+    const deps = new Set<string>()
+    for (let j = 0, edgeCount = rec.edgeLabels.length; j < edgeCount; j += 1) {
+      const label = rec.edgeLabels[j]!
+      const resolution = resolveDepLabel(label, index)
+      if (resolution.kind === 'coord') {
+        deps.add(resolution.coord)
+      } else if (resolution.kind === 'unresolved') {
+        unresolved.add(label)
+      }
+    }
+    out.push({
+      deps: [...deps],
+      mavenCoordinates: rec.coord,
+      ruleKind: rec.ruleKind,
+      ruleName: rec.ruleName,
+      sourceRepo: provenance,
+    })
+  }
+  return { artifacts: out, unresolvedLabels: [...unresolved] }
 }
 
 export type DepResolution =
