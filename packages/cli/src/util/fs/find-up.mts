@@ -69,7 +69,7 @@ export async function matchesFindUpEntry(
     | { onlyDirectories?: boolean | undefined; onlyFiles?: boolean | undefined }
     | undefined,
 ): Promise<boolean> {
-  const opts = { __proto__: null, ...options } as typeof options
+  const opts = { __proto__: null, ...options }
   try {
     // oxlint-disable-next-line socket/prefer-exists-sync -- stat type.
     const stats = await fs.stat(candidatePath)

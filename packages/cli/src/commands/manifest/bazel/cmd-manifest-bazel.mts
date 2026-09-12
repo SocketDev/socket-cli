@@ -373,7 +373,7 @@ export async function run(
           cwd,
           out: out as string,
           perRepoTimeoutMs: perRepoTimeout,
-          verbose: verbose,
+          verbose: Boolean(verbose),
         })
         outcomes.push({
           complete: result.complete,
@@ -389,7 +389,7 @@ export async function run(
           bin: bazel as string | undefined,
           cwd,
           out: out as string,
-          verbose: verbose,
+          verbose: Boolean(verbose),
         })
         outcomes.push({ ecosystem: 'pypi', ...pypiOutcome(result) })
       }

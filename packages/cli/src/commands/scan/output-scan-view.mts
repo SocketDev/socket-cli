@@ -79,13 +79,7 @@ export async function outputScanView(
     }
   })
 
-  const md = mdTable(display as Array<Record<string, string>>, [
-    'type',
-    'version',
-    'name',
-    'author',
-    'score',
-  ])
+  const md = mdTable(display, ['type', 'version', 'name', 'author', 'score'])
 
   const report = `${`
 # Scan Details

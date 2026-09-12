@@ -3,10 +3,10 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { strictDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { checkCiEnvVars, getCiEnvInstructions } from './env-helpers.mts'
+import { strictDelete } from '../../util/fs/strict-delete.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
 
@@ -91,19 +91,11 @@ export async function runLocalCoanaFix(
     applyFixes,
     coanaVersion,
     cwd,
-    debug: debugFlag,
-    disableExternalToolChecks,
-    disableMajorUpdates,
-    ecosystems,
     exclude,
     excludePaths,
     ghsas,
-    include,
-    minimumReleaseAge,
-    packageManagers,
     outputFile,
     prLimit,
-    showAffectedDirectDependencies,
     spinner,
   } = fixConfig
   // --exclude-paths is the canonical path exclusion; forward it to coana's

@@ -10,10 +10,11 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { safeMkdirSync, strictDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { strictDelete } from '../../util/fs/strict-delete.mts'
 import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import { isReportSupportedFile } from '../../util/fs/glob.mts'
 import { socketHttpRequest } from '../../util/socket/api.mjs'

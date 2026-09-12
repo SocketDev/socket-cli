@@ -7,6 +7,7 @@ import { PackageURL } from '@socketregistry/packageurl-js-stable'
 const PLACEHOLDER_VERSION_ECOSYSTEMS = new Set(['npm', 'pypi'])
 
 export interface PurlName {
+  readonly __proto__: null
   name: string
   namespace: string | undefined
 }

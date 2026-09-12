@@ -45,7 +45,10 @@ export function collectArtifactPurls(artifacts: SocketArtifact[]): Set<string> {
 export function createDedupedArtifact(
   artifact: SocketArtifact,
 ): DedupedArtifact {
-  const alerts = new Map<string, { type: string; severity: string }>()
+  const alerts = new Map<
+    string,
+    { readonly __proto__: null; type: string; severity: string }
+  >()
   addArtifactAlerts(alerts, artifact)
   return {
     __proto__: null,
@@ -242,11 +245,13 @@ export function getAlertString(
 
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
 export interface DedupedArtifact {
+  readonly __proto__: null
   ecosystem: string // artifact.type
   namespace: string
   name: string
   version: string
   score: {
+    readonly __proto__: null
     supplyChain: number
     maintenance: number
     quality: number
@@ -256,6 +261,7 @@ export interface DedupedArtifact {
   alerts: Map<
     string,
     {
+      readonly __proto__: null
       type: string
       severity: string
     }

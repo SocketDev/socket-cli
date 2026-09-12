@@ -45,6 +45,7 @@ export type GQL_MERGE_STATE_STATUS =
 export type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
 
 export type PrMatch = {
+  readonly __proto__: null
   author: string
   baseRefName: string
   headRefName: string
@@ -276,7 +277,9 @@ export type GqlPullRequestsResponse = {
 }
 
 export type ContextualPrMatch = {
+  readonly __proto__: null
   context: {
+    readonly __proto__: null
     apiType: 'graphql' | 'rest'
     cacheKey: string
     data: JsonContent

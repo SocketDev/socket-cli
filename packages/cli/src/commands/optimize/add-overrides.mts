@@ -23,6 +23,7 @@ import {
   getOverridesDataYarnClassic,
 } from './get-overrides-by-agent.mts'
 import { lockSrcIncludes } from './lockfile-includes-by-agent.mts'
+import type { StringKeyValueObject } from '../../types.mts'
 import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateManifest } from './update-manifest-by-agent.mts'
@@ -177,7 +178,7 @@ export async function addOverrides(
               const origDepAlias = depAliasMap.get(origPkgName)
               const sockRegDepAlias = depAliasMap.get(sockRegPkgName)
               const depAlias = sockRegDepAlias ?? origDepAlias
-              const newSpec = await resolveOverrideSpec({
+              const overrideConfig = {
                 __proto__: null,
                 depAlias,
                 major,
@@ -190,7 +191,8 @@ export async function addOverrides(
                 sockRegPkgName,
                 type,
                 version,
-              })
+              }
+              const newSpec = await resolveOverrideSpec(overrideConfig)
               if (newSpec !== oldSpec) {
                 overrides[origPkgName] = newSpec
                 const addedOrUpdated = overrideExists ? 'updated' : 'added'
@@ -276,7 +278,7 @@ export function isValidSocketOverride(spec: string, prefix: string): boolean {
 export interface ResolveOverrideSpecConfig {
   depAlias: string | undefined
   major: number
-  oldSpec: string | undefined
+  oldSpec: string | StringKeyValueObject | undefined
   origPkgName: string
   pin: boolean | undefined
   sockOverridePrefix: string

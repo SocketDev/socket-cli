@@ -234,7 +234,9 @@ const TOOLS = new Map<string, ToolRules>(
         install: ['--silent'],
       },
     },
-  }),
+  }).flatMap(([name, rules]) =>
+    rules === null ? [] : [[name, rules] as const],
+  ),
 )
 
 /**

@@ -26,6 +26,7 @@ export interface AnalyticsFlags {
 }
 
 export interface AnalyticsSelection {
+  readonly __proto__: null
   repoName: string
   scope: string
   time: string

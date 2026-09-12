@@ -110,6 +110,7 @@ export async function discoverGitIgnoreFiles(
   projectIgnoreGlobs: string[],
   ignores: Set<string>,
 ): Promise<{
+  readonly __proto__: null
   gitignoreFiles: Array<{ content: string; dir: string }>
   venvGlobs: string[]
 }> {

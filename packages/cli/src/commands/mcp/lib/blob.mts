@@ -52,6 +52,7 @@ export interface RawBlobResult {
 }
 
 export interface ChunkManifest {
+  readonly __proto__: null
   chunks: string[]
   offsets: number[] | undefined
   totalSize: number

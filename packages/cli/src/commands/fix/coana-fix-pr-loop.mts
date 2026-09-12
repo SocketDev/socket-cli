@@ -20,6 +20,7 @@ import {
   getOctokit,
   setGitRemoteGithubRepoUrl,
 } from '../../util/git/github.mts'
+import type { Pr } from '../../util/git/github.mts'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -260,7 +261,7 @@ export async function runGhsaFixLoop(
   async function recordOpenedPr(
     branch: string,
     ghsaId: string,
-    data: { html_url: string; number: number },
+    data: Pr,
   ): Promise<void> {
     const prRef = `PR #${data.number}`
     logger.success(`Opened ${prRef} for ${ghsaId}.`)

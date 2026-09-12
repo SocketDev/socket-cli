@@ -254,6 +254,7 @@ export function getPackageMinimumVersions(
   minAgentVersion: string,
   minNodeVersion: string,
 ): {
+  readonly __proto__: null
   pkgAgentRange: string | undefined
   pkgNodeRange: string | undefined
   pkgMinAgentVersion: string

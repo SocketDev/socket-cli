@@ -80,7 +80,7 @@ export function collectExportTypes(node: unknown, out: string[]): void {
     return
   }
   if (typeof node === 'object' && node !== null) {
-    const entries = Object.entries<unknown>(node)
+    const entries = Object.entries<unknown>({ ...node })
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const { 0: key, 1: child } = entries[i]!
       if ((key === 'types' || key === 'typings') && typeof child === 'string') {
@@ -130,7 +130,7 @@ export function collectManifestBin(
     typeof bin === 'string'
       ? [bin]
       : typeof bin === 'object' && bin !== null
-        ? Object.values<unknown>(bin)
+        ? Object.values<unknown>({ ...bin })
         : []
   for (let i = 0, { length } = values; i < length; i += 1) {
     const value = values[i]
@@ -156,7 +156,7 @@ export function collectManifestExports(
   ) {
     return
   }
-  const entries = Object.entries<unknown>(exportsField)
+  const entries = Object.entries<unknown>({ ...exportsField })
   if (!entries.some(({ 0: key }) => key.startsWith('.'))) {
     walkExports(exportsField, 'main', out, seen)
     return
@@ -296,7 +296,7 @@ export function parseManifest(raw: string): Manifest | undefined {
   const optionalPeers = new Set<string>()
   const peerMeta = pkg['peerDependenciesMeta']
   if (typeof peerMeta === 'object' && peerMeta !== null) {
-    const entries = Object.entries<unknown>(peerMeta)
+    const entries = Object.entries<unknown>({ ...peerMeta })
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const { 0: peer, 1: cfg } = entries[i]!
       const optional =
@@ -360,7 +360,7 @@ export function walkExports(
     return
   }
   if (typeof node === 'object' && node !== null) {
-    const entries = Object.entries<unknown>(node)
+    const entries = Object.entries<unknown>({ ...node })
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const { 0: key, 1: child } = entries[i]!
       if (key === 'types' || key === 'typings') {

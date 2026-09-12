@@ -28,8 +28,7 @@ export type { GhsaFixResult } from './coana-fix-ci.mts'
 export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixedAll: boolean; ghsaDetails: GhsaFixResult[] }>> {
-  const { all, cwd, excludePaths, ghsas, orgSlug, outputKind, spinner } =
-    fixConfig
+  const { all, cwd, ghsas, orgSlug, outputKind, spinner } = fixConfig
 
   // Under json/markdown mode we route coana's chatter away from our
   // stdout (its JSON report comes from --output-file, not stdout, so
@@ -116,9 +115,13 @@ export async function coanaFix(
   })
 }
 
-export async function prepareCoanaFixScan(
-  fixConfig: FixConfig,
-): Promise<CResult<{ scanFilepaths: string[]; sockSdk: SocketSdk }>> {
+export async function prepareCoanaFixScan(fixConfig: FixConfig): Promise<
+  CResult<{
+    readonly __proto__: null
+    scanFilepaths: string[]
+    sockSdk: SocketSdk
+  }>
+> {
   const { cwd, excludePaths, spinner } = fixConfig
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {

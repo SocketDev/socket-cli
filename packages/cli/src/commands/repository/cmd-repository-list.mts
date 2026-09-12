@@ -213,7 +213,8 @@ export async function run(
   // Re-assert the checkCommandInput guards for the type system — meow's
   // number-typed flags deliver the raw string for garbage input, and the
   // string-typed enum flags accept any string.
-  if (!isRepositoryListSelection({ direction, page, perPage, sort })) {
+  const selection = { direction, page, perPage, sort }
+  if (!isRepositoryListSelection(selection)) {
     return
   }
 
@@ -221,21 +222,21 @@ export async function run(
     outputDryRunFetch('repositories', {
       organization: orgSlug,
       all: all || undefined,
-      sort,
-      direction,
-      page: all ? undefined : page,
-      perPage: all ? undefined : perPage,
+      sort: selection.sort,
+      direction: selection.direction,
+      page: all ? undefined : selection.page,
+      perPage: all ? undefined : selection.perPage,
     })
     return
   }
 
   await handleListRepos({
     all,
-    direction,
+    direction: selection.direction,
     orgSlug,
     outputKind,
-    page,
-    perPage,
-    sort,
+    page: selection.page,
+    perPage: selection.perPage,
+    sort: selection.sort,
   })
 }

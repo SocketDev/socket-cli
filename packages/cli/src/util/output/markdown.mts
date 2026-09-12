@@ -31,7 +31,7 @@
  */
 
 export function getMarkdownColumnWidths(
-  logs: Array<Record<string, string>>,
+  logs: Array<Record<string, unknown>>,
   cols: string[],
   titles: string[],
 ): number[] {
@@ -197,7 +197,7 @@ export function mdSection(
   return `${header}\n\n${body}`
 }
 
-export function mdTable<T extends Array<Record<string, string>>>(
+export function mdTable<T extends Array<Record<string, unknown>>>(
   logs: T,
   // This is saying "an array of strings and the strings are a valid key of elements of T"
   // In turn, T is defined above as the audit log event type from our OpenAPI docs.

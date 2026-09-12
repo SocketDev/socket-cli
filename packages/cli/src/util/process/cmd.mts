@@ -25,6 +25,7 @@ helpFlags.add('-h')
 export function buildFilterFlagSets(
   flagsToFilter: Parameters<typeof filterFlags>[1],
 ): {
+  readonly __proto__: null
   flagsToFilterSet: Set<string>
   flagsWithValueSet: Set<string>
 } {

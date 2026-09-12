@@ -288,7 +288,7 @@ export function parsePypiHubCandidates(
     content: string,
     matcher: RegExp,
     source: PypiHubInfo['source'],
-    mode: PypiHubInfo['mode'],
+    mode: PypiHubInfo['workspaceMode'],
     out: PypiHubCandidate[],
   ): void {
     for (const match of content.matchAll(matcher)) {

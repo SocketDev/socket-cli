@@ -83,7 +83,7 @@ export function checkSfwWrap(root: string): PracticeViolation[] {
           ? pkg.scripts
           : undefined
       for (const [name, body] of Object.entries<unknown>(
-        typeof scripts === 'object' && scripts !== null ? scripts : {},
+        typeof scripts === 'object' && scripts !== null ? { ...scripts } : {},
       )) {
         if (typeof body !== 'string') {
           continue

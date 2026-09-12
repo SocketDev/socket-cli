@@ -124,18 +124,19 @@ export async function chooseEnforcedOrgs(
   enforcedChoices: OrgChoices,
 ): Promise<string[] | undefined> {
   if (enforcedChoices.length > 1) {
+    const choices = [
+      ...enforcedChoices,
+      {
+        __proto__: null,
+        name: 'None',
+        value: '',
+        description: 'Pick "None" if this is a personal device',
+      },
+    ]
     const id = await select({
       message:
         "Which organization's policies should Socket enforce system-wide?",
-      choices: [
-        ...enforcedChoices,
-        {
-          __proto__: null,
-          name: 'None',
-          value: '',
-          description: 'Pick "None" if this is a personal device',
-        },
-      ],
+      choices,
     })
     return id === undefined ? undefined : id ? [id] : []
   }
@@ -185,24 +186,25 @@ export function finishLogin(
 }
 
 export async function promptForTabCompletion(): Promise<boolean> {
+  const choices = [
+    {
+      __proto__: null,
+      name: 'Yes',
+      value: true,
+      description:
+        'Sets up tab completion for "socket" in your bash env. If you\'re unsure, this is probably what you want.',
+    },
+    {
+      __proto__: null,
+      name: 'No',
+      value: false,
+      description:
+        'Will skip tab completion setup. Does not change how Socket works.',
+    },
+  ]
   const wantToComplete = await select({
     message: 'Would you like to install bash tab completion?',
-    choices: [
-      {
-        __proto__: null,
-        name: 'Yes',
-        value: true,
-        description:
-          'Sets up tab completion for "socket" in your bash env. If you\'re unsure, this is probably what you want.',
-      },
-      {
-        __proto__: null,
-        name: 'No',
-        value: false,
-        description:
-          'Will skip tab completion setup. Does not change how Socket works.',
-      },
-    ],
+    choices,
   })
   if (wantToComplete === undefined) {
     return false

@@ -82,7 +82,7 @@ export async function runFirewallCommand(
   let rebind: Awaited<ReturnType<typeof startFirewallRegistryRebind>> =
     undefined
   try {
-    policy = createFirewallPolicy({
+    const activePolicy = createFirewallPolicy({
       apiToken: config.apiToken,
       customRegistries: config.customRegistries,
       localRegistryAliases: config.localRegistryAliases,
@@ -102,11 +102,13 @@ export async function runFirewallCommand(
         }
       },
     })
+    policy = activePolicy
     proxy = await startFirewallProxy({
       certificateAuthority: authority,
-      checkRequest: (...requestArgs) => policy.checkRequest(...requestArgs),
+      checkRequest: (...requestArgs) =>
+        activePolicy.checkRequest(...requestArgs),
       resolveDestination: (...destinationArgs) =>
-        policy.resolveDestination(...destinationArgs),
+        activePolicy.resolveDestination(...destinationArgs),
       upstreamCa: trust.certificates,
       upstreamProxy: config.upstreamProxy,
       onRequestError(diagnostic) {

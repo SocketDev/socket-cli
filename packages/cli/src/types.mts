@@ -38,3 +38,8 @@ export type CResult<T> =
       // If set, this may conform to the actual payload.
       data?: unknown | undefined
     }
+declare global {
+  interface Object {
+    readonly __proto__: unknown
+  }
+}

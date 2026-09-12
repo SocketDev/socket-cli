@@ -279,7 +279,17 @@ export async function run(
   }
 
   await fetchValidatedScanList({
-    flags: cli.flags,
+    flags: {
+      direction:
+        typeof cli.flags.direction === 'string'
+          ? cli.flags.direction
+          : undefined,
+      fromTime:
+        typeof cli.flags.fromTime === 'string' ? cli.flags.fromTime : undefined,
+      page: validatedPage,
+      perPage: validatedPerPage,
+      sort: typeof cli.flags.sort === 'string' ? cli.flags.sort : undefined,
+    },
     branch,
     repo,
     orgSlug,

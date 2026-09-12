@@ -141,7 +141,7 @@ export async function resolveCondaFilename(config: {
     cliFile: filename,
     cwd,
     socketJson: sockJson,
-    trustSocketJson,
+    trustSocketJson: Boolean(trustSocketJson),
   })
   if (!infile.ok) {
     await outputRequirements(infile, outputKind, '-')
@@ -177,7 +177,7 @@ export async function resolveCondaOutput(config: {
     cliOut: out,
     cwd,
     socketJson: sockJson,
-    trustSocketJson,
+    trustSocketJson: Boolean(trustSocketJson),
   })
   if (!outfile.ok) {
     await outputRequirements(outfile, outputKind, '-')

@@ -90,6 +90,7 @@ export async function persistDefaultOrg(data: unknown): Promise<void> {
         description: `Use "${slug}" as the default organization`,
       }))
       .concat({
+        __proto__: null,
         name: 'No',
         value: '',
         description: 'Do not use any of these organizations',
@@ -120,6 +121,7 @@ export async function persistEnforcedOrgs(data: unknown): Promise<void> {
         description: `Enforce the security policy of "${slug}" on this machine`,
       }))
       .concat({
+        __proto__: null,
         name: 'No',
         value: '',
         description: 'Do not use any of these organizations',

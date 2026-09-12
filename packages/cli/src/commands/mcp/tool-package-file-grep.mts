@@ -118,7 +118,7 @@ export async function handlePackageFileGrep(
       `Searching a package file failed. Where: the \`pattern\` argument. Saw: ${errorMessage(e)}, wanted a valid JavaScript regular expression. Fix: escape the special characters, or search for a plain literal string.`,
     )
   }
-  return await searchPackageFile({
+  const request = {
     __proto__: null,
     contextLines,
     flags,
@@ -127,7 +127,8 @@ export async function handlePackageFileGrep(
     maxMatches,
     pattern,
     regexp,
-  })
+  }
+  return await searchPackageFile(request)
 }
 
 /**

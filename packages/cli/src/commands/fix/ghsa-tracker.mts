@@ -3,10 +3,11 @@ import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { readJson } from '@socketsecurity/lib-stable/fs/read-json'
-import { safeMkdir, strictDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { writeJson } from '@socketsecurity/lib-stable/fs/write-json'
 
 import { getSocketFixBranchName } from './git.mts'
+import { strictDelete } from '../../util/fs/strict-delete.mts'
 
 export type GhsaFixRecord = {
   branch: string

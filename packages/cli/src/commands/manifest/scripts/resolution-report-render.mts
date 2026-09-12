@@ -40,6 +40,7 @@ export type ResolutionDialect = {
 }
 
 export type RenderedResolutionReport = {
+  readonly __proto__: null
   // Failure report for blocking kinds; empty when nothing blocks.
   summary: string
   // Build tool's own full messages for all kinds; surfaced at --verbose.

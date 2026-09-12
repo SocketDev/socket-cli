@@ -46,6 +46,7 @@ export async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
         description: `Create scan for the ${slug} repo through GitHub`,
       }))
       .concat({
+        __proto__: null,
         name: '(Exit)',
         value: '',
         description: 'Cancel this action and exit',

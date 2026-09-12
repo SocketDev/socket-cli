@@ -366,7 +366,7 @@ export async function run(
   const wasValidInput = validateSbtInput({
     facts: resolvedFacts,
     flags: cli.flags,
-    input: cli.input,
+    input: [...cli.input],
     outputKind,
   })
   if (!wasValidInput) {

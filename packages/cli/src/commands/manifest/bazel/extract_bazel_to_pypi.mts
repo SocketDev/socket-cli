@@ -252,7 +252,7 @@ export async function extractBazelToPypi(
       hubs,
       cwd,
       queryOpts,
-      verbose,
+      { verbose },
     )
 
     // Step 6: cross-hub conflict check (same normalized name, different

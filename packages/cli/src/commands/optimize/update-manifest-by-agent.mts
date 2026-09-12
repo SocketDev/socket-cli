@@ -55,7 +55,7 @@ export function getLowestEntryIndex(
 export function resolvePkgJsonInsertPosition(
   entries: Array<[string | symbol, unknown]>,
   field: string,
-): { index: number; placeAfter: boolean } {
+): { readonly __proto__: null; index: number; placeAfter: boolean } {
   let index = -1
   let placeAfter = false
   if (field === OVERRIDES) {

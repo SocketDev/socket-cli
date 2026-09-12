@@ -154,7 +154,7 @@ export function parseThreatFeedFilters(
     }
     return false
   })
-  return {
+  const filters = {
     __proto__: null,
     eco,
     name,
@@ -162,6 +162,7 @@ export function parseThreatFeedFilters(
     type,
     version,
   }
+  return filters
 }
 
 export async function run(
@@ -365,7 +366,6 @@ export async function run(
     outputKind,
     page: cli.flags['page'] || '1',
     perPage: cli.flags['perPage'],
-    remaining,
     type: typeFilter,
     version: versionFilter,
   })
