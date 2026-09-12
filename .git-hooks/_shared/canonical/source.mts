@@ -92,13 +92,18 @@ function memberLayers(member: string, readGit: CanonicalGitRead): string[] {
     .filter(([, scopes]) => Array.isArray(scopes) && scopes.length > 0)
     .map(([name]) => name)
   const layers = [`template/overrides/${slug}`]
+  const generated = ['template/generated/conditional/npm']
   const release = objectValue(config['release'])
   if (release['github'] !== false) {
+    generated.push('template/generated/conditional/github-release')
     layers.push('template/base/conditional/github-release')
   }
   for (let i = 0, { length } = capabilities; i < length; i += 1) {
     const capability = capabilities[i]!
     if (/^[a-z][a-z0-9-]*$/u.test(capability)) {
+      if (capability !== 'npm') {
+        generated.push(`template/generated/conditional/${capability}`)
+      }
       layers.push(`template/base/conditional/${capability}`)
     }
   }
@@ -106,7 +111,7 @@ function memberLayers(member: string, readGit: CanonicalGitRead): string[] {
     layers.push(`template/${kind}`)
   }
   layers.push('template/base/universal')
-  return layers
+  return [...generated, 'template/generated/universal', ...layers]
 }
 
 export function canonicalSourceAllowed(
