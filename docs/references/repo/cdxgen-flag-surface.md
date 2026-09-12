@@ -22,7 +22,7 @@ bumps the version.
 Run the same command against the new version and replace the block below:
 
 ```bash
-npx @cyclonedx/cdxgen@<new-version> --help
+npx @cyclonedx/cdxgen@<new-version> --help # oxlint-disable-line socket/no-npx-dlx -- pinned upstream invocation
 ```
 
 Then diff the two. Pay closest attention to flags that change _type_ - a flag
@@ -32,8 +32,8 @@ surfaces much later as a malformed SBOM.
 
 Upstream sources for the pinned version:
 
-- Parser config: https://github.com/CycloneDX/cdxgen/blob/v11.2.7/bin/cdxgen.js#L64
-- `isSecureMode`: https://github.com/CycloneDX/cdxgen/blob/v11.2.7/lib/helpers/utils.js#L66
+- Parser config: <https://github.com/CycloneDX/cdxgen/blob/v11.2.7/bin/cdxgen.js#L64>
+- `isSecureMode`: <https://github.com/CycloneDX/cdxgen/blob/v11.2.7/lib/helpers/utils.js#L66>
 
 ## Frozen output
 
@@ -41,7 +41,7 @@ Upstream sources for the pinned version:
 <summary><b>cdxgen@11.2.7 --help</b> - the full frozen flag list this repo's parser config must match</summary>
 
 ```console
-npx @cyclonedx/cdxgen@11.2.7 --help
+npx @cyclonedx/cdxgen@11.2.7 --help # oxlint-disable-line socket/no-npx-dlx -- frozen upstream output
 
 Options:
   -o, --output                 Output file. Default bom.json                                       [default: "bom.json"]

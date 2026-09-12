@@ -46,7 +46,7 @@ repository from `-Dmaven.repo.local`, Gradle its user home from `-g`, and sbt it
 Ivy home from `-Dsbt.ivy.home` plus `COURSIER_CACHE`, all under one root that
 `compat-cache.sh` resolves:
 
-```
+```text
 ${SOCKET_COMPAT_CACHE:-${TMPDIR:-/tmp}/socket-manifest-compat}
 ```
 
