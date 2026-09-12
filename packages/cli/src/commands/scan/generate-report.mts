@@ -65,7 +65,7 @@ export function addAlert(
   const ecoMap: EcoMap = violations.get(ecosystem)!
   if (fold === FOLD_SETTING_PKG) {
     const existing = ecoMap.get(pkgName) as ReportLeafNode | undefined
-    if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+    if (shouldReplaceReportLeaf(existing, policyAction)) {
       ecoMap.set(pkgName, createLeaf(art, alert, policyAction))
     }
   } else {
@@ -75,7 +75,7 @@ export function addAlert(
     const pkgMap = ecoMap.get(pkgName) as PackageMap
     if (fold === FOLD_SETTING_VERSION) {
       const existing = pkgMap.get(version) as ReportLeafNode | undefined
-      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+      if (shouldReplaceReportLeaf(existing, policyAction)) {
         pkgMap.set(version, createLeaf(art, alert, policyAction))
       }
     } else {
@@ -87,7 +87,7 @@ export function addAlert(
 
       if (fold === FOLD_SETTING_FILE) {
         const existing = verMap.get(file) as ReportLeafNode | undefined
-        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+        if (shouldReplaceReportLeaf(existing, policyAction)) {
           verMap.set(file, createLeaf(art, alert, policyAction))
         }
       } else {
@@ -97,7 +97,7 @@ export function addAlert(
         const key = `${alert.type} at ${alert.start}:${alert.end}`
         const fileMap: FileMap = verMap.get(file) as FileMap
         const existing = fileMap.get(key) as ReportLeafNode | undefined
-        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+        if (shouldReplaceReportLeaf(existing, policyAction)) {
           fileMap.set(key, createLeaf(art, alert, policyAction))
         }
       }
@@ -193,99 +193,20 @@ export function generateReport(
           const alertName = alert.type // => policy[type]
           const action = (securityRules[alertName]?.action ||
             '') as REPORT_LEVEL
-          switch (action) {
-            case REPORT_LEVEL_ERROR: {
-              healthy = false
-              if (!short) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-            case REPORT_LEVEL_WARN: {
-              if (!short && reportLevel !== REPORT_LEVEL_ERROR) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-            case REPORT_LEVEL_MONITOR: {
-              if (
-                !short &&
-                reportLevel !== REPORT_LEVEL_WARN &&
-                reportLevel !== REPORT_LEVEL_ERROR
-              ) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            case REPORT_LEVEL_IGNORE: {
-              if (
-                !short &&
-                reportLevel !== REPORT_LEVEL_MONITOR &&
-                reportLevel !== REPORT_LEVEL_WARN &&
-                reportLevel !== REPORT_LEVEL_ERROR
-              ) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            case REPORT_LEVEL_DEFER: {
-              // Not sure but ignore for now. Defer to later ;)
-              if (!short && reportLevel === REPORT_LEVEL_DEFER) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            default: {
-              // This value was not emitted from the Socket API at the time of writing.
-            }
+          if (action === REPORT_LEVEL_ERROR) {
+            healthy = false
+          }
+          if (!short && shouldIncludeReportAction(action, reportLevel)) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
           }
         },
       )
@@ -358,4 +279,37 @@ export function isStricterPolicy(was: REPORT_LEVEL, is: REPORT_LEVEL): boolean {
   }
   // unreachable?
   return false
+}
+
+export function shouldIncludeReportAction(
+  action: REPORT_LEVEL,
+  reportLevel: REPORT_LEVEL,
+): boolean {
+  switch (action) {
+    case REPORT_LEVEL_ERROR:
+      return true
+    case REPORT_LEVEL_WARN:
+      return reportLevel !== REPORT_LEVEL_ERROR
+    case REPORT_LEVEL_MONITOR:
+      return (
+        reportLevel !== REPORT_LEVEL_WARN && reportLevel !== REPORT_LEVEL_ERROR
+      )
+    case REPORT_LEVEL_IGNORE:
+      return (
+        reportLevel !== REPORT_LEVEL_MONITOR &&
+        reportLevel !== REPORT_LEVEL_WARN &&
+        reportLevel !== REPORT_LEVEL_ERROR
+      )
+    case REPORT_LEVEL_DEFER:
+      return reportLevel === REPORT_LEVEL_DEFER
+    default:
+      return false
+  }
+}
+
+export function shouldReplaceReportLeaf(
+  existing: ReportLeafNode | undefined,
+  policyAction: REPORT_LEVEL,
+): boolean {
+  return !existing || isStricterPolicy(existing.policy, policyAction)
 }
