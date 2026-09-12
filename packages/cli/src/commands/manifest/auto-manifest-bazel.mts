@@ -34,6 +34,33 @@ export type BazelAutoSettings = {
   bin: string | undefined
 }
 
+export function getBazelExecutingFields(
+  bazelConfig:
+    | NonNullable<
+        NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['bazel']
+      >
+    | undefined,
+): string[] {
+  const fields: string[] = []
+  if (bazelConfig?.bazel || bazelConfig?.bin) {
+    fields.push(
+      bazelConfig.bazel
+        ? 'defaults.manifest.bazel.bazel'
+        : 'defaults.manifest.bazel.bin',
+    )
+  }
+  if (bazelConfig?.bazelFlags) {
+    fields.push('defaults.manifest.bazel.bazelFlags')
+  }
+  if (bazelConfig?.bazelRc) {
+    fields.push('defaults.manifest.bazel.bazelRc')
+  }
+  if (bazelConfig?.bazelOutputBase) {
+    fields.push('defaults.manifest.bazel.bazelOutputBase')
+  }
+  return fields
+}
+
 /**
  * Pick which Bazel ecosystems the auto run extracts. Maven is the default;
  * PyPI is opt-in via socket.json `defaults.manifest.bazel.ecosystems`. The
@@ -73,23 +100,7 @@ export function resolveBazelAutoSettings({
   trustSocketJson: boolean
 }): CResult<BazelAutoSettings> {
   const bazelConfig = socketJson?.defaults?.manifest?.bazel
-  const executingFields: string[] = []
-  if (bazelConfig?.bazel || bazelConfig?.bin) {
-    executingFields.push(
-      bazelConfig.bazel
-        ? 'defaults.manifest.bazel.bazel'
-        : 'defaults.manifest.bazel.bin',
-    )
-  }
-  if (bazelConfig?.bazelFlags) {
-    executingFields.push('defaults.manifest.bazel.bazelFlags')
-  }
-  if (bazelConfig?.bazelRc) {
-    executingFields.push('defaults.manifest.bazel.bazelRc')
-  }
-  if (bazelConfig?.bazelOutputBase) {
-    executingFields.push('defaults.manifest.bazel.bazelOutputBase')
-  }
+  const executingFields = getBazelExecutingFields(bazelConfig)
   if (executingFields.length && !trustSocketJson) {
     return {
       ok: false,
