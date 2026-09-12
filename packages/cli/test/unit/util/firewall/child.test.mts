@@ -127,48 +127,61 @@ it.skipIf(process.platform === 'win32')(
   async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), 'firewall-child-'))
     try {
-      for (const mode of ['exit-with-descendant', 'wait-with-descendant']) {
+      async function verifyDescendantCleanup(
+        mode: 'exit-with-descendant' | 'wait-with-descendant',
+      ): Promise<void> {
         const pidPath = path.join(directory, `${mode}.pid`)
         const controller = new AbortController()
-        controllers.push(controller)
-        const result = spawnFirewallChild({
-          executable: process.execPath,
-          args: [fixture, mode, pidPath],
-          env: {},
-          stdio: 'ignore',
-          signal: controller.signal,
-        })
-        for (
-          let attempt = 0;
-          attempt < 100 && !existsSync(pidPath);
-          attempt += 1
-        ) {
-          await delay(20)
-        }
-        expect(existsSync(pidPath)).toBe(true)
-        const pid = Number(readFileSync(pidPath, 'utf8'))
-        if (mode === 'wait-with-descendant') {
+        try {
+          const result = spawnFirewallChild({
+            executable: process.execPath,
+            args: [fixture, mode, pidPath],
+            env: {},
+            stdio: 'ignore',
+            signal: controller.signal,
+          })
+          await expect
+            .poll(() => existsSync(pidPath), { interval: 10, timeout: 5000 })
+            .toBe(true)
+          const pid = Number(readFileSync(pidPath, 'utf8'))
+          if (mode === 'wait-with-descendant') {
+            controller.abort()
+          }
+          const outcome = await result
+          if (mode === 'exit-with-descendant') {
+            expect(outcome.code).toBe(23)
+          } else {
+            expect(outcome.signal).toBe('SIGTERM')
+          }
+          await expect
+            .poll(
+              () => {
+                try {
+                  process.kill(pid, 0)
+                  return true
+                } catch (error) {
+                  if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
+                    throw error
+                  }
+                  return false
+                }
+              },
+              { interval: 10, timeout: 5000 },
+            )
+            .toBe(false)
+        } finally {
           controller.abort()
         }
-        if (mode === 'exit-with-descendant') {
-          expect((await result).code).toBe(23)
-        } else {
-          expect((await result).signal).toBe('SIGTERM')
-        }
-        await expect
-          .poll(() => {
-            try {
-              process.kill(pid, 0)
-              return true
-            } catch (error) {
-              if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
-                throw error
-              }
-              return false
-            }
-          })
-          .toBe(false)
       }
+
+      const results = await Promise.allSettled([
+        verifyDescendantCleanup('exit-with-descendant'),
+        verifyDescendantCleanup('wait-with-descendant'),
+      ])
+      expect(results).toEqual([
+        { status: 'fulfilled', value: undefined },
+        { status: 'fulfilled', value: undefined },
+      ])
     } finally {
       await safeDelete(directory)
     }
