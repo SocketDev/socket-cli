@@ -22,6 +22,8 @@ import { ENV } from './env.mts'
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'
 
+const logger = getDefaultLogger()
+
 // Re-export socket constants for backward compatibility.
 export { SOCKET_JSON }
 
@@ -177,6 +179,10 @@ export function getNmYarnPath(): string | undefined {
   }
 }
 
+export function getPackagedCompletionPath(packageRoot: string): string {
+  return path.join(packageRoot, 'data', 'socket-completion.bash')
+}
+
 export function getPackageJsonPath(): string {
   return path.join(rootPath, 'package.json')
 }
@@ -202,7 +208,6 @@ export function getSocketAppDataPath(): string | undefined {
     /* c8 ignore start - WIN32-only fallback when LOCALAPPDATA env var missing; tests run on macOS/Linux */
     if (isWin32) {
       dataHome = path.join(home, 'AppData', 'Local')
-      const logger = getDefaultLogger()
       logger.warn('LOCALAPPDATA not set, using fallback path.')
       /* c8 ignore stop */
     } else {

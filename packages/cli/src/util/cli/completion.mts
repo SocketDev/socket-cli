@@ -3,7 +3,11 @@ import path from 'node:path'
 
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
-import { getSocketAppDataPath, rootPath } from '../../constants/paths.mts'
+import {
+  getPackagedCompletionPath,
+  getSocketAppDataPath,
+  rootPath,
+} from '../../constants/paths.mts'
 
 import type { CResult } from '../../types.mjs'
 
@@ -66,11 +70,7 @@ fi
 
 export function getCompletionSourcingCommand(): CResult<string> {
   // Bash completion script lives in data directory.
-  const completionScriptPath = path.join(
-    rootPath,
-    'data',
-    'socket-completion.bash',
-  )
+  const completionScriptPath = getPackagedCompletionPath(rootPath)
 
   if (!existsSync(completionScriptPath)) {
     return {
