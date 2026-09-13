@@ -70,7 +70,7 @@ jobs:
         with:
           # Authorizes a thin member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           # Full history: the commit-history checks (AI-attribution,
           # release-boundary) read the default branch's history and refuse a
@@ -123,14 +123,14 @@ jobs:
         with:
           # Authorizes a thin member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
       - name: Mint sdxgen read token
         id: sdxgen-token
         uses: ./.github/actions/fleet/github-payload-app-token
         with:
-          client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
+          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           repositories: sdxgen
       - name: Run checks
