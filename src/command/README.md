@@ -4,10 +4,10 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 
 ## Command Hierarchy
 
-### 76 Total Commands
+### 81 Total Commands
 
 - 39 Root commands (including parent commands)
-- 37 Subcommands
+- 42 Subcommands
 
 ## Root Commands (39)
 
@@ -55,7 +55,7 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 | Command            | Module                                  | Integrates With                               | Type       |
 | ------------------ | --------------------------------------- | --------------------------------------------- | ---------- |
 | **manifest**       | `manifest/cmd-manifest.mts`             | Parent command                                | Parent     |
-| sbom               | `sbom/cmd-sbom.mts`                     | Bundled sdxgen                                | Command    |
+| sbom               | `sbom/cmd-sbom.mts`                     | sdxgen                                        | Command    |
 | ├─ manifest auto   | `manifest/cmd-manifest-auto.mts`        | Auto-detect manifests                         | Subcommand |
 | ├─ manifest bazel  | `manifest/bazel/cmd-manifest-bazel.mts` | Bazel → maven_install.json / requirements.txt | Subcommand |
 | ├─ manifest conda  | `manifest/cmd-manifest-conda.mts`       | conda.yml → requirements.txt                  | Subcommand |
@@ -116,21 +116,26 @@ All connect via Socket Firewall (sfw) except raw-npm and raw-npx which bypass So
 | ├─ repository update | `repository/cmd-repository-update.mts` | Socket Repository API (update) | Subcommand |
 | └─ repository view   | `repository/cmd-repository-view.mts`   | Socket Repository API (view)   | Subcommand |
 
-### Scan Commands (1 parent + 10 subcommands)
+### Scan Commands (1 parent + 15 subcommands)
 
-| Command          | Module                       | Integrates With                | Type       |
-| ---------------- | ---------------------------- | ------------------------------ | ---------- |
-| **scan**         | `scan/cmd-scan.mts`          | Socket Scan API                | Parent     |
-| ├─ scan create   | `scan/cmd-scan-create.mts`   | Socket Scan API (create)       | Subcommand |
-| ├─ scan del      | `scan/cmd-scan-del.mts`      | Socket Scan API (delete)       | Subcommand |
-| ├─ scan diff     | `scan/cmd-scan-diff.mts`     | Socket Scan API (diff)         | Subcommand |
-| ├─ scan github   | `scan/cmd-scan-github.mts`   | GitHub API + Socket Scan API   | Subcommand |
-| ├─ scan list     | `scan/cmd-scan-list.mts`     | Socket Scan API (list)         | Subcommand |
-| ├─ scan metadata | `scan/cmd-scan-metadata.mts` | Socket Scan API (metadata)     | Subcommand |
-| ├─ scan reach    | `scan/cmd-scan-reach.mts`    | @coana-tech/cli (reachability) | Subcommand |
-| ├─ scan report   | `scan/cmd-scan-report.mts`   | Socket Scan API (report)       | Subcommand |
-| ├─ scan setup    | `scan/cmd-scan-setup.mts`    | Interactive scan config        | Subcommand |
-| └─ scan view     | `scan/cmd-scan-view.mts`     | Socket Scan API (view)         | Subcommand |
+| Command               | Module                            | Integrates With                | Type       |
+| --------------------- | --------------------------------- | ------------------------------ | ---------- |
+| **scan**              | `scan/cmd-scan.mts`               | Socket Scan API                | Parent     |
+| ├─ scan agent-configs | `scan/cmd-scan-agent-configs.mts` | Scan pattern metadata          | Subcommand |
+| ├─ scan create        | `scan/cmd-scan-create.mts`        | Socket Scan API (create)       | Subcommand |
+| ├─ scan del           | `scan/cmd-scan-del.mts`           | Socket Scan API (delete)       | Subcommand |
+| ├─ scan diff          | `scan/cmd-scan-diff.mts`          | Socket Scan API (diff)         | Subcommand |
+| ├─ scan github        | `scan/cmd-scan-github.mts`        | GitHub API + Socket Scan API   | Subcommand |
+| ├─ scan list          | `scan/cmd-scan-list.mts`          | Socket Scan API (list)         | Subcommand |
+| ├─ scan manifests     | `scan/cmd-scan-manifests.mts`     | Local manifest patterns        | Subcommand |
+| ├─ scan metadata      | `scan/cmd-scan-metadata.mts`      | Socket Scan API (metadata)     | Subcommand |
+| ├─ scan reach         | `scan/cmd-scan-reach.mts`         | @coana-tech/cli (reachability) | Subcommand |
+| ├─ scan report        | `scan/cmd-scan-report.mts`        | Socket Scan API (report)       | Subcommand |
+| ├─ scan secrets       | `scan/cmd-scan-secrets.mts`       | Local secret patterns          | Subcommand |
+| ├─ scan setup         | `scan/cmd-scan-setup.mts`         | Interactive scan config        | Subcommand |
+| ├─ scan skills        | `scan/cmd-scan-skills.mts`        | Local skill patterns           | Subcommand |
+| ├─ scan view          | `scan/cmd-scan-view.mts`          | Socket Scan API (view)         | Subcommand |
+| └─ scan workflows     | `scan/cmd-scan-workflows.mts`     | Scan pattern metadata          | Subcommand |
 
 ## Command File Structure
 

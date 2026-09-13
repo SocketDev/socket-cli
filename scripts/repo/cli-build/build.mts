@@ -11,7 +11,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { copyPastoralistAssets } from './pastoralist.mts'
-import { buildSdxgenBundle } from './sdxgen.mts'
+import { copySdxgenAssets } from './sdxgen.mts'
 import { safeDelete } from '../../fleet/fs/safe.mts'
 
 const logger = getDefaultLogger()
@@ -183,7 +183,7 @@ async function main(): Promise<void> {
   )
   const results = await Promise.allSettled([
     writeCommandWrappers(),
-    buildSdxgenBundle(packageRoot),
+    copySdxgenAssets(packageRoot),
     copyPastoralistAssets(packageRoot),
     copyManifestScripts(),
   ])

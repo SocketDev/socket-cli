@@ -16,7 +16,7 @@ const logger = getDefaultLogger()
 
 const config = {
   commandName: 'sbom',
-  description: 'Generate a CycloneDX manifest with the bundled sdxgen parsers',
+  description: 'Generate a CycloneDX SBOM',
   flags: defineFlags({
     ...commonFlags,
     executeTools: {

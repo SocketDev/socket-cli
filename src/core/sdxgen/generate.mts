@@ -1,9 +1,7 @@
-import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
-
-import { distPath } from '../../constants/paths.mts'
+import * as sdxgen from 'sdxgen'
 
 export async function executeSdxgenModule(
   module: unknown,
@@ -12,7 +10,7 @@ export async function executeSdxgenModule(
 ): Promise<SdxgenDocument> {
   if (!isObject(module) || typeof module['generateSbom'] !== 'function') {
     throw new Error(
-      'Cannot load the bundled generator. Where: sdxgen API. Saw an invalid module; wanted generateSbom. Fix: reinstall Socket CLI.',
+      'Cannot load the generator. Where: sdxgen API. Saw an invalid module; wanted generateSbom. Fix: reinstall Socket CLI.',
     )
   }
   const result: unknown = await Reflect.apply(
@@ -39,9 +37,7 @@ export async function generateSdxgenManifest(
   projectPath: string,
   options: SdxgenOptions = {},
 ): Promise<SdxgenDocument> {
-  const require = createRequire(import.meta.url)
-  const module: unknown = require(path.join(distPath, 'sdxgen', 'index.cjs'))
-  return await executeSdxgenModule(module, projectPath, options)
+  return await executeSdxgenModule(sdxgen, projectPath, options)
 }
 
 export interface SdxgenOptions {

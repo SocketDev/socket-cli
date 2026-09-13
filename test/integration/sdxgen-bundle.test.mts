@@ -1,4 +1,4 @@
-import { cp, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
@@ -7,17 +7,12 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { expect, it } from 'vitest'
 
-import { executeSdxgenModule } from '../../src/core/sdxgen/generate.mts'
+import { getBinCliPath } from '../../src/constants/paths.mts'
+import { spawnSocketCli } from '../utils.mts'
 
-it('generates an npm manifest from an isolated shipped bundle and retains native parser assets', async () => {
-  const directory = await mkdtemp(
-    path.join(os.tmpdir(), 'socket-sdxgen-bundle-'),
-  )
+it('generates an npm SBOM from the built CLI and ships parser assets', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'socket-sdxgen-'))
   try {
-    const bundle = path.join(directory, 'bundle')
-    await cp(new URL('../../dist/sdxgen/', import.meta.url), bundle, {
-      recursive: true,
-    })
     await writeFile(
       path.join(directory, 'package.json'),
       JSON.stringify({
@@ -42,20 +37,32 @@ it('generates an npm manifest from an isolated shipped bundle and retains native
         },
       }),
     )
-    const require = createRequire(import.meta.url)
-    const module: unknown = require(path.join(bundle, 'index.cjs'))
-    const document = await executeSdxgenModule(module, directory)
-    expect(document.components).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          name: 'example-dependency',
-          version: '2.0.0',
-        }),
-      ]),
+
+    const result = await spawnSocketCli(
+      getBinCliPath(),
+      ['sbom', directory, '--no-banner'],
+      { cwd: directory },
     )
-    const wasm = await readFile(path.join(bundle, 'acorn.wasm'))
+    expect(result.code).toBe(0)
+    expect(result.stderr).toBe('')
+    const document: unknown = JSON.parse(result.stdout)
+    expect(document).toEqual(
+      expect.objectContaining({
+        bomFormat: 'CycloneDX',
+        components: expect.arrayContaining([
+          expect.objectContaining({
+            name: 'example-dependency',
+            version: '2.0.0',
+          }),
+        ]),
+      }),
+    )
+
+    const distPath = path.dirname(getBinCliPath())
+    const wasm = await readFile(path.join(distPath, 'acorn.wasm'))
     expect(WebAssembly.validate(wasm)).toBe(true)
-    const acorn: unknown = require(path.join(bundle, 'acorn.cjs'))
+    const require = createRequire(import.meta.url)
+    const acorn: unknown = require(path.join(distPath, 'acorn-bindgen.cjs'))
     if (!isObject(acorn) || typeof acorn['simple'] !== 'function') {
       throw new TypeError('Missing Acorn visitor API')
     }
@@ -71,18 +78,13 @@ it('generates an npm manifest from an isolated shipped bundle and retains native
       }),
     ])
     expect(
-      await readFile(path.join(bundle, 'dependency-tree.init.gradle'), 'utf8'),
-    ).toBe(
       await readFile(
-        new URL(
-          '../../upstream/sdxgen/src/parsers/gradle/dependency-tree.init.gradle',
-          import.meta.url,
-        ),
+        path.join(distPath, 'parsers', 'gradle', 'dependency-tree.init.gradle'),
         'utf8',
       ),
-    )
+    ).not.toBe('')
     expect(
-      await readFile(path.join(bundle, 'LICENSE.sdxgen'), 'utf8'),
+      await readFile(path.join(distPath, 'LICENSE.sdxgen'), 'utf8'),
     ).toContain('MIT')
   } finally {
     await safeDelete(directory, { maxRetries: 0 })

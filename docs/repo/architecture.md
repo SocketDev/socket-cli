@@ -8,7 +8,9 @@ The root package is `@socketsecurity/cli`. It builds one Node CLI distribution.
 
 The firewall, optimize, and MCP implementations live in `src/core/firewall/`, `src/core/optimize/`, and `src/core/mcp/`. The binary integration for Socket Patch lives in `src/core/patch/`.
 
-`src/core/sdxgen/` loads the bundled manifest generator when requested. The build compiles pinned TypeScript from `upstream/sdxgen/`. Its JavaScript, Acorn WebAssembly parser, and Gradle script ship under `dist/sdxgen/` in the same published package. Project tool execution requires `--execute-tools`.
+`src/core/sdxgen/` calls the installed sdxgen API. The build bundles its JavaScript and copies its Acorn and Gradle runtime assets. Project tool execution requires `--execute-tools`.
+
+`src/core/scanner-patterns/` runs executable rules from `@socketsecurity/scan-patterns`. The result identifies rules that this scanner cannot execute.
 
 External source references live under `upstream/` and are declared in `.gitmodules`.
 
