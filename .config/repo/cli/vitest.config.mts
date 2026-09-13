@@ -224,6 +224,12 @@ const normalConfig = defineConfig({
           functions: 99,
           branches: 99,
         },
+        'src/{core/scanner-patterns/**,command/scan/cmd-scan-patterns.mts}': {
+          statements: 96,
+          lines: 96,
+          functions: 94,
+          branches: 92,
+        },
         'src/{command,core}/mcp/**': {
           statements: 99,
           lines: 99,

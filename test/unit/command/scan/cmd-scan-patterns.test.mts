@@ -80,3 +80,37 @@ it('validates severity names', () => {
   expect(parseScannerPatternSeverity('critical')).toBe('critical')
   expect(() => parseScannerPatternSeverity('urgent')).toThrow()
 })
+
+it('formats help and human findings', async () => {
+  mocks.scan.mockResolvedValue({
+    filesScanned: 1,
+    findings: [
+      {
+        category: 'credentials',
+        column: 3,
+        description: 'Finds a synthetic credential marker',
+        file: 'example.env',
+        line: 2,
+        ruleId: 'example:credential',
+        severity: 'high',
+        title: 'Synthetic credential marker',
+      },
+    ],
+    scanner: 'secrets',
+    unsupportedRules: [],
+  })
+  const command = createScannerPatternCommand(
+    'secrets',
+    'secrets',
+    'Scan secrets',
+  )
+  await command.run([], import.meta, { parentName: 'socket scan' })
+  const config = mocks.parse.mock.calls[0]![0].config
+  expect(config.help('socket scan secrets')).toContain(
+    'socket scan secrets [path...]',
+  )
+  expect(mocks.log).toHaveBeenCalledWith(
+    'high example:credential example.env:2:3 Synthetic credential marker',
+  )
+  expect(process.exitCode).toBe(1)
+})

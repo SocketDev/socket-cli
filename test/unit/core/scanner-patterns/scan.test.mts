@@ -4,17 +4,22 @@ import path from 'node:path'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { describe, expect, it } from 'vitest'
+import secretsTable from '@socketsecurity/scan-patterns/data/secrets.json' with { type: 'json' }
 
 import {
+  compareScannerPatternFindings,
+  compileScannerPatternPathRegex,
+  compileScannerPatternRegex,
   findScannerPatternMatches,
   isExecutableScannerPatternRule,
   isScannerPatternSeverityEnabled,
-  scanWithScannerPatterns,
   scannerPatternEntropy,
+  scanWithScannerPatterns,
   validateScannerPatternTable,
 } from '../../../../src/core/scanner-patterns/scan.mts'
 
 import type { PatternRule } from '@socketsecurity/scan-patterns'
+import type { ScannerPatternFinding } from '../../../../src/core/scanner-patterns/types.mts'
 
 function createRule(overrides: Partial<PatternRule> = {}): PatternRule {
   return {
@@ -32,6 +37,22 @@ function createRule(overrides: Partial<PatternRule> = {}): PatternRule {
     },
     regexFlags: '',
     regexSource: 'EXAMPLE_TOKEN_([A-Z0-9]+)',
+    severity: 'high',
+    title: 'Synthetic credential marker',
+    ...overrides,
+  }
+}
+
+function createFinding(
+  overrides: Partial<ScannerPatternFinding> = {},
+): ScannerPatternFinding {
+  return {
+    category: 'credentials',
+    column: 1,
+    description: 'Finds a synthetic credential marker',
+    file: 'example.env',
+    line: 1,
+    ruleId: 'example:credential',
     severity: 'high',
     title: 'Synthetic credential marker',
     ...overrides,
@@ -72,6 +93,60 @@ describe('scanner pattern execution', () => {
     ).toHaveLength(1)
   })
 
+  it('compiles only JavaScript regular expressions', () => {
+    expect(compileScannerPatternRegex(createRule())?.global).toBe(false)
+    expect(
+      compileScannerPatternPathRegex(
+        createRule({ pathRegexSource: 'package\\.json$' }),
+      )?.test('package.json'),
+    ).toBe(true)
+    expect(compileScannerPatternPathRegex(createRule())).toBeUndefined()
+    expect(
+      compileScannerPatternRegex(createRule({ dialect: 're2' })),
+    ).toBeUndefined()
+    expect(
+      compileScannerPatternPathRegex(
+        createRule({ dialect: 're2', pathRegexSource: 'package\\.json$' }),
+      ),
+    ).toBeUndefined()
+  })
+
+  it('handles global, keyword-free, capture-free, and empty matches', () => {
+    expect(
+      findScannerPatternMatches(
+        createRule({ keywords: [], regexFlags: 'g', regexSource: 'MARKER' }),
+        'example.txt',
+        'MARKER MARKER',
+      ),
+    ).toHaveLength(2)
+    expect(
+      findScannerPatternMatches(
+        createRule({ keywords: [], regexSource: '(?=MARKER)' }),
+        'example.txt',
+        'MARKER',
+      ),
+    ).toEqual([])
+  })
+
+  it('sorts findings by severity and stable source location', () => {
+    const findings = [
+      createFinding({ ruleId: 'z-rule' }),
+      createFinding({ column: 2, ruleId: 'column' }),
+      createFinding({ line: 2, ruleId: 'line' }),
+      createFinding({ file: 'z.env', ruleId: 'file' }),
+      createFinding({ ruleId: 'critical', severity: 'critical' }),
+      createFinding({ ruleId: 'a-rule' }),
+    ].toSorted(compareScannerPatternFindings)
+    expect(findings.map(finding => finding.ruleId)).toEqual([
+      'critical',
+      'a-rule',
+      'z-rule',
+      'column',
+      'line',
+      'file',
+    ])
+  })
+
   it('classifies only JavaScript content rules as executable', () => {
     expect(isExecutableScannerPatternRule(createRule())).toBe(true)
     expect(isExecutableScannerPatternRule(createRule({ dialect: 're2' }))).toBe(
@@ -105,6 +180,9 @@ describe('scanner pattern execution', () => {
     expect(() => validateScannerPatternTable({}, 'secrets')).toThrow(
       'Cannot load scanner patterns',
     )
+    expect(validateScannerPatternTable(secretsTable, 'secrets')).toBe(
+      secretsTable,
+    )
   })
 
   it('scans text files with the published table and excludes binary files', async () => {
@@ -126,6 +204,29 @@ describe('scanner pattern execution', () => {
         scanner: 'secrets',
       })
       expect(result.unsupportedRules.length).toBeGreaterThan(0)
+    } finally {
+      await safeDelete(directory, { maxRetries: 0 })
+    }
+  })
+
+  it('applies severity filtering before executing published rules', async () => {
+    const directory = await mkdtemp(
+      path.join(os.tmpdir(), 'scanner-pattern-severity-'),
+    )
+    try {
+      await writeFile(
+        path.join(directory, 'package.php'),
+        "'secret_key' => 'sk_12345678901234567890123456789'",
+      )
+      const result = await scanWithScannerPatterns(
+        'manifests',
+        ['package.php'],
+        {
+          cwd: directory,
+          minimumSeverity: 'critical',
+        },
+      )
+      expect(result).toMatchObject({ filesScanned: 1, findings: [] })
     } finally {
       await safeDelete(directory, { maxRetries: 0 })
     }
