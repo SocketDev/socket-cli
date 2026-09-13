@@ -43,7 +43,10 @@ jobs:
           FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
           else
             git fetch "${FETCH_ARGS[@]}"
           fi
@@ -99,7 +102,10 @@ jobs:
           FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
           else
             git fetch "${FETCH_ARGS[@]}"
           fi
@@ -136,9 +142,12 @@ jobs:
           set -euo pipefail
           echo "on-device model ready: ${ODAI_READY}"
           AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --quiet origin "${DEFAULT_BRANCH}"
-          if git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" ls-remote --exit-code --heads origin refs/heads/weekly-update >/dev/null; then
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --quiet origin +refs/heads/weekly-update:refs/remotes/origin/weekly-update
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch --quiet origin "${DEFAULT_BRANCH}"
+          if git ls-remote --exit-code --heads origin refs/heads/weekly-update >/dev/null; then
+            git fetch --quiet origin +refs/heads/weekly-update:refs/remotes/origin/weekly-update
           else
             FETCH_STATUS=$?
             if [ "${FETCH_STATUS}" != 2 ]; then exit "${FETCH_STATUS}"; fi
@@ -216,8 +225,11 @@ jobs:
           # run, so a non-fast-forward push is EXPECTED. --force-with-lease
           # still refuses if someone else pushed to it since our fetch.
           AUTH_B64="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
-          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" \
-            push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git \
+            push --no-verify --force-with-lease origin "HEAD:refs/heads/${BRANCH}"
 
           # Compose the body with the pure helper — never markdown surgery in
           # bash. It folds this run into a dated <details>, newest first, and

@@ -46,7 +46,10 @@ jobs:
           fi
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
           else
             git fetch "${FETCH_ARGS[@]}"
           fi
@@ -134,7 +137,10 @@ jobs:
             --parent "origin/${SOURCE_BRANCH}" --branch "${BRANCH}" --repo "${REPOSITORY}" \
             --message 'fix: apply verified mechanical repairs'
           AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" \
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git \
               push origin "HEAD:refs/heads/${BRANCH}"
           OPEN_PRS="$(gh pr list --repo "${REPOSITORY}" --head "${BRANCH}" --base "${DEFAULT_BRANCH}" --state open --json number --jq 'length')"
           if [ "${OPEN_PRS}" = "0" ]; then

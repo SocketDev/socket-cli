@@ -76,7 +76,7 @@ inputs:
   payload-token-private-key:
     description: >-
       Existing PR App private key. Pass secrets.SOCKET_PR_APP_PRIVATE_KEY.
-      An absent key skips the optional mint and leaves public GHCR available.
+      An absent credential pair leaves public GHCR hydration anonymous.
     required: false
     default: ''
 
@@ -187,6 +187,19 @@ runs:
       uses: ./.github/actions/fleet/cache-pnpm-store
       with:
         working-directory: ${{ inputs.working-directory }}
+
+    - name: Validate fleet payload credentials
+      shell: bash
+      env:
+        PAYLOAD_TOKEN_CLIENT_ID: ${{ inputs.payload-token-client-id }}
+        PAYLOAD_TOKEN_PRIVATE_KEY: ${{ inputs.payload-token-private-key }}
+      run: |
+        set -euo pipefail
+        if { [ -z "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -n "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; } || \
+           { [ -n "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -z "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; }; then
+          echo "::error title=fleet payload credentials are incomplete::The payload client variable and private-key secret are both required for dependency installation."
+          exit 1
+        fi
 
     - name: Mint fleet payload read token
       id: payload-token

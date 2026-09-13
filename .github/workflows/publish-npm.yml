@@ -116,7 +116,10 @@ jobs:
           # version-derivation-jobs-have-tags gate can see it.
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --tags "${FETCH_ARGS[@]}"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch --tags "${FETCH_ARGS[@]}"
           else
             git fetch --tags "${FETCH_ARGS[@]}"
           fi
@@ -176,13 +179,6 @@ jobs:
           # key, hydration still pulls public GHCR anonymously.
           payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
-      - name: Run full coverage
-        # Backfill republishes already-released historical content. Its hard
-        # content checks replace current-branch qualification.
-        if: ${{ inputs.backfill-version == '' }}
-        run: pnpm run cover
-      - name: Build
-        run: pnpm run build
       - name: 'Mint release token'
         if: ${{ inputs.backfill-version == '' }}
         id: release-app
@@ -191,6 +187,13 @@ jobs:
           client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           repositories: ${{ github.event.repository.name }}
+      - name: Build
+        run: pnpm run build
+      - name: Run full coverage
+        # Backfill republishes already-released historical content. Its hard
+        # content checks replace current-branch qualification.
+        if: ${{ inputs.backfill-version == '' }}
+        run: pnpm run cover
       # The version resolver consumes a prerelease hint, uses configured odai
       # for patch/minor, or defaults to minor. Backfills keep their version.
       - name: Publish

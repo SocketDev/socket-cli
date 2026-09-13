@@ -378,6 +378,10 @@ opencode.json
 .claude/hooks/fleet/agent-session-budget-guard/package.json
 .claude/hooks/fleet/agent-session-budget-guard/reap.mts
 .claude/hooks/fleet/agent-session-budget-guard/tsconfig.json
+.claude/hooks/fleet/ai-adapter-source-guard/git.mts
+.claude/hooks/fleet/ai-adapter-source-guard/index.mts
+.claude/hooks/fleet/ai-adapter-source-guard/package.json
+.claude/hooks/fleet/ai-adapter-source-guard/tsconfig.json
 .claude/hooks/fleet/ai-balancer-proxy-start/README.md
 .claude/hooks/fleet/ai-balancer-proxy-start/index.mts
 .claude/hooks/fleet/ai-balancer-proxy-start/package.json
@@ -793,6 +797,9 @@ opencode.json
 .claude/hooks/fleet/inline-script-defer-guard/index.mts
 .claude/hooks/fleet/inline-script-defer-guard/package.json
 .claude/hooks/fleet/inline-script-defer-guard/tsconfig.json
+.claude/hooks/fleet/instruction-precedence-guard/index.mts
+.claude/hooks/fleet/instruction-precedence-guard/package.json
+.claude/hooks/fleet/instruction-precedence-guard/tsconfig.json
 .claude/hooks/fleet/issue-autolink-nudge/README.md
 .claude/hooks/fleet/issue-autolink-nudge/index.mts
 .claude/hooks/fleet/issue-autolink-nudge/package.json
@@ -2575,6 +2582,7 @@ docs/fleet/agents.md/git-config-write-guard.md
 docs/fleet/agents.md/github-action-release-contract.md
 docs/fleet/agents.md/github-token-limitations.md
 docs/fleet/agents.md/golden-fixtures.md
+docs/fleet/agents.md/heavy-jobs.md
 docs/fleet/agents.md/history-rewrites.md
 docs/fleet/agents.md/hook-bundle.md
 docs/fleet/agents.md/hook-registry.md
@@ -2694,6 +2702,7 @@ docs/fleet/fuzzing/practices.md
 docs/fleet/perf/async-work.md
 docs/fleet/perf/caching.md
 docs/fleet/perf/decisions.md
+docs/fleet/perf/disk-space.md
 docs/fleet/perf/practices.md
 docs/fleet/perf/profiling.md
 docs/fleet/testing/coverage.md
@@ -2709,7 +2718,6 @@ docs/fleet/workflows/practices.md
 docs/fleet/workflows/publishing.md
 docs/fleet/workflows/registry-settings.md
 docs/references/fleet/sfw-local-install.md
-opencode.json
 scripts/fleet/agent-orphan-sweep.mts
 scripts/fleet/ai-backends-status.mts
 scripts/fleet/ai-codify/cli.mts
@@ -2721,6 +2729,7 @@ scripts/fleet/ai-lint-fix/odai-fix.mts
 scripts/fleet/ai-lint-fix/oxlint-json.mts
 scripts/fleet/ai-lint-fix/prompt.mts
 scripts/fleet/ai-lint-fix/rule-guidance.mts
+scripts/fleet/ai/adapters/paths.mts
 scripts/fleet/ai/agent-offload.mts
 scripts/fleet/ai/anthropic-key.mts
 scripts/fleet/ai/balancer/active-rung.mts
@@ -2888,6 +2897,7 @@ scripts/fleet/browser/control/one-password.mts
 scripts/fleet/browser/control/profiles.mts
 scripts/fleet/browser/control/sanctioned-files.mts
 scripts/fleet/browser/control/singleton-lock.mts
+scripts/fleet/browser/github-auth.mts
 scripts/fleet/browser/open-url.mts
 scripts/fleet/browser/timeouts.mts
 scripts/fleet/build-hook-bundle.mts
@@ -3062,6 +3072,7 @@ scripts/fleet/check/go-deps-are-soaked.mts
 scripts/fleet/check/golden-fixtures-are-named-golden-at-commit.mts
 scripts/fleet/check/guard-blocks-are-pithy.mts
 scripts/fleet/check/handoff-docs-are-untracked.mts
+scripts/fleet/check/heavy-jobs-are-admitted.mts
 scripts/fleet/check/hook-bundle-build-is-clean.mts
 scripts/fleet/check/hook-dirs-are-not-husks.mts
 scripts/fleet/check/hook-main-is-entrypoint-guarded.mts
@@ -3267,6 +3278,7 @@ scripts/fleet/ci/local/requirements.mts
 scripts/fleet/ci/local/run.mts
 scripts/fleet/ci/local/setup.mts
 scripts/fleet/ci/remote/setup.mts
+scripts/fleet/ci/remote/variables/migrate.mts
 scripts/fleet/clean.mts
 scripts/fleet/cli/human-gate.mts
 scripts/fleet/cli/picker.mts
@@ -3320,6 +3332,7 @@ scripts/fleet/cover/cpp-lane.mts
 scripts/fleet/cover/cumulative-report.mts
 scripts/fleet/cover/discovery.mts
 scripts/fleet/cover/go-lane.mts
+scripts/fleet/cover/group-thresholds.mts
 scripts/fleet/cover/lane-budget.mts
 scripts/fleet/cover/lane-contract.mts
 scripts/fleet/cover/lane-paths.mts
@@ -3439,6 +3452,7 @@ scripts/fleet/gen/glyph-store.mts
 scripts/fleet/gen/glyph-types.mts
 scripts/fleet/gen/glyph.mts
 scripts/fleet/gen/harness-adapters.mts
+scripts/fleet/gen/harness-adapters/catalog.mts
 scripts/fleet/gen/harness-adapters/fleet-guards.mts
 scripts/fleet/gen/hook-dispatch.mts
 scripts/fleet/gen/hook-validators.mts
@@ -3673,6 +3687,7 @@ scripts/fleet/pack/pinned-ref.mts
 scripts/fleet/pack/ref.mts
 scripts/fleet/pack/structure.mts
 scripts/fleet/pack/template-payload-scope.mts
+scripts/fleet/patches/ownership.mts
 scripts/fleet/patching-findings/cli.mts
 scripts/fleet/patching-findings/lib/patch-parse.mts
 scripts/fleet/paths.mts
@@ -3695,6 +3710,8 @@ scripts/fleet/process/active-run-marker.mts
 scripts/fleet/process/backoff.mts
 scripts/fleet/process/duration-budgets.mts
 scripts/fleet/process/fixer-lock.mts
+scripts/fleet/process/heavy-job/admission.mts
+scripts/fleet/process/heavy-job/owner.mts
 scripts/fleet/process/is-main-module.mts
 scripts/fleet/process/lifecycle.mts
 scripts/fleet/process/poll-with-decay.mts
@@ -4008,6 +4025,7 @@ scripts/fleet/team-activity/lib/state.mts
 scripts/fleet/team-activity/lib/types.mts
 scripts/fleet/temporal/calendar-month.mts
 scripts/fleet/test-runner/cli-args.mts
+scripts/fleet/test-runner/discovery.mts
 scripts/fleet/test-runner/git-files.mts
 scripts/fleet/test-runner/mirror-resolver.mts
 scripts/fleet/test-runner/read-summary.mts
@@ -4038,6 +4056,7 @@ scripts/fleet/triaging-findings/lib/ingest.mts
 scripts/fleet/triaging-findings/lib/report.mts
 scripts/fleet/trim-claude-md.mts
 scripts/fleet/trimming-bundle/measure-bundle.mts
+scripts/fleet/type.mts
 scripts/fleet/update-model-pricing.mts
 scripts/fleet/update.mts
 scripts/fleet/update/_shared.mts
@@ -4089,6 +4108,7 @@ scripts/fleet/worktree/create/run.mts
 scripts/fleet/worktree/landed.mts
 scripts/fleet/worktree/policy.mts
 scripts/fleet/worktree/safety.mts
+scripts/fleet/worktree/sweep/args.mts
 scripts/fleet/worktree/sweep/lifecycle.mts
 scripts/fleet/worktree/sweep/queue.mts
 scripts/fleet/worktree/sweep/run.mts

@@ -79,7 +79,10 @@ jobs:
           FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
           else
             git fetch "${FETCH_ARGS[@]}"
           fi
@@ -107,47 +110,97 @@ jobs:
     permissions:
       contents: write
     steps:
-      # First step can't call the local ./.github/actions/fleet/checkout
-      # composite (nothing checked out yet); bootstrap the workspace with the
-      # same inline git-fetch shape publish-npm.yml uses, so the fleet
-      # checkout action below can re-check-out at its own depth.
-      - name: Bootstrap checkout
+      # Retain the current default branch's fleet actions before checking out
+      # historical release content. The archive digest protects the retained
+      # definitions until they are restored after checkout.
+      - name: Bootstrap fleet Actions
         shell: bash
         env:
           # Route context through env (no ${{ }} in the shell body —
           # zizmor expression-injection). Token authorizes the fetch inline and
           # is never persisted to .git/config.
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GITHUB_TOKEN: ${{ github.token }}
-          INPUT_TAG: ${{ inputs.tag }}
           REPOSITORY: ${{ github.repository }}
           SERVER_URL: ${{ github.server_url }}
-          TRIGGER_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
+          if [ -z "${DEFAULT_BRANCH}" ]; then
+            echo '::error::Cannot retain fleet actions: repository default branch is empty.' >&2
+            exit 1
+          fi
           git init -q
           git config --local advice.detachedHead false
           git remote remove origin 2>/dev/null || true
           git remote add origin "${SERVER_URL}/${REPOSITORY}"
-          # A dispatched tag input wins; otherwise the ref that triggered the run.
-          FETCH_REF="${TRIGGER_REF}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "refs/heads/${DEFAULT_BRANCH}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          ACTIONS_SHA="$(git rev-parse 'FETCH_HEAD^{commit}')"
+          git checkout -q --detach "${ACTIONS_SHA}"
+          ACTUAL_SHA="$(git rev-parse 'HEAD^{commit}')"
+          if [ "${ACTUAL_SHA}" != "${ACTIONS_SHA}" ]; then
+            echo "::error::Fleet action source mismatch: expected ${ACTIONS_SHA}, got ${ACTUAL_SHA}." >&2
+            exit 1
+          fi
+          tar -czf "${RUNNER_TEMP}/fleet-actions.tar.gz" .github/actions/fleet
+          (
+            cd "${RUNNER_TEMP}"
+            sha256sum fleet-actions.tar.gz > fleet-actions.tar.gz.sha256
+          )
+          printf '%s\n' "${ACTIONS_SHA}" > "${RUNNER_TEMP}/fleet-actions.sha"
+      - name: Checkout release content
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          TRIGGER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          FETCH_REF="${TRIGGER_SHA}"
           if [ -n "${INPUT_TAG}" ]; then
             FETCH_REF="refs/tags/${INPUT_TAG}"
           fi
           FETCH_ARGS=(--no-tags --prune --depth 1 origin "${FETCH_REF}")
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
           else
             git fetch "${FETCH_ARGS[@]}"
           fi
-          git checkout -q --detach FETCH_HEAD
-      - name: Checkout
+          RELEASE_SHA="$(git rev-parse 'FETCH_HEAD^{commit}')"
+          git checkout -q --detach "${RELEASE_SHA}"
+          ACTUAL_SHA="$(git rev-parse 'HEAD^{commit}')"
+          if [ "${ACTUAL_SHA}" != "${RELEASE_SHA}" ]; then
+            echo "::error::Release source mismatch: expected ${RELEASE_SHA}, got ${ACTUAL_SHA}." >&2
+            exit 1
+          fi
+      - name: Restore fleet Actions
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd "${RUNNER_TEMP}"
+            sha256sum -c fleet-actions.tar.gz.sha256
+          )
+          tar -xzf "${RUNNER_TEMP}/fleet-actions.tar.gz" -C "${GITHUB_WORKSPACE}"
+          echo "Restored fleet actions from $(cat "${RUNNER_TEMP}/fleet-actions.sha")."
+      - name: Hydrate release content
         uses: ./.github/actions/fleet/checkout
         with:
-          ref: ${{ inputs.tag != '' && format('refs/tags/{0}', inputs.tag) || github.sha }}
-          # Reuse the PR App for a contents:read token scoped to wheelhouse.
-          # Both credentials enable the private release fallback. Without the
-          # key, hydration still pulls public GHCR anonymously.
+          checkout: 'false'
           payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       # The resolved tag is the single input every later step trusts — it

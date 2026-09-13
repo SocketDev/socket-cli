@@ -514,6 +514,7 @@ catalogs:
       version: 4.5.4
 
 overrides:
+  '@polka/url': 1.0.0-next.29
   '@sinclair/typebox': 0.34.52
   '@socketregistry/packageurl-js': 1.5.2
   '@socketsecurity/lib': 7.0.1
@@ -547,7 +548,7 @@ overrides:
   ssri@>=12: 13.0.1
   string-width@>=5: 8.2.2
   tinyexec: 1.3.0
-  typebox: 1.3.26
+  typebox: 1.3.27
   undici@<6: 6.28.0
   update-notifier@>=4.0.0: 7.3.1
   uuid: 11.1.1
@@ -557,7 +558,6 @@ overrides:
   '@grpc/proto-loader': 0.8.1
   '@octokit/graphql': 9.0.5
   '@octokit/request-error': 7.1.2
-  '@polka/url': 1.0.0-next.29
   '@sigstore/core': 3.2.1
   '@sigstore/sign': 5.0.0
   '@sigstore/verify': 3.1.1
@@ -625,6 +625,7 @@ overrides:
 
 patchedDependencies:
   '@npmcli/run-script@10.0.4': 65d59a7c4dd7b00f1c218cbcf97d78fe2f462f2e048de4a22b41bd70dbdefcdc
+  '@polka/url@1.0.0-next.29': 60d82e95c5e67e66c41fe2987ddd4fc3f4992f12158e5c56838e7682e6ef72ea
   '@sigstore/sign@5.0.0': 4d806e50e530edf6761bba8ad98cd1f2867a86201f6faee419444d86f5325def
   '@sindresorhus/df@5.0.0': 47c1e44703106ab3c1bd7111ca44b18012c52fd1bba00a4aa89c4d38fefa0ab1
   '@socketsecurity/lib@7.0.1': a07ae34e75e4e6547a1c68678e556ca4396d02abebb1efe42224f92ed132c8c3
@@ -1040,8 +1041,8 @@ importers:
         specifier: 'catalog:'
         version: 2.30.1(typescript@7.1.0-dev.20260904.1)
       typebox:
-        specifier: 1.3.26
-        version: 1.3.26
+        specifier: 1.3.27
+        version: 1.3.27
       typescript:
         specifier: 'catalog:'
         version: 7.1.0-dev.20260904.1
@@ -8598,8 +8599,8 @@ packages:
     resolution: {integrity: sha512-faYHw0anBbc/kWF3zFTEnxSFOAGUX9GFbOBthvDdLsIlEoWOFOtS0zgCiQYwIskL9iGXZL3kAXD8OoZ4GmMATA==}
     engines: {node: '>= 18'}
 
-  typebox@1.3.26:
-    resolution: {integrity: sha512-ey7mwY4ZDw0e0cEv2apwJq7jdMdUEZF1zpNLsHF5G4nY2w/Q+qPGt3ZvbxWml2H2yFYjZ20B/0j8ezny7xHUGg==}
+  typebox@1.3.27:
+    resolution: {integrity: sha512-zu+jc1pcy4UiNThxikUr36f0Rybk9PEeCg/NE6adeWr/SKsdNO4EzZHYRDlv2YCVAfj3Odq3dESSo/jNyoBXzA==}
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
@@ -10011,7 +10012,7 @@ snapshots:
 
   '@pnpm/util.lex-comparator@4.0.1': {}
 
-  '@polka/url@1.0.0-next.29': {}
+  '@polka/url@1.0.0-next.29(patch_hash=60d82e95c5e67e66c41fe2987ddd4fc3f4992f12158e5c56838e7682e6ef72ea)': {}
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -12546,7 +12547,7 @@ snapshots:
 
   polka@0.5.2:
     dependencies:
-      '@polka/url': 1.0.0-next.29
+      '@polka/url': 1.0.0-next.29(patch_hash=60d82e95c5e67e66c41fe2987ddd4fc3f4992f12158e5c56838e7682e6ef72ea)
       trouter: 2.0.1
 
   portless@0.15.6: {}
@@ -12794,7 +12795,7 @@ snapshots:
 
   sirv@3.0.2:
     dependencies:
-      '@polka/url': 1.0.0-next.29
+      '@polka/url': 1.0.0-next.29(patch_hash=60d82e95c5e67e66c41fe2987ddd4fc3f4992f12158e5c56838e7682e6ef72ea)
       mrmime: 2.0.1
       totalist: 3.0.1
 
@@ -13120,7 +13121,7 @@ snapshots:
       media-typer: 1.1.0
       mime-types: 3.0.2
 
-  typebox@1.3.26: {}
+  typebox@1.3.27: {}
 
   typescript@5.9.3: {}
 

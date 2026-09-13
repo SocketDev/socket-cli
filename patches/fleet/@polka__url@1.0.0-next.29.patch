@@ -1,0 +1,43 @@
+diff --git a/build.js b/build.js
+index a945343214b16fdb462ba64c01331c8080c846c4..5c88f1325e55e07ff67f7e3389693f8a6a6a5199 100644
+--- a/build.js
++++ b/build.js
+@@ -47,3 +47,38 @@ function parse(req) {
+ }
+ 
+ exports.parse = parse;
++
++// compat shim: @polka/url@0.5 shipped a default-callable export — `require('@polka/url')`
++// itself was the parse function, returning `{query: <raw string>, search, href, path,
++// pathname, _raw}` (query left unparsed; polka's own index.js re-parses it via
++// `querystring.parse`). @polka/url@1 replaced that with a named `parse` export
++// returning `{pathname, search, query: <already-parsed object>, hash, raw}` — a
++// consumer calling the module as a function, or reading `.query` as a string, breaks.
++// Port the @polka/url@0.5 algorithm verbatim as the default export so `require('@polka/url')`
++// stays callable with the old return shape; the modern named `parse` export above (used by
++// e.g. sirv, which only reads `.pathname`) is untouched.
++function parseOld(req) {
++	let url = req.url;
++	if (url === void 0) return url;
++
++	let obj = req._parsedUrl;
++	if (obj && obj._raw === url) return obj;
++
++	obj = {};
++	obj.query = obj.search = null;
++	obj.href = obj.path = obj.pathname = url;
++
++	let idx = url.indexOf('?', 1);
++	if (idx !== -1) {
++		obj.search = url.substring(idx);
++		obj.query = obj.search.substring(1);
++		obj.pathname = url.substring(0, idx);
++	}
++
++	obj._raw = url;
++
++	return (req._parsedUrl = obj);
++}
++
++module.exports = parseOld;
++module.exports.parse = parse;

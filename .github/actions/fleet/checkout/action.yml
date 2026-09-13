@@ -50,7 +50,7 @@ inputs:
   payload-token-private-key:
     description: >-
       Existing PR App private key. Pass secrets.SOCKET_PR_APP_PRIVATE_KEY.
-      An absent key skips the optional mint and leaves public GHCR available.
+      An absent credential pair leaves public GHCR hydration anonymous.
     required: false
     default: ''
 
@@ -70,8 +70,8 @@ runs:
       env:
         # Route every workflow-context value through env so no ${{ }} expands
         # directly into the shell body (zizmor expression-injection). The token
-        # authorizes the fetch inline via `git -c …extraheader` and is NEVER
-        # written to .git/config — the persist-credentials:false equivalent.
+        # authorizes Git through step-local environment configuration.
+        # The credential stays out of arguments and .git/config.
         CHECKOUT_REF: ${{ inputs.ref }}
         CHECKOUT_DEST: ${{ inputs.working-directory }}
         CHECKOUT_FETCH_DEPTH: ${{ inputs.fetch-depth }}
@@ -111,7 +111,10 @@ runs:
         # Inline, non-persisting auth header (persist-credentials:false equiv).
         if [ -n "${GITHUB_TOKEN}" ]; then
           AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch "${FETCH_ARGS[@]}"
         else
           git fetch "${FETCH_ARGS[@]}"
         fi
@@ -126,7 +129,7 @@ runs:
         # origin/HEAD, and they fail loud with their own What/Where/Fix.
         if [ "${CHECKOUT_FETCH_DEPTH}" = "0" ]; then
           if [ -n "${GITHUB_TOKEN}" ]; then
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64:-}" remote set-head origin --auto \
+            git remote set-head origin --auto \
               || echo "::warning::set-head failed — origin/HEAD unset"
           else
             git remote set-head origin --auto \
@@ -150,11 +153,24 @@ runs:
         fi
         echo "needed=${NEEDED}" >> "${GITHUB_OUTPUT}"
 
+    - name: Validate fleet payload credentials
+      if: steps.detect-hydration.outputs.needed == 'true'
+      shell: bash
+      env:
+        PAYLOAD_TOKEN_CLIENT_ID: ${{ inputs.payload-token-client-id }}
+        PAYLOAD_TOKEN_PRIVATE_KEY: ${{ inputs.payload-token-private-key }}
+      run: |
+        set -euo pipefail
+        if { [ -z "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -n "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; } || \
+           { [ -n "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -z "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; }; then
+          echo "::error title=fleet payload credentials are incomplete::The payload client variable and private-key secret are both required for thin payload hydration."
+          exit 1
+        fi
+
     - name: Mint fleet payload read token
       # Scoped contents:read mint for the hydration fetch below. Gated on
-      # BOTH hydration actually being needed AND the caller having provisioned
-      # the PR App credentials, so a non-thin checkout — most callers of
-      # this action — never mints a token it has no use for. Mirrors
+      # hydration actually being needed, after validation rejects incomplete
+      # PR App input pairs. A non-thin checkout never mints an unused token. Mirrors
       # setup-and-install's own later mint (for the `pnpm install`-time
       # fetch), scoped identically (contents:read on the wheelhouse repo
       # alone) — see github-payload-app-token's own description.
@@ -195,7 +211,7 @@ runs:
         if [ -d template/base/universal ]; then
           HYDRATE_ARGS+=(--from-template)
         else
-          HYDRATE_ARGS+=(--ensure-current --quiet)
+          HYDRATE_ARGS+=(--quiet)
         fi
         if ! node scripts/repo/bootstrap/fleet.mjs "${HYDRATE_ARGS[@]+"${HYDRATE_ARGS[@]}"}"; then
           echo "::error title=fleet payload hydration failed::node scripts/repo/bootstrap/fleet.mjs exited non-zero"

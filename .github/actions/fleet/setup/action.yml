@@ -170,6 +170,10 @@ runs:
             fi
             printf '#!/bin/bash\nexec node "%s" "$@"\n' "$BINARY_PATH" > "$PNPM_BIN"
             chmod +x "$PNPM_BIN"
+            if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
+              BINARY_PATH_WIN="$(cygpath -w "$BINARY_PATH")"
+              printf '@echo off\r\nnode "%s" %%*\r\nexit /b %%errorlevel%%\r\n' "$BINARY_PATH_WIN" > "${PNPM_BIN}.cmd"
+            fi
           fi
         else
           # A THIN member untracks the whole scripts/fleet/** payload and
@@ -241,6 +245,10 @@ runs:
           fi
           printf '#!/bin/bash\nexec node "%s" "$@"\n' "$BINARY_PATH" > "$PNPM_BIN"
           chmod +x "$PNPM_BIN"
+          if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
+            BINARY_PATH_WIN="$(cygpath -w "$BINARY_PATH")"
+            printf '@echo off\r\nnode "%s" %%*\r\nexit /b %%errorlevel%%\r\n' "$BINARY_PATH_WIN" > "${PNPM_BIN}.cmd"
+          fi
         fi
         echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
         # The pnpm installed above is pinned + SRI-verified from
@@ -626,6 +634,13 @@ runs:
               if [ -x "$CARGO_PROXY" ]; then REAL="$CARGO_PROXY"; break; fi
             done
           fi
+          if $IS_WINDOWS; then
+            if [[ "$REAL" != *.cmd && -f "${REAL}.cmd" ]]; then
+              REAL="${REAL}.cmd"
+            elif [[ "$REAL" != *.exe && -f "${REAL}.exe" ]]; then
+              REAL="${REAL}.exe"
+            fi
+          fi
           if [ -n "$REAL" ]; then
             REAL="$(msys_to_win_path "$REAL")"
             # SFW_UNKNOWN_HOST_ACTION=ignore: only sfw-enterprise PARSES
@@ -756,6 +771,13 @@ runs:
           echo 'SFW_CUSTOM_REGISTRIES<<EOF'
           # Strip comments + blank lines so the env var holds only real entries.
           grep -vE '^\s*(#|$)' "$BYPASS_FILE"
+          if [[ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]]; then
+            OIDC_HOST="${ACTIONS_ID_TOKEN_REQUEST_URL#*://}"
+            OIDC_HOST="${OIDC_HOST%%/*}"
+            case "$OIDC_HOST" in
+              *.actions.githubusercontent.com) printf 'bypass:%s\n' "$OIDC_HOST" ;;
+            esac
+          fi
           echo 'EOF'
         } >> "${GITHUB_ENV:-/dev/null}"
         # Opt out of gh CLI telemetry (on-by-default as of late 2025).

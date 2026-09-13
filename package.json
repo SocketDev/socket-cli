@@ -80,7 +80,7 @@
     "npm:staged": "node scripts/fleet/publish-pipeline.mts --status",
     "npm:trust": "node scripts/fleet/registry-infra/npm/settings/trust.mts",
     "offload:model": "node scripts/fleet/offload-model.mts",
-    "preflight": "node scripts/repo/bootstrap/fleet.mjs --ensure-current --quiet && node scripts/fleet/preflight.mts",
+    "preflight": "node scripts/repo/bootstrap/fleet.mjs --quiet && node scripts/fleet/preflight.mts",
     "prepare": "node scripts/repo/bootstrap/prepare.mts && node scripts/fleet/install-git-hooks.mts && node scripts/fleet/prepare.mts",
     "prepublishOnly": "echo 'ERROR: Use GitHub Actions workflow for publishing' && exit 1",
     "pretest": "pnpm run build:cli",
@@ -112,7 +112,7 @@
     "test:e2e": "node scripts/repo/cli-build/e2e.mts",
     "test:integration": "node scripts/repo/cli-build/integration.mts",
     "test:unit": "node scripts/repo/cli-build/test-wrapper.mts",
-    "type": "node node_modules/typescript/bin/tsc --noEmit -p .config/fleet/tsconfig.check.json",
+    "type": "node scripts/fleet/type.mts",
     "type:cli": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
     "update": "node scripts/fleet/update.mts",
     "weekly-update": "node scripts/fleet/weekly-update.mts",
@@ -127,7 +127,7 @@
     "ai:odai:diagnose": "node scripts/fleet/ai/odai/run.mts diagnose",
     "ai:read": "node scripts/fleet/ai/bounded-reader.mts",
     "spend-usage": "node scripts/fleet/spend-usage.mts",
-    "update:chrome": "node scripts/fleet/ai/odai/run.mts verify-chrome",
+    "update:chrome": "node scripts/fleet/update/chrome.mts",
     "build:oxlint-bundle": "node scripts/fleet/build-oxlint-bundle.mts",
     "build:hook-bundle": "node scripts/fleet/build-hook-bundle.mts",
     "build:hook-snapshot": "node scripts/fleet/build-hook-snapshot.mts",
@@ -158,7 +158,10 @@
     "lockstep:assist": "node scripts/fleet/lockstep/assist/run.mts",
     "mcp:1password": "node scripts/fleet/mcp/1password/run.mts",
     "npm:dispatch": "node scripts/fleet/registry-infra/remote-npm-publish.mts --publish",
-    "worktree:create": "node scripts/fleet/worktree/create/run.mts"
+    "worktree:create": "node scripts/fleet/worktree/create/run.mts",
+    "slack:auth": "node scripts/fleet/mcp/connect.mts slack --client claude --reauthenticate",
+    "slack:token": "node scripts/fleet/setup/slack-token.mts",
+    "github:browser": "node scripts/fleet/browser/github-auth.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

@@ -593,6 +593,327 @@ function migrateWorkspaceSettings(dest, yaml) {
 }
 
 //#endregion
+//#region scripts/repo/gen/bootstrap/src/yaml-merge.mts
+const COL0_KEY_RE = /^[A-Za-z][\w-]*:/
+/**
+ * Splice off a block's trailing separator run — the comment/blank lines at the
+ * END of `blockLines` when the very last line is a comment. That run sits
+ * directly above the NEXT top-level key, so it is that key's preamble, not
+ * documentation of this block's last entry. Mutates `blockLines`; returns the
+ * spliced run (empty when the block ends with content or blank lines only —
+ * bare trailing blanks stay put as inter-block spacing).
+ */
+function spliceYamlSeparatorRun(blockLines) {
+  const last = blockLines[blockLines.length - 1]
+  if (blockLines.length < 2 || !last.trim().startsWith('#')) return []
+  let start = blockLines.length
+  while (start > 1) {
+    const trimmed = blockLines[start - 1].trim()
+    if (trimmed !== '' && !trimmed.startsWith('#')) break
+    start -= 1
+  }
+  return blockLines.splice(start)
+}
+/**
+ * Parse a YAML string into an ordered list of top-level key blocks. Each
+ * block's `lines` run from the key line up to (not including) the next
+ * column-0 key line or EOF — except a trailing comment run directly above the
+ * next key, which attaches to that FOLLOWING block as its `head`: it is a
+ * separator headed for the next key (the `overrides:` preamble in a member's
+ * pnpm-workspace.yaml), and leaving it as body tail makes the entry-scoped
+ * merge strand it mid-block when consumer-only entries append after it.
+ * Comment lines before the first key become the first block's head.
+ */
+function parseYamlKeyBlocks(yaml) {
+  const lines = yaml.split('\n')
+  const blocks = []
+  let preamble = []
+  let current
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]
+    if (COL0_KEY_RE.test(line)) {
+      let head
+      if (current !== void 0) {
+        head = spliceYamlSeparatorRun(current.lines)
+        blocks.push(current)
+      } else {
+        head = preamble
+        preamble = []
+      }
+      const colonIdx = line.indexOf(':')
+      current = {
+        head,
+        key: line.slice(0, colonIdx),
+        lines: [line],
+      }
+    } else if (current !== void 0) current.lines.push(line)
+    else preamble.push(line)
+  }
+  if (current !== void 0) blocks.push(current)
+  return blocks
+}
+const MAP_ENTRY_RE = /^(\s+)(?:(['"])(.*?)\2|([^'"\n]+?)):(?:\s|$)/
+const LIST_ITEM_RE = /^(\s+)-\s+(.*)$/
+/**
+ * Split a top-level key block's BODY lines into entry chunks. A chunk starts
+ * at a map-entry or list-item line at the block's entry indent; comment and
+ * blank lines BEFORE an entry attach to it as documentation for the entry
+ * that immediately follows; deeper-indented lines are continuations. Comments
+ * and blanks after the last entry come back as `trailing`, unattached, since
+ * they document nothing that a merge can key on. Returns `undefined` when the
+ * body has no recognizable entries — a scalar block, nothing nested to merge.
+ */
+function parseYamlEntryChunks(bodyLines) {
+  const chunks = []
+  let pending = []
+  let current
+  let entryIndent
+  for (let i = 0, { length } = bodyLines; i < length; i += 1) {
+    const line = bodyLines[i]
+    const trimmed = line.trim()
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      pending.push(line)
+      continue
+    }
+    const map = MAP_ENTRY_RE.exec(line)
+    const item = map ? void 0 : LIST_ITEM_RE.exec(line)
+    const indent = map ? map[1].length : item ? item[1].length : void 0
+    if (
+      indent !== void 0 &&
+      (entryIndent === void 0 || indent === entryIndent)
+    ) {
+      entryIndent ??= indent
+      if (current !== void 0) chunks.push(current)
+      current = {
+        id: map ? `k:${(map[3] ?? map[4]).trim()}` : `i:${item[2].trim()}`,
+        lines: [...pending, line],
+      }
+      pending = []
+      continue
+    }
+    if (current === void 0) return
+    current.lines.push(...pending, line)
+    pending = []
+  }
+  if (current !== void 0) chunks.push(current)
+  else if (pending.length > 0) return
+  return chunks.length > 0
+    ? {
+        chunks,
+        trailing: pending,
+      }
+    : void 0
+}
+/**
+ * Merge one fleet-managed top-level key block ENTRY-SCOPED — the workspace
+ * analog of the Claude-settings splice that keeps repo hook registrations
+ * inside the fleet-owned `hooks` key. Fleet-shipped entries (present in the
+ * bundle block) take the bundle's text, comments included; member-local
+ * entries that appear only in the consumer block survive in their original
+ * order after the fleet set. Scalar-shaped blocks (`saveExact: true`) have no
+ * nested entries, so the bundle block replaces wholesale. Trailing blank lines
+ * follow the consumer block so inter-block spacing is preserved. The merged
+ * block's head (the separator run above its key) is the BUNDLE's when the
+ * bundle ships one — canonical text, and it retires a stale consumer copy —
+ * falling back to the consumer's so local spacing and comments survive when
+ * the bundle has none.
+ */
+function mergeYamlKeyBlock(bundleBlock, consumerBlock) {
+  const stripTrailingBlanks = lines => {
+    const out = [...lines]
+    while (out.length > 0 && out[out.length - 1].trim() === '') out.pop()
+    return out
+  }
+  const head =
+    bundleBlock.head.length > 0 ? bundleBlock.head : consumerBlock.head
+  const trailingBlankCount =
+    consumerBlock.lines.length - stripTrailingBlanks(consumerBlock.lines).length
+  const bundleBody = stripTrailingBlanks(bundleBlock.lines).slice(1)
+  const consumerBody = stripTrailingBlanks(consumerBlock.lines).slice(1)
+  const bundleParsed = parseYamlEntryChunks(bundleBody)
+  const consumerParsed = parseYamlEntryChunks(consumerBody)
+  if (bundleParsed === void 0 || consumerParsed === void 0)
+    return {
+      head,
+      key: bundleBlock.key,
+      lines: [
+        ...stripTrailingBlanks(bundleBlock.lines),
+        ...Array.from({ length: trailingBlankCount }, () => ''),
+      ],
+    }
+  const bundleChunks = bundleParsed.chunks
+  const consumerChunks = consumerParsed.chunks
+  const bundleIds = new Set(bundleChunks.map(c => c.id))
+  const merged = [bundleBlock.lines[0]]
+  for (let i = 0, { length } = bundleChunks; i < length; i += 1)
+    merged.push(...bundleChunks[i].lines)
+  for (let i = 0, { length } = consumerChunks; i < length; i += 1) {
+    const chunk = consumerChunks[i]
+    if (!bundleIds.has(chunk.id)) merged.push(...chunk.lines)
+  }
+  merged.push(...bundleParsed.trailing)
+  for (let i = 0; i < trailingBlankCount; i += 1) merged.push('')
+  return {
+    head,
+    key: bundleBlock.key,
+    lines: merged,
+  }
+}
+/**
+ * Merge the fleet-managed workspace sections from `bundleFleetSections` into
+ * `consumerYaml`, scoped to the keys listed in `fleetKeys` — and, within each
+ * fleet key, scoped to the ENTRIES the bundle ships (mergeYamlKeyBlock):
+ * member-local nested entries (repo-specific `catalog:`/`overrides:` pins,
+ * soak-exclude items, …) survive a refresh instead of being wholesale-dropped.
+ * Non-fleet keys (including `packages:`) are preserved byte-exact. Throws on
+ * ambiguous input.
+ */
+function mergeWorkspaceYaml(config) {
+  const { bundleFleetSections, consumerYaml, fleetKeys } = {
+    __proto__: null,
+    ...config,
+  }
+  const consumerBlocks = parseYamlKeyBlocks(consumerYaml)
+  const bundleBlocks = parseYamlKeyBlocks(bundleFleetSections)
+  const fleetKeySet = new Set(fleetKeys)
+  const consumerKeyCounts = /* @__PURE__ */ new Map()
+  for (const block of consumerBlocks)
+    if (fleetKeySet.has(block.key))
+      consumerKeyCounts.set(
+        block.key,
+        (consumerKeyCounts.get(block.key) ?? 0) + 1,
+      )
+  for (const [key, count] of consumerKeyCounts)
+    if (count > 1)
+      throw new Error(
+        `mergeWorkspaceYaml: fleet key "${key}" appears ${count} times at column 0 in consumerYaml — cannot merge safely`,
+      )
+  const bundleMap = /* @__PURE__ */ new Map()
+  for (const block of bundleBlocks) bundleMap.set(block.key, block)
+  const resultBlocks = []
+  const handledFleetKeys = /* @__PURE__ */ new Set()
+  for (const block of consumerBlocks)
+    if (fleetKeySet.has(block.key)) {
+      const bundleBlock = bundleMap.get(block.key)
+      if (bundleBlock !== void 0)
+        resultBlocks.push(mergeYamlKeyBlock(bundleBlock, block))
+      else resultBlocks.push(block)
+      handledFleetKeys.add(block.key)
+    } else resultBlocks.push(block)
+  for (const key of fleetKeys)
+    if (!handledFleetKeys.has(key)) {
+      const bundleBlock = bundleMap.get(key)
+      if (bundleBlock !== void 0) resultBlocks.push(bundleBlock)
+    }
+  for (let i = 1; i < resultBlocks.length; i += 1) {
+    if (resultBlocks[i].head.length === 0) continue
+    const { lines } = resultBlocks[i - 1]
+    while (lines.length > 1 && lines[lines.length - 1].trim() === '')
+      lines.pop()
+  }
+  return `${resultBlocks
+    .map(b => [...b.head, ...b.lines].join('\n'))
+    .join('\n')
+    .replace(/\n+$/, '')}\n`
+}
+
+//#endregion
+//#region scripts/repo/gen/bootstrap/src/dependency-patches.mts
+function packageNameFromSpec(spec) {
+  const normalized = spec.startsWith('/') ? spec.slice(1) : spec
+  const separator = normalized.lastIndexOf('@')
+  return separator > 0 ? normalized.slice(0, separator) : normalized
+}
+function dependencyGraphRequires(root, dependency) {
+  const packageFile = path.join(root, 'package.json')
+  if (existsSync(packageFile)) {
+    const manifest = JSON.parse(readFileSync(packageFile, 'utf8'))
+    if (manifest && typeof manifest === 'object' && !Array.isArray(manifest))
+      for (const field of [
+        'dependencies',
+        'devDependencies',
+        'optionalDependencies',
+        'peerDependencies',
+      ]) {
+        const entries = manifest[field]
+        if (!entries || typeof entries !== 'object' || Array.isArray(entries))
+          continue
+        if (Object.hasOwn(entries, dependency)) return true
+        for (const spec of Object.values(entries))
+          if (typeof spec === 'string' && spec.startsWith(`npm:${dependency}@`))
+            return true
+      }
+  }
+  const lockFile = path.join(root, 'pnpm-lock.yaml')
+  if (!existsSync(lockFile)) return false
+  return parseYamlKeyBlocks(readFileSync(lockFile, 'utf8'))
+    .filter(block => block.key === 'packages')
+    .some(packages => {
+      return (
+        parseYamlEntryChunks(
+          packages.lines.slice(1).filter(line => line !== '---'),
+        )?.chunks.some(chunk => {
+          const spec = chunk.id.slice(2)
+          return (
+            spec.startsWith(`${dependency}@`) ||
+            spec.startsWith(`/${dependency}@`) ||
+            spec.startsWith(`/${dependency}/`)
+          )
+        }) ?? false
+      )
+    })
+}
+function patchEntries(yaml) {
+  const blocks = parseYamlKeyBlocks(yaml)
+  const block = blocks.find(entry => entry.key === 'patchedDependencies')
+  return {
+    blocks,
+    block,
+    entries: block ? parseYamlEntryChunks(block.lines.slice(1)) : void 0,
+  }
+}
+function filterPatchEntries(yaml, keep) {
+  const { blocks, block, entries } = patchEntries(yaml)
+  if (!block || !entries) return yaml
+  const kept = entries.chunks.filter(chunk =>
+    keep(packageNameFromSpec(chunk.id.slice(2))),
+  )
+  if (kept.length === entries.chunks.length) return yaml
+  block.lines = [
+    block.lines[0],
+    ...kept.flatMap(chunk => chunk.lines),
+    ...entries.trailing,
+  ]
+  return blocks
+    .filter(entry => entry !== block || kept.length > 0)
+    .flatMap(entry => [...entry.head, ...entry.lines])
+    .join('\n')
+}
+function prepareWorkspacePatchMerge(config) {
+  const entries = patchEntries(config.bundleFleetSections).entries
+  const fleetNames = new Set(
+    entries?.chunks.map(chunk => packageNameFromSpec(chunk.id.slice(2))),
+  )
+  const inactive = /* @__PURE__ */ new Set()
+  for (const group of config.groups ?? [])
+    if (
+      group.dependency &&
+      !dependencyGraphRequires(config.root, group.dependency)
+    )
+      inactive.add(group.dependency)
+  return {
+    bundleFleetSections: filterPatchEntries(
+      config.bundleFleetSections,
+      name => !inactive.has(name),
+    ),
+    consumerYaml: filterPatchEntries(
+      config.consumerYaml,
+      name => !fleetNames.has(name) && !inactive.has(name),
+    ),
+  }
+}
+
+//#endregion
 //#region template/base/universal/scripts/fleet/release/github/config.mts
 function githubReleaseEnabled(config) {
   return config?.release?.github !== false
@@ -718,6 +1039,8 @@ function readConditionalSettings(dest) {
   }
 }
 function conditionalManifestGroupHolds(group, raw, dest) {
+  if (group.dependency !== void 0)
+    return dependencyGraphRequires(dest, group.dependency)
   if (group.marker !== void 0) return existsSync(path.join(dest, group.marker))
   if (group.configFlag !== void 0) return configFlagHolds(group.configFlag, raw)
   if (group.capability !== void 0) {
@@ -1008,11 +1331,12 @@ const ALWAYS_TRACKED_PREFIXES = [
   'assets/fleet/important.svg',
   'assets/fleet/socket-combomark-dark.svg',
   'assets/fleet/socket-combomark-light.svg',
-  'patches/@socketsecurity__lib@7.0.1.patch',
-  'patches/brace-expansion@5.0.9.patch',
-  'patches/minimatch@10.2.6.patch',
-  'patches/run-local-ci@0.18.1.patch',
-  'patches/vitest@5.0.0.patch',
+  'patches/fleet/@polka__url@1.0.0-next.29.patch',
+  'patches/fleet/@socketsecurity__lib@7.0.1.patch',
+  'patches/fleet/brace-expansion@5.0.9.patch',
+  'patches/fleet/minimatch@10.2.6.patch',
+  'patches/fleet/run-local-ci@0.18.1.patch',
+  'patches/fleet/vitest@5.0.0.patch',
   'scripts/repo/bootstrap/',
 ]
 /**
@@ -1330,13 +1654,17 @@ function readFleetTrackedPaths(dest) {
       execFileSync('git', ['ls-files', '--cached', '-z'], {
         cwd: dest,
         encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
       })
         .split('\0')
         .filter(Boolean)
         .map(normalizeBundlePath),
     )
-  } catch {
-    return /* @__PURE__ */ new Set()
+  } catch (error) {
+    throw new Error(
+      `install-fleet: cannot read the tracked-path inventory for ${dest}; automatic hydration stopped before writing files: ${errorMessage(error)}. Fix the Git checkout, then retry.`,
+      { cause: error },
+    )
   }
 }
 function refreshFleetPackCheckoutExcludes(config) {
@@ -1930,231 +2258,6 @@ function isLockablePlacement(config) {
     !cfg.hybridPaths.has(rel) &&
     !isFleetCanonicalSpliceFile(rel)
   )
-}
-
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/yaml-merge.mts
-const COL0_KEY_RE = /^[A-Za-z][\w-]*:/
-/**
- * Splice off a block's trailing separator run — the comment/blank lines at the
- * END of `blockLines` when the very last line is a comment. That run sits
- * directly above the NEXT top-level key, so it is that key's preamble, not
- * documentation of this block's last entry. Mutates `blockLines`; returns the
- * spliced run (empty when the block ends with content or blank lines only —
- * bare trailing blanks stay put as inter-block spacing).
- */
-function spliceYamlSeparatorRun(blockLines) {
-  const last = blockLines[blockLines.length - 1]
-  if (blockLines.length < 2 || !last.trim().startsWith('#')) return []
-  let start = blockLines.length
-  while (start > 1) {
-    const trimmed = blockLines[start - 1].trim()
-    if (trimmed !== '' && !trimmed.startsWith('#')) break
-    start -= 1
-  }
-  return blockLines.splice(start)
-}
-/**
- * Parse a YAML string into an ordered list of top-level key blocks. Each
- * block's `lines` run from the key line up to (not including) the next
- * column-0 key line or EOF — except a trailing comment run directly above the
- * next key, which attaches to that FOLLOWING block as its `head`: it is a
- * separator headed for the next key (the `overrides:` preamble in a member's
- * pnpm-workspace.yaml), and leaving it as body tail makes the entry-scoped
- * merge strand it mid-block when consumer-only entries append after it.
- * Comment lines before the first key become the first block's head.
- */
-function parseYamlKeyBlocks(yaml) {
-  const lines = yaml.split('\n')
-  const blocks = []
-  let preamble = []
-  let current
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]
-    if (COL0_KEY_RE.test(line)) {
-      let head
-      if (current !== void 0) {
-        head = spliceYamlSeparatorRun(current.lines)
-        blocks.push(current)
-      } else {
-        head = preamble
-        preamble = []
-      }
-      const colonIdx = line.indexOf(':')
-      current = {
-        head,
-        key: line.slice(0, colonIdx),
-        lines: [line],
-      }
-    } else if (current !== void 0) current.lines.push(line)
-    else preamble.push(line)
-  }
-  if (current !== void 0) blocks.push(current)
-  return blocks
-}
-const MAP_ENTRY_RE = /^(\s+)(?:(['"])(.*?)\2|([^'"\n]+?)):(?:\s|$)/
-const LIST_ITEM_RE = /^(\s+)-\s+(.*)$/
-/**
- * Split a top-level key block's BODY lines into entry chunks. A chunk starts
- * at a map-entry or list-item line at the block's entry indent; comment and
- * blank lines BEFORE an entry attach to it as documentation for the entry
- * that immediately follows; deeper-indented lines are continuations. Comments
- * and blanks after the last entry come back as `trailing`, unattached, since
- * they document nothing that a merge can key on. Returns `undefined` when the
- * body has no recognizable entries — a scalar block, nothing nested to merge.
- */
-function parseYamlEntryChunks(bodyLines) {
-  const chunks = []
-  let pending = []
-  let current
-  let entryIndent
-  for (let i = 0, { length } = bodyLines; i < length; i += 1) {
-    const line = bodyLines[i]
-    const trimmed = line.trim()
-    if (trimmed === '' || trimmed.startsWith('#')) {
-      pending.push(line)
-      continue
-    }
-    const map = MAP_ENTRY_RE.exec(line)
-    const item = map ? void 0 : LIST_ITEM_RE.exec(line)
-    const indent = map ? map[1].length : item ? item[1].length : void 0
-    if (
-      indent !== void 0 &&
-      (entryIndent === void 0 || indent === entryIndent)
-    ) {
-      entryIndent ??= indent
-      if (current !== void 0) chunks.push(current)
-      current = {
-        id: map ? `k:${(map[3] ?? map[4]).trim()}` : `i:${item[2].trim()}`,
-        lines: [...pending, line],
-      }
-      pending = []
-      continue
-    }
-    if (current === void 0) return
-    current.lines.push(...pending, line)
-    pending = []
-  }
-  if (current !== void 0) chunks.push(current)
-  else if (pending.length > 0) return
-  return chunks.length > 0
-    ? {
-        chunks,
-        trailing: pending,
-      }
-    : void 0
-}
-/**
- * Merge one fleet-managed top-level key block ENTRY-SCOPED — the workspace
- * analog of the Claude-settings splice that keeps repo hook registrations
- * inside the fleet-owned `hooks` key. Fleet-shipped entries (present in the
- * bundle block) take the bundle's text, comments included; member-local
- * entries that appear only in the consumer block survive in their original
- * order after the fleet set. Scalar-shaped blocks (`saveExact: true`) have no
- * nested entries, so the bundle block replaces wholesale. Trailing blank lines
- * follow the consumer block so inter-block spacing is preserved. The merged
- * block's head (the separator run above its key) is the BUNDLE's when the
- * bundle ships one — canonical text, and it retires a stale consumer copy —
- * falling back to the consumer's so local spacing and comments survive when
- * the bundle has none.
- */
-function mergeYamlKeyBlock(bundleBlock, consumerBlock) {
-  const stripTrailingBlanks = lines => {
-    const out = [...lines]
-    while (out.length > 0 && out[out.length - 1].trim() === '') out.pop()
-    return out
-  }
-  const head =
-    bundleBlock.head.length > 0 ? bundleBlock.head : consumerBlock.head
-  const trailingBlankCount =
-    consumerBlock.lines.length - stripTrailingBlanks(consumerBlock.lines).length
-  const bundleBody = stripTrailingBlanks(bundleBlock.lines).slice(1)
-  const consumerBody = stripTrailingBlanks(consumerBlock.lines).slice(1)
-  const bundleParsed = parseYamlEntryChunks(bundleBody)
-  const consumerParsed = parseYamlEntryChunks(consumerBody)
-  if (bundleParsed === void 0 || consumerParsed === void 0)
-    return {
-      head,
-      key: bundleBlock.key,
-      lines: [
-        ...stripTrailingBlanks(bundleBlock.lines),
-        ...Array.from({ length: trailingBlankCount }, () => ''),
-      ],
-    }
-  const bundleChunks = bundleParsed.chunks
-  const consumerChunks = consumerParsed.chunks
-  const bundleIds = new Set(bundleChunks.map(c => c.id))
-  const merged = [bundleBlock.lines[0]]
-  for (let i = 0, { length } = bundleChunks; i < length; i += 1)
-    merged.push(...bundleChunks[i].lines)
-  for (let i = 0, { length } = consumerChunks; i < length; i += 1) {
-    const chunk = consumerChunks[i]
-    if (!bundleIds.has(chunk.id)) merged.push(...chunk.lines)
-  }
-  merged.push(...bundleParsed.trailing)
-  for (let i = 0; i < trailingBlankCount; i += 1) merged.push('')
-  return {
-    head,
-    key: bundleBlock.key,
-    lines: merged,
-  }
-}
-/**
- * Merge the fleet-managed workspace sections from `bundleFleetSections` into
- * `consumerYaml`, scoped to the keys listed in `fleetKeys` — and, within each
- * fleet key, scoped to the ENTRIES the bundle ships (mergeYamlKeyBlock):
- * member-local nested entries (repo-specific `catalog:`/`overrides:` pins,
- * soak-exclude items, …) survive a refresh instead of being wholesale-dropped.
- * Non-fleet keys (including `packages:`) are preserved byte-exact. Throws on
- * ambiguous input.
- */
-function mergeWorkspaceYaml(config) {
-  const { bundleFleetSections, consumerYaml, fleetKeys } = {
-    __proto__: null,
-    ...config,
-  }
-  const consumerBlocks = parseYamlKeyBlocks(consumerYaml)
-  const bundleBlocks = parseYamlKeyBlocks(bundleFleetSections)
-  const fleetKeySet = new Set(fleetKeys)
-  const consumerKeyCounts = /* @__PURE__ */ new Map()
-  for (const block of consumerBlocks)
-    if (fleetKeySet.has(block.key))
-      consumerKeyCounts.set(
-        block.key,
-        (consumerKeyCounts.get(block.key) ?? 0) + 1,
-      )
-  for (const [key, count] of consumerKeyCounts)
-    if (count > 1)
-      throw new Error(
-        `mergeWorkspaceYaml: fleet key "${key}" appears ${count} times at column 0 in consumerYaml — cannot merge safely`,
-      )
-  const bundleMap = /* @__PURE__ */ new Map()
-  for (const block of bundleBlocks) bundleMap.set(block.key, block)
-  const resultBlocks = []
-  const handledFleetKeys = /* @__PURE__ */ new Set()
-  for (const block of consumerBlocks)
-    if (fleetKeySet.has(block.key)) {
-      const bundleBlock = bundleMap.get(block.key)
-      if (bundleBlock !== void 0)
-        resultBlocks.push(mergeYamlKeyBlock(bundleBlock, block))
-      else resultBlocks.push(block)
-      handledFleetKeys.add(block.key)
-    } else resultBlocks.push(block)
-  for (const key of fleetKeys)
-    if (!handledFleetKeys.has(key)) {
-      const bundleBlock = bundleMap.get(key)
-      if (bundleBlock !== void 0) resultBlocks.push(bundleBlock)
-    }
-  for (let i = 1; i < resultBlocks.length; i += 1) {
-    if (resultBlocks[i].head.length === 0) continue
-    const { lines } = resultBlocks[i - 1]
-    while (lines.length > 1 && lines[lines.length - 1].trim() === '')
-      lines.pop()
-  }
-  return `${resultBlocks
-    .map(b => [...b.head, ...b.lines].join('\n'))
-    .join('\n')
-    .replace(/\n+$/, '')}\n`
 }
 
 //#endregion
@@ -2844,8 +2947,12 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
     : ''
   try {
     const merged = mergeWorkspaceYaml({
-      bundleFleetSections,
-      consumerYaml: migrateWorkspaceSettings(dest, consumerYaml),
+      ...prepareWorkspacePatchMerge({
+        bundleFleetSections,
+        consumerYaml: migrateWorkspaceSettings(dest, consumerYaml),
+        root: dest,
+        groups: manifest.conditionalScopedFiles,
+      }),
       fleetKeys: ws.fleetKeys,
     })
     writeFileSync(targetPath, merged)
@@ -3504,6 +3611,86 @@ async function resolveGreenPack(repo) {
 }
 
 //#endregion
+//#region scripts/repo/gen/bootstrap/src/tracked-hydration.mts
+function completeRegion(content, begin, end) {
+  const lines = content.split(/\r?\n/)
+  const start = lines.indexOf(begin)
+  const finish = start === -1 ? -1 : lines.indexOf(end, start + 1)
+  if (start === -1 || finish === -1) return
+  return lines.slice(start, finish + 1).join('\n')
+}
+function isManagedGitignoreResult(index, current) {
+  const fleetBlock = completeRegion(current, '# <fleet>', '# </fleet>')
+  const packBlock = completeRegion(current, packBeginMarker(), packEndMarker())
+  if (fleetBlock === void 0 || packBlock === void 0) return false
+  const withFleet = composeGitignore({
+    fleetBlock,
+    target: index,
+  })
+  return (
+    composeGitignore({
+      packBlock,
+      target: withFleet,
+    }) === current
+  )
+}
+function readIndexFile(dest, relative) {
+  return execFileSync('git', ['show', `:${relative}`], {
+    cwd: dest,
+    encoding: 'buffer',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+}
+function restoreIndexFile(dest, relative) {
+  execFileSync('git', ['checkout-index', '--force', '--', relative], {
+    cwd: dest,
+    stdio: 'ignore',
+  })
+}
+function repairTrackedHydration(dest, options) {
+  if (!existsSync(path.join(dest, '.git'))) return []
+  const appliedFiles = new Set(
+    (readAppliedFiles(dest) ?? []).map(normalizeBundlePath),
+  )
+  const appliedManifest = readAppliedManifest(dest) ?? {}
+  if (appliedFiles.size === 0 && Object.keys(appliedManifest).length === 0)
+    return []
+  const repaired = []
+  for (const relative of readFleetTrackedPaths(dest)) {
+    if (
+      relative !== '.gitignore' &&
+      !appliedFiles.has(relative) &&
+      !Object.hasOwn(appliedManifest, relative)
+    )
+      continue
+    const target = path.join(dest, relative)
+    if (!existsSync(target)) {
+      if (options?.restoreMissing === true && appliedFiles.has(relative)) {
+        restoreIndexFile(dest, relative)
+        repaired.push(relative)
+      }
+      continue
+    }
+    const current = readFileSync(target)
+    const appliedDigest = appliedManifest[relative]
+    const index = readIndexFile(dest, relative)
+    const isAppliedPayload =
+      appliedDigest !== void 0 && computeSha256(current) === appliedDigest
+    const isManagedGitignoreOnly =
+      relative === '.gitignore' &&
+      isManagedGitignoreResult(index.toString('utf8'), current.toString('utf8'))
+    if (
+      !current.equals(index) &&
+      (isAppliedPayload || isManagedGitignoreOnly)
+    ) {
+      restoreIndexFile(dest, relative)
+      repaired.push(relative)
+    }
+  }
+  return repaired
+}
+
+//#endregion
 //#region scripts/repo/gen/bootstrap/src/fleet.mts
 const SCRIPT_META = {
   describe:
@@ -3532,12 +3719,12 @@ function parseArgs(argv) {
     bundle: void 0,
     dest: repoRoot,
     dryRun: false,
-    ensureCurrent: false,
     json: false,
     manifest: void 0,
     quiet: false,
     refreshTracked: false,
     preserveTracked: false,
+    repairTracked: false,
     ref: '',
     repo: DEFAULT_REPO,
     fromTemplate: false,
@@ -3550,12 +3737,12 @@ function parseArgs(argv) {
     if (arg === '--dest') opts.dest = argv[++i] ?? repoRoot
     else if (arg === '--bundle') opts.bundle = argv[++i]
     else if (arg === '--dry-run') opts.dryRun = true
-    else if (arg === '--ensure-current') opts.ensureCurrent = true
     else if (arg === '--json') opts.json = true
     else if (arg === '--from-template') opts.fromTemplate = true
     else if (arg === '--manifest') opts.manifest = argv[++i]
     else if (arg === '--quiet') opts.quiet = true
     else if (arg === '--preserve-tracked') opts.preserveTracked = true
+    else if (arg === '--repair-tracked') opts.repairTracked = true
     else if (arg === '--refresh-tracked') opts.refreshTracked = true
     else if (arg === '--ref') opts.ref = argv[++i] ?? ''
     else if (arg === '--repo') opts.repo = argv[++i] ?? DEFAULT_REPO
@@ -3696,6 +3883,7 @@ async function ensureCurrentFleet(config, dependencies) {
   }
   const dest = path.resolve(cfg.dest ?? repoRoot)
   if (existsSync(sharedTemplateBasePath(dest))) return 0
+  repairTrackedHydration(dest, { restoreMissing: cfg.repairTracked === true })
   const now = deps.now ?? Date.now
   const receipt = readEnsureCurrentReceipt(dest)
   if (
@@ -3757,7 +3945,6 @@ async function ensureCurrentFleet(config, dependencies) {
     if (readAppliedRef(dest) !== ref || !appliedPayloadIsComplete(dest, ref)) {
       const result = await (deps.install ?? installFleet)({
         ...cfg,
-        ensureCurrent: false,
         expectedReceipt: oci,
         ref,
       })
