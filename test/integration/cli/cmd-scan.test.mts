@@ -55,14 +55,19 @@ describe('socket scan', async () => {
               $ socket scan <command>
           
             Commands
+              agent-configs               Inspect agent configuration security rules
               create                      Create a new Socket scan and report
               del                         Delete a scan
               diff                        See what changed between two Scans
               list                        List the scans for an organization
+              manifests                   Scan package manifests for exposed secrets
               metadata                    Get a scan's metadata
               report                      Check whether a scan result passes the organizational policies (security, license)
+              secrets                     Scan files for exposed secrets
               setup                       Start interactive configurator to customize default flag values for \`socket scan\` in this dir
+              skills                      Scan agent skills for unsafe instructions
               view                        View the raw results of a scan
+              workflows                   Inspect GitHub Actions workflow security rules
           
             Options
           

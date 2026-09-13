@@ -7,16 +7,39 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { cmdScan } from '../../../../src/command/scan/cmd-scan.mts'
+import { cmdScanAgentConfigs } from '../../../../src/command/scan/cmd-scan-agent-configs.mts'
 import { cmdScanCreate } from '../../../../src/command/scan/cmd-scan-create.mts'
 import { cmdScanDel } from '../../../../src/command/scan/cmd-scan-del.mts'
 import { cmdScanDiff } from '../../../../src/command/scan/cmd-scan-diff.mts'
 import { cmdScanGithub } from '../../../../src/command/scan/cmd-scan-github.mts'
 import { cmdScanList } from '../../../../src/command/scan/cmd-scan-list.mts'
+import { cmdScanManifests } from '../../../../src/command/scan/cmd-scan-manifests.mts'
 import { cmdScanMetadata } from '../../../../src/command/scan/cmd-scan-metadata.mts'
 import { cmdScanReach } from '../../../../src/command/scan/cmd-scan-reach.mts'
 import { cmdScanReport } from '../../../../src/command/scan/cmd-scan-report.mts'
+import { cmdScanSecrets } from '../../../../src/command/scan/cmd-scan-secrets.mts'
 import { cmdScanSetup } from '../../../../src/command/scan/cmd-scan-setup.mts'
+import { cmdScanSkills } from '../../../../src/command/scan/cmd-scan-skills.mts'
 import { cmdScanView } from '../../../../src/command/scan/cmd-scan-view.mts'
+import { cmdScanWorkflows } from '../../../../src/command/scan/cmd-scan-workflows.mts'
+
+const SUBCOMMAND_NAMES = [
+  'agent-configs',
+  'create',
+  'del',
+  'diff',
+  'github',
+  'list',
+  'manifests',
+  'metadata',
+  'reach',
+  'report',
+  'secrets',
+  'setup',
+  'skills',
+  'view',
+  'workflows',
+]
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -72,18 +95,9 @@ describe('cmd-scan', () => {
       expect(config.importMeta === importMeta).toBe(true)
       // Subcommand identity (each entry IS the imported src module instance)
       // is asserted in the "subcommand validation" block below.
-      expect(Object.keys(config.subcommands).toSorted()).toEqual([
-        'create',
-        'del',
-        'diff',
-        'github',
-        'list',
-        'metadata',
-        'reach',
-        'report',
-        'setup',
-        'view',
-      ])
+      expect(Object.keys(config.subcommands).toSorted()).toEqual(
+        SUBCOMMAND_NAMES,
+      )
       expect(callOptions.description).toBe('Manage Socket scans')
       expect(callOptions.aliases.meta).toMatchObject({
         argv: ['metadata'],
@@ -127,18 +141,7 @@ describe('cmd-scan', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommands = call[0].subcommands
 
-      expect(Object.keys(subcommands)).toEqual([
-        'create',
-        'del',
-        'diff',
-        'github',
-        'list',
-        'metadata',
-        'reach',
-        'report',
-        'setup',
-        'view',
-      ])
+      expect(Object.keys(subcommands)).toEqual(SUBCOMMAND_NAMES)
     })
 
     it('should pass through argv unchanged', async () => {
@@ -182,16 +185,21 @@ describe('cmd-scan', () => {
       // Reference-identity checks (=== inside the expect(actual) call): the
       // routed subcommand must BE the imported src module instance, so the
       // -stable alias, a different module instance, can't stand in here.
+      expect(subcommands['agent-configs'] === cmdScanAgentConfigs).toBe(true)
       expect(subcommands.create === cmdScanCreate).toBe(true)
       expect(subcommands.del === cmdScanDel).toBe(true)
       expect(subcommands.diff === cmdScanDiff).toBe(true)
       expect(subcommands.github === cmdScanGithub).toBe(true)
       expect(subcommands.list === cmdScanList).toBe(true)
+      expect(subcommands.manifests === cmdScanManifests).toBe(true)
       expect(subcommands.metadata === cmdScanMetadata).toBe(true)
       expect(subcommands.reach === cmdScanReach).toBe(true)
       expect(subcommands.report === cmdScanReport).toBe(true)
+      expect(subcommands.secrets === cmdScanSecrets).toBe(true)
       expect(subcommands.setup === cmdScanSetup).toBe(true)
+      expect(subcommands.skills === cmdScanSkills).toBe(true)
       expect(subcommands.view === cmdScanView).toBe(true)
+      expect(subcommands.workflows === cmdScanWorkflows).toBe(true)
     })
   })
 
@@ -256,18 +264,7 @@ describe('cmd-scan', () => {
       const call = mockMeowWithSubcommands.mock.calls[0]
       const subcommandKeys = Object.keys(call[0].subcommands)
 
-      expect(subcommandKeys).toEqual([
-        'create',
-        'del',
-        'diff',
-        'github',
-        'list',
-        'metadata',
-        'reach',
-        'report',
-        'setup',
-        'view',
-      ])
+      expect(subcommandKeys).toEqual(SUBCOMMAND_NAMES)
     })
   })
 
