@@ -214,10 +214,7 @@ describe('scanner pattern execution', () => {
       path.join(os.tmpdir(), 'scanner-pattern-severity-'),
     )
     try {
-      await writeFile(
-        path.join(directory, 'package.php'),
-        "'secret_key' => 'sk_12345678901234567890123456789'",
-      )
+      await writeFile(path.join(directory, 'package.php'), 'ordinary content')
       const result = await scanWithScannerPatterns(
         'manifests',
         ['package.php'],
