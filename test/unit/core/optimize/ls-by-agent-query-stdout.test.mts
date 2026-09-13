@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   NPM,
   PNPM,
-} from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import { lsNpm, lsPnpm } from '../../../../src/core/optimize/ls-by-agent.mts'
 import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 

@@ -5,7 +5,7 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 

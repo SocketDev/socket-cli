@@ -10,6 +10,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import stableLibPackageJson from '@socketsecurity/lib-stable/package.json' with { type: 'json' }
 
 import {
   BLESSED,
@@ -35,6 +36,15 @@ import {
 } from '../../../src/constants/packages.mts'
 
 describe('packages constants', () => {
+  it('uses the published stable package-manager path', () => {
+    expect(stableLibPackageJson.exports).toHaveProperty(
+      './constants/package-managers',
+    )
+    expect(stableLibPackageJson.exports).not.toHaveProperty(
+      './eco/npm/constants/package-managers',
+    )
+  })
+
   describe('package manifest file constants', () => {
     it('has PACKAGE_JSON constant', () => {
       expect(PACKAGE_JSON).toBe('package.json')

@@ -24,7 +24,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { PNPM } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
+import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import {

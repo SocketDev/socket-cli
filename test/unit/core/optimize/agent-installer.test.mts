@@ -52,7 +52,7 @@ vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
 }))
 
 vi.mock(
-  import('@socketsecurity/lib-stable/eco/npm/constants/package-managers'),
+  import('@socketsecurity/lib-stable/constants/package-managers'),
   async importOriginal => {
     const actual = await importOriginal()
     return {

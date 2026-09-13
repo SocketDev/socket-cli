@@ -12,7 +12,7 @@ import {
   debugDir,
   debugDirNs,
 } from '@socketsecurity/lib-stable/debug/output'
-import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/package-managers'
 import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'

@@ -10,7 +10,7 @@ import {
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'

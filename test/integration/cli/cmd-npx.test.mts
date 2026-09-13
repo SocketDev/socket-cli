@@ -19,7 +19,7 @@
 
 import { describe, expect } from 'vitest'
 
-import { NPX } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
+import { NPX } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import {
   FLAG_CONFIG,

@@ -31,7 +31,7 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
   YARN_LOCK,
-} from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import { EXT_LOCK, EXT_LOCKB, NODE_MODULES } from '../../constants/packages.mts'
 import type { Agent } from './environment.mts'
 
