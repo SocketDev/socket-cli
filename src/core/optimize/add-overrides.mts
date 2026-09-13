@@ -8,7 +8,7 @@ import semver from 'semver'
 import {
   NPM,
   PNPM,
-} from '@socketsecurity/lib-stable/constants/package-managers'
+} from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
 import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
 import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
 import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'

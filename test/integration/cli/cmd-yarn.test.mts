@@ -22,7 +22,7 @@
 
 import { describe, expect } from 'vitest'
 
-import { YARN } from '@socketsecurity/lib-stable/constants/package-managers'
+import { YARN } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
 
 import {
   FLAG_CONFIG,

@@ -4,7 +4,7 @@
  * Defined via `defineHandoffCommand`. See util/cli/define-handoff.mts.
  */
 
-import { YARN } from '@socketsecurity/lib-stable/constants/package-managers'
+import { YARN } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
 
 import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 

@@ -1,4 +1,4 @@
-import { NPM } from '@socketsecurity/lib-stable/constants/package-managers'
+import { NPM } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { findBinPathDetailsSync } from '../fs/path-resolve.mts'

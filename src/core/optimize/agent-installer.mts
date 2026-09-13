@@ -15,7 +15,7 @@
 import {
   NPM,
   PNPM,
-} from '@socketsecurity/lib-stable/constants/package-managers'
+} from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
 import {
   getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
