@@ -196,7 +196,7 @@ export async function meowWithSubcommands(
     splitFirewallArguments(argv, { explicitCommand: true })
   const [commandOrAliasName_, ...rawCommandArgv] = routedArgs
   let commandOrAliasName = commandOrAliasName_
-  if (!commandOrAliasName && defaultSub) {
+  if (argv.length === 0 && defaultSub) {
     commandOrAliasName = defaultSub
   }
 
