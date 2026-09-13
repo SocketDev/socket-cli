@@ -36,7 +36,6 @@
       "scripts/repo/cli-build/build.mts",
       "scripts/repo/cli-build/e2e.mts",
       "scripts/repo/cli-build/repo/fuzz.mts",
-      "scripts/repo/cli-build/run-dist.mts",
       "scripts/repo/cli-build/sync-checksums.mts",
       "scripts/repo/cli-build/test-download-external-tools.mts",
       "scripts/repo/cli-build/test-wrapper.mts",

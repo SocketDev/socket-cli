@@ -9,7 +9,7 @@ import { expect, it } from 'vitest'
 import { getBinCliPath } from '../../../../src/constants/paths.mts'
 import { spawnSocketCli } from '../../../utils.mts'
 
-it.each([
+it.concurrent.each([
   ...['bundler', 'cargo', 'gem', 'go', 'nuget', 'pip', 'pip3', 'uv'].map(
     command => ({ command, rootArgs: [] as string[] }),
   ),

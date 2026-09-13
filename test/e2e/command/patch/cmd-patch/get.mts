@@ -1,5 +1,5 @@
 /**
- * Integration tests for `socket patch get` command.
+ * End-to-end tests for `socket patch get` command.
  *
  * Tests retrieving and applying security patches via socket-patch v2.0.0
  * binary.
@@ -16,10 +16,10 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants/cli.mts'
-import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { withTempFixture } from '../../helpers/test-fixtures.mts'
-import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../../../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../../../src/constants/paths.mts'
+import { withTempFixture } from '../../../../helpers/test-fixtures.mts'
+import { cmdit, spawnSocketCli, testPath } from '../../../../utils.mts'
 
 const binCliPath = getBinCliPath()
 
@@ -40,7 +40,7 @@ describe('socket patch get', async () => {
   )
 
   cmdit(
-    ['patch', 'get', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    ['patch', 'get', FLAG_CONFIG, '{"apiToken":"YOUR_API_TOKEN"}'],
     'should show error when identifier is not provided',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -61,7 +61,7 @@ describe('socket patch get', async () => {
       '--cwd',
       pnpmFixtureDir,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"YOUR_API_TOKEN"}',
     ],
     'should handle non-existent package gracefully',
     async cmd => {
@@ -96,7 +96,7 @@ describe('socket patch get', async () => {
       pnpmFixtureDir,
       '--save-only',
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"YOUR_API_TOKEN"}',
     ],
     'should support --save-only flag',
     async cmd => {

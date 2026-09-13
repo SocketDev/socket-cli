@@ -49,11 +49,11 @@ describe('socket root command', async () => {
               socket login                Setup Socket CLI with an API token and defaults
               socket scan create          Create a new Socket scan and report
               socket npm/lodash@4.17.21   Request the Socket score of a package
-              sbom                        Generate a CycloneDX manifest with the bundled sdxgen parsers
               ci                          Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
               doctor                      Enforce dependency health policies (soak-time and more)
               fix                         Fix CVEs in dependencies
               optimize                    Optimize dependencies with @socketregistry overrides
+              sbom                        Generate a CycloneDX manifest with the bundled sdxgen parsers
           
             Socket API
               analytics                   Look up analytics data

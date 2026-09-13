@@ -1,5 +1,5 @@
 /**
- * Integration tests for `socket patch list` command.
+ * End-to-end tests for `socket patch list` command.
  *
  * Tests listing all patches in the local manifest via socket-patch v2.0.0
  * binary.
@@ -15,9 +15,9 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants/cli.mts'
-import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
+import { FLAG_CONFIG, FLAG_HELP } from '../../../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../../../src/constants/paths.mts'
+import { cmdit, spawnSocketCli, testPath } from '../../../../utils.mts'
 
 const binCliPath = getBinCliPath()
 
@@ -44,7 +44,7 @@ describe('socket patch list', async () => {
       '--cwd',
       path.join(fixtureBaseDir, 'nonexistent'),
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"YOUR_API_TOKEN"}',
     ],
     'should handle missing manifest gracefully',
     async cmd => {
@@ -63,7 +63,7 @@ describe('socket patch list', async () => {
       '--cwd',
       pnpmFixtureDir,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"YOUR_API_TOKEN"}',
     ],
     'should list patches from manifest',
     async cmd => {
@@ -82,7 +82,7 @@ describe('socket patch list', async () => {
       pnpmFixtureDir,
       '--json',
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"YOUR_API_TOKEN"}',
     ],
     'should output patches in JSON format',
     async cmd => {

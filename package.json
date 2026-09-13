@@ -91,7 +91,7 @@
     "prune:gha-caches": "node scripts/fleet/prune-actions-caches.mts",
     "remote:github:release": "node scripts/fleet/release/github/remote.mts",
     "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
-    "s": "node scripts/repo/cli-build/run-dist.mts --",
+    "s": "node dist/index.js",
     "security": "node scripts/fleet/security.mts",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
     "setup:brew": "node scripts/fleet/setup/brew.mts",
