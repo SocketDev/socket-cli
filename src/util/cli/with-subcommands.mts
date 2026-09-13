@@ -18,7 +18,11 @@ import {
 } from '../output/ambient-mode.mts'
 import { applyMachineOutputStreamPolicy } from '../output/machine-output-streams.mts'
 import { buildHelpLines } from './with-subcommands-help.mts'
-import { tryDispatchSubcommand } from './with-subcommands-dispatch.mts'
+import {
+  resolveSubcommand,
+  tryDispatchSubcommand,
+} from './with-subcommands-dispatch.mts'
+import { splitFirewallArguments } from './firewall-arguments.mts'
 import { applyRootCommandFlagVisibility } from './with-subcommands-root-flags.mts'
 import type { AsciiHeaderOptions } from './with-subcommands-banner.mts'
 import type { CliCommandName } from './command-name.mts'
@@ -188,7 +192,9 @@ export async function meowWithSubcommands(
     ...getOwn(additionalOptions, 'flags'),
   }
 
-  const [commandOrAliasName_, ...rawCommandArgv] = argv
+  const { wrapperArgs: rootArgs, commandArgs: routedArgs } =
+    splitFirewallArguments(argv, { explicitCommand: true })
+  const [commandOrAliasName_, ...rawCommandArgv] = routedArgs
   let commandOrAliasName = commandOrAliasName_
   if (!commandOrAliasName && defaultSub) {
     commandOrAliasName = defaultSub
@@ -216,8 +222,18 @@ export async function meowWithSubcommands(
 
   // This is basically a dry-run parse of cli args and flags. We use this to
   // determine config overrides and expected output mode.
+  const dispatchName = commandOrAliasName || ''
+  const { commandArgv, commandDefinition } = resolveSubcommand({
+    aliases,
+    commandOrAliasName: dispatchName,
+    rawCommandArgv,
+    subcommands,
+  })
+  const globalArgv = commandDefinition?.selectGlobalArgs
+    ? [...rootArgs, ...commandDefinition.selectGlobalArgs(commandArgv)]
+    : argv
   const cli1 = meow({
-    argv,
+    argv: globalArgv,
     importMeta,
     ...additionalOptions,
     flags,
@@ -282,7 +298,7 @@ export async function meowWithSubcommands(
   // If we have got some args, then lets find out if we can find a command.
   const dispatched = await tryDispatchSubcommand({
     aliases,
-    commandOrAliasName: commandOrAliasName || '',
+    commandOrAliasName: dispatchName,
     defaultSub,
     importMeta,
     name,

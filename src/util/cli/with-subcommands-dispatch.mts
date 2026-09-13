@@ -30,6 +30,27 @@ export interface DispatchSubcommandConfig<CommandName extends string> {
   subcommands: Record<CommandName, CliSubcommand>
 }
 
+export function resolveSubcommand<CommandName extends string>(
+  config: Pick<
+    DispatchSubcommandConfig<CommandName>,
+    'aliases' | 'commandOrAliasName' | 'rawCommandArgv' | 'subcommands'
+  >,
+) {
+  const { aliases, commandOrAliasName, rawCommandArgv, subcommands } = config
+  const alias =
+    isCliCommandName(commandOrAliasName) &&
+    Object.hasOwn(aliases, commandOrAliasName)
+      ? aliases[commandOrAliasName]
+      : undefined
+  const [commandName, ...commandArgv] = alias
+    ? [...alias.argv, ...rawCommandArgv]
+    : [commandOrAliasName, ...rawCommandArgv]
+  const commandDefinition = commandName
+    ? lookupSubcommand(subcommands, commandName)
+    : undefined
+  return { __proto__: null, alias, commandName, commandArgv, commandDefinition }
+}
+
 /**
  * Resolve `commandOrAliasName` against `subcommands`/`aliases` and run the
  * match. Returns `true` once the router should stop (either because a
@@ -53,18 +74,13 @@ export async function tryDispatchSubcommand<CommandName extends string>(
     return false
   }
 
-  const alias = isCliCommandName(commandOrAliasName)
-    ? aliases[commandOrAliasName]
-    : undefined
-  // First: Resolve argv data from alias if its an alias that's been given.
-  const [commandName, ...commandArgv] = alias
-    ? [...alias.argv, ...rawCommandArgv]
-    : [commandOrAliasName, ...rawCommandArgv]
-  // Second: Find a command definition using that data.
-  const commandDefinition = commandName
-    ? lookupSubcommand(subcommands, commandName)
-    : undefined
-  // Third: If a valid command has been found, then we run it...
+  const { alias, commandName, commandArgv, commandDefinition } =
+    resolveSubcommand({
+      aliases,
+      commandOrAliasName,
+      rawCommandArgv,
+      subcommands,
+    })
   if (commandDefinition) {
     // Extract the original command arguments from the full argv
     // by skipping the command name

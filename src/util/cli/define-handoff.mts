@@ -235,5 +235,15 @@ export function defineHandoffCommand(
     }
   }
 
-  return { description, hidden, run }
+  return {
+    description,
+    hidden,
+    run,
+    selectGlobalArgs(argv) {
+      return splitFirewallArguments(argv, {
+        explicitCommand: false,
+        supportDryRun,
+      }).wrapperArgs
+    },
+  }
 }

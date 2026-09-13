@@ -31,6 +31,9 @@ export interface CliSubcommand {
   description: string
   hidden?: boolean | undefined
   run: CliSubcommandRun
+  selectGlobalArgs?:
+    | ((argv: readonly string[]) => readonly string[])
+    | undefined
 }
 
 /**
