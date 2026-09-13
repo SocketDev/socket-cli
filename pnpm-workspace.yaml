@@ -43,7 +43,6 @@ allowBuilds:
 pmOnFail: warn
 
 catalog:
-  '@bcoe/v8-coverage': 1.0.2
   '@mdn/browser-compat-data': 8.1.0
   # run-local-ci (bin: local-ci, formerly published as @redwoodjs/agent-ci)
   # runs a repo's GitHub Actions workflows locally in Docker so a change can
@@ -65,7 +64,7 @@ catalog:
   # pinned while the fleet migrates; the 0.x entry is deleted once no member
   # imports the scoped name. 1.3.10 is inside the 7-day soak, so it carries a
   # dated minimumReleaseAgeExclude entry above.
-  'typebox': 1.3.26
+  'typebox': 1.3.27
   '@socketregistry/packageurl-js': 1.5.2
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name when used INSIDE that same package — Node ESM treats it as a
@@ -152,15 +151,17 @@ catalog:
   # high, GHSA-v6wh-96g9-6wx3 medium). Tracked here so the pnpm
   # override below pins every transitive `vite` (vitest, @vitest/*,
   # plugin authors) to it.
-  'typescript': 7.0.2
+  'typescript': 7.1.0-dev.20260905.1
   'vitest': 5.0.0
   '@vitest/coverage-v8': 5.0.0
-  c8: 12.0.0
+  '@bcoe/v8-coverage': 1.0.2
+  ast-v8-to-istanbul: 1.0.5
   'chrome-devtools-mcp': 1.8.0
   # Playwright MCP server — agent-driven browsing with the fleet agent-banner
   # init script (see .config/fleet/playwright/).
   '@playwright/mcp': 0.0.80
   '@vitest/ui': 5.0.0
+  c8: 12.0.0
   # agent-ci runs a repo's GitHub Actions workflows locally in Docker so a
   # change can be validated before it's pushed (see the `agent-ci` skill).
   # The published package is a self-contained Node CLI (`dist/cli.js`) — no
@@ -346,12 +347,14 @@ minimumReleaseAgeExclude:
   - '@decmpfs/*'
   - '@node-smol/*'
   - sockeye
+  # published: 2026-09-08 | removable: 2026-09-15
+  - pnpm@12.4.0
+  # published: 2026-09-10 | removable: 2026-09-17
+  - 'mcp-tada@0.1.0'
   - 'sfw'
   - 'socket'
   - 'sdxgen'
   - 'sockeye'
-  # published: 2026-09-10 | removable: 2026-09-17
-  - 'mcp-tada@0.1.0'
 
 # Refuse transitive (sub-) deps declared via git/tarball/local-tarball
 # specs. Direct git deps in this repo are still allowed; this only
@@ -675,8 +678,6 @@ enableGlobalVirtualStore: true
 # default is `false`; declared explicitly so a future default flip
 # can't silently widen the trust boundary.
 trustPolicyExclude:
-  # Rename-bridge releases (agent-ci -> run-local-ci); the bridge lines
-  # carry no provenance. Owner-directed; see the catalog note.
   - '@playwright/mcp@0.0.80'
   - 'playwright@1.63.0-alpha-2026-08-31'
   - 'playwright-core@1.63.0-alpha-2026-08-31'
@@ -688,18 +689,3 @@ tasks:
   build:oxlint-bundle:
     cache: false
     dependsOn: []
-
-# Proceed with a node_modules purge WITHOUT an interactive confirm. The fleet
-# runs pnpm non-interactively everywhere (skills, scripts, hooks, agents, CI) —
-# no TTY. pnpm's default ABORTS a purge for lack of a TTY
-# (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY), wedging any commit whose
-# pre-commit re-checks deps after a workspace/.npmrc change. Purging
-# node_modules is safe (gitignored + regenerable). Unlike CI=true this does NOT
-# force a frozen lockfile; CI keeps owning frozen-vs-update policy.
-
-# Opt out of pnpm's packageManager-version self-check. CI installs pnpm from
-# its native bin via the shared setup workflow, not corepack, so the runner's
-# pnpm legitimately differs from the `packageManager` pin (which is
-# informational, not a version to enforce). Without this, pnpm hard-fails
-# ("This project is configured to use <pin> ... your current pnpm is <run>")
-# the moment the runner's pnpm differs from the pin.

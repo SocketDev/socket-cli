@@ -1,0 +1,9 @@
+{
+  "name": "local-ai-adapter-source-guard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": { ".": "./index.mts" },
+  "dependencies": { "@socketsecurity/lib-stable": "catalog:" }
+}

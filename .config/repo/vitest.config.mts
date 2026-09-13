@@ -19,6 +19,7 @@ import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { defineConfig } from 'vitest/config'
 
 import { GENERATED_GLOBS } from '../../scripts/fleet/constants/generated-globs.mts'
+import { resolveGeneratedTestExcludes } from '../../scripts/fleet/test-runner/discovery.mts'
 import { resolveCoverageConfig } from '../../.config/fleet/vitest.coverage.fleet.config.mts'
 import {
   discoverSharedTestFiles,
@@ -541,6 +542,14 @@ const config = defineConfig({
     },
   },
 })
+
+if (config.test) {
+  config.test.exclude = resolveGeneratedTestExcludes({
+    repoRoot: process.cwd(),
+    include: config.test.include ?? [],
+    exclude: config.test.exclude ?? [],
+  })
+}
 
 // Construct complete project options explicitly: Vite's extends merge concatenates
 // include arrays, which otherwise makes the shared project rerun isolated files.
