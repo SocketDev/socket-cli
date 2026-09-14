@@ -10,6 +10,8 @@
  * - extractReachabilityErrors: Extract per-component reachability errors
  * - extractTier1ReachabilityScanId: Extract scan ID from socket facts file
  * - getFullWorkspacePath: Label a build-root/workspace pair the way Coana does
+ * - snapshotSocketFacts: Copy aside the socket facts files Coana overwrites
+ *   in place, so a failed analysis can be rolled back
  *
  * Integration:
  * - Works with @coana-tech/cli for reachability analysis
@@ -18,11 +20,12 @@
  */
 
 import { createReadStream, createWriteStream, existsSync } from 'node:fs'
-import { rm } from 'node:fs/promises'
+import { copyFile, mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createBrotliCompress } from 'node:zlib'
 
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
 
 import constants from '../constants.mts'
@@ -199,4 +202,73 @@ export function getFullWorkspacePath(
     return `${subproject}/${workspace}`
   }
   return subproject || workspace || '.'
+}
+
+export type SnapshotSocketFactsOptions = {
+  cwd: string
+  outputPath: string
+  tmpDir: string
+}
+
+export type SocketFactsSnapshot = {
+  restore: () => Promise<void>
+}
+
+// Coana overwrites `.socket.facts.json` in place, so an analysis that fails
+// part way leaves partial output where the scan's inputs used to be.
+export async function snapshotSocketFacts(
+  scanPaths: string[],
+  options: SnapshotSocketFactsOptions,
+): Promise<SocketFactsSnapshot> {
+  const { cwd, outputPath, tmpDir } = {
+    __proto__: null,
+    ...options,
+  } as SnapshotSocketFactsOptions
+
+  const sources = new Set(
+    scanPaths
+      .filter(p => path.basename(p) === DOT_SOCKET_DOT_FACTS_JSON)
+      .map(p => path.resolve(cwd, p)),
+  )
+  sources.add(path.resolve(cwd, outputPath))
+
+  const snapshotDir = path.join(tmpDir, 'socket-facts-snapshot')
+  await mkdir(snapshotDir, { recursive: true })
+
+  const captured: Array<{ backup: string; source: string }> = []
+  const created: string[] = []
+  await Promise.all(
+    Array.from(sources, async (source, index) => {
+      if (!existsSync(source)) {
+        created.push(source)
+        return
+      }
+      const backup = path.join(snapshotDir, `${index}.json`)
+      try {
+        await copyFile(source, backup)
+        captured.push({ backup, source })
+      } catch (e) {
+        // A path we cannot copy is left out of both lists so restore() leaves
+        // it untouched rather than deleting a file it never captured.
+        debugFn('warn', `[socket-facts] snapshot failed: ${source}`)
+        debugDir('error', e)
+      }
+    }),
+  )
+
+  return {
+    async restore() {
+      await Promise.all([
+        ...captured.map(async ({ backup, source }) => {
+          try {
+            await copyFile(backup, source)
+          } catch (e) {
+            debugFn('warn', `[socket-facts] restore failed: ${source}`)
+            debugDir('error', e)
+          }
+        }),
+        ...created.map(source => rm(source, { force: true }).catch(() => {})),
+      ])
+    },
+  }
 }

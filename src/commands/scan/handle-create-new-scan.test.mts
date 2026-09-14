@@ -1,3 +1,13 @@
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -804,6 +814,45 @@ describe('handleCreateNewScan reachability fallback', () => {
     expect(String(warnSpy.mock.calls[0]![0])).toMatch(
       /Reachability analysis failed: Failed to fetch artifacts from Socket API — Socket compute-artifacts failed.*Falling back to a regular SCA scan without reachability results\./,
     )
+    expect(outputCreateNewScan).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: true }),
+      expect.objectContaining({
+        reachabilityFallback: {
+          cause:
+            'Socket compute-artifacts failed: upstream gateway disconnected (code=gateway_disconnect)',
+          message: 'Failed to fetch artifacts from Socket API',
+        },
+      }),
+    )
+  })
+
+  it('leaves the fallback marker unset when reachability succeeds', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+      ok: true,
+    })
+
+    const config = createConfig()
+    config.reach.runReachabilityAnalysis = true
+    config.reach.reachFallbackToRegularScan = true
+
+    await handleCreateNewScan(config)
+
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      expect.anything(),
+      'fakeOrg',
+      expect.objectContaining({ scanType: 'socket_tier1' }),
+      expect.anything(),
+    )
+    expect(finalizeTier1Scan).toHaveBeenCalledWith('tier1-id', 'scan-id')
+    expect(outputCreateNewScan).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ reachabilityFallback: undefined }),
+    )
+    expect(warnSpy).not.toHaveBeenCalled()
   })
 
   it('still halts when reachability fails without the fallback flag', async () => {
@@ -826,5 +875,87 @@ describe('handleCreateNewScan reachability fallback', () => {
       expect.anything(),
     )
     expect(warnSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('handleCreateNewScan reachability fallback facts files', () => {
+  let cwd: string
+  let warnSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+    cwd = mkdtempSync(path.join(tmpdir(), 'socket-fallback-facts-'))
+    writeFileSync(path.join(cwd, 'package.json'), '{}')
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      data: { size: 1 },
+      ok: true,
+    })
+    mockFindSocketYmlSync.mockReturnValue({ ok: false })
+  })
+
+  afterEach(() => {
+    warnSpy.mockRestore()
+    rmSync(cwd, { recursive: true, force: true })
+  })
+
+  it('uploads the pre-analysis facts file the analysis overwrote', async () => {
+    const factsPath = path.join(cwd, '.socket.facts.json')
+    writeFileSync(factsPath, JSON.stringify({ producer: 'gradle' }))
+
+    mockGetPackageFilesForScan.mockResolvedValue([
+      'package.json',
+      '.socket.facts.json',
+    ])
+    mockPerformReachabilityAnalysis.mockImplementation(async () => {
+      writeFileSync(factsPath, '{"partial": true')
+      return {
+        cause: 'upstream gateway disconnected',
+        message: 'Failed to fetch artifacts from Socket API',
+        ok: false,
+      }
+    })
+
+    let uploadedFacts: string | undefined
+    mockFetchCreateOrgFullScan.mockImplementation(async () => {
+      uploadedFacts = readFileSync(factsPath, 'utf8')
+      return { data: { id: 'scan-id' }, ok: true }
+    })
+
+    const config = createConfig({ cwd, targets: [cwd] })
+    config.reach.runReachabilityAnalysis = true
+    config.reach.reachFallbackToRegularScan = true
+
+    await handleCreateNewScan(config)
+
+    expect(JSON.parse(uploadedFacts!)).toEqual({ producer: 'gradle' })
+    expect(JSON.parse(readFileSync(factsPath, 'utf8'))).toEqual({
+      producer: 'gradle',
+    })
+  })
+
+  it('removes the report a failed analysis left behind', async () => {
+    const factsPath = path.join(cwd, '.socket.facts.json')
+
+    mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
+    mockPerformReachabilityAnalysis.mockImplementation(async () => {
+      writeFileSync(factsPath, '{"partial": true')
+      return {
+        message: 'Failed to fetch artifacts from Socket API',
+        ok: false,
+      }
+    })
+    mockFetchCreateOrgFullScan.mockResolvedValue({
+      data: { id: 'scan-id' },
+      ok: true,
+    })
+
+    const config = createConfig({ cwd, targets: [cwd] })
+    config.reach.runReachabilityAnalysis = true
+    config.reach.reachFallbackToRegularScan = true
+
+    await handleCreateNewScan(config)
+
+    expect(existsSync(factsPath)).toBe(false)
   })
 })

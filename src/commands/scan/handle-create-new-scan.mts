@@ -17,7 +17,10 @@ import { performReachabilityAnalysis } from './perform-reachability-analysis.mts
 import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { compressSocketFactsForUpload } from '../../utils/coana.mts'
+import {
+  compressSocketFactsForUpload,
+  snapshotSocketFacts,
+} from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
@@ -27,6 +30,7 @@ import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import { mergeResolvedPathsSidecars } from '../manifest/scripts/sidecar.mts'
 
+import type { ReachabilityFallback } from './output-create-new-scan.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
@@ -293,7 +297,7 @@ export async function handleCreateNewScan({
     let scanPaths: string[] = packagePaths
     let tier1ReachabilityScanId: string | undefined
     let reachabilityReport: string | undefined
-    let didReachFallbackToRegularScan = false
+    let reachabilityFallback: ReachabilityFallback | undefined
 
     // If reachability is enabled, perform reachability analysis.
     if (reach.runReachabilityAnalysis) {
@@ -301,6 +305,12 @@ export async function handleCreateNewScan({
       logger.info('Starting reachability analysis...')
       debugFn('notice', 'Reachability analysis enabled')
       debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
+
+      const factsSnapshot = await snapshotSocketFacts(packagePaths, {
+        cwd,
+        outputPath: constants.DOT_SOCKET_DOT_FACTS_JSON,
+        tmpDir: manifestTmpDir,
+      })
 
       spinner.start()
 
@@ -321,7 +331,13 @@ export async function handleCreateNewScan({
 
       if (!reachResult.ok) {
         if (reach.reachFallbackToRegularScan) {
-          didReachFallbackToRegularScan = true
+          reachabilityFallback = {
+            cause: reachResult.cause,
+            message: reachResult.message,
+          }
+          // Restore the pre-analysis facts files: the regular scan must upload
+          // the inputs it would have had without --reach, not partial output.
+          await factsSnapshot.restore()
           logger.warn(
             `Reachability analysis failed: ${reachResult.message}${reachResult.cause ? ` — ${reachResult.cause}` : ''}. Falling back to a regular SCA scan without reachability results.`,
           )
@@ -379,7 +395,7 @@ export async function handleCreateNewScan({
           repoName,
           branchName,
           scanType:
-            reach.runReachabilityAnalysis && !didReachFallbackToRegularScan
+            reach.runReachabilityAnalysis && !reachabilityFallback
               ? constants.SCAN_TYPE_SOCKET_TIER1
               : constants.SCAN_TYPE_SOCKET,
           workspace,
@@ -403,7 +419,7 @@ export async function handleCreateNewScan({
       reach.runReachabilityAnalysis &&
       scanId &&
       !tier1ReachabilityScanId &&
-      !didReachFallbackToRegularScan
+      !reachabilityFallback
     ) {
       // Reachability analysis ran and a scan was created, but no full
       // application reachability scan id was extracted from the facts file.
@@ -466,13 +482,18 @@ export async function handleCreateNewScan({
           {
             interactive,
             outputKind,
+            reachabilityFallback,
           },
         )
       }
     } else {
       spinner.stop()
 
-      await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
+      await outputCreateNewScan(fullScanCResult, {
+        interactive,
+        outputKind,
+        reachabilityFallback,
+      })
     }
   })
 }
