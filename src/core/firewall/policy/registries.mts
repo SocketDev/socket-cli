@@ -68,6 +68,23 @@ export function firewallRegistryHostnameMatches(
   )
 }
 
+export function firewallRegistryMatchesUrl(
+  registry: FirewallRegistry,
+  url: URL,
+): boolean {
+  return (
+    firewallRegistryHostnameMatches(
+      new URL(`https://${registry.host}`).hostname,
+      url.hostname.toLowerCase().replace(/\.+$/, ''),
+    ) &&
+    firewallRegistryHostMatches(registry.host, url.host) &&
+    (!registry.protocol || registry.protocol === url.protocol) &&
+    (!registry.prefix ||
+      url.pathname === registry.prefix ||
+      url.pathname.startsWith(`${registry.prefix}/`))
+  )
+}
+
 export function isFirewallRegistryHostname(hostname: string): boolean {
   return !hostname.includes('*') || /^\*\.[^*]+$/.test(hostname)
 }

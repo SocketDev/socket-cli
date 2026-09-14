@@ -42,6 +42,7 @@ export interface FirewallPolicyOptions {
 
 export interface FirewallPolicy {
   getTunneledEcosystems(): FirewallTunneledEcosystem[]
+  allowPrivateDestination(this: void, url: URL): boolean
   resolveDestination(this: void, url: URL): 'inspect' | 'bypass' | 'block'
   checkRequest(this: void, url: URL, method: string): Promise<FirewallDecision>
   close(): void
