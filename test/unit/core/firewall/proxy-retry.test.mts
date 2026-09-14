@@ -2,12 +2,12 @@ import http from 'node:http'
 import { describe, expect, it, vi } from 'vitest'
 
 import { spawnFirewallChild } from '../../../../src/core/firewall/child.mts'
-import { startFirewallProxy } from '../../../../src/core/firewall/proxy.mts'
 import {
   closeFirewallFixture,
   connectFirewallFixture,
   listenFirewallFixture,
   requestFirewallFixture,
+  startFirewallFixtureProxy,
 } from './proxy-fixture.mts'
 
 const certificateAuthority = {
@@ -27,7 +27,7 @@ describe('firewall upstream connection retries', () => {
         origin.listen(port, '127.0.0.1')
       }
     })
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
       resolveDestination: () => 'bypass',
@@ -66,7 +66,7 @@ process.exitCode=(await attempt())===200?23:92;
     const onRequestError = vi.fn(() => {
       throw new Error('fixture diagnostic failure')
     })
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
       resolveDestination: () => 'bypass',

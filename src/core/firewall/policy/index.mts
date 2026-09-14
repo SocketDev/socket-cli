@@ -6,6 +6,7 @@ import {
 } from './artifacts.mts'
 import {
   firewallRegistryHostMatches,
+  firewallRegistryMatchesUrl,
   parseFirewallRegistry,
 } from './registries.mts'
 import {
@@ -99,6 +100,16 @@ export function createFirewallPolicy(
       : registry.kind === 'bypass'
         ? 'bypass'
         : 'inspect'
+  }
+
+  function allowPrivateDestination(url: URL): boolean {
+    if (aliases.has(canonicalizeFirewallHostname(url.hostname))) {
+      return true
+    }
+    return custom.some(
+      registry =>
+        registry.kind !== 'block' && firewallRegistryMatchesUrl(registry, url),
+    )
   }
 
   function resolveUnknownDestination(url: URL): 'bypass' | 'block' {
@@ -243,5 +254,11 @@ export function createFirewallPolicy(
     return true
   }
 
-  return { checkRequest, resolveDestination, close, getTunneledEcosystems }
+  return {
+    allowPrivateDestination,
+    checkRequest,
+    resolveDestination,
+    close,
+    getTunneledEcosystems,
+  }
 }

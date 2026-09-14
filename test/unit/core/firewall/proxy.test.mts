@@ -11,13 +11,13 @@ import {
   loadFirewallCertificateAuthority,
 } from '../../../../src/core/firewall/certificates.mts'
 import type { FirewallCertificateAuthority } from '../../../../src/core/firewall/certificates.mts'
-import { startFirewallProxy } from '../../../../src/core/firewall/proxy.mts'
 import {
   closeFirewallFixture,
   connectFirewallFixture,
   listenFirewallFixture,
   requestFirewallFixture,
   requestFirewallTunnel,
+  startFirewallFixtureProxy,
 } from './proxy-fixture.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
@@ -44,7 +44,7 @@ describe('firewall proxy', () => {
     const checkRequest = vi.fn(async (url: URL) => ({
       blocked: url.pathname === '/blocked',
     }))
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest,
     })
@@ -71,7 +71,7 @@ describe('firewall proxy', () => {
   })
 
   it('fails closed when policy rejects or hangs', async () => {
-    const failed = await startFirewallProxy({
+    const failed = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => {
         throw new Error('fixture policy unavailable')
@@ -84,7 +84,7 @@ describe('firewall proxy', () => {
     } finally {
       await failed.close()
     }
-    const stalled = await startFirewallProxy({
+    const stalled = await startFirewallFixtureProxy({
       certificateAuthority,
       timeoutMs: 100,
       checkRequest: () => new Promise(() => {}),
@@ -109,7 +109,7 @@ describe('firewall proxy', () => {
     const checkRequest = vi.fn(async (url: URL) => ({
       blocked: url.pathname === '/blocked',
     }))
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest,
       upstreamCa: [certificateAuthority.certificate],
@@ -166,7 +166,7 @@ describe('firewall proxy', () => {
       (request, response) => response.end('artifact'),
     )
     const port = await listenFirewallFixture(upstream)
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
     })
@@ -202,7 +202,7 @@ describe('firewall proxy', () => {
     )
     const port = await listenFirewallFixture(upstream)
     const checkRequest = vi.fn(async () => ({ blocked: false }))
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest,
       resolveDestination: () => 'bypass',
@@ -255,7 +255,7 @@ describe('firewall proxy', () => {
       })
     })
     const intermediaryPort = await listenFirewallFixture(intermediary)
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       upstreamProxy: `http://127.0.0.1:${intermediaryPort}`,
       checkRequest: async () => ({ blocked: false }),
@@ -279,7 +279,7 @@ describe('firewall proxy', () => {
   })
 
   it('refuses blocked CONNECT destinations and closes idle tunnels', async () => {
-    const blocked = await startFirewallProxy({
+    const blocked = await startFirewallFixtureProxy({
       certificateAuthority,
       resolveDestination: () => 'block',
       checkRequest: async () => ({ blocked: false }),
@@ -295,7 +295,7 @@ describe('firewall proxy', () => {
     } finally {
       await blocked.close()
     }
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
     })

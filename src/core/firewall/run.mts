@@ -105,6 +105,8 @@ export async function runFirewallCommand(
     policy = activePolicy
     proxy = await startFirewallProxy({
       certificateAuthority: authority,
+      allowPrivateDestination: (...destinationArgs) =>
+        activePolicy.allowPrivateDestination(...destinationArgs),
       checkRequest: (...requestArgs) =>
         activePolicy.checkRequest(...requestArgs),
       resolveDestination: (...destinationArgs) =>

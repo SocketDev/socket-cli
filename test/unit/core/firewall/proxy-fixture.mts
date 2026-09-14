@@ -3,6 +3,16 @@ import { connect } from 'node:tls'
 import type { AddressInfo } from 'node:net'
 import type { TLSSocket } from 'node:tls'
 
+import { startFirewallProxy } from '../../../../src/core/firewall/proxy.mts'
+import type { FirewallProxyConfig } from '../../../../src/core/firewall/proxy.mts'
+
+export function startFirewallFixtureProxy(config: FirewallProxyConfig) {
+  return startFirewallProxy({
+    ...config,
+    allowPrivateDestination: () => true,
+  })
+}
+
 export async function listenFirewallFixture(
   server: http.Server,
 ): Promise<number> {

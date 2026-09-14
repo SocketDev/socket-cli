@@ -12,13 +12,13 @@ import {
   loadFirewallCertificateAuthority,
 } from '../../../../src/core/firewall/certificates.mts'
 import type { FirewallCertificateAuthority } from '../../../../src/core/firewall/certificates.mts'
-import { startFirewallProxy } from '../../../../src/core/firewall/proxy.mts'
 import {
   closeFirewallFixture,
   connectFirewallFixture,
   listenFirewallFixture,
   requestFirewallFixture,
   requestFirewallTunnel,
+  startFirewallFixtureProxy,
 } from './proxy-fixture.mts'
 
 let directory: string
@@ -36,7 +36,7 @@ afterAll(async () => {
 describe('firewall proxy failure boundaries', () => {
   it('rejects malformed targets, unsupported methods, and invalid CONNECT authorities', async () => {
     const checkRequest = vi.fn(async () => ({ blocked: false }))
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest,
     })
@@ -84,7 +84,7 @@ describe('firewall proxy failure boundaries', () => {
       await proxy.close()
     }
     await expect(
-      startFirewallProxy({
+      startFirewallFixtureProxy({
         certificateAuthority,
         checkRequest,
         upstreamProxy: 'socks://localhost:1080',
@@ -96,7 +96,7 @@ describe('firewall proxy failure boundaries', () => {
     const reached = Promise.withResolvers<void>()
     const upstream = http.createServer(() => reached.resolve())
     const port = await listenFirewallFixture(upstream)
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
       timeoutMs: 100,
@@ -151,7 +151,7 @@ describe('firewall proxy failure boundaries', () => {
       })
     })
     const intermediaryPort = await listenFirewallFixture(intermediary)
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
       resolveDestination: () => 'bypass',
@@ -193,7 +193,7 @@ describe('firewall proxy failure boundaries', () => {
       socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'),
     )
     const port = await listenFirewallFixture(intermediary)
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
       resolveDestination: () => 'bypass',
@@ -214,7 +214,7 @@ describe('firewall proxy failure boundaries', () => {
   })
 
   it('closes malformed HTTP, upgrades, and idle clients', async () => {
-    const proxy = await startFirewallProxy({
+    const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
       timeoutMs: 100,

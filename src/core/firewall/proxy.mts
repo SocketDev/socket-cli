@@ -1,28 +1,16 @@
 import http from 'node:http'
 import https from 'node:https'
+import { lookup } from 'node:dns/promises'
 import { connect, isIP } from 'node:net'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import { createSecureContext, rootCertificates, TLSSocket } from 'node:tls'
+
+import { isPrivateHost } from '@socketsecurity/lib-stable/url/predicates'
 
 import { formatFirewallError } from './proxy-errors.mts'
 
 import type { Duplex } from 'node:stream'
 import type { FirewallCertificateAuthority } from './certificates.mts'
-
-export type FirewallProxyConfig = {
-  certificateAuthority: FirewallCertificateAuthority
-  checkRequest: (
-    url: URL,
-    method: string,
-  ) => Promise<{ blocked: boolean; reasons?: string[] | undefined }>
-  upstreamCa?: string[] | undefined
-  upstreamProxy?: string | undefined
-  resolveDestination?:
-    | ((url: URL) => 'inspect' | 'bypass' | 'block')
-    | undefined
-  timeoutMs?: number | undefined
-  onRequestError?: ((diagnostic: string) => void) | undefined
-}
 
 export function firewallProxyHeaders(
   headers: http.IncomingHttpHeaders,
@@ -67,6 +55,70 @@ export function firewallProxyTarget(
   return target
 }
 
+export function pinFirewallDestination(
+  target: URL,
+  destination: FirewallDestinationAddress,
+): URL {
+  const pinned = new URL(target)
+  pinned.hostname =
+    destination.family === 6 ? `[${destination.address}]` : destination.address
+  return pinned
+}
+
+export type FirewallProxyConfig = {
+  certificateAuthority: FirewallCertificateAuthority
+  checkRequest: (
+    url: URL,
+    method: string,
+  ) => Promise<{ blocked: boolean; reasons?: string[] | undefined }>
+  upstreamCa?: string[] | undefined
+  upstreamProxy?: string | undefined
+  resolveDestination?:
+    | ((url: URL) => 'inspect' | 'bypass' | 'block')
+    | undefined
+  allowPrivateDestination?: ((url: URL) => boolean) | undefined
+  timeoutMs?: number | undefined
+  onRequestError?: ((diagnostic: string) => void) | undefined
+}
+
+export interface FirewallDestinationAddress {
+  address: string
+  family: number
+}
+
+export type FirewallDestinationLookup = (
+  hostname: string,
+  options: { all: true; verbatim: true },
+) => Promise<FirewallDestinationAddress[]>
+
+export interface ResolveFirewallDestinationAddressOptions {
+  allowPrivate?: boolean | undefined
+  lookupDestination?: FirewallDestinationLookup | undefined
+}
+
+export async function resolveFirewallDestinationAddress(
+  target: URL,
+  options: ResolveFirewallDestinationAddressOptions = {},
+): Promise<FirewallDestinationAddress> {
+  const allowPrivate = options.allowPrivate ?? false
+  const lookupDestination =
+    options.lookupDestination ?? (lookup as FirewallDestinationLookup)
+  const hostname = target.hostname.replace(/^\[|\]$/g, '')
+  const family = isIP(hostname)
+  const addresses = family
+    ? [{ address: hostname, family }]
+    : await lookupDestination(hostname, { all: true, verbatim: true })
+  const destination = addresses.find(
+    address => allowPrivate || !isPrivateHost(address.address),
+  )
+  if (!destination) {
+    throw new Error(
+      `Firewall destination is refused at ${target.host}. Saw only private, loopback, or link-local addresses. Wanted a public address. Fix the registry configuration or explicitly allow its private host.`,
+    )
+  }
+  return destination
+}
+
 export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
   url: string
   close: () => Promise<void>
@@ -98,6 +150,17 @@ export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
     : undefined
   const server = http.createServer()
   const decrypted = http.createServer()
+
+  async function resolveTarget(target: URL) {
+    const destination = await resolveFirewallDestinationAddress(target, {
+      allowPrivate: opts.allowPrivateDestination?.(target) ?? false,
+    })
+    return {
+      __proto__: null,
+      destination,
+      pinnedTarget: pinFirewallDestination(target, destination),
+    }
+  }
 
   function report(error: unknown) {
     if (!closed) {
@@ -159,11 +222,12 @@ export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
         reject(response, 403)
         return
       }
+      const { pinnedTarget } = await resolveTarget(target)
       const headers = firewallProxyHeaders(request.headers)
       headers.host = target.host
       const client = target.protocol === 'https:' ? https : http
       const upstream = client.request(
-        target,
+        pinnedTarget,
         {
           method: request.method,
           headers,
@@ -171,7 +235,11 @@ export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
             (target.protocol === 'https:' ? httpsAgent : httpAgent) ?? false,
           timeout: timeoutMs,
           ...(target.protocol === 'https:'
-            ? { ca: upstreamCa, rejectUnauthorized: true }
+            ? {
+                ca: upstreamCa,
+                rejectUnauthorized: true,
+                servername: target.hostname,
+              }
             : {}),
         },
         incoming => {
@@ -218,7 +286,7 @@ export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
     track(socket)
     socket.setTimeout(timeoutMs, () => socket.destroy())
   })
-  function bypassTunnel(target: URL, socket: Duplex, head: Buffer) {
+  async function bypassTunnel(target: URL, socket: Duplex, head: Buffer) {
     function ready(remote: Duplex) {
       if (closed || socket.destroyed) {
         remote.destroy()
@@ -233,10 +301,14 @@ export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
       socket.once('close', () => remote.destroy())
       remote.once('close', () => socket.destroy())
     }
-    const hostname = target.hostname.replace(/^\[|\]$/g, '')
+    const { destination } = await resolveTarget(target)
+    const destinationHost =
+      destination.family === 6
+        ? `[${destination.address}]`
+        : destination.address
     if (!proxyUrl) {
       const remote = connect({
-        host: hostname,
+        host: destination.address,
         port: Number(target.port || 443),
         timeout: timeoutMs,
       })
@@ -258,7 +330,7 @@ export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
     const transport = proxyUrl.protocol === 'https:' ? https : http
     const request = transport.request(proxyUrl, {
       method: 'CONNECT',
-      path: `${target.hostname}:${target.port || 443}`,
+      path: `${destinationHost}:${target.port || 443}`,
       headers,
       agent: false,
       timeout: timeoutMs,
@@ -312,7 +384,10 @@ export async function startFirewallProxy(config: FirewallProxyConfig): Promise<{
         return
       }
       if (disposition === 'bypass') {
-        bypassTunnel(target, socket, head)
+        void bypassTunnel(target, socket, head).catch(error => {
+          report(error)
+          socket.destroy()
+        })
         return
       }
       const hostname = target.hostname.replace(/^\[|\]$/g, '')
