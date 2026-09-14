@@ -20,6 +20,21 @@ export interface PathIgnoredByChainOptions {
   isDir?: boolean | undefined
 }
 
+export function escapeIgnorePatternSyntax(pattern: string): string {
+  let escaped = ''
+  for (let index = 0, { length } = pattern; index < length; index += 1) {
+    const character = pattern[index]!
+    if (character === '\\' && index + 1 < length) {
+      escaped += character + pattern[index + 1]!
+      index += 1
+    } else {
+      escaped +=
+        character === '(' || character === '{' ? `\\${character}` : character
+    }
+  }
+  return escaped
+}
+
 export function ignoreFileLinesToGlobPatterns(
   lines: string[] | readonly string[],
   filepath: string,
@@ -81,13 +96,9 @@ export function ignorePatternToMinimatch(pattern: string): string {
   // For example, gitignore pattern `src/{a,b}.js` ignores file `src/{a,b}.js`.
   // But, the same minimatch pattern `src/{a,b}.js` ignores files `src/a.js` and `src/b.js`.
   // Minimatch pattern `src/\{a,b}.js` is equivalent to gitignore pattern `src/{a,b}.js`.
-  // In the alternation, `\\.` must come first so escape pairs are consumed
-  // atomically.
-  const escapedPatternWithoutLeadingSlash =
-    patternWithoutLeadingSlash.replaceAll(
-      /(?=((?:\\.|[^{(])*))\1([{(])/guy,
-      '$1\\$2',
-    )
+  const escapedPatternWithoutLeadingSlash = escapeIgnorePatternSyntax(
+    patternWithoutLeadingSlash,
+  )
   const matchInsideSuffix = patternToTest.endsWith('/**') ? '/*' : ''
   return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
 }

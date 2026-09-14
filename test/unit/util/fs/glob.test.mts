@@ -235,6 +235,16 @@ describe('util/fs/glob', () => {
       expect(ignorePatternToMinimatch('src/(group)')).toContain('\\(')
     })
 
+    it('preserves existing escapes and handles long malformed patterns', async () => {
+      const { ignorePatternToMinimatch } =
+        await import('../../../../src/util/fs/glob-ignore.mts')
+      expect(ignorePatternToMinimatch(String.raw`src/\{group\}/\(file\)`)).toBe(
+        String.raw`src/\{group\}/\(file\)`,
+      )
+      const prefix = 'a'.repeat(1_000_000)
+      expect(ignorePatternToMinimatch(`${prefix}{`)).toBe(`**/${prefix}\\{`)
+    })
+
     it('passes negation prefix through', async () => {
       const { ignorePatternToMinimatch } =
         await import('../../../../src/util/fs/glob-ignore.mts')
