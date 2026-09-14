@@ -47,6 +47,14 @@ const reachabilityFlagsForReach: MeowFlags = {
     default: false,
     description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} The reachability analysis is split per project/module accordingly.`,
   },
+  // Fallback targets scan creation, which this command never performs.
+  reachFallbackToRegularScan: {
+    type: 'boolean',
+    default: false,
+    hidden: true,
+    description:
+      'No-op: only `socket scan create --reach` falls back to a regular SCA scan on reachability failure.',
+  },
 }
 
 const generalFlags: MeowFlags = {

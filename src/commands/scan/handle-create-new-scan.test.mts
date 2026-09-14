@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import { outputCreateNewScan } from './output-create-new-scan.mts'
 
 import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
 
@@ -108,6 +109,7 @@ function createConfig(
       reachEcosystems: [],
       reachEnableAnalysisSplitting: false,
       reachExcludePaths: [],
+      reachFallbackToRegularScan: false,
       reachRetainFactsFile: false,
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,
@@ -408,6 +410,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEcosystems: [],
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: ['dist'],
+        reachFallbackToRegularScan: false,
         reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
@@ -471,6 +474,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEcosystems: [],
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: ['node_modules'],
+        reachFallbackToRegularScan: false,
         reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
@@ -540,6 +544,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEcosystems: [],
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: [],
+        reachFallbackToRegularScan: false,
         reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
@@ -599,6 +604,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEcosystems: [],
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: ['node_modules'],
+        reachFallbackToRegularScan: false,
         reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
@@ -658,6 +664,7 @@ describe('handleCreateNewScan excludePaths', () => {
         reachEcosystems: [],
         reachEnableAnalysisSplitting: false,
         reachExcludePaths: [],
+        reachFallbackToRegularScan: false,
         reachRetainFactsFile: false,
         reachSkipCache: false,
         reachUseOnlyPregeneratedSboms: false,
@@ -743,5 +750,81 @@ describe('handleCreateNewScan full application reachability finalize', () => {
     expect(String(warnSpy.mock.calls[0]![0])).toMatch(
       /reachability finalize|reachability report was not linked/i,
     )
+  })
+})
+
+describe('handleCreateNewScan reachability fallback', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      data: { size: 1 },
+      ok: true,
+    })
+    mockFindSocketYmlSync.mockReturnValue({ ok: false })
+    mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
+    mockFetchCreateOrgFullScan.mockResolvedValue({
+      data: { id: 'scan-id' },
+      ok: true,
+    })
+  })
+
+  afterEach(() => {
+    warnSpy.mockRestore()
+  })
+
+  it('creates a regular scan when reachability fails and the fallback flag is set', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      cause:
+        'Socket compute-artifacts failed: upstream gateway disconnected (code=gateway_disconnect)',
+      message: 'Failed to fetch artifacts from Socket API',
+      ok: false,
+    })
+
+    const config = createConfig()
+    config.reach.runReachabilityAnalysis = true
+    config.reach.reachFallbackToRegularScan = true
+
+    await handleCreateNewScan(config)
+
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      ['package.json'],
+      'fakeOrg',
+      expect.objectContaining({ scanType: 'socket' }),
+      expect.anything(),
+    )
+    expect(finalizeTier1Scan).not.toHaveBeenCalled()
+    expect(outputCreateNewScan).not.toHaveBeenCalledWith(
+      expect.objectContaining({ ok: false }),
+      expect.anything(),
+    )
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+    expect(String(warnSpy.mock.calls[0]![0])).toMatch(
+      /Reachability analysis failed: Failed to fetch artifacts from Socket API — Socket compute-artifacts failed.*Falling back to a regular SCA scan without reachability results\./,
+    )
+  })
+
+  it('still halts when reachability fails without the fallback flag', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      cause:
+        'Socket compute-artifacts failed: upstream gateway disconnected (code=gateway_disconnect)',
+      message: 'Failed to fetch artifacts from Socket API',
+      ok: false,
+    })
+
+    const config = createConfig()
+    config.reach.runReachabilityAnalysis = true
+
+    await handleCreateNewScan(config)
+
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
+    expect(outputCreateNewScan).toHaveBeenCalledTimes(1)
+    expect(outputCreateNewScan).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: false }),
+      expect.anything(),
+    )
+    expect(warnSpy).not.toHaveBeenCalled()
   })
 })

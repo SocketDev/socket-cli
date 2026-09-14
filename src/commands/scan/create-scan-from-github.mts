@@ -339,6 +339,7 @@ async function scanOneRepo(
       reachEcosystems: [],
       reachEnableAnalysisSplitting: false,
       reachExcludePaths: [],
+      reachFallbackToRegularScan: false,
       reachRetainFactsFile: false,
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,

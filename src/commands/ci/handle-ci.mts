@@ -81,6 +81,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
       reachEcosystems: [],
       reachEnableAnalysisSplitting: false,
       reachExcludePaths: [],
+      reachFallbackToRegularScan: false,
       reachRetainFactsFile: false,
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,
