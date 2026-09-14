@@ -1,6 +1,7 @@
 import { YARN_CLASSIC } from '@socketsecurity/lib-stable/constants/package-managers'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
+
 const logger = getDefaultLogger()
 
 const YARN = YARN_CLASSIC

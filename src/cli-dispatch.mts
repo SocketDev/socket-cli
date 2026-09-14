@@ -1,57 +1,28 @@
-import path from 'node:path'
-
+import { getInvocationMode } from './util/cli/invocation-mode.mts'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from '../scripts/fleet/process/is-main-module.mts'
+import { runMain } from '../scripts/fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../scripts/fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 
-// Detect how this binary was invoked.
-export function getInvocationMode(): string {
-  // Check environment variable first, for explicit mode.
-  const envMode = process.env['SOCKET_CLI_MODE']
-  if (envMode) {
-    return envMode
-  }
-
-  // Check process.argv[1] for the actual script name.
-  const scriptPath = process.argv[1]
-  if (scriptPath) {
-    const scriptName = path
-      .basename(scriptPath)
-      .replace(/\.(cjs|exe|js|mjs)$/i, '')
-
-    const wrapperMode = invocationWrapperMode(scriptName)
-    if (wrapperMode) {
-      return wrapperMode
-    }
-    // For 'cli' or anything containing 'socket', default to socket mode.
-    if (scriptName.includes('socket') || scriptName === 'cli') {
-      return 'socket'
-    }
-  }
-
-  // Check process.argv0 as fallback.
-  const argv0 = path
-    .basename(process.argv0 || process.execPath)
-    .replace(/\.exe$/i, '')
-
-  for (const mode of ['pnpm', 'npm', 'npx', 'yarn']) {
-    if (argv0.endsWith(mode)) {
-      return mode
-    }
-  }
-
-  // Default to main Socket CLI.
-  return 'socket'
+const SCRIPT_META: ScriptMeta = {
+  describe: 'dispatch a Socket CLI wrapper invocation to its command mode',
+  help: 'Usage: pnpm run dev [arguments]',
+  json: 'native',
 }
 
-export function invocationWrapperMode(name: string): string | undefined {
-  return ['pnpm', 'npm', 'npx', 'yarn'].find(
-    mode => name.endsWith(`-${mode}`) || name === mode,
-  )
+export function runCliProduct(): void {
+  void main().catch(error => {
+    logger.error(errorMessage(error))
+    process.exitCode = 1
+  })
 }
 
 // Route to the appropriate CLI based on invocation mode.
-async function main() {
+export async function main(): Promise<void> {
   const mode = getInvocationMode()
 
   // Set environment variable for child processes.
@@ -63,8 +34,6 @@ async function main() {
   await import('./cli-entry.mjs')
 }
 
-// Run the appropriate CLI.
-main().catch(error => {
-  logger.error('Socket CLI Error:', error)
-  process.exit(1)
-})
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

@@ -30,7 +30,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchSecurityPolicy } from '../../../../src/command/organization/fetch-security-policy.mts'
 
 // Mock the dependencies.

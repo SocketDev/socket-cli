@@ -47,7 +47,7 @@ vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
 
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: vi.fn(() => ({
-    fail: vi.fn(),
+    fail: mockLoggerFail,
     group: vi.fn(),
     groupEnd: vi.fn(),
     info: vi.fn(),
@@ -56,6 +56,8 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
     warn: vi.fn(),
   })),
 }))
+
+const mockLoggerFail = vi.hoisted(() => vi.fn())
 
 const mockSelect = vi.hoisted(() => vi.fn())
 const mockConfirm = vi.hoisted(() => vi.fn())
@@ -211,7 +213,7 @@ describe('create-scan-from-github (coverage)', () => {
   })
 
   describe('streamDownloadWithFetch inner cleanup error', () => {
-    it('logs the inner cleanup error when safeDelete also throws', async () => {
+    it('logs the inner cleanup error when deletion also throws', async () => {
       mockSocketHttpRequest.mockRejectedValueOnce(new Error('boom'))
       mockSafeDelete.mockRejectedValueOnce(
         Object.assign(new Error('EACCES'), { code: 'EACCES' }),
@@ -220,7 +222,11 @@ describe('create-scan-from-github (coverage)', () => {
         '/tmp/download-target',
         'https://example.com/file',
       )
-      expect(mockSafeDelete).toHaveBeenCalled()
+      expect(mockSafeDelete).toHaveBeenCalledExactlyOnceWith(
+        '/tmp/download-target',
+        {},
+      )
+      expect(mockLoggerFail).toHaveBeenCalledTimes(2)
       expect(result.ok).toBe(false)
     })
   })

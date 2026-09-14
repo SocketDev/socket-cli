@@ -1,4 +1,4 @@
-import { resolveManifestDefault } from './manifest-defaults.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -9,12 +9,19 @@ import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { resolveGradleInvocation } from './manifest-build-trust.mts'
 import { outputManifest } from './output-manifest.mts'
+import {
+  resolveGradleExcludeConfigs,
+  resolveGradleFacts,
+  resolveGradleIgnoreUnresolved,
+  resolveGradleIncludeConfigs,
+  resolveGradleVerbose,
+  warnGradlePomOnlyFlags,
+} from './gradle-command-defaults.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { commonFlags } from '../../flags.mts'
 import { defineFlags } from '../../meow.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
 import { getFlagListOutput } from '../../util/output/formatting.mts'
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
@@ -172,7 +179,6 @@ export async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   const sockJson = readOrDefaultSocketJson(cwd)
-  const manifestSettings = sockJson.defaults?.manifest?.gradle ?? {}
 
   debug(
     `override: ${SOCKET_JSON} gradle: ${JSON.stringify(sockJson.defaults?.manifest?.gradle)}`,
@@ -183,9 +189,6 @@ export async function run(
     gradleOpts: gradleOptsFlag,
     trustSocketJson,
   } = cli.flags
-
-  let { excludeConfigs, facts, ignoreUnresolved, includeConfigs, verbose } =
-    cli.flags
 
   // The bin and its options choose what gets executed, so they route through
   // the socket.json trust gate. The remaining socket.json defaults below only
@@ -203,60 +206,35 @@ export async function run(
   }
 
   const { bin, opts: gradleOpts } = invocation.data
-
-  verbose = resolveManifestDefault(
-    verbose,
-    manifestSettings.verbose,
-    false,
-    'verbose',
+  const facts = resolveGradleFacts(sockJson, {
+    facts: cli.flags.facts,
+    pom: cli.flags.pom,
+  })
+  const includeConfigs = resolveGradleIncludeConfigs(
+    sockJson,
+    cli.flags.includeConfigs,
   )
-  facts = resolveManifestDefault(facts, manifestSettings.facts, true, 'facts')
-  // --pom opts into legacy pom.xml generation. It overrides the facts default
-  // (and the socket.json default) but conflicts with an explicit --facts.
-  if (cli.flags['pom']) {
-    if (cli.flags['facts'] !== undefined) {
-      logger.warn(
-        'The `--facts` and `--pom` options are mutually exclusive; generating Socket facts.',
-      )
-    } else {
-      facts = false
-    }
-  }
-  includeConfigs = resolveManifestDefault(
-    includeConfigs,
-    manifestSettings.includeConfigs,
-    '',
-    'include-configs',
+  const excludeConfigs = resolveGradleExcludeConfigs(
+    sockJson,
+    cli.flags.excludeConfigs,
   )
-  excludeConfigs = resolveManifestDefault(
-    excludeConfigs,
-    manifestSettings.excludeConfigs,
-    '',
-    'exclude-configs',
-  )
-  ignoreUnresolved = resolveManifestDefault(
-    ignoreUnresolved,
-    manifestSettings.ignoreUnresolved,
-    false,
-    'ignore-unresolved',
-  )
+  const ignoreUnresolved = resolveGradleIgnoreUnresolved(sockJson, {
+    value: cli.flags.ignoreUnresolved,
+  })
+  const verbose = resolveGradleVerbose(sockJson, {
+    value: cli.flags.verbose,
+  })
+  const manifestMode = facts ? 'facts' : 'pom'
 
   // `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` only
   // affect facts generation; the pom path has no equivalent knobs. Warn rather
   // than silently ignore an explicitly-passed flag. A socket.json default does
   // not trip this — only a flag actually present on the command line does.
-  if (
-    !facts &&
-    [
-      cli.flags['includeConfigs'],
-      cli.flags['excludeConfigs'],
-      cli.flags['ignoreUnresolved'],
-    ].some(value => value !== undefined)
-  ) {
-    logger.warn(
-      'The `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` options only apply when generating Socket facts (not with `--pom`); ignoring them.',
-    )
-  }
+  warnGradlePomOnlyFlags(manifestMode, {
+    excludeConfigs: cli.flags.excludeConfigs,
+    ignoreUnresolved: cli.flags.ignoreUnresolved,
+    includeConfigs: cli.flags.includeConfigs,
+  })
 
   const resolvedVerbose = verbose
   const resolvedIgnoreunresolved = ignoreUnresolved

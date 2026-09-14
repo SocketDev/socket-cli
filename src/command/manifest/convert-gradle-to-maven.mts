@@ -29,14 +29,14 @@ export async function convertGradleToMaven({
   // We don't resolve against $PATH since gradlew is typically a local wrapper script.
   // Users can provide absolute paths if they need to reference system-wide installations.
   const rBin = path.resolve(cwd, bin)
-  const binExists = existsSync(rBin)
-  const cwdExists = existsSync(cwd)
-
   // Only show logging in text mode.
   const isTextMode = outputKind === 'text'
 
   if (isTextMode) {
-    reportGradleConversionPaths(rBin, cwd, { binExists, cwdExists })
+    reportGradleConversionPaths(rBin, cwd, {
+      binExists: existsSync(rBin),
+      cwdExists: existsSync(cwd),
+    })
   }
 
   try {

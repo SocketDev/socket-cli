@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for Socket CLI's package-manager wrappers. Ported from
  *   `packages/cli/test/smoke.sh`'s npm / npx / raw-npm / raw-npx / wrapper /

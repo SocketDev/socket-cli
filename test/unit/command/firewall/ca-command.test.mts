@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   trust: vi.fn(),
   store: vi.fn(),
 }))
+const mockStdoutWrite = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/core/firewall/config.mts'), () => ({
   readFirewallConfig: mocks.config,
 }))
@@ -29,8 +30,10 @@ vi.mock(import('../../../../src/core/firewall/ca-trust.mts'), () => ({
 }))
 beforeEach(() => {
   vi.resetAllMocks()
-  mocks.write.mockReturnValue(true)
-  vi.spyOn(process.stdout, 'write').mockImplementation(mocks.write)
+  mockStdoutWrite.mockReturnValue(true)
+  vi.spyOn(process.stdout, 'write').mockImplementation((...args) =>
+    mockStdoutWrite(...args),
+  )
   mocks.config.mockResolvedValue({ caDirectory: '/example' })
   mocks.ensure.mockResolvedValue({
     certificatePath: '/example/ca.crt',
@@ -55,7 +58,7 @@ describe('firewall CA command', () => {
     await runFirewallCaCommand(['init', '--json'])
     expect(mocks.ensure).toHaveBeenCalledWith({ directory: '/example' })
     expect(mocks.rotate).not.toHaveBeenCalled()
-    expect(JSON.parse(mocks.write.mock.calls[0]![0] as string)).toEqual({
+    expect(JSON.parse(mockStdoutWrite.mock.calls[0]![0] as string)).toEqual({
       command: 'init',
       certificatePath: '/example/ca.crt',
     })
@@ -64,7 +67,7 @@ describe('firewall CA command', () => {
     await runFirewallCaCommand(['init', '--force'])
     expect(mocks.rotate).toHaveBeenCalledWith({ directory: '/example' })
     expect(mocks.ensure).not.toHaveBeenCalled()
-    expect(mocks.write).toHaveBeenCalledWith(
+    expect(mockStdoutWrite).toHaveBeenCalledWith(
       expect.stringContaining('/example/backup'),
     )
   })
@@ -75,7 +78,7 @@ describe('firewall CA command', () => {
       keyPath: '/example/ca.key',
     })
     expect(mocks.ensure).not.toHaveBeenCalled()
-    expect(mocks.write).toHaveBeenCalledWith('/example/ca.crt\n')
+    expect(mockStdoutWrite).toHaveBeenCalledWith('/example/ca.crt\n')
   })
   it('uses externally configured paths and refuses their rotation', async () => {
     mocks.config.mockResolvedValue({
@@ -126,7 +129,7 @@ describe('firewall CA command', () => {
     async ({ args }) => {
       await runFirewallCaCommand(args)
       expect(mocks.config).not.toHaveBeenCalled()
-      expect(mocks.write).toHaveBeenCalled()
+      expect(mockStdoutWrite).toHaveBeenCalled()
     },
   )
 })

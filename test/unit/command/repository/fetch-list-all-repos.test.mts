@@ -26,7 +26,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 
 // Mock the dependencies.
 vi.mock(import('../../../../src/util/socket/api.mts'), () => ({

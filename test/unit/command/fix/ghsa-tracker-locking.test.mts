@@ -7,7 +7,7 @@
  * lock detection, lock release, and graceful degradation when locking fails.
  *
  * Testing Approach: Mocks @socketsecurity/lib/fs functions (readJson,
- * writeJson, safeMkdir, safeDelete) and node:fs promises (readFile,
+ * writeJson, safeMkdir, strictDelete) and node:fs promises (readFile,
  * writeFile) to exercise tracker locking without touching a real disk.
  *
  * Related Files: - src/command/fix/ghsa-tracker.mts - GHSA tracker persistence
@@ -27,7 +27,7 @@ import type * as FsModule from 'node:fs'
 
 // Mock file system operations.
 const mockReadJson = vi.hoisted(() => vi.fn())
-const mockSafeDelete = vi.hoisted(() => vi.fn())
+const mockStrictDelete = vi.hoisted(() => vi.fn())
 const mockSafeMkdir = vi.hoisted(() => vi.fn())
 const mockWriteJson = vi.hoisted(() => vi.fn())
 
@@ -52,7 +52,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJson: mockReadJson,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
-  safeDelete: mockSafeDelete,
+  safeDelete: mockStrictDelete,
   safeMkdir: mockSafeMkdir,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/write-json'), () => ({
@@ -68,7 +68,7 @@ describe('ghsa-tracker', () => {
     // Default: lock file creation succeeds.
     mockFsWriteFile.mockResolvedValue(undefined)
     mockFsReadFile.mockResolvedValue('12345')
-    mockSafeDelete.mockResolvedValue(undefined)
+    mockStrictDelete.mockResolvedValue(undefined)
   })
 
   describe('markGhsaFixed with locking', () => {
@@ -193,8 +193,8 @@ describe('ghsa-tracker', () => {
 
       await markGhsaFixed(mockCwd, 'GHSA-release-lock', 123)
 
-      // Confirms the lock cleanup path runs via safeDelete.
-      expect(mockSafeDelete).toHaveBeenCalled()
+      // Confirms the lock cleanup path runs via strictDelete.
+      expect(mockStrictDelete).toHaveBeenCalled()
     })
 
     it('proceeds without lock when all attempts fail', async () => {

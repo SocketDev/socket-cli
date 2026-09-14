@@ -33,6 +33,7 @@ async function main(): Promise<void> {
 const SCRIPT_META: ScriptMeta = {
   describe: 'clean the repository CLI cache',
   help: 'Usage: pnpm run clean:cache [--dry-run]',
+  json: 'native',
 }
 
 if (isMainModule(import.meta.url)) {

@@ -3,7 +3,7 @@
  *   defineCommand function that registers commands with the global registry.
  */
 
-import { registry } from './registry-core.mjs'
+import { registry } from './registry-core.mts'
 
 import type { CommandDefinition } from './registry-types.mjs'
 

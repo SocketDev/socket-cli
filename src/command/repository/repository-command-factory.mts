@@ -179,7 +179,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       if (dryRun) {
-        outputRepositoryDryRun()
+        outputRepositoryDryRun(spec, orgSlug, repoName)
         return
       }
 
@@ -189,27 +189,6 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
         outputKind,
         repoName,
       })
-      function outputRepositoryDryRun() {
-        const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
-        if (spec.commandName === 'create') {
-          outputDryRunUpload('repository', {
-            organization: orgSlug,
-            repository: repoName,
-          })
-        } else if (spec.commandName === 'update') {
-          outputDryRunUpload('repository (update)', {
-            organization: orgSlug,
-            repository: repoName,
-          })
-        } else if (spec.commandName === 'del') {
-          outputDryRunDelete('repository', identifier)
-        } else {
-          outputDryRunFetch(`repository ${identifier}`, {
-            organization: orgSlug,
-            repository: repoName || undefined,
-          })
-        }
-      }
     },
   }
 }
@@ -235,4 +214,30 @@ export function findEmptyDefaultBranch(
     }
   }
   return undefined
+}
+
+export function outputRepositoryDryRun(
+  spec: RepositoryCommandSpec,
+  orgSlug: string,
+  repoName: string,
+): void {
+  const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
+  if (spec.commandName === 'create') {
+    outputDryRunUpload('repository', {
+      organization: orgSlug,
+      repository: repoName,
+    })
+  } else if (spec.commandName === 'update') {
+    outputDryRunUpload('repository (update)', {
+      organization: orgSlug,
+      repository: repoName,
+    })
+  } else if (spec.commandName === 'del') {
+    outputDryRunDelete('repository', identifier)
+  } else {
+    outputDryRunFetch(`repository ${identifier}`, {
+      organization: orgSlug,
+      repository: repoName || undefined,
+    })
+  }
 }

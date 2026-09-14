@@ -1,4 +1,4 @@
-/**
+/*
  * @file Test wrapper for the project. Handles test execution with Vitest,
  *   including:
  *
@@ -20,16 +20,21 @@ import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { rootNodeModulesBinPath } from './constants/paths.mts'
+
 import { REPO_ROOT } from '../../fleet/paths.mts'
 import { EnvironmentVariables } from './environment-variables.mts'
 import { loadEnvFile } from './util/load-env.mts'
 import { resolvePackageTestScope } from './test-lanes.mts'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
+import { isMainModule } from '../../fleet/process/is-main-module.mts'
+import { runMain } from '../../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '../../..')
-const rootNodeModulesBinPath = path.join(rootPath, 'node_modules', '.bin')
 
 /**
  * Check if required build artifacts exist.
@@ -52,7 +57,7 @@ function checkBuildArtifacts() {
 /**
  * Main test execution flow.
  */
-async function main() {
+export async function main(): Promise<void> {
   try {
     // Validate build artifacts exist.
     if (!checkBuildArtifacts()) {
@@ -182,7 +187,12 @@ async function main() {
   }
 }
 
-main().catch(e => {
-  logger.error('Unexpected error:', e)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe: 'run the Socket CLI Vitest lanes with repository defaults',
+  help: 'Usage: pnpm run test:unit [test paths] [--all] [--coverage]',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

@@ -55,8 +55,6 @@ vi.mock(import('../../../../src/env/cli-version-hash.mts'), () => ({
 
 vi.mock(import('../../../../src/constants/paths.mts'), () => ({
   homePath: '/home/user',
-  resolveCompletionScriptPath: (basePath: string) =>
-    `${basePath}/data/socket-completion.bash`,
 }))
 
 describe('setupTabCompletion', () => {

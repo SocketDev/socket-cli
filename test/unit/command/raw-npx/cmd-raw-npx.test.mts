@@ -141,7 +141,7 @@ describe('cmd-raw-npx', () => {
 
     it('should have correct description', () => {
       expect(cmdRawNpx.description).toBe(
-        'Run npm exec without the Socket wrapper',
+        'Run pnpm exec without the Socket wrapper',
       )
     })
 

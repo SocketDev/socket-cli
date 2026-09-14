@@ -119,11 +119,11 @@ describe('socket config get', async () => {
     [
       'config',
       'set',
-      'test',
-      'xyz',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'test',
+      'xyz',
     ],
     'should require args with just dry-run',
     async cmd => {

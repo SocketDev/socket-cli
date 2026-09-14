@@ -1,4 +1,4 @@
-import path from 'node:path'
+import { resolveScanCwd } from './util.mts'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { applyScanCreateDefaults } from './cmd-scan-create-defaults.mts'
 import {
@@ -32,6 +32,7 @@ import type { PURL_Type } from '../../util/ecosystem/types.mts'
 import { generalFlags } from './cmd-scan-create-flags.mts'
 import {
   findDefaultBranchValueMisuse,
+  hasLegacyDefaultBranchFlag,
   isBareIdentifier,
 } from './cmd-scan-create-validation.mts'
 
@@ -45,6 +46,7 @@ export interface ScanCreateFlags {
   commitMessage: string
   committers: string
   cwd: string
+  defaultBranch: boolean
   makeDefaultBranch: boolean
   interactive: boolean
   json: boolean
@@ -84,15 +86,51 @@ const hidden = false
 
 // Flag schema extracted to keep this file under the 1000-line File-size cap.
 
-// --make-default-branch validation helpers extracted
+// Legacy flag names kept working via meow aliases on `makeDefaultBranch`.
+// Detected here so we can warn on use and keep the misuse heuristic
+// working against both the primary and legacy names.
+// --default-branch / --make-default-branch validation helpers extracted
 // to keep this file under the 1000-line File-size cap.
 
-export { findDefaultBranchValueMisuse, isBareIdentifier }
+export {
+  findDefaultBranchValueMisuse,
+  hasLegacyDefaultBranchFlag,
+  isBareIdentifier,
+}
 
 export const cmdScanCreate = {
   description,
   hidden,
   run,
+}
+
+export function outputDryRunScanCreate(config: {
+  orgSlug: string
+  targets: string[]
+  repoName: string
+  branchName: string
+  reach: boolean
+  reachEcosystems: PURL_Type[]
+}): void {
+  const { orgSlug, targets, repoName, branchName, reach, reachEcosystems } =
+    config
+  const details: Record<string, unknown> = {
+    organization: orgSlug,
+    targets: targets.join(', '),
+  }
+  if (repoName) {
+    details['repository'] = repoName
+  }
+  if (branchName) {
+    details['branch'] = branchName
+  }
+  if (reach) {
+    details['reachabilityAnalysis'] = 'enabled'
+    if (reachEcosystems.length > 0) {
+      details['ecosystems'] = reachEcosystems.join(', ')
+    }
+  }
+  outputDryRunUpload('scan', details)
 }
 
 export async function run(
@@ -168,7 +206,8 @@ export async function run(
   `,
   }
 
-  // `--make-default-branch` is a boolean flag, so meow/yargs-parser silently drops any value
+  // `--make-default-branch` (and its deprecated alias `--default-branch`)
+  // is a boolean flag, so meow/yargs-parser silently drops any value
   // attached to it — the resulting scan is untagged and invisible in the
   // Main/PR dashboard tabs. Catch that shape before meow parses so the
   // user sees an actionable error instead of a mysteriously-mislabelled
@@ -187,6 +226,15 @@ export async function run(
     return
   }
 
+  // `--default-branch` / `--defaultBranch` is kept working via meow's
+  // aliases, but nudge callers to migrate so we can eventually retire
+  // the legacy name.
+  if (hasLegacyDefaultBranchFlag(argv)) {
+    logger.warn(
+      '--default-branch is deprecated on `socket scan create`; use --make-default-branch instead. The old flag still works for now.',
+    )
+  }
+
   const cli = meowOrExit({
     argv,
     config,
@@ -199,8 +247,9 @@ export async function run(
     commitMessage,
     committers,
     cwd: cwdOverride,
+    defaultBranch: legacyDefaultBranch,
     interactive,
-    makeDefaultBranch,
+    makeDefaultBranch: makeDefaultBranchFlag,
     json,
     markdown,
     org: orgFlag,
@@ -226,6 +275,11 @@ export async function run(
     tmp,
   } = cli.flags as unknown as ScanCreateFlags
 
+  // Merge the legacy --default-branch flag into the primary. Both are
+  // declared as separate boolean flags in the config (see the comment
+  // on the `defaultBranch` flag definition above).
+  const makeDefaultBranch = makeDefaultBranchFlag || legacyDefaultBranch
+
   // Validate ecosystem values.
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const reachEcosystems: PURL_Type[] =
@@ -250,10 +304,7 @@ export async function run(
   )
 
   const processCwd = process.cwd()
-  const cwd =
-    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
-      ? path.resolve(processCwd, cwdOverride)
-      : processCwd
+  const cwd = resolveScanCwd(processCwd, cwdOverride)
 
   const sockJson = await readOrDefaultSocketJsonUp(cwd)
 
@@ -337,89 +388,72 @@ export async function run(
     return
   }
 
-  return await executeValidatedScanCreate({ autoManifest, report })
-
-  async function executeValidatedScanCreate(scanOptions: {
-    autoManifest: boolean
-    report: boolean
-  }) {
-    const opts = { __proto__: null, ...scanOptions } as typeof scanOptions
-    if (dryRun) {
-      const details: Record<string, unknown> = {
-        organization: orgSlug,
-        targets: targets.join(', '),
-      }
-      if (repoName) {
-        details['repository'] = repoName
-      }
-      if (branchName) {
-        details['branch'] = branchName
-      }
-      if (reach) {
-        details['reachabilityAnalysis'] = 'enabled'
-        if (reachEcosystems.length > 0) {
-          details['ecosystems'] = reachEcosystems.join(', ')
-        }
-      }
-      outputDryRunUpload('scan', details)
-      return
-    }
-
-    // Validate numeric flag conversions.
-    const {
-      validatedPullRequest,
-      validatedReachAnalysisMemoryLimit,
-      validatedReachAnalysisTimeout,
-      validatedReachConcurrency,
-    } = validateScanCreateNumericFlags({
-      pullRequest,
-      reachAnalysisMemoryLimit,
-      reachAnalysisTimeout,
-      reachConcurrency,
-    })
-
-    await handleCreateNewScan({
-      autoManifest: opts.autoManifest,
-      branchName: branchName,
-      commitHash: (commitHash && commitHash) || '',
-      commitMessage: (commitMessage && commitMessage) || '',
-      committers: (committers && committers) || '',
-      cwd,
-      defaultBranch: makeDefaultBranch,
-      interactive: interactive,
+  if (dryRun) {
+    outputDryRunScanCreate({
       orgSlug,
-      outputKind,
-      pendingHead: pendingHead,
-      pullRequest: validatedPullRequest,
-      reach: {
-        excludePaths,
-        runReachabilityAnalysis: reach,
-        reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
-        reachAnalysisTimeout: validatedReachAnalysisTimeout,
-        reachConcurrency: validatedReachConcurrency,
-        reachDebug: reachDebug,
-        reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
-        reachDisableAnalytics: reachDisableAnalytics,
-        reachDisableExternalToolChecks: reachDisableExternalToolChecks,
-        reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
-        reachEcosystems,
-        reachExcludePaths,
-        reachLazyMode: reachLazyMode,
-        reachMinSeverity: reachMinSeverity,
-        reachSkipCache: reachSkipCache,
-        reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
-        reachUseUnreachableFromPrecomputation:
-          reachUseUnreachableFromPrecomputation,
-        reachVersion: reachVersion || undefined,
-      },
-      readOnly: readOnly,
-      repoName,
-      report: opts.report,
-      reportLevel,
       targets,
-      tmp: tmp,
-      trustSocketJson: Boolean(trustSocketJson),
-      workspace: (workspace && workspace) || '',
+      repoName,
+      branchName,
+      reach,
+      reachEcosystems,
     })
+    return
   }
+
+  // Validate numeric flag conversions.
+  const {
+    validatedPullRequest,
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
+  } = validateScanCreateNumericFlags({
+    pullRequest,
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+  })
+
+  await handleCreateNewScan({
+    autoManifest: autoManifest,
+    branchName: branchName,
+    commitHash: commitHash || '',
+    commitMessage: commitMessage || '',
+    committers: committers || '',
+    cwd,
+    defaultBranch: makeDefaultBranch,
+    interactive: interactive,
+    orgSlug,
+    outputKind,
+    pendingHead: pendingHead,
+    pullRequest: validatedPullRequest,
+    reach: {
+      excludePaths,
+      runReachabilityAnalysis: reach,
+      reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
+      reachAnalysisTimeout: validatedReachAnalysisTimeout,
+      reachConcurrency: validatedReachConcurrency,
+      reachDebug: reachDebug,
+      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
+      reachDisableAnalytics: reachDisableAnalytics,
+      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
+      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
+      reachEcosystems,
+      reachExcludePaths,
+      reachLazyMode: reachLazyMode,
+      reachMinSeverity: reachMinSeverity,
+      reachSkipCache: reachSkipCache,
+      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
+      reachUseUnreachableFromPrecomputation:
+        reachUseUnreachableFromPrecomputation,
+      reachVersion: reachVersion || undefined,
+    },
+    readOnly: readOnly,
+    repoName,
+    report,
+    reportLevel,
+    targets,
+    tmp: tmp,
+    trustSocketJson: Boolean(trustSocketJson),
+    workspace: workspace || '',
+  })
 }

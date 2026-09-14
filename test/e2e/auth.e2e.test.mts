@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for `socket login`, `socket logout`, and `socket whoami`.
  *   Ported from `packages/cli/test/smoke.sh`'s login/logout sections, plus the

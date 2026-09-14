@@ -13,8 +13,8 @@ import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
+import { FOLD_SETTING_VERSION } from '../../constants/cli.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-import { FOLD_SETTING_VERSION } from '../../constants/reporting.mts'
 import {
   SCAN_TYPE_SOCKET,
   SCAN_TYPE_SOCKET_TIER1,

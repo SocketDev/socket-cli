@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for the Socket CLI's top-level `--help` / `--version`
  *   behavior. Absorbed from the (now-deleted) critical-commands.e2e.test.mts

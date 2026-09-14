@@ -89,7 +89,7 @@ vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock(import('../../../../src/command/fix/env-helpers.mts'), () => ({
+vi.mock(import('../../../../src/command/fix/ci-environment.mts'), () => ({
   checkCiEnvVars: mockCheckCiEnvVars,
   getCiEnvInstructions: vi.fn(() => 'Set CI env vars'),
   getFixEnv: mockGetFixEnv,

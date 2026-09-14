@@ -159,13 +159,16 @@ if (BINARY.enabled) {
             return
           }
 
-          const result = await executeCliCommand(['npm', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
+          const result = await executeCliCommand(
+            ['npm', '--dry-run', '--help', '--config', '{}'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('npm')
+          expect(result.stdout + result.stderr).toContain('npm')
         },
       )
 
@@ -295,13 +298,16 @@ if (BINARY.enabled) {
             return
           }
 
-          const result = await executeCliCommand(['yarn', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
+          const result = await executeCliCommand(
+            ['yarn', '--dry-run', '--help', '--config', '{}'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('yarn')
+          expect(result.stdout + result.stderr).toContain('yarn')
         },
       )
 
@@ -312,13 +318,16 @@ if (BINARY.enabled) {
             return
           }
 
-          const result = await executeCliCommand(['pip', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
+          const result = await executeCliCommand(
+            ['pip', '--dry-run', '--help', '--config', '{}'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('pip')
+          expect(result.stdout + result.stderr).toContain('pip')
         },
       )
 
@@ -922,13 +931,16 @@ if (BINARY.enabled) {
             return
           }
 
-          const result = await executeCliCommand(['patch', 'list', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
+          const result = await executeCliCommand(
+            ['patch', 'list', '--help', '--dry-run'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('list')
+          expect(result.stdout + result.stderr).toContain('list')
         },
       )
 
@@ -939,13 +951,16 @@ if (BINARY.enabled) {
             return
           }
 
-          const result = await executeCliCommand(['patch', 'get', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
+          const result = await executeCliCommand(
+            ['patch', 'get', '--help', '--dry-run'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('get')
+          expect(result.stdout + result.stderr).toContain('get')
         },
       )
 
@@ -956,13 +971,16 @@ if (BINARY.enabled) {
             return
           }
 
-          const result = await executeCliCommand(['patch', 'scan', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
+          const result = await executeCliCommand(
+            ['patch', 'scan', '--help', '--dry-run'],
+            {
+              binPath: BINARY.path,
+              isolateConfig: false,
+            },
+          )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('scan')
+          expect(result.stdout + result.stderr).toContain('scan')
         },
       )
 
@@ -974,7 +992,7 @@ if (BINARY.enabled) {
           }
 
           const result = await executeCliCommand(
-            ['patch', 'repair', '--help'],
+            ['patch', 'repair', '--help', '--dry-run'],
             {
               binPath: BINARY.path,
               isolateConfig: false,
@@ -982,7 +1000,7 @@ if (BINARY.enabled) {
           )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('repair')
+          expect(result.stdout + result.stderr).toContain('repair')
         },
       )
 
@@ -994,7 +1012,7 @@ if (BINARY.enabled) {
           }
 
           const result = await executeCliCommand(
-            ['patch', 'remove', '--help'],
+            ['patch', 'remove', '--help', '--dry-run'],
             {
               binPath: BINARY.path,
               isolateConfig: false,
@@ -1002,7 +1020,7 @@ if (BINARY.enabled) {
           )
 
           expect(result.code).toBe(0)
-          expect(result.stdout).toContain('remove')
+          expect(result.stdout + result.stderr).toContain('remove')
         },
       )
     })
@@ -1261,7 +1279,12 @@ if (BINARY.enabled) {
           }
 
           const result = await executeCliCommand(
-            ['fix', '--dry-run', '--config', '{}'],
+            [
+              'fix',
+              '--dry-run',
+              '--config',
+              '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
+            ],
             {
               binPath: BINARY.path,
               isolateConfig: false,

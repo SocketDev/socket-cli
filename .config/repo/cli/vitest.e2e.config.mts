@@ -13,7 +13,7 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    include: ['**/*.e2e.test.{mts,ts}'],
+    include: ['test/e2e/**/*.test.{mts,ts}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

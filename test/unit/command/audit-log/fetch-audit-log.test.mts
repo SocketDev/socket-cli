@@ -19,7 +19,7 @@
  * Related Files: - src/command/audit-log/fetch-audit-log.mts - Implementation.
  *
  * - Src/commands/audit-log/handle-audit-log.mts - Handler that calls this fetcher -
- *   test/helpers/sdk-test-helpers.mts - SDK mocking utilities.
+ *   test/helpers/sdk-fixtures.mts - SDK mocking utilities.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -28,7 +28,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchAuditLog } from '../../../../src/command/audit-log/fetch-audit-log.mts'
 
 // Mock the dependencies.

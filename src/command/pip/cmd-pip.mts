@@ -46,5 +46,4 @@ export const cmdPip = defineHandoffCommand({
   examples: ['install flask', 'install -r requirements.txt', 'list'],
   binaryPicker: ctx => getPipBinName(ctx.invokedAs),
   trackTelemetry: false,
-  supportDryRun: false,
 })

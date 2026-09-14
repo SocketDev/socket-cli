@@ -1,3 +1,4 @@
+// real-identity: allow-file -- verifies the public sales contact in command output.
 /**
  * Integration tests for `socket threat-feed` command.
  *

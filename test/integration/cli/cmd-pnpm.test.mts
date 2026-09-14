@@ -41,58 +41,16 @@ import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/type
 
 const binCliPath = getBinCliPath()
 
-// Known issue: Several exec/install tests currently fail due to config flag handling.
-// Needs investigation and fix for proper config isolation in pnpm wrapper tests.
 describe('socket pnpm', async () => {
   cmdit(
-    [PNPM, FLAG_HELP, FLAG_CONFIG, '{}'],
-    `should support ${FLAG_HELP}`,
+    [PNPM, FLAG_DRY_RUN, FLAG_CONFIG, '{}', FLAG_HELP],
+    `should forward ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
-        "Run pnpm with Socket Firewall security
-
-          Usage
-                $ socket pnpm ...
-          
-              API Token Requirements
-                (none)
-          
-              Note: Everything after "pnpm" is forwarded to Socket Firewall (sfw).
-                    Socket Firewall provides real-time security scanning for pnpm packages.
-          
-              Use \`socket wrapper on\` to alias this command as \`pnpm\`.
-          
-              Examples
-                $ socket pnpm
-                $ socket pnpm install
-                $ socket pnpm add package-name
-                $ socket pnpm dlx package-name"
-      `,
-      ).toMatchInlineSnapshot(`
-        "Run pnpm with Socket Firewall security
-
-          Usage
-                $ socket pnpm ...
-          
-              API Token Requirements
-                (none)
-          
-              Note: Everything after "pnpm" is forwarded to Socket Firewall (sfw).
-                    Socket Firewall provides real-time security scanning for pnpm packages.
-          
-              Use \`socket wrapper on\` to alias this command as \`pnpm\`.
-          
-              Examples
-                $ socket pnpm
-                $ socket pnpm install
-                $ socket pnpm add package-name
-                $ socket pnpm dlx package-name"
-      `)
-
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain('`socket pnpm`')
+      expectDryRunOutput(stderr)
+      expect(stderr).toContain('Arguments: pnpm --help')
+      expect(stdout).toBe('')
+      expect(code, 'forwarded help should exit with code 0').toBe(0)
     },
   )
 
@@ -115,11 +73,11 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'add',
-      'lodash',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'add',
+      'lodash',
     ],
     'should handle add with --dry-run flag',
     async cmd => {
@@ -135,7 +93,7 @@ describe('socket pnpm', async () => {
   )
 
   cmdit(
-    [PNPM, 'install', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    [PNPM, FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}', 'install'],
     'should handle install with --dry-run flag',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -149,11 +107,11 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'add',
-      '@types/node@^20.0.0',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'add',
+      '@types/node@^20.0.0',
     ],
     'should handle scoped packages with version',
     async cmd => {
@@ -171,13 +129,13 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'dlx',
-      FLAG_SILENT,
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      FLAG_SILENT,
+      'dlx',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle dlx with version',
     async cmd => {
@@ -192,12 +150,12 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle exec with issueRules for malware',
     async cmd => {
@@ -215,12 +173,12 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'exec',
+      FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'exec',
       'cowsay@^1.6.0',
       'hello',
-      FLAG_DRY_RUN,
     ],
     'should handle exec with --config flag and issueRules for malware',
     async cmd => {
@@ -238,12 +196,12 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle exec with multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -264,12 +222,12 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'exec',
+      FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'exec',
       'cowsay@^1.6.0',
       'hello',
-      FLAG_DRY_RUN,
     ],
     'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -290,10 +248,10 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'install',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'install',
     ],
     'should handle install with issueRules for malware',
     async cmd => {
@@ -311,10 +269,10 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'install',
+      FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
-      FLAG_DRY_RUN,
+      'install',
     ],
     'should handle install with --config flag and issueRules for malware',
     async cmd => {
@@ -335,10 +293,10 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'install',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'install',
     ],
     'should handle install with multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -359,10 +317,10 @@ describe('socket pnpm', async () => {
   cmdit(
     [
       PNPM,
-      'install',
+      FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
-      FLAG_DRY_RUN,
+      'install',
     ],
     'should handle install with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {

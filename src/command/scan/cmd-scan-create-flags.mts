@@ -54,6 +54,17 @@ export const generalFlags: MeowFlags = {
     description:
       "Reassign the repo's default-branch pointer at Socket to the branch of this scan. The previous default-branch designation is replaced. Mirrors the `make_default_branch` API field.",
   },
+  // Deprecated alias for `--make-default-branch`. Declared as its own
+  // boolean flag (rather than via meow `aliases`) because meow's alias
+  // forwarding doesn't reliably propagate values in this command's
+  // large flag set. We merge it onto `makeDefaultBranch` after parsing.
+  defaultBranch: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Deprecated alias for --make-default-branch. Kept working for back-compat; emits a deprecation warning on use.',
+    hidden: true,
+  },
   interactive: {
     type: 'boolean',
     default: true,

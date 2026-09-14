@@ -32,7 +32,7 @@ export const GITHUB_ERR_GRAPHQL_RATE_LIMIT =
   'GitHub GraphQL rate limit exceeded'
 export const GITHUB_ERR_RATE_LIMIT = 'GitHub rate limit exceeded'
 
-export function getGitHubRetryWait(e: RequestError): number | undefined {
+export function getGitHubRetryWaitTime(e: RequestError): number | undefined {
   const retryAfter = e.response?.headers?.['retry-after']
   const resetHeader = e.response?.headers?.['x-ratelimit-reset']
   let waitTime: number | undefined
@@ -119,7 +119,7 @@ export function handleGitHubRequestError(
 
   // Standard rate limit errors (403 with rate limit message or 429).
   if (status === 429 || (status === 403 && e.message.includes('rate limit'))) {
-    const waitTime = getGitHubRetryWait(e)
+    const waitTime = getGitHubRetryWaitTime(e)
 
     return {
       ok: false,

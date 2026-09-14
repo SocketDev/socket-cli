@@ -4,10 +4,10 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 
 ## Command Hierarchy
 
-### 81 Total Commands
+### 76 Total Commands
 
 - 39 Root commands (including parent commands)
-- 42 Subcommands
+- 37 Subcommands
 
 ## Root Commands (39)
 
@@ -55,7 +55,7 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 | Command            | Module                                  | Integrates With                               | Type       |
 | ------------------ | --------------------------------------- | --------------------------------------------- | ---------- |
 | **manifest**       | `manifest/cmd-manifest.mts`             | Parent command                                | Parent     |
-| sbom               | `sbom/cmd-sbom.mts`                     | sdxgen                                        | Command    |
+| sbom               | `sbom/cmd-sbom.mts`                     | Bundled sdxgen                                | Command    |
 | ├─ manifest auto   | `manifest/cmd-manifest-auto.mts`        | Auto-detect manifests                         | Subcommand |
 | ├─ manifest bazel  | `manifest/bazel/cmd-manifest-bazel.mts` | Bazel → maven_install.json / requirements.txt | Subcommand |
 | ├─ manifest conda  | `manifest/cmd-manifest-conda.mts`       | conda.yml → requirements.txt                  | Subcommand |
@@ -89,21 +89,21 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 
 All connect via Socket Firewall (sfw) except raw-npm and raw-npx which bypass Socket entirely.
 
-| Command | Module                    | Integrates With         | Subcommands |
-| ------- | ------------------------- | ----------------------- | ----------- |
-| bundler | `bundler/cmd-bundler.mts` | sfw → Bundler (Ruby)    | -           |
-| cargo   | `cargo/cmd-cargo.mts`     | sfw → Cargo (Rust)      | -           |
-| gem     | `gem/cmd-gem.mts`         | sfw → RubyGems          | -           |
-| go      | `go/cmd-go.mts`           | sfw → Go modules        | -           |
-| npm     | `npm/cmd-npm.mts`         | sfw → npm               | -           |
-| npx     | `npx/cmd-npx.mts`         | sfw → npx               | -           |
-| nuget   | `nuget/cmd-nuget.mts`     | sfw → NuGet (.NET)      | -           |
-| pip     | `pip/cmd-pip.mts`         | sfw → pip/pip3 (Python) | -           |
-| pnpm    | `pnpm/cmd-pnpm.mts`       | sfw → pnpm              | -           |
-| raw-npm | `raw-npm/cmd-raw-npm.mts` | Direct npm (no Socket)  | -           |
-| raw-npx | `raw-npx/cmd-raw-npx.mts` | Direct npx (no Socket)  | -           |
-| uv      | `uv/cmd-uv.mts`           | sfw → uv (Python)       | -           |
-| yarn    | `yarn/cmd-yarn.mts`       | sfw → Yarn              | -           |
+| Command | Module                    | Integrates With         | Subcommands                                                       |
+| ------- | ------------------------- | ----------------------- | ----------------------------------------------------------------- |
+| bundler | `bundler/cmd-bundler.mts` | sfw → Bundler (Ruby)    | -                                                                 |
+| cargo   | `cargo/cmd-cargo.mts`     | sfw → Cargo (Rust)      | -                                                                 |
+| gem     | `gem/cmd-gem.mts`         | sfw → RubyGems          | -                                                                 |
+| go      | `go/cmd-go.mts`           | sfw → Go modules        | -                                                                 |
+| npm     | `npm/cmd-npm.mts`         | sfw → npm               | -                                                                 |
+| npx     | `npx/cmd-npx.mts`         | sfw → npx               | - <!-- oxlint-disable-line socket/no-npx-dlx -- command names --> |
+| nuget   | `nuget/cmd-nuget.mts`     | sfw → NuGet (.NET)      | -                                                                 |
+| pip     | `pip/cmd-pip.mts`         | sfw → pip/pip3 (Python) | -                                                                 |
+| pnpm    | `pnpm/cmd-pnpm.mts`       | sfw → pnpm              | -                                                                 |
+| raw-npm | `raw-npm/cmd-raw-npm.mts` | Direct npm (no Socket)  | -                                                                 |
+| raw-npx | `raw-npx/cmd-raw-npx.mts` | Direct npx (no Socket)  | - <!-- oxlint-disable-line socket/no-npx-dlx -- command names --> |
+| uv      | `uv/cmd-uv.mts`           | sfw → uv (Python)       | -                                                                 |
+| yarn    | `yarn/cmd-yarn.mts`       | sfw → Yarn              | -                                                                 |
 
 ### Repository Commands (1 parent + 5 subcommands)
 
@@ -116,26 +116,21 @@ All connect via Socket Firewall (sfw) except raw-npm and raw-npx which bypass So
 | ├─ repository update | `repository/cmd-repository-update.mts` | Socket Repository API (update) | Subcommand |
 | └─ repository view   | `repository/cmd-repository-view.mts`   | Socket Repository API (view)   | Subcommand |
 
-### Scan Commands (1 parent + 15 subcommands)
+### Scan Commands (1 parent + 10 subcommands)
 
-| Command               | Module                            | Integrates With                | Type       |
-| --------------------- | --------------------------------- | ------------------------------ | ---------- |
-| **scan**              | `scan/cmd-scan.mts`               | Socket Scan API                | Parent     |
-| ├─ scan agent-configs | `scan/cmd-scan-agent-configs.mts` | Scan pattern metadata          | Subcommand |
-| ├─ scan create        | `scan/cmd-scan-create.mts`        | Socket Scan API (create)       | Subcommand |
-| ├─ scan del           | `scan/cmd-scan-del.mts`           | Socket Scan API (delete)       | Subcommand |
-| ├─ scan diff          | `scan/cmd-scan-diff.mts`          | Socket Scan API (diff)         | Subcommand |
-| ├─ scan github        | `scan/cmd-scan-github.mts`        | GitHub API + Socket Scan API   | Subcommand |
-| ├─ scan list          | `scan/cmd-scan-list.mts`          | Socket Scan API (list)         | Subcommand |
-| ├─ scan manifests     | `scan/cmd-scan-manifests.mts`     | Local manifest patterns        | Subcommand |
-| ├─ scan metadata      | `scan/cmd-scan-metadata.mts`      | Socket Scan API (metadata)     | Subcommand |
-| ├─ scan reach         | `scan/cmd-scan-reach.mts`         | @coana-tech/cli (reachability) | Subcommand |
-| ├─ scan report        | `scan/cmd-scan-report.mts`        | Socket Scan API (report)       | Subcommand |
-| ├─ scan secrets       | `scan/cmd-scan-secrets.mts`       | Local secret patterns          | Subcommand |
-| ├─ scan setup         | `scan/cmd-scan-setup.mts`         | Interactive scan config        | Subcommand |
-| ├─ scan skills        | `scan/cmd-scan-skills.mts`        | Local skill patterns           | Subcommand |
-| ├─ scan view          | `scan/cmd-scan-view.mts`          | Socket Scan API (view)         | Subcommand |
-| └─ scan workflows     | `scan/cmd-scan-workflows.mts`     | Scan pattern metadata          | Subcommand |
+| Command          | Module                       | Integrates With                | Type       |
+| ---------------- | ---------------------------- | ------------------------------ | ---------- |
+| **scan**         | `scan/cmd-scan.mts`          | Socket Scan API                | Parent     |
+| ├─ scan create   | `scan/cmd-scan-create.mts`   | Socket Scan API (create)       | Subcommand |
+| ├─ scan del      | `scan/cmd-scan-del.mts`      | Socket Scan API (delete)       | Subcommand |
+| ├─ scan diff     | `scan/cmd-scan-diff.mts`     | Socket Scan API (diff)         | Subcommand |
+| ├─ scan github   | `scan/cmd-scan-github.mts`   | GitHub API + Socket Scan API   | Subcommand |
+| ├─ scan list     | `scan/cmd-scan-list.mts`     | Socket Scan API (list)         | Subcommand |
+| ├─ scan metadata | `scan/cmd-scan-metadata.mts` | Socket Scan API (metadata)     | Subcommand |
+| ├─ scan reach    | `scan/cmd-scan-reach.mts`    | @coana-tech/cli (reachability) | Subcommand |
+| ├─ scan report   | `scan/cmd-scan-report.mts`   | Socket Scan API (report)       | Subcommand |
+| ├─ scan setup    | `scan/cmd-scan-setup.mts`    | Interactive scan config        | Subcommand |
+| └─ scan view     | `scan/cmd-scan-view.mts`     | Socket Scan API (view)         | Subcommand |
 
 ## Command File Structure
 
@@ -184,11 +179,11 @@ src/command/package/
 
 ### Third-Party Tools
 
-| Tool                         | Commands Using It                                             |
-| ---------------------------- | ------------------------------------------------------------- |
-| @coana-tech/cli              | scan reach                                                    |
-| @socketsecurity/socket-patch | patch                                                         |
-| Socket Firewall (sfw)        | bundler, cargo, gem, go, npm, npx, nuget, pip, pnpm, uv, yarn |
+| Tool                         | Commands Using It                                                                                                             |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| @coana-tech/cli              | scan reach                                                                                                                    |
+| @socketsecurity/socket-patch | patch                                                                                                                         |
+| Socket Firewall (sfw)        | bundler, cargo, gem, go, npm, npx, nuget, pip, pnpm, uv, yarn <!-- oxlint-disable-line socket/no-npx-dlx -- command names --> |
 
 ### System Integrations
 

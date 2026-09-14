@@ -5,7 +5,7 @@ import { getSocketOauthRequireAudience } from '../../env/socket-oauth-require-au
 import { getDefaultApiToken } from '../../util/socket/sdk.mts'
 import { runHttpTransport } from '../../core/mcp/transport-http.mts'
 import { runStdioTransport } from '../../core/mcp/transport-stdio.mts'
-import { getCliVersion } from '../../env/cli-version.mts'
+import { getCliVersion } from '../../constants/env.mts'
 
 import type { ServerConfig } from '../../core/mcp/server.mts'
 

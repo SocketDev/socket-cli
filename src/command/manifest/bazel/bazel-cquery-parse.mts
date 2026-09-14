@@ -163,8 +163,59 @@ export function parseCqueryJsonproto(
   if (!stdout.trim()) {
     return { artifacts: [], unresolvedLabels: [] }
   }
-  const targets = parseCqueryTargets(stdout)
-  // First pass: collect coordinate-bearing rules with their raw edge labels.
+  const records = parseTargetsToRawArtifactRecords(
+    parseJsonprotoOutputTargets(stdout),
+  )
+  return resolveArtifactRecords(records, repoName, workspaceRelPath)
+}
+
+export function parseJsonprotoOutputTargets(stdout: string): JsonprotoTarget[] {
+  // Bazel 5+ emits a single JSON envelope; older versions stream one target
+  // per line. Try envelope-first, then fall back to per-line.
+  const targets: JsonprotoTarget[] = []
+  try {
+    const parsed = JSON.parse(stdout) as JsonprotoEnvelope
+    if (parsed.results) {
+      const { results } = parsed
+      for (let i = 0, { length } = results; i < length; i += 1) {
+        const target = results[i]!.target
+        if (target) {
+          targets.push(target)
+        }
+      }
+    }
+  } catch {
+    // Fall through to per-line scanning.
+  }
+  if (!targets.length) {
+    targets.push(...parseJsonprotoStreamTargets(stdout))
+  }
+  return targets
+}
+
+export function parseJsonprotoStreamTargets(stdout: string): JsonprotoTarget[] {
+  const targets: JsonprotoTarget[] = []
+  const lines = stdout.split(/\r?\n/)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const trimmed = lines[i]!.trim()
+    if (!trimmed) {
+      continue
+    }
+    try {
+      const parsed = JSON.parse(trimmed) as JsonprotoTarget
+      if (parsed?.rule) {
+        targets.push(parsed)
+      }
+    } catch {
+      // Skip malformed lines.
+    }
+  }
+  return targets
+}
+
+export function parseTargetsToRawArtifactRecords(
+  targets: JsonprotoTarget[],
+): RawArtifactRecord[] {
   const records: RawArtifactRecord[] = []
   for (let i = 0, { length } = targets; i < length; i += 1) {
     const target = targets[i]!
@@ -187,34 +238,7 @@ export function parseCqueryJsonproto(
       ruleName: ruleNameFromLabel(rule.name),
     })
   }
-  // Second pass: resolve edge labels against this repo's own targets.
-  const index = buildLabelCoordIndex(records)
-  const provenance = workspaceRelPath
-    ? `${workspaceRelPath}:${repoName}`
-    : repoName
-  const out: ExtractedArtifact[] = []
-  const unresolved = new Set<string>()
-  for (let i = 0, { length } = records; i < length; i += 1) {
-    const rec = records[i]!
-    const deps = new Set<string>()
-    for (let j = 0, edgeCount = rec.edgeLabels.length; j < edgeCount; j += 1) {
-      const label = rec.edgeLabels[j]!
-      const resolution = resolveDepLabel(label, index)
-      if (resolution.kind === 'coord') {
-        deps.add(resolution.coord)
-      } else if (resolution.kind === 'unresolved') {
-        unresolved.add(label)
-      }
-    }
-    out.push({
-      deps: [...deps],
-      mavenCoordinates: rec.coord,
-      ruleKind: rec.ruleKind,
-      ruleName: rec.ruleName,
-      sourceRepo: provenance,
-    })
-  }
-  return { artifacts: out, unresolvedLabels: [...unresolved] }
+  return records
 }
 
 // Pure parser for the jsonproto cquery stream. Returns one
@@ -223,44 +247,6 @@ export function parseCqueryJsonproto(
 // labels that could not be resolved. The `sourceRepo` field carries
 // `<workspaceRelPath>:<repoName>` provenance when a workspace path was
 // provided; otherwise just the repo name.
-export function parseCqueryTargets(stdout: string): JsonprotoTarget[] {
-  // Bazel 5+ emits a single JSON envelope; older versions stream one target
-  // per line. Try envelope-first, then fall back to per-line.
-  const targets: JsonprotoTarget[] = []
-  try {
-    const parsed = JSON.parse(stdout) as JsonprotoEnvelope
-    if (parsed.results) {
-      const { results } = parsed
-      for (let i = 0, { length } = results; i < length; i += 1) {
-        const target = results[i]!.target
-        if (target) {
-          targets.push(target)
-        }
-      }
-    }
-  } catch {
-    // Fall through to per-line scanning.
-  }
-  if (!targets.length) {
-    // Line separator tolerant of Windows CRLF output.
-    const lines = stdout.split(/\r?\n/)
-    for (let i = 0, { length } = lines; i < length; i += 1) {
-      const trimmed = lines[i]!.trim()
-      if (!trimmed) {
-        continue
-      }
-      try {
-        const parsed = JSON.parse(trimmed) as JsonprotoTarget
-        if (parsed?.rule) {
-          targets.push(parsed)
-        }
-      } catch {
-        // Skip malformed lines.
-      }
-    }
-  }
-  return targets
-}
 
 // Reads a `LABEL_LIST` jsonproto attribute. Bazel serializes label lists into
 // the same string-list payload (`stringListValue` / `string_list_value`) it
@@ -350,6 +336,40 @@ export function repoPrefixOfLabel(label: string): string | undefined {
     return undefined
   }
   return label.slice(0, sep + 2)
+}
+
+export function resolveArtifactRecords(
+  records: RawArtifactRecord[],
+  repoName: string,
+  workspaceRelPath: string,
+): ParseCqueryResult {
+  const index = buildLabelCoordIndex(records)
+  const provenance = workspaceRelPath
+    ? `${workspaceRelPath}:${repoName}`
+    : repoName
+  const out: ExtractedArtifact[] = []
+  const unresolved = new Set<string>()
+  for (let i = 0, { length } = records; i < length; i += 1) {
+    const rec = records[i]!
+    const deps = new Set<string>()
+    for (let j = 0, edgeCount = rec.edgeLabels.length; j < edgeCount; j += 1) {
+      const label = rec.edgeLabels[j]!
+      const resolution = resolveDepLabel(label, index)
+      if (resolution.kind === 'coord') {
+        deps.add(resolution.coord)
+      } else if (resolution.kind === 'unresolved') {
+        unresolved.add(label)
+      }
+    }
+    out.push({
+      deps: [...deps],
+      mavenCoordinates: rec.coord,
+      ruleKind: rec.ruleKind,
+      ruleName: rec.ruleName,
+      sourceRepo: provenance,
+    })
+  }
+  return { artifacts: out, unresolvedLabels: [...unresolved] }
 }
 
 export type DepResolution =

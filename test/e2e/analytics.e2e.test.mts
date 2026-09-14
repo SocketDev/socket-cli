@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for the `socket analytics` command family. Ported from
  *   `packages/cli/test/smoke.sh`'s analytics section (19 commands). Covers:

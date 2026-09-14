@@ -7,8 +7,8 @@
  * each command's word list against the query using Jaccard similarity.
  *
  * If the best score clears WORD_OVERLAP_THRESHOLD, the matcher returns the
- * winning action; otherwise it returns null and the caller falls back to
- * pattern matching or the ONNX fallback.
+ * winning action; otherwise it returns undefined and leaves the request
+ * unresolved when pattern matching also finds no command.
  */
 
 import { promises as fs } from 'node:fs'

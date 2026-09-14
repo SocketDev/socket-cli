@@ -7,14 +7,14 @@ import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type {
-  AddCommentOptions,
-  CreatePrOptions,
-  ListPrsOptions,
+  AddCommentConfig,
+  CreatePrConfig,
+  ListPrsConfig,
   MergeStateStatus,
   PrMatch,
   PrProvider,
   PrResponse,
-  UpdatePrOptions,
+  UpdatePrConfig,
 } from './provider.mts'
 import type { MergeRequestSchema } from '@gitbeaker/rest'
 
@@ -38,7 +38,7 @@ export class GitLabProvider implements PrProvider {
     })
   }
 
-  async createPr(config: CreatePrOptions): Promise<PrResponse> {
+  async createPr(config: CreatePrConfig): Promise<PrResponse> {
     const {
       base,
       body,
@@ -80,6 +80,7 @@ export class GitLabProvider implements PrProvider {
         debug(message)
         debugDir(e)
 
+        // Don't retry on validation errors (400).
         if (isGitLabValidationError(e)) {
           break
         }
@@ -100,7 +101,7 @@ export class GitLabProvider implements PrProvider {
     )
   }
 
-  async updatePr(config: UpdatePrOptions): Promise<void> {
+  async updatePr(config: UpdatePrConfig): Promise<void> {
     const { owner, prNumber, repo } = {
       __proto__: null,
       ...config,
@@ -142,7 +143,7 @@ export class GitLabProvider implements PrProvider {
     }
   }
 
-  async listPrs(config: ListPrsOptions): Promise<PrMatch[]> {
+  async listPrs(config: ListPrsConfig): Promise<PrMatch[]> {
     const {
       author,
       ghsaId,
@@ -233,7 +234,7 @@ export class GitLabProvider implements PrProvider {
     /* c8 ignore stop */
   }
 
-  async addComment(config: AddCommentOptions): Promise<void> {
+  async addComment(config: AddCommentConfig): Promise<void> {
     const { body, owner, prNumber, repo } = {
       __proto__: null,
       ...config,
@@ -280,28 +281,21 @@ export function getGitLabToken(): string {
   )
 }
 
-export function isGitLabValidationError(e: unknown): boolean {
-  // Don't retry on validation errors (400).
-  if (
-    e !== null &&
-    typeof e === 'object' &&
-    'cause' in e &&
-    e.cause &&
-    typeof e.cause === 'object' &&
-    'response' in e.cause
-  ) {
-    const { response } = e.cause
-    if (
-      response !== null &&
-      typeof response === 'object' &&
-      'status' in response &&
-      response.status === 400
-    ) {
-      return true
-    }
+export function isGitLabValidationError(value: unknown): boolean {
+  if (value === null || typeof value !== 'object' || !('cause' in value)) {
+    return false
   }
-
-  return false
+  const { cause } = value
+  if (cause === null || typeof cause !== 'object' || !('response' in cause)) {
+    return false
+  }
+  const { response } = cause
+  return (
+    response !== null &&
+    typeof response === 'object' &&
+    'status' in response &&
+    response.status === 400
+  )
 }
 
 /**

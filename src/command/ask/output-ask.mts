@@ -124,7 +124,7 @@ export function explainCommand(intent: {
  */
 export function outputAskCommand(
   query: string,
-  intent: AskIntent,
+  intent: AskIntent | undefined,
   context: AskProjectContext,
   options?: OutputAskCommandOptions | undefined,
 ): void {
@@ -138,6 +138,14 @@ export function outputAskCommand(
   logger.log(colors.bold(colors.magenta('❯ You asked:')))
   logger.log(`  "${colors.cyan(query)}"`)
   logger.log('')
+
+  if (!intent) {
+    logger.log(
+      'No supported command matched this request. Nothing was executed.',
+    )
+    logger.log('Run socket ask --help to see supported examples.')
+    return
+  }
 
   // Show interpretation.
   logger.log(colors.bold(colors.magenta('🤖 I understood:')))

@@ -20,7 +20,7 @@
  *
  * Related Files: - src/command/analytics/fetch-repo-analytics.mts -
  * Implementation - src/command/analytics/handle-analytics.mts - Handler that
- * calls this fetcher - test/helpers/sdk-test-helpers.mts - SDK mocking
+ * calls this fetcher - test/helpers/sdk-fixtures.mts - SDK mocking
  * utilities.
  */
 
@@ -30,7 +30,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchRepoAnalyticsData } from '../../../../src/command/analytics/fetch-repo-analytics.mts'
 
 // Mock the dependencies.

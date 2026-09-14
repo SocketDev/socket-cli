@@ -16,7 +16,7 @@ import {
   findBinPathDetailsSync,
   isProjectControlledBinPath,
 } from '../../../../src/util/fs/path-resolve.mts'
-import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
+import { createTestWorkspace } from '../../../helpers/workspace-fixtures.mts'
 
 import type * as BinResolveModule from '@socketsecurity/lib-stable/exe/path/resolve'
 import type * as BinWhichModule from '@socketsecurity/lib-stable/exe/path/which'

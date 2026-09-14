@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for `socket threat-feed`. Ported from
  *   `packages/cli/test/smoke.sh`'s threat-feed section (6 commands).

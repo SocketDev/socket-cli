@@ -186,7 +186,7 @@ export function createFirewallPolicy(
     const artifact = parseFirewallArtifact(registry.kind, pathname)
     if (!artifact) {
       return {
-        blocked: isFirewallArtifactPath(registry.kind, pathname),
+        blocked: Boolean(isFirewallArtifactPath(registry.kind, pathname)),
         reasons: ['Artifact URL cannot be parsed.'],
       }
     }

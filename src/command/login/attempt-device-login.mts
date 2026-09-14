@@ -1,7 +1,3 @@
-import { Type } from '@sinclair/typebox'
-import { Value } from '@sinclair/typebox/value'
-import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
-import type { Static, TSchema } from '@sinclair/typebox'
 import { request as nodeHttpRequest } from 'node:http'
 import { request as nodeHttpsRequest } from 'node:https'
 import { setTimeout as sleep } from 'node:timers/promises'
@@ -13,6 +9,7 @@ import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { isUrl } from '@socketsecurity/lib-stable/url/predicates'
 
@@ -32,22 +29,6 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
-
-const deviceAuthorizationSchema = Type.Object({
-  device_code: Type.String(),
-  user_code: Type.String(),
-  verification_uri: Type.String(),
-  verification_uri_complete: Type.String(),
-  expires_in: Type.Number(),
-  interval: Type.Optional(Type.Number()),
-})
-const deviceTokenSchema = Type.Object({
-  access_token: Type.String(),
-  token_type: Type.String(),
-  expires_in: Type.Number(),
-  refresh_token: Type.Optional(Type.String()),
-  scope: Type.Optional(Type.String()),
-})
 
 const logger = getDefaultLogger()
 
@@ -132,12 +113,12 @@ export async function attemptDeviceLogin(
   try {
     spinner?.start('Requesting a device code from Socket…')
     deviceAuth = await postForm(
-      deviceAuthorizationSchema,
       deviceAuthorizationUrl,
       new URLSearchParams({
         client_id: clientId,
         scope: DEFAULT_DEVICE_LOGIN_SCOPES,
       }),
+      parseDeviceAuthorizationResponse,
       effectiveApiProxy,
     )
     spinner?.successAndStop('Requested a device code from Socket')
@@ -188,74 +169,61 @@ export async function attemptDeviceLogin(
     return result
   }
 
-  return completeDeviceLogin(
-    tokenResponse.access_token,
-    apiBaseUrl,
-    effectiveApiProxy,
-  )
-}
-
-export async function completeDeviceLogin(
-  apiToken: string,
-  apiBaseUrl: string | undefined,
-  effectiveApiProxy: string | undefined,
-): Promise<CResult<void>> {
-  const sockSdkCResult = await setupSdk({
+  return await verifyDeviceLoginToken(tokenResponse.access_token, {
     apiBaseUrl,
     apiProxy: effectiveApiProxy,
-    apiToken,
   })
-  if (!sockSdkCResult.ok) {
-    logger.fail(sockSdkCResult.message)
-    process.exitCode = 1
-    return sockSdkCResult
+}
+
+export function parseDeviceAuthorizationResponse(
+  value: unknown,
+): DeviceAuthorizationResponse {
+  if (
+    !isObject(value) ||
+    typeof value['device_code'] !== 'string' ||
+    typeof value['user_code'] !== 'string' ||
+    typeof value['verification_uri'] !== 'string' ||
+    typeof value['verification_uri_complete'] !== 'string' ||
+    typeof value['expires_in'] !== 'number' ||
+    !Number.isFinite(value['expires_in']) ||
+    (value['interval'] !== undefined &&
+      (typeof value['interval'] !== 'number' ||
+        !Number.isFinite(value['interval'])))
+  ) {
+    throw new DeviceLoginError('invalid_response')
   }
-
-  const orgsCResult = await fetchOrganization({
-    description: 'token verification',
-    sdk: sockSdkCResult.data,
-  })
-  if (!orgsCResult.ok) {
-    logger.fail(orgsCResult.message)
-    process.exitCode = 1
-    return orgsCResult
+  return {
+    device_code: value['device_code'],
+    user_code: value['user_code'],
+    verification_uri: value['verification_uri'],
+    verification_uri_complete: value['verification_uri_complete'],
+    expires_in: value['expires_in'],
+    interval: value['interval'],
   }
+}
 
-  const { organizations } = orgsCResult.data
-  const orgSlugs = getOrgSlugs(organizations)
-
-  if (!orgSlugs.length) {
-    const result: CResult<void> = {
-      ok: false,
-      message:
-        'No organizations found. Please contact Socket support to set up your account.',
-    }
-    logger.fail(result.message)
-    process.exitCode = 1
-    return result
+export function parseDeviceTokenSuccessResponse(
+  value: unknown,
+): DeviceTokenSuccessResponse {
+  if (
+    !isObject(value) ||
+    typeof value['access_token'] !== 'string' ||
+    typeof value['token_type'] !== 'string' ||
+    typeof value['expires_in'] !== 'number' ||
+    !Number.isFinite(value['expires_in']) ||
+    (value['refresh_token'] !== undefined &&
+      typeof value['refresh_token'] !== 'string') ||
+    (value['scope'] !== undefined && typeof value['scope'] !== 'string')
+  ) {
+    throw new DeviceLoginError('invalid_response')
   }
-
-  logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
-
-  const enterpriseOrgs = getEnterpriseOrgs(organizations)
-  const enforcedOrgs =
-    enterpriseOrgs.length === 1 ? [enterpriseOrgs[0]!['id']] : []
-
-  const defaultOrg = orgSlugs[0]?.trim()
-  if (defaultOrg) {
-    updateConfigValue(CONFIG_KEY_DEFAULT_ORG, defaultOrg)
+  return {
+    access_token: value['access_token'],
+    token_type: value['token_type'],
+    expires_in: value['expires_in'],
+    refresh_token: value['refresh_token'],
+    scope: value['scope'],
   }
-
-  applyLogin(apiToken, enforcedOrgs, apiBaseUrl, effectiveApiProxy)
-  logger.success('API credentials set')
-  if (isConfigFromFlag()) {
-    logger.log('')
-    logger.warn(
-      'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!',
-    )
-  }
-
-  return { ok: true, data: undefined }
 }
 
 export async function pollForDeviceToken(
@@ -281,13 +249,13 @@ export async function pollForDeviceToken(
 
     try {
       return await postForm(
-        deviceTokenSchema,
         tokenUrl,
         new URLSearchParams({
           grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
           client_id: clientId,
           device_code: deviceCode,
         }),
+        parseDeviceTokenSuccessResponse,
         apiProxy,
       )
     } catch (e) {
@@ -307,12 +275,12 @@ export async function pollForDeviceToken(
   }
 }
 
-export async function postForm<T extends TSchema>(
-  schema: T,
+export async function postForm<T>(
   url: URL,
   body: URLSearchParams,
+  parse: (value: unknown) => T,
   apiProxy?: string | undefined,
-): Promise<Static<T>> {
+): Promise<T> {
   const response: HttpResponse | { status: number; text: () => string } =
     apiProxy
       ? await postFormViaProxy(url, body, apiProxy)
@@ -324,19 +292,15 @@ export async function postForm<T extends TSchema>(
   const parsed: unknown = JSON.parse(response.text())
   const json = isObject(parsed) ? parsed : {}
   if (response.status < 200 || response.status >= 300) {
+    const oauthError = json['error']
     throw new DeviceLoginError(
-      typeof json['error'] === 'string' ? json['error'] : 'unknown_error',
+      typeof oauthError === 'string' ? oauthError : 'unknown_error',
       typeof json['error_description'] === 'string'
         ? json['error_description']
         : undefined,
     )
   }
-  if (!Value.Check(schema, json)) {
-    throw new TypeError(
-      `Invalid OAuth response from ${url.origin}${url.pathname}`,
-    )
-  }
-  return json
+  return parse(json)
 }
 
 /**
@@ -388,4 +352,67 @@ export function resolveOauthBaseUrl(): string {
 
 export function resolveOauthClientId(): string {
   return getSocketCliOauthClientIdOverride() || SOCKET_CLI_OAUTH_CLIENT_ID
+}
+
+export async function verifyDeviceLoginToken(
+  apiToken: string,
+  config: { apiBaseUrl: string | undefined; apiProxy: string | undefined },
+): Promise<CResult<void>> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const sockSdkCResult = await setupSdk({
+    apiBaseUrl: cfg.apiBaseUrl,
+    apiProxy: cfg.apiProxy,
+    apiToken,
+  })
+  if (!sockSdkCResult.ok) {
+    logger.fail(sockSdkCResult.message)
+    process.exitCode = 1
+    return sockSdkCResult
+  }
+
+  const orgsCResult = await fetchOrganization({
+    description: 'token verification',
+    sdk: sockSdkCResult.data,
+  })
+  if (!orgsCResult.ok) {
+    logger.fail(orgsCResult.message)
+    process.exitCode = 1
+    return orgsCResult
+  }
+
+  const { organizations } = orgsCResult.data
+  const orgSlugs = getOrgSlugs(organizations)
+
+  if (!orgSlugs.length) {
+    const result: CResult<void> = {
+      ok: false,
+      message:
+        'No organizations found. Please contact Socket support to set up your account.',
+    }
+    logger.fail(result.message)
+    process.exitCode = 1
+    return result
+  }
+
+  logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
+
+  const enterpriseOrgs = getEnterpriseOrgs(organizations)
+  const enforcedOrgs =
+    enterpriseOrgs.length === 1 ? [enterpriseOrgs[0]!['id']] : []
+
+  const defaultOrg = orgSlugs[0]?.trim()
+  if (defaultOrg) {
+    updateConfigValue(CONFIG_KEY_DEFAULT_ORG, defaultOrg)
+  }
+
+  applyLogin(apiToken, enforcedOrgs, cfg.apiBaseUrl, cfg.apiProxy)
+  logger.success('API credentials set')
+  if (isConfigFromFlag()) {
+    logger.log('')
+    logger.warn(
+      'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!',
+    )
+  }
+
+  return { ok: true, data: undefined }
 }

@@ -118,9 +118,9 @@ describe("token-hygiene hook", () => {
       assert.match(r.stderr, /JWT/);
     });
     it("redacts the command in stderr so the literal token is not re-logged", () => {
-      const r = runHook("echo vtwn_SECRETVALUE");
+      const r = runHook("echo vtwn_exampleexample");
       assert.equal(r.code, 2);
-      assert.doesNotMatch(r.stderr, /SECRETVALUE/);
+      assert.doesNotMatch(r.stderr, /exampleexample/);
       assert.match(r.stderr, /suppressed/);
     });
   });

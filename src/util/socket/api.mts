@@ -72,6 +72,47 @@ export {
 export type { ApiTextResult } from './api-query.mts'
 
 export { sendApiRequest } from './api-send.mts'
+export async function buildSdkApiError<T extends SocketSdkOperations>(
+  sdkResult: SocketSdkErrorResult<T>,
+  options?: HandleApiCallOptions | undefined,
+): Promise<ApiCallResult<T>> {
+  const { commandPath, description } = { __proto__: null, ...options }
+  const endpoint = description || 'Socket API'
+  debugApiResponse(endpoint, { status: sdkResult.status as number })
+  debugDir({ sdkResult })
+
+  const errCResult = sdkResult as SocketSdkErrorResult<T>
+  const errStr = errCResult.error ? errCResult.error.trim() : ''
+  const message = errStr || NO_ERROR_MESSAGE
+  const reason = errCResult.cause || NO_ERROR_MESSAGE
+
+  const cause = await buildErrorCause(
+    sdkResult.status as number,
+    message,
+    reason,
+  )
+
+  const causeWithEndpoint = description
+    ? `${cause} (endpoint: ${description})`
+    : cause
+
+  const socketSdkErrorResult: ApiCallResult<T> = {
+    ok: false,
+    message: 'Socket API error',
+    cause: causeWithEndpoint,
+    data: {
+      code: sdkResult.status,
+    },
+  }
+
+  // Log required permissions for 403 errors when in a command context.
+  if (commandPath && sdkResult.status === 403) {
+    logPermissionsFor403(commandPath)
+  }
+
+  return socketSdkErrorResult
+}
+
 export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<unknown>,
   options?: HandleApiCallOptions | undefined,
@@ -108,40 +149,10 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics.
   if (sdkResult.success === false) {
-    const endpoint = description || 'Socket API'
-    debugApiResponse(endpoint, { status: sdkResult.status as number })
-    debugDir({ sdkResult })
-
-    const errCResult = sdkResult as SocketSdkErrorResult<T>
-    const errStr = errCResult.error ? errCResult.error.trim() : ''
-    const message = errStr || NO_ERROR_MESSAGE
-    const reason = errCResult.cause || NO_ERROR_MESSAGE
-
-    const cause = await buildErrorCause(
-      sdkResult.status as number,
-      message,
-      reason,
-    )
-
-    const causeWithEndpoint = description
-      ? `${cause} (endpoint: ${description})`
-      : cause
-
-    const socketSdkErrorResult: ApiCallResult<T> = {
-      ok: false,
-      message: 'Socket API error',
-      cause: causeWithEndpoint,
-      data: {
-        code: sdkResult.status,
-      },
-    }
-
-    // Log required permissions for 403 errors when in a command context.
-    if (commandPath && sdkResult.status === 403) {
-      logPermissionsFor403(commandPath)
-    }
-
-    return socketSdkErrorResult
+    return await buildSdkApiError(sdkResult as SocketSdkErrorResult<T>, {
+      commandPath,
+      description,
+    })
   }
   const socketSdkSuccessResult: ApiCallResult<T> = {
     ok: true,

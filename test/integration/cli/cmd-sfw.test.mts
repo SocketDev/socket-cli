@@ -35,7 +35,7 @@ describe('socket sfw', async () => {
       expect(stdout).toContain('Usage')
       expect(stdout).toContain('<package-manager>')
       expect(stdout).toContain('Supported Package Managers')
-      expect(stdout).toContain('npm, npx, pnpm, yarn, pip')
+      expect(stdout).toContain('npm, pnpm, yarn, pip')
       expect(code, 'explicit help should exit with code 0').toBe(0)
     },
   )
@@ -53,7 +53,7 @@ describe('socket sfw', async () => {
   )
 
   cmdit(
-    ['sfw', FLAG_DRY_RUN, 'npm', 'install', 'lodash', FLAG_CONFIG, '{}'],
+    ['sfw', FLAG_DRY_RUN, FLAG_CONFIG, '{}', 'npm', 'install', 'lodash'],
     `should support ${FLAG_DRY_RUN} with npm command`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)

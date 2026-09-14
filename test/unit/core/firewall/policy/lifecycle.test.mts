@@ -62,11 +62,13 @@ describe('firewall policy lifecycle', () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockImplementation(async url => {
-        const purl = decodeURIComponent(
-          (url instanceof Request ? url.url : url.toString()).split(
-            '/purl/',
-          )[1]!,
-        )
+        const requestUrl =
+          typeof url === 'string'
+            ? url
+            : url instanceof URL
+              ? url.href
+              : url.url
+        const purl = decodeURIComponent(requestUrl.split('/purl/')[1]!)
         return responseForVersion(purl.split('@')[1]!)
       })
     const policy = createFirewallPolicy({ fetch, cacheCapacity: 2 })
@@ -151,7 +153,7 @@ describe('firewall policy lifecycle', () => {
     })
     for (const url of [
       'ftp://registry.npmjs.org/example.tgz',
-      'https://user:password@registry.npmjs.org/example.tgz',
+      'https://user:password@registry.npmjs.org/example.tgz', // real-identity: allow
       'https://packages.example.com/',
     ]) {
       expect(await policy.checkRequest(new URL(url), 'GET')).toMatchObject({

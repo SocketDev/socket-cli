@@ -98,7 +98,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         file: 'package.json',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         supportedFiles: undefined,
         tmpDir: '/tmp',
       })
@@ -113,7 +113,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         file: 'random.txt',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         supportedFiles: { npm: { 'package.json': {} } } as unknown,
         tmpDir: '/tmp',
       })
@@ -135,7 +135,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         file: 'package.json',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         tmpDir: '/tmp',
       })
       expect(result.ok).toBe(false)
@@ -150,7 +150,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         file: 'subdir',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         tmpDir: '/tmp',
       })
       expect(result.ok).toBe(false)
@@ -172,7 +172,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         file: 'package.json',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         tmpDir: '/tmp',
       })
       expect(result.ok).toBe(false)
@@ -199,7 +199,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         file: 'package.json',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         tmpDir: '/tmp',
       })
       expect(result.ok).toBe(false)
@@ -217,12 +217,12 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         files: ['random.txt', 'foo.bar'],
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         tmpDir: '/tmp',
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.cause).toContain('org/r')
+        expect(result.cause).toContain('org/example-repo')
       }
     })
 
@@ -238,7 +238,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
         defaultBranch: 'main',
         files: ['random.txt'],
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         tmpDir: '/tmp',
       })
       // Random.txt doesn't match; result depends on implementation.

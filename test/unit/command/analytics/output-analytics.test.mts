@@ -252,6 +252,15 @@ describe('output-analytics', () => {
     it('should renderMarkdown for repo', () => {
       const fdata = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
       const serialized = renderMarkdown(fdata, 7, 'fake_repo')
+      const tableRows = serialized
+        .split(/\r?\n/)
+        .filter(line => /^\|.*\|$/.test(line))
+        .map(line =>
+          line
+            .split('|')
+            .slice(1, -1)
+            .map(cell => cell.trim()),
+        )
 
       expect(parseMarkdownTableRows(serialized)).toEqual([
         ['Date', 'Counts'],
@@ -301,6 +310,13 @@ describe('output-analytics', () => {
         ['networkAccess', '434'],
         ['dynamicRequire', '274'],
       ])
+      expect(serialized.split('\n## ').length - 1).toBe(9)
+      expect(
+        tableRows.some(row => row[0] === 'Apr 19' && row[1] === '13'),
+      ).toBe(true)
+      expect(
+        tableRows.some(row => row[0] === 'envVars' && row[1] === '2533'),
+      ).toBe(true)
     })
   })
 

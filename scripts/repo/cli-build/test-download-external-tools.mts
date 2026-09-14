@@ -15,6 +15,10 @@ import { fileURLToPath } from 'node:url'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { isMainModule } from '../../fleet/process/is-main-module.mts'
+import { runMain } from '../../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const logger = getDefaultLogger()
@@ -198,7 +202,7 @@ function getCurrentPlatform() {
 /**
  * Main function.
  */
-async function main() {
+export async function main(): Promise<void> {
   const platform = getCurrentPlatform()
 
   logger.log(`Testing external tool download for platform: ${platform}`)
@@ -249,7 +253,12 @@ async function main() {
   logger.log(`Wrote tool paths to: ${mappingPath}`)
 }
 
-main().catch(e => {
-  logger.fail(e)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe: 'verify bundled security-tool downloads for this platform',
+  help: 'Usage: node scripts/repo/cli-build/test-download-external-tools.mts',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

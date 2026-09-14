@@ -272,3 +272,12 @@ describe('output-ask', () => {
     })
   })
 })
+
+it('shows help without suggesting execution for an unresolved request', () => {
+  mockLogger.log.mockClear()
+  outputAskCommand('help me', undefined, { hasPackageJson: false })
+  const logs = mockLogger.log.mock.calls.map(call => call[0]).join('\n')
+  expect(logs).toContain('Nothing was executed')
+  expect(logs).toContain('socket ask --help')
+  expect(logs).not.toContain('--execute')
+})

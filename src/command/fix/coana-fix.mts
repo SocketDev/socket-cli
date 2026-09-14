@@ -5,7 +5,7 @@ import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 import { runCiCoanaFix } from './coana-fix-ci.mts'
 import { runLocalCoanaFix } from './coana-fix-local.mts'
-import { getFixEnv } from './env-helpers.mts'
+import { getFixEnv } from './ci-environment.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { findSocketYmlSync } from '../../util/config.mts'
 import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'
@@ -23,8 +23,7 @@ export type { GhsaFixResult } from './coana-fix-ci.mts'
 export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixedAll: boolean; ghsaDetails: GhsaFixResult[] }>> {
-  const { all, cwd, excludePaths, ghsas, orgSlug, outputKind, spinner } =
-    fixConfig
+  const { all, cwd, ghsas, orgSlug, outputKind, spinner } = fixConfig
 
   // Under json/markdown mode we route coana's chatter away from our
   // stdout (its JSON report comes from --output-file, not stdout, so
@@ -42,26 +41,11 @@ export async function coanaFix(
 
   spinner?.start()
 
-  const sockSdkCResult = await setupSdk()
-  if (!sockSdkCResult.ok) {
-    return sockSdkCResult
+  const scanCResult = await prepareCoanaFixScan(fixConfig)
+  if (!scanCResult.ok) {
+    return scanCResult
   }
-
-  const sockSdk = sockSdkCResult.data
-
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
-  if (!supportedFilesCResult.ok) {
-    return supportedFilesCResult
-  }
-
-  const supportedFiles = supportedFilesCResult.data
-
-  const effectiveSocketConfig = resolveFixSocketConfig(cwd, excludePaths)
-
-  const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
-    config: effectiveSocketConfig,
-    cwd,
-  })
+  const { scanFilepaths, sockSdk } = scanCResult.data
 
   // A .socket.facts.json in the scan folder is an analysis artifact from an
   // earlier run, not a manifest. Uploading it silently poisons the fix input,
@@ -131,6 +115,39 @@ export function discoverAllFixes(
   ghsas: string[],
 ): boolean {
   return all || !ghsas.length || (ghsas.length === 1 && ghsas[0] === 'all')
+}
+
+export type SocketSdk = Extract<
+  Awaited<ReturnType<typeof setupSdk>>,
+  { ok: true }
+>['data']
+
+export async function prepareCoanaFixScan(fixConfig: FixConfig): Promise<
+  CResult<{
+    readonly __proto__: null
+    scanFilepaths: string[]
+    sockSdk: SocketSdk
+  }>
+> {
+  const { cwd, excludePaths, spinner } = fixConfig
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
+  }
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  if (!supportedFilesCResult.ok) {
+    return supportedFilesCResult
+  }
+  const effectiveSocketConfig = resolveFixSocketConfig(cwd, excludePaths)
+  const scanFilepaths = await getPackageFilesForScan(
+    ['.'],
+    supportedFilesCResult.data,
+    { config: effectiveSocketConfig, cwd },
+  )
+  return {
+    ok: true,
+    data: { __proto__: null, scanFilepaths, sockSdk: sockSdkCResult.data },
+  }
 }
 
 export function resolveFixSocketConfig(cwd: string, excludePaths: string[]) {

@@ -21,6 +21,8 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
+import type { OutputKind } from '../../types.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 
 // Flags interface for type safety.
 export interface ScanGithubFlags {
@@ -47,6 +49,108 @@ export const cmdScanGithub = {
   description,
   hidden,
   run,
+}
+
+export function outputGithubScanDryRun(
+  options?:
+    | {
+        all?: boolean | undefined
+        githubApiUrl?: string | undefined
+        orgGithub?: string | undefined
+        orgSlug?: string | undefined
+        repos?: string | undefined
+      }
+    | undefined,
+): void {
+  const { all, githubApiUrl, orgGithub, orgSlug, repos } = {
+    __proto__: null,
+    ...options,
+  }
+  const details: Record<string, unknown> = {
+    organization: orgSlug,
+    githubOrganization: orgGithub,
+    githubApiUrl,
+  }
+  if (all) {
+    details['scope'] = 'all repositories'
+  } else if (repos) {
+    details['repositories'] = repos
+  }
+  outputDryRunUpload('GitHub scan', details)
+}
+
+export function resolveGithubScanEndpointDefaults(
+  sockJson: SocketJson,
+  config: Pick<ScanGithubFlags, 'all' | 'githubApiUrl'>,
+) {
+  let { all, githubApiUrl } = config
+  if (all === undefined) {
+    if (sockJson.defaults?.scan?.github?.all !== undefined) {
+      all = sockJson.defaults?.scan?.github?.all
+    } else {
+      all = false
+    }
+  }
+  /* c8 ignore start - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
+  if (!githubApiUrl) {
+    if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
+      githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
+    } else {
+      githubApiUrl = DEFAULT_GITHUB_URL
+    }
+  }
+  /* c8 ignore stop */
+  return { __proto__: null, all, githubApiUrl }
+}
+
+export async function resolveGithubScanOrgSlug(
+  orgSlug: string,
+  mode: 'suggest' | 'use-current',
+  outputKind: OutputKind,
+): Promise<string | undefined> {
+  if (mode === 'use-current' || orgSlug) {
+    return orgSlug
+  }
+  const suggestion = await suggestOrgSlug()
+  if (suggestion === undefined) {
+    await outputScanGithub(
+      {
+        ok: false,
+        message: 'Canceled by user',
+        cause: 'Org selector was canceled by user',
+      },
+      outputKind,
+    )
+    return undefined
+  }
+  return suggestion || orgSlug
+}
+
+export function resolveGithubScanRepoDefaults(
+  sockJson: SocketJson,
+  config: Pick<ScanGithubFlags, 'all' | 'orgGithub' | 'repos'> & {
+    orgSlug: string
+  },
+) {
+  const { all, orgSlug } = config
+  let { orgGithub, repos } = config
+  if (!orgGithub) {
+    if (sockJson.defaults?.scan?.github?.orgGithub !== undefined) {
+      orgGithub = sockJson.defaults.scan.github.orgGithub
+    } else {
+      // Default to Socket org slug. Often that's fine. Vanity and all that.
+      orgGithub = orgSlug
+    }
+  }
+  if (!all && !repos) {
+    if (sockJson.defaults?.scan?.github?.repos !== undefined) {
+      repos = sockJson.defaults.scan.github.repos
+    } else {
+      repos = ''
+    }
+  }
+
+  return { __proto__: null, orgGithub, repos }
 }
 
 export async function run(
@@ -148,50 +252,23 @@ export async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  let { 0: orgSlug } = await determineOrgSlug(
+  const { 0: detectedOrgSlug } = await determineOrgSlug(
     orgFlag || '',
     interactive,
     dryRun,
   )
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  all = applyGithubDefaults()
-
-  function applyGithubDefaults() {
-    const defaults = sockJson.defaults?.scan?.github ?? {}
-    if (all === undefined) {
-      if (defaults.all !== undefined) {
-        all = defaults.all
-      } else {
-        all = false
-      }
-    }
-    /* c8 ignore start - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
-    if (!githubApiUrl) {
-      if (defaults.githubApiUrl !== undefined) {
-        githubApiUrl = defaults.githubApiUrl
-      } else {
-        githubApiUrl = DEFAULT_GITHUB_URL
-      }
-    }
-    /* c8 ignore stop */
-    if (!orgGithub) {
-      if (defaults.orgGithub !== undefined) {
-        orgGithub = defaults.orgGithub
-      } else {
-        // Default to Socket org slug. Often that's fine. Vanity and all that.
-        orgGithub = orgSlug
-      }
-    }
-    if (!all && !repos) {
-      if (defaults.repos !== undefined) {
-        repos = defaults.repos
-      } else {
-        repos = ''
-      }
-    }
-    return all
-  }
+  ;({ all, githubApiUrl } = resolveGithubScanEndpointDefaults(sockJson, {
+    all,
+    githubApiUrl,
+  }))
+  ;({ orgGithub, repos } = resolveGithubScanRepoDefaults(sockJson, {
+    all,
+    orgGithub,
+    orgSlug: detectedOrgSlug,
+    repos,
+  }))
 
   // We will also be needing that GitHub token.
   const hasGithubApiToken = !!githubToken
@@ -206,44 +283,34 @@ export async function run(
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
   // Only do suggestions with an apiToken and when not in dryRun mode
-  if (hasSocketApiToken && !dryRun && interactive) {
-    if (!orgSlug) {
-      const suggestion = await suggestOrgSlug()
-      if (suggestion === undefined) {
-        await outputScanGithub(
-          {
-            ok: false,
-            message: 'Canceled by user',
-            cause: 'Org selector was canceled by user',
-          },
-          outputKind,
-        )
-        return
-      }
-      if (suggestion) {
-        orgSlug = suggestion
-      }
-    }
+  const orgSlug = await resolveGithubScanOrgSlug(
+    detectedOrgSlug,
+    hasSocketApiToken && !dryRun && interactive ? 'suggest' : 'use-current',
+    outputKind,
+  )
+  if (orgSlug === undefined) {
+    return
   }
 
-  const wasValidInput = validateCommandInput()
+  const wasValidInput = validateGithubScanInput(outputKind, {
+    json,
+    markdown,
+    hasSocketApiToken,
+    hasGithubApiToken,
+  })
   if (!wasValidInput) {
     return
   }
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    const details: Record<string, unknown> = {
-      organization: orgSlug,
-      githubOrganization: orgGithub,
+    outputGithubScanDryRun({
+      all,
       githubApiUrl,
-    }
-    if (all) {
-      details['scope'] = 'all repositories'
-    } else if (repos) {
-      details['repositories'] = repos
-    }
-    outputDryRunUpload('GitHub scan', details)
+      orgGithub,
+      orgSlug,
+      repos,
+    })
     return
   }
 
@@ -257,27 +324,36 @@ export async function run(
     outputKind,
     repos,
   })
+}
 
-  function validateCommandInput() {
-    return checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: 'The json and markdown flags cannot be both set, pick one',
-        fail: 'omit one',
-      },
-      {
-        nook: true,
-        test: hasSocketApiToken,
-        message: 'This command requires a Socket API token for access',
-        fail: 'try `socket login`',
-      },
-      {
-        test: hasGithubApiToken,
-        message: 'This command requires a GitHub API token for access',
-        fail: 'missing',
-      },
-    )
-  }
+export function validateGithubScanInput(
+  outputKind: Parameters<typeof checkCommandInput>[0],
+  config: {
+    json: boolean
+    markdown: boolean
+    hasSocketApiToken: boolean
+    hasGithubApiToken: boolean
+  },
+): boolean {
+  const { json, markdown, hasSocketApiToken, hasGithubApiToken } = config
+  return checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: hasSocketApiToken,
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
+    },
+    {
+      test: hasGithubApiToken,
+      message: 'This command requires a GitHub API token for access',
+      fail: 'missing',
+    },
+  )
 }

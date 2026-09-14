@@ -7,6 +7,8 @@
  * File size hard cap.
  */
 
+import { isCliCommandName } from './command-name.mts'
+
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { lookupSubcommand } from './lookup-subcommand.mts'
@@ -26,6 +28,27 @@ export interface DispatchSubcommandConfig<CommandName extends string> {
   name: string
   rawCommandArgv: string[]
   subcommands: Record<CommandName, CliSubcommand>
+}
+
+export function resolveSubcommand<CommandName extends string>(
+  config: Pick<
+    DispatchSubcommandConfig<CommandName>,
+    'aliases' | 'commandOrAliasName' | 'rawCommandArgv' | 'subcommands'
+  >,
+) {
+  const { aliases, commandOrAliasName, rawCommandArgv, subcommands } = config
+  const alias =
+    isCliCommandName(commandOrAliasName) &&
+    Object.hasOwn(aliases, commandOrAliasName)
+      ? aliases[commandOrAliasName]
+      : undefined
+  const [commandName, ...commandArgv] = alias
+    ? [...alias.argv, ...rawCommandArgv]
+    : [commandOrAliasName, ...rawCommandArgv]
+  const commandDefinition = commandName
+    ? lookupSubcommand(subcommands, commandName)
+    : undefined
+  return { __proto__: null, alias, commandName, commandArgv, commandDefinition }
 }
 
 /**
@@ -51,16 +74,13 @@ export async function tryDispatchSubcommand<CommandName extends string>(
     return false
   }
 
-  const alias = aliases[commandOrAliasName]
-  // First: Resolve argv data from alias if its an alias that's been given.
-  const [commandName, ...commandArgv] = alias
-    ? [...alias.argv, ...rawCommandArgv]
-    : [commandOrAliasName, ...rawCommandArgv]
-  // Second: Find a command definition using that data.
-  const commandDefinition = commandName
-    ? lookupSubcommand(subcommands, commandName)
-    : undefined
-  // Third: If a valid command has been found, then we run it...
+  const { alias, commandName, commandArgv, commandDefinition } =
+    resolveSubcommand({
+      aliases,
+      commandOrAliasName,
+      rawCommandArgv,
+      subcommands,
+    })
   if (commandDefinition) {
     // Extract the original command arguments from the full argv
     // by skipping the command name

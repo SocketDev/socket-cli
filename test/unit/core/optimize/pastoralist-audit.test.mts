@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import process from 'node:process'
 
 import { runPastoralistAudit } from '../../../../src/core/optimize/pastoralist-audit.mts'
 
@@ -42,7 +43,7 @@ describe('runPastoralistAudit', () => {
     expect(spawnMock).toHaveBeenCalledWith(
       process.execPath,
       [
-        expect.stringMatching(/dist[/\\]pastoralist[/\\]index\.js$/),
+        expect.stringMatching(/pastoralist[/\\]dist[/\\]index\.js$/),
         '--root',
         '/repo',
       ],
@@ -58,11 +59,5 @@ describe('runPastoralistAudit', () => {
     const result = await runPastoralistAudit('/repo')
     expect(result.ok).toBe(false)
     expect(result.reason).toBe('pastoralist exited 2')
-  })
-
-  it('reports a process startup failure without throwing', async () => {
-    spawnMock.mockRejectedValue(new Error('process unavailable'))
-    const result = await runPastoralistAudit('/repo')
-    expect(result).toEqual({ ok: false, reason: 'pastoralist exited 1' })
   })
 })

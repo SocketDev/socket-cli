@@ -17,7 +17,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { setupSdkMockSuccess } from '../../../helpers/sdk-test-helpers.mts'
+import { setupSdkMockSuccess } from '../../../helpers/sdk-fixtures.mts'
 
 // Mock the dependencies.
 vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
@@ -59,7 +59,7 @@ describe('fetchScanMetadata', () => {
     const { fetchScanMetadata } =
       await import('../../../../src/command/scan/fetch-scan-metadata.mts')
     const { setupSdkSetupFailure } =
-      await import('../../../helpers/sdk-test-helpers.mts')
+      await import('../../../helpers/sdk-fixtures.mts')
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
@@ -76,7 +76,7 @@ describe('fetchScanMetadata', () => {
     const { fetchScanMetadata } =
       await import('../../../../src/command/scan/fetch-scan-metadata.mts')
     const { setupSdkMockError } =
-      await import('../../../helpers/sdk-test-helpers.mts')
+      await import('../../../helpers/sdk-fixtures.mts')
 
     await setupSdkMockError('getFullScanMetadata', 'Not found', 404)
 

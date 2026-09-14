@@ -1,4 +1,4 @@
-import path from 'node:path'
+import { resolveScanCwd } from './util.mts'
 
 import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { validateReachEcosystems } from './cmd-scan-create-checks.mts'
@@ -179,10 +179,7 @@ export async function run(
   const reachEcosystems = validateReachEcosystems(reachEcosystemsRaw)
 
   const processCwd = process.cwd()
-  const cwd =
-    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
-      ? path.resolve(processCwd, cwdOverride)
-      : processCwd
+  const cwd = resolveScanCwd(processCwd, cwdOverride)
 
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? [...cli.input] : [cwd]
@@ -202,7 +199,57 @@ export async function run(
   // Validate target constraints for reachability analysis.
   const targetValidation = await validateReachabilityTarget(targets, cwd)
 
-  const wasValidInput = validateCommandInput()
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
+      fail: 'missing',
+    },
+    {
+      nook: true,
+      test: hasApiToken,
+      message: 'This command requires an API token for access',
+      fail: 'try `socket login`',
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: !outputPath || outputPath.endsWith('.json'),
+      message: 'The --output path must end with .json',
+      fail: 'use a path ending with .json',
+    },
+    {
+      nook: true,
+      test: targetValidation.isValid,
+      message: 'Reachability analysis requires exactly one target directory',
+      fail: 'provide exactly one directory path',
+    },
+    {
+      nook: true,
+      test: targetValidation.isDirectory,
+      message: 'Reachability analysis target must be a directory',
+      fail: 'provide a directory path, not a file',
+    },
+    {
+      nook: true,
+      test: targetValidation.targetExists,
+      message: 'Target directory must exist',
+      fail: 'provide an existing directory path',
+    },
+    {
+      nook: true,
+      test: targetValidation.isInsideCwd,
+      message: 'Target directory must be inside the current working directory',
+      fail: 'provide a path inside the working directory',
+    },
+  )
   if (!wasValidInput) {
     return
   }
@@ -222,124 +269,91 @@ export async function run(
     return
   }
 
-  return await executeValidatedScanReach()
+  const {
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
+  } = validateScanReachNumbers({
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+  })
 
-  async function executeValidatedScanReach() {
-    // Validate numeric flag conversions.
-    const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
-    if (
-      reachAnalysisMemoryLimit !== undefined &&
-      Number.isNaN(validatedReachAnalysisMemoryLimit)
-    ) {
-      throw new InputError(
-        `--reach-analysis-memory-limit must be a number of megabytes (saw: "${reachAnalysisMemoryLimit}"); pass an integer like --reach-analysis-memory-limit=4096`,
-      )
-    }
+  await handleScanReach({
+    cwd,
+    interactive,
+    orgSlug,
+    outputKind,
+    outputPath: outputPath || '',
+    targets,
+    reachabilityOptions: {
+      excludePaths,
+      reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
+      reachAnalysisTimeout: validatedReachAnalysisTimeout,
+      reachConcurrency: validatedReachConcurrency,
+      reachDebug: reachDebug,
+      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
+      reachDisableAnalytics: reachDisableAnalytics,
+      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
+      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
+      reachEcosystems,
+      reachExcludePaths,
+      reachLazyMode: reachLazyMode,
+      reachMinSeverity: reachMinSeverity,
+      reachSkipCache: reachSkipCache,
+      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
+      reachUseUnreachableFromPrecomputation:
+        reachUseUnreachableFromPrecomputation,
+      reachVersion: reachVersion || undefined,
+    },
+  })
+}
 
-    const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout)
-    if (
-      reachAnalysisTimeout !== undefined &&
-      Number.isNaN(validatedReachAnalysisTimeout)
-    ) {
-      throw new InputError(
-        `--reach-analysis-timeout must be a number of seconds (saw: "${reachAnalysisTimeout}"); pass an integer like --reach-analysis-timeout=300`,
-      )
-    }
-
-    const validatedReachConcurrency = Number(reachConcurrency)
-    if (
-      reachConcurrency !== undefined &&
-      (Number.isNaN(validatedReachConcurrency) ||
-        !Number.isInteger(validatedReachConcurrency) ||
-        validatedReachConcurrency <= 0)
-    ) {
-      throw new InputError(
-        `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,
-      )
-    }
-
-    await handleScanReach({
-      cwd,
-      interactive,
-      orgSlug,
-      outputKind,
-      outputPath: outputPath || '',
-      targets,
-      reachabilityOptions: {
-        excludePaths,
-        reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
-        reachAnalysisTimeout: validatedReachAnalysisTimeout,
-        reachConcurrency: validatedReachConcurrency,
-        reachDebug: reachDebug,
-        reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
-        reachDisableAnalytics: reachDisableAnalytics,
-        reachDisableExternalToolChecks: reachDisableExternalToolChecks,
-        reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
-        reachEcosystems,
-        reachExcludePaths,
-        reachLazyMode: reachLazyMode,
-        reachMinSeverity: reachMinSeverity,
-        reachSkipCache: reachSkipCache,
-        reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
-        reachUseUnreachableFromPrecomputation:
-          reachUseUnreachableFromPrecomputation,
-        reachVersion: reachVersion || undefined,
-      },
-    })
+export function validateScanReachNumbers(
+  config: Pick<
+    ScanReachFlags,
+    'reachAnalysisMemoryLimit' | 'reachAnalysisTimeout' | 'reachConcurrency'
+  >,
+) {
+  const { reachAnalysisMemoryLimit, reachAnalysisTimeout, reachConcurrency } =
+    config
+  // Validate numeric flag conversions.
+  const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
+  if (
+    reachAnalysisMemoryLimit !== undefined &&
+    Number.isNaN(validatedReachAnalysisMemoryLimit)
+  ) {
+    throw new InputError(
+      `--reach-analysis-memory-limit must be a number of megabytes (saw: "${reachAnalysisMemoryLimit}"); pass an integer like --reach-analysis-memory-limit=4096`,
+    )
   }
 
-  function validateCommandInput() {
-    return checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: !!orgSlug,
-        message: 'Org name by default setting, --org, or auto-discovered',
-        fail: 'missing',
-      },
-      {
-        nook: true,
-        test: hasApiToken,
-        message: 'This command requires an API token for access',
-        fail: 'try `socket login`',
-      },
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: 'The json and markdown flags cannot be both set, pick one',
-        fail: 'omit one',
-      },
-      {
-        nook: true,
-        test: !outputPath || outputPath.endsWith('.json'),
-        message: 'The --output path must end with .json',
-        fail: 'use a path ending with .json',
-      },
-      {
-        nook: true,
-        test: targetValidation.isValid,
-        message: 'Reachability analysis requires exactly one target directory',
-        fail: 'provide exactly one directory path',
-      },
-      {
-        nook: true,
-        test: targetValidation.isDirectory,
-        message: 'Reachability analysis target must be a directory',
-        fail: 'provide a directory path, not a file',
-      },
-      {
-        nook: true,
-        test: targetValidation.targetExists,
-        message: 'Target directory must exist',
-        fail: 'provide an existing directory path',
-      },
-      {
-        nook: true,
-        test: targetValidation.isInsideCwd,
-        message:
-          'Target directory must be inside the current working directory',
-        fail: 'provide a path inside the working directory',
-      },
+  const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout)
+  if (
+    reachAnalysisTimeout !== undefined &&
+    Number.isNaN(validatedReachAnalysisTimeout)
+  ) {
+    throw new InputError(
+      `--reach-analysis-timeout must be a number of seconds (saw: "${reachAnalysisTimeout}"); pass an integer like --reach-analysis-timeout=300`,
     )
+  }
+
+  const validatedReachConcurrency = Number(reachConcurrency)
+  if (
+    reachConcurrency !== undefined &&
+    (Number.isNaN(validatedReachConcurrency) ||
+      !Number.isInteger(validatedReachConcurrency) ||
+      validatedReachConcurrency <= 0)
+  ) {
+    throw new InputError(
+      `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,
+    )
+  }
+
+  return {
+    __proto__: null,
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
   }
 }

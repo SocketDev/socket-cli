@@ -3,47 +3,45 @@ import type {
   ResolutionDialect,
 } from './resolution-report-render.mts'
 
+const MAVEN_CONFIG_PATTERNS = [
+  'failed to read artifact descriptor',
+  'invalid pom',
+  'could not parse pom',
+]
+const MAVEN_NOT_FOUND_PATTERNS = [
+  'could not find artifact',
+  'failure to find',
+  'could not resolve',
+  'no versions available',
+  'not found',
+]
+const MAVEN_REPOSITORY_PATTERNS = [
+  'could not transfer',
+  'connection refused',
+  'connect timed out',
+  'connection timed out',
+  'read timed out',
+  'status code: 401',
+  'status code: 403',
+  'unauthorized',
+  'forbidden',
+  'peer not authenticated',
+  'certpathbuilderexception',
+]
+
 // Maven's resolver (Aether/maven-resolver): no attribute-based variants. Two
 // failure shapes (artifact-resolution miss with config = scope, dependency-graph
 // build failure with config = "graph") both classify off the root-cause message.
 export function classifyMavenFailure(detail: string): FailureCategory {
   const t = (detail || '').toLowerCase()
-  if (
-    [
-      'could not transfer',
-      'connection refused',
-      'connect timed out',
-      'connection timed out',
-      'read timed out',
-      'status code: 401',
-      'status code: 403',
-      'unauthorized',
-      'forbidden',
-      'peer not authenticated',
-      'certpathbuilderexception',
-    ].some(message => t.includes(message))
-  ) {
+  if (MAVEN_REPOSITORY_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'repository-or-network'
   }
-  if (
-    [
-      'could not find artifact',
-      'failure to find',
-      'could not resolve',
-      'no versions available',
-      'not found',
-    ].some(message => t.includes(message))
-  ) {
+  if (MAVEN_NOT_FOUND_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'not-found'
   }
   // POM exists but can't be read/parsed.
-  if (
-    [
-      'failed to read artifact descriptor',
-      'invalid pom',
-      'could not parse pom',
-    ].some(message => t.includes(message))
-  ) {
+  if (MAVEN_CONFIG_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'config-problem'
   }
   return 'other'

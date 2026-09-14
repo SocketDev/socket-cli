@@ -19,6 +19,20 @@ import {
   writeCache,
 } from '../../../../src/util/git/github.mts'
 
+const mockGraphqlFetch = vi.hoisted(() =>
+  vi
+    .fn<typeof fetch>()
+    .mockRejectedValue(new Error('Unconfigured GraphQL fixture')),
+)
+
+vi.mock(import('@octokit/graphql'), async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    graphql: actual.graphql.defaults({ request: { fetch: mockGraphqlFetch } }),
+  }
+})
+
 // Mock debug utilities to suppress output during tests.
 vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: vi.fn(),
@@ -129,20 +143,24 @@ describe('enablePrAutoMerge', () => {
   it('returns enabled true when GraphQL mutation succeeds', async () => {
     const { enablePrAutoMerge } =
       await import('../../../../src/util/git/github.mts')
-    // This test verifies the function exists and handles the PR object.
-    // Full testing would require mocking getOctokitGraphql.
     const mockPr = {
-      node_id: 'test-node-id',
+      node_id: 'example-pull-request-node',
       number: 123,
     } as unknown
+    mockGraphqlFetch.mockResolvedValueOnce(
+      Response.json({
+        data: { enablePullRequestAutoMerge: { pullRequest: { number: 123 } } },
+      }),
+    )
 
-    // Without proper mocking, this will attempt a real API call and fail.
-    // The function should handle errors gracefully.
     const result = await enablePrAutoMerge(mockPr)
 
-    // Should return an object with enabled property.
-    expect(result).toHaveProperty('enabled')
-    expect(typeof result.enabled).toBe('boolean')
+    expect(result).toEqual({ enabled: true })
+    const requestBody = mockGraphqlFetch.mock.lastCall?.[1]?.body
+    expect(requestBody).toEqual(expect.stringContaining('EnableAutoMerge'))
+    expect(requestBody).toEqual(
+      expect.stringContaining('example-pull-request-node'),
+    )
   })
 })
 
@@ -161,11 +179,26 @@ describe('fetchGhsaDetails', () => {
     const { fetchGhsaDetails } =
       await import('../../../../src/util/git/github.mts')
 
-    // Without proper mocking, this will attempt a real API call.
-    // The function should handle errors gracefully.
-    const result = await fetchGhsaDetails(['GHSA-test-1234-5678'])
+    const ghsaId = `GHSA-example-${Date.now()}-${Math.random()}`
+    const advisory = {
+      ghsaId,
+      summary: 'Example advisory',
+      severity: 'HIGH',
+      publishedAt: '2025-01-01T00:00:00Z',
+      references: [],
+      vulnerabilities: { nodes: [] },
+    }
+    mockGraphqlFetch.mockResolvedValueOnce(
+      Response.json({
+        data: { advisory0: advisory },
+      }),
+    )
 
-    expect(result).toBeInstanceOf(Map)
+    const result = await fetchGhsaDetails([ghsaId])
+
+    expect([...result]).toEqual([[ghsaId, advisory]])
+    const requestBody = mockGraphqlFetch.mock.lastCall?.[1]?.body
+    expect(requestBody).toEqual(expect.stringContaining(ghsaId))
   })
 })
 

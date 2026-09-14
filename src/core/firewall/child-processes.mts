@@ -134,15 +134,29 @@ export function signalFirewallProcessGroup(
   try {
     process.kill(-pid, signal)
   } catch (error) {
-    if (
-      isObject(error) &&
-      error['code'] === 'EPERM' &&
-      isFirewallProcessGroupInactive(pid)
-    ) {
+    if (isObject(error) && error['code'] === 'ESRCH') {
       return
     }
-    if (!isObject(error) || error['code'] !== 'ESRCH') {
+    if (!isObject(error) || error['code'] !== 'EPERM') {
       throw error
+    }
+    if (isFirewallProcessGroupInactive(pid)) {
+      return
+    }
+    try {
+      process.kill(-pid, signal)
+    } catch (retryError) {
+      if (isObject(retryError) && retryError['code'] === 'ESRCH') {
+        return
+      }
+      if (
+        isObject(retryError) &&
+        retryError['code'] === 'EPERM' &&
+        isFirewallProcessGroupInactive(pid)
+      ) {
+        return
+      }
+      throw retryError
     }
   }
 }

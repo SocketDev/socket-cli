@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import { handleScanConfig } from './handle-scan-config.mts'
-import { SOCKET_JSON } from '../../constants/socket.mts'
+import { SOCKET_JSON } from '../../constants/paths.mts'
 import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

@@ -318,7 +318,6 @@ export function setupTelemetryExitHandlers(): void {
  *
  * @param eventType Type of event to track.
  * @param context Event context.
- * @param metadata Event metadata.
  * @param options Optional configuration.
  *
  * @returns Promise that resolves when tracking completes.
@@ -326,8 +325,8 @@ export function setupTelemetryExitHandlers(): void {
 export async function trackEvent(
   eventType: string,
   context: TelemetryContext,
-  metadata: Record<string, unknown> = {},
   options: {
+    metadata?: Record<string, unknown> | undefined
     error?: Error | undefined
     flush?: boolean | undefined
   } = {},
@@ -338,6 +337,7 @@ export async function trackEvent(
   }
 
   try {
+    const { metadata = {} } = { __proto__: null, ...options }
     const orgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
 
     if (orgSlug) {

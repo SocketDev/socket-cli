@@ -51,7 +51,7 @@ export async function findUp(
         return undefined
       }
       const thePath = path.join(dir, candidateName)
-      if (await matchesFindUpType(thePath, { onlyDirectories, onlyFiles })) {
+      if (await matchesFindUpEntry(thePath, { onlyDirectories, onlyFiles })) {
         return thePath
       }
     }
@@ -63,18 +63,20 @@ export async function findUp(
   return undefined
 }
 
-export async function matchesFindUpType(
-  thePath: string,
-  config: { onlyDirectories: boolean; onlyFiles: boolean },
+export async function matchesFindUpEntry(
+  candidatePath: string,
+  options?:
+    | { onlyDirectories?: boolean | undefined; onlyFiles?: boolean | undefined }
+    | undefined,
 ): Promise<boolean> {
-  const { onlyDirectories, onlyFiles } = config
+  const opts = { __proto__: null, ...options }
   try {
-    // oxlint-disable-next-line socket/prefer-exists-sync -- file type
-    const stats = await fs.stat(thePath)
-    if (!onlyDirectories && stats.isFile()) {
+    // oxlint-disable-next-line socket/prefer-exists-sync -- stat type.
+    const stats = await fs.stat(candidatePath)
+    if (!opts.onlyDirectories && stats.isFile()) {
       return true
     }
-    if (!onlyFiles && stats.isDirectory()) {
+    if (!opts.onlyFiles && stats.isDirectory()) {
       return true
     }
   } catch {}

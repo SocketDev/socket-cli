@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getScanWithEnvVars,
   getScanWithMultiplePackages,
-} from '../../../helpers/generate-report-test-helpers.mts'
+} from '../../../helpers/report-fixtures.mts'
 import { generateReport } from '../../../../src/command/scan/generate-report.mts'
 
 import type { ScanReport } from '../../../../src/command/scan/generate-report.mts'

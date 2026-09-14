@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * JavaScript CLI end-to-end behavior.
  */

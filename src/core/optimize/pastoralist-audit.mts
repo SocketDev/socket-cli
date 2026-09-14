@@ -14,13 +14,11 @@
  * still pins the exact audited version.
  */
 
-import { existsSync } from 'node:fs'
-import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { distPath } from '../../constants/paths.mts'
 const logger = getDefaultLogger()
 
 export type PastoralistAuditResult = {
@@ -37,22 +35,21 @@ export type PastoralistAuditResult = {
 export async function runPastoralistAudit(
   root: string,
 ): Promise<PastoralistAuditResult> {
-  const binPath = path.join(distPath, 'pastoralist', 'index.js')
-  if (!existsSync(binPath)) {
-    debug(`pastoralist asset is missing at ${binPath}`)
-    return {
-      ok: false,
-      reason: 'pastoralist is missing from this installation',
-    }
+  let binPath: string
+  try {
+    // pastoralist's exports map carries only an `import` condition for `.`
+    // (dist/index.js, the bin), so the import-condition resolver finds it
+    // where a require-resolve cannot.
+    binPath = fileURLToPath(import.meta.resolve('pastoralist'))
+  } catch (e) {
+    debug('pastoralist is not resolvable from this checkout')
+    debugDir(e)
+    return { ok: false, reason: 'pastoralist is not installed' }
   }
 
   const result = await spawn(process.execPath, [binPath, '--root', root], {
     cwd: root,
     stdio: 'inherit',
-  }).catch(error => {
-    debug('pastoralist audit could not start')
-    debugDir(error)
-    return { __proto__: null, code: 1 }
   })
   if (result.code !== 0) {
     debug(`pastoralist audit exited ${String(result.code)}`)

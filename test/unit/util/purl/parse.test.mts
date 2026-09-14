@@ -52,7 +52,7 @@ describe('purl utilities', () => {
 
   describe('createPurlObject', () => {
     it('creates PURL from type and name', () => {
-      const purl = createPurlObject('npm', 'lodash')
+      const purl = createPurlObject('npm', { name: 'lodash' })
       expect(purl).toBeInstanceOf(PackageURL)
       expect(purl?.type).toBe('npm')
       expect(purl?.name).toBe('lodash')
@@ -102,17 +102,21 @@ describe('purl utilities', () => {
     })
 
     it('throws on invalid input by default', () => {
-      expect(() => createPurlObject('', '')).toThrow()
+      expect(() => createPurlObject('', { name: '' })).toThrow()
     })
 
     it('returns undefined on invalid input when throws: false', () => {
-      const purl = createPurlObject('', '', { throws: false })
+      const purl = createPurlObject('', {
+        throws: false,
+        name: '',
+      })
       expect(purl).toBeUndefined()
     })
 
-    it('handles type string with name string and options', () => {
-      const purl = createPurlObject('pypi', 'requests', {
+    it('creates a pypi URL with named component options', () => {
+      const purl = createPurlObject('pypi', {
         version: '2.31.0',
+        name: 'requests',
       })
       expect(purl?.type).toBe('pypi')
       expect(purl?.name).toBe('requests')
@@ -129,9 +133,8 @@ describe('purl utilities', () => {
       expect(purl?.version).toBe('1.0.0')
     })
 
-    it('falls back to opts.name when name argument is not a string', () => {
-      // Exercises the typeof name !== 'string' branch — opts.name resolves it.
-      const purl = createPurlObject('npm', undefined as unknown, {
+    it('retains npm name and version options', () => {
+      const purl = createPurlObject('npm', {
         name: 'fallback-name',
         version: '1.0.0',
       })

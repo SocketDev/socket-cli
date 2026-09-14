@@ -16,7 +16,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { setupSdkMockSuccess } from '../../../helpers/sdk-test-helpers.mts'
+import { setupSdkMockSuccess } from '../../../helpers/sdk-fixtures.mts'
 
 // Mock the dependencies.
 vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
@@ -74,7 +74,7 @@ describe('fetchOrgFullScanList', () => {
     const { fetchOrgFullScanList } =
       await import('../../../../src/command/scan/fetch-list-scans.mts')
     const { setupSdkSetupFailure } =
-      await import('../../../helpers/sdk-test-helpers.mts')
+      await import('../../../helpers/sdk-fixtures.mts')
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
@@ -104,7 +104,7 @@ describe('fetchOrgFullScanList', () => {
     const { fetchOrgFullScanList } =
       await import('../../../../src/command/scan/fetch-list-scans.mts')
     const { setupSdkMockError } =
-      await import('../../../helpers/sdk-test-helpers.mts')
+      await import('../../../helpers/sdk-fixtures.mts')
 
     await setupSdkMockError('listFullScans', 'API error', 500)
 

@@ -57,9 +57,7 @@ describe('socket wrapper', async () => {
               Options
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
-              While enabled, the wrapper makes it so that when you call npm/npx on your
-              machine, it will automatically actually run \`socket npm\` / \`socket npx\`
-              instead.
+              While enabled, package manager commands run through Socket automatically.
           
               Examples
                 $ socket wrapper on
@@ -103,7 +101,7 @@ describe('socket wrapper', async () => {
   )
 
   cmdit(
-    ['wrapper', FLAG_DRY_RUN, 'on', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    ['wrapper', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}', 'on'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -126,7 +124,7 @@ describe('socket wrapper', async () => {
           Target file: [PROJECT]/test/fixtures/commands/wrapper/rc-home/.bashrc, [PROJECT]/test/fixtures/commands/wrapper/rc-home/.zshrc
           Changes:
             - Add shell aliases/functions to wrap npm/pnpm exec commands
-            - Redirect npm/pnpm exec calls to socket npm/socket npx
+            - Redirect package manager execution through Socket
 
           Run without --dry-run to apply these changes."
       `)

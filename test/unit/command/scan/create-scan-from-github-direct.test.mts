@@ -78,11 +78,11 @@ describe('create-scan-from-github (direct)', () => {
     it('returns default branch on success', async () => {
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: true,
-        data: { default_branch: 'main', name: 'r' },
+        data: { default_branch: 'main', name: 'example-repo' },
       })
       const result = await getRepoDetails({
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         githubApiUrl: 'https://api.github.com',
         githubToken: 'gh_t',
       })
@@ -100,7 +100,7 @@ describe('create-scan-from-github (direct)', () => {
       })
       const result = await getRepoDetails({
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         githubApiUrl: 'https://api.github.com',
         githubToken: 'gh_t',
       })
@@ -113,17 +113,17 @@ describe('create-scan-from-github (direct)', () => {
     it('returns error when default branch is missing', async () => {
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: true,
-        data: { default_branch: undefined, name: 'r' },
+        data: { default_branch: undefined, name: 'example-repo' },
       })
       const result = await getRepoDetails({
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
         githubApiUrl: 'https://api.github.com',
         githubToken: 'gh_t',
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.cause).toContain('org/r')
+        expect(result.cause).toContain('org/example-repo')
       }
     })
   })
@@ -144,7 +144,7 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getRepoBranchTree({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -178,7 +178,7 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getRepoBranchTree({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       expect(result.ok).toBe(false)
     })
@@ -191,11 +191,11 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getRepoBranchTree({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.cause).toContain('org/r')
+        expect(result.cause).toContain('org/example-repo')
       }
     })
   })
@@ -218,7 +218,7 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getLastCommitDetails({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -244,7 +244,7 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getLastCommitDetails({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       if (result.ok) {
         expect(result.data.lastCommitter).toBe('OnlyCommitter')
@@ -256,11 +256,11 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getLastCommitDetails({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.cause).toContain('org/r')
+        expect(result.cause).toContain('org/example-repo')
       }
     })
 
@@ -272,11 +272,11 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getLastCommitDetails({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.cause).toContain('org/r')
+        expect(result.cause).toContain('org/example-repo')
       }
     })
 
@@ -289,7 +289,7 @@ describe('create-scan-from-github (direct)', () => {
       const result = await getLastCommitDetails({
         defaultBranch: 'main',
         orgGithub: 'org',
-        repoSlug: 'r',
+        repoSlug: 'example-repo',
       })
       expect(result.ok).toBe(false)
     })

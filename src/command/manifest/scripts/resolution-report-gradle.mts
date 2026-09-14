@@ -3,6 +3,24 @@ import type {
   ResolutionDialect,
 } from './resolution-report-render.mts'
 
+const GRADLE_NO_VARIANT_PATTERNS = [
+  'no matching variant',
+  'no variants of',
+  'unable to find a matching variant',
+  'no compatible variant',
+]
+const GRADLE_REPOSITORY_PATTERNS = [
+  'could not get',
+  'could not head',
+  'status code 401',
+  'status code 403',
+  'connection refused',
+  'connection timed out',
+  'read timed out',
+  'certification path',
+  'peer not authenticated',
+]
+
 // Gradle's variant-aware resolver: distinct exceptions give mutually-exclusive
 // phrasing, so most-specific-first substring checks classify reliably.
 export function classifyGradleFailure(detail: string): FailureCategory {
@@ -13,32 +31,13 @@ export function classifyGradleFailure(detail: string): FailureCategory {
   }
   // Zero compatible variants — the opposite of ambiguity below. Gradle phrases
   // this several ways depending on version and whether attributes were supplied.
-  if (
-    [
-      'no matching variant',
-      'no variants of',
-      'unable to find a matching variant',
-      'no compatible variant',
-    ].some(message => t.includes(message))
-  ) {
+  if (GRADLE_NO_VARIANT_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'no-matching-variant'
   }
   if (t.includes('cannot choose between')) {
     return 'variant-ambiguity'
   }
-  if (
-    [
-      'could not get',
-      'could not head',
-      'status code 401',
-      'status code 403',
-      'connection refused',
-      'connection timed out',
-      'read timed out',
-      'certification path',
-      'peer not authenticated',
-    ].some(message => t.includes(message))
-  ) {
+  if (GRADLE_REPOSITORY_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'repository-or-network'
   }
   if (t.includes('could not find')) {

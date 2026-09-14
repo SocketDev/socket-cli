@@ -6,7 +6,7 @@
  * Test Coverage: - getSimpleCleanScan function - getScanWithEnvVars function -
  * getScanWithMultiplePackages function.
  *
- * Related Files: - test/helpers/generate-report-test-helpers.mts
+ * Related Files: - test/helpers/report-fixtures.mts
  * (implementation)
  */
 
@@ -16,9 +16,9 @@ import {
   getScanWithEnvVars,
   getScanWithMultiplePackages,
   getSimpleCleanScan,
-} from '../../../helpers/generate-report-test-helpers.mts'
+} from '../../../helpers/report-fixtures.mts'
 
-describe('generate-report-test-helpers', () => {
+describe('report-fixtures', () => {
   describe('getSimpleCleanScan', () => {
     it('returns an array with one artifact', () => {
       const scan = getSimpleCleanScan()

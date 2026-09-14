@@ -6,8 +6,8 @@
   "schemaVersion": 1,
   "repoName": "socket-cli",
   "bundle": {
-    "ref": "fleet-pack-34b047176c416cd46f1919ad0bba35a0bb7b84b3",
-    "cascadeSha": "34b047176c416cd46f1919ad0bba35a0bb7b84b3"
+    "ref": "fleet-pack-b12f764b31ec17f8f08ab5a49c21c3852e46a385",
+    "cascadeSha": "b12f764b31ec17f8f08ab5a49c21c3852e46a385"
   },
   "repo": {
     "type": "solo"
@@ -29,12 +29,18 @@
   },
   "bornTested": {
     "grandfathered": [
-      "scripts/repo/bootstrap/prepare.mts",
       "scripts/repo/build.mts",
       "scripts/repo/check/cli-types-are-sound.mts",
       "scripts/repo/clean-cache.mts",
-      "scripts/repo/validate-no-cdn-refs.mts",
-      "scripts/repo/warm-dlx-cache.mts"
+      "scripts/repo/cli-build/build-js.mts",
+      "scripts/repo/cli-build/build.mts",
+      "scripts/repo/cli-build/e2e.mts",
+      "scripts/repo/cli-build/repo/fuzz.mts",
+      "scripts/repo/cli-build/sync-checksums.mts",
+      "scripts/repo/cli-build/test-download-external-tools.mts",
+      "scripts/repo/cli-build/test-wrapper.mts",
+      "scripts/repo/cli-build/validate-bundle.mts",
+      "scripts/repo/validate-no-cdn-refs.mts"
     ]
   },
   "sharedModuleTests": {
@@ -170,39 +176,58 @@
   },
   "vitest": {
     "lanes": {
-      "fast": [
-        "test/unit/constants/**",
-        "test/unit/core/mcp/lib/**",
-        "test/unit/core/mcp/tool-*.test.mts",
-        "test/unit/core/patch/**",
-        "test/unit/flags.test.mts",
-        "test/unit/types.test.mts",
-        "test/unit/util/data/**",
-        "test/unit/util/ecosystem/**",
-        "test/unit/util/output/**",
-        "test/unit/util/process/**",
-        "test/unit/util/purl/**",
-        "test/unit/util/sanitize-names*.test.mts",
-        "test/unit/util/url/**"
-      ],
       "mid": [
-        "test/mock-auth.test.mts",
         "test/unit/command/**",
-        "test/unit/core/mcp/transport-http*.test.mts",
-        "test/unit/core/optimize/**",
-        "test/unit/core/sdxgen/**",
-        "test/unit/env/**",
         "test/unit/meow.test.mts",
-        "test/unit/scripts/**",
-        "test/unit/util/dlx/**",
-        "test/unit/util/error/**",
-        "test/unit/util/fs/**",
-        "test/unit/util/git/**",
-        "test/unit/util/spawn/**",
-        "test/unit/util/telemetry/**",
+        "test/unit/core/firewall/**",
+        "test/unit/util/git/spawn-git.test.mts",
+        "test/unit/util/spawn/spawn-node.test.mts",
+        "test/unit/util/spawn/system-tool.test.mts",
         "test/unit/util/trusted-executable.test.mts"
       ],
-      "slow": ["test/integration/**", "test/unit/core/firewall/**"]
+      "slow": ["test/integration/**"]
+    }
+  },
+  "cover": {
+    "groupThresholds": {
+      "src/{core,command}/firewall/**": {
+        "statements": 94,
+        "lines": 94,
+        "functions": 93,
+        "branches": 90
+      },
+      "src/{core/sdxgen/**,command/sbom/cmd-sbom.mts}": {
+        "statements": 99,
+        "lines": 99,
+        "functions": 99,
+        "branches": 99
+      },
+      "src/{core/scanner-patterns/**,command/scan/cmd-scan-patterns.mts}": {
+        "statements": 96,
+        "lines": 96,
+        "functions": 94,
+        "branches": 92
+      },
+      "src/{command,core}/mcp/**": {
+        "statements": 99,
+        "lines": 99,
+        "functions": 98,
+        "branches": 95
+      }
+    },
+    "budgetAllowances": {
+      "slow": {
+        "maxMs": 168348,
+        "reason": "Instrumented CLI integration processes exceed the 60-second slow-lane target.",
+        "created": "2026-09-12",
+        "expires": "2026-10-12"
+      },
+      "fast": {
+        "maxMs": 10049,
+        "reason": "Measured 9570.211 ms at 98da3281fd6ae67f1e1e55aeeb88525957e1c85b; 5% headroom; darwin/arm64, Node v24.10.0.",
+        "created": "2026-09-12",
+        "expires": "2026-10-12"
+      }
     }
   }
 }

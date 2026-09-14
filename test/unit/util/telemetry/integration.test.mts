@@ -68,9 +68,7 @@ vi.mock(import('../../../../src/util/config.mts'), () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 
-vi.mock(import('../../../../src/constants/config.mts'), () => ({
-  CONFIG_KEY_DEFAULT_ORG: 'defaultOrg',
-}))
+// Mock constants - set VITEST to false to enable telemetry tracking.
 vi.mock(import('../../../../src/constants/env.mts'), () => ({
   ENV: {
     INLINED_VERSION: '1.0.0-test',
@@ -185,7 +183,7 @@ describe('telemetry/integration', () => {
           platform: 'darwin',
           version: '1.0.0',
         },
-        { custom_field: 'value' },
+        { metadata: { custom_field: 'value' } },
       )
 
       const call = mockTrack.mock.calls[0][0]
@@ -203,8 +201,10 @@ describe('telemetry/integration', () => {
           platform: 'darwin',
           version: '1.0.0',
         },
-        {},
-        { error },
+        {
+          metadata: {},
+          error,
+        },
       )
 
       const call = mockTrack.mock.calls[0][0]
@@ -226,8 +226,10 @@ describe('telemetry/integration', () => {
           platform: 'darwin',
           version: '1.0.0',
         },
-        {},
-        { error },
+        {
+          metadata: {},
+          error,
+        },
       )
 
       const call = mockTrack.mock.calls[0][0]
@@ -244,8 +246,10 @@ describe('telemetry/integration', () => {
           platform: 'darwin',
           version: '1.0.0',
         },
-        {},
-        { flush: true },
+        {
+          metadata: {},
+          flush: true,
+        },
       )
 
       expect(mockFlush).toHaveBeenCalled()

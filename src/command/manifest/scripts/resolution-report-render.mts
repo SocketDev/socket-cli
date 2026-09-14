@@ -40,6 +40,7 @@ export type ResolutionDialect = {
 }
 
 export type RenderedResolutionReport = {
+  readonly __proto__: null
   // Failure report for blocking kinds; empty when nothing blocks.
   summary: string
   // Build tool's own full messages for all kinds; surfaced at --verbose.
@@ -114,7 +115,12 @@ export function renderResolutionReport(
   // failure: ambiguity stays lenient, every other cause is fail-closed.
   const unscannableInfos = unscannable.map(u => {
     const category = dialect.classify(u.detail)
-    return { __proto__: null, ...u, category, blocking: isBlocking(category) }
+    return {
+      __proto__: null,
+      ...u,
+      category,
+      blocking: isBlocking(category),
+    }
   })
   const blockingUnscannable = unscannableInfos.filter(u => u.blocking)
   const nonBlockingUnscannable = unscannableInfos.filter(u => !u.blocking)
@@ -146,8 +152,11 @@ export function renderResolutionReport(
     blockingCount > 0 || blockingUnscannable.length > 0
   const willFail = hasBlockingFailures && !opts.ignoreUnresolved
 
-  const out: string[] = []
-  if (hasBlockingFailures) {
+  function buildSummary(): string[] {
+    const out: string[] = []
+    if (!hasBlockingFailures) {
+      return out
+    }
     if (blockingCount > 0) {
       out.push(
         opts.ignoreUnresolved
@@ -172,15 +181,13 @@ export function renderResolutionReport(
       )
     }
     if (willFail) {
-      out.push('')
-      out.push(`To proceed, re-run with either:`)
-      out.push(`    --ignore-unresolved`)
+      out.push('', 'To proceed, re-run with either:', '    --ignore-unresolved')
       if (blockingFailed.length) {
         out.push(`    --exclude-configs '${blockingFailed.join(',')}'`)
       }
     }
-    out.push('')
-    out.push(`Re-run with --verbose for ${name}'s full messages.`)
+    out.push('', `Re-run with --verbose for ${name}'s full messages.`)
+    return out
   }
 
   const notices: string[] = []
@@ -204,7 +211,7 @@ export function renderResolutionReport(
 
   const result = {
     __proto__: null,
-    summary: out.join('\n'),
+    summary: buildSummary().join('\n'),
     details,
     hasBlockingFailures,
     nonBlockingNotice: notices.join('\n'),
@@ -226,8 +233,8 @@ function dialectFor(tool: BuildTool): ResolutionDialect {
 
 export function renderResolutionErrorReport(
   failures: ResolutionFailure[],
-  scannedConfigs: string[] = [],
-  tool: BuildTool = 'gradle',
+  scannedConfigs: string[],
+  tool: BuildTool,
   opts: {
     ignoreUnresolved?: boolean | undefined
     unscannable?: UnscannableConfig[] | undefined

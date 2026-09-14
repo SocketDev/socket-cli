@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for the `socket config` command family. Ported from
  *   `packages/cli/test/smoke.sh`'s config section (15 commands). Covers: get /

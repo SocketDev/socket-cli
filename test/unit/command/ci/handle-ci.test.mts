@@ -86,10 +86,6 @@ vi.mock(
   }),
 )
 
-vi.mock(import('../../../../src/constants/reporting.mts'), () => ({
-  REPORT_LEVEL_ERROR: 'error',
-}))
-
 vi.mock(import('../../../../src/util/git/operations.mjs'), () => ({
   detectDefaultBranch: mockDetectDefaultBranch,
   getRepoName: mockGetRepoName,

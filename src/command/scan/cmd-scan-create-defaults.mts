@@ -38,12 +38,23 @@ export async function applyScanCreateDefaults(
 ): Promise<ScanCreateDefaultsResult> {
   let { autoManifest, branchName, repoName, report, workspace } = flags
 
-  const defaults = sockJson.defaults?.scan?.create ?? {}
+  autoManifest = resolveScanAutoManifest(sockJson, { autoManifest })
+  branchName = await resolveScanBranchName(cwd, sockJson, branchName)
+  repoName = await resolveScanRepoName(cwd, sockJson, repoName)
+  workspace = resolveScanWorkspace(sockJson, workspace)
+  report = resolveScanReport(sockJson, { report })
+  return { autoManifest, branchName, repoName, report, workspace }
+}
 
+export function resolveScanAutoManifest(
+  sockJson: SocketJson,
+  options?: { autoManifest?: boolean | undefined } | undefined,
+): boolean {
+  let { autoManifest } = options ?? {}
   // Note: This needs meow booleanDefault=undefined.
   if (typeof autoManifest !== 'boolean') {
-    if (defaults.autoManifest !== undefined) {
-      autoManifest = defaults.autoManifest
+    if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
+      autoManifest = sockJson.defaults.scan.create.autoManifest
       logger.info(
         `Using default --auto-manifest from ${SOCKET_JSON}:`,
         autoManifest,
@@ -52,39 +63,69 @@ export async function applyScanCreateDefaults(
       autoManifest = false
     }
   }
+
+  return autoManifest
+}
+
+export async function resolveScanBranchName(
+  cwd: string,
+  sockJson: SocketJson,
+  branchName: string,
+): Promise<string> {
   if (!branchName) {
-    if (defaults.branch) {
-      branchName = defaults.branch
+    if (sockJson.defaults?.scan?.create?.branch) {
+      branchName = sockJson.defaults.scan.create.branch
       logger.info(`Using default --branch from ${SOCKET_JSON}:`, branchName)
     } else {
       branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
     }
   }
+
+  return branchName
+}
+
+export async function resolveScanRepoName(
+  cwd: string,
+  sockJson: SocketJson,
+  repoName: string,
+): Promise<string> {
   if (!repoName) {
-    if (defaults.repo) {
-      repoName = defaults.repo
+    if (sockJson.defaults?.scan?.create?.repo) {
+      repoName = sockJson.defaults.scan.create.repo
       logger.info(`Using default --repo from ${SOCKET_JSON}:`, repoName)
     } else {
       repoName = await getRepoName(cwd)
     }
   }
-  if (!workspace && defaults.workspace) {
-    workspace = defaults.workspace
+
+  return repoName
+}
+
+export function resolveScanReport(
+  sockJson: SocketJson,
+  options?: { report?: boolean | undefined } | undefined,
+): boolean {
+  let { report } = options ?? {}
+  if (typeof report !== 'boolean') {
+    if (sockJson.defaults?.scan?.create?.report !== undefined) {
+      report = sockJson.defaults.scan.create.report
+      logger.info(`Using default --report from ${SOCKET_JSON}:`, report)
+    } else {
+      report = false
+    }
+  }
+
+  return report
+}
+
+export function resolveScanWorkspace(
+  sockJson: SocketJson,
+  workspace: string,
+): string {
+  if (!workspace && sockJson.defaults?.scan?.create?.workspace) {
+    workspace = sockJson.defaults.scan.create.workspace
     logger.info(`Using default --workspace from ${SOCKET_JSON}:`, workspace)
   }
-  report = applyReportDefault()
 
-  function applyReportDefault(): boolean {
-    if (typeof report !== 'boolean') {
-      if (defaults.report !== undefined) {
-        report = defaults.report
-        logger.info(`Using default --report from ${SOCKET_JSON}:`, report)
-      } else {
-        report = false
-      }
-    }
-    return report
-  }
-
-  return { autoManifest, branchName, repoName, report, workspace }
+  return workspace
 }

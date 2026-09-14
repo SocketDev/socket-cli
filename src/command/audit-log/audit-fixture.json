@@ -18,7 +18,7 @@
       "type": "updateOrganizationSetting",
       "user_agent": "",
       "user_id": "7d8b2478-abcd-4cc9-abcd-c869de8fc924",
-      "user_email": "person@socket.dev",
+      "user_email": "person@example.com",
       "user_image": "",
       "organization_name": "SocketDev"
     },
@@ -38,7 +38,7 @@
       "type": "createApiToken",
       "user_agent": "",
       "user_id": "e110f7e0-abcd-41bb-abcd-5745be143db8",
-      "user_email": "person@socket.dev",
+      "user_email": "person@example.com",
       "user_image": "",
       "organization_name": "SocketDev"
     },
@@ -59,7 +59,7 @@
       "type": "updateOrganizationSetting",
       "user_agent": "super ai .com",
       "user_id": "6dc7b702-abcd-438a-abcd-51e227962ebd",
-      "user_email": "person@socket.dev",
+      "user_email": "person@example.com",
       "user_image": "",
       "organization_name": "SocketDev"
     },
@@ -81,7 +81,7 @@
       "type": "updateOrganizationSetting",
       "user_agent": "",
       "user_id": "6dc7b702-abcd-438a-abcd-51e227962ebd",
-      "user_email": "person@socket.dev",
+      "user_email": "person@example.com",
       "user_image": "",
       "organization_name": "SocketDev"
     },
@@ -101,7 +101,7 @@
       "type": "updateAlertTriage",
       "user_agent": "",
       "user_id": "b5d98911-abcd-425b-abcd-c71534f0ef88",
-      "user_email": "person@socket.dev",
+      "user_email": "person@example.com",
       "user_image": "",
       "organization_name": "SocketDev"
     },
@@ -127,7 +127,7 @@
       "type": "updateOrganizationSetting",
       "user_agent": "",
       "user_id": "7d8b2478-abcd-4cc9-abcd-c869de8fc924",
-      "user_email": "person@socket.dev",
+      "user_email": "person@example.com",
       "user_image": "",
       "organization_name": "SocketDev"
     },
@@ -171,7 +171,7 @@
       "type": "updateApiTokenScopes",
       "user_agent": "",
       "user_id": "1fc4346e-abcd-4537-abcd-113e0e9609b5",
-      "user_email": "person@socket.dev",
+      "user_email": "person@example.com",
       "user_image": "",
       "organization_name": "SocketDev"
     }

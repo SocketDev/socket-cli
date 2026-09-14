@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for `socket oops`. Ported from `packages/cli/test/smoke.sh`'s
  *   oops section (4 commands). `oops` is a deliberate-failure command used in

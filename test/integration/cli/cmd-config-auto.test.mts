@@ -81,10 +81,10 @@ describe('socket config auto', async () => {
     [
       'config',
       'auto',
-      'defaultOrg',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'defaultOrg',
     ],
     'should require args with just dry-run',
     async cmd => {

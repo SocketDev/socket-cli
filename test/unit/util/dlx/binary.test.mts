@@ -9,8 +9,8 @@
  */
 
 import { existsSync, promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
 
 import { describe, expect, it } from 'vitest'
 
@@ -26,7 +26,10 @@ describe('binary', () => {
   describe('getSocketHomePath', () => {
     it('should return correct path', () => {
       const result = normalizePath(getSocketHomePath())
-      const expected = normalizePath(path.join(process.env['HOME']!, '.socket'))
+      const expected = normalizePath(
+        process.env['SOCKET_HOME'] ??
+          path.join(process.env['HOME'] ?? os.homedir(), '.socket'),
+      )
       expect(result).toBe(expected)
     })
   })
@@ -35,7 +38,11 @@ describe('binary', () => {
     it('should return correct cache path', () => {
       const result = normalizePath(getDlxCachePath())
       const expected = normalizePath(
-        path.join(process.env['HOME']!, '.socket', '_dlx'),
+        path.join(
+          process.env['SOCKET_HOME'] ??
+            path.join(process.env['HOME'] ?? os.homedir(), '.socket'),
+          '_dlx',
+        ),
       )
       expect(result).toBe(expected)
     })

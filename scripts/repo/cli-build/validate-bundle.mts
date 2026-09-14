@@ -12,6 +12,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from '../../fleet/process/is-main-module.mts'
+import { runMain } from '../../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -46,7 +50,7 @@ function validateBundle() {
   return violations
 }
 
-async function main() {
+export async function main(): Promise<void> {
   try {
     const violations = validateBundle()
 
@@ -89,7 +93,12 @@ async function main() {
   }
 }
 
-main().catch(e => {
-  logger.error(`Validation failed: ${e}`)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe: 'validate the built CLI bundle has no unresolved externals',
+  help: 'Usage: node scripts/repo/cli-build/validate-bundle.mts',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

@@ -92,23 +92,9 @@ export async function processWorkspaceForMaven(config: {
   let anyRepos = false
   let hubsFailed = 0
   let hubsSucceeded = 0
+  let loadFailureReason = ''
 
-  let mode: WorkspaceMode
-  try {
-    mode = detectWorkspaceMode(workspaceRoot)
-  } catch (e) {
-    // A workspace we cannot even read is a load failure, NOT "no Maven
-    // here": record it so the run is flagged not-complete rather than
-    // silently skipped.
-    const reason = errorMessage(e)
-    if (verbose) {
-      logger.log(
-        `[VERBOSE] workspace ${workspaceRoot}: load failed (${reason})`,
-      )
-    }
-    logger.warn(
-      `Workspace ${relPath || '.'}: failed to load (${reason}); it could not be analyzed.`,
-    )
+  function failedWorkspaceResult(reason: string): WorkspaceRunResult {
     return {
       anyHubCoveredByLockfile,
       anyIndeterminate,
@@ -126,6 +112,29 @@ export async function processWorkspaceForMaven(config: {
         relPath,
       },
     }
+  }
+
+  function loadWorkspaceMode(): WorkspaceMode | undefined {
+    try {
+      return detectWorkspaceMode(workspaceRoot)
+    } catch (e) {
+      const reason = errorMessage(e)
+      loadFailureReason = reason
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] workspace ${workspaceRoot}: load failed (${reason})`,
+        )
+      }
+      logger.warn(
+        `Workspace ${relPath || '.'}: failed to load (${reason}); it could not be analyzed.`,
+      )
+      return undefined
+    }
+  }
+
+  const mode = loadWorkspaceMode()
+  if (!mode) {
+    return failedWorkspaceResult(loadFailureReason)
   }
   logger.info(
     `Workspace ${relPath || '.'}: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
@@ -182,90 +191,10 @@ export async function processWorkspaceForMaven(config: {
       candidates.join(', ') || '(none)'
     }`,
   )
-  for (
-    let candIdx = 0, candCount = candidates.length;
-    candIdx < candCount;
-    candIdx += 1
-  ) {
-    const repoName = candidates[candIdx]!
-    await processMavenCandidate(repoName)
-  }
-  if (verbose) {
-    for (
-      let outIdx = 0, outCount = hubOutcomes.length;
-      outIdx < outCount;
-      outIdx += 1
-    ) {
-      const outcome = hubOutcomes[outIdx]!
-      logger.log(
-        `[VERBOSE] workspace ${relPath || '.'} hub @${outcome.hub}: ${outcome.state}${
-          outcome.reason ? ` (${outcome.reason})` : ''
-        }`,
-      )
-    }
-  }
-  return {
-    anyHubCoveredByLockfile,
-    anyIndeterminate,
-    anyRepos,
-    artifactCount,
-    hubsFailed,
-    hubsSucceeded,
-    manifestPaths,
-    mintedRoots,
-    outputUserRoot,
-    workspaceOutcome: {
-      hubs: hubOutcomes,
-      load: 'loaded',
-      relPath,
-    },
-  }
-
-  async function processMavenCandidate(repoName: string) {
-    // Committed-lockfile gate: the server-side walker already ingests any
-    // committed maven_install.json / <hub>_maven_install.json under the
-    // workspace; the CLI's synthetic manifest is the COMPLEMENT, not a
-    // duplicate. Skip emitting when a committed lockfile already covers
-    // this hub. A skip is a successful no-op — the server already ingests
-    // that lockfile — so it runs BEFORE `anyRepos` is flipped (which marks
-    // "a hub we needed to extract").
-    const committed = committedLockfileCovers({
-      fileName: hubManifestFileName(repoName),
-      manifestDir,
-      workspaceRoot,
-    })
-    if (committed) {
-      anyHubCoveredByLockfile = true
-      logger.info(
-        `@${repoName}: committed lockfile already covers this hub (${path.relative(cwd, committed) || committed}); skipping synthetic manifest.`,
-      )
-      hubOutcomes.push({
-        hub: repoName,
-        reason: 'committed-lockfile',
-        state: 'skipped-lockfile',
-      })
-      if (verbose) {
-        logger.log(
-          `[VERBOSE] @${repoName}: skipped (committed lockfile at ${committed})`,
-        )
-      }
-      return
-    }
-    // We are about to extract this hub: it is a real candidate we must
-    // analyze, so mark the ecosystem present.
-    anyRepos = true
-    if (verbose) {
-      logger.log(
-        `[VERBOSE] workspace ${relPath || '.'}: running metadata cquery for @${repoName} (timeout ${perRepoTimeoutMs}ms)`,
-      )
-    }
-    const result: CqueryRepoResult = await runMetadataCqueryForRepo({
-      options: queryOptsFor(outputUserRoot),
-      repoName,
-      timeoutMs: perRepoTimeoutMs,
-      workspaceRelPath: relPath,
-      workspaceRoot,
-    })
+  async function finishHubQuery(
+    repoName: string,
+    result: CqueryRepoResult,
+  ): Promise<void> {
     if (result.status === 'timeout') {
       logger.warn(
         `@${repoName}: cquery timed out after ${perRepoTimeoutMs}ms; reaping server`,
@@ -393,5 +322,91 @@ export async function processWorkspaceForMaven(config: {
         )
       }
     }
+  }
+
+  async function processHub(repoName: string): Promise<void> {
+    // Committed-lockfile gate: the server-side walker already ingests any
+    // committed maven_install.json / <hub>_maven_install.json under the
+    // workspace; the CLI's synthetic manifest is the COMPLEMENT, not a
+    // duplicate. Skip emitting when a committed lockfile already covers
+    // this hub. A skip is a successful no-op — the server already ingests
+    // that lockfile — so it runs BEFORE `anyRepos` is flipped (which marks
+    // "a hub we needed to extract").
+    const committed = committedLockfileCovers({
+      fileName: hubManifestFileName(repoName),
+      manifestDir,
+      workspaceRoot,
+    })
+    if (committed) {
+      anyHubCoveredByLockfile = true
+      logger.info(
+        `@${repoName}: committed lockfile already covers this hub (${path.relative(cwd, committed) || committed}); skipping synthetic manifest.`,
+      )
+      hubOutcomes.push({
+        hub: repoName,
+        reason: 'committed-lockfile',
+        state: 'skipped-lockfile',
+      })
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] @${repoName}: skipped (committed lockfile at ${committed})`,
+        )
+      }
+      return
+    }
+    // We are about to extract this hub: it is a real candidate we must
+    // analyze, so mark the ecosystem present.
+    anyRepos = true
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] workspace ${relPath || '.'}: running metadata cquery for @${repoName} (timeout ${perRepoTimeoutMs}ms)`,
+      )
+    }
+    const result: CqueryRepoResult = await runMetadataCqueryForRepo({
+      options: queryOptsFor(outputUserRoot),
+      repoName,
+      timeoutMs: perRepoTimeoutMs,
+      workspaceRelPath: relPath,
+      workspaceRoot,
+    })
+    await finishHubQuery(repoName, result)
+  }
+
+  for (
+    let candIdx = 0, candCount = candidates.length;
+    candIdx < candCount;
+    candIdx += 1
+  ) {
+    await processHub(candidates[candIdx]!)
+  }
+  if (verbose) {
+    for (
+      let outIdx = 0, outCount = hubOutcomes.length;
+      outIdx < outCount;
+      outIdx += 1
+    ) {
+      const outcome = hubOutcomes[outIdx]!
+      logger.log(
+        `[VERBOSE] workspace ${relPath || '.'} hub @${outcome.hub}: ${outcome.state}${
+          outcome.reason ? ` (${outcome.reason})` : ''
+        }`,
+      )
+    }
+  }
+  return {
+    anyHubCoveredByLockfile,
+    anyIndeterminate,
+    anyRepos,
+    artifactCount,
+    hubsFailed,
+    hubsSucceeded,
+    manifestPaths,
+    mintedRoots,
+    outputUserRoot,
+    workspaceOutcome: {
+      hubs: hubOutcomes,
+      load: 'loaded',
+      relPath,
+    },
   }
 }

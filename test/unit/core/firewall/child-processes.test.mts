@@ -28,6 +28,29 @@ afterEach(() => {
 })
 
 describe('firewall process identities', () => {
+  it('retries a group signal while process-group cleanup completes', () => {
+    const permissionError = Object.assign(new Error('fixture permission'), {
+      code: 'EPERM',
+    })
+    const missingError = Object.assign(new Error('fixture missing'), {
+      code: 'ESRCH',
+    })
+    const kill = vi
+      .spyOn(process, 'kill')
+      .mockImplementationOnce(() => {
+        throw permissionError
+      })
+      .mockImplementationOnce(() => {
+        throw missingError
+      })
+    spawnSync.mockReturnValue({ status: 0, stdout: '910001 E\n' })
+
+    expect(() => signalFirewallProcessGroup(910_001, 'SIGKILL')).not.toThrow()
+    expect(kill.mock.calls).toEqual([
+      [-910_001, 'SIGKILL'],
+      [-910_001, 'SIGKILL'],
+    ])
+  })
   it('accepts permission failure only when the group has no live processes', () => {
     const error = Object.assign(new Error('fixture permission'), {
       code: 'EPERM',
@@ -50,7 +73,7 @@ describe('firewall process identities', () => {
         error,
       )
     }
-    expect(kill).toHaveBeenCalledTimes(6)
+    expect(kill).toHaveBeenCalledTimes(10)
     spawnSync.mockImplementation(() => {
       throw new Error('fixture process listing unavailable')
     })

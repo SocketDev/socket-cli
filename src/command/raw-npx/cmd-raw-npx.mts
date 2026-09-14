@@ -16,7 +16,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'raw-npx'
 
-const description = 'Run npm exec without the Socket wrapper'
+const description = 'Run pnpm exec without the Socket wrapper'
 
 const hidden = false
 
@@ -34,6 +34,7 @@ export async function run(
     flags: defineFlags({
       ...commonFlags,
     }),
+    // oxlint-disable-next-line socket/no-npx-dlx -- command help
     help: (command: string) => `
     Usage
       $ ${command} ...
@@ -42,7 +43,7 @@ export async function run(
     Useful when  \`socket wrapper on\` is enabled and you want to bypass
     the Socket wrapper. Use at your own risk.
 
-    Note: Everything after "raw-npx" is passed to the npx command.
+Note: Everything after "raw-npx" is passed to the \`npx\` command.
           Only the \`${FLAG_DRY_RUN}\` and \`${FLAG_HELP}\` flags are caught here.
 
     Examples

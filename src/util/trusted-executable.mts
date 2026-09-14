@@ -114,6 +114,44 @@ export function findEnvPathValue(
   return undefined
 }
 
+export function getTrustedExecutableLookups(
+  candidate: string,
+  entries: string[],
+  options?: TrustedExecutableOptions | undefined,
+): Array<{ entry: string | undefined; runnable: boolean; target: string }> {
+  const { windows = isWin32() } = { __proto__: null, ...options }
+  const probes = listExecutableProbes(candidate, { windows })
+  // A candidate carrying a separator is a literal path, not a PATH lookup, so
+  // it is never attributed to a PATH entry.
+  const isPathLike = candidate.includes('/') || candidate.includes('\\')
+  const lookups: Array<{
+    entry: string | undefined
+    runnable: boolean
+    target: string
+  }> = []
+  if (isPathLike) {
+    lookups.push({
+      entry: undefined,
+      runnable: true,
+      target: path.resolve(candidate),
+    })
+  } else {
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const entry = entries[i]!
+      for (let j = 0, { length: probeCount } = probes; j < probeCount; j += 1) {
+        const probe = probes[j]!
+        lookups.push({
+          entry,
+          runnable: probe.runnable,
+          target: path.join(entry, `${candidate}${probe.suffix}`),
+        })
+      }
+    }
+  }
+
+  return lookups
+}
+
 export async function getTrustedPathEntries(
   env: Readonly<Record<string, string | undefined>>,
   root: string,
@@ -264,34 +302,7 @@ export async function resolveTrustedExecutable(
 
   const entries = await getTrustedPathEntries(env, root)
 
-  const probes = listExecutableProbes(candidate, { windows })
-  // A candidate carrying a separator is a literal path, not a PATH lookup, so
-  // it is never attributed to a PATH entry.
-  const isPathLike = candidate.includes('/') || candidate.includes('\\')
-  const lookups: Array<{
-    entry: string | undefined
-    runnable: boolean
-    target: string
-  }> = []
-  if (isPathLike) {
-    lookups.push({
-      entry: undefined,
-      runnable: true,
-      target: path.resolve(candidate),
-    })
-  } else {
-    for (let i = 0, { length } = entries; i < length; i += 1) {
-      const entry = entries[i]!
-      for (let j = 0, { length: probeCount } = probes; j < probeCount; j += 1) {
-        const probe = probes[j]!
-        lookups.push({
-          entry,
-          runnable: probe.runnable,
-          target: path.join(entry, `${candidate}${probe.suffix}`),
-        })
-      }
-    }
-  }
+  const lookups = getTrustedExecutableLookups(candidate, entries, { windows })
 
   // First pass decides which PATH entries are poisoned. Selection cannot
   // happen in the same pass: a `.cmd` probe LATER in the same directory can

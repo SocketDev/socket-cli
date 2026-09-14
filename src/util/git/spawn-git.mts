@@ -87,8 +87,8 @@ export const GIT_OPERAND_FENCE = '--end-of-options'
  * - `core.hooksPath=` — the scanned repository's own `pre-commit`, `commit-msg`,
  *   and `post-checkout` hooks must not run during `socket fix`.
  * - `credential.helper=` — an empty value resets the helper chain, and because
- *   `-c` sorts last it drops a repository-supplied `!sh -c 'hostile'` helper
- *   that would otherwise execute on any network operation.
+ *   `-c` sorts last it drops a repository-supplied `!sh -c 'untrusted-command'`
+ *   helper that would otherwise execute on any network operation.
  * - `protocol.allow=never` plus the five known-safe transports — unknown
  *   transports default to policy `user`, which counts a direct `ls-remote` as
  *   user-initiated. Denying by default and re-allowing exactly git's own

@@ -64,11 +64,11 @@ export async function handleMarkdown(
   logger.log('')
   logger.log(mdHeader('Changes', 2))
   logger.log('')
-  logDiffArtifacts('Added', diffScan.artifacts.added)
-  logDiffArtifacts('Removed', diffScan.artifacts.removed)
-  logDiffArtifacts('Replaced', diffScan.artifacts.replaced)
-  logDiffArtifacts('Updated', diffScan.artifacts.updated)
-  logDiffArtifacts('Unchanged', diffScan.artifacts.unchanged ?? [])
+  outputDiffArtifactSummary('Added', diffScan.artifacts.added)
+  outputDiffArtifactSummary('Removed', diffScan.artifacts.removed)
+  outputDiffArtifactSummary('Replaced', diffScan.artifacts.replaced)
+  outputDiffArtifactSummary('Updated', diffScan.artifacts.updated)
+  outputDiffArtifactSummary('Unchanged', diffScan.artifacts.unchanged ?? [])
 
   logger.log('')
   logger.log(`## Scan ${beforeScan.id}`)
@@ -77,54 +77,32 @@ export async function handleMarkdown(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
   logger.log('')
-  for (const { 0: key, 1: value } of Object.entries(beforeScan)) {
-    if (key === 'pull_request' && !value) {
-      continue
-    }
-    if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
-      )
-      logger.groupEnd()
-    }
-  }
+  outputDiffScanMetadata(beforeScan)
 
   logger.log('')
   logger.log(`## Scan ${afterScan.id}`)
   logger.log('')
   logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
   logger.log('')
-  for (const { 0: key, 1: value } of Object.entries(afterScan)) {
-    if (key === 'pull_request' && !value) {
-      continue
-    }
-    if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
-      )
-      logger.groupEnd()
-    }
-  }
+  outputDiffScanMetadata(afterScan)
 
   logger.log('')
 }
 
-export function logDiffArtifacts(
+export function outputDiffArtifactSummary(
   label: string,
-  artifacts: Array<{
-    type?: string | undefined
-    name?: string | undefined
-    version?: string | undefined
-  }>,
+  artifacts: SocketSdkSuccessResult<'getDiffScanById'>['data']['diff_scan']['artifacts']['added'],
 ): void {
   logger.log(`- ${label} packages: ${artifacts.length}`)
-  const first = artifacts.slice(0, 10)
-  for (let i = 0; i < first.length; i += 1) {
-    const artifact = first[i]!
-    logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-  }
-  if (artifacts.length > 10) {
-    logger.log(`  … and ${artifacts.length - 10} more`)
+  if (artifacts.length > 0) {
+    const head = artifacts.slice(0, 10)
+    for (let index = 0, { length } = head; index < length; index += 1) {
+      const artifact = head[index]!
+      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+    }
+    if (artifacts.length > 10) {
+      logger.log(`  … and ${artifacts.length - 10} more`)
+    }
   }
 }
 
@@ -189,4 +167,20 @@ export async function outputDiffScan(
   )
   logger.error('')
   logger.info(dashboardMessage)
+}
+
+export function outputDiffScanMetadata(
+  scan: SocketSdkSuccessResult<'getDiffScanById'>['data']['diff_scan']['before_full_scan'],
+): void {
+  for (const { 0: key, 1: value } of Object.entries(scan)) {
+    if (key === 'pull_request' && !value) {
+      continue
+    }
+    if (!['id', 'organization_id', 'repository_id'].includes(key)) {
+      logger.group(
+        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
+      )
+      logger.groupEnd()
+    }
+  }
 }

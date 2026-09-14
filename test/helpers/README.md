@@ -111,7 +111,7 @@ expectResult(result)
   })
 ```
 
-### 4. Workspace Helpers (`workspace-helper.mts`)
+### 4. Workspace Helpers (`workspace-fixtures.mts`)
 
 Create and manage temporary test workspaces with package manifests, lockfiles, and configurations.
 
@@ -143,7 +143,6 @@ await withTestWorkspace(
 
 The library also re-exports existing helpers:
 
-- **constants.mts** - Test constants (timeouts, URLs, tokens)
 - **environment.mts** - Test environment setup
 - **fixtures.mts** - Test data fixtures
 - **mocks.mts** - Mock SDK and API functions

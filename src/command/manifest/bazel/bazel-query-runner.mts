@@ -7,9 +7,6 @@ import type { RepoProbe } from './bazel-repo-discovery.mts'
 const logger = getDefaultLogger()
 
 export type BazelQueryOptions = {
-  bin: string
-  cwd: string
-  invocationFlags: string[]
   bazelRc?: string | undefined
   bazelFlags?: string | undefined
   bazelOutputBase?: string | undefined
@@ -22,6 +19,12 @@ export type BazelQueryOptions = {
   outputUserRoot?: string | undefined
   env?: NodeJS.ProcessEnv | undefined
   verbose?: boolean | undefined
+} & BazelQueryRequired
+
+export type BazelQueryRequired = {
+  bin: string
+  cwd: string
+  invocationFlags: string[]
 }
 
 export type BazelQueryResult = {
@@ -377,7 +380,7 @@ export async function runBazelQuery(
   const spinner = getDefaultSpinner()
   let result: BazelQueryResult | undefined
   try {
-    spinner.start(`Running bazel query (${queryStr.slice(0, 80)})…`)
+    spinner.start(`Running bazel query: ${queryStr.slice(0, 80)}…`)
     const spawnOutput = await spawn(cfg.bin, argv, {
       cwd: cfg.cwd,
       timeout: BAZEL_QUERY_TIMEOUT_MS,

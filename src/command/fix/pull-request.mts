@@ -45,6 +45,7 @@ export type GQL_MERGE_STATE_STATUS =
 export type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
 
 export type PrMatch = {
+  readonly __proto__: null
   author: string
   baseRefName: string
   headRefName: string
@@ -52,6 +53,87 @@ export type PrMatch = {
   number: number
   state: GQL_PR_STATE
   title: string
+}
+
+export function appendMatchingPrNodes(
+  contextualMatches: ContextualPrMatch[],
+  nodes: GqlPrNode[],
+  config: {
+    author: string | undefined
+    branchPattern: RegExp
+    cacheKey: string
+    checkAuthor: boolean
+    data: JsonContent
+  },
+): void {
+  const { author, branchPattern, cacheKey, checkAuthor, data } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  for (let i = 0, { length } = nodes; i < length; i += 1) {
+    const node = nodes[i]!
+    const login = node.author?.login
+    if (
+      (!checkAuthor || login === author) &&
+      branchPattern.test(node.headRefName)
+    ) {
+      contextualMatches.push({
+        __proto__: null,
+        context: {
+          __proto__: null,
+          apiType: 'graphql',
+          cacheKey,
+          data,
+          entry: node,
+          index: i,
+          parent: nodes,
+        },
+        match: { __proto__: null, ...node, author: login ?? UNKNOWN_VALUE },
+      })
+    }
+  }
+}
+
+export function classifyOpenPrError(error: unknown): OpenPrResult {
+  if (!(error instanceof RequestError)) {
+    return { ok: false, reason: 'unknown', error: error as Error }
+  }
+  const errors = (
+    error.response?.data as { errors?: unknown | undefined } | undefined
+  )?.errors
+  const errorMessages = Array.isArray(errors)
+    ? errors.map(
+        (detail: {
+          message?: string | undefined
+          resource?: string | undefined
+          field?: string | undefined
+          code?: string | undefined
+        }) =>
+          detail.message?.trim() ??
+          `${detail.resource}.${detail.field} (${detail.code})`,
+      )
+    : []
+  if (
+    errorMessages.some(message =>
+      message.toLowerCase().includes('pull request already exists'),
+    )
+  ) {
+    return { ok: false, reason: 'already_exists', error }
+  }
+  if (errorMessages.length > 0) {
+    return {
+      ok: false,
+      reason: 'validation_error',
+      error,
+      details: errorMessages.map(message => `- ${message}`).join('\n'),
+    }
+  }
+  if (error.status === 403 || error.status === 401) {
+    return { ok: false, reason: 'permission_denied', error }
+  }
+  return error.status && error.status >= 500
+    ? { ok: false, reason: 'network_error', error }
+    : { ok: false, reason: 'unknown', error }
 }
 
 export async function cleanupSocketFixPrs(
@@ -195,7 +277,9 @@ export type GqlPullRequestsResponse = {
 }
 
 export type ContextualPrMatch = {
+  readonly __proto__: null
   context: {
+    readonly __proto__: null
     apiType: 'graphql' | 'rest'
     cacheKey: string
     data: JsonContent
@@ -244,7 +328,7 @@ export async function getSocketFixPrsWithContext(
         () =>
           octokitGraphql(
             `
-              query($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
+              query PullRequests($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
                 repository(owner: $owner, name: $repo) {
                   pullRequests(first: 100, states: $states, after: $after, orderBy: {field: CREATED_AT, direction: DESC}) {
                     pageInfo {
@@ -281,32 +365,13 @@ export async function getSocketFixPrsWithContext(
         pageInfo: { hasNextPage: false, endCursor: undefined },
       }
 
-      collectPageMatches()
-
-      function collectPageMatches() {
-        for (let i = 0, { length } = nodes; i < length; i += 1) {
-          const node = nodes[i]!
-          const login = node.author?.login
-          const matchesAuthor = checkAuthor ? login === author : true
-          const matchesBranch = branchPattern.test(node.headRefName)
-          if (matchesAuthor && matchesBranch) {
-            contextualMatches.push({
-              context: {
-                apiType: 'graphql',
-                cacheKey: `${gqlCacheKey}-page-${pageIndex}`,
-                data: gqlResp,
-                entry: node,
-                index: i,
-                parent: nodes,
-              },
-              match: {
-                ...node,
-                author: login ?? UNKNOWN_VALUE,
-              },
-            })
-          }
-        }
-      }
+      appendMatchingPrNodes(contextualMatches, nodes, {
+        author,
+        branchPattern,
+        cacheKey: `${gqlCacheKey}-page-${pageIndex}`,
+        checkAuthor,
+        data: gqlResp,
+      })
 
       // Continue to next page.
       hasNextPage = pageInfo.hasNextPage
@@ -423,59 +488,7 @@ export async function openSocketFixPr(
     debug(formatErrorWithDetail('Failed to create pull request', e))
     debugDir(e)
 
-    // Handle RequestError from Octokit/provider.
-    if (e instanceof RequestError) {
-      const errors = (
-        e.response?.data as { errors?: unknown | undefined } | undefined
-      )?.errors
-      const errorMessages = Array.isArray(errors)
-        ? errors.map(
-            (d: {
-              message?: string | undefined
-              resource?: string | undefined
-              field?: string | undefined
-              code?: string | undefined
-            }) => d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
-          )
-        : []
-
-      // Check for "PR already exists" error.
-      if (
-        errorMessages.some((msg: string) =>
-          msg.toLowerCase().includes('pull request already exists'),
-        )
-      ) {
-        debug('Failed to create pull request: already exists')
-        return { ok: false, reason: 'already_exists', error: e }
-      }
-
-      // Check for validation errors (e.g., no commits between branches).
-      if (Array.isArray(errors) && errors.length > 0) {
-        const details = errorMessages.map((d: string) => `- ${d}`).join('\n')
-        debug(`Failed to create pull request:\n${details}`)
-        return {
-          ok: false,
-          reason: 'validation_error',
-          error: e,
-          details,
-        }
-      }
-
-      // Check HTTP status codes for permission errors.
-      if (e.status === 403 || e.status === 401) {
-        debug('Failed to create pull request: permission denied')
-        return { ok: false, reason: 'permission_denied', error: e }
-      }
-
-      // Check for server errors.
-      if (e.status && e.status >= 500) {
-        debug('Failed to create pull request: network error')
-        return { ok: false, reason: 'network_error', error: e }
-      }
-    }
-
-    // Unknown error.
     debug(`Failed to create pull request: ${errorMessage(e)}`)
-    return { ok: false, reason: 'unknown', error: e as Error }
+    return classifyOpenPrError(e)
   }
 }

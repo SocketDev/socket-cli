@@ -43,6 +43,28 @@ export const cmdRepositoryList = {
   run,
 }
 
+export function isRepositoryListSelection(config: {
+  direction: unknown
+  page: unknown
+  perPage: unknown
+  sort: unknown
+}): config is {
+  direction: Direction
+  page: number
+  perPage: number
+  sort: RepositorySort
+} {
+  const cfg = { __proto__: null, ...config } as typeof config
+  return (
+    (cfg.direction === 'asc' || cfg.direction === 'desc') &&
+    (cfg.sort === 'created_at' ||
+      cfg.sort === 'name' ||
+      cfg.sort === 'updated_at') &&
+    typeof cfg.page === 'number' &&
+    typeof cfg.perPage === 'number'
+  )
+}
+
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
@@ -147,12 +169,8 @@ export async function run(
   // Re-assert the checkCommandInput guards for the type system — meow's
   // number-typed flags deliver the raw string for garbage input, and the
   // string-typed enum flags accept any string.
-  if (
-    (direction !== 'asc' && direction !== 'desc') ||
-    (sort !== 'created_at' && sort !== 'name' && sort !== 'updated_at') ||
-    typeof page !== 'number' ||
-    typeof perPage !== 'number'
-  ) {
+  const selection = { direction, page, perPage, sort }
+  if (!isRepositoryListSelection(selection)) {
     return
   }
 
@@ -160,22 +178,22 @@ export async function run(
     outputDryRunFetch('repositories', {
       organization: orgSlug,
       all: all || undefined,
-      sort,
-      direction,
-      page: all ? undefined : page,
-      perPage: all ? undefined : perPage,
+      sort: selection.sort,
+      direction: selection.direction,
+      page: all ? undefined : selection.page,
+      perPage: all ? undefined : selection.perPage,
     })
     return
   }
 
   await handleListRepos({
     all,
-    direction,
+    direction: selection.direction,
     orgSlug,
     outputKind,
-    page,
-    perPage,
-    sort,
+    page: selection.page,
+    perPage: selection.perPage,
+    sort: selection.sort,
   })
 
   function validateCommandInput() {

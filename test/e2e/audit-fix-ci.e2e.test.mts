@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane
 /**
  * @file E2E tests for `socket audit-log`, `socket fix`, and `socket ci`. Ported
  *   from the corresponding sections of `packages/cli/test/smoke.sh`. These

@@ -21,7 +21,6 @@
     "socket-yarn": "dist/socket-yarn.js"
   },
   "files": [
-    "CHANGELOG.md",
     "DISCLOSURE",
     "README.md",
     "data/**",
@@ -29,6 +28,7 @@
   ],
   "publishConfig": {
     "access": "public",
+    "provenance": true,
     "registry": "https://registry.npmjs.org/",
     "tag": "prerelease"
   },
@@ -80,7 +80,7 @@
     "npm:staged": "node scripts/fleet/publish-pipeline.mts --status",
     "npm:trust": "node scripts/fleet/registry-infra/npm/settings/trust.mts",
     "offload:model": "node scripts/fleet/offload-model.mts",
-    "preflight": "node scripts/repo/bootstrap/fleet.mjs --ensure-current --quiet && node scripts/fleet/preflight.mts",
+    "preflight": "node scripts/repo/bootstrap/fleet.mjs --quiet && node scripts/fleet/preflight.mts",
     "prepare": "node scripts/repo/bootstrap/prepare.mts && node scripts/fleet/install-git-hooks.mts && node scripts/fleet/prepare.mts",
     "prepublishOnly": "echo 'ERROR: Use GitHub Actions workflow for publishing' && exit 1",
     "pretest": "pnpm run build:cli",
@@ -89,8 +89,9 @@
     "prune:branch-backups": "node scripts/fleet/backup-branches.mts prune",
     "prune:caches": "node scripts/fleet/prune-actions-caches.mts",
     "prune:gha-caches": "node scripts/fleet/prune-actions-caches.mts",
+    "remote:github:release": "node scripts/fleet/release/github/remote.mts",
     "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
-    "s": "node scripts/repo/cli-build/run-dist.mts --",
+    "s": "node dist/index.js",
     "security": "node scripts/fleet/security.mts",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
     "setup:brew": "node scripts/fleet/setup/brew.mts",
@@ -116,7 +117,7 @@
     "update": "node scripts/fleet/update.mts",
     "weekly-update": "node scripts/fleet/weekly-update.mts",
     "weekly-update:ci": "gh workflow run weekly-update.yml",
-    "release:hint": "node scripts/fleet/release/hint.mts",
+    "cover:allowance": "node scripts/fleet/cover-allowance.mts",
     "audit:consumer-source": "node scripts/fleet/audit/consumer-source.mts",
     "ai-balancer": "node scripts/fleet/ai/balancer/launch.mts",
     "ai-balancer:auth": "node scripts/fleet/ai/balancer/login.mts",
@@ -137,23 +138,26 @@
     "integrity-refresh": "node scripts/fleet/external-tools/refresh.mts",
     "setup:1password": "node scripts/fleet/setup/one-password.mts",
     "setup:ci:local": "node scripts/fleet/ci/local/setup.mts",
-    "setup:ci:remote": "node scripts/fleet/ci/remote/setup.mts",
     "setup:ai-clients": "node scripts/fleet/setup/ai-clients.mts",
     "setup:pgbot": "node scripts/fleet/setup/pgbot.mts",
-    "lockstep:assist": "node scripts/fleet/lockstep/assist/run.mts",
-    "mcp:1password": "node scripts/fleet/mcp/1password/run.mts",
     "mcp:connect": "node scripts/fleet/mcp/connect.mts",
     "mcp:pgbot": "node scripts/fleet/mcp/pgbot/run.mts",
     "mcp:schemas:check": "node scripts/fleet/mcp/schemas.mts check",
     "mcp:schemas:save": "node scripts/fleet/mcp/schemas.mts save",
     "mcp:status": "node scripts/fleet/mcp/connect.mts --status",
-    "npm:dispatch": "node scripts/fleet/registry-infra/remote-npm-publish.mts --publish",
     "npm:inventory": "node scripts/fleet/registry-infra/npm/account-inventory-read.mts",
     "soak:check": "node scripts/fleet/check/soak-time-is-consistent.mts",
     "sweep:worktrees": "node scripts/fleet/worktree-sweep.mts",
     "sweep:worktrees:visit": "node scripts/fleet/worktree/sweep/run.mts",
     "test:profile": "node scripts/fleet/test/profile.mts",
     "update:pnpm": "node scripts/fleet/update/pnpm.mts",
+    "setup:ci:remote": "node scripts/fleet/ci/remote/setup.mts",
+    "mcp:schema:check": "node scripts/repo/cli-build/mcp-schema.mts check",
+    "mcp:schema:update": "node scripts/repo/cli-build/mcp-schema.mts update && pnpm run format test/integration/mcp-schema.golden.json",
+    "release:hint": "node scripts/fleet/release/hint.mts",
+    "lockstep:assist": "node scripts/fleet/lockstep/assist/run.mts",
+    "mcp:1password": "node scripts/fleet/mcp/1password/run.mts",
+    "npm:dispatch": "node scripts/fleet/registry-infra/remote-npm-publish.mts --publish",
     "worktree:create": "node scripts/fleet/worktree/create/run.mts"
   },
   "devDependencies": {
@@ -199,7 +203,7 @@
     "@socketregistry/yocto-spinner": "catalog:",
     "@socketsecurity/lib": "catalog:",
     "@socketsecurity/lib-stable": "catalog:",
-    "@socketsecurity/odai": "0.2.1",
+    "@socketsecurity/odai": "catalog:",
     "@socketsecurity/registry": "catalog:",
     "@socketsecurity/registry-stable": "catalog:",
     "@socketsecurity/sdk": "catalog:",
@@ -237,7 +241,7 @@
     "chrome-devtools-mcp": "catalog:",
     "cmd-shim": "catalog:",
     "compromise": "catalog:",
-    "cross-env": "10.1.0",
+    "cross-env": "catalog:",
     "del-cli": "catalog:",
     "dev-null-cli": "catalog:",
     "ecc-agentshield": "catalog:",
@@ -251,7 +255,7 @@
     "ignore": "catalog:",
     "js-yaml": "catalog:",
     "lint-staged": "catalog:",
-    "lru-cache": "11.2.6",
+    "lru-cache": "catalog:",
     "magic-string": "catalog:",
     "markdownlint-cli2": "catalog:",
     "mcp-tada": "catalog:",
@@ -273,7 +277,7 @@
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "parse5": "catalog:",
-    "pastoralist": "1.13.0",
+    "pastoralist": "catalog:",
     "playwright-core": "catalog:",
     "portless": "catalog:",
     "postject": "catalog:",
@@ -317,11 +321,18 @@
     "strict": true
   },
   "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.25.0 || >=12.3.4",
-      "onFail": "error"
-    }
+    "packageManager": [
+      {
+        "name": "npm",
+        "version": "^11.19.0 || >=12.0.2",
+        "onFail": "error"
+      },
+      {
+        "name": "pnpm",
+        "version": "^11.25.0 || >=12.3.4",
+        "onFail": "error"
+      }
+    ]
   },
   "engines": {
     "node": ">=24",

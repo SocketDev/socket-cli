@@ -9,4 +9,4 @@ const path = require('node:path')
 
 // Load CLI from dist directory
 const cliPath = path.join(__dirname, 'cli.js')
-require(cliPath)
+require(cliPath).runCliProduct()

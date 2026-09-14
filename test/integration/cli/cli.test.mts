@@ -67,10 +67,10 @@ describe('socket root command', async () => {
             Local tools
               manifest                    Generate a dependency manifest for certain ecosystems
               npm                         Run npm with Socket Firewall security
-              npx                         Run npm exec with Socket Firewall security
+              npx                         Run pnpm exec with Socket Firewall security
               pycli                       Run Socket Python CLI (socketsecurity) directly
               raw-npm                     Run npm without the Socket wrapper
-              raw-npx                     Run npm exec without the Socket wrapper
+              raw-npx                     Run pnpm exec without the Socket wrapper
               sfw                         Run Socket Firewall directly (alias: firewall)
           
             CLI configuration

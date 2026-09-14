@@ -4,30 +4,12 @@ import path from 'node:path'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { onnxSemanticMatch } from './onnx-match.mts'
 import { outputAskCommand } from './output-ask.mts'
 import { normalizeQuery, wordOverlapMatch } from './word-overlap-match.mts'
 
-// Re-export the matchers + helpers so existing import paths keep working.
-export {
-  cosineSimilarity,
-  ensureCommandEmbeddings,
-  getEmbedding,
-  getEmbeddingPipeline,
-  onnxSemanticMatch,
-} from './onnx-match.mts'
-export {
-  extractWords,
-  loadSemanticIndex,
-  normalizeQuery,
-  wordOverlap,
-  wordOverlapMatch,
-} from './word-overlap-match.mts'
-
 const logger = getDefaultLogger()
 
-// Confidence threshold: pattern-match scores below this trigger the ONNX
-// semantic-match fallback (currently a no-op; see onnx-match.mts).
+// Low-scoring patterns also try deterministic word overlap.
 const PATTERN_MATCH_THRESHOLD = 0.6
 
 export interface ParsedIntent {
@@ -194,6 +176,11 @@ export async function handleAsk(
   // Parse the intent.
   const intent = await parseIntent(query)
 
+  if (!intent) {
+    outputAskCommand(query, undefined, { hasPackageJson: false }, { explain })
+    return
+  }
+
   // Get project context.
   const context = await getProjectContext(process.cwd())
 
@@ -246,7 +233,9 @@ export function lookupPattern(action: string): AskPattern | undefined {
 /**
  * Parse natural language query into structured intent.
  */
-export async function parseIntent(query: string): Promise<ParsedIntent> {
+export async function parseIntent(
+  query: string,
+): Promise<ParsedIntent | undefined> {
   // Normalize the query to handle verb tenses, plurals, etc.
   const lowerQuery = normalizeQuery(query)
 
@@ -261,12 +250,13 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
     if (quotedMatch) {
       extractedPackageName = quotedMatch[1]
     } else {
-      // Try to find package name after "is", "check", "about", "with".
+      // Extract a package name after a supported query verb.
       // Must look like a real package (has @, /, or contains common package patterns).
-      // (?:about|check|is|with) — one of four trigger verbs (non-capturing)
+      // (?:about|check|is|trust|with) — trigger verbs (non-capturing)
       // \s+                     — one or more whitespace chars after the verb
       // ([a-z0-9-@/]+)          — capture: package-name chars (letters, digits, dash, @, slash)
-      const extractedPackageNameRe = /(?:about|check|is|with)\s+([a-z0-9-@/]+)/i
+      const extractedPackageNameRe =
+        /(?:about|check|is|trust|with)\s+([a-z0-9-@/]+)/i
       const pkgMatch = query.toLowerCase().match(extractedPackageNameRe)
       if (pkgMatch) {
         const candidate = pkgMatch[1]
@@ -290,6 +280,8 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
             'security',
             'safe',
             'check',
+            'package',
+            'dependency',
           ]
           if (!commonWords.includes(candidate)) {
             extractedPackageName = candidate
@@ -343,13 +335,25 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
       }
     | undefined = undefined
 
+  if (packageName && /\babout\b/u.test(lowerQuery)) {
+    bestMatch = {
+      action: 'package',
+      command: [...PATTERNS.package.command],
+      explanation: PATTERNS.package.explanation,
+      confidence: 1,
+      score: 1,
+    }
+  }
   matchIntentPatterns()
   function matchIntentPatterns(): void {
     const patternEntries = (
       ['fix', 'patch', 'optimize', 'package', 'scan', 'issues'] as const
     ).map(patternKey => [patternKey, PATTERNS[patternKey]] as const)
     for (const [action, pattern] of patternEntries) {
-      if (!pattern) {
+      if (
+        !pattern ||
+        (action === 'package' && !packageName && /\bscan\b/u.test(lowerQuery))
+      ) {
         continue
       }
       const matchCount = pattern.keywords.filter(kw =>
@@ -396,40 +400,11 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
         }
         /* c8 ignore stop */
       }
-
-      // Strategy 2: ONNX semantic matching (50-80ms, 95-98% accuracy).
-      // Only try if still low confidence.
-      if (!bestMatch || bestMatch.confidence < 0.5) {
-        const onnxMatch = await onnxSemanticMatch(query)
-
-        if (onnxMatch && onnxMatch.confidence > (bestMatch?.confidence || 0)) {
-          // Use ONNX semantic match.
-          /* c8 ignore start - ONNX match selected branch; requires onnxSemanticMatch to return a specific PATTERNS-keyed action that beats the current confidence; tests cover the matchers in isolation */
-          const pattern = lookupPattern(onnxMatch.action)
-          if (pattern) {
-            bestMatch = {
-              action: onnxMatch.action,
-              command: [...pattern.command],
-              explanation: pattern.explanation,
-              confidence: onnxMatch.confidence,
-              score: onnxMatch.confidence,
-            }
-          }
-          /* c8 ignore stop */
-        }
-      }
     }
   }
 
-  // Default to scan if still no match.
-  if (!bestMatch) {
-    bestMatch = {
-      action: 'scan',
-      command: ['scan', 'create'],
-      explanation: 'Scanning your project',
-      confidence: 0.5,
-      score: 0.5,
-    }
+  if (!bestMatch || (bestMatch.action === 'package' && !packageName)) {
+    return undefined
   }
 
   return buildIntentCommand(bestMatch)

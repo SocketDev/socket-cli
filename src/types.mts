@@ -18,14 +18,14 @@ export type TrufflehogChecksums = Record<string, string>
 // "CResult" is easier to grep for than "result". Short for CliJsonResult.
 export type CResult<T> =
   | {
-      __proto__?: null | undefined
+      __proto__?: unknown | undefined
       ok: true
       data: T
       // The message prop may contain warnings that we want to convey.
       message?: string | undefined
     }
   | {
-      __proto__?: null | undefined
+      __proto__?: unknown | undefined
       ok: false
       // This should be set to process.exitCode if this
       // payload is actually displayed to the user.
@@ -40,3 +40,8 @@ export type CResult<T> =
       // If set, this may conform to the actual payload.
       data?: unknown | undefined
     }
+declare global {
+  interface Object {
+    readonly __proto__: unknown
+  }
+}

@@ -20,8 +20,8 @@ import {
   stripTrailingSlashFromIgnorePattern,
 } from './glob-ignore.mts'
 import { homePath } from '../../constants/paths.mts'
+import { PNPM } from '../../constants/agents.mts'
 import { NODE_MODULES } from '../../constants/packages.mts'
-import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import type { IgnoreMatcher } from './glob-ignore.mts'
 import type { Agent } from '../ecosystem/environment.mts'
@@ -70,8 +70,8 @@ const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
 const PYVENV_CFG = 'pyvenv.cfg'
 
 export function buildGitIgnoreMatchers(
-  projectIgnoreLines: string[],
   gitignoreFiles: Array<{ content: string; dir: string }>,
+  projectIgnoreLines: string[],
 ): Map<string, IgnoreMatcher[]> {
   const byDir = new Map<string, IgnoreMatcher[]>()
   const igByContent = new Map<string, IgnoreMatcher>()
@@ -110,12 +110,11 @@ export async function discoverGitIgnoreFiles(
   cwd: string,
   projectIgnoreGlobs: string[],
   ignores: Set<string>,
-) {
-  for (let i = 0, { length } = projectIgnoreGlobs; i < length; i += 1) {
-    const pattern = projectIgnoreGlobs[i]!
-    ignores.add(pattern)
-  }
-
+): Promise<{
+  readonly __proto__: null
+  gitignoreFiles: Array<{ content: string; dir: string }>
+  venvGlobs: string[]
+}> {
   // Raw per-directory `.gitignore` contents from discovery. Matchers are built
   // from these only when a pattern is negated (see below).
   const gitignoreFiles: Array<{ content: string; dir: string }> = []
@@ -193,6 +192,19 @@ export async function discoverGitIgnoreFiles(
   return { __proto__: null, gitignoreFiles, venvGlobs }
 }
 
+export function getProjectIgnoreGlobs(
+  projectIgnoreLines: string[],
+  cwd: string,
+): string[] {
+  return projectIgnoreLines.length
+    ? ignoreFileLinesToGlobPatterns(
+        projectIgnoreLines,
+        path.join(cwd, '.gitignore'),
+        cwd,
+      )
+    : []
+}
+
 export function getSupportedFilePatterns(
   supportedFiles: SupportedFiles,
 ): string[] {
@@ -254,22 +266,19 @@ export async function globWithGitIgnore(
   const projectIgnoreLines = Array.isArray(projectIgnorePaths)
     ? projectIgnorePaths
     : []
-  const projectIgnoreGlobs = projectIgnoreLines.length
-    ? ignoreFileLinesToGlobPatterns(
-        projectIgnoreLines,
-        path.join(cwd, '.gitignore'),
-        cwd,
-      )
-    : []
+  const projectIgnoreGlobs = getProjectIgnoreGlobs(projectIgnoreLines, cwd)
+  for (let i = 0, { length } = projectIgnoreGlobs; i < length; i += 1) {
+    const pattern = projectIgnoreGlobs[i]!
+    ignores.add(pattern)
+  }
+
   const { gitignoreFiles, venvGlobs } = await discoverGitIgnoreFiles(
     cwd,
     projectIgnoreGlobs,
     ignores,
   )
 
-  const hasNegatedPattern = Array.from(ignores).some(
-    pattern => pattern.charCodeAt(0) === 33,
-  )
+  const hasNegatedPattern = hasNegatedIgnorePattern(ignores)
 
   const globOptions = {
     __proto__: null,
@@ -304,7 +313,7 @@ export async function globWithGitIgnore(
   // matcher over every anchored pattern can exhaust V8 code space on big repos).
   let matchersByDir: Map<string, IgnoreMatcher[]> | undefined
   if (hasNegatedPattern) {
-    matchersByDir = buildGitIgnoreMatchers(projectIgnoreLines, gitignoreFiles)
+    matchersByDir = buildGitIgnoreMatchers(gitignoreFiles, projectIgnoreLines)
   }
 
   // Stream so memory stays bounded on large monorepos with 100k+ files: the
@@ -348,6 +357,17 @@ export async function globWorkspace(
         ignore: [...defaultIgnore],
       })
     : []
+}
+
+export function hasNegatedIgnorePattern(ignores: Set<string>): boolean {
+  let hasNegatedPattern = false
+  for (const p of ignores) {
+    if (p.charCodeAt(0) === 33 /*'!'*/) {
+      hasNegatedPattern = true
+      break
+    }
+  }
+  return hasNegatedPattern
 }
 
 export function isReportSupportedFile(

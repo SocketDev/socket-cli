@@ -11,9 +11,17 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  BUN,
   getMinimumVersionByAgent,
   getNpmExecPath,
   getPnpmExecPath,
+  NPM,
+  NPX,
+  PNPM,
+  VLT,
+  YARN,
+  YARN_BERRY,
+  YARN_CLASSIC,
 } from '../../../src/constants/agents.mts'
 
 // Mock dependencies using hoisted mocks.
@@ -38,6 +46,40 @@ describe('agents constants', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
+  })
+
+  describe('agent name constants', () => {
+    it('has BUN constant', () => {
+      expect(BUN).toBe('bun')
+    })
+
+    it('has NPM constant', () => {
+      expect(NPM).toBe('npm')
+    })
+
+    it('has NPX constant', () => {
+      expect(NPX).toBe('npx')
+    })
+
+    it('has PNPM constant', () => {
+      expect(PNPM).toBe('pnpm')
+    })
+
+    it('has VLT constant', () => {
+      expect(VLT).toBe('vlt')
+    })
+
+    it('has YARN constant', () => {
+      expect(YARN).toBe('yarn')
+    })
+
+    it('has YARN_BERRY constant', () => {
+      expect(YARN_BERRY).toBe('yarn/berry')
+    })
+
+    it('has YARN_CLASSIC constant', () => {
+      expect(YARN_CLASSIC).toBe('yarn/classic')
+    })
   })
 
   describe('getMinimumVersionByAgent', () => {

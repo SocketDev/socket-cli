@@ -1,28 +1,21 @@
+import {
+  extractWords,
+  normalizeQuery,
+  wordOverlap,
+  wordOverlapMatch,
+} from '../../../../src/command/ask/word-overlap-match.mts'
 /**
  * Unit tests for ask command handler.
  *
- * Tests `handleAsk` execution/output behavior and the smaller natural
- * language helper functions (`normalizeQuery`, `extractWords`, `wordOverlap`,
- * `wordOverlapMatch`, `cosineSimilarity`, the embedding pipeline helpers, and
- * `onnxSemanticMatch`). The `parseIntent` intent-detection matrix lives in
- * `handle-ask-parse-intent.test.mts`.
+ * Tests handler execution and deterministic matching helpers.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  cosineSimilarity,
-  ensureCommandEmbeddings,
-  extractWords,
   getCliReentryArgv,
-  getEmbedding,
-  getEmbeddingPipeline,
   handleAsk,
-  normalizeQuery,
-  onnxSemanticMatch,
   parseIntent,
-  wordOverlap,
-  wordOverlapMatch,
 } from '../../../../src/command/ask/handle-ask.mts'
 
 // Mock dependencies.
@@ -275,63 +268,6 @@ describe('wordOverlapMatch', () => {
   })
 })
 
-describe('cosineSimilarity', () => {
-  it('returns 0 for vectors of different lengths', () => {
-    expect(
-      cosineSimilarity(new Float32Array([1, 2]), new Float32Array([1, 2, 3])),
-    ).toBe(0)
-  })
-
-  it('computes dot product for matching-length normalized vectors', () => {
-    // Two identical unit vectors → dot product 1.
-    const a = new Float32Array([1, 0, 0])
-    const b = new Float32Array([1, 0, 0])
-    expect(cosineSimilarity(a, b)).toBe(1)
-  })
-
-  it('returns 0 for orthogonal unit vectors', () => {
-    const a = new Float32Array([1, 0, 0])
-    const b = new Float32Array([0, 1, 0])
-    expect(cosineSimilarity(a, b)).toBe(0)
-  })
-
-  it('handles undefined entries (treated as 0)', () => {
-    const a = new Float32Array([1, 2, 3])
-    const b = new Float32Array([4, 5, 6])
-    // 1*4 + 2*5 + 3*6 = 32.
-    expect(cosineSimilarity(a, b)).toBe(32)
-  })
-})
-
-describe('getEmbeddingPipeline', () => {
-  it('returns undefined when pipeline is temporarily disabled', async () => {
-    const result = await getEmbeddingPipeline()
-    expect(result).toBeUndefined()
-  })
-})
-
-describe('getEmbedding', () => {
-  it('returns undefined when embedding pipeline is unavailable', async () => {
-    const result = await getEmbedding('any text')
-    expect(result).toBeUndefined()
-  })
-})
-
-describe('ensureCommandEmbeddings', () => {
-  it('completes without throwing when pipeline is unavailable', async () => {
-    // With the pipeline disabled, getEmbedding returns null for every
-    // command description and no embeddings are stored.
-    await expect(ensureCommandEmbeddings()).resolves.toBeUndefined()
-  })
-})
-
-describe('onnxSemanticMatch', () => {
-  it('returns undefined when embedding pipeline unavailable', async () => {
-    const result = await onnxSemanticMatch('fix vulnerabilities')
-    expect(result).toBeUndefined()
-  })
-})
-
 describe('parseIntent semantic match fallthrough', () => {
   it('skips wordOverlapMatch when action not in PATTERNS (lines 512-514)', async () => {
     // Provide a semantic index whose top match action is unknown to PATTERNS,
@@ -348,7 +284,22 @@ describe('parseIntent semantic match fallthrough', () => {
     // Use a query that matches 'xyz totally unrelated' but doesn't hit
     // any pattern keyword.
     const result = await parseIntent('xyz totally unrelated query')
-    // Should fall through to a default action (parseIntent always returns one).
-    expect(result.action).toBeDefined()
+    expect(result).toBeUndefined()
   })
+})
+
+describe('unresolved requests', () => {
+  it.each(['', 'help me', 'xyz totally unrelated query'])(
+    'never executes %j',
+    async query => {
+      await handleAsk(query, { execute: true })
+      expect(mockSpawn).not.toHaveBeenCalled()
+      expect(mockOutputAskCommand).toHaveBeenCalledWith(
+        query,
+        undefined,
+        expect.anything(),
+        expect.anything(),
+      )
+    },
+  )
 })

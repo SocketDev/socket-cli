@@ -20,6 +20,10 @@ import { getMajor as getMajorVersion } from '../../util/semver.mts'
 import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+// Feature-detects fetchChangelog, an odai >=0.3 export the pinned 0.2.1
+// type declarations don't carry yet.
+// oxlint-disable-next-line socket/no-namespace-import -- feature detection
+import * as odai from '@socketsecurity/odai'
 import {
   assessHoistSafety,
   createOdaiModel,
@@ -86,13 +90,26 @@ const BACKEND_NAMES: readonly string[] = [
 ]
 
 /**
- * Load the installed changelog or the registry README with its provenance.
+ * Odai's changelog helper (odai >=0.3) with the pacote-README fallback for
+ * the released line. Same contract either way: text plus its provenance.
  */
 export async function changelogFor(
   root: string,
   name: string,
   target: string,
 ): Promise<{ source: string; text: string }> {
+  const helper = (odai as Record<string, unknown>)['fetchChangelog']
+  if (typeof helper === 'function') {
+    const result = await (
+      helper as (
+        name: string,
+        options?:
+          | { root?: string | undefined; version?: string | undefined }
+          | undefined,
+      ) => Promise<{ source: string; text: string }>
+    )(name, { root, version: target })
+    return result.source === 'none' ? { source: 'none', text: '' } : result
+  }
   const local = findLocalChangelog(root, name)
   if (local !== undefined) {
     return { __proto__: null, source: 'CHANGELOG.md', text: local } as {
@@ -189,6 +206,51 @@ export function findLocalChangelog(
   return undefined
 }
 
+export function formatHoistSuggestion(config: {
+  assessFailed: boolean
+  backend: string | undefined
+  changelog: string
+  duplicate: HoistDuplicate
+  lowest: string
+  source: string
+  target: string
+  verdict: HoistAssessment | undefined
+}): string {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const via =
+    cfg.backend === undefined
+      ? ''
+      : BACKEND_NAMES.includes(cfg.backend)
+        ? ` (odai unknown model via ${cfg.backend})`
+        : ` (odai ${cfg.backend})`
+  if (cfg.verdict?.verdict === 'safe') {
+    return (
+      `${cfg.duplicate.name} ${cfg.lowest} → ${cfg.target}: safe to unify — ` +
+      `add \`hoistPattern: ['${cfg.duplicate.name}']\` to .npmrc` +
+      ` (assessed against ${cfg.source}${via})`
+    )
+  }
+  if (cfg.verdict) {
+    const reasons = cfg.verdict.breakingChanges.slice(0, 2).join('; ')
+    const reason = reasons || cfg.verdict.reason
+    return (
+      `${cfg.duplicate.name} ${cfg.lowest} → ${cfg.target}: ${cfg.verdict.verdict}` +
+      (reason ? ` (${reason})` : '') +
+      ` (assessed against ${cfg.source}${via})`
+    )
+  }
+  if (cfg.changelog.length > 0 && cfg.assessFailed) {
+    return (
+      `${cfg.duplicate.name} ${cfg.lowest} → ${cfg.target}: assessment failed against ` +
+      `${cfg.source} — review manually`
+    )
+  }
+  return (
+    `${cfg.duplicate.name} sits on majors ${cfg.duplicate.majors.join(', ')} — ` +
+    'review unifying (no changelog to assess against)'
+  )
+}
+
 /**
  * The advisory. Cap at MAX_ADVISED duplicates (the worst offenders first by
  * major spread), verdict each when odai is available, and degrade to the
@@ -262,37 +324,16 @@ export async function hoistAdvisory(
     // `(odai unknown model via chrome-builtin)` when only the backend is
     // known; NO label when nothing is stamped at all — a meaningless label
     // does not print.
-    const via =
-      backend === undefined
-        ? ''
-        : BACKEND_NAMES.includes(backend)
-          ? ` (odai unknown model via ${backend})`
-          : ` (odai ${backend})`
-    let suggestion: string
-    if (verdict !== undefined && verdict.verdict === 'safe') {
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: safe to unify — ` +
-        `add \`hoistPattern: ['${duplicate.name}']\` to .npmrc` +
-        ` (assessed against ${source}${via})`
-    } else if (verdict !== undefined) {
-      const reasons = verdict.breakingChanges.slice(0, 2).join('; ')
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: ${verdict.verdict}` +
-        (reasons
-          ? ` (${reasons})`
-          : verdict.reason
-            ? ` (${verdict.reason})`
-            : '') +
-        ` (assessed against ${source}${via})`
-    } else if (changelog.length > 0 && assessFailed) {
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: assessment failed against ` +
-        `${source} — review manually`
-    } else {
-      suggestion =
-        `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — ` +
-        'review unifying (no changelog to assess against)'
-    }
+    const suggestion = formatHoistSuggestion({
+      assessFailed,
+      backend,
+      changelog,
+      duplicate,
+      lowest,
+      source,
+      target,
+      verdict,
+    })
     lines.push({ duplicate, suggestion, verdict })
   }
   return lines

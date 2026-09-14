@@ -13,7 +13,6 @@ import { trimNewlines } from '@socketsecurity/lib-stable/strings/transform'
 
 import { VITEST } from '../../env/vitest.mts'
 import { meow } from '../../meow.mts'
-import { isDebug } from '../debug.mts'
 import {
   resetMachineOutputMode,
   setMachineOutputMode,
@@ -89,7 +88,6 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     markdown: markdownFlag,
     org: orgFlag,
     quiet: quietFlag,
-    spinner: spinnerFlag,
     version: versionFlag,
   } = cli.flags as {
     compactHeader: boolean
@@ -98,7 +96,6 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     markdown: boolean | undefined
     org: string
     quiet: boolean | undefined
-    spinner: boolean
     version: boolean | undefined
   }
 
@@ -119,16 +116,6 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   })
 
   const compactMode = compactHeaderFlag || (isCI() && !VITEST)
-  const noSpinner = !spinnerFlag || isDebug()
-
-  // Use CI spinner style when --no-spinner is passed.
-  // This prevents the spinner from interfering with debug output.
-  if (noSpinner) {
-    // Note: Spinner configuration skipped here to avoid circular dependency with
-    // constants barrel. Spinner is managed via terminal/spinner state.
-    // Refactoring opportunity: Extract spinner to standalone module.
-  }
-
   if (!shouldSuppressBanner(cli.flags)) {
     emitBanner(command, { orgFlag, compactMode, flags: cli.flags })
     // Add newline in stderr.

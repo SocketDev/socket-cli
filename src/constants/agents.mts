@@ -10,13 +10,18 @@ import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 import {
   BUN,
   NPM,
+  NPX,
   PNPM,
   VLT,
+  YARN,
   YARN_BERRY,
   YARN_CLASSIC,
 } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import type { Agent } from '../util/ecosystem/environment.mjs'
+
+// Re-export agent constants for backward compatibility.
+export { BUN, NPM, NPX, PNPM, VLT, YARN, YARN_BERRY, YARN_CLASSIC }
 
 /**
  * Minimum supported versions for each package manager agent. These are the

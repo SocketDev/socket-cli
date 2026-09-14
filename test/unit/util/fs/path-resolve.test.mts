@@ -23,7 +23,7 @@ import {
   YARN_LOCK,
 } from '../../../../src/constants/packages.mts'
 import { getPackageFilesForScan } from '../../../../src/util/fs/path-resolve.mts'
-import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
+import { createTestWorkspace } from '../../../helpers/workspace-fixtures.mts'
 
 import type * as FsInspectModule from '@socketsecurity/lib-stable/fs/inspect'
 

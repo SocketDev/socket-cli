@@ -888,6 +888,7 @@ describe('meow-with-subcommands', () => {
     })
 
     it('handles dryRun without --help', async () => {
+      const exitSpy = vi.spyOn(process, 'exit')
       const subcommands = {
         scan: {
           description: 'scan',
@@ -902,7 +903,7 @@ describe('meow-with-subcommands', () => {
           subcommands,
         }),
       ).rejects.toBe(processExitError)
-      expect(vi.spyOn(process, 'exit')).toHaveBeenCalledWith(0)
+      expect(exitSpy).toHaveBeenCalledWith(0)
       expect(subcommands.scan.run).not.toHaveBeenCalled()
     })
 

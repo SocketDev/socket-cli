@@ -54,6 +54,9 @@ For the hosted service, use your client's native remote connector with
 `https://mcp.socket.dev/`. In Claude Desktop, add it through **Customize >
 Connectors**.
 
+<details>
+<summary>Configure clients that require a stdio bridge</summary>
+
 Clients that require a stdio bridge can use the verified `mcp-remote@0.8.3`
 release. Install it with `pnpm add --global mcp-remote@0.8.3`, then configure:
 
@@ -75,6 +78,8 @@ can open authorization after connection without starting that listener. The
 localhost callback. Reauthorization recovery was verified against the published
 bridge transport; a complete browser login remains a separate integration check.
 
+</details>
+
 ## Architecture
 
 CLI entrypoints live in `src/command/`. Shared implementations live in `src/core/`. See the [architecture guide](docs/repo/architecture.md) for the source and test layout.
@@ -94,16 +99,16 @@ pnpm test
 
 Requires Node.js (see `.node-version`) and pnpm (see the `packageManager` field in `package.json`).
 
-| Command                       | Description                   |
-| ----------------------------- | ----------------------------- |
-| `pnpm run build`              | Smart build (skips unchanged) |
-| `pnpm run build --force`      | Force rebuild everything      |
-| `pnpm run build:cli`          | Build CLI package only        |
-| `pnpm run build:watch`        | Rebuild the CLI on changes    |
-| `pnpm test`                   | Run all tests                 |
-| `pnpm run test:unit -- --all` | Run all product unit tests    |
-| `pnpm run check`              | Lint + typecheck              |
-| `pnpm run fix`                | Auto-fix lint + formatting    |
+| Command                    | Description                   |
+| -------------------------- | ----------------------------- |
+| `pnpm run build`           | Smart build (skips unchanged) |
+| `pnpm run build --force`   | Force rebuild everything      |
+| `pnpm run build:cli`       | Build CLI package only        |
+| `pnpm run build:watch`     | Rebuild the CLI on changes    |
+| `pnpm test`                | Run all tests                 |
+| `pnpm run test:unit --all` | Run all product unit tests    |
+| `pnpm run check`           | Lint + typecheck              |
+| `pnpm run fix`             | Auto-fix lint + formatting    |
 
 Run the built CLI from source:
 
