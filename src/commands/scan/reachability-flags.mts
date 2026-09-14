@@ -104,6 +104,12 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Deprecated: use --exclude-paths instead. List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
   },
+  reachFallbackToRegularScan: {
+    type: 'boolean',
+    default: false,
+    description:
+      'If reachability analysis fails, continue with a regular SCA scan (without reachability results) instead of halting. By default, the CLI halts on reachability errors.',
+  },
   reachLazyMode: {
     type: 'boolean',
     default: false,

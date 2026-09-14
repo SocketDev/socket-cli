@@ -8,6 +8,8 @@
  * - extractReachabilityErrors: plain JSON + missing + malformed.
  * - getFullWorkspacePath: build-root/workspace labelling, including the
  *   single-root and absent-path cases.
+ * - snapshotSocketFacts: restores overwritten facts files and removes ones
+ *   the analysis created.
  *
  * Related Files:
  * - utils/coana.mts (implementation)
@@ -31,6 +33,7 @@ import {
   extractReachabilityErrors,
   extractTier1ReachabilityScanId,
   getFullWorkspacePath,
+  snapshotSocketFacts,
 } from './coana.mts'
 
 describe('coana facts-file utils', () => {
@@ -347,6 +350,76 @@ describe('coana facts-file utils', () => {
       expect(getFullWorkspacePath('services/gateway', '')).toBe(
         'services/gateway',
       )
+    })
+  })
+  describe('snapshotSocketFacts', () => {
+    it('restores a facts file the analysis overwrote in place', async () => {
+      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-snap-'))
+      const factsPath = path.join(wrapDir, '.socket.facts.json')
+      writeFileSync(factsPath, JSON.stringify({ producer: 'gradle' }))
+
+      try {
+        const snapshot = await snapshotSocketFacts(['.socket.facts.json'], {
+          cwd: wrapDir,
+          outputPath: '.socket.facts.json',
+          tmpDir: wrapDir,
+        })
+
+        writeFileSync(factsPath, '{"partial": true')
+
+        await snapshot.restore()
+
+        expect(JSON.parse(readFileSync(factsPath, 'utf8'))).toEqual({
+          producer: 'gradle',
+        })
+      } finally {
+        rmSync(wrapDir, { recursive: true, force: true })
+      }
+    })
+
+    it('removes an output file that did not exist before the analysis', async () => {
+      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-snap-'))
+      const factsPath = path.join(wrapDir, '.socket.facts.json')
+
+      try {
+        const snapshot = await snapshotSocketFacts([], {
+          cwd: wrapDir,
+          outputPath: '.socket.facts.json',
+          tmpDir: wrapDir,
+        })
+
+        writeFileSync(factsPath, JSON.stringify({ coana: 'partial' }))
+
+        await snapshot.restore()
+
+        expect(existsSync(factsPath)).toBe(false)
+      } finally {
+        rmSync(wrapDir, { recursive: true, force: true })
+      }
+    })
+
+    it('leaves non-facts paths alone', async () => {
+      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-snap-'))
+      const manifestPath = path.join(wrapDir, 'package.json')
+      writeFileSync(manifestPath, JSON.stringify({ name: 'pkg' }))
+
+      try {
+        const snapshot = await snapshotSocketFacts(['package.json'], {
+          cwd: wrapDir,
+          outputPath: '.socket.facts.json',
+          tmpDir: wrapDir,
+        })
+
+        writeFileSync(manifestPath, JSON.stringify({ name: 'changed' }))
+
+        await snapshot.restore()
+
+        expect(JSON.parse(readFileSync(manifestPath, 'utf8'))).toEqual({
+          name: 'changed',
+        })
+      } finally {
+        rmSync(wrapDir, { recursive: true, force: true })
+      }
     })
   })
 })

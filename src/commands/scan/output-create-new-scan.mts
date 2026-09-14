@@ -12,9 +12,17 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { FullScanResult } from '@socketsecurity/sdk'
 
+export type ReachabilityFallback = {
+  cause?: string | undefined
+  message: string
+}
+
 export type CreateNewScanOptions = {
   interactive?: boolean | undefined
   outputKind?: OutputKind | undefined
+  // Set when --reach-fallback-to-regular-scan downgraded the run, so machine
+  // consumers can tell a degraded scan from a full one.
+  reachabilityFallback?: ReachabilityFallback | undefined
   spinner?: Spinner | undefined
 }
 
@@ -25,6 +33,7 @@ export async function outputCreateNewScan(
   const {
     interactive = false,
     outputKind = 'text',
+    reachabilityFallback,
     spinner = constants.spinner,
   } = { __proto__: null, ...options } as CreateNewScanOptions
 
@@ -37,7 +46,10 @@ export async function outputCreateNewScan(
   spinner?.stop()
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    const payload: CResult<FullScanResult['data']> & {
+      reachabilityFallback?: ReachabilityFallback | undefined
+    } = reachabilityFallback ? { ...result, reachabilityFallback } : result
+    logger.log(serializeResultJson(payload))
     if (wasSpinning) {
       spinner.start()
     }
@@ -60,6 +72,12 @@ export async function outputCreateNewScan(
   if (outputKind === 'markdown') {
     logger.log('# Create New Scan')
     logger.log('')
+    if (reachabilityFallback) {
+      logger.log(
+        `Reachability analysis failed (${reachabilityFallback.message}); this Scan holds regular SCA results only.`,
+      )
+      logger.log('')
+    }
     if (result.data.id) {
       logger.log(
         `A [new Scan](${result.data.html_report_url}) was created with ID: ${result.data.id}`,

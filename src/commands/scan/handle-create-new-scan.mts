@@ -17,7 +17,10 @@ import { performReachabilityAnalysis } from './perform-reachability-analysis.mts
 import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { compressSocketFactsForUpload } from '../../utils/coana.mts'
+import {
+  compressSocketFactsForUpload,
+  snapshotSocketFacts,
+} from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
@@ -27,6 +30,7 @@ import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import { mergeResolvedPathsSidecars } from '../manifest/scripts/sidecar.mts'
 
+import type { ReachabilityFallback } from './output-create-new-scan.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
@@ -84,6 +88,7 @@ export type HandleCreateNewScanConfig = {
   outputKind: OutputKind
   reach: Remap<
     ReachabilityOptions & {
+      reachFallbackToRegularScan: boolean
       runReachabilityAnalysis: boolean
     }
   >
@@ -292,6 +297,7 @@ export async function handleCreateNewScan({
     let scanPaths: string[] = packagePaths
     let tier1ReachabilityScanId: string | undefined
     let reachabilityReport: string | undefined
+    let reachabilityFallback: ReachabilityFallback | undefined
 
     // If reachability is enabled, perform reachability analysis.
     if (reach.runReachabilityAnalysis) {
@@ -299,6 +305,12 @@ export async function handleCreateNewScan({
       logger.info('Starting reachability analysis...')
       debugFn('notice', 'Reachability analysis enabled')
       debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
+
+      const factsSnapshot = await snapshotSocketFacts(packagePaths, {
+        cwd,
+        outputPath: constants.DOT_SOCKET_DOT_FACTS_JSON,
+        tmpDir: manifestTmpDir,
+      })
 
       spinner.start()
 
@@ -318,36 +330,49 @@ export async function handleCreateNewScan({
       spinner.stop()
 
       if (!reachResult.ok) {
-        await outputCreateNewScan(reachResult, { interactive, outputKind })
-        return
-      }
-
-      logger.success('Reachability analysis completed successfully')
-
-      reachabilityReport = reachResult.data?.reachabilityReport
-
-      // When using only pre-generated SBOMs, build the scan from those inputs —
-      // CycloneDX, SPDX, and Socket facts (`.socket.facts.json`) — matching
-      // Coana's `--use-only-pregenerated-sboms` selection. Otherwise drop any
-      // stray `.socket.facts.json`; coana's fresh reachability report (appended
-      // below) is the authoritative facts file for the scan.
-      const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-        ? filterToPregeneratedSboms(packagePaths, supportedFiles)
-        : packagePaths.filter(
-            p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+        if (reach.reachFallbackToRegularScan) {
+          reachabilityFallback = {
+            cause: reachResult.cause,
+            message: reachResult.message,
+          }
+          // Restore the pre-analysis facts files: the regular scan must upload
+          // the inputs it would have had without --reach, not partial output.
+          await factsSnapshot.restore()
+          logger.warn(
+            `Reachability analysis failed: ${reachResult.message}${reachResult.cause ? ` — ${reachResult.cause}` : ''}. Falling back to a regular SCA scan without reachability results.`,
           )
+        } else {
+          await outputCreateNewScan(reachResult, { interactive, outputKind })
+          return
+        }
+      } else {
+        logger.success('Reachability analysis completed successfully')
 
-      // Append coana's reachability report, but not twice: a pre-generated facts
-      // input can resolve to the same path coana wrote its report to.
-      const reportPath = reachabilityReport
-        ? path.resolve(cwd, reachabilityReport)
-        : undefined
-      scanPaths = [
-        ...pathsForScan.filter(p => path.resolve(cwd, p) !== reportPath),
-        ...(reachabilityReport ? [reachabilityReport] : []),
-      ]
+        reachabilityReport = reachResult.data?.reachabilityReport
 
-      tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
+        // When using only pre-generated SBOMs, build the scan from those inputs —
+        // CycloneDX, SPDX, and Socket facts (`.socket.facts.json`) — matching
+        // Coana's `--use-only-pregenerated-sboms` selection. Otherwise drop any
+        // stray `.socket.facts.json`; coana's fresh reachability report (appended
+        // below) is the authoritative facts file for the scan.
+        const pathsForScan = reach.reachUseOnlyPregeneratedSboms
+          ? filterToPregeneratedSboms(packagePaths, supportedFiles)
+          : packagePaths.filter(
+              p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+            )
+
+        // Append coana's reachability report, but not twice: a pre-generated facts
+        // input can resolve to the same path coana wrote its report to.
+        const reportPath = reachabilityReport
+          ? path.resolve(cwd, reachabilityReport)
+          : undefined
+        scanPaths = [
+          ...pathsForScan.filter(p => path.resolve(cwd, p) !== reportPath),
+          ...(reachabilityReport ? [reachabilityReport] : []),
+        ]
+
+        tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
+      }
     }
 
     // Brotli-compress any .socket.facts.json paths in scanPaths just before
@@ -369,9 +394,10 @@ export async function handleCreateNewScan({
           pullRequest,
           repoName,
           branchName,
-          scanType: reach.runReachabilityAnalysis
-            ? constants.SCAN_TYPE_SOCKET_TIER1
-            : constants.SCAN_TYPE_SOCKET,
+          scanType:
+            reach.runReachabilityAnalysis && !reachabilityFallback
+              ? constants.SCAN_TYPE_SOCKET_TIER1
+              : constants.SCAN_TYPE_SOCKET,
           workspace,
         },
         {
@@ -392,7 +418,8 @@ export async function handleCreateNewScan({
     } else if (
       reach.runReachabilityAnalysis &&
       scanId &&
-      !tier1ReachabilityScanId
+      !tier1ReachabilityScanId &&
+      !reachabilityFallback
     ) {
       // Reachability analysis ran and a scan was created, but no full
       // application reachability scan id was extracted from the facts file.
@@ -455,13 +482,18 @@ export async function handleCreateNewScan({
           {
             interactive,
             outputKind,
+            reachabilityFallback,
           },
         )
       }
     } else {
       spinner.stop()
 
-      await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
+      await outputCreateNewScan(fullScanCResult, {
+        interactive,
+        outputKind,
+        reachabilityFallback,
+      })
     }
   })
 }

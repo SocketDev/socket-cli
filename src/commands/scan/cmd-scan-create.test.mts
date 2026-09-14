@@ -70,6 +70,7 @@ describe('socket scan create', async () => {
             --reach-disable-external-tool-checks  Disable external tool checks during reachability analysis.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: cargo, composer, gem, golang, maven, npm, nuget, pypi. Defaults to all supported ecosystems.
             --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
+            --reach-fallback-to-regular-scan  If reachability analysis fails, continue with a regular SCA scan (without reachability results) instead of halting. By default, the CLI halts on reachability errors.
             --reach-retain-facts-file  Keep the \`.socket.facts.json\` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. IMPORTANT: you must delete this file before running a fresh full application reachability scan. A stale \`.socket.facts.json\` left in place is picked up as a pre-generated input and silently overrides fresh analysis, so the new scan results will not be reliable.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
             --reach-use-only-pregenerated-sboms  When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.
@@ -235,6 +236,37 @@ describe('socket scan create', async () => {
       '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reach-retain-facts-file is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Reachability analysis flags require --reach to be enabled',
+      )
+      expect(output).toContain('add --reach flag to use --reach-* options')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-fallback-to-regular-scan',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should fail when --reach-fallback-to-regular-scan is used without --reach',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
@@ -683,6 +715,31 @@ describe('socket scan create', async () => {
       '{"apiToken":"fakeToken"}',
     ],
     'should succeed when --exclude-paths is used with --reach',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'test/fixtures/commands/scan/simple-npm',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-fallback-to-regular-scan',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --reach-fallback-to-regular-scan is used with --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
