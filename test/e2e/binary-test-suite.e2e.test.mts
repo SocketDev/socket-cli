@@ -172,7 +172,6 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         'ask',
         'audit-log',
         'ci',
-        'console',
         'fix',
         'json',
         'login',

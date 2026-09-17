@@ -18,6 +18,10 @@ import {
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const DRY_RUN_CONFIG = {
+  apiToken: 'fake-token',
+  defaultOrg: 'example-org',
+}
 
 describe('socket organization (e2e)', () => {
   let hasAuth = false
@@ -74,11 +78,10 @@ describe('socket organization (e2e)', () => {
     })
 
     it.skipIf(!RUN)('organization list --dry-run exits 0', async () => {
-      const result = await executeCliCommand([
-        'organization',
-        'list',
-        '--dry-run',
-      ])
+      const result = await executeCliCommand(
+        ['organization', 'list', '--dry-run'],
+        { config: DRY_RUN_CONFIG },
+      )
       expect(result.code).toBe(0)
     })
 
@@ -118,12 +121,10 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN)(
       'organization policy license --dry-run exits 0',
       async () => {
-        const result = await executeCliCommand([
-          'organization',
-          'policy',
-          'license',
-          '--dry-run',
-        ])
+        const result = await executeCliCommand(
+          ['organization', 'policy', 'license', '--dry-run'],
+          { config: DRY_RUN_CONFIG },
+        )
         expect(result.code).toBe(0)
       },
     )
@@ -141,12 +142,10 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN)(
       'organization policy security --dry-run exits 0',
       async () => {
-        const result = await executeCliCommand([
-          'organization',
-          'policy',
-          'security',
-          '--dry-run',
-        ])
+        const result = await executeCliCommand(
+          ['organization', 'policy', 'security', '--dry-run'],
+          { config: DRY_RUN_CONFIG },
+        )
         expect(result.code).toBe(0)
       },
     )
@@ -161,11 +160,10 @@ describe('socket organization (e2e)', () => {
     })
 
     it.skipIf(!RUN)('organization quota --dry-run exits 0', async () => {
-      const result = await executeCliCommand([
-        'organization',
-        'quota',
-        '--dry-run',
-      ])
+      const result = await executeCliCommand(
+        ['organization', 'quota', '--dry-run'],
+        { config: DRY_RUN_CONFIG },
+      )
       expect(result.code).toBe(0)
     })
   })

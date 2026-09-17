@@ -83,7 +83,9 @@ describe('socket scan (e2e)', () => {
     })
 
     it.skipIf(!RUN)('scan list --dry-run exits 0', async () => {
-      const result = await executeCliCommand(['scan', 'list', '--dry-run'])
+      const result = await executeCliCommand(['scan', 'list', '--dry-run'], {
+        config: { apiToken: 'fake-token', defaultOrg: 'example-org' },
+      })
       expect(result.code).toBe(0)
     })
 

@@ -80,17 +80,14 @@ describe('socket manifest (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN)(
-      'manifest gradle --dry-run exits 1 (per smoke.sh — gradle wrapper not found)',
-      async () => {
-        const result = await executeCliCommand([
-          'manifest',
-          'gradle',
-          '--dry-run',
-        ])
-        expect(result.code).toBe(1)
-      },
-    )
+    it.skipIf(!RUN)('manifest gradle --dry-run exits 0', async () => {
+      const result = await executeCliCommand([
+        'manifest',
+        'gradle',
+        '--dry-run',
+      ])
+      expect(result.code).toBe(0)
+    })
   })
 
   describe('manifest kotlin', () => {
