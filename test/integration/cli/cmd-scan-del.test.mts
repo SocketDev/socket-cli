@@ -79,7 +79,7 @@ describe('socket scan del', async () => {
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan del\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
-        i Note: Run \`socket login\` to set a default org.
+        \\u24d8 Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode

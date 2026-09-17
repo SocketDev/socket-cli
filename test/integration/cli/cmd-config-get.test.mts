@@ -160,7 +160,7 @@ describe('socket config get', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            \\xd7 Unknown command "test".
-        i Tip: Use \`socket pycli\` to invoke the Python CLI directly."
+        \\u24d8 Tip: Use \`socket pycli\` to invoke the Python CLI directly."
       `)
 
       expect(code, 'unknown command should exit with code 2').toBe(2)

@@ -90,7 +90,7 @@ describe('socket organization policy security', async () => {
       //     |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>
 
       //   \\u203c Unable to determine the target org. Trying to auto-discover it now...
-      //   i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+      //   \\u24d8 Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
 
       //   \\xd7 Skipping auto-discovery of org in dry-run mode
       //   \\xd7  Input error:  Please review the input requirements and try again
