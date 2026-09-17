@@ -1,4 +1,4 @@
-import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
+import { PNPM } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 

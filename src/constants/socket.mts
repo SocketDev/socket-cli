@@ -4,7 +4,7 @@
  */
 
 // Re-export NPM registry URL from registry for backward compatibility.
-export { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/package-managers'
+export { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/eco/npm/constants/package-managers'
 
 // Socket API URLs
 export const API_V0_URL = 'https://api.socket.dev/v0/'
