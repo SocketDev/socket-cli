@@ -57,6 +57,9 @@
           }
         },
         "required": ["org_slug"]
+      },
+      "annotations": {
+        "readOnlyHint": true
       }
     },
     "depscore": {
@@ -93,12 +96,18 @@
           }
         },
         "required": ["packages"]
+      },
+      "annotations": {
+        "readOnlyHint": true
       }
     },
     "organizations": {
       "inputSchema": {
         "type": "object",
         "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true
       }
     },
     "package_file_contents": {
@@ -115,6 +124,9 @@
           }
         },
         "required": ["hash"]
+      },
+      "annotations": {
+        "readOnlyHint": true
       }
     },
     "package_file_grep": {
@@ -151,6 +163,9 @@
           }
         },
         "required": ["hash", "pattern"]
+      },
+      "annotations": {
+        "readOnlyHint": true
       }
     },
     "package_files": {
@@ -180,6 +195,9 @@
           }
         },
         "required": ["depname", "version"]
+      },
+      "annotations": {
+        "readOnlyHint": true
       }
     },
     "threat_feed": {
@@ -260,6 +278,9 @@
           }
         },
         "required": ["org_slug"]
+      },
+      "annotations": {
+        "readOnlyHint": true
       }
     }
   }
