@@ -41,11 +41,13 @@ describe('socket fix (e2e)', () => {
   })
 
   it.skipIf(!RUN)('fix --dry-run exits 0', async () => {
-    const result = await executeCliCommand(['fix', '--dry-run'])
+    const result = await executeCliCommand(['fix', '--dry-run'], {
+      config: { apiToken: 'fake-token', defaultOrg: 'example-org' },
+    })
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('fix exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('fix exits 0', async () => {
     // Scratch-isolated with a minimal package.json so `fix` has something
     // to operate on without touching the developer's repo.
     const result = await executeCliInScratch(['fix'], {
@@ -71,7 +73,7 @@ describe('socket ci (e2e)', () => {
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('ci exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('ci exits 0', async () => {
     const result = await executeCliInScratch(['ci'], {
       seedFiles: {
         'package.json': JSON.stringify({

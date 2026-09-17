@@ -28,7 +28,9 @@ describe('socket analytics (e2e)', () => {
     })
 
     it.skipIf(!RUN)('analytics --dry-run exits 0', async () => {
-      const result = await executeCliCommand(['analytics', '--dry-run'])
+      const result = await executeCliCommand(['analytics', '--dry-run'], {
+        config: { apiToken: 'fake-token', defaultOrg: 'example-org' },
+      })
       expect(result.code).toBe(0)
     })
   })
@@ -165,7 +167,7 @@ describe('socket analytics (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'analytics repo veryunknownrepo --json (unknown repo) exits 1',
       async () => {
         const result = await executeCliInScratch([
