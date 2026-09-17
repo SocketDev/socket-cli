@@ -9,6 +9,8 @@
  * - apiFetch always uses node:https.request (no undici body timeout).
  * - apiFetch passes a custom HttpsAgent when CA certs are set via SSL_CERT_FILE.
  * - apiFetch passes an explicit HttpsAgent (no timeout) when no CA certs are configured.
+ * - apiFetch routes through an hpagent proxy agent when a proxy is configured.
+ * - apiFetch trusts extra CA certs on the destination and the proxy hop.
  * - Response object construction from https.request output.
  * - POST requests with JSON body through https.request path.
  * - Error propagation from https.request failures.
@@ -19,7 +21,7 @@
  *
  * Related Files:
  * - utils/api.mts (implementation)
- * - utils/sdk.mts (getExtraCaCerts)
+ * - utils/sdk.mts (getExtraCaCerts, getDefaultProxyUrl)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -32,11 +34,14 @@ const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-api-token'))
 const mockGetCliUserAgent = vi.hoisted(() =>
   vi.fn(() => 'socket-cli/1.0.0 node/v20.0.0 test/x64'),
 )
+const mockGetDefaultProxyUrl = vi.hoisted(() =>
+  vi.fn((): string | undefined => undefined),
+)
 vi.mock('./sdk.mts', () => ({
   getCliUserAgent: mockGetCliUserAgent,
   getDefaultApiToken: mockGetDefaultApiToken,
   getDefaultApiBaseUrl: vi.fn(() => undefined),
-  getDefaultProxyUrl: vi.fn(() => undefined),
+  getDefaultProxyUrl: mockGetDefaultProxyUrl,
   getExtraCaCerts: mockGetExtraCaCerts,
 }))
 
@@ -55,6 +60,14 @@ const MockHttpsAgent = vi.hoisted(() =>
 vi.mock('node:https', () => ({
   Agent: MockHttpsAgent,
   request: mockHttpsRequest,
+}))
+
+// Mock hpagent proxy agent.
+const MockHttpsProxyAgent = vi.hoisted(() =>
+  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsProxyAgent: true })),
+)
+vi.mock('hpagent', () => ({
+  HttpsProxyAgent: MockHttpsProxyAgent,
 }))
 
 // Mock constants.
@@ -107,11 +120,41 @@ vi.mock('./telemetry/integration.mts', () => ({
 // Store original fetch for restoration.
 const originalFetch = globalThis.fetch
 
+function stubHttpsResponse() {
+  const mockReq = {
+    end: vi.fn(),
+    on: vi.fn(),
+    write: vi.fn(),
+  }
+  mockHttpsRequest.mockImplementation(
+    (_url: string, _opts: unknown, callback: RequestCallback) => {
+      setTimeout(() => {
+        const mockRes = {
+          headers: { 'content-type': 'text/plain' },
+          on: vi.fn(),
+          statusCode: 200,
+          statusMessage: 'OK',
+        }
+        const handlers: Record<string, Function> = {}
+        mockRes.on.mockImplementation((event: string, handler: Function) => {
+          handlers[event] = handler
+          return mockRes
+        })
+        callback(mockRes)
+        handlers['data']?.(Buffer.from('response body'))
+        handlers['end']?.()
+      }, 0)
+      return mockReq
+    },
+  )
+}
+
 describe('apiFetch with extra CA certificates', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.resetModules()
     mockGetExtraCaCerts.mockReturnValue(undefined)
+    mockGetDefaultProxyUrl.mockReturnValue(undefined)
   })
 
   afterEach(() => {
@@ -620,5 +663,61 @@ describe('apiFetch with extra CA certificates', () => {
 
     const secondCallHeaders = (mockHttpsRequest.mock.calls[1][1] as any).headers
     expect(secondCallHeaders['Authorization']).toBe('Bearer ghp_secret')
+  })
+})
+
+describe('apiFetch proxy support', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    mockGetExtraCaCerts.mockReturnValue(undefined)
+    mockGetDefaultProxyUrl.mockReturnValue(undefined)
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  it('should route direct API calls through the configured proxy', async () => {
+    mockGetDefaultProxyUrl.mockReturnValue('http://proxy.example.com:8080')
+    stubHttpsResponse()
+
+    const { queryApiSafeText } = await import('./api.mts')
+    const result = await queryApiSafeText('test/path')
+
+    expect(MockHttpsProxyAgent).toHaveBeenCalledTimes(1)
+    expect(MockHttpsProxyAgent.mock.calls[0]?.[0]).toMatchObject({
+      proxy: 'http://proxy.example.com:8080',
+    })
+    expect(MockHttpsAgent).not.toHaveBeenCalled()
+    const callArgs = mockHttpsRequest.mock.calls[0]
+    expect(callArgs[1].agent).toMatchObject({ _isHttpsProxyAgent: true })
+    expect(result.ok).toBe(true)
+  })
+
+  it('should trust extra CA certs on the destination and the proxy hop', async () => {
+    const caCerts = ['ROOT_CERT', 'EXTRA_CERT']
+    mockGetDefaultProxyUrl.mockReturnValue('https://proxy.example.com:8443')
+    mockGetExtraCaCerts.mockReturnValue(caCerts)
+    stubHttpsResponse()
+
+    const { queryApiSafeText } = await import('./api.mts')
+    await queryApiSafeText('test/path')
+
+    expect(MockHttpsProxyAgent.mock.calls[0]?.[0]).toMatchObject({
+      ca: caCerts,
+      proxy: 'https://proxy.example.com:8443',
+      proxyRequestOptions: { ca: caCerts },
+    })
+  })
+
+  it('should use a plain agent when no proxy is configured', async () => {
+    stubHttpsResponse()
+
+    const { queryApiSafeText } = await import('./api.mts')
+    await queryApiSafeText('test/path')
+
+    expect(MockHttpsProxyAgent).not.toHaveBeenCalled()
+    expect(MockHttpsAgent).toHaveBeenCalledTimes(1)
   })
 })
