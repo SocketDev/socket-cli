@@ -8,12 +8,14 @@
 import { describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import {
   executeCliCommand,
   executeCliInScratch,
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
 
 describe('socket audit-log (e2e, auth required)', () => {
   it.skipIf(!RUN)('audit-log --help exits 0', async () => {
@@ -21,12 +23,12 @@ describe('socket audit-log (e2e, auth required)', () => {
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('audit-log --dry-run exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('audit-log --dry-run exits 0', async () => {
     const result = await executeCliCommand(['audit-log', '--dry-run'])
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('audit-log exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('audit-log exits 0', async () => {
     const result = await executeCliInScratch(['audit-log'])
     expect(result.code).toBe(0)
   })

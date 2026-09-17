@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import {
   executeCliCommand,
   executeCliInScratch,
@@ -16,6 +17,7 @@ import {
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
 
 describe('socket threat-feed (e2e, auth required, scratch-isolated)', () => {
   it.skipIf(!RUN)('threat-feed --help exits 0', async () => {
@@ -23,17 +25,20 @@ describe('socket threat-feed (e2e, auth required, scratch-isolated)', () => {
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('threat-feed --dry-run exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('threat-feed --dry-run exits 0', async () => {
     const result = await executeCliCommand(['threat-feed', '--dry-run'])
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('threat-feed (interactive default) exits 0', async () => {
-    const result = await executeCliInScratch(['threat-feed'])
-    expect(result.code).toBe(0)
-  })
+  it.skipIf(!HAS_AUTH)(
+    'threat-feed (interactive default) exits 0',
+    async () => {
+      const result = await executeCliInScratch(['threat-feed'])
+      expect(result.code).toBe(0)
+    },
+  )
 
-  it.skipIf(!RUN)('threat-feed --no-interactive exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('threat-feed --no-interactive exits 0', async () => {
     const result = await executeCliInScratch([
       'threat-feed',
       '--no-interactive',
@@ -41,13 +46,13 @@ describe('socket threat-feed (e2e, auth required, scratch-isolated)', () => {
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('threat-feed --json conforms to contract', async () => {
+  it.skipIf(!HAS_AUTH)('threat-feed --json conforms to contract', async () => {
     const result = await executeCliInScratch(['threat-feed', '--json'])
     expect(result.code).toBe(0)
     validateSocketJsonContract(result.stdout, 0)
   })
 
-  it.skipIf(!RUN)('threat-feed --markdown exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('threat-feed --markdown exits 0', async () => {
     const result = await executeCliInScratch(['threat-feed', '--markdown'])
     expect(result.code).toBe(0)
   })

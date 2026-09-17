@@ -47,7 +47,7 @@ export async function runProductTests(
         ...Object.fromEntries(
           Object.entries(EnvironmentVariables.getTestVariables()),
         ),
-        RUN_INTEGRATION_TESTS: '1',
+        [lane === 'e2e' ? 'RUN_E2E_TESTS' : 'RUN_INTEGRATION_TESTS']: '1',
       },
       stdio: 'inherit',
     },

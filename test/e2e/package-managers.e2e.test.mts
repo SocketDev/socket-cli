@@ -11,6 +11,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import {
   executeCliCommand,
   executeCliInScratch,
@@ -18,6 +19,7 @@ import {
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
 
 describe('socket npm wrapper (e2e)', () => {
   it.skipIf(!RUN)('npm --help exits 0', async () => {
@@ -181,7 +183,7 @@ describe('socket optimize (e2e)', () => {
 })
 
 describe('socket organization dependencies (e2e, auth required, scratch-isolated)', () => {
-  it.skipIf(!RUN)('organization dependencies --help exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('organization dependencies --help exits 0', async () => {
     const result = await executeCliCommand([
       'organization',
       'dependencies',
@@ -190,21 +192,24 @@ describe('socket organization dependencies (e2e, auth required, scratch-isolated
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)('organization dependencies --dry-run exits 0', async () => {
-    const result = await executeCliCommand([
-      'organization',
-      'dependencies',
-      '--dry-run',
-    ])
-    expect(result.code).toBe(0)
-  })
+  it.skipIf(!HAS_AUTH)(
+    'organization dependencies --dry-run exits 0',
+    async () => {
+      const result = await executeCliCommand([
+        'organization',
+        'dependencies',
+        '--dry-run',
+      ])
+      expect(result.code).toBe(0)
+    },
+  )
 
-  it.skipIf(!RUN)('organization dependencies exits 0', async () => {
+  it.skipIf(!HAS_AUTH)('organization dependencies exits 0', async () => {
     const result = await executeCliInScratch(['organization', 'dependencies'])
     expect(result.code).toBe(0)
   })
 
-  it.skipIf(!RUN)(
+  it.skipIf(!HAS_AUTH)(
     'organization dependencies --json conforms to contract',
     async () => {
       const result = await executeCliInScratch([
@@ -217,36 +222,45 @@ describe('socket organization dependencies (e2e, auth required, scratch-isolated
     },
   )
 
-  it.skipIf(!RUN)('organization dependencies --markdown exits 0', async () => {
-    const result = await executeCliInScratch([
-      'organization',
-      'dependencies',
-      '--markdown',
-    ])
-    expect(result.code).toBe(0)
-  })
+  it.skipIf(!HAS_AUTH)(
+    'organization dependencies --markdown exits 0',
+    async () => {
+      const result = await executeCliInScratch([
+        'organization',
+        'dependencies',
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    },
+  )
 
-  it.skipIf(!RUN)('organization dependencies --limit 1 exits 0', async () => {
-    const result = await executeCliInScratch([
-      'organization',
-      'dependencies',
-      '--limit',
-      '1',
-    ])
-    expect(result.code).toBe(0)
-  })
+  it.skipIf(!HAS_AUTH)(
+    'organization dependencies --limit 1 exits 0',
+    async () => {
+      const result = await executeCliInScratch([
+        'organization',
+        'dependencies',
+        '--limit',
+        '1',
+      ])
+      expect(result.code).toBe(0)
+    },
+  )
 
-  it.skipIf(!RUN)('organization dependencies --offset 5 exits 0', async () => {
-    const result = await executeCliInScratch([
-      'organization',
-      'dependencies',
-      '--offset',
-      '5',
-    ])
-    expect(result.code).toBe(0)
-  })
+  it.skipIf(!HAS_AUTH)(
+    'organization dependencies --offset 5 exits 0',
+    async () => {
+      const result = await executeCliInScratch([
+        'organization',
+        'dependencies',
+        '--offset',
+        '5',
+      ])
+      expect(result.code).toBe(0)
+    },
+  )
 
-  it.skipIf(!RUN)(
+  it.skipIf(!HAS_AUTH)(
     'organization dependencies --limit 1 --offset 10 exits 0',
     async () => {
       const result = await executeCliInScratch([

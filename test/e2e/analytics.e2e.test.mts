@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import {
   executeCliCommand,
   executeCliInScratch,
@@ -17,6 +18,7 @@ import {
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
 
 describe('socket analytics (e2e)', () => {
   describe('help and dry-run (no auth required)', () => {
@@ -32,29 +34,32 @@ describe('socket analytics (e2e)', () => {
   })
 
   describe('default / org / repo / time-window (auth required, scratch-isolated)', () => {
-    it.skipIf(!RUN)('analytics (default scope) exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('analytics (default scope) exits 0', async () => {
       const result = await executeCliInScratch(['analytics'])
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN)('analytics --markdown exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('analytics --markdown exits 0', async () => {
       const result = await executeCliInScratch(['analytics', '--markdown'])
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN)('analytics --json conforms to contract', async () => {
+    it.skipIf(!HAS_AUTH)('analytics --json conforms to contract', async () => {
       const result = await executeCliInScratch(['analytics', '--json'])
       expect(result.code).toBe(0)
       validateSocketJsonContract(result.stdout, 0)
     })
 
-    it.skipIf(!RUN)('analytics org --json conforms to contract', async () => {
-      const result = await executeCliInScratch(['analytics', 'org', '--json'])
-      expect(result.code).toBe(0)
-      validateSocketJsonContract(result.stdout, 0)
-    })
+    it.skipIf(!HAS_AUTH)(
+      'analytics org --json conforms to contract',
+      async () => {
+        const result = await executeCliInScratch(['analytics', 'org', '--json'])
+        expect(result.code).toBe(0)
+        validateSocketJsonContract(result.stdout, 0)
+      },
+    )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'analytics repo socket-cli --json conforms to contract',
       async () => {
         const result = await executeCliInScratch([
@@ -68,7 +73,7 @@ describe('socket analytics (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)('analytics org 7 --markdown exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('analytics org 7 --markdown exits 0', async () => {
       const result = await executeCliInScratch([
         'analytics',
         'org',
@@ -78,7 +83,7 @@ describe('socket analytics (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'analytics repo socket-cli 30 --markdown exits 0',
       async () => {
         const result = await executeCliInScratch([
@@ -92,15 +97,18 @@ describe('socket analytics (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)('analytics 90 --json conforms to contract', async () => {
-      const result = await executeCliInScratch(['analytics', '90', '--json'])
-      expect(result.code).toBe(0)
-      validateSocketJsonContract(result.stdout, 0)
-    })
+    it.skipIf(!HAS_AUTH)(
+      'analytics 90 --json conforms to contract',
+      async () => {
+        const result = await executeCliInScratch(['analytics', '90', '--json'])
+        expect(result.code).toBe(0)
+        validateSocketJsonContract(result.stdout, 0)
+      },
+    )
   })
 
   describe('--file output (auth required, scratch-isolated)', () => {
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'analytics --file <scratch>/out.txt --json exits 0',
       async () => {
         const result = await executeCliInScratch([
@@ -113,7 +121,7 @@ describe('socket analytics (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'analytics --file <scratch>/out.txt --markdown exits 0',
       async () => {
         const result = await executeCliInScratch([

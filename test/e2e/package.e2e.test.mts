@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import {
   executeCliCommand,
   executeCliInScratch,
@@ -19,6 +20,7 @@ import {
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
 
 const SILENT_NO_DATA_PKG = 'mostdefinitelynotworkingletskeepitthatway'
 
@@ -69,7 +71,7 @@ describe('socket package (e2e)', () => {
   })
 
   describe('package score (auth required)', () => {
-    it.skipIf(!RUN)('score npm tenko exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('score npm tenko exits 0', async () => {
       const result = await executeCliInScratch([
         'package',
         'score',
@@ -79,7 +81,7 @@ describe('socket package (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'score npm socket exits 0 (regression: server 500)',
       async () => {
         const result = await executeCliInScratch([
@@ -92,7 +94,7 @@ describe('socket package (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)('score npm babel exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('score npm babel exits 0', async () => {
       const result = await executeCliInScratch([
         'package',
         'score',
@@ -102,17 +104,20 @@ describe('socket package (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN)('score npm nope exits 0 (server may stall)', async () => {
-      const result = await executeCliInScratch([
-        'package',
-        'score',
-        'npm',
-        'nope',
-      ])
-      expect(result.code).toBe(0)
-    })
+    it.skipIf(!HAS_AUTH)(
+      'score npm nope exits 0 (server may stall)',
+      async () => {
+        const result = await executeCliInScratch([
+          'package',
+          'score',
+          'npm',
+          'nope',
+        ])
+        expect(result.code).toBe(0)
+      },
+    )
 
-    it.skipIf(!RUN)('score npm <silent-no-data> exits 1', async () => {
+    it.skipIf(!HAS_AUTH)('score npm <silent-no-data> exits 1', async () => {
       const result = await executeCliInScratch([
         'package',
         'score',
@@ -122,7 +127,7 @@ describe('socket package (e2e)', () => {
       expect(result.code).toBe(1)
     })
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'score npm socket --json conforms to contract',
       async () => {
         const result = await executeCliInScratch([
@@ -137,31 +142,37 @@ describe('socket package (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)('score npm babel --json conforms to contract', async () => {
-      const result = await executeCliInScratch([
-        'package',
-        'score',
-        'npm',
-        'babel',
-        '--json',
-      ])
-      expect(result.code).toBe(0)
-      validateSocketJsonContract(result.stdout, 0)
-    })
+    it.skipIf(!HAS_AUTH)(
+      'score npm babel --json conforms to contract',
+      async () => {
+        const result = await executeCliInScratch([
+          'package',
+          'score',
+          'npm',
+          'babel',
+          '--json',
+        ])
+        expect(result.code).toBe(0)
+        validateSocketJsonContract(result.stdout, 0)
+      },
+    )
 
-    it.skipIf(!RUN)('score npm nope --json conforms to contract', async () => {
-      const result = await executeCliInScratch([
-        'package',
-        'score',
-        'npm',
-        'nope',
-        '--json',
-      ])
-      expect(result.code).toBe(0)
-      validateSocketJsonContract(result.stdout, 0)
-    })
+    it.skipIf(!HAS_AUTH)(
+      'score npm nope --json conforms to contract',
+      async () => {
+        const result = await executeCliInScratch([
+          'package',
+          'score',
+          'npm',
+          'nope',
+          '--json',
+        ])
+        expect(result.code).toBe(0)
+        validateSocketJsonContract(result.stdout, 0)
+      },
+    )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'score npm <silent-no-data> --json conforms to error contract',
       async () => {
         const result = await executeCliInScratch([
@@ -178,7 +189,7 @@ describe('socket package (e2e)', () => {
   })
 
   describe('package shallow (auth required)', () => {
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'shallow npm socket exits 0 (regression: server 500)',
       async () => {
         const result = await executeCliInScratch([
@@ -191,7 +202,7 @@ describe('socket package (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)('shallow npm babel exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('shallow npm babel exits 0', async () => {
       const result = await executeCliInScratch([
         'package',
         'shallow',
@@ -201,17 +212,20 @@ describe('socket package (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN)('shallow npm nope exits 0 (server may stall)', async () => {
-      const result = await executeCliInScratch([
-        'package',
-        'shallow',
-        'npm',
-        'nope',
-      ])
-      expect(result.code).toBe(0)
-    })
+    it.skipIf(!HAS_AUTH)(
+      'shallow npm nope exits 0 (server may stall)',
+      async () => {
+        const result = await executeCliInScratch([
+          'package',
+          'shallow',
+          'npm',
+          'nope',
+        ])
+        expect(result.code).toBe(0)
+      },
+    )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'shallow npm <silent-no-data> exits 0 (server returns no data, not an error)',
       async () => {
         const result = await executeCliInScratch([
@@ -224,7 +238,7 @@ describe('socket package (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'shallow npm socket --json conforms to contract',
       async () => {
         const result = await executeCliInScratch([
@@ -239,7 +253,7 @@ describe('socket package (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'shallow npm babel --json conforms to contract',
       async () => {
         const result = await executeCliInScratch([
@@ -254,7 +268,7 @@ describe('socket package (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'shallow npm nope --json conforms to contract',
       async () => {
         const result = await executeCliInScratch([
@@ -269,7 +283,7 @@ describe('socket package (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN)(
+    it.skipIf(!HAS_AUTH)(
       'shallow npm <silent-no-data> --json conforms to contract (ok:true with empty data)',
       async () => {
         const result = await executeCliInScratch([
