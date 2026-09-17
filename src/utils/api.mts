@@ -22,6 +22,7 @@
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https'
 import { ReadableStream } from 'node:stream/web'
 
+import { HttpsProxyAgent } from 'hpagent'
 import { messageWithCauses } from 'pony-cause'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
@@ -40,7 +41,12 @@ import constants, {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
-import { getCliUserAgent, getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
+import {
+  getCliUserAgent,
+  getDefaultApiToken,
+  getDefaultProxyUrl,
+  getExtraCaCerts,
+} from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -52,9 +58,10 @@ const NO_ERROR_MESSAGE = 'No error message returned'
 // getHttpsAgent() call lazily creates it.
 let _httpsAgent: HttpsAgent | undefined
 
-// Returns an explicit HTTPS agent for direct API calls, carrying extra CA
-// certificates when SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not. An
-// explicit agent is always returned. Node >=19's global agent enables keepAlive
+// Returns an explicit HTTPS agent for direct API calls, routing through the
+// configured proxy when one is set and carrying extra CA certificates when
+// SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not. An explicit agent is
+// always returned. Node >=19's global agent enables keepAlive
 // with a 5s socket timeout that Node applies as a per-socket inactivity
 // timeout. A request made without an explicit agent inherits it and is torn
 // down after 5s of socket inactivity, prematurely dropping slow or idle-gapped
@@ -65,7 +72,17 @@ function getHttpsAgent(): HttpsAgent {
     return _httpsAgent
   }
   const ca = getExtraCaCerts()
-  const agent = ca ? new HttpsAgent({ ca }) : new HttpsAgent()
+  const proxyUrl = getDefaultProxyUrl()
+  // `ca` covers the destination TLS handshake; `proxyRequestOptions.ca` covers
+  // the hop to an https:// proxy.
+  const agent = proxyUrl
+    ? new HttpsProxyAgent({
+        proxy: proxyUrl,
+        ...(ca ? { ca, proxyRequestOptions: { ca } } : {}),
+      })
+    : ca
+      ? new HttpsAgent({ ca })
+      : new HttpsAgent()
   _httpsAgent = agent
   return agent
 }
