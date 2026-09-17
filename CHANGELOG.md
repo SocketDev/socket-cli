@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.175](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.175) - 2026-09-17
+
+### Fixed
+- **`api`** — honor proxy config for direct API calls (#1543)
+
 ## [1.1.174](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.174) - 2026-09-17
 
 ### Changed
