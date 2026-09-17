@@ -159,6 +159,7 @@ export async function outputAuditLog(
         perPage,
       }),
     )
+    return
   }
 
   if (!result.ok) {

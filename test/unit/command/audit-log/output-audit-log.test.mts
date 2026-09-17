@@ -32,20 +32,69 @@ import { parseMarkdownTableRows } from '../../../helpers/markdown-table.mts'
  *   functions
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+const mockLogger = vi.hoisted(() => ({
+  fail: vi.fn(),
+  log: vi.fn(),
+}))
+
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
+  getDefaultLogger: () => mockLogger,
+}))
 
 import FIXTURE from '../../../../src/command/audit-log/audit-fixture.json' with { type: 'json' }
 import {
   outputAsJson,
   outputAsMarkdown,
+  outputAuditLog,
 } from '../../../../src/command/audit-log/output-audit-log.mts'
-import { createSuccessResult } from '../../../helpers/mocks.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type AuditLogs = SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results']
 
 describe('output-audit-log', () => {
+  afterEach(() => {
+    mockLogger.fail.mockReset()
+    mockLogger.log.mockReset()
+    process.exitCode = undefined
+  })
+
+  describe('output selection', () => {
+    const options = {
+      logType: '',
+      orgSlug: 'example-org',
+      outputKind: 'json',
+      page: 1,
+      perPage: 10,
+    } as const
+
+    it('emits only one JSON document for a successful result', async () => {
+      await outputAuditLog(
+        createSuccessResult(JSON.parse(JSON.stringify(FIXTURE))),
+        options,
+      )
+
+      expect(mockLogger.log).toHaveBeenCalledTimes(1)
+      expect(() => JSON.parse(mockLogger.log.mock.calls[0]![0])).not.toThrow()
+      expect(mockLogger.fail).not.toHaveBeenCalled()
+    })
+
+    it('emits only one JSON document for a failed result', async () => {
+      await outputAuditLog(createErrorResult('API error'), options)
+
+      expect(mockLogger.log).toHaveBeenCalledTimes(1)
+      expect(() => JSON.parse(mockLogger.log.mock.calls[0]![0])).not.toThrow()
+      expect(mockLogger.fail).not.toHaveBeenCalled()
+      expect(process.exitCode).toBe(1)
+    })
+  })
+
   describe('json', () => {
     it('should return formatted json string', async () => {
       const r = await outputAsJson(
