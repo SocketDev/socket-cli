@@ -122,7 +122,7 @@ export async function downloadCli(): Promise<void> {
               return
             }
 
-            await safeDelete(tarballPath, { force: true })
+            await safeDelete(tarballPath, { cwd: dlxDir })
 
             logger.error('Socket CLI installed successfully')
             resolve()

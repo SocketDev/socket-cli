@@ -71,10 +71,7 @@ export async function compressSocketFactsForUpload(
     if (targets.length === 0) {
       return
     }
-    // Remove owned files at caller-configurable paths outside cwd.
-    // The pinned filesystem API has no strictDelete.
-    // oxlint-disable-next-line socket/no-force-delete -- owned path
-    await safeDelete(targets, { force: true })
+    await safeDelete(targets, { allowedDirs: targets.map(path.dirname) })
   }
   return { __proto__: null, cleanup, paths } as CompressedScanPaths
 }

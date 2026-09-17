@@ -98,10 +98,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 
         if (isStale) {
           // Stale lock detected, remove and retry.
-          // Remove owned files at caller-configurable paths outside cwd.
-          // The pinned filesystem API has no strictDelete.
-          // oxlint-disable-next-line socket/no-force-delete -- owned path
-          await safeDelete(lockFile, { force: true })
+          await safeDelete(lockFile, { cwd: pythonDir })
           return ensurePythonDlx(retryCount + 1)
         }
 
@@ -136,10 +133,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
       }
     } finally {
       // Clean up lock file.
-      // Remove owned files at caller-configurable paths outside cwd.
-      // The pinned filesystem API has no strictDelete.
-      // oxlint-disable-next-line socket/no-force-delete -- owned path
-      await safeDelete(lockFile, { force: true })
+      await safeDelete(lockFile, { cwd: pythonDir })
     }
   }
 

@@ -58,10 +58,7 @@ export async function ensureSocketPyCli(
 
       if (isStale) {
         // Stale lock detected, remove and retry immediately.
-        // Remove owned files at caller-configurable paths outside cwd.
-        // The pinned filesystem API has no strictDelete.
-        // oxlint-disable-next-line socket/no-force-delete -- owned path
-        await safeDelete(lockFile, { force: true })
+        await safeDelete(lockFile, { cwd: pythonDir })
         return ensureSocketPyCli(pythonBin, retryCount + 1)
       }
 
@@ -80,10 +77,7 @@ export async function ensureSocketPyCli(
             const pid = Number.parseInt(lockPid.trim(), 10)
             if (isDeadPythonInstallLockPid(pid)) {
               // Lock holder died during wait, retry.
-              // Remove owned files at caller-configurable paths outside cwd.
-              // The pinned filesystem API has no strictDelete.
-              // oxlint-disable-next-line socket/no-force-delete -- owned path
-              await safeDelete(lockFile, { force: true })
+              await safeDelete(lockFile, { cwd: pythonDir })
               return ensureSocketPyCli(pythonBin, retryCount + 1)
             }
           } catch {
@@ -102,10 +96,7 @@ export async function ensureSocketPyCli(
     await installSocketPyCli(pythonBin)
   } finally {
     // Clean up lock file.
-    // Remove owned files at caller-configurable paths outside cwd.
-    // The pinned filesystem API has no strictDelete.
-    // oxlint-disable-next-line socket/no-force-delete -- owned path
-    await safeDelete(lockFile, { force: true })
+    await safeDelete(lockFile, { cwd: pythonDir })
   }
 }
 
