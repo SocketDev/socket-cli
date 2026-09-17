@@ -1133,6 +1133,12 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
+  .claude/hooks/fleet/ai-adapter-source-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.2
+        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
+
   .claude/hooks/fleet/ai-balancer-proxy-start:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -1306,16 +1312,6 @@ importers:
         version: 26.5.1
 
   .claude/hooks/fleet/bot-comment-collapse-guard:
-    dependencies:
-      '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@7.0.2
-        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.5.1
-
-  .claude/hooks/fleet/branch-worktree-sweep-nudge:
     dependencies:
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@7.0.2
@@ -2008,6 +2004,12 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.5.1
+
+  .claude/hooks/fleet/instruction-precedence-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.2
+        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
 
   .claude/hooks/fleet/issue-autolink-nudge:
     devDependencies:
@@ -3129,16 +3131,6 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
-  .claude/hooks/fleet/playwright-launch-guard:
-    dependencies:
-      '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@7.0.2
-        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.5.1
-
   .claude/hooks/fleet/pnpm-filter-zero-match-nudge:
     devDependencies:
       '@types/node':
@@ -3271,12 +3263,6 @@ importers:
       '@ultrathink/acorn.rs.wasm':
         specifier: 'catalog:'
         version: 0.1.1
-
-  .claude/hooks/fleet/prefer-mcp-search-nudge:
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.5.1
 
   .claude/hooks/fleet/prefer-mcp-server-nudge:
     dependencies:
@@ -3907,6 +3893,8 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
+  .claude/hooks/fleet/task-scope-guard: {}
+
   .claude/hooks/fleet/test-dir-name-guard:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -4056,6 +4044,10 @@ importers:
         version: 26.5.1
 
   .claude/hooks/fleet/upstream-is-read-only-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.2
+        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -4199,11 +4191,31 @@ importers:
         specifier: npm:@socketsecurity/lib@7.0.2
         version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
 
+  .claude/hooks/fleet/worktree-create-defers-to-script-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.2
+        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
   .claude/hooks/fleet/worktree-remove-relink-nudge:
     dependencies:
       shell-quote:
         specifier: 1.10.0
         version: 1.10.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
+  .claude/hooks/fleet/worktree-sweep:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.2
+        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -4289,8 +4301,6 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/no-fileoverview-prefer-file: {}
 
-  .config/fleet/oxlint-plugin/fleet/no-floating-async-map: {}
-
   .config/fleet/oxlint-plugin/fleet/no-force-delete: {}
 
   .config/fleet/oxlint-plugin/fleet/no-handbuilt-file-url: {}
@@ -4308,6 +4318,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/no-logger-newline-literal: {}
 
   .config/fleet/oxlint-plugin/fleet/no-malformed-bypass-marker: {}
+
+  .config/fleet/oxlint-plugin/fleet/no-map-async-callback: {}
 
   .config/fleet/oxlint-plugin/fleet/no-minified-bundler-output: {}
 
@@ -4355,7 +4367,7 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/no-spawn-stream-double-consume: {}
 
-  .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-field: {}
+  .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-property: {}
 
   .config/fleet/oxlint-plugin/fleet/no-src-import-in-test-expect: {}
 
@@ -4405,6 +4417,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/prefer-cached-for-loop: {}
 
+  .config/fleet/oxlint-plugin/fleet/prefer-char-code-comparison: {}
+
   .config/fleet/oxlint-plugin/fleet/prefer-crlf-safe-split: {}
 
   .config/fleet/oxlint-plugin/fleet/prefer-ellipsis-char: {}
@@ -4451,6 +4465,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-compare-str: {}
 
+  .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-env: {}
+
   .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-error-message: {}
 
   .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-normalize-path: {}
@@ -4468,6 +4484,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/prefer-undefined-over-null: {}
 
   .config/fleet/oxlint-plugin/fleet/prefer-windows-test-helpers: {}
+
+  .config/fleet/oxlint-plugin/fleet/repository-paths-are-contained: {}
 
   .config/fleet/oxlint-plugin/fleet/require-async-iife-entry: {}
 
