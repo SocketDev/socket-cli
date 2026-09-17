@@ -1,5 +1,5 @@
-name: 🔁 Weekly odai cache
-run-name: Weekly odai cache
+name: 'cron: weekly odai cache'
+run-name: 'cron: weekly odai cache'
 
 # Fleet-canonical on-device model cache. The fleet's keyless-AI lane (the
 # weekly-update decision leg, every odai-driven assist) needs the on-device
@@ -36,6 +36,7 @@ env:
 
 jobs:
   fill:
+    cache-mode: write
     name: Prepare model cache
     runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 50
@@ -84,11 +85,11 @@ jobs:
         uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Reuse the Release App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
 
       - name: Verify model CPU capacity
         timeout-minutes: 1
@@ -119,6 +120,7 @@ jobs:
         with:
           allow-fill: 'false'
           restore-model-cache: 'false'
+          require-ready: 'false'
 
       # First activation of a fresh profile needs network for one keyless
       # component-metadata exchange; with a restored profile the download is
@@ -199,6 +201,7 @@ jobs:
             --key "$CACHE_KEY"
 
   verify:
+    cache-mode: read
     name: Verify model cache
     needs: fill
     runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-latest' }}
@@ -233,11 +236,11 @@ jobs:
         uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Reuse the Release App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
 
       - name: Verify model CPU capacity
         timeout-minutes: 1
@@ -266,6 +269,7 @@ jobs:
         with:
           allow-fill: 'false'
           restore-model-cache: 'false'
+          require-ready: 'true'
 
       - name: Verify model offline
         shell: bash

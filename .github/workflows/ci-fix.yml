@@ -1,0 +1,111 @@
+name: "ci: fix"
+run-name: "ci: fix"
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to repair (defaults to the repository default branch)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: get-green-${{ inputs.branch || github.event.repository.default_branch }}
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    name: Repair
+    runs-on: ubuntu-latest
+    env:
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ inputs.branch || github.event.repository.default_branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          git check-ref-format "refs/heads/${TRIGGER_REF}"
+          git check-ref-format "refs/heads/${DEFAULT_BRANCH}"
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune origin "+refs/heads/${TRIGGER_REF}:refs/remotes/origin/${TRIGGER_REF}")
+          if [ "${TRIGGER_REF}" != "${DEFAULT_BRANCH}" ]; then
+            FETCH_ARGS+=("+refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}")
+          fi
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach "refs/remotes/origin/${TRIGGER_REF}"
+
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          checkout: 'false'
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Mint release token
+        if: ${{ inputs.branch == '' || inputs.branch == github.event.repository.default_branch }}
+        id: release-app
+        uses: ./.github/actions/fleet/github-ci-fix-app-token
+        with:
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Mint PR branch token
+        if: ${{ inputs.branch != '' && inputs.branch != github.event.repository.default_branch }}
+        id: pr-branch-app
+        uses: ./.github/actions/fleet/github-pr-branch-app-token
+        with:
+          client-id: ${{ secrets.SOCKET_PR_CLIENT_ID || vars.SOCKET_PR_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Mint PR token
+        if: ${{ inputs.branch != '' && inputs.branch != github.event.repository.default_branch }}
+        id: pr-app
+        uses: ./.github/actions/fleet/github-pr-app-token
+        with:
+          client-id: ${{ secrets.SOCKET_PR_CLIENT_ID || vars.SOCKET_PR_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Repair and verify
+        id: repair
+        shell: bash
+        env:
+          SOURCE_BRANCH: ${{ inputs.branch || github.event.repository.default_branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          CI_FIX_RELEASE_TOKEN: ${{ steps.release-app.outputs.token }}
+          CI_FIX_PR_BRANCH_TOKEN: ${{ steps.pr-branch-app.outputs.token }}
+          CI_FIX_PR_TOKEN: ${{ steps.pr-app.outputs.token }}
+          CI_FIX_MONITOR_TOKEN: ${{ github.token }}
+        run: pnpm run ci:fix --branch "$SOURCE_BRANCH" --deliver --json
+
+      - name: Preserve failure evidence
+        if: ${{ failure() && steps.repair.outputs.diagnostics-path != '' }}
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: ci-fix-failure-${{ github.run_attempt }}
+          path: ${{ steps.repair.outputs.diagnostics-path }}
+          if-no-files-found: error

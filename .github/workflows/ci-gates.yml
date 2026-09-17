@@ -2,8 +2,8 @@
 # edit it here. Fleet CI runs check + test through the LOCAL composite
 # actions under .github/actions/, inlined, so there is no cross-repo
 # reusable workflow and no first-party `uses:@sha`.
-name: 🚦 CI
-run-name: CI
+name: "ci: gates"
+run-name: "ci: gates"
 
 # PUSH, never pull_request. The fleet takes no outside contributions and
 # lands on main directly, so a pull_request trigger adds no coverage a push

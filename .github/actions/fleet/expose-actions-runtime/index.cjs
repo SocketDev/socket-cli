@@ -1,4 +1,4 @@
-// Bridge the runner-injected cache-service credentials into the job env so a
+// Bridge the runner-injected cache-service runtime into the job env so a
 // composite's `run:` steps (the fleet cache CLIs) can reach the v2 cache
 // service. Zero dependencies on purpose: a JS action runs from committed
 // source with no install step. Values land via the GITHUB_ENV heredoc form,
@@ -11,6 +11,7 @@ const { randomUUID } = require('node:crypto')
 function main() {
   const url = process.env.ACTIONS_RESULTS_URL ?? ''
   const token = process.env.ACTIONS_RUNTIME_TOKEN ?? ''
+  const mode = process.env.ACTIONS_CACHE_MODE ?? ''
   const envFile = process.env.GITHUB_ENV ?? ''
   if (!url || !token || !envFile) {
     // Fail soft: outside a real Actions job there is nothing to expose, and
@@ -22,10 +23,14 @@ function main() {
   }
   process.stdout.write(`::add-mask::${token}\n`)
   const lines = []
-  for (const [name, value] of [
+  const values = [
     ['ACTIONS_RESULTS_URL', url],
     ['ACTIONS_RUNTIME_TOKEN', token],
-  ]) {
+  ]
+  if (mode) {
+    values.push(['ACTIONS_CACHE_MODE', mode])
+  }
+  for (const [name, value] of values) {
     const delimiter = `ghadelimiter_${randomUUID()}`
     lines.push(`${name}<<${delimiter}`, value, delimiter)
   }

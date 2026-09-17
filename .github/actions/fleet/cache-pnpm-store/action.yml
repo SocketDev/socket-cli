@@ -7,7 +7,7 @@ name: 'Cache pnpm store'
 description: 'Restore the pnpm content-addressable store to skip cold downloads on every CI job and matrix cell'
 
 # WHY THIS EXISTS:
-#   The reusable ci.yml runs four jobs (check, lint, type-check, test) and
+#   The reusable ci-gates.yml runs four jobs (check, lint, type-check, test) and
 #   the test job fans out across an OS × Node matrix. `install` runs a bare
 #   `pnpm install` in each — without a warm store that is a full cold fetch
 #   of the dependency closure 4–10× per CI run, repeated across every fleet

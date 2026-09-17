@@ -131,7 +131,9 @@
     "socket/no-vitest-skipped-tests": "error",
     "socket/no-vitest-standalone-expect": [
       "error",
-      { "additionalTestBlockFunctions": ["cmdit"] }
+      {
+        "additionalTestBlockFunctions": ["cmdit"]
+      }
     ],
     "socket/no-which-for-local-bin": "error",
     "socket/optional-explicit-undefined": "error",
@@ -353,7 +355,11 @@
     "**/test/fleet/nock-loopback-passthrough.test.mts",
     "**/test/fleet/registry-infra/cargo/placeholder.test.mts",
     "**/test/fleet/registry-infra/npm/placeholder.test.mts",
+    "**/test/fleet/unit/ci/gates/run.test.mts",
     "**/test/fleet/unit/comment-voice.test.mts",
+    "**/test/fleet/unit/fix/plan.test.mts",
+    "**/test/fleet/unit/fix/run.test.mts",
+    "**/test/fleet/unit/lockstep/emit-mirror-globs.test.mts",
     "</fleet>",
     "#fleet-canonical-end",
     "<repo>",

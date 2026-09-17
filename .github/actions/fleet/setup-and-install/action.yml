@@ -1,6 +1,6 @@
 # Layer 2b — aggregator. References Layer 1 (checkout, install) +
 # Layer 2a (setup). When ANY of those bump, THIS file bumps next, then
-# Layer 3 (ci.yml / provenance.yml / weekly-update.yml) bumps to ref
+# Layer 3 (ci-gates.yml / provenance.yml / cron-weekly-update.yml) bumps to ref
 # this file's new SHA. See the updating-workflows skill at
 # .claude/skills/updating-workflows/.
 
@@ -68,14 +68,15 @@ inputs:
     default: ''
   payload-token-client-id:
     description: >-
-      Existing PR App Client ID. Pass secrets.SOCKET_PR_CLIENT_ID. The optional
+      Existing Release App client ID. Resolve secrets.SOCKET_RELEASE_CLIENT_ID ||
+      vars.SOCKET_RELEASE_CLIENT_ID in the caller. The optional
       private release fallback mints only when both credentials are present.
       Public GHCR hydration remains anonymous.
     required: false
     default: ''
   payload-token-private-key:
     description: >-
-      Existing PR App private key. Pass secrets.SOCKET_PR_APP_PRIVATE_KEY.
+      Existing Release App private key. Pass secrets.SOCKET_RELEASE_APP_PRIVATE_KEY.
       An absent credential pair leaves public GHCR hydration anonymous.
     required: false
     default: ''
@@ -208,6 +209,7 @@ runs:
       with:
         client-id: ${{ inputs.payload-token-client-id }}
         private-key: ${{ inputs.payload-token-private-key }}
+        repositories: socket-wheelhouse
 
     - name: Install dependencies
       uses: ./.github/actions/fleet/install

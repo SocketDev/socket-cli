@@ -31,8 +31,8 @@
 # Rust repo contract: `fuzz/run.sh <target> [seconds]` and
 # `fuzz/no-unsafe-without-fuzz.sh` are required; `fuzz/seed-corpus.py` is
 # optional and runs only where it exists.
-name: 🔁 Weekly fuzz
-run-name: Weekly fuzz
+name: 'cron: weekly fuzz'
+run-name: 'cron: weekly fuzz'
 
 # Fuzzing is NOT a per-commit gate, which is why there is no push or
 # pull_request trigger here. A randomized harness is budgeted by wall-clock, so
@@ -76,6 +76,7 @@ jobs:
   # Which toolchain legs fire, and the rust target list, read from the repo so
   # no job below hard-codes names.
   discover:
+    cache-mode: none
     name: Discover fuzz targets
     runs-on: ubuntu-latest
     outputs:
@@ -150,6 +151,7 @@ jobs:
 
   # Weekly coverage-guided campaign: 10 min/rust target, corpus cached across runs.
   fuzz-rust:
+    cache-mode: write
     name: 'Fuzz Rust (${{ matrix.target }})'
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasRust == 'true'
     needs: discover
@@ -190,8 +192,8 @@ jobs:
         uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
       - name: Rust toolchain
         uses: ./.github/actions/fleet/setup-rust-toolchain
         with:
@@ -342,11 +344,11 @@ jobs:
           # Without this the install runs the firewall unauthenticated while the
           # job still reports green.
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Reuse the Release App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
       - name: Resolve JS fuzz runtime
         id: js-runtime
         run: |
@@ -451,8 +453,8 @@ jobs:
       - name: 'Hydrate fleet Actions'
         uses: ./.github/actions/fleet/checkout
         with:
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
       - name: Go toolchain
         uses: ./.github/actions/fleet/setup-go-toolchain
         with:
@@ -580,23 +582,23 @@ jobs:
           # Without this the install runs the firewall unauthenticated while the
           # job still reports green.
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
-      # The PR App carries the issues:write grant this needs and already owns
-      # the comment surface. The default GITHUB_TOKEN is deliberately not used:
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+      # The PR App issue profile carries only the issues:write grant. The
+      # default GITHUB_TOKEN is deliberately not used:
       # an issue it opens is attributed to github-actions[bot] and, more to the
       # point, cannot trigger the on:issues workflows a member may hang off a
       # filed crash.
-      - name: 'Mint PR token'
-        id: pr-app
-        uses: ./.github/actions/fleet/github-pr-app-token
+      - name: 'Mint issue token'
+        id: issue-app
+        uses: ./.github/actions/fleet/github-issue-app-token
         with:
-          client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
+          client-id: ${{ secrets.SOCKET_PR_CLIENT_ID || vars.SOCKET_PR_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           repositories: ${{ github.event.repository.name }}
       - name: File an issue for each failed leg
         env:
-          GH_TOKEN: ${{ steps.pr-app.outputs.token }}
+          GH_TOKEN: ${{ steps.issue-app.outputs.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           COMMIT_SHA: ${{ github.sha }}
           # Routed through env, never interpolated into the shell body.

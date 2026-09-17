@@ -1,5 +1,5 @@
 # Layer 1 — leaf action (no internal SocketDev refs). Consumed by the
-# reusable `ci.yml` (Layer 3) as a pre-flight check at the start of
+# reusable `ci-gates.yml` (Layer 3) as a pre-flight check at the start of
 # every job. When this file bumps, cascade is: 2b → 3 → 4 → external
 # repos. See updating-workflows skill at .claude/skills/updating-workflows/.
 

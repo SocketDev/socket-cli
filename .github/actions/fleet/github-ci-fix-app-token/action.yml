@@ -1,0 +1,39 @@
+name: CI fix app token
+description: >-
+  Mint a short-lived Release App installation token for default-branch CI
+  repair. The fixed scope permits repository content updates.
+
+inputs:
+  client-id:
+    description: 'Release App client ID. Resolve secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID in the caller.'
+    required: true
+  private-key:
+    description: 'Release App private key - pass secrets.SOCKET_RELEASE_APP_PRIVATE_KEY.'
+    required: true
+  owner:
+    description: 'Organization or owner for the installation. Empty selects the current repository owner.'
+    required: false
+    default: ''
+  repositories:
+    description: 'Newline or comma-separated repository names.'
+    required: true
+
+outputs:
+  token:
+    description: 'The scoped installation token for CI repair writes.'
+    value: ${{ steps.app-token.outputs.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create CI fix app token
+      id: app-token
+      shell: bash
+      env:
+        APP_PRIVATE_KEY: ${{ inputs.private-key }}
+        CLIENT_ID: ${{ inputs.client-id }}
+        OWNER: ${{ inputs.owner || github.repository_owner }}
+        PERMISSIONS: '{"contents":"write"}'
+        REPOSITORIES: ${{ inputs.repositories }}
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+      run: node "${GITHUB_ACTION_PATH}/mint-app-installation-token.mjs"

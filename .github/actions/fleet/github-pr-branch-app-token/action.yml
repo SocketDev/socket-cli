@@ -1,0 +1,42 @@
+name: PR branch app token
+description: >-
+  Mint a short-lived PR App installation token for owned non-default branch
+  writes. Workflow files are outside this profile.
+
+inputs:
+  client-id:
+    description: 'PR App client ID. Resolve secrets.SOCKET_PR_CLIENT_ID || vars.SOCKET_PR_CLIENT_ID in the caller.'
+    required: true
+  private-key:
+    description: 'PR App private key - pass secrets.SOCKET_PR_APP_PRIVATE_KEY.'
+    required: true
+  owner:
+    description: 'Organization or owner for the installation. Empty selects the current repository owner.'
+    required: false
+    default: ''
+  repositories:
+    description: 'Newline or comma-separated repository names.'
+    required: true
+
+outputs:
+  slug:
+    description: 'The PR App slug for the bot commit identity.'
+    value: ${{ steps.app-token.outputs.slug }}
+  token:
+    description: 'The scoped installation token for owned branch writes.'
+    value: ${{ steps.app-token.outputs.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create PR branch app token
+      id: app-token
+      shell: bash
+      env:
+        APP_PRIVATE_KEY: ${{ inputs.private-key }}
+        CLIENT_ID: ${{ inputs.client-id }}
+        OWNER: ${{ inputs.owner || github.repository_owner }}
+        PERMISSIONS: '{"contents":"write"}'
+        REPOSITORIES: ${{ inputs.repositories }}
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+      run: node "${GITHUB_ACTION_PATH}/mint-app-installation-token.mjs"

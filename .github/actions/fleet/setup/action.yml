@@ -48,8 +48,8 @@ runs:
     # Derived from FLEET_ENV, the one list in
     # .claude/hooks/fleet/_shared/fleet-env.mts, so a workflow inherits every
     # knob by running setup rather than hand-copying an env: block. That
-    # duplication is what let OTEL_SDK_DISABLED reach ci.yml and miss
-    # github-release.yml.
+    # duplication is what let OTEL_SDK_DISABLED reach ci-gates.yml and miss
+    # release-github.yml.
     - name: Export the fleet no-phone-home env
       shell: bash
       run: | # zizmor: ignore[github-env] - emits fixed NAME=value lines read from the tracked fleet-env.json, no runtime-attacker data.

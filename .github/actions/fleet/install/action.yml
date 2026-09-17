@@ -63,7 +63,7 @@ runs:
     - name: Install agentshield
       # Auto-skip in matrix cells: AgentShield's scan is
       # Node-version-indifferent and belongs in a single scan job
-      # (the check / lint / type-check jobs in the reusable ci.yml),
+      # (the check / lint / type-check jobs in the reusable ci-gates.yml),
       # not replicated across every Node × OS matrix cell.
       # `strategy.job-total` is empty for non-matrix jobs and `1` for
       # 1×1 matrices, so `< 2` keeps scan-style jobs installing

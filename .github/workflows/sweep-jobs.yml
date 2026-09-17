@@ -1,9 +1,9 @@
-name: 🧹 Sweep jobs
-run-name: Sweep jobs
+name: 'sweep: jobs'
+run-name: 'sweep: jobs'
 
 # Reclaims GitHub Actions storage on a weekly cadence, in two steps.
 #
-# Run history (scripts/fleet/prune-workflow-runs.mts):
+# Run history (scripts/fleet/workflow/runs/prune.mts):
 #   - keeps only the newest 20 runs per workflow still present on the default
 #     branch (an optional `days` input adds a time window),
 #   - purges dependabot / gh-audit run groups wholesale, and
@@ -89,11 +89,11 @@ jobs:
           # Every sibling workflow supplies it either here or as job env — this
           # one did neither, so its install ran the firewall unauthenticated.
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Reuse the Release App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
       - name: Prune workflow runs
         env:
           GH_TOKEN: ${{ github.token }}
@@ -110,7 +110,7 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then
             ARGS+=(--dry-run)
           fi
-          node scripts/fleet/prune-workflow-runs.mts "${ARGS[@]}"
+          node scripts/fleet/workflow/runs/prune.mts "${ARGS[@]}"
       # Same job, not a second one: every job starts on a bare runner and would
       # need its own copy of the inline bootstrap above, and that bootstrap is
       # deliberately tri-plicated and lock-step checked. `always()` keeps the

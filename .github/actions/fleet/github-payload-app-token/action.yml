@@ -1,6 +1,6 @@
 name: Fleet payload read token
 description: >-
-  Mint a short-lived, read-only installation token from the existing PR App.
+  Mint a short-lived, read-only installation token from the Release App.
   Thin member CI uses it to download the fleet release bundle from the private wheelhouse. Scoped
   to contents:read on the payload repo only — the least privilege the bootstrap
   fetch (`gh release download` in scripts/repo/bootstrap/fleet.mjs) needs, and
@@ -11,19 +11,18 @@ description: >-
 
 inputs:
   client-id:
-    description: 'PR App Client ID - pass secrets.SOCKET_PR_CLIENT_ID.'
+    description: 'Release App client ID. Resolve secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID in the caller.'
     required: true
   private-key:
-    description: 'PR App private key — pass secrets.SOCKET_PR_APP_PRIVATE_KEY.'
+    description: 'Release App private key — pass secrets.SOCKET_RELEASE_APP_PRIVATE_KEY.'
     required: true
   owner:
     description: 'Org/owner that hosts the payload repo. Empty = the current repo owner.'
     required: false
     default: ''
   repositories:
-    description: 'Repos to scope the token to. Defaults to the wheelhouse payload repo alone — never widen without reason.'
-    required: false
-    default: 'socket-wheelhouse'
+    description: 'Repos to scope the token to.'
+    required: true
 
 outputs:
   token:
@@ -42,7 +41,7 @@ runs:
     # This token is contents:read ONLY, scoped to the single payload repo — it
     # downloads the fleet release bundle and nothing more. A contents:read
     # request is a subset of a contents:write app grant, so the minter's
-    # preflight accepts the PR App contents grant; this token remains read-only.
+    # preflight accepts the Release App contents grant; this token remains read-only.
     - name: Create payload app token
       id: app-token
       shell: bash

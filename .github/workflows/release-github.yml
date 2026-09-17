@@ -1,5 +1,5 @@
-name: 🚀 GitHub release
-run-name: GitHub release
+name: 'release: github'
+run-name: 'release: github'
 
 # PRESET — seeded once from template/presets/ (onboarding or first cascade),
 # then repo-owned: customize what THIS repo releases. The fleet base actions
@@ -36,19 +36,6 @@ on:
 permissions:
   contents: read
 
-# Fleet no-phone-home posture, lockstep with the FLEET_ENV list in
-# .claude/hooks/fleet/_shared/fleet-env.mts (mirror of ci.yml's env block) —
-# the release job runs the same telemetry + update-notifier opt-outs, so a
-# release build never phones home. OTEL_SDK_DISABLED holds the OpenTelemetry
-# exporter that ships in the skillspector security tool's closure inert.
-env:
-  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
-  COREPACK_ENABLE_PROJECT_SPEC: '0'
-  DISABLE_TELEMETRY: '1'
-  DO_NOT_TRACK: '1'
-  NO_UPDATE_NOTIFIER: '1'
-  OTEL_SDK_DISABLED: 'true'
-
 jobs:
   # Does this repo cut GitHub Releases at all? Read from the repo's own
   # settings, never hard-coded here: a member publishing to npm or crates.io
@@ -61,6 +48,7 @@ jobs:
     name: Check release eligibility
     runs-on: ubuntu-latest
     outputs:
+      asset_workflow: ${{ steps.flag.outputs.asset_workflow }}
       enabled: ${{ steps.flag.outputs.enabled }}
     steps:
       - name: Bootstrap checkout
@@ -91,8 +79,8 @@ jobs:
         uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
       - name: Read release.github
         id: flag
         run: node scripts/fleet/release/github/enabled.mts
@@ -108,7 +96,8 @@ jobs:
     if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      actions: read
+      contents: read
     steps:
       # Retain the current default branch's fleet actions before checking out
       # historical release content. The archive digest protects the retained
@@ -157,6 +146,7 @@ jobs:
           )
           printf '%s\n' "${ACTIONS_SHA}" > "${RUNNER_TEMP}/fleet-actions.sha"
       - name: Checkout release content
+        id: release-source
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -187,6 +177,7 @@ jobs:
             echo "::error::Release source mismatch: expected ${RELEASE_SHA}, got ${ACTUAL_SHA}." >&2
             exit 1
           fi
+          echo "revision=${RELEASE_SHA}" >> "${GITHUB_OUTPUT}"
       - name: Restore fleet Actions
         shell: bash
         run: |
@@ -201,8 +192,8 @@ jobs:
         uses: ./.github/actions/fleet/checkout
         with:
           checkout: 'false'
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
       # The resolved tag is the single input every later step trusts — it
       # feeds the registry-liveness gate as TAG and names the release cut, so
       # wrong resolution here silently bypasses the publish-before-release
@@ -230,11 +221,28 @@ jobs:
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: node scripts/fleet/registry-liveness-gate.mjs
+      - name: Set up and install
+        if: ${{ needs.gate.outputs.asset_workflow != '' && (github.event_name == 'push' || inputs.release) }}
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          checkout: 'false'
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+      - name: Collect verified release assets
+        id: assets
+        if: ${{ needs.gate.outputs.asset_workflow != '' && (github.event_name == 'push' || inputs.release) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ASSET_WORKFLOW: ${{ needs.gate.outputs.asset_workflow }}
+          RELEASE_REVISION: ${{ steps.release-source.outputs.revision }}
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: node scripts/fleet/release/github/assets.mts
       - name: Mint release-app token
         id: app-token
         uses: ./.github/actions/fleet/github-release-app-token
         with:
-          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID }}
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           repositories: ${{ github.event.repository.name }}
           owner: ${{ github.repository_owner }}
@@ -245,4 +253,5 @@ jobs:
         with:
           tag: ${{ steps.tag.outputs.tag }}
           dry-run: ${{ (github.event_name == 'push' || inputs.release) && 'false' || 'true' }}
+          assets: ${{ steps.assets.outputs.assets }}
           token: ${{ steps.app-token.outputs.token }}
