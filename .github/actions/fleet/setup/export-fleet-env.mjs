@@ -6,7 +6,7 @@
  *   step `NO_UPDATE_NOTIFIER` exists for. Reads `fleet-env.json` beside this
  *   file, which is THE list. A workflow gets every knob by running setup,
  *   instead of hand-copying an `env:` block that drifts — the duplication that
- *   let `OTEL_SDK_DISABLED` reach ci.yml and miss github-release.yml.
+ *   let `OTEL_SDK_DISABLED` reach ci-gates.yml and miss release-github.yml.
  *   Dependency-free by requirement, not preference: this runs on the runner's
  *   system Node before any install, so it may use only `node:` builtins. That
  *   is also why the error text uses String(e) rather than importing the fleet

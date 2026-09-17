@@ -2,7 +2,6 @@
  * @file Path constants for Socket CLI build scripts.
  */
 
-import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -22,27 +21,5 @@ export const srcPath = path.join(rootPath, 'src')
 // Package and lockfile paths.
 export const rootNodeModulesBinPath = packageNodeModulesBinPath(rootPath)
 
-// Cache directory paths.
-// Repo-owned tool-cache segment at the repo root, NOT inside node_modules:
-// the store has to outlive `rm -rf node_modules` and package `clean` sweeps.
+// Repo-owned tool-cache segment at the repo root, outside node_modules.
 export const REPO_CACHE_DIR = path.join(rootPath, '.cache', 'repo')
-const SOCKET_CACHE_DIR = path.join(os.homedir(), '.socket')
-export const SOCKET_CLI_SEA_BUILD_DIR = path.join(
-  os.tmpdir(),
-  'socket-cli-sea-build',
-)
-const SOCKET_CLI_SEA_BUILD_DIR_FALLBACK = '/tmp/socket-cli-sea-build'
-
-/**
- * Get all global cache directories.
- */
-export function getGlobalCacheDirs() {
-  return [
-    { name: '~/.socket', path: SOCKET_CACHE_DIR },
-    { name: '$TMPDIR/socket-cli-sea-build', path: SOCKET_CLI_SEA_BUILD_DIR },
-    {
-      name: '/tmp/socket-cli-sea-build',
-      path: SOCKET_CLI_SEA_BUILD_DIR_FALLBACK,
-    },
-  ]
-}

@@ -1,5 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest'
-import { ensureSdxgenSource } from '../../../scripts/repo/cli-build/sdxgen.mts'
+import {
+  ensureSdxgenSource,
+  getSdxgenCloneEnvironment,
+} from '../../../scripts/repo/cli-build/sdxgen.mts'
+import { withEnv } from '@socketsecurity/lib-stable/env/rewire'
 
 const spawn = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
@@ -77,4 +81,25 @@ it('stops if sparse assets cannot be restored', async () => {
     ),
   ).rejects.toThrow()
   expect(spawn).toHaveBeenCalledTimes(2)
+})
+
+it('passes a scoped token to git through inherited config', async () => {
+  const env = await withEnv(
+    { SDXGEN_GITHUB_TOKEN: 'example-fake-token' },
+    getSdxgenCloneEnvironment,
+  )
+  expect(env).toMatchObject({
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${Buffer.from('x-access-token:example-fake-token').toString('base64')}`,
+  })
+})
+
+it('rejects a missing token in GitHub Actions', async () => {
+  await expect(
+    withEnv(
+      { GITHUB_ACTIONS: 'true', SDXGEN_GITHUB_TOKEN: undefined },
+      getSdxgenCloneEnvironment,
+    ),
+  ).rejects.toThrow('Cannot authenticate the generator clone')
 })

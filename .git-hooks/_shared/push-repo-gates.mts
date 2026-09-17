@@ -42,7 +42,11 @@ import {
 // One owner for the path, per `paths-are-constructed-once`: a cascaded file is
 // tracked twice (source + live mirror), so a literal spelled here counts as
 // two construction sites on its own.
-import { TYPECHECK_CACHE_DIR } from '../../scripts/fleet/paths.mts'
+import { HEAVY_JOB_BUSY_EXIT_CODE } from '../../scripts/fleet/process/heavy-job/admission.mts'
+import {
+  FLEET_TYPE_SCRIPT,
+  TYPECHECK_CACHE_DIR,
+} from '../../scripts/fleet/paths.mts'
 
 import type { TypecheckVerdict } from './typecheck-cache.mts'
 import { scanSoakExcludeDateAnnotations } from './scan-supply-chain.mts'
@@ -403,16 +407,16 @@ function runTypeCheckOnce(cacheKey: string): TypecheckVerdict {
     // Captured rather than inherited so the diagnostics can be ATTRIBUTED. tsc
     // reads the working tree, which in a shared checkout holds a co-session's
     // half-finished edits — errors this push neither caused nor can fix.
-    const r = spawnSync(
-      process.execPath,
-      [TSC_BIN, '--noEmit', '-p', TYPE_CHECK_TSCONFIG],
-      { stdioString: true },
-    )
+    const r = spawnSync(process.execPath, [FLEET_TYPE_SCRIPT], {
+      stdioString: true,
+    })
     const verdict: TypecheckVerdict = {
       output: `${String(r.stdout ?? '')}${String(r.stderr ?? '')}`,
       status: r.status ?? 1,
     }
-    writeTypecheckVerdict(TYPECHECK_CACHE_DIR, cacheKey, verdict)
+    if (verdict.status !== HEAVY_JOB_BUSY_EXIT_CODE) {
+      writeTypecheckVerdict(TYPECHECK_CACHE_DIR, cacheKey, verdict)
+    }
     return verdict
   } finally {
     held?.release()

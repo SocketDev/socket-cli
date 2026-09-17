@@ -9,8 +9,9 @@ import { runMain } from '../fleet/process/run-main.mts'
 import type { ScriptMeta } from '../fleet/process/run-main.mts'
 
 export async function runCliBuild(
-  args: string[] = process.argv.slice(2),
+  options: { args?: string[] | undefined } = {},
 ): Promise<void> {
+  const args = options.args ?? process.argv.slice(2)
   await spawn(
     process.execPath,
     [path.join(REPO_ROOT, 'scripts/repo/cli-build/build.mts'), ...args],
@@ -24,8 +25,9 @@ export async function runCliBuild(
 const SCRIPT_META: ScriptMeta = {
   describe: 'build the Node CLI package',
   help: `Usage: pnpm run build [--quiet] [--verbose] [--force] [--watch]`,
+  json: 'native',
 }
 
 if (isMainModule(import.meta.url)) {
-  runMain(runCliBuild, SCRIPT_META)
+  runMain(() => runCliBuild(), SCRIPT_META)
 }

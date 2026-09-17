@@ -98,19 +98,15 @@
 # this file covers every entry).
 **/dist/**
 **/out/**
+**/target/**
+**/test/fixtures/**
 
 # Vendored / upstream trees — kept byte-identical with their source of truth. Per
 # CLAUDE.md "untracked-by-default for vendored / build-copied trees": someone
 # else's source, not ours; the formatter would rewrite it into our local style.
-# `test/fixtures/` is the conformance-corpus flavor of the same contract (see
-# docs/agents.md/fleet/conformance-runners.md): spec suites vendored there must
-# stay byte-identical to their pinned upstream or the owning sync's drift check
-# fires on every formatter pass.
-**/test/fixtures/**
-# `tests/fixtures/` is the cargo-convention spelling of the same contract —
-# a Rust crate's `tests/` dir carrying language fixtures (e.g. golden .d.ts
-# inputs) that must stay byte-stable for its harness.
-**/tests/fixtures/**
+# Fixture trees are test data, including conformance corpora and tiered fleet
+# fixtures. Their harness or owning sync controls their byte representation.
+**/fixtures/**
 **/upstream/**
 
 # gh-aw generated workflows. `gh aw compile` turns a `<name>.md` agentic workflow

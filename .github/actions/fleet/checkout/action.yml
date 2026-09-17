@@ -42,15 +42,16 @@ inputs:
     default: '.'
   payload-token-client-id:
     description: >-
-      Existing PR App Client ID. Pass secrets.SOCKET_PR_CLIENT_ID. The optional
+      Existing Release App client ID. Resolve secrets.SOCKET_RELEASE_CLIENT_ID ||
+      vars.SOCKET_RELEASE_CLIENT_ID in the caller. The optional
       private release fallback mints only when both credentials are present.
       Public GHCR hydration remains anonymous.
     required: false
     default: ''
   payload-token-private-key:
     description: >-
-      Existing PR App private key. Pass secrets.SOCKET_PR_APP_PRIVATE_KEY.
-      An absent key skips the optional mint and leaves public GHCR available.
+      Existing Release App private key. Pass secrets.SOCKET_RELEASE_APP_PRIVATE_KEY.
+      An absent credential pair leaves public GHCR hydration anonymous.
     required: false
     default: ''
 
@@ -70,8 +71,8 @@ runs:
       env:
         # Route every workflow-context value through env so no ${{ }} expands
         # directly into the shell body (zizmor expression-injection). The token
-        # authorizes the fetch inline via `git -c …extraheader` and is NEVER
-        # written to .git/config — the persist-credentials:false equivalent.
+        # authorizes Git through step-local environment configuration.
+        # The credential stays out of arguments and .git/config.
         CHECKOUT_REF: ${{ inputs.ref }}
         CHECKOUT_DEST: ${{ inputs.working-directory }}
         CHECKOUT_FETCH_DEPTH: ${{ inputs.fetch-depth }}
@@ -111,7 +112,10 @@ runs:
         # Inline, non-persisting auth header (persist-credentials:false equiv).
         if [ -n "${GITHUB_TOKEN}" ]; then
           AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch "${FETCH_ARGS[@]}"
         else
           git fetch "${FETCH_ARGS[@]}"
         fi
@@ -126,7 +130,7 @@ runs:
         # origin/HEAD, and they fail loud with their own What/Where/Fix.
         if [ "${CHECKOUT_FETCH_DEPTH}" = "0" ]; then
           if [ -n "${GITHUB_TOKEN}" ]; then
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64:-}" remote set-head origin --auto \
+            git remote set-head origin --auto \
               || echo "::warning::set-head failed — origin/HEAD unset"
           else
             git remote set-head origin --auto \
@@ -145,18 +149,29 @@ runs:
         set -euo pipefail
         DEST="${CHECKOUT_DEST:-.}"
         NEEDED=false
-        if [ -f "${DEST}/scripts/repo/bootstrap/fleet.mjs" ] \
-          && { [ -d "${DEST}/template/base/universal" ] \
-            || [ ! -f "${DEST}/scripts/fleet/setup/external-tools.json" ]; }; then
+        if [ -f "${DEST}/scripts/repo/bootstrap/fleet.mjs" ]; then
           NEEDED=true
         fi
         echo "needed=${NEEDED}" >> "${GITHUB_OUTPUT}"
 
+    - name: Validate fleet payload credentials
+      if: steps.detect-hydration.outputs.needed == 'true'
+      shell: bash
+      env:
+        PAYLOAD_TOKEN_CLIENT_ID: ${{ inputs.payload-token-client-id }}
+        PAYLOAD_TOKEN_PRIVATE_KEY: ${{ inputs.payload-token-private-key }}
+      run: |
+        set -euo pipefail
+        if { [ -z "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -n "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; } || \
+           { [ -n "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -z "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; }; then
+          echo "::error title=fleet payload credentials are incomplete::The payload client variable and private-key secret are both required for thin payload hydration."
+          exit 1
+        fi
+
     - name: Mint fleet payload read token
       # Scoped contents:read mint for the hydration fetch below. Gated on
-      # BOTH hydration actually being needed AND the caller having provisioned
-      # the PR App credentials, so a non-thin checkout — most callers of
-      # this action — never mints a token it has no use for. Mirrors
+      # hydration actually being needed, after validation rejects incomplete
+      # Release App input pairs. A non-thin checkout never mints an unused token. Mirrors
       # setup-and-install's own later mint (for the `pnpm install`-time
       # fetch), scoped identically (contents:read on the wheelhouse repo
       # alone) — see github-payload-app-token's own description.
@@ -166,12 +181,13 @@ runs:
       with:
         client-id: ${{ inputs.payload-token-client-id }}
         private-key: ${{ inputs.payload-token-private-key }}
+        repositories: socket-wheelhouse
 
     - name: Hydrate thin fleet payload
       # Materialize the release bundle right after checkout, before ANY
       # reader — see "Detect thin fleet payload" above. The GHCR pull inside
       # fleet.mjs is anonymous: the fleet-pack OCI artifact is published
-      # PUBLIC (github-release.yml's "Push fleet-pack to GHCR" step — "so
+      # PUBLIC (release-github.yml's "Push fleet-pack to GHCR" step — "so
       # members pull the bundle anonymously"), so the common case needs no
       # token at all. The token minted above only backs the
       # `gh release download` fallback fleet.mjs takes if GHCR itself is
@@ -190,13 +206,14 @@ runs:
         # fetches a release bundle. Both reach this step, because the payload is
         # untracked in either case, so the branch is on which tree is present.
         # Without it the wheelhouse's own jobs took the consumer path and died
-        # on "no --ref and no bundle.ref" - correct for a member, meaningless in
-        # the repo that PUBLISHES the bundle, which has no ref of its own to
-        # pin. Mirrors materializeFromLocalTemplate, which returns undefined
+        # when asked to fetch its own published payload. Mirrors
+        # materializeFromLocalTemplate, which returns undefined
         # exactly when template/base/universal is absent.
         HYDRATE_ARGS=()
         if [ -d template/base/universal ]; then
           HYDRATE_ARGS+=(--from-template)
+        else
+          HYDRATE_ARGS+=(--quiet)
         fi
         if ! node scripts/repo/bootstrap/fleet.mjs "${HYDRATE_ARGS[@]+"${HYDRATE_ARGS[@]}"}"; then
           echo "::error title=fleet payload hydration failed::node scripts/repo/bootstrap/fleet.mjs exited non-zero"
@@ -204,11 +221,10 @@ runs:
             echo "  What:   the thin fleet payload fetch failed on a fresh checkout."
             echo "  Where:  ${DEST}/scripts/repo/bootstrap/fleet.mjs, called from checkout/action.yml."
             echo "  Saw:    a non-zero exit — see this step's own output above for the reason"
-            echo "          (bundle.ref unpinned, GHCR pull AND the gh-release fallback both"
-            echo "          failed, or a bundle-verification mismatch)."
-            echo "  Fix:    in a MEMBER, confirm .config/repo/socket-wheelhouse.json carries a valid"
-            echo "          bundle.ref, that ghcr.io/socketdev/socket-wheelhouse/fleet-pack is"
-            echo "          reachable, and — if GHCR is down — that payload-token-client-id /"
+            echo "          (GHCR pull AND the gh-release fallback both failed, or a"
+            echo "          bundle-verification mismatch)."
+            echo "  Fix:    confirm ghcr.io/socketdev/socket-wheelhouse/fleet-pack is reachable"
+            echo "          and — if GHCR is down — that payload-token-client-id /"
             echo "          payload-token-private-key are wired through to this action."
           } >&2
           exit 1

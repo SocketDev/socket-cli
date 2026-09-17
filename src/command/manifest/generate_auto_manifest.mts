@@ -57,7 +57,7 @@ export function abortManifestRunIfFailed(
   }
 }
 
-export type GenerateAutoManifestOptions = {
+export type GenerateAutoManifestConfig = {
   // Reachability path: run build tools with files to emit the sidecar.
   computeArtifactsSidecar?: boolean | undefined
   cwd: string
@@ -78,7 +78,7 @@ export async function generateAutoManifest({
   outputKind,
   trustSocketJson,
   verbose,
-}: GenerateAutoManifestOptions): Promise<GenerateAutoManifestResult> {
+}: GenerateAutoManifestConfig): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const manifestDefaults = sockJson.defaults?.manifest
   const isTextMode = outputKind === 'text'
@@ -285,7 +285,7 @@ export async function generateMavenAutoManifest({
   abortManifestRunIfFailed('maven', beforeExitCode)
 }
 
-export type AutoManifestContext = GenerateAutoManifestOptions & {
+export type AutoManifestContext = GenerateAutoManifestConfig & {
   sockJson: ReturnType<typeof readOrDefaultSocketJson>
   isTextMode: boolean
   sidecarAcc: SidecarAccumulator | undefined

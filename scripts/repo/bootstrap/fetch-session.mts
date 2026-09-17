@@ -7,7 +7,7 @@
  *   kernel runs at SessionStart from a TRACKED location (it survives a thin
  *   untrack), detects the absent payload, and re-materializes it through the
  *   SAME dep-0 bootstrap fetcher: `scripts/repo/bootstrap/fleet.mjs
- *   --if-current`. It never reimplements fetching — it shells the fetcher.
+ *   with no mode flag. It never reimplements fetching — it shells the fetcher.
  *   Dep-0: node: builtins only, so it runs before node_modules exists. Plain
  *   `.mts`, type-stripped by Node, which every fleet repo already requires via
  *   `engines.node >=24` —
@@ -120,6 +120,7 @@ const bootstrapRunner = (function (
    * `main()` actually parses.
    */
   interface ScriptMeta {
+    readonly heavyJob?: 'test' | 'coverage' | 'build' | 'type' | undefined
     readonly json?: 'native' | 'result' | undefined
     readonly describe: string
     readonly help: string
@@ -304,7 +305,7 @@ type ScriptMeta = Parameters<typeof runMainMinimal>[1]
  * declaration and the code cannot drift apart.
  */
 export type FetchPlan =
-  | { action: 'fetch'; fleet: string }
+  | { action: 'ensure'; fleet: string }
   | { action: 'no-fetcher' }
   | { action: 'present' }
 
@@ -327,7 +328,7 @@ export function ensurePayload(repoRoot: string): number {
     )
     return 0
   }
-  const result = spawnSync(process.execPath, [plan.fleet, '--if-current'], {
+  const result = spawnSync(process.execPath, [plan.fleet, '--quiet'], {
     cwd: repoRoot,
     encoding: 'utf8',
   })
@@ -385,14 +386,13 @@ export function payloadPresent(repoRoot: string): boolean {
  *   with no node_modules: a bare clone self-fetches.
  */
 export function planFetch(repoRoot: string): FetchPlan {
-  if (payloadPresent(repoRoot)) {
-    return { action: 'present' }
-  }
   const fleet = path.join(repoRoot, 'scripts', 'repo', 'bootstrap', 'fleet.mjs')
   if (!existsSync(fleet)) {
-    return { action: 'no-fetcher' }
+    return payloadPresent(repoRoot)
+      ? { action: 'present' }
+      : { action: 'no-fetcher' }
   }
-  return { action: 'fetch', fleet }
+  return { action: 'ensure', fleet }
 }
 
 /**
@@ -436,7 +436,7 @@ export const HELP = `Usage: node scripts/repo/bootstrap/fetch-session.mts [flags
 A thin fleet member gitignores its .claude/hooks/fleet payload, so a clone
 opened before \`pnpm install\` has no hooks and they silently never fire. This
 kernel sits in a tracked location, notices the missing payload, and shells the
-dep-0 fetcher \`scripts/repo/bootstrap/fleet.mjs --if-current\` to fetch it.
+dep-0 fetcher \`scripts/repo/bootstrap/fleet.mjs\` to fetch it.
 
 Fail-open: a missing fetcher or a failed fetch warns on stderr and exits 0, so
 a session never blocks. Idempotent: with the payload already present it does

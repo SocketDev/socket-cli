@@ -1,4 +1,4 @@
-/**
+/*
  * @file Unified environment variable management for Socket CLI builds and
  *   tests. Single source of truth for all inlined environment variables. This
  *   module consolidates environment variable loading that was previously

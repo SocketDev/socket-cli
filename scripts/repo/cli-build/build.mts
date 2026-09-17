@@ -12,6 +12,10 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { buildSdxgenBundle } from './sdxgen.mts'
 import { safeDelete } from '../../fleet/fs/safe.mts'
+import { isMainModule } from '../../fleet/process/is-main-module.mts'
+import { runMain } from '../../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -149,7 +153,7 @@ async function runBuildStep(executable: string, args: string[]): Promise<void> {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = isQuiet()
   const verbose = isVerbose()
   if (process.argv.includes('--force')) {
@@ -194,7 +198,12 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch(error => {
-  logger.error(error)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe: 'build the Socket CLI distribution and bundled assets',
+  help: 'Usage: pnpm run build:cli [--quiet] [--verbose] [--force] [--watch]',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

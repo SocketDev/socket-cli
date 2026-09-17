@@ -99,16 +99,16 @@ pnpm test
 
 Requires Node.js (see `.node-version`) and pnpm (see the `packageManager` field in `package.json`).
 
-| Command                       | Description                   |
-| ----------------------------- | ----------------------------- |
-| `pnpm run build`              | Smart build (skips unchanged) |
-| `pnpm run build --force`      | Force rebuild everything      |
-| `pnpm run build:cli`          | Build CLI package only        |
-| `pnpm run build:watch`        | Rebuild the CLI on changes    |
-| `pnpm test`                   | Run all tests                 |
-| `pnpm run test:unit -- --all` | Run all product unit tests    |
-| `pnpm run check`              | Lint + typecheck              |
-| `pnpm run fix`                | Auto-fix lint + formatting    |
+| Command                    | Description                   |
+| -------------------------- | ----------------------------- |
+| `pnpm run build`           | Smart build (skips unchanged) |
+| `pnpm run build --force`   | Force rebuild everything      |
+| `pnpm run build:cli`       | Build CLI package only        |
+| `pnpm run build:watch`     | Rebuild the CLI on changes    |
+| `pnpm test`                | Run all tests                 |
+| `pnpm run test:unit --all` | Run all product unit tests    |
+| `pnpm run check`           | Lint + typecheck              |
+| `pnpm run fix`             | Auto-fix lint + formatting    |
 
 Run the built CLI from source:
 

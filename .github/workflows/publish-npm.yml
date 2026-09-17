@@ -1,5 +1,5 @@
-name: 📦 Publish npm
-run-name: Publish npm
+name: 'publish: npm'
+run-name: 'publish: npm'
 
 # Cascade-owned — every npm-publishing repo carries the byte-identical copy
 # (adopt by copying the template once; the sync then keeps it in lock-step;
@@ -53,9 +53,38 @@ on:
         default: ''
       checkout-ref:
         description: >-
-          Backfill only — the branch/tag/SHA whose CONTENT is republished.
-          The workflow definition always comes from the dispatched ref,
-          main, so historical content stays reachable.
+          Backfill or reserved-release resume — the tag, branch, or SHA whose
+          content is published while the workflow definition stays on main.
+        type: string
+        default: ''
+      resume-reserved:
+        description: >-
+          Resume an unpublished release from its existing vVERSION tag.
+          Requires checkout-ref to name that exact tag.
+        type: boolean
+        default: false
+      scan-package:
+        description: 'Package name for a CI-only staged-byte Socket scan.'
+        type: string
+        default: ''
+      scan-version:
+        description: 'Package version for the CI-only scan.'
+        type: string
+        default: ''
+      scan-stage-id:
+        description: 'npm stage ID. A non-empty value selects scan-only mode.'
+        type: string
+        default: ''
+      scan-stage-sha1:
+        description: 'Exact npm-recorded sha1 for the staged tarball.'
+        type: string
+        default: ''
+      scan-source-sha:
+        description: 'Full signed release-App bump SHA that produced the stage.'
+        type: string
+        default: ''
+      scan-publish-run-id:
+        description: 'Successful original publish workflow run ID.'
         type: string
         default: ''
 
@@ -67,20 +96,167 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  npm-publish:
-    name: Publish npm
+  coverage-shards:
+    if: ${{ inputs.scan-stage-id == '' && inputs.backfill-version == '' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    outputs:
+      shard-count: ${{ strategy.job-total }}
+    name: Coverage collection
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          CHECKOUT_REF: ${{ inputs.checkout-ref || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${FETCH_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          checkout-ref: ${{ inputs.checkout-ref || github.sha }}
+      - name: Build
+        run: pnpm run build
+      - name: 'Run coverage'
+        id: coverage_collection
+        uses: ./.github/actions/fleet/run-script
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COVERAGE_SHARD: ${{ matrix.shard }}
+          COVERAGE_SHARD_COUNT: ${{ strategy.job-total }}
+        with:
+          main-script: pnpm run ci:gates --stage=cover-shard --shard="$COVERAGE_SHARD/$COVERAGE_SHARD_COUNT"
+      - name: Upload coverage collection
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: npm-publish-coverage-shard-${{ matrix.shard }}
+          path: .cache/fleet/coverage-shards/${{ matrix.shard }}
+      - name: Preserve coverage failure output
+        if: ${{ failure() && steps.coverage_collection.outcome == 'failure' }}
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: npm-publish-coverage-shard-${{ matrix.shard }}-failure
+          path: |
+            .cache/fleet/fleet-cover
+            .cache/fleet/coverage-shards/${{ matrix.shard }}
+          if-no-files-found: ignore
+
+  coverage:
+    needs: [coverage-shards]
+    if: ${{ !cancelled() && inputs.scan-stage-id == '' && inputs.backfill-version == '' }}
+    name: Coverage gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Require successful coverage collection
+        shell: bash
+        env:
+          COLLECTION_RESULT: ${{ needs.coverage-shards.result }}
+        run: |
+          if [ "$COLLECTION_RESULT" != success ]; then
+            echo "Coverage collection failed. Fix the failed collection jobs before publishing."
+            exit 1
+          fi
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          CHECKOUT_REF: ${{ inputs.checkout-ref || github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${FETCH_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          checkout-ref: ${{ inputs.checkout-ref || github.sha }}
+      - name: Build
+        run: pnpm run build
+      - name: 'Download coverage artifacts'
+        uses: ./.github/actions/fleet/download-artifact
+        with:
+          path: .cache/fleet/npm-publish-coverage
+      - name: Arrange coverage artifacts
+        shell: bash
+        env:
+          COVERAGE_SHARD_COUNT: ${{ needs.coverage-shards.outputs.shard-count }}
+        run: |
+          set -euo pipefail
+          for index in $(seq 1 "$COVERAGE_SHARD_COUNT"); do
+            source=".cache/fleet/npm-publish-coverage/npm-publish-coverage-shard-$index"
+            target=".cache/fleet/coverage-shards/$index"
+            if [ ! -d "$source" ]; then
+              echo "Missing coverage artifact for shard $index." >&2
+              exit 1
+            fi
+            mkdir -p "$target"
+            cp -R "$source/." "$target/"
+          done
+      - name: Install cargo-llvm-cov
+        if: ${{ hashFiles('**/Cargo.toml') != '' }}
+        run: pnpm run setup:rust-coverage
+      - name: Aggregate coverage
+        env:
+          COVERAGE_SHARD_COUNT: ${{ needs.coverage-shards.outputs.shard-count }}
+        run: pnpm run cover:aggregate --shards="$COVERAGE_SHARD_COUNT"
+
+  npm-publish:
+    needs: [coverage]
+    if: ${{ always() && inputs.scan-stage-id == '' && (inputs.backfill-version != '' || needs.coverage.result == 'success') }}
+    cache-mode: read
+    name: Publish npm
+    runs-on: ${{ vars.NPM_PUBLISH_RUNNER || vars.ODAI_RUNNER || 'ubuntu-latest' }}
     # npm's trusted-publisher config pins this GitHub environment name; the
     # OIDC token exchange 404s if the job runs outside it.
-    environment: npm-publish
+    environment: publish-npm
     permissions:
       contents: read
       # npm provenance / trusted publishing mints its OIDC token here.
       id-token: write
-    env:
-      # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install —
-      # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
-      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:
       # First step can't call the local ./.github/actions/fleet/checkout
       # composite (nothing checked out yet); bootstrap the workspace with the
@@ -98,7 +274,7 @@ jobs:
           # Route context through env (no ${{ }} in the shell body —
           # zizmor expression-injection). Token authorizes the fetch inline and
           # is never persisted to .git/config.
-          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+          CHECKOUT_REF: ${{ inputs.checkout-ref || github.sha }}
           GITHUB_TOKEN: ${{ github.token }}
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
@@ -111,16 +287,51 @@ jobs:
           git remote add origin "${SERVER_URL}/${REPOSITORY}"
           # Backfill's content ref wins; otherwise the dispatched ref.
           FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
-          FETCH_ARGS=(--prune --depth 1 origin "${FETCH_REF}")
+          FETCH_ARGS=(--prune origin "${FETCH_REF}")
           # --tags stays on the fetch line itself so the
           # version-derivation-jobs-have-tags gate can see it.
           if [ -n "${GITHUB_TOKEN}" ]; then
             AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --tags "${FETCH_ARGS[@]}"
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+            git fetch --tags "${FETCH_ARGS[@]}"
           else
             git fetch --tags "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
+
+      - name: Establish trusted release content
+        id: content-trust
+        shell: bash
+        env:
+          BACKFILL_VERSION: ${{ inputs.backfill-version }}
+          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          DISPATCH_REF: ${{ github.ref }}
+          RESUME_RESERVED: ${{ inputs.resume-reserved }}
+        run: |
+          set -euo pipefail
+          if [ "$DISPATCH_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "trusted=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$CHECKOUT_REF" ]; then
+            echo "trusted=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$RESUME_RESERVED" != "true" ] || [ -n "$BACKFILL_VERSION" ] || [[ ! "$CHECKOUT_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "trusted=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags origin "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          TAG_SHA="$(git rev-parse "refs/tags/$CHECKOUT_REF^{commit}")"
+          HEAD_SHA="$(git rev-parse HEAD)"
+          if [ "$TAG_SHA" != "$HEAD_SHA" ] || ! git merge-base --is-ancestor "$TAG_SHA" "refs/remotes/origin/$DEFAULT_BRANCH"; then
+            echo "trusted=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "trusted=true" >> "$GITHUB_OUTPUT"
 
       # `latest` is what an untagged install of the package resolves to, so it belongs
       # to whichever branch carries the line customers actually consume. For
@@ -163,32 +374,54 @@ jobs:
 
       - name: Set up and install
         uses: ./.github/actions/fleet/setup-and-install
+        env:
+          SOCKET_API_KEY: ${{ steps.content-trust.outputs.trusted == 'true' && secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW || '' }}
         with:
+          socket-api-token: ${{ steps.content-trust.outputs.trusted == 'true' && secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW || '' }}
           # Forward the backfill content ref — setup-and-install re-checks-out
           # internally (fleet checkout falls back to the TRIGGERING ref when
           # unset), which would silently swap the backfill content back to
           # main's tree; the backfill gate then refuses against main's
           # version. Empty forwards as unset, so normal dispatches keep the
           # dispatched-ref re-checkout.
-          checkout-ref: ${{ inputs.checkout-ref }}
-          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          checkout-ref: ${{ inputs.checkout-ref || github.sha }}
+          # Reuse the Release App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
-      - name: Run full coverage
-        # Backfill republishes already-released historical content. Its hard
-        # content checks replace current-branch qualification.
-        if: ${{ inputs.backfill-version == '' }}
-        run: pnpm run cover
+          payload-token-client-id: ${{ steps.content-trust.outputs.trusted == 'true' && (secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID) || '' }}
+          payload-token-private-key: ${{ steps.content-trust.outputs.trusted == 'true' && secrets.SOCKET_RELEASE_APP_PRIVATE_KEY || '' }}
+      - name: Validate reserved release resume
+        if: ${{ inputs.resume-reserved == true }}
+        env:
+          BACKFILL_VERSION: ${{ inputs.backfill-version }}
+          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p 'require("./package.json").version')"
+          if [ -n "$BACKFILL_VERSION" ] || [ "$CHECKOUT_REF" != "v$VERSION" ]; then
+            echo "::error::Reserved release resume requires checkout-ref v$VERSION without backfill-version." >&2
+            exit 1
+          fi
+          HEAD_SHA="$(git rev-parse HEAD)"
+          TAG_SHA="$(git rev-parse "$CHECKOUT_REF^{commit}")"
+          if [ "$HEAD_SHA" != "$TAG_SHA" ]; then
+            echo "::error::Reserved release resume checked out $HEAD_SHA, but $CHECKOUT_REF resolves to $TAG_SHA." >&2
+            exit 1
+          fi
       - name: Build
         run: pnpm run build
+      - name: Set up odai
+        if: ${{ inputs.backfill-version == '' && inputs.resume-reserved != true }}
+        uses: ./.github/actions/fleet/setup-odai
+        with:
+          allow-fill: 'true'
+          require-ready: 'true'
       - name: 'Mint release token'
-        if: ${{ inputs.backfill-version == '' }}
+        if: ${{ inputs.backfill-version == '' && steps.content-trust.outputs.trusted == 'true' }}
         id: release-app
         uses: ./.github/actions/fleet/github-release-app-token
         with:
-          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID }}
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           repositories: ${{ github.event.repository.name }}
       # The version resolver consumes a prerelease hint, uses configured odai
@@ -196,11 +429,132 @@ jobs:
       - name: Publish
         env:
           BACKFILL_VERSION: ${{ inputs.backfill-version }}
-          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+          CHECKOUT_REF: ${{ inputs.resume-reserved != true && inputs.checkout-ref || '' }}
           DIST_TAG: ${{ inputs.dist-tag }}
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
           GH_TOKEN: ${{ steps.release-app.outputs.token }}
         # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT
         # backfill-version is refused by the script instead of silently
         # bump-publishing historical content.
-        run: node scripts/fleet/npm-publish.mts --tag "$DIST_TAG" ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}
+        run: node scripts/fleet/npm-publish.mts --tag "$DIST_TAG" ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.resume-reserved == true && '--resume-reserved' || '' }} ${{ inputs.publish != true && '--dry-run' || '' }}
+
+  scan-staged-package:
+    if: ${{ inputs.scan-stage-id != '' }}
+    name: Scan staged npm package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Bootstrap trusted scan controller
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "::error::Scan mode must be dispatched from the default branch." >&2
+            exit 1
+          fi
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch --no-tags --prune --depth 1 origin "+refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
+          git checkout -q --detach "refs/remotes/origin/${DEFAULT_BRANCH}"
+          install -m 0600 scripts/fleet/npm/scan-ci.mts "$RUNNER_TEMP/npm-scan-ci.mts"
+          install -m 0600 scripts/fleet/npm/scan-receipt.mts "$RUNNER_TEMP/npm-scan-receipt.mts"
+          install -m 0600 scripts/fleet/registry-infra/npm/scan-ndjson.mts "$RUNNER_TEMP/npm-registry-scan-ndjson.mts"
+          install -m 0600 scripts/fleet/registry-infra/npm/scan.mts "$RUNNER_TEMP/npm-registry-scan.mts"
+      - name: Verify release source before setup
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH_RUN_ID: ${{ inputs.scan-publish-run-id }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ inputs.scan-source-sha }}
+        run: |
+          set -euo pipefail
+          [[ "$PUBLISH_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          RUN_JSON="$(gh api "repos/$REPOSITORY/actions/runs/$PUBLISH_RUN_ID")"
+          test "$(jq -r '.repository.full_name' <<<"$RUN_JSON")" = "$REPOSITORY"
+          test "$(jq -r '.head_repository.full_name' <<<"$RUN_JSON")" = "$REPOSITORY"
+          test "$(jq -r '.path' <<<"$RUN_JSON")" = ".github/workflows/publish-npm.yml"
+          test "$(jq -r '.event' <<<"$RUN_JSON")" = "workflow_dispatch"
+          test "$(jq -r '.status' <<<"$RUN_JSON")" = "completed"
+          test "$(jq -r '.conclusion' <<<"$RUN_JSON")" = "success"
+          test "$(jq -r '.head_branch' <<<"$RUN_JSON")" = "$DEFAULT_BRANCH"
+          RUN_HEAD="$(jq -r '.head_sha' <<<"$RUN_JSON")"
+          COMMIT_JSON="$(gh api "repos/$REPOSITORY/commits/$SOURCE_SHA")"
+          test "$(jq -r '.sha' <<<"$COMMIT_JSON")" = "$SOURCE_SHA"
+          test "$(jq -r '.commit.verification.verified' <<<"$COMMIT_JSON")" = "true"
+          test "$(jq -r '.parents | length' <<<"$COMMIT_JSON")" = "1"
+          test "$(jq -r '.parents[0].sha' <<<"$COMMIT_JSON")" = "$RUN_HEAD"
+          gh api "repos/$REPOSITORY/actions/runs/$PUBLISH_RUN_ID/logs" > "$RUNNER_TEMP/publish-logs.zip"
+          unzip -p "$RUNNER_TEMP/publish-logs.zip" > "$RUNNER_TEMP/publish-logs.txt"
+          perl -pe 's/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z +//; s/\e\[[0-?]*[ -\/]*[@-~]//g' "$RUNNER_TEMP/publish-logs.txt" > "$RUNNER_TEMP/publish-logs.normalized.txt"
+          BUMP_PREFIX="$(sed -nE 's/^(✔ )?\[bump\].* committed ([0-9a-f]{7,40}) .*via the release App\.$/\2/p' "$RUNNER_TEMP/publish-logs.normalized.txt" | sort -u)"
+          test -n "$BUMP_PREFIX"
+          test "$(printf '%s\n' "$BUMP_PREFIX" | wc -l | tr -d ' ')" = "1"
+          case "$SOURCE_SHA" in "$BUMP_PREFIX"*) ;; *) exit 1 ;; esac
+          grep -Eq "^[[:space:]]*\\* branch[[:space:]]+$SOURCE_SHA[[:space:]]+->[[:space:]]+FETCH_HEAD[[:space:]]*$" "$RUNNER_TEMP/publish-logs.normalized.txt"
+          rm -f "$RUNNER_TEMP/publish-logs.zip" "$RUNNER_TEMP/publish-logs.txt" "$RUNNER_TEMP/publish-logs.normalized.txt"
+      - name: Require enterprise scan credential
+        shell: bash
+        env:
+          SOCKET_API_TOKEN_FOR_CLI_AND_SFW: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+        run: |
+          if [ -z "$SOCKET_API_TOKEN_FOR_CLI_AND_SFW" ]; then
+            echo "::error::Required secret SOCKET_API_TOKEN_FOR_CLI_AND_SFW is unavailable." >&2
+            exit 1
+          fi
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          checkout-ref: ${{ inputs.scan-source-sha }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+      - name: Restore trusted scan controller
+        shell: bash
+        run: |
+          install -m 0600 "$RUNNER_TEMP/npm-scan-ci.mts" scripts/fleet/npm/scan-ci.mts
+          install -m 0600 "$RUNNER_TEMP/npm-scan-receipt.mts" scripts/fleet/npm/scan-receipt.mts
+          install -m 0600 "$RUNNER_TEMP/npm-registry-scan-ndjson.mts" scripts/fleet/registry-infra/npm/scan-ndjson.mts
+          install -m 0600 "$RUNNER_TEMP/npm-registry-scan.mts" scripts/fleet/registry-infra/npm/scan.mts
+      - name: Build exact release source
+        run: pnpm run build
+      - name: Scan exact staged bytes
+        id: scan
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SCAN_PACKAGE: ${{ inputs.scan-package }}
+          SCAN_PUBLISH_RUN_ID: ${{ inputs.scan-publish-run-id }}
+          SCAN_SOURCE_SHA: ${{ inputs.scan-source-sha }}
+          SCAN_STAGE_ID: ${{ inputs.scan-stage-id }}
+          SCAN_STAGE_SHA1: ${{ inputs.scan-stage-sha1 }}
+          SCAN_VERSION: ${{ inputs.scan-version }}
+          SOCKET_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+        run: node scripts/fleet/npm/scan-ci.mts --json
+      - name: Upload scan receipt
+        if: ${{ always() }}
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: npm-stage-scan-receipt-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/fleet/npm-scan-ci/npm-stage-scan-receipt.json
+          if-no-files-found: error
+      - name: Require successful scan
+        if: ${{ always() }}
+        env:
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+        run: test "$SCAN_OUTCOME" = success

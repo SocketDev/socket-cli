@@ -40,19 +40,29 @@ for (const [language, globs] of Object.entries(CODEQL_LANGUAGE_GLOBS)) {
   }
 }
 
-function toUnixPath(file) {
+function normalizePath(file) {
   return path.posix.normalize(file.replaceAll('\\', '/'))
+}
+
+function hasPathSegment(file, segment) {
+  let start = 0
+  for (let i = 0, { length } = file; i <= length; i += 1) {
+    if (i === length || file.charCodeAt(i) === 47 /* '/' */) {
+      if (file.slice(start, i) === segment) {
+        return true
+      }
+      start = i + 1
+    }
+  }
+  return false
 }
 
 function sourcePaths(gitPaths) {
   const sources = []
   for (const file of gitPaths) {
-    const normalizedPath = toUnixPath(file)
-    if (
-      normalizedPath !== '.' &&
-      !normalizedPath.split('/').includes(EXCLUDED_PATH_SEGMENT)
-    ) {
-      sources.push(normalizedPath)
+    const fileName = normalizePath(file)
+    if (fileName !== '.' && !hasPathSegment(fileName, EXCLUDED_PATH_SEGMENT)) {
+      sources.push(fileName)
     }
   }
   return sources
