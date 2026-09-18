@@ -31,13 +31,13 @@ export function getCliPackageDir(): string {
  * runs before ENV module loads.
  */
 export function getCliPackageName(): string {
-  return process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
+  return process.env['SOCKET_CLI_PACKAGE'] || 'socket'
 }
 
 /**
  * Get the DLX cache directory for downloaded packages. This is where.
  *
- * @socketsecurity/cli and other packages are installed.
+ * Socket and other packages are installed.
  */
 export function getDlxDir(): string {
   return path.join(getSocketHome(), '_dlx')

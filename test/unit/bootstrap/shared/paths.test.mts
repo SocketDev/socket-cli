@@ -97,8 +97,8 @@ describe('bootstrap/shared/paths', () => {
       expect(getCliPackageName()).toBe('@my-org/socket')
     })
 
-    it('falls back to @socketsecurity/cli', () => {
-      expect(getCliPackageName()).toBe('@socketsecurity/cli')
+    it('falls back to socket', () => {
+      expect(getCliPackageName()).toBe('socket')
     })
   })
 })

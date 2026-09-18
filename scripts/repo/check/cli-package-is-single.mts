@@ -51,22 +51,15 @@ export function checkCliPackageShape(
   publishedPackages: readonly string[],
 ): string[] {
   const findings: string[] = []
-  if (manifest.name !== '@socketsecurity/cli' || manifest.private === true) {
-    findings.push(
-      'Root package must be the publishable @socketsecurity/cli package.',
-    )
+  if (manifest.name !== 'socket' || manifest.private === true) {
+    findings.push('Root package must be the publishable socket package.')
   }
   const version = manifest.version ? parseVersion(manifest.version) : undefined
   if (version?.major !== 2 || !version.prerelease.length) {
     findings.push('Root package version must identify a 2.x prerelease.')
   }
-  if (
-    publishedPackages.length !== 1 ||
-    publishedPackages[0] !== '@socketsecurity/cli'
-  ) {
-    findings.push(
-      'Release configuration must publish only @socketsecurity/cli.',
-    )
+  if (publishedPackages.length !== 1 || publishedPackages[0] !== 'socket') {
+    findings.push('Release configuration must publish only socket.')
   }
   return findings
 }

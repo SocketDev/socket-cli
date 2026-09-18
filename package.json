@@ -1,5 +1,5 @@
 {
-  "name": "@socketsecurity/cli",
+  "name": "socket",
   "version": "2.2.0-prerelease",
   "description": "CLI for Socket.dev",
   "homepage": "https://github.com/SocketDev/socket-cli",
@@ -14,7 +14,7 @@
     "url": "git+https://github.com/SocketDev/socket-cli.git"
   },
   "bin": {
-    "socket": "dist/index.js",
+    "socket": "dist/socket.js",
     "socket-npm": "dist/socket-npm.js",
     "socket-npx": "dist/socket-npx.js",
     "socket-pnpm": "dist/socket-pnpm.js",
@@ -211,7 +211,10 @@
     "check:deps": "node scripts/fleet/check.mts --category=deps",
     "check:hooks": "node scripts/fleet/check.mts --category=hooks",
     "check:types": "node scripts/fleet/check.mts --category=types",
-    "npm:trust:browser": "node scripts/fleet/registry-infra/npm/settings/trusted-publisher/browser.mts"
+    "npm:trust:browser": "node scripts/fleet/registry-infra/npm/settings/trusted-publisher/browser.mts",
+    "build:sea": "node scripts/repo/cli-build/sea/build.mts",
+    "check:sea-package": "node scripts/repo/cli-build/sea/check.mts",
+    "prepack": "pnpm run check:sea-package"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

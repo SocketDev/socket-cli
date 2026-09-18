@@ -7,7 +7,7 @@
  *
  * Responsibilities:
  *
- * - Check if @socketsecurity/cli is installed in ~/.socket/_dlx/cli/
+ * - Check if socket is installed in ~/.socket/_dlx/cli/
  * - If not installed: download and extract from npm
  * - Spawn the CLI with current arguments
  *

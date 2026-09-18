@@ -28,7 +28,7 @@ export const BLESSED_CONTRIB = 'blessed-contrib'
 export const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry-stable'
 
 // Socket CLI Package Names
-export const SOCKET_CLI_PACKAGE_NAME = '@socketsecurity/cli'
+export const SOCKET_CLI_PACKAGE_NAME = 'socket'
 
 // Socket CLI Binary Names
 export const SOCKET_CLI_BIN_NAME = 'socket'

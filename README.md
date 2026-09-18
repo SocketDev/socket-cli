@@ -8,12 +8,12 @@
 
 CLI for [Socket.dev](https://socket.dev) - bring Socket's supply-chain security analysis to your terminal and CI.
 
-Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), letting you scan dependencies, audit packages, and gate installs from your terminal or CI. This branch develops the 2.x prerelease of `@socketsecurity/cli`. End-user documentation lives on [socket.dev](https://docs.socket.dev).
+Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), letting you scan dependencies, audit packages, and gate installs from your terminal or CI. This branch develops the 2.x prerelease of `socket`. End-user documentation lives on [socket.dev](https://docs.socket.dev).
 
 ## Install
 
 ```sh
-pnpm add --global @socketsecurity/cli
+pnpm add --global socket@prerelease
 ```
 
 Then run:

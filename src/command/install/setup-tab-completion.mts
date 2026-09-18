@@ -19,11 +19,11 @@ const __dirname = path.dirname(__filename)
 const require = createRequire(import.meta.url)
 
 export function getTabCompletionScriptRaw(): CResult<string> {
-  // Resolve the @socketsecurity/cli package root to find the data directory.
+  // Resolve the socket package root to find the data directory.
   // This works whether running from source, installed globally, or via npx/dlx.
   let sourcePath: string
   try {
-    const cliPackageJson = require.resolve('@socketsecurity/cli/package.json')
+    const cliPackageJson = require.resolve('socket/package.json')
     const cliPackageRoot = path.dirname(cliPackageJson)
     sourcePath = getPackagedCompletionPath(cliPackageRoot)
     /* c8 ignore start - fallback for source-tree development; require.resolve always succeeds in tests because the workspace package is installed */

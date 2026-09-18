@@ -1,6 +1,6 @@
 # Dual-use disclosure
 
-Package: @socketsecurity/cli
+Package: socket
 Content policy class: dual-use (https://docs.npmjs.com/policies/dual-use)
 
 ## What the tool does that can look like malware

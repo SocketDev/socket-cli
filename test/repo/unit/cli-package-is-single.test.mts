@@ -5,8 +5,8 @@ import {
   checkCliReleaseVersion,
 } from '../../../scripts/repo/check/cli-package-is-single.mts'
 
-const manifest = { name: '@socketsecurity/cli', version: '2.2.0-prerelease' }
-const published = ['@socketsecurity/cli']
+const manifest = { name: 'socket', version: '2.2.0-prerelease' }
+const published = ['socket']
 
 describe('single-package CLI layout', () => {
   it('accepts the root prerelease package', () => {

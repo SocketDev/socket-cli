@@ -3,7 +3,7 @@
  */
 
 // CLI package names.
-export const SOCKET_CLI_PACKAGE_NAME = '@socketsecurity/cli'
+export const SOCKET_CLI_PACKAGE_NAME = 'socket'
 
 // CLI binary names.
 export const SOCKET_CLI_BIN_NAME = 'socket'

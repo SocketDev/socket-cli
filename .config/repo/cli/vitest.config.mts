@@ -55,7 +55,7 @@ if (existsSync(bundleToolsPath)) {
     const toolVersions: Record<string, string | undefined> = {
       INLINED_COANA_VERSION: tools['@coana-tech/cli']?.version,
       INLINED_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
-      INLINED_NAME: '@socketsecurity/cli',
+      INLINED_NAME: 'socket',
       INLINED_OPENGREP_VERSION: tools['opengrep']?.version,
       INLINED_PUBLISHED_BUILD: '',
       INLINED_PYCLI_VERSION: tools['socketsecurity']?.version,
