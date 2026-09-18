@@ -1,6 +1,5 @@
 /**
- * @file E2E tests for the `socket package` command family. Ported from
- *   `packages/cli/test/smoke.sh`'s package section (25 commands). Covers:
+ * @file E2E tests for the `socket package` command family. Covers:
  *   shallow / score against representative npm packages — `socket` (the package
  *   itself, regression case for past 500s), `babel`, well-known ok package,
  *   `nope`, single-publish curio that sometimes hangs server side, and

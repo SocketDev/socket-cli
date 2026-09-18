@@ -1,6 +1,5 @@
 /**
- * @file E2E tests for the `socket organization` command family. Ported from
- *   `packages/cli/test/smoke.sh`'s organization section (45 commands). Covers:
+ * @file E2E tests for the `socket organization` command family. Covers:
  *   list / policy security / policy license / quota; --json contract
  *   conformance; --org overrides; missing-org and invalid-org error paths
  *   (achieved via per-call `--config` injection instead of mutating the real

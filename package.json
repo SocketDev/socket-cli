@@ -46,7 +46,7 @@
     "check:paths": "node scripts/fleet/check/paths-are-valid.mts",
     "check:test-budget-headroom": "node scripts/fleet/check/test-budget-headroom.mts",
     "ci:local": "node scripts/fleet/ci/local/run.mts run --all --quiet --pause-on-failure --github-token",
-    "clean": "node scripts/repo/clean.mts",
+    "clean": "node scripts/fleet/clean.mts",
     "clean:cache": "node scripts/repo/clean-cache.mts",
     "cover": "node scripts/fleet/cover.mts",
     "cover:cli": "node scripts/repo/cli-build/test-wrapper.mts --coverage --all",

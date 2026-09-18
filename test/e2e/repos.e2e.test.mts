@@ -1,6 +1,5 @@
 /**
- * @file E2E tests for the `socket repos` command family. Ported from
- *   `packages/cli/test/smoke.sh`'s repos section (17 commands). Most repos
+ * @file E2E tests for the `socket repos` command family.. Most repos
  *   checks are help / dry-run / read-only and run under the normal
  *   `RUN_E2E_TESTS=1` gate. The create → update → view → del round-trip writes
  *   real org-side state via the Socket API, so it lives behind a second gate

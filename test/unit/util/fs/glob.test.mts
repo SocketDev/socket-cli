@@ -278,8 +278,8 @@ describe('util/fs/glob', () => {
     it('appends /package.json for plain workspaces', async () => {
       const { workspacePatternToGlobPattern } =
         await import('../../../../src/util/fs/glob.mts')
-      expect(workspacePatternToGlobPattern('packages/cli')).toBe(
-        'packages/cli/package.json',
+      expect(workspacePatternToGlobPattern('packages/example-cli')).toBe(
+        'packages/example-cli/package.json',
       )
     })
   })

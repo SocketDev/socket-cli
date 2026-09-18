@@ -175,8 +175,7 @@ export async function spawnSocketCli(
 }> {
   const {
     // Default to the workspace root, not process.cwd(): worker cwd differs
-    // between the fleet root vitest lane, repo root, and the packages/cli
-    // wrapper lane (packages/cli), and snapshots must match in both.
+    // between the fleet root Vitest lane and the repository root.
     cwd = WORKSPACE_ROOT,
     env: spawnEnv,
     ...restOptions

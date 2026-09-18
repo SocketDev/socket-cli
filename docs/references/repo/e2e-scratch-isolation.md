@@ -3,7 +3,7 @@
 End-to-end tests run the real CLI, which means they run code that wants to
 write to a home directory: config files, package-manager caches, credential
 stores. Left alone, a test run would scribble on the machine it runs on. The
-helpers in `packages/cli/test/helpers/cli-execution.mts` prevent that by
+helpers in `test/helpers/cli-execution.mts` prevent that by
 pointing every such variable at a throwaway directory.
 
 There are two helpers because there are two ways a test reaches the CLI, and

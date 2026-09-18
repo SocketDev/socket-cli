@@ -1,11 +1,9 @@
 /**
- * @file E2E tests for Socket CLI's package-manager wrappers. Ported from
- *   `packages/cli/test/smoke.sh`'s npm / npx / raw-npm / raw-npx / wrapper /
- *   optimize / dependencies sections. Covers: help / dry-run paths for
- *   each wrapper; the wrapper on/off toggle (scratch-isolated so the
- *   developer's real shim install isn't touched); `dependencies` listing +
- *   pagination flags; `optimize` flag matrix.
- *   Gated on `RUN_E2E_TESTS=1`. `dependencies` against the org list needs auth;
+ * @file E2E tests for Socket CLI's package-manager wrappers. Covers: help /
+ *   dry-run paths for each wrapper; the wrapper on/off toggle (scratch-isolated
+ *   so the developer's real shim install isn't touched); `dependencies` listing +
+ *   pagination flags; `optimize` flag matrix. Gated on `RUN_E2E_TESTS=1`.
+ *   `dependencies` against the org list needs auth;
  */
 
 import { describe, expect, it } from 'vitest'

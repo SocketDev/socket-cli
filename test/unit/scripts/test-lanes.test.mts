@@ -63,9 +63,9 @@ it('normalizes member globs and excludes other packages', () => {
     packageTestGlobs(
       [
         'packages\\cli\\test\\unit\\command\\**',
-        'packages/cli/test/unit/meow.test.mts',
+        'packages/example-cli/test/unit/meow.test.mts',
         'packages/other/test/unit/example.test.mts',
-        'packages/cli-other/test/unit/example.test.mts',
+        'packages/example-other/test/unit/example.test.mts',
       ],
       'packages\\cli',
     ),

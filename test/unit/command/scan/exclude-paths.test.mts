@@ -188,25 +188,35 @@ describe('exclude-paths', () => {
     })
 
     it('returns "**" when path equals target', () => {
-      expect(pathRelativeToTarget('packages/cli', 'packages/cli')).toBe('**')
+      expect(
+        pathRelativeToTarget('packages/example-cli', 'packages/example-cli'),
+      ).toBe('**')
     })
 
     it('strips the target prefix from a nested path', () => {
-      expect(pathRelativeToTarget('packages/cli/src/foo', 'packages/cli')).toBe(
-        'src/foo',
-      )
+      expect(
+        pathRelativeToTarget(
+          'packages/example-cli/src/foo',
+          'packages/example-cli',
+        ),
+      ).toBe('src/foo')
     })
 
     it('strips the target prefix when path uses recursive **/  prefix (line 177)', () => {
-      // path = "packages/cli/**/dist/foo" with target = "packages/cli"
-      // → matches recursiveTargetPrefix "packages/cli/**/" branch.
+      // path = "packages/example-cli/**/dist/foo" with target = "packages/example-cli"
+      // → matches recursiveTargetPrefix "packages/example-cli/**/" branch.
       expect(
-        pathRelativeToTarget('packages/cli/**/dist/foo', 'packages/cli'),
+        pathRelativeToTarget(
+          'packages/example-cli/**/dist/foo',
+          'packages/example-cli',
+        ),
       ).toBe('**/dist/foo')
     })
 
     it('returns undefined when path is outside the target', () => {
-      expect(pathRelativeToTarget('other/dir', 'packages/cli')).toBeUndefined()
+      expect(
+        pathRelativeToTarget('other/dir', 'packages/example-cli'),
+      ).toBeUndefined()
     })
   })
 })

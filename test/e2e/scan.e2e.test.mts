@@ -1,6 +1,5 @@
 /**
- * @file E2E tests for the `socket scan` command family. Ported from
- *   `packages/cli/test/smoke.sh`'s scan section. Exercises help, dry-run,
+ * @file E2E tests for the `socket scan` command family. Exercises help, dry-run,
  *   list/view/metadata/report/diff, and `--json` contract conformance. Every
  *   auth-required call runs inside `executeCliInScratch` so:
  *

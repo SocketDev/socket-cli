@@ -30,7 +30,7 @@ The split in one line: **doctor enforces time, optimize enforces shape.**
 
 ## The doctor command (new)
 
-`packages/cli/src/commands/doctor/` - first pass is deliberately small:
+`src/command/doctor/` - first pass is deliberately small:
 
 1. **Soak-time enforcement** (moved from the optimize draft):
    `ensurePnpmWorkspaceMinReleaseAge(repoRoot)` for pnpm repos - add at

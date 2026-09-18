@@ -7,7 +7,7 @@ End-to-end tests for all Socket CLI commands across multiple binary types.
 - **`binary-test-suite.e2e.test.mts`** - Comprehensive test suite for all 73 commands
 - **`dlx-spawn.e2e.test.mts`** - DLX execution tests
 
-Per-domain smoke files (ported from the retired `smoke.sh`):
+Per-domain command files:
 
 - **`analytics.e2e.test.mts`** - `socket analytics`
 - **`audit-fix-ci.e2e.test.mts`** - `socket audit-log`, `socket fix`, `socket ci`

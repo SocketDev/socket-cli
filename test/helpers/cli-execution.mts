@@ -140,9 +140,7 @@ export async function executeCliCommand(
 }
 
 /**
- * Shape of the Socket CLI's `--json` response contract. Mirrors the
- * `validate_json` shell helper that was in `test/smoke.sh` so e2e tests can
- * assert the contract programmatically.
+ * Shape of the Socket CLI's `--json` response contract.
  *
  * The contract:
  *
@@ -234,9 +232,6 @@ function validateSocketJsonPayload(options: {
  * given the `expectedExitCode` the command actually returned. Returns the
  * parsed payload on success; throws with a diagnostic message on contract
  * violation.
- *
- * The contract being asserted is the same one `test/smoke.sh::validate_json`
- * enforced before being ported to TypeScript.
  *
  * @example
  *   const result = await executeCliCommand(['scan', 'list', '--json'])

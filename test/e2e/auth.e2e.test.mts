@@ -1,9 +1,6 @@
 /**
  * @file E2E tests for `socket login`, `socket logout`, and `socket whoami`.
- *   Ported from `packages/cli/test/smoke.sh`'s login/logout sections, plus the
- *   `whoami` check that lived in `critical-commands.e2e.test.mts`. login is
- *   interactive in normal use; the smoke.sh check only ran the no-arg form
- *   (which exits 0 after printing a prompt note). logout mutates the
+ *   Login is interactive in normal use. Logout mutates the
  *   developer's stored Socket session, so the destructive forms route through
  *   executeCliInScratch (isolated HOME → isolated keychain). The
  *   non-destructive `--help` / `--dry-run` checks use the normal helpers. Gated
@@ -35,10 +32,7 @@ describe('socket login (e2e)', () => {
     expect(result.code).toBe(0)
   })
 
-  // smoke.sh's `run_socket 0 login` ran the real login flow. In an e2e
-  // suite that can't accept TTY input, the equivalent is to confirm the
-  // command starts cleanly when there's no token to bind to — easiest in
-  // a scratch HOME with --no-interactive.
+  // A noninteractive run in a scratch home verifies the missing-token path.
   it.skipIf(!RUN)(
     'login --no-interactive (no token) exits non-zero cleanly',
     async () => {

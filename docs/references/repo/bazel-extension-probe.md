@@ -8,7 +8,7 @@ bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven
 
 That command exits non-zero in two situations that mean opposite things. Telling
 them apart is the whole job of the classifier in
-`packages/cli/src/commands/manifest/bazel/bazel-repo-discovery.mts`, and getting
+`src/command/manifest/bazel/bazel-repo-discovery.mts`, and getting
 it wrong is a security problem rather than a cosmetic one.
 
 ## The two failures

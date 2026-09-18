@@ -91,7 +91,7 @@ describe('syncOriginMain', () => {
   it('skips a dirty tree', async () => {
     gitUnstagedModifiedFilesMock.mockResolvedValue({
       ok: true,
-      data: ['packages/cli/package.json'],
+      data: ['packages/example-cli/package.json'],
     })
     const result = await syncOriginMain('/repo')
     expect(result.reason).toContain('unstaged changes')

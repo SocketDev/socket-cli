@@ -1,8 +1,6 @@
 /**
- * @file E2E tests for the `socket config` command family. Ported from
- *   `packages/cli/test/smoke.sh`'s config section (15 commands). Covers: get /
- *   set / unset / auto at help / dry-run / no-args / valid-key. smoke.sh's `set
- *   defaultOrg mydev` mutated the developer's real config. The port uses
+ * @file E2E tests for the `socket config` command family. Covers: get /
+ *   set / unset / auto at help / dry-run / no-args / valid-key. The tests use
  *   `executeCliInScratch` (isolated HOME / XDG_CONFIG_HOME) for any
  *   set/unset/auto call, so no real config file is touched. Gated on
  *   `RUN_E2E_TESTS=1`. Auto-discovery additionally requires authentication.

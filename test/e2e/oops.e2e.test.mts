@@ -1,7 +1,6 @@
 /**
- * @file E2E tests for `socket oops`. Ported from `packages/cli/test/smoke.sh`'s
- *   oops section (4 commands). `oops` is a deliberate-failure command used in
- *   regression tests; the no-arg form exits 1 by design. Gated on
+ * @file E2E tests for `socket oops`.. `oops` is a deliberate-failure command
+ *   used in regression tests; the no-arg form exits 1 by design. Gated on
  *   `RUN_E2E_TESTS=1`.
  */
 

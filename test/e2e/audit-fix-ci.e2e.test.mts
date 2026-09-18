@@ -1,6 +1,5 @@
 /**
- * @file E2E tests for `socket audit-log`, `socket fix`, and `socket ci`. Ported
- *   from the corresponding sections of `packages/cli/test/smoke.sh`. These
+ * @file E2E tests for `socket audit-log`, `socket fix`, and `socket ci`.. These
  *   commands share a shape (help / dry-run / no-args run); audit-log needs
  *   auth, fix and ci are local-only. Gated on `RUN_E2E_TESTS=1`.
  */
