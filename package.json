@@ -28,6 +28,16 @@
   ],
   "publishConfig": {
     "access": "public",
+    "executableFiles": [
+      "dist/sea/socket-darwin-arm64",
+      "dist/sea/socket-darwin-x64",
+      "dist/sea/socket-linux-arm64",
+      "dist/sea/socket-linux-arm64-musl",
+      "dist/sea/socket-linux-x64",
+      "dist/sea/socket-linux-x64-musl",
+      "dist/sea/socket-win32-arm64.exe",
+      "dist/sea/socket-win32-x64.exe"
+    ],
     "provenance": true,
     "registry": "https://registry.npmjs.org/",
     "tag": "prerelease"
