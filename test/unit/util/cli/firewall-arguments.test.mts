@@ -26,7 +26,7 @@ describe('firewall wrapper argument boundaries', () => {
       }),
     ).toEqual({ wrapperArgs: [], commandArgs: ['npm', '--help'] })
   })
-  it.each(['--help', '-h', '--version', '-v', '--verbose'])(
+  it.each(['--version', '-v', '--verbose'])(
     'preserves handoff child flag %s',
     flag => {
       expect(
@@ -40,6 +40,19 @@ describe('firewall wrapper argument boundaries', () => {
       commandArgs: [],
     })
   })
+  it.each(['--help', '-h'])(
+    'handles handoff help %s with trailing wrapper flags locally',
+    flag => {
+      expect(
+        splitFirewallArguments([flag, '--config', '{}'], {
+          explicitCommand: false,
+        }),
+      ).toEqual({
+        wrapperArgs: [flag, '--config', '{}'],
+        commandArgs: [],
+      })
+    },
+  )
   it('leaves unsupported wrapper modes for runtime rejection', () => {
     expect(
       splitFirewallArguments(['--service'], { explicitCommand: true }),
