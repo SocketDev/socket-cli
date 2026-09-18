@@ -34,6 +34,12 @@ describe('firewall wrapper argument boundaries', () => {
       ).toEqual({ wrapperArgs: [], commandArgs: [flag, '--dry-run'] })
     },
   )
+  it.each(['--help', '-h'])('handles bare handoff help %s locally', flag => {
+    expect(splitFirewallArguments([flag], { explicitCommand: false })).toEqual({
+      wrapperArgs: [flag],
+      commandArgs: [],
+    })
+  })
   it('leaves unsupported wrapper modes for runtime rejection', () => {
     expect(
       splitFirewallArguments(['--service'], { explicitCommand: true }),

@@ -20,6 +20,13 @@ export function splitFirewallArguments(
   args: readonly string[],
   config: { explicitCommand: boolean; supportDryRun?: boolean | undefined },
 ): { wrapperArgs: string[]; commandArgs: string[] } {
+  if (
+    !config.explicitCommand &&
+    args.length === 1 &&
+    (args[0] === '--help' || args[0] === '-h')
+  ) {
+    return { wrapperArgs: [...args], commandArgs: [] }
+  }
   const flags = getFirewallWrapperFlags()
   let offset = 0
   while (offset < args.length) {
