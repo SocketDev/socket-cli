@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -142,28 +142,36 @@ async function buildSeaTarget(
       `SEA blob generation failed for ${target}. Inspect node-smol output.`,
     )
   }
-  const result = await spawn(
-    injector,
-    [
-      'inject',
-      '--executable',
-      base,
-      '--output',
-      output,
-      '--sea',
-      blob,
-      '--vfs-compat',
-      '--skip-repack',
-    ],
-    {
-      stdio: process.argv.includes('--json') ? 'pipe' : 'inherit',
-      timeout: 600_000,
-    },
-  )
-  if (result.code !== 0) {
-    throw new Error(
-      `SEA build failed for ${target}: exit ${result.code}. Inspect binject output.`,
+  if (target.startsWith('linux-')) {
+    const { inject } = await import('postject')
+    await copyFile(base, output)
+    await inject(output, 'NODE_SEA_BLOB', await readFile(blob), {
+      sentinelFuse: 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
+    })
+  } else {
+    const result = await spawn(
+      injector,
+      [
+        'inject',
+        '--executable',
+        base,
+        '--output',
+        output,
+        '--sea',
+        blob,
+        '--vfs-compat',
+        '--skip-repack',
+      ],
+      {
+        stdio: process.argv.includes('--json') ? 'pipe' : 'inherit',
+        timeout: 600_000,
+      },
     )
+    if (result.code !== 0) {
+      throw new Error(
+        `SEA build failed for ${target}: exit ${result.code}. Inspect binject output.`,
+      )
+    }
   }
   return crypto
     .createHash('sha256')
