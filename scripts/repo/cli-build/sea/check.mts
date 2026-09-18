@@ -71,14 +71,14 @@ export async function main(): Promise<void> {
       }
     ).header.glibcVersionRuntime,
   )
-  for (const arg of ['--version', '--help']) {
-    const result = await spawn(seaBinaryPath(host), [arg], {
+  for (const args of [['--version'], ['--help'], ['npm', '--version']]) {
+    const result = await spawn(seaBinaryPath(host), args, {
       stdio: 'pipe',
       timeout: 60_000,
     })
     if (result.code !== 0 || !result.stdout.toString().trim()) {
       throw new Error(
-        `SEA smoke test failed for ${arg}: ${result.stderr}. Rebuild the executable.`,
+        `SEA smoke test failed for ${args.join(' ')}: ${result.stderr}. Rebuild the executable.`,
       )
     }
   }
