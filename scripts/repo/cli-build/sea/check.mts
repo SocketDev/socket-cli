@@ -4,7 +4,12 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../../../fleet/process/is-main-module.mts'
 import { runMain } from '../../../fleet/process/run-main.mts'
-import { SEA_PAYLOAD_PATH, SEA_RECEIPT_PATH, seaBinaryPath } from './paths.mts'
+import {
+  SEA_ENTRYPOINT_PATHS,
+  SEA_PAYLOAD_PATH,
+  SEA_RECEIPT_PATH,
+  seaBinaryPath,
+} from './paths.mts'
 import { resolveSeaTarget, SEA_TARGETS } from './targets.mts'
 
 const logger = getDefaultLogger()
@@ -13,6 +18,7 @@ export async function main(): Promise<void> {
   const receipt = JSON.parse(await readFile(SEA_RECEIPT_PATH, 'utf8')) as {
     payload: string
     binaries: Record<string, string>
+    entrypoints: Record<string, string>
   }
   const payload = crypto
     .createHash('sha256')
@@ -22,6 +28,17 @@ export async function main(): Promise<void> {
     throw new Error(
       'SEA payload does not match the CLI build. Run pnpm run build:sea.',
     )
+  }
+  for (const [name, file] of Object.entries(SEA_ENTRYPOINT_PATHS)) {
+    const actual = crypto
+      .createHash('sha256')
+      .update(await readFile(file))
+      .digest('hex')
+    if (receipt.entrypoints[name] !== actual) {
+      throw new Error(
+        `SEA entry point mismatch for ${name}. Run pnpm run build:sea.`,
+      )
+    }
   }
   const targets = process.argv.includes('--host')
     ? [

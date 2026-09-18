@@ -7,10 +7,11 @@ import { isMainModule } from '../../../fleet/process/is-main-module.mts'
 import { runMain } from '../../../fleet/process/run-main.mts'
 import { BINJECT_VERSION, NODE_SMOL_VERSION } from '../constants/sea-assets.mts'
 import { fetchSeaAsset } from './assets.mts'
-import { extractWindowsSmolRuntime } from './windows-runtime.mts'
+import { extractSmolRuntime } from './runtime.mts'
 import {
   SEA_BUILD_DIR,
   SEA_ENTRY_PATH,
+  SEA_ENTRYPOINT_PATHS,
   SEA_LAUNCHER_PATH,
   SEA_OUTPUT_DIR,
   SEA_PAYLOAD_PATH,
@@ -68,10 +69,17 @@ export async function main(): Promise<void> {
   await writeFile(SEA_LAUNCHER_PATH, createSeaLauncher(), { mode: 0o755 })
   for (const mode of ['npm', 'npx', 'pnpm', 'yarn']) {
     await writeFile(
-      path.join(path.dirname(SEA_LAUNCHER_PATH), `socket-${mode}.js`),
+      SEA_ENTRYPOINT_PATHS[`socket-${mode}.js`]!,
       `#!/usr/bin/env node\nprocess.env.SOCKET_CLI_MODE = ${JSON.stringify(mode)};\nrequire('./socket.js');\n`,
       { mode: 0o755 },
     )
+  }
+  const entrypoints: Record<string, string> = {}
+  for (const [name, file] of Object.entries(SEA_ENTRYPOINT_PATHS)) {
+    entrypoints[name] = crypto
+      .createHash('sha256')
+      .update(await readFile(file))
+      .digest('hex')
   }
   await writeFile(
     SEA_RECEIPT_PATH,
@@ -80,6 +88,7 @@ export async function main(): Promise<void> {
         nodeSmol: NODE_SMOL_VERSION,
         payload: crypto.createHash('sha256').update(payload).digest('hex'),
         binaries: receipt,
+        entrypoints,
       },
       null,
       2,
@@ -98,12 +107,13 @@ async function buildSeaTarget(
   hostBase: string,
 ): Promise<string> {
   const asset = `node-${target.replace('win32-', 'win-')}${target.startsWith('win32-') ? '.exe' : ''}`
-  let base = await fetchSeaAsset(`node-smol-${NODE_SMOL_VERSION}`, asset)
-  if (target.startsWith('win32-')) {
-    const runtime = extractWindowsSmolRuntime(await readFile(base))
-    base = path.join(SEA_BUILD_DIR, `runtime-${target}.exe`)
-    await writeFile(base, runtime)
-  }
+  const assetPath = await fetchSeaAsset(`node-smol-${NODE_SMOL_VERSION}`, asset)
+  const runtime = extractSmolRuntime(await readFile(assetPath), target)
+  const base = path.join(
+    SEA_BUILD_DIR,
+    `runtime-${target}${target.startsWith('win32-') ? '.exe' : ''}`,
+  )
+  await writeFile(base, runtime, { mode: 0o755 })
   const output = seaBinaryPath(target)
   const config = path.join(SEA_BUILD_DIR, `${target}.generated.json`)
   await writeFile(
@@ -143,7 +153,7 @@ async function buildSeaTarget(
       '--sea',
       blob,
       '--vfs-compat',
-      ...(target.startsWith('win32-') ? ['--skip-repack'] : []),
+      '--skip-repack',
     ],
     {
       stdio: process.argv.includes('--json') ? 'pipe' : 'inherit',

@@ -214,7 +214,8 @@
     "npm:trust:browser": "node scripts/fleet/registry-infra/npm/settings/trusted-publisher/browser.mts",
     "build:sea": "node scripts/repo/cli-build/sea/build.mts",
     "check:sea-package": "node scripts/repo/cli-build/sea/check.mts",
-    "prepack": "pnpm run check:sea-package"
+    "prepack": "pnpm run check:sea-package",
+    "test:sea": "node scripts/fleet/test.mts test/repo/unit/sea-package.test.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

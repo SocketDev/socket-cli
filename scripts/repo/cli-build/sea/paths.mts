@@ -17,3 +17,9 @@ export function seaBinaryPath(target: string): string {
     `socket-${target}${target.startsWith('win32-') ? '.exe' : ''}`,
   )
 }
+
+export const SEA_ENTRYPOINT_PATHS = Object.fromEntries(
+  ['socket', 'socket-npm', 'socket-npx', 'socket-pnpm', 'socket-yarn'].map(
+    name => [`${name}.js`, path.join(PACKAGE_ROOT, 'dist', `${name}.js`)],
+  ),
+)

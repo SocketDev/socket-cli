@@ -1,5 +1,5 @@
 import { zstdCompressSync } from 'node:zlib'
-import { extractWindowsSmolRuntime } from '../../../scripts/repo/cli-build/sea/windows-runtime.mts'
+import { extractSmolRuntime } from '../../../scripts/repo/cli-build/sea/runtime.mts'
 import { createHash } from 'node:crypto'
 import { runInNewContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
@@ -91,30 +91,40 @@ describe('SEA package', () => {
   })
 })
 
-describe('Windows node-smol runtime', () => {
+describe('node-smol runtime', () => {
   it('extracts a verified PE payload', () => {
-    const fixture = createWindowsFixture()
-    expect(extractWindowsSmolRuntime(fixture)).toEqual(
+    const fixture = createSmolFixture()
+    expect(extractSmolRuntime(fixture, 'win32-arm64')).toEqual(
       Buffer.from('MZ example node runtime'),
     )
   })
+  it.each([
+    ['linux-x64', [0x7f, 0x45, 0x4c, 0x46]],
+    ['darwin-arm64', [0xcf, 0xfa, 0xed, 0xfe]],
+  ] as const)('extracts %s runtime', (target, magic) => {
+    const runtime = Buffer.from(magic)
+    expect(extractSmolRuntime(createSmolFixture(runtime), target)).toEqual(
+      runtime,
+    )
+  })
   it('rejects corrupted compressed bytes', () => {
-    const fixture = createWindowsFixture()
+    const fixture = createSmolFixture()
     fixture[fixture.length - 1] = fixture[fixture.length - 1]! ^ 1
-    expect(() => extractWindowsSmolRuntime(fixture)).toThrow()
+    expect(() => extractSmolRuntime(fixture, 'win32-arm64')).toThrow()
   })
   it('rejects oversized declared output', () => {
-    const fixture = createWindowsFixture()
+    const fixture = createSmolFixture()
     fixture.writeBigUInt64LE(512n * 1024n * 1024n, 40)
-    expect(() => extractWindowsSmolRuntime(fixture)).toThrow()
+    expect(() => extractSmolRuntime(fixture, 'win32-arm64')).toThrow()
   })
   it('rejects truncated metadata', () => {
-    expect(() => extractWindowsSmolRuntime(Buffer.alloc(10))).toThrow()
+    expect(() => extractSmolRuntime(Buffer.alloc(10), 'win32-arm64')).toThrow()
   })
 })
 
-function createWindowsFixture(): Buffer {
-  const runtime = Buffer.from('MZ example node runtime')
+function createSmolFixture(
+  runtime = Buffer.from('MZ example node runtime'),
+): Buffer {
   const compressed = zstdCompressSync(runtime)
   const header = Buffer.alloc(100)
   header.write('__SMOL_PRESSED_DATA_MAGIC_MARKER')
