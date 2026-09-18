@@ -31,6 +31,9 @@ describe('SEA package', () => {
     )
   })
   it('executes the embedded payload and starts the product', () => {
+    const payload = 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2'
+    const entry = createSeaEntry(payload)
+    expect(entry.includes(payload)).toBe(false)
     let started = false
     let filename = ''
     class ProductModule {
@@ -42,12 +45,12 @@ describe('SEA package', () => {
       static _nodeModulePaths() {
         return []
       }
-      _compile(payload: string, file: string) {
-        expect(payload).toBe('example payload')
+      _compile(compiled: string, file: string) {
+        expect(compiled).toBe(payload)
         filename = file
       }
     }
-    runInNewContext(createSeaEntry('example payload'), {
+    runInNewContext(entry, {
       process: { execPath: '/example/dist/sea/socket-linux-x64', env: {} },
       require(name: string) {
         return name === 'node:module'

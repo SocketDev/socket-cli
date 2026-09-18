@@ -23,7 +23,11 @@ import { resolveSeaTarget, SEA_TARGETS } from './targets.mts'
 const logger = getDefaultLogger()
 
 export function createSeaEntry(payload: string): string {
-  return `const path = require('node:path');\nconst { Module } = require('node:module');\nconst filename = path.resolve(path.dirname(process.env.SMOL_STUB_PATH || process.execPath), '..', 'cli.js');\nconst product = new Module(filename);\nproduct.filename = filename;\nproduct.paths = Module._nodeModulePaths(path.dirname(filename));\nproduct._compile(${JSON.stringify(payload)}, filename);\nproduct.exports.runCliProduct();\n`
+  const encodedPayload = JSON.stringify(payload).replaceAll(
+    'NODE_SEA_FUSE',
+    'NODE_SEA_FU\\u0053E',
+  )
+  return `const path = require('node:path');\nconst { Module } = require('node:module');\nconst filename = path.resolve(path.dirname(process.env.SMOL_STUB_PATH || process.execPath), '..', 'cli.js');\nconst product = new Module(filename);\nproduct.filename = filename;\nproduct.paths = Module._nodeModulePaths(path.dirname(filename));\nproduct._compile(${encodedPayload}, filename);\nproduct.exports.runCliProduct();\n`
 }
 
 export function createSeaLauncher(): string {
