@@ -10,6 +10,7 @@
 
 import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { fileURLToPath } from 'node:url'
 
 import { IMPORT_META_URL_BANNER } from '../../../scripts/repo/build-infra/esbuild-runtime-banner.mts'
@@ -31,7 +32,10 @@ const inlinedEnvVars = getInlinedEnvVars()
 const socketLibExternalPathRegExp = /^(?:(?:\.\.[/\\])+|\.[/\\])external[/\\]/
 
 export function findSocketLibPath(importerPath: string): string | undefined {
-  const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
+  // Capture the package root, including the optional stable alias, before a separator.
+  const match = normalizePath(importerPath).match(
+    /^(.*\/@socketsecurity\/lib(?:-stable)?)(?:\/|$)/,
+  )
   if (match) {
     return match[1]
   }
@@ -53,7 +57,7 @@ export function ignoreUnsupportedFilesPlugin(): Plugin {
     resolveId(source, importer) {
       if (/@npmcli\/arborist/.test(source)) {
         // Don't externalize when it comes from socket-lib's own external bundle.
-        if (importer?.includes('/socket-lib/dist/')) {
+        if (isSocketLibDistImporter(importer)) {
           return undefined
         }
         return { __proto__: null, id: source, external: true }
@@ -77,11 +81,14 @@ export function ignoreUnsupportedFilesPlugin(): Plugin {
 // `/socket-lib/` checkout. rolldown resolves the alias to the real
 // `@socketsecurity/lib/dist/` path; esbuild saw the `-stable` form.
 export function isSocketLibDistImporter(importer: string | undefined): boolean {
+  if (!importer) {
+    return false
+  }
+  const normalizedImporter = normalizePath(importer)
   return (
-    !!importer &&
-    (importer.includes('@socketsecurity/lib/dist/') ||
-      importer.includes('@socketsecurity/lib-stable/dist/') ||
-      importer.includes('/socket-lib/dist/'))
+    normalizedImporter.includes('@socketsecurity/lib/dist/') ||
+    normalizedImporter.includes('@socketsecurity/lib-stable/dist/') ||
+    normalizedImporter.includes('/socket-lib/dist/')
   )
 }
 
