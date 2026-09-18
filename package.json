@@ -225,7 +225,10 @@
     "build:sea": "node scripts/repo/cli-build/sea/build.mts",
     "check:sea-package": "node scripts/repo/cli-build/sea/check.mts",
     "prepack": "pnpm run check:sea-package",
-    "test:sea": "node scripts/fleet/test.mts test/repo/unit/sea-package.test.mts"
+    "test:sea": "node scripts/fleet/test.mts test/repo/unit/sea-package.test.mts",
+    "bump": "node scripts/repo/bump.mts",
+    "prepublish:check": "node scripts/repo/check/publish-contract.mts",
+    "build:publish": "pnpm run prepublish:check --reserved && pnpm run build:sea"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
