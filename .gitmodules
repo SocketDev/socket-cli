@@ -17,7 +17,7 @@
 	url = https://github.com/SocketDev/socket-mcp.git
 	branch = main
 	shallow = true
-	sparse-checkout = /lib/ /index.mts
+	sparse-checkout = /lib/ /index.mts /test/ /LICENSE
 	verify = none
 
 # no-release-tag: Development reference pins the explicitly selected main commit.
@@ -53,5 +53,5 @@
 	url = https://github.com/SocketDev/socket-patch.git
 	branch = main
 	shallow = true
-	sparse-checkout = crates/socket-patch-core crates/socket-patch-cli/src tests
+	sparse-checkout = crates/socket-patch-core/src crates/socket-patch-core/tests crates/socket-patch-cli/src tests
 	verify = none

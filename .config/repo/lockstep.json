@@ -35,7 +35,7 @@
       "sparse_cone": ["packages/server/src", "packages/middleware/node/src"],
       "pinned_tag": "@modelcontextprotocol/server@2.0.0",
       "conformance_test": "test/unit/core/mcp/transport-http.test.mts",
-      "notes": "`socket mcp` consumes the SDK as an npm dependency, not vendored source, so the port is behavioral: server.mts registers handlers by the string method names the low-level `Server` dispatches on, transport-stdio.mts hands a factory to `serveStdio`, and transport-http.mts composes `createMcpHandler` with `toNodeHandler`. Those four entry points live under the cone, which is why drift is scoped to `packages/server/src` (serving entries + the low-level Server) and `packages/middleware/node/src` (the node:http adapter). The rest of the monorepo — the codemod, the express/fastify/hono middlewares, server-legacy — is deliberately outside the port. `major-gate` because a v2 minor is additive to these entries while a major moved them once already (v1's `Server` + `StreamableHTTPServerTransport` became `createMcpHandler`, and HTTP went stateless)."
+      "notes": "`socket mcp` consumes the SDK as an npm dependency, not vendored source, so the port is behavioral: server.mts registers handlers by the string method names the low-level `Server` dispatches on, transport-stdio.mts hands a factory to `serveStdio`, and transport-http.mts composes `createMcpHandler` with `toNodeHandler`. Those four entry points live under the cone, which is why drift is scoped to `packages/server/src` (serving entries + the low-level Server) and `packages/middleware/node/src` (the node:http adapter). The rest of the monorepo \u2014 the codemod, the express/fastify/hono middlewares, server-legacy \u2014 is deliberately outside the port. `major-gate` because a v2 minor is additive to these entries while a major moved them once already (v1's `Server` + `StreamableHTTPServerTransport` became `createMcpHandler`, and HTTP went stateless)."
     },
     {
       "kind": "feature-parity",
@@ -80,6 +80,28 @@
         "propagates parser failures"
       ],
       "notes": "The CLI builds the pinned TypeScript API into dist/sdxgen/index.cjs. Acorn CJS and WebAssembly, the Gradle init script, and the upstream license ship beside it. Project tool execution requires an explicit command flag. The isolated bundle integration test checks real npm parsing and Acorn execution."
+    },
+    {
+      "kind": "feature-parity",
+      "id": "patch/command-execution",
+      "upstream": "socket-patch",
+      "criticality": 9,
+      "local_area": "src/core/patch",
+      "test_area": "test/unit/core/patch",
+      "code_patterns": [
+        "spawnSocketPatch",
+        "detectExecutableType",
+        "downloadGitHubReleaseBinary",
+        "resolution.type"
+      ],
+      "test_patterns": [
+        "runs a local socket-patch binary",
+        "runs the local script via node",
+        "downloads from GitHub releases",
+        "honors a custom stdio",
+        "merges options.env"
+      ],
+      "notes": "The patch adapter resolves and executes socket-patch with argument, environment, and stdio forwarding. The sparse upstream contains core implementation, CLI commands, and behavioral tests for incorporation. This row covers the execution adapter; patch algorithms are implemented by the upstream executable."
     }
   ]
 }

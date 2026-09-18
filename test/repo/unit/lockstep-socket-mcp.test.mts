@@ -15,7 +15,7 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { resolvePinnedSha } from '../../../scripts/fleet/gen/gitmodules-hash.mts'
+import { resolvePinnedSha } from '../../../scripts/fleet/gitmodules/hash.mts'
 import {
   checkCrossRowConsistency,
   checkFeatureParity,
