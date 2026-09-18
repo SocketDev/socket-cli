@@ -146,7 +146,7 @@ async function buildSeaTarget(
       `SEA blob generation failed for ${target}. Inspect node-smol output.`,
     )
   }
-  if (target.startsWith('linux-')) {
+  if (!target.startsWith('darwin-')) {
     const { inject } = await import('postject')
     await copyFile(base, output)
     await inject(output, 'NODE_SEA_BLOB', await readFile(blob), {
