@@ -1,3 +1,4 @@
+import sea from 'node:sea'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
@@ -130,6 +131,9 @@ const ENVIRONMENT_KEYWORDS = {
 export function getCliReentryArgv(
   command: string[] | readonly string[],
 ): string[] | undefined {
+  if (sea.isSea()) {
+    return [...command]
+  }
   const entryPath = process.argv[1]
   return entryPath ? [entryPath, ...command] : undefined
 }

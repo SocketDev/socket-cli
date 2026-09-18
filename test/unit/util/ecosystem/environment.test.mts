@@ -23,6 +23,19 @@ import {
   resolveBinPathSync,
 } from '../../../../src/util/ecosystem/environment.mts'
 
+const mockIsWin32 = vi.hoisted(() => vi.fn(() => false))
+const mockNodeRuntime = vi.hoisted(() => vi.fn())
+vi.mock(
+  import('@socketsecurity/lib-stable/constants/platform'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    isWin32: mockIsWin32,
+  }),
+)
+vi.mock(import('../../../../src/util/spawn/node-runtime.mts'), () => ({
+  resolveNodeRuntime: mockNodeRuntime,
+}))
+
 // Mock the dependencies.
 const mockExistsSync = vi.hoisted(() => vi.fn())
 const mockReadFileSync = vi.hoisted(() => vi.fn())
@@ -70,6 +83,7 @@ vi.mock(import('semver'), () => ({
 describe('package-environment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsWin32.mockReturnValue(false)
     // Default mock behavior for spawn to get package manager version.
     mockSpawn.mockResolvedValue({ stdout: '10.0.0', stderr: '', code: 0 })
   })
@@ -201,6 +215,21 @@ describe('package-environment', () => {
   })
 
   describe('getAgentVersion', () => {
+    it('runs Windows JavaScript shims with the trusted Node runtime', async () => {
+      mockIsWin32.mockReturnValue(true)
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue('node "/tools/npm-cli.js" "$@"')
+      mockNodeRuntime.mockResolvedValue({
+        executable: '/trusted/node',
+        environment: { PATH: '/trusted' },
+      })
+      await getAgentVersion('npm', '/tools/npm', '/project')
+      expect(mockSpawn).toHaveBeenCalledWith(
+        '/trusted/node',
+        expect.arrayContaining(['/tools/npm-cli.js', '--version']),
+        { cwd: '/project', env: { PATH: '/trusted' } },
+      )
+    })
     it('returns coerced semver version on successful spawn', async () => {
       mockSpawn.mockResolvedValue({
         stdout: '10.8.2',

@@ -1,3 +1,4 @@
+import sea from 'node:sea'
 import {
   extractWords,
   normalizeQuery,
@@ -95,6 +96,15 @@ describe('handleAsk', () => {
         stdio: 'inherit',
       }),
     )
+  })
+
+  it('reenters a SEA executable with command arguments only', () => {
+    const probe = vi.spyOn(sea, 'isSea').mockReturnValue(true)
+    try {
+      expect(getCliReentryArgv(['scan', '--json'])).toEqual(['scan', '--json'])
+    } finally {
+      probe.mockRestore()
+    }
   })
 
   it('reports an unknown entry script instead of guessing one', () => {

@@ -19,7 +19,8 @@ import semver from 'semver'
 
 import { getNpmExecPath, getPnpmExecPath } from '../../constants/agents.mts'
 import { FLAG_VERSION } from '../../constants/cli.mts'
-import { execPath, nodeNoWarningsFlags } from '../../constants/paths.mts'
+import { nodeNoWarningsFlags } from '../../constants/paths.mts'
+import { resolveNodeRuntime } from '../spawn/node-runtime.mts'
 import { preferWindowsCmdShim, resolveBinPathSync } from './windows-shims.mts'
 
 import type { Agent } from './supported-agents.mts'
@@ -117,10 +118,11 @@ export async function getAgentVersion(
     }
 
     if (shouldRunWithNode) {
+      const runtime = await resolveNodeRuntime({ cwd })
       const spawnResult = await spawn(
-        execPath,
+        runtime.executable,
         [...nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
-        { cwd },
+        { cwd, env: runtime.environment },
       )
 
       if (!spawnResult) {
