@@ -20,11 +20,32 @@ import {
 
 const RUN = ENV.RUN_E2E_TESTS
 const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
+const OPTIMIZE_FIXTURE = {
+  'package-lock.json': JSON.stringify({
+    name: 'socket-cli-e2e-optimize',
+    version: '0.0.0',
+    lockfileVersion: 3,
+    packages: {
+      '': {
+        name: 'socket-cli-e2e-optimize',
+        version: '0.0.0',
+      },
+    },
+  }),
+  'package.json': JSON.stringify({
+    name: 'socket-cli-e2e-optimize',
+    version: '0.0.0',
+    packageManager: 'npm@12.0.2',
+  }),
+}
 
 describe('socket npm wrapper (e2e)', () => {
-  it.skipIf(!RUN)('npm --help exits 0', async () => {
-    const result = await executeCliCommand(['npm', '--help'])
-    expect(result.code).toBe(0)
+  it.skipIf(!RUN)('npm --help forwards npm usage', async () => {
+    const wrapped = await executeCliCommand(['npm', '--help'], {
+      isolateConfig: false,
+    })
+    expect(wrapped.code).toBe(1)
+    expect(wrapped.stdout).toContain('npm <command>')
   })
 
   it.skipIf(!RUN)('npm --dry-run exits 0', async () => {
@@ -34,7 +55,9 @@ describe('socket npm wrapper (e2e)', () => {
 
   it.skipIf(!RUN)('npm info exits 0', async () => {
     // Scratch so npm's ~/.npm cache isn't written into the dev's home.
-    const result = await executeCliInScratch(['npm', 'info'])
+    const result = await executeCliInScratch(['npm', 'info', 'npm'], {
+      isolateConfig: false,
+    })
     expect(result.code).toBe(0)
   })
 })
@@ -80,7 +103,9 @@ describe('socket raw-npm (e2e)', () => {
   })
 
   it.skipIf(!RUN)('raw-npm info exits 0', async () => {
-    const result = await executeCliInScratch(['raw-npm', 'info'])
+    const result = await executeCliInScratch(['raw-npm', 'info', 'npm'], {
+      isolateConfig: false,
+    })
     expect(result.code).toBe(0)
   })
 })
@@ -147,36 +172,21 @@ describe('socket optimize (e2e)', () => {
 
   it.skipIf(!RUN)('optimize exits 0', async () => {
     const result = await executeCliInScratch(['optimize'], {
-      seedFiles: {
-        'package.json': JSON.stringify({
-          name: 'socket-cli-e2e-optimize',
-          version: '0.0.0',
-        }),
-      },
+      seedFiles: OPTIMIZE_FIXTURE,
     })
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)('optimize --prod exits 0', async () => {
     const result = await executeCliInScratch(['optimize', '--prod'], {
-      seedFiles: {
-        'package.json': JSON.stringify({
-          name: 'socket-cli-e2e-optimize',
-          version: '0.0.0',
-        }),
-      },
+      seedFiles: OPTIMIZE_FIXTURE,
     })
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)('optimize --pin exits 0', async () => {
     const result = await executeCliInScratch(['optimize', '--pin'], {
-      seedFiles: {
-        'package.json': JSON.stringify({
-          name: 'socket-cli-e2e-optimize',
-          version: '0.0.0',
-        }),
-      },
+      seedFiles: OPTIMIZE_FIXTURE,
     })
     expect(result.code).toBe(0)
   })

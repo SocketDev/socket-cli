@@ -5,18 +5,20 @@
  *   defaultOrg mydev` mutated the developer's real config. The port uses
  *   `executeCliInScratch` (isolated HOME / XDG_CONFIG_HOME) for any
  *   set/unset/auto call, so no real config file is touched. Gated on
- *   `RUN_E2E_TESTS=1`. No auth required — these are local config operations.
+ *   `RUN_E2E_TESTS=1`. Auto-discovery additionally requires authentication.
  */
 
 import { describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import {
   executeCliCommand,
   executeCliInScratch,
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
 
 describe('socket config (e2e)', () => {
   describe('top-level', () => {
@@ -68,12 +70,10 @@ describe('socket config (e2e)', () => {
 
     it.skipIf(!RUN)('config set defaultOrg <value> exits 0', async () => {
       // Scratch-isolated so the developer's real defaultOrg isn't overwritten.
-      const result = await executeCliInScratch([
-        'config',
-        'set',
-        'defaultOrg',
-        'mydev',
-      ])
+      const result = await executeCliInScratch(
+        ['config', 'set', 'defaultOrg', 'mydev'],
+        { isolateConfig: false },
+      )
       expect(result.code).toBe(0)
     })
   })
@@ -110,8 +110,11 @@ describe('socket config (e2e)', () => {
       expect(result.code).toBe(2)
     })
 
-    it.skipIf(!RUN)('config auto defaultOrg exits 0', async () => {
-      const result = await executeCliInScratch(['config', 'auto', 'defaultOrg'])
+    it.skipIf(!HAS_AUTH)('config auto defaultOrg exits 0', async () => {
+      const result = await executeCliInScratch(
+        ['config', 'auto', 'defaultOrg', '--json'],
+        { isolateConfig: false },
+      )
       expect(result.code).toBe(0)
     })
   })
