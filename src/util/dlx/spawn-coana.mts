@@ -10,7 +10,7 @@ import { getErrorCause } from '../error/errors.mts'
 
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 import { getCliUserAgent } from '../socket/user-agent.mts'
-import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
+import { resolveNodeRuntime } from '../spawn/node-runtime.mts'
 
 import type { CoanaDlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { CResult } from '../../types.mjs'
@@ -151,13 +151,16 @@ export async function spawnLocalCoana(
     ...spawnEnv,
   })
 
-  const nodeResolution = detection.type === 'binary' ? undefined : getExecPath()
+  const nodeResolution =
+    detection.type === 'binary'
+      ? undefined
+      : await resolveNodeRuntime({ cwd: config.cwd, env: baseEnv })
   const spawnArgs = nodeResolution ? [localPath, ...args] : [...args]
-  const spawnCommand = nodeResolution ?? localPath
+  const spawnCommand = nodeResolution?.executable ?? localPath
 
   const spawnPromise = spawn(spawnCommand, spawnArgs, {
     ...dlxOptions,
-    env: baseEnv,
+    env: nodeResolution?.environment ?? baseEnv,
     stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
   })
 

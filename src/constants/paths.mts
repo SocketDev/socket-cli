@@ -6,6 +6,7 @@
 import { realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'
+import sea from 'node:sea'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -89,7 +90,10 @@ export function getBinCliPath(): string {
     // Resolve relative paths against project root to support cwd changes in tests.
     return path.isAbsolute(binPath) ? binPath : path.join(rootPath, binPath)
   }
-  /* c8 ignore start - .env.test always sets SOCKET_CLI_BIN_PATH so the fallback is unreachable in unit tests */
+  if (sea.isSea()) {
+    return process.execPath
+  }
+  /* c8 ignore start - .env.test sets SOCKET_CLI_BIN_PATH */
   return path.join(rootPath, 'dist/index.js')
   /* c8 ignore stop */
 }

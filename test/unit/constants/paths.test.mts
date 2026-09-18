@@ -10,6 +10,7 @@
  */
 
 import path from 'node:path'
+import sea from 'node:sea'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   configPath,
@@ -134,15 +135,19 @@ describe('paths constants', () => {
       expect(result).toContain('bin')
     })
 
+    it('uses the running SEA for child CLI invocations', () => {
+      const spy = vi.spyOn(sea, 'isSea').mockReturnValue(true)
+      vi.stubEnv('SOCKET_CLI_BIN_PATH', '')
+      try {
+        expect(getBinCliPath()).toBe(process.execPath)
+      } finally {
+        vi.unstubAllEnvs()
+        spy.mockRestore()
+      }
+    })
+
     it('getBinCliPath returns path to CLI entry point', () => {
       const result = getBinCliPath()
-      // Default bundle entry is `dist/index.js` (was `dist/cli.js`
-      // before the unified-build rename in src/constants/paths.mts).
-      // Tests load `.env.test`, which sets `SOCKET_CLI_BIN_PATH` to
-      // `./build/cli.js` so unit tests can exercise locally-built
-      // bundles. The env value is snapshotted at module load by
-      // src/env/socket-cli-bin-path.mts, so we can't unset it here —
-      // accept either the override path or the default.
       const isOverride =
         result.endsWith('build/cli.js') || result.endsWith('build\\cli.js')
       const isDefault =
@@ -309,7 +314,8 @@ describe('paths constants', () => {
         const { getSocketCachePath: getPathFresh } =
           await import('../../../src/constants/paths.mts')
         const result = getPathFresh()
-        expect(result).toContain('.cache/socket')
+        expect(path.basename(result)).toBe('socket')
+        expect(path.basename(path.dirname(result))).toBe('.cache')
       } finally {
         Object.defineProperty(process, 'platform', { value: originalPlatform })
         if (originalXdg !== undefined) {

@@ -3,7 +3,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { downloadGitHubReleaseBinary } from '../../util/dlx/spawn.mts'
 import { resolveSocketPatch } from '../../util/dlx/resolve-binary.mjs'
-import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
+import { resolveNodeRuntime } from '../../util/spawn/node-runtime.mts'
 
 import type { DlxOptions, DlxSpawnResult } from '../../util/dlx/spawn.mts'
 import type { StdioOptions } from 'node:child_process'
@@ -23,19 +23,21 @@ export async function spawnSocketPatch(
   if (resolution.type === 'local') {
     const detection = detectExecutableType(resolution.path)
 
-    const nodeResolution =
-      detection.type === 'binary' ? undefined : getExecPath()
-    const spawnArgs = nodeResolution ? [resolution.path, ...args] : [...args]
-    const spawnCommand = nodeResolution ?? resolution.path
     const baseEnv = {
       ...process.env,
       ...spawnEnv,
     }
 
+    const nodeResolution =
+      detection.type === 'binary'
+        ? undefined
+        : await resolveNodeRuntime({ cwd: options?.cwd, env: baseEnv })
+    const spawnArgs = nodeResolution ? [resolution.path, ...args] : [...args]
+    const spawnCommand = nodeResolution?.executable ?? resolution.path
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
       throws: false,
-      env: baseEnv,
+      env: nodeResolution?.environment ?? baseEnv,
       stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
 

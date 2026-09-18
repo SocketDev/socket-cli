@@ -1,4 +1,4 @@
-import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
+import { resolveNodeRuntime } from './node-runtime.mts'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import type {
@@ -12,5 +12,11 @@ export async function spawnNode(
   options?: SpawnOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<SpawnResult> {
-  return spawn(getExecPath(), args, options, extra)
+  const runtime = await resolveNodeRuntime(options)
+  return spawn(
+    runtime.executable,
+    args,
+    { __proto__: null, ...options, env: runtime.environment },
+    extra,
+  )
 }
