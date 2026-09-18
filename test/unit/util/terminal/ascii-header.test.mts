@@ -3,7 +3,7 @@
  *   rendering, theme handling, and environment detection.
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   renderLogoWithFallback,
@@ -20,6 +20,35 @@ export function stripAnsi(str: string): string {
 }
 
 describe('ascii-header', () => {
+  const stderrTty = Object.getOwnPropertyDescriptor(process.stderr, 'isTTY')
+  beforeEach(() => {
+    Object.defineProperty(process.stderr, 'isTTY', {
+      configurable: true,
+      value: true,
+    })
+    vi.stubEnv('NO_COLOR', undefined)
+    vi.stubEnv('TERM', 'xterm')
+  })
+  afterEach(() => {
+    if (stderrTty) {
+      Object.defineProperty(process.stderr, 'isTTY', stderrTty)
+    } else {
+      Reflect.deleteProperty(process.stderr, 'isTTY')
+    }
+    vi.unstubAllEnvs()
+  })
+
+  it('keeps the logo plain when stderr is redirected', () => {
+    Object.defineProperty(process.stderr, 'isTTY', {
+      configurable: true,
+      value: false,
+    })
+    vi.stubEnv('COLORTERM', 'truecolor')
+    const logo = renderLogoWithFallback(0)
+    expect(logo).toBe(stripAnsi(logo))
+    expect(logo).toContain('.dev')
+  })
+
   describe('supportsFullColor', () => {
     it('should detect COLORTERM=truecolor', () => {
       const originalColorterm = process.env['COLORTERM']

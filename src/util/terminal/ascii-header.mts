@@ -11,7 +11,10 @@ import {
   configToSpec,
   frameColors,
 } from '@socketsecurity/lib-stable/term/effects/shimmer'
-import { colorsToAnsi } from '@socketsecurity/lib-stable/term/effects/shimmer-terminal'
+import {
+  getTerminalCapabilities,
+  renderTerminalColors,
+} from './capabilities.mts'
 
 import type {
   Palette,
@@ -94,8 +97,11 @@ export function renderLogoWithFallback(
   frame?: number | undefined,
   theme: HeaderTheme = 'default',
 ): string {
-  // If frame is provided and terminal supports full color, use shimmer.
-  if (frame !== undefined && supportsFullColor()) {
+  const capabilities = getTerminalCapabilities()
+  if (capabilities.mode === 'plain') {
+    return ASCII_LOGO.join('\n')
+  }
+  if (frame !== undefined && capabilities.truecolor) {
     return renderShimmerFrame(frame, theme)
   }
 
@@ -128,6 +134,10 @@ export function renderShimmerFrame(
   frame: number,
   theme: HeaderTheme = 'default',
 ): string {
+  const capabilities = getTerminalCapabilities()
+  if (capabilities.mode === 'plain') {
+    return ASCII_LOGO.join('\n')
+  }
   const themePalette = THEME_COLORS_RGB[theme] as unknown as Palette
 
   const lines: string[] = []
@@ -167,7 +177,9 @@ export function renderShimmerFrame(
     // Render to ANSI truecolor + wrap in bold for the brighter look
     // the previous implementation produced. \x1b[1m turns bold on,
     // colorsToAnsi emits per-char truecolor codes, \x1b[0m resets.
-    lines.push(`\x1b[1m${colorsToAnsi(line, merged)}\x1b[0m`)
+    lines.push(
+      `\x1b[1m${renderTerminalColors(line, merged, capabilities)}\x1b[0m`,
+    )
   }
 
   return lines.join('\n')
@@ -177,14 +189,5 @@ export function renderShimmerFrame(
  * Check if terminal supports 24-bit color.
  */
 export function supportsFullColor(): boolean {
-  const { COLORTERM, TERM, TERM_PROGRAM } = process.env
-  return (
-    COLORTERM === 'truecolor' ||
-    COLORTERM === '24bit' ||
-    TERM?.includes('24bit') ||
-    TERM?.includes('truecolor') ||
-    TERM_PROGRAM === 'iTerm.app' ||
-    TERM_PROGRAM === 'Hyper' ||
-    TERM_PROGRAM === 'vscode'
-  )
+  return getTerminalCapabilities().truecolor
 }

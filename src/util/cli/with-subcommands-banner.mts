@@ -241,7 +241,7 @@ export function shouldAnimateHeader(
   flags?: Record<string, unknown> | undefined,
 ): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
-  if (isCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+  if (isCI() || VITEST || !process.stderr.isTTY || !supportsFullColor()) {
     return false
   }
   /* c8 ignore start - VITEST is true under tests so the early-return above always fires; the flag-check + default-true paths require an interactive TTY */
