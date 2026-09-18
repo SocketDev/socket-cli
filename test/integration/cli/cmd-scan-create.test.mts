@@ -146,7 +146,9 @@ describe('socket scan create', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        cwd: path.join(testPath, 'fixtures/commands/manifest/conda'),
+      })
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -155,7 +157,7 @@ describe('socket scan create', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan create\`, cwd: <redacted>
 
-        i Detected 1 manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.
+        \\u24d8 Detected 1 manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.
 
         [DryRun]: Would upload scan
 

@@ -79,7 +79,7 @@ describe('socket json', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: <redacted>
+        \\u24d8 Target cwd: <redacted>
         \\xd7 Not found: <redacted>"
       `)
 
@@ -100,7 +100,7 @@ describe('socket json', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: <redacted>
+        \\u24d8 Target cwd: <redacted>
         \\xd7 Not found: <redacted>"
       `)
 
@@ -127,7 +127,7 @@ describe('socket json', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: <redacted>
+        \\u24d8 Target cwd: <redacted>
         \\xd7 Not found: <redacted>"
       `)
 
@@ -170,7 +170,7 @@ describe('socket json', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket json\`, cwd: <redacted>
 
-        i Target cwd: <redacted>
+        \\u24d8 Target cwd: <redacted>
         \\u221a This is the contents of <redacted>:"
       `)
 

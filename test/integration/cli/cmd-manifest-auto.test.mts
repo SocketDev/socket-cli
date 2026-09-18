@@ -17,6 +17,8 @@
  * logic.
  */
 
+import path from 'node:path'
+
 import { describe, expect } from 'vitest'
 
 import {
@@ -25,7 +27,7 @@ import {
   FLAG_HELP,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { cmdit, spawnSocketCli } from '../../utils.mts'
+import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
 
@@ -81,12 +83,12 @@ describe('socket manifest auto', async () => {
 
   cmdit(
     ['manifest', 'auto', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
-    'should report when no manifest targets are detected',
+    'should report detected manifest targets',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        cwd: path.join(testPath, 'fixtures/commands/manifest/conda'),
+      })
 
-      // manifest auto scans the cwd for generatable manifest targets and
-      // reports when none exist; there is no dry-run bail anymore.
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -99,7 +101,7 @@ describe('socket manifest auto', async () => {
         [DryRun]: Would execute auto-detect and generate 1 manifest file(s)
 
           Command: manifest generators
-          Arguments: [PROJECT]
+          Arguments: [PROJECT]/test/fixtures/commands/manifest/conda
 
           Run without --dry-run to execute this command."
       `)
