@@ -42,7 +42,7 @@ on:
       dist-tag:
         description: 'npm dist-tag to publish under.'
         type: string
-        default: 'latest'
+        default: 'prerelease'
       backfill-version:
         description: >-
           Backfill a never-published GAP version below registry latest with
@@ -142,6 +142,15 @@ jobs:
           checkout-ref: ${{ inputs.checkout-ref || github.sha }}
       - name: Build
         run: pnpm run build
+      - name: Guard Socket CLI prerelease channel
+        if: ${{ inputs.backfill-version == '' && inputs.resume-reserved != true }}
+        env:
+          DIST_TAG: ${{ inputs.dist-tag }}
+        run: |
+          if [ "$DIST_TAG" != "prerelease" ]; then
+            echo "::error::Socket CLI 2.x releases require the prerelease dist-tag." >&2
+            exit 1
+          fi
       - name: 'Run coverage'
         id: coverage_collection
         uses: ./.github/actions/fleet/run-script
