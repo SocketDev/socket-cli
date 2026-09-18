@@ -1261,7 +1261,12 @@ if (BINARY.enabled) {
           }
 
           const result = await executeCliCommand(
-            ['fix', '--dry-run', '--config', '{}'],
+            [
+              'fix',
+              '--dry-run',
+              '--config',
+              '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
+            ],
             {
               binPath: BINARY.path,
               isolateConfig: false,
