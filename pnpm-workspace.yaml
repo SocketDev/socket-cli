@@ -78,8 +78,8 @@ catalog:
   # test/ code uses the canonical name because vitest aliases that
   # to local src/.
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
-  '@socketsecurity/lib': 7.0.2
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@7.0.2'
+  '@socketsecurity/lib': 7.0.3
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@7.0.3'
   '@socketsecurity/odai': 0.2.1
   '@socketsecurity/registry': 2.0.5
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
@@ -596,7 +596,7 @@ overrides:
   # function that already wraps the call.
   '@sindresorhus/df': '5.0.0'
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@7.0.2'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@7.0.3'
   '@socketsecurity/registry-stable': 'catalog:'
   '@socketsecurity/sdk-stable': 'catalog:'
   # Dedup: @types/unist is types-only (no runtime), pulled transitively by the
