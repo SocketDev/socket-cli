@@ -57,6 +57,7 @@ export async function buildSdxgenBundle(root: string): Promise<void> {
   const acornDir = path.dirname(require.resolve('@ultrathink/acorn.rs.wasm'))
   await fs.mkdir(output, { recursive: true })
   const bundle = await rolldown({
+    experimental: { attachDebugInfo: 'none' },
     input: sourceIndexPath(upstream),
     platform: 'node',
     tsconfig: path.join(root, 'tsconfig.json'),
