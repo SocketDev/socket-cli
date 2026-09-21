@@ -33,6 +33,7 @@ export function createBaseConfig(
   inlinedEnvVars: Record<string, string>,
 ): RolldownOptions {
   return {
+    experimental: { attachDebugInfo: 'none' },
     platform: 'node',
     transform: {
       define: {

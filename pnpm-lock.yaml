@@ -1622,12 +1622,6 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
-  .claude/hooks/fleet/copy-on-select-hint-nudge:
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.5.1
-
   .claude/hooks/fleet/corepack-guard:
     devDependencies:
       '@types/node':
@@ -2933,19 +2927,6 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
-  .claude/hooks/fleet/npm-auth-lane-guard:
-    dependencies:
-      '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@7.0.2
-        version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
-      shell-quote:
-        specifier: 1.10.0
-        version: 1.10.0
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.5.1
-
   .claude/hooks/fleet/npm-otp-flow-nudge:
     dependencies:
       shell-quote:
@@ -3851,12 +3832,6 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
-  .claude/hooks/fleet/stop-claim-verify-nudge:
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.5.1
-
   .claude/hooks/fleet/stop-means-commit-guard:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -3974,16 +3949,6 @@ importers:
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@7.0.2
         version: '@socketsecurity/lib@7.0.2(typescript@7.1.0-dev.20260904.1)'
-      shell-quote:
-        specifier: 1.10.0
-        version: 1.10.0
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.5.1
-
-  .claude/hooks/fleet/unbacked-claim-commit-guard:
-    dependencies:
       shell-quote:
         specifier: 1.10.0
         version: 1.10.0
