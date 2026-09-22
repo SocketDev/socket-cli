@@ -1,6 +1,5 @@
-# CLAUDE.md
+# AGENTS.md
 
-**MANDATORY**: Act as principal-level engineer. Follow these guidelines exactly.
 
 <!-- <fleet> -->
 
@@ -13,8 +12,9 @@
 - 🚨 Active-edits ledger coordinates concurrent actors: a path another live actor wrote within 5 min is blocked, as are open-ended wait promises. [`parallel-claude-sessions`](docs/fleet/agents.md/parallel-claude-sessions.md)
 - Keep repo paths local. Only validated Wheelhouse commit-cascade may cross repos. [`parallel-claude-sessions`](docs/fleet/agents.md/parallel-claude-sessions.md)
 - 🚨 Use `pnpm run worktree:create`. [`parallel-claude-sessions`](docs/fleet/agents.md/parallel-claude-sessions.md)
+- Check `who_owns`/`list_claims` before non-trivial work; `claim_paths` what you take, `release_paths` when done. [`claim-before-you-work`](docs/fleet/agents.md/claim-before-you-work.md)
 - Never hard-code `main` in scripts: resolve the default branch via `git symbolic-ref`, fall back `main` → `master`. [`default-branch-resolution`](docs/fleet/agents.md/default-branch-resolution.md)
-- 🚨 Write no real customer name, private repo, Linear ref, or Slack thread on a public surface. [`public-surface-hygiene`](docs/fleet/agents.md/public-surface-hygiene.md) [`pull-request-target`](docs/fleet/agents.md/pull-request-target.md)
+- 🚨 Write no real customer name, private repo, Linear ref, or Slack thread on a public surface. [`public-surface-hygiene`](docs/fleet/agents.md/public-surface-hygiene.md)
 - Root `README.md` follows the fleet skeleton - 5 level-2 sections in order, every member. [`public-surface-hygiene`](docs/fleet/agents.md/public-surface-hygiene.md)
 - Fleet repos use Conventional Commits `<type>(<scope>): <description>`, lowercase, with NO AI attribution. [`commit-cadence-format`](docs/fleet/agents.md/commit-cadence-format.md)
 - 🚨 No fleet commit trailer or branch name carries an AI tool's mark. (`scripts/fleet/check/commits-have-no-ai-attribution.mts`) [`agent-detection-surfaces`](docs/fleet/agents.md/agent-detection-surfaces.md)
@@ -40,14 +40,15 @@
 - Admit local tests, coverage, builds, and type checks through the shared heavy-job runner. [`heavy-jobs`](docs/fleet/agents.md/heavy-jobs.md)
 - A raw `node <file>` call is BLOCKED when a script wraps it: run `pnpm run <name>`, or add one. (`.claude/hooks/fleet/use-the-script-guard/`) [`code-first-then-ai`](docs/fleet/agents.md/code-first-then-ai.md)
 - zsh does not word-split `$var`: a space-joined list in a variable passes as ONE arg. [`tooling`](docs/fleet/agents.md/tooling.md)
+- Resolve `git` through `PATH`, never a hardcoded `/Applications/Xcode.app/...` path. [`git-binary-resolution`](docs/fleet/agents.md/git-binary-resolution.md)
 - 🚨 rg's `-r` never clusters: `rg -rln` parses as `--replace 'ln'` and corrupts output; spell `-r` separately. [`tooling`](docs/fleet/agents.md/tooling.md)
-- 🚨 7-day `minimumReleaseAge` soak, every ecosystem (manifest+lock+gate). [`multi-ecosystem-soak`](docs/fleet/agents.md/multi-ecosystem-soak.md) [`tooling`](docs/fleet/agents.md/tooling.md) [`prompt-injection`](docs/fleet/agents.md/prompt-injection.md)
+- 🚨 7-day `minimumReleaseAge` soak, every ecosystem (manifest+lock+gate). [`multi-ecosystem-soak`](docs/fleet/agents.md/multi-ecosystem-soak.md)
 - 🚨 Never silently phone home: every dep + external tool is telemetry-OFF, fail-closed. [`telemetry-lockdown`](docs/fleet/agents.md/telemetry-lockdown.md)
 - Use the persistent per-user sfw CA (`pnpm run setup:sfw-ca`), never a per-invocation temporary CA. [`sfw-persistent-ca`](docs/fleet/agents.md/sfw-persistent-ca.md)
 - Dedup the install tree: no avoidable cross-major duplicate, and every `@socketregistry/*` hardened drop-in is redirected via `overrides:`. [`tooling`](docs/fleet/agents.md/tooling.md)
 - An override's value is MEASURED, never predicted: report surviving gateways beside every cut %. [`ecosystem-impact-measurement`](docs/fleet/agents.md/ecosystem-impact-measurement.md)
 - Every user-facing CLI provides `doctor` (diagnose, read-only) and `doctor --fix` (safe, idempotent repair); `pnpm run fix --all` runs the fleet doctor. [`fleet-doctor`](docs/fleet/agents.md/fleet-doctor.md)
-- Re-measure or attribute peer measurements. (`.claude/hooks/fleet/stop-claim-verify-nudge/`) [`a-peers-claim-is-a-lead`](docs/fleet/agents.md/a-peers-claim-is-a-lead.md)
+- Re-measure or attribute peer measurements. (`.claude/hooks/fleet/unbacked-claim-nudge/`) [`a-peers-claim-is-a-lead`](docs/fleet/agents.md/a-peers-claim-is-a-lead.md)
 - Keep work within your scope. [`task-scope`](docs/fleet/agents.md/judgment-and-self-evaluation.md)
 - "stop"/"pause" means stop FORWARD action: finish the in-flight commit, never freeze broken. (`.claude/hooks/fleet/stop-means-commit-guard/`) [`stop-means-finish-the-commit`](docs/fleet/agents.md/stop-means-finish-the-commit.md)
 - Scope work into chunks that land: verify each alone, commit it, then start the next. (`.claude/hooks/fleet/uncommitted-sweep-nudge/`) [`scope-work-into-landable-chunks`](docs/fleet/agents.md/scope-work-into-landable-chunks.md)
@@ -69,7 +70,7 @@
 - A vendored/build-copied dir (`upstream/`, `pkg-node/`, `*-bundled`/`*-vendored`) is untracked-by-default. [`untracked-by-default`](docs/fleet/agents.md/untracked-by-default.md)
 - Never write runtime or per-checkout state into the tracked tree. [`runtime-state-and-caches`](docs/fleet/agents.md/runtime-state-and-caches.md) <!-- enforcement: off-machine - needs VFS instrumentation -->
 - 🚨 Bypassing a hook needs the user to type `Allow <X> bypass` verbatim. [`bypass-phrases`](docs/fleet/agents.md/bypass-phrases.md)
-- 🚨 Closing a High/Critical finding requires searching the repo for the same shape first. [`agent-delegation`](docs/fleet/agents.md/agent-delegation.md) [`tooling`](docs/fleet/agents.md/tooling.md)
+- 🚨 Closing a High/Critical finding requires searching the repo for the same shape first. [`agent-delegation`](docs/fleet/agents.md/agent-delegation.md)
 - A Workflow `agent()` subagent has no Task tools. [`agent-delegation`](docs/fleet/agents.md/agent-delegation.md)
 - Each assistant/subagent picks a team alias. [`team-stars`](docs/fleet/agents.md/team-stars.md)
 - A background Workflow, Agent, or Bash task silent past 2 minutes may be thrashing. [`long-running-tasks`](docs/fleet/agents.md/long-running-tasks.md) <!--advisory-->
@@ -89,12 +90,12 @@
 - The fleet-pack is the DEFAULT: a tracked cascade entry names its reader or the pack carries it. (`scripts/fleet/check/cascade-additions-are-justified.mts`) [`pack-first-distribution`](docs/fleet/agents.md/pack-first-distribution.md)
 - Drift across fleet repos is a defect: when two repos pin different versions, opt for the latest. [`drift-watch`](docs/fleet/agents.md/drift-watch.md)
 - 🚨 A Socket-published pin NEVER moves down. (`scripts/fleet/check/socket-pins-are-never-lowered.mts`) [`drift-watch`](docs/fleet/agents.md/drift-watch.md)
-- Port an upstream at its LATEST release: `git fetch --tags`, pin NEWEST before a `.gitmodules`/`lockstep.json` version-pin change. [`lockstep`](docs/fleet/agents.md/lockstep.md) [`drift-watch`](docs/fleet/agents.md/drift-watch.md)
+- Port an upstream at its LATEST release: `git fetch --tags`, pin NEWEST before a `.gitmodules`/`lockstep.json` version-pin change. [`lockstep`](docs/fleet/agents.md/lockstep.md)
 - Local-only cascade commits + superseded worktrees silently block future pushes. [`stranded-cascades`](docs/fleet/agents.md/stranded-cascades.md)
 - 🚨 Edit fleet-canonical files ONLY in `template/...`. [`no-local-fork`](docs/fleet/agents.md/no-local-fork.md)
 - 🚨 Fleet tooling writes only into roster members: membership resolves via the destination's `origin` remote, never its filesystem location. [`single-source-of-truth`](docs/fleet/agents.md/single-source-of-truth.md)
 - Every `template/base/universal` file is classified into ONE distribution channel. [`wheelhouse-controlled-drift`](docs/fleet/agents.md/wheelhouse-controlled-drift.md)
-- Default to no comments. [`code-style`](docs/fleet/agents.md/code-style.md) [`parser-comments`](docs/fleet/agents.md/parser-comments.md)
+- Default to no comments. [`code-style`](docs/fleet/agents.md/code-style.md)
 - Comments + prose state the present, never the removed past: no "used to be X", no relocation tombstone. [`parser-comments`](docs/fleet/agents.md/parser-comments.md)
 - The fleet deletes, it does not deprecate: no `@deprecated` marker, no legacy fallback, no back-compat alias. [`no-deprecation`](docs/fleet/agents.md/no-deprecation.md)
 - 🚨 Never land a burn-down list to make a check pass. (`scripts/fleet/check/no-burn-down-lists.mts`) [`no-burn-down-lists`](docs/fleet/agents.md/no-burn-down-lists.md)
@@ -153,7 +154,7 @@
 - A `github-action` member ships committed `dist/` at a tag. (`scripts/fleet/check/github-action-aliases-are-not-frozen.mts`) [`github-action-release-contract`](docs/fleet/agents.md/github-action-release-contract.md)
 - 🚨 GitHub CLI tokens: keychain only; `workflow` scope off by default; 8-hour age cap. [`gh-token-hygiene`](docs/fleet/agents.md/gh-token-hygiene.md)
 - Release App writes default-branch and release content. PR App writes repair branches, issues, and PRs. Both are organization-wide. [`token-hygiene`](docs/fleet/agents.md/token-hygiene.md)
-- 🚨 Commits on `main`/`master` must be signed. [`commit-signing`](docs/fleet/agents.md/commit-signing.md) [`git-config-write-guard`](docs/fleet/agents.md/git-config-write-guard.md) [`security-stack`](docs/fleet/agents.md/security-stack.md)
+- 🚨 Commits on `main`/`master` must be signed. [`commit-signing`](docs/fleet/agents.md/commit-signing.md) [`git-config-write-guard`](docs/fleet/agents.md/git-config-write-guard.md)
 - Keep AI logic canonical; generate client aliases during setup, never commit them. [`release-vs-cascade`](docs/fleet/agents.md/release-vs-cascade.md)
 - Skills, commands, and agent instructions are thin wrappers. [`agents-and-skills`](docs/fleet/agents.md/agents-and-skills.md)
 - Fleet/repo segmentation on every surface; a `-guard` BLOCKS, a `-nudge` NUDGES. [`hook-registry`](docs/fleet/agents.md/hook-registry.md)
@@ -164,32 +165,3 @@
 - A written mermaid fence gets rewritten GitHub-safe at edit time. [`hook-registry`](docs/fleet/agents.md/hook-registry.md)
 
 <!-- </fleet> -->
-
-## 🏗️ CLI-Specific
-
-**Commands:** `pnpm run build` (smart; `build:force` / `build:cli`); `pnpm test` (repository tooling) or `pnpm run test:unit <path>` (product tests); `pnpm run lint` / `type` / `check` / `fix`; `pnpm run build:watch` (watch); run built via `pnpm run s <args>`.
-
-### Testing
-
-- 🚨 **NEVER use `--` before test file paths** - runs ALL tests
-- Always build before testing: `pnpm run build:cli`
-- Update snapshots: `pnpm run test:unit <path> --update`
-- NEVER write source-code-scanning tests - verify behavior, not string patterns
-
-### Command Pattern
-
-Simple (<200 LOC, no subcommands): single `cmd-*.mts`. Complex: `cmd-*.mts` + `handle-*.mts` + `output-*.mts` + `fetch-*.mts`.
-
-### Codex Usage
-
-Advice and critical assessment ONLY - never for making code changes. Consult before complex optimizations (>30min).
-
-### Releasing v1.x
-
-`v1.x` ships `socket`, `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry` from one tree at one version, via `.github/workflows/npm-publish.yml` on that branch - not `main`'s pipeline.
-
-- 🚨 A failure AFTER the tag step burns that version; move the hint to the next patch, never re-dispatch the same number. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
-- 🚨 Never dispatch a real run (`dry-run=false`) and never approve a stage - both are human actions, and stage approval needs browser 2FA. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
-- 🚨 The USER names the release version; prepare the bump commit only after they do. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
-- Between releases `package.json` carries an `X.Y.Z-prerelease` hint; the bump strips it and promotes CHANGELOG's `## [Unreleased]`. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
-- 🚨 `v1.x` is the consumable line and owns the `latest` dist-tag; the default branch carries the 2.x PRERELEASE line and is refused `latest`. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
