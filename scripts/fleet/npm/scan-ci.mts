@@ -16,6 +16,7 @@ import { resolveReleaseSubject } from '../release/subject.mts'
 import { scanStagedEntryDetailed } from '../registry-infra/npm/scan.mts'
 import type { StagedScanVerdict } from '../registry-infra/npm/scan.mts'
 import { defaultPackTarball } from '../registry-infra/npm/staged.mts'
+import { resolveNpmWorkspaceLayout } from '../registry-infra/npm/workspace.mts'
 import { rootPath, runCapture } from '../registry-infra/shared.mts'
 import {
   NPM_SCAN_RECEIPT_FILE,
@@ -47,7 +48,7 @@ interface ScanCiDeps {
   headSha: () => Promise<string>
   pack: typeof defaultPackTarball
   scan: typeof scanStagedEntryDetailed
-  subject: typeof resolveReleaseSubject
+  subject: (root: string) => { name: string; version: string }
   writeReceipt: (receipt: NpmRemoteScanReceipt) => Promise<void>
 }
 
@@ -149,12 +150,22 @@ function receiptFrom(
   })
 }
 
-function runtimeDeps(): ScanCiDeps {
+function runtimeDeps(packageName: string): ScanCiDeps {
   return {
     headSha: currentHeadSha,
     pack: defaultPackTarball,
     scan: scanStagedEntryDetailed,
-    subject: resolveReleaseSubject,
+    subject(root) {
+      const layout = resolveNpmWorkspaceLayout(root)
+      if (layout.kind === 'single') {
+        return resolveReleaseSubject(root)
+      }
+      const member = layout.packages.find(pkg => pkg.name === packageName)
+      if (!member) {
+        throw new Error('Scan package is absent from the release workspace.')
+      }
+      return member
+    },
     writeReceipt,
   }
 }
@@ -163,7 +174,7 @@ export async function runScanCi(
   config: ScanCiConfig,
   options: { deps?: ScanCiDeps | undefined } = {},
 ): Promise<NpmRemoteScanReceipt> {
-  const deps = options.deps ?? runtimeDeps()
+  const deps = options.deps ?? runtimeDeps(config.packageName)
   const headSha = await deps.headSha()
   if (headSha !== config.sourceSha) {
     throw new Error(

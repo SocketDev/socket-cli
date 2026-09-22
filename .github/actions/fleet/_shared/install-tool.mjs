@@ -236,7 +236,7 @@ async function run() {
   }
   // Positionals: <url> <integrity> <dest-dir> [<bin-name>]. Optional flags
   // --src <url> and --date <iso> carry the object-form integrity provenance
-  // (forwarded by the composite actions from resolve-external-tool-asset.mjs's
+  // (forwarded by the composite actions from resolve-external-tool-asset.generated.mjs's
   // JSON output) so the live src / staleness checks run after the SRI check.
   const flags = { src: '', date: '', cache: false }
   const positionals = []

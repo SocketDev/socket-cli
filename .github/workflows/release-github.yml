@@ -46,7 +46,7 @@ jobs:
   # what it has.
   gate:
     name: Check release eligibility
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       asset_workflow: ${{ steps.flag.outputs.asset_workflow }}
       enabled: ${{ steps.flag.outputs.enabled }}
@@ -94,7 +94,7 @@ jobs:
     name: Publish GitHub release
     needs: gate
     if: needs.gate.outputs.enabled == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read

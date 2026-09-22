@@ -1,30 +1,15442 @@
 #!/usr/bin/env node
+import { createRequire } from 'node:module'
+import { execFile, execFileSync } from 'node:child_process'
+import crypto, { randomUUID } from 'node:crypto'
 import {
   chmodSync,
   copyFileSync,
   existsSync,
+  linkSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
+  readlinkSync,
   realpathSync,
   renameSync,
   rmSync,
+  rmdirSync,
   statSync,
+  symlinkSync,
+  unlinkSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs'
 import path, { dirname, resolve, sep } from 'node:path'
-import crypto, { randomUUID } from 'node:crypto'
-import { execFileSync } from 'node:child_process'
 import process$1 from 'node:process'
-import { format } from 'node:util'
+import { format, parseArgs as parseArgs$1, promisify } from 'node:util'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import https from 'node:https'
+import v8 from 'node:v8'
+import { AsyncLocalStorage } from 'node:async_hooks'
 
-//#region template/base/universal/scripts/fleet/gitignore/compose.mts
+var __defProp = Object.defineProperty
+var __esmMin = (fn, res, err) => () => {
+  if (err) throw err[0]
+  try {
+    return (fn && (res = fn((fn = 0))), res)
+  } catch (e) {
+    throw ((err = [e]), e)
+  }
+}
+var __commonJSMin = (cb, mod) => () => (
+  mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+  mod.exports
+)
+var __exportAll = (all, no_symbols) => {
+  let target = {}
+  for (var name in all) {
+    __defProp(target, name, {
+      get: all[name],
+      enumerable: true,
+    })
+  }
+  if (!no_symbols) {
+    __defProp(target, Symbol.toStringTag, { value: 'Module' })
+  }
+  return target
+}
+var __require = /* #__PURE__ */ (() => createRequire(import.meta.url))()
+
+const POINTER_TEXT =
+  'The authoritative engineering rules for this repository are in `./AGENTS.md` (`./CLAUDE.md` imports the same file). Read and follow them.\n'
+const POINTER_BODY = '# Engineering rules\n\n' + POINTER_TEXT
+const CURSOR_MDC =
+  '---\ndescription: Socket fleet engineering rules (canonical source is ./AGENTS.md)\nglobs:\nalwaysApply: true\n---\n\n' +
+  POINTER_BODY +
+  '\n@AGENTS.md\n'
+const CLAUDE_MD = POINTER_BODY + '\n@AGENTS.md\n'
+const KIRO_MD =
+  '---\ntitle: Socket fleet engineering rules\ninclusion: always\n---\n\n' +
+  POINTER_TEXT
+function renderAdapterCopy(adapter, source) {
+  let content = source
+  for (const replacement of adapter.replacements ?? [])
+    content = content.replaceAll(replacement.from, () => replacement.to)
+  return content
+}
+const ADAPTER_SRC_DIR = import.meta.dirname
+const OPENCODE_GUARDS_SRC = path.join(ADAPTER_SRC_DIR, 'fleet-guards.mts')
+const ADAPTERS = [
+  {
+    content: CLAUDE_MD,
+    dest: 'CLAUDE.md',
+    kind: 'file',
+  },
+  {
+    dest: '.clinerules/socket.md',
+    kind: 'symlink',
+  },
+  {
+    content: CURSOR_MDC,
+    dest: '.cursor/rules/socket.mdc',
+    kind: 'file',
+  },
+  {
+    dest: '.github/copilot-instructions.md',
+    kind: 'symlink',
+  },
+  ...['server', 'tool'].map(name => ({
+    __proto__: null,
+    dest: `.opencode/_shared/opencode/${name}.mts`,
+    kind: 'copy',
+    sourceRel: `scripts/fleet/gen/_shared/opencode/${name}.mts`,
+    src: path.join(ADAPTER_SRC_DIR, '../_shared/opencode', `${name}.mts`),
+  })),
+  {
+    content: KIRO_MD,
+    dest: '.kiro/steering/socket.md',
+    kind: 'file',
+  },
+  {
+    dest: '.opencode/plugins/fleet-guards.ts',
+    kind: 'copy',
+    replacements: [
+      {
+        from: "from '../../paths/util.mts'",
+        to: "from '../../scripts/fleet/paths/util.mts'",
+      },
+      {
+        from: "from '../../cli/terminal-link.mts'",
+        to: "from '../../scripts/fleet/cli/terminal-link.mts'",
+      },
+      {
+        from: "from '../../cross-cli/util.mts'",
+        to: "from '../../scripts/fleet/cross-cli/util.mts'",
+      },
+    ],
+    sourceRel: 'scripts/fleet/gen/harness-adapters/fleet-guards.mts',
+    src: OPENCODE_GUARDS_SRC,
+  },
+  {
+    dest: '.windsurf/rules/socket.md',
+    kind: 'symlink',
+  },
+]
+
+var require_runtime$3 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Runtime environment detection constants. All checks use only
+   *   `typeof`-safe global probes so this module is safe to import in browser,
+   *   Node.js, Deno, Bun, and bundled contexts alike.
+   */
+  /**
+   * True when running inside a Node.js process. Detected via
+   * `process.versions.node` — present in Node, absent in browsers and Deno/Bun
+   * which expose a different `process.versions` shape (or no `process` at all).
+   */
+  const IS_NODE =
+    typeof process !== 'undefined' &&
+    typeof process.versions !== 'undefined' &&
+    typeof process.versions.node === 'string'
+  /**
+   * True when running in a browser context (window + document both defined).
+   * Note: Chrome extensions have `window` in popup contexts but not in service
+   * workers — check `IS_SERVICE_WORKER` for that case.
+   */
+  const IS_BROWSER =
+    typeof globalThis !== 'undefined' &&
+    'window' in globalThis &&
+    typeof globalThis.window !== 'undefined' &&
+    'document' in globalThis &&
+    typeof globalThis.document !== 'undefined'
+  /**
+   * True when running inside a Web Worker / Chrome MV3 service worker. `self`
+   * is defined without `window` in worker contexts.
+   */
+  const IS_WORKER =
+    'self' in globalThis &&
+    typeof globalThis.self !== 'undefined' &&
+    !('window' in globalThis) &&
+    !('document' in globalThis)
+  exports.IS_BROWSER = IS_BROWSER
+  exports.IS_NODE = IS_NODE
+  exports.IS_WORKER = IS_WORKER
+})
+
+var require_fs$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const nodeFs = require_runtime$3().IS_NODE
+    ? /*@__PURE__*/ __require('fs')
+    : void 0
+  function getNodeFs() {
+    return nodeFs
+  }
+  const FsAccessSync = nodeFs?.accessSync
+  const FsExistsSync = nodeFs?.existsSync
+  const FsMkdirSync = nodeFs?.mkdirSync
+  const FsReadFileSync = nodeFs?.readFileSync
+  const FsRealpathSync = nodeFs?.realpathSync
+  const FsStatSync = nodeFs?.statSync
+  const FsWriteFileSync = nodeFs?.writeFileSync
+  exports.FsAccessSync = FsAccessSync
+  exports.FsExistsSync = FsExistsSync
+  exports.FsMkdirSync = FsMkdirSync
+  exports.FsReadFileSync = FsReadFileSync
+  exports.FsRealpathSync = FsRealpathSync
+  exports.FsStatSync = FsStatSync
+  exports.FsWriteFileSync = FsWriteFileSync
+  exports.getNodeFs = getNodeFs
+})
+
+var require_predicates$3 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Array type-guard predicates. Currently just a re-export of native
+   *   `Array.isArray` for consistency with the rest of the arrays surface —
+   *   kept in its own leaf because it's runtime-trivial but conceptually a
+   *   different concern from `chunk` / `unique` / `join`.
+   */
+  /**
+   * Alias for native Array.isArray. Determines whether the passed value is an
+   * array.
+   *
+   * This is a direct reference to the native `Array.isArray` method, providing
+   * a type guard that narrows the type to an array type. Exported for
+   * consistency with other array utilities in this module.
+   *
+   * @example
+   *   ;```ts
+   *   // Check if value is an array
+   *   isArray([1, 2, 3])
+   *   // Returns: true
+   *
+   *   isArray('not an array')
+   *   // Returns: false
+   *
+   *   isArray(null)
+   *   // Returns: false
+   *
+   *   // Type guard usage
+   *   function processValue(value: unknown) {
+   *     if (isArray(value)) {
+   *       // TypeScript knows value is an array here
+   *       console.log(value.length)
+   *     }
+   *   }
+   *   ```
+   *
+   * @param value - The value to check.
+   *
+   * @returns `true` if the value is an array, `false` otherwise
+   */
+  const isArray = Array.isArray
+  exports.isArray = isArray
+})
+
+var require_os = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const nodeOs = require_runtime$3().IS_NODE
+    ? /*@__PURE__*/ __require('os')
+    : void 0
+  function getNodeOs() {
+    return nodeOs
+  }
+  const OsArch = nodeOs?.arch
+  const OsHomedir = nodeOs?.homedir
+  const OsPlatform = nodeOs?.platform
+  const OsTmpdir = nodeOs?.tmpdir
+  exports.OsArch = OsArch
+  exports.OsHomedir = OsHomedir
+  exports.OsPlatform = OsPlatform
+  exports.OsTmpdir = OsTmpdir
+  exports.getNodeOs = getNodeOs
+})
+
+var require_platform = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_os = require_os()
+  const require_node_fs = require_fs$1()
+  /**
+   * @file Platform detection and OS-specific constants.
+   */
+  let memoizedArch
+  /**
+   * Get the current CPU architecture (memoized), e.g. `x64`, `arm64`.
+   */
+  function getArch() {
+    if (memoizedArch === void 0)
+      memoizedArch = require_node_os.getNodeOs().arch()
+    return memoizedArch
+  }
+  const MUSL_LINKERS = [
+    '/lib/ld-musl-x86_64.so.1',
+    '/lib/ld-musl-aarch64.so.1',
+    '/usr/lib/ld-musl-x86_64.so.1',
+    '/usr/lib/ld-musl-aarch64.so.1',
+  ]
+  let memoizedLibc
+  let memoizedLibcProbed = false
+  /**
+   * Get the host libc variant (memoized): `'musl'` on Alpine-and-similar,
+   * `'glibc'` on other Linux, `undefined` off-Linux. Detected by probing for
+   * the musl dynamic linker. The single source of truth for libc detection —
+   * tool-specific resolvers (`getPythonArch`, `getJreArch`) call this rather
+   * than re-probing.
+   */
+  function getLibc() {
+    if (!memoizedLibcProbed) {
+      memoizedLibcProbed = true
+      /* c8 ignore start - Linux-only filesystem probe. */
+      if (getOs() !== 'linux') memoizedLibc = void 0
+      else {
+        memoizedLibc = 'glibc'
+        for (let i = 0, { length } = MUSL_LINKERS; i < length; i += 1)
+          if (require_node_fs.getNodeFs().existsSync(MUSL_LINKERS[i])) {
+            memoizedLibc = 'musl'
+            break
+          }
+      }
+    }
+    return memoizedLibc
+  }
+  let memoizedOs
+  /**
+   * Get the current OS (memoized), e.g. `darwin`, `linux`, `win32` — the raw
+   * `process.platform` value.
+   */
+  function getOs() {
+    if (memoizedOs === void 0)
+      memoizedOs = require_node_os.getNodeOs().platform()
+    return memoizedOs
+  }
+  let memoizedTarget
+  /**
+   * Get the current host **target** in the pnpm `pack-app` vocabulary
+   * (memoized): `<os>-<arch>[-<libc>]`, e.g. `darwin-arm64`, `linux-x64`,
+   * `win32-x64`, `linux-x64-musl`. Raw Node `process.platform`/`process.arch`
+   * joined with `-`, plus a `-musl` suffix on Alpine. This is the Socket-wide
+   * naming for non-python / non-JRE tools (matches pnpm's release assets,
+   * `pnpm-<os>-<arch>[-<libc>].{tar.gz,zip}`). Tool-specific resolvers that
+   * need a different vocabulary own their own helper — see `getPythonArch` for
+   * python-build-standalone and `getJreArch` for Adoptium.
+   */
+  function getTarget() {
+    if (memoizedTarget === void 0) {
+      const libcSuffix = getLibc() === 'musl' ? '-musl' : ''
+      memoizedTarget = `${getOs()}-${getArch()}${libcSuffix}`
+    }
+    return memoizedTarget
+  }
+  const DARWIN = getOs() === 'darwin'
+  const WIN32 = getOs() === 'win32'
+  /**
+   * Returns whether the current platform is macOS. Callable predicate backed
+   * by the module-load memo, so tests can mock the module.
+   *
+   * @returns `true` on darwin, `false` otherwise
+   */
+  function isDarwin() {
+    return DARWIN
+  }
+  /**
+   * Returns whether the current platform is POSIX (anything but Windows).
+   * Callable predicate backed by the module-load memo, so tests can mock the
+   * module.
+   *
+   * @returns `true` on darwin/linux, `false` on win32
+   */
+  function isPosix() {
+    return !WIN32
+  }
+  /**
+   * Returns whether the current platform is Windows. Callable predicate backed
+   * by the module-load memo, so tests can mock the module.
+   *
+   * @returns `true` on win32, `false` otherwise
+   */
+  function isWin32() {
+    return WIN32
+  }
+  /**
+   * True when this process was launched as a Chrome or Chromium native
+   * messaging host. Chrome passes the extension origin URL
+   * (`chrome-extension://<id>/`) as `process.argv[2]`; no other invocation
+   * shape produces that prefix.
+   */
+  const NATIVE_MESSAGING_HOST =
+    typeof process !== 'undefined' &&
+    typeof process.argv[2] === 'string' &&
+    process.argv[2].startsWith('chrome-extension://')
+  const S_IXUSR = 64
+  const S_IXGRP = 8
+  const S_IXOTH = 1
+  exports.NATIVE_MESSAGING_HOST = NATIVE_MESSAGING_HOST
+  exports.S_IXGRP = S_IXGRP
+  exports.S_IXOTH = S_IXOTH
+  exports.S_IXUSR = S_IXUSR
+  exports.getArch = getArch
+  exports.getLibc = getLibc
+  exports.getOs = getOs
+  exports.getTarget = getTarget
+  exports.isDarwin = isDarwin
+  exports.isPosix = isPosix
+  exports.isWin32 = isWin32
+})
+
+var require_module = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_runtime = require_runtime$3()
+  let module$1 = __require('module')
+  /**
+   * @file Accessors for `node:module` that work across runtimes. Ambient
+   *   `require` is bound in CommonJS but unbound in ESM and inside
+   *   ahead-of-time-compiled package modules (e.g. Perry), where reading it
+   *   throws. And Perry's `require('module')` value omits `isBuiltin`. So
+   *   instead of the ambient `require('module')` lazy-loader,
+   *   `isBuiltin`/`createRequire` are imported as named values from the bare
+   *   `module` specifier — which resolves on Node and Perry, and which browser
+   *   bundlers can stub via resolve.fallback (a `node:` prefix would throw
+   *   UnhandledSchemeError there). `require` is DIRECTORY-SPECIFIC:
+   *   `createRequire(base)` resolves relative specifiers (`./x`, `../y`) from
+   *   `base`'s directory. For builtins and bare packages that's irrelevant
+   *   since they resolve the same anywhere, so the cached `getRequire` /
+   *   `requireBuiltin` bind to THIS file. A RELATIVE specifier must resolve
+   *   from the CALLER's directory, so use `requireFrom` with the caller's
+   *   `import.meta.url` — binding such a load to this file would resolve it
+   *   against `src/node/` instead. Bundled, every module collapses to one base
+   *   and either works; unbundled (e.g. AOT-compiled from source), each module
+   *   sits at its own nested path and the base matters.
+   */
+  let cachedModule
+  let cachedRequire
+  /**
+   * Bind a working `require`. Ambient `require` exists in CommonJS; in ESM and
+   * ahead-of-time-compiled package modules it is unbound (reading it throws or
+   * yields undefined), so fall back to `createRequire`. Returns undefined off
+   * Node and in browsers, where neither is available.
+   *
+   * `fromUrl` sets the resolution base — pass a caller's `import.meta.url` to
+   * resolve that caller's RELATIVE specifiers. When omitted, the base is this
+   * file, which is correct only for builtins / bare packages (dir-independent).
+   * With `fromUrl` the ambient `require` is skipped: it is bound to THIS file,
+   * so it would resolve a relative specifier from the wrong directory.
+   */
+  function bindRequire(fromUrl) {
+    if (!require_constants_runtime.IS_NODE) return
+    if (!fromUrl && typeof __require === 'function') return __require
+    if (typeof module$1.createRequire === 'function')
+      try {
+        return (0, module$1.createRequire)(
+          fromUrl ?? __require('url').pathToFileURL(__filename).href,
+        )
+      } catch {
+        return
+      }
+  }
+  /**
+   * Returns `node:module` loaded through the bound `require`, or undefined off
+   * Node. Cached across calls.
+   */
+  function getNodeModule() {
+    return (cachedModule ??= requireBuiltin('module'))
+  }
+  /**
+   * Returns a working `require` bound to THIS file, binding one on first call
+   * (see bindRequire). Cached across calls; undefined off Node / in browsers.
+   *
+   * For builtins and bare packages only — the resolution base is this file, so
+   * a relative specifier would resolve from `src/node/`. Use `requireFrom` for
+   * relative loads.
+   */
+  function getRequire() {
+    if (cachedRequire === void 0) cachedRequire = bindRequire()
+    return cachedRequire
+  }
+  /**
+   * Is `name` a Node built-in module? Resolved from the statically-imported
+   * `isBuiltin`, so it works on Node and on ahead-of-time-compiled binaries
+   * (Perry), where ambient `require('module')` would lack `isBuiltin`. Returns
+   * false in browsers, where the bare `module` import is stubbed away.
+   *
+   * Single source of truth for "is this a Node builtin?" probes across
+   * socket-lib (used by the smol-binding loaders to gate their `node:smol-*`
+   * loads).
+   */
+  function isNodeBuiltin(name) {
+    if (
+      !require_constants_runtime.IS_NODE ||
+      typeof module$1.isBuiltin !== 'function'
+    )
+      return false
+    return (0, module$1.isBuiltin)(name)
+  }
+  /**
+   * Load a built-in module by _computed_ specifier through the bound `require`
+   * (see getRequire). The specifier is a parameter — never a literal at the
+   * call site — so browser bundlers neither walk nor bundle it. Returns
+   * undefined where no `require` can be bound.
+   *
+   * Builtins / bare packages only (dir-independent); for a relative specifier
+   * use `requireFrom`. Used by `getNodeModule` for `node:module`, and by the
+   * smol-binding loaders for the optional `node:smol-*` native bindings (gated
+   * behind `isNodeBuiltin`, true only on socket-btm's smol Node binary).
+   */
+  function requireBuiltin(specifier) {
+    const req = getRequire()
+    if (req) return req(specifier)
+  }
+  /**
+   * Load a module by specifier from a CALLER-supplied base (its
+   * `import.meta.url`). Use this for RELATIVE specifiers (`./x`, `../y`), whose
+   * resolution depends on the caller's directory — `requireBuiltin` binds to
+   * this file and would resolve them from `src/node/`. Not cached: the binding
+   * is per-caller. Returns undefined where no `require` can be bound.
+   */
+  function requireFrom(fromUrl, specifier) {
+    const req = bindRequire(fromUrl)
+    if (req) return req(specifier)
+  }
+  exports.bindRequire = bindRequire
+  exports.getNodeModule = getNodeModule
+  exports.getRequire = getRequire
+  exports.isNodeBuiltin = isNodeBuiltin
+  exports.requireBuiltin = requireBuiltin
+  exports.requireFrom = requireFrom
+})
+
+var require_detect = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_module = require_module()
+  /**
+   * @file Smol detection + lazy-loader for `node:smol-util`. Two
+   *   responsibilities:
+   *
+   *   1. `isSmol()` — memoized boolean detector for socket-btm's smol Node binary.
+   *      Mirrors `isSeaBinary()` from `src/sea.ts`. Probes via
+   *      `node:module.isBuiltin('node:smol-util')` since only the smol binary
+   *      registers any `node:smol-*` builtins.
+   *   2. `getSmolUtil()` — lazy-loader for the `node:smol-util` binding, which
+   *      provides native `uncurryThis` and `applyBind` (single V8 dispatch via
+   *      `args.Data()` + `v8::Function::Call`, skipping the BoundFunction
+   *      adapter
+   *
+   *   - `Function.prototype.call` trampoline that the JS form
+   *     `bind.bind(call)(fn)` hits twice per invocation). ~2x faster on hot
+   *     uncurried-call sites. `getSmolUtil()` returns `undefined` on stock
+   *     Node
+   *   - non-Node runtimes. Result is cached across calls; the lazy-loader follows
+   *     the same shape as `src/node/fs.ts` etc.
+   *
+   * @see https://github.com/SocketDev/socket-btm — socket-btm builds
+   *   the smol binary that exposes the `node:smol-util` binding.
+   */
+  /**
+   * Cached smol-binary detection result.
+   */
+  let isSmolCache
+  /**
+   * Cached `node:smol-util` binding. `null` = probed and unavailable;
+   * `undefined` = not yet probed. JS truthiness collapses both to "no binding"
+   * at the call site.
+   */
+  let smolUtilCache
+  let smolUtilProbed = false
+  /**
+   * Returns `node:smol-util` when running on the smol Node binary, otherwise
+   * `undefined`. Result is cached across calls.
+   */
+  function getSmolUtil() {
+    if (!smolUtilProbed) {
+      smolUtilProbed = true
+      /* c8 ignore start - smol Node binary only. */
+      if (require_node_module.isNodeBuiltin('node:smol-util'))
+        smolUtilCache = require_node_module.requireBuiltin('node:smol-util')
+    }
+    return smolUtilCache
+  }
+  /**
+   * Detect if the current process is running on socket-btm's smol Node binary.
+   * Memoized on first call.
+   *
+   * Defensive across runtimes: returns `false` on stock Node, browsers (no
+   * `node:module`), Deno and Bun, whose module resolution differs, and worker
+   * threads, each of which has its own builtin table.
+   *
+   * @example
+   *   ;```ts
+   *   import { isSmol } from '@socketsecurity/lib/exe/smol/detect'
+   *
+   *   if (isSmol()) {
+   *     // running on the smol binary; native fast paths available
+   *   }
+   *   ```
+   */
+  function isSmol() {
+    if (isSmolCache === void 0)
+      isSmolCache = require_node_module.isNodeBuiltin('node:smol-util')
+    return isSmolCache
+  }
+  exports.getSmolUtil = getSmolUtil
+  exports.isSmol = isSmol
+})
+
+var require_uncurry = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file `uncurryThis` and the cluster of helpers built atop it. Mirrors
+   *   Node.js's internal/per_context/primordials.js. Every other primordials
+   *   leaf depends on `uncurryThis` to expose prototype-method primordials, so
+   *   this file must be import-safe before any of them. Smol fast paths
+   *   (`node:smol-util`) replace the JS forms when running on socket-btm's smol
+   *   Node binary; stock Node and other runtimes fall back to the standard
+   *   `bind.bind(call)` shape. **IMPORTANT**: do not destructure on
+   *   `globalThis` or `Reflect` here. tsgo has a bug that mis-transpiles
+   *   destructured exports. See:
+   *   https://github.com/SocketDev/socket-packageurl-js/issues/3.
+   */
+  const smolUtil = require_detect().getSmolUtil()
+  const { apply, bind, call } = Function.prototype
+  const uncurryThis = smolUtil?.uncurryThis ?? bind.bind(call)
+  const applyBind = smolUtil?.applyBind ?? bind.bind(apply)
+  const applyBoundForSafe = applyBind
+  const applySafe =
+    smolUtil?.applySafe ??
+    (fn => {
+      const apply2 = applyBoundForSafe(fn)
+      return (self, args) => {
+        try {
+          return apply2(self, args)
+        } catch {
+          return
+        }
+      }
+    })
+  const bindCallFallback = (fn, thisArg, ...presetArgs) =>
+    Function.prototype.bind.apply(fn, [thisArg, ...presetArgs])
+  const bindCall = smolUtil?.bindCall ?? bindCallFallback
+  const weakRefSafe =
+    smolUtil?.weakRefSafe ??
+    (target => {
+      try {
+        return new WeakRef(target)
+      } catch {
+        return
+      }
+    })
+  exports.applyBind = applyBind
+  exports.applySafe = applySafe
+  exports.bindCall = bindCall
+  exports.uncurryThis = uncurryThis
+  exports.weakRefSafe = weakRefSafe
+})
+
+var require_primordial = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_module = require_module()
+  /**
+   * @file Lazy-loader for socket-btm's `node:smol-primordial` binding.
+   *   `node:smol-primordial` provides V8 Fast API typed implementations of
+   *   Math.* and Number.is* primordials, registered with `CFunction::Make()` so
+   *   TurboFan inlines them directly into JIT- compiled JS callers. Bypasses
+   *   the FunctionCallbackInfo trampoline entirely — ~30-50% gain on hot loops
+   *   where V8 doesn't already auto-inline. Returns `undefined` on stock Node +
+   *   non-Node runtimes. Result is cached across calls.
+   *
+   * @internal — used by `src/primordials.ts` to resolve smol-aware
+   *   Math.* / Number.is* fast paths. Most callers should use the
+   *   standard `primordials` exports, which already route through this
+   *   when smol is present.
+   *
+   * @see https://v8.dev/blog/v8-release-99 — V8 Fast API Calls overview
+   */
+  let smolPrimordial
+  let smolPrimordialProbed = false
+  /**
+   * Returns `node:smol-primordial` when running on the smol Node binary,
+   * otherwise `undefined`. Result is cached across calls.
+   */
+  function getSmolPrimordial() {
+    if (!smolPrimordialProbed) {
+      smolPrimordialProbed = true
+      /* c8 ignore start - smol Node binary only. */
+      if (require_node_module.isNodeBuiltin('node:smol-primordial'))
+        smolPrimordial = require_node_module.requireBuiltin(
+          'node:smol-primordial',
+        )
+    }
+    return smolPrimordial
+  }
+  exports.getSmolPrimordial = getSmolPrimordial
+})
+
+var require_string$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to `String` static methods and prototype methods.
+   *   `StringPrototypeCharCodeAt` prefers the smol Fast API binding for ASCII
+   *   inputs, which reduces to a single byte load, and translates the `-1` Fast
+   *   API sentinel back to `NaN` to preserve spec parity. Two-byte strings fall
+   *   back to the uncurried `String.prototype.charCodeAt`.
+   *
+   *   ## Fast API surface — and why it's small
+   *
+   *   Mirrors the design rationale from socket-btm's `primordial_binding.cc`
+   *   (lines 41-72). The smol Fast API exposes exactly one string op
+   *   (`stringCharCodeAt`) because that's the one shape where the C++
+   *   trampoline genuinely beats V8's existing hot path: a single ASCII byte
+   *   load, no encoding dispatch, no HandleScope, returns a primitive. String
+   *   **searches** (`startsWith` / `endsWith` / `includes` / `indexOf` /
+   *   `lastIndexOf`) are intentionally NOT exposed. V8's existing hot path
+   *   dispatches on encoding and runs native SIMD memcmp — a Fast API binding
+   *   would add overhead without winning. Same for `Map.has` / `Set.has` /
+   *   `Array.includes`. Fast API also has a hard constraint: a fast-path
+   *   function cannot return a new V8 object — only primitives,
+   *   Local<Value/Object/Array>, or FastOneByteString. That rules out anything
+   *   that produces a new string (`slice`, `substring`, `toUpperCase`,
+   *   `concat`, `repeat`, `padStart`/`padEnd`, formatted-number) from ever
+   *   being a Fast API win on the return path. Net: the current surface is
+   *   approximately the ceiling. Adding more Fast API string ops without a
+   *   flamegraph showing the cost is a regression risk, not a perf win. See
+   *   `socket-btm/packages/node-smol-builder/additions/source-patched/`
+   *   `src/socketsecurity/primordial/primordial_binding.cc:41-72` for the
+   *   canonical design statement.
+   */
+  const smolPrimordial = require_primordial().getSmolPrimordial()
+  const StringCtor = String
+  const StringFromCharCode = String.fromCharCode
+  const StringFromCodePoint = String.fromCodePoint
+  const StringRaw = String.raw
+  const StringPrototypeAt = require_primordials_uncurry.uncurryThis(
+    String.prototype.at,
+  )
+  const StringPrototypeCharAt = require_primordials_uncurry.uncurryThis(
+    String.prototype.charAt,
+  )
+  const smolCharCodeAt = smolPrimordial?.stringCharCodeAt
+  /* c8 ignore start - the smol Fast API binding ships only on socket-btm's smol Node binary, so this body cannot run under the stock-Node runner */
+  function smolStringCharCodeAt(s, i) {
+    const code = smolCharCodeAt(s, i)
+    return code === -1 ? NaN : code
+  }
+  /* c8 ignore stop */
+  const StringPrototypeCharCodeAt = smolCharCodeAt
+    ? smolStringCharCodeAt
+    : require_primordials_uncurry.uncurryThis(String.prototype.charCodeAt)
+  const StringPrototypeCodePointAt = require_primordials_uncurry.uncurryThis(
+    String.prototype.codePointAt,
+  )
+  const StringPrototypeConcat = require_primordials_uncurry.uncurryThis(
+    String.prototype.concat,
+  )
+  const StringPrototypeEndsWith = require_primordials_uncurry.uncurryThis(
+    String.prototype.endsWith,
+  )
+  const StringPrototypeIncludes = require_primordials_uncurry.uncurryThis(
+    String.prototype.includes,
+  )
+  const StringPrototypeIndexOf = require_primordials_uncurry.uncurryThis(
+    String.prototype.indexOf,
+  )
+  const StringPrototypeIsWellFormed =
+    smolPrimordial?.stringIsWellFormed ??
+    require_primordials_uncurry.uncurryThis(String.prototype.isWellFormed)
+  const StringPrototypeLastIndexOf = require_primordials_uncurry.uncurryThis(
+    String.prototype.lastIndexOf,
+  )
+  const StringPrototypeLocaleCompare = require_primordials_uncurry.uncurryThis(
+    String.prototype.localeCompare,
+  )
+  const StringPrototypeMatch = require_primordials_uncurry.uncurryThis(
+    String.prototype.match,
+  )
+  const StringPrototypeMatchAll = require_primordials_uncurry.uncurryThis(
+    String.prototype.matchAll,
+  )
+  const StringPrototypeNormalize = require_primordials_uncurry.uncurryThis(
+    String.prototype.normalize,
+  )
+  const StringPrototypePadEnd = require_primordials_uncurry.uncurryThis(
+    String.prototype.padEnd,
+  )
+  const StringPrototypePadStart = require_primordials_uncurry.uncurryThis(
+    String.prototype.padStart,
+  )
+  const StringPrototypeRepeat = require_primordials_uncurry.uncurryThis(
+    String.prototype.repeat,
+  )
+  const StringPrototypeReplace = require_primordials_uncurry.uncurryThis(
+    String.prototype.replace,
+  )
+  const StringPrototypeReplaceAll = require_primordials_uncurry.uncurryThis(
+    String.prototype.replaceAll,
+  )
+  const StringPrototypeSearch = require_primordials_uncurry.uncurryThis(
+    String.prototype.search,
+  )
+  const StringPrototypeSlice = require_primordials_uncurry.uncurryThis(
+    String.prototype.slice,
+  )
+  const StringPrototypeSplit = require_primordials_uncurry.uncurryThis(
+    String.prototype.split,
+  )
+  const StringPrototypeStartsWith = require_primordials_uncurry.uncurryThis(
+    String.prototype.startsWith,
+  )
+  const StringPrototypeSubstring = require_primordials_uncurry.uncurryThis(
+    String.prototype.substring,
+  )
+  const StringPrototypeToLocaleLowerCase =
+    require_primordials_uncurry.uncurryThis(String.prototype.toLocaleLowerCase)
+  const StringPrototypeToLocaleUpperCase =
+    require_primordials_uncurry.uncurryThis(String.prototype.toLocaleUpperCase)
+  const StringPrototypeToLowerCase = require_primordials_uncurry.uncurryThis(
+    String.prototype.toLowerCase,
+  )
+  const StringPrototypeToString = require_primordials_uncurry.uncurryThis(
+    String.prototype.toString,
+  )
+  const StringPrototypeToUpperCase = require_primordials_uncurry.uncurryThis(
+    String.prototype.toUpperCase,
+  )
+  const StringPrototypeToWellFormed = require_primordials_uncurry.uncurryThis(
+    String.prototype.toWellFormed,
+  )
+  const StringPrototypeTrim = require_primordials_uncurry.uncurryThis(
+    String.prototype.trim,
+  )
+  const StringPrototypeTrimEnd = require_primordials_uncurry.uncurryThis(
+    String.prototype.trimEnd,
+  )
+  const StringPrototypeTrimStart = require_primordials_uncurry.uncurryThis(
+    String.prototype.trimStart,
+  )
+  const StringPrototypeValueOf = require_primordials_uncurry.uncurryThis(
+    String.prototype.valueOf,
+  )
+  exports.StringCtor = StringCtor
+  exports.StringFromCharCode = StringFromCharCode
+  exports.StringFromCodePoint = StringFromCodePoint
+  exports.StringPrototypeAt = StringPrototypeAt
+  exports.StringPrototypeCharAt = StringPrototypeCharAt
+  exports.StringPrototypeCharCodeAt = StringPrototypeCharCodeAt
+  exports.StringPrototypeCodePointAt = StringPrototypeCodePointAt
+  exports.StringPrototypeConcat = StringPrototypeConcat
+  exports.StringPrototypeEndsWith = StringPrototypeEndsWith
+  exports.StringPrototypeIncludes = StringPrototypeIncludes
+  exports.StringPrototypeIndexOf = StringPrototypeIndexOf
+  exports.StringPrototypeIsWellFormed = StringPrototypeIsWellFormed
+  exports.StringPrototypeLastIndexOf = StringPrototypeLastIndexOf
+  exports.StringPrototypeLocaleCompare = StringPrototypeLocaleCompare
+  exports.StringPrototypeMatch = StringPrototypeMatch
+  exports.StringPrototypeMatchAll = StringPrototypeMatchAll
+  exports.StringPrototypeNormalize = StringPrototypeNormalize
+  exports.StringPrototypePadEnd = StringPrototypePadEnd
+  exports.StringPrototypePadStart = StringPrototypePadStart
+  exports.StringPrototypeRepeat = StringPrototypeRepeat
+  exports.StringPrototypeReplace = StringPrototypeReplace
+  exports.StringPrototypeReplaceAll = StringPrototypeReplaceAll
+  exports.StringPrototypeSearch = StringPrototypeSearch
+  exports.StringPrototypeSlice = StringPrototypeSlice
+  exports.StringPrototypeSplit = StringPrototypeSplit
+  exports.StringPrototypeStartsWith = StringPrototypeStartsWith
+  exports.StringPrototypeSubstring = StringPrototypeSubstring
+  exports.StringPrototypeToLocaleLowerCase = StringPrototypeToLocaleLowerCase
+  exports.StringPrototypeToLocaleUpperCase = StringPrototypeToLocaleUpperCase
+  exports.StringPrototypeToLowerCase = StringPrototypeToLowerCase
+  exports.StringPrototypeToString = StringPrototypeToString
+  exports.StringPrototypeToUpperCase = StringPrototypeToUpperCase
+  exports.StringPrototypeToWellFormed = StringPrototypeToWellFormed
+  exports.StringPrototypeTrim = StringPrototypeTrim
+  exports.StringPrototypeTrimEnd = StringPrototypeTrimEnd
+  exports.StringPrototypeTrimStart = StringPrototypeTrimStart
+  exports.StringPrototypeValueOf = StringPrototypeValueOf
+  exports.StringRaw = StringRaw
+  exports.smolStringCharCodeAt = smolStringCharCodeAt
+})
+
+var require_url = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_runtime = require_runtime$3()
+  let cachedUrl
+  /**
+   * @unused No internal or Socket consumers; exercised only by its unit tests.
+   */
+  function getNodeUrl() {
+    if (!require_constants_runtime.IS_NODE) return
+    return (cachedUrl ??= /*@__PURE__*/ __require('url'))
+  }
+  exports.getNodeUrl = getNodeUrl
+})
+
+var require_buffer = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to Node's `Buffer` global. `Buffer` is a Node-only
+   *   global; in browsers and in Deno without a compatibility shim the captured
+   *   references are `undefined`. Cross- env consumers must null-check before
+   *   calling.
+   */
+  const BufferCtor = globalThis.Buffer
+  const BufferAlloc = BufferCtor?.alloc
+  const BufferAllocUnsafe = BufferCtor?.allocUnsafe
+  const BufferAllocUnsafeSlow = BufferCtor?.allocUnsafeSlow
+  const BufferByteLength = BufferCtor?.byteLength
+  const BufferConcat = BufferCtor?.concat
+  const BufferFrom = BufferCtor?.from
+  const BufferIsBuffer = BufferCtor?.isBuffer
+  const BufferIsEncoding = BufferCtor?.isEncoding
+  /* c8 ignore start */
+  const BufferPrototypeSlice = BufferCtor
+    ? require_primordials_uncurry.uncurryThis(BufferCtor.prototype.slice)
+    : void 0
+  const BufferPrototypeToString = BufferCtor
+    ? require_primordials_uncurry.uncurryThis(BufferCtor.prototype.toString)
+    : void 0
+  /* c8 ignore stop */
+  exports.BufferAlloc = BufferAlloc
+  exports.BufferAllocUnsafe = BufferAllocUnsafe
+  exports.BufferAllocUnsafeSlow = BufferAllocUnsafeSlow
+  exports.BufferByteLength = BufferByteLength
+  exports.BufferConcat = BufferConcat
+  exports.BufferCtor = BufferCtor
+  exports.BufferFrom = BufferFrom
+  exports.BufferIsBuffer = BufferIsBuffer
+  exports.BufferIsEncoding = BufferIsEncoding
+  exports.BufferPrototypeSlice = BufferPrototypeSlice
+  exports.BufferPrototypeToString = BufferPrototypeToString
+})
+
+var require_encoding = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Character encoding and character code constants. Exports the default
+   *   UTF-8 encoding name and numeric char codes for common ASCII characters
+   *   used by path and parsing utilities.
+   */
+  const UTF8 = 'utf8'
+  const CHAR_BACKWARD_SLASH = 92
+  const CHAR_COLON = 58
+  const CHAR_FORWARD_SLASH = 47
+  const CHAR_LOWERCASE_A = 97
+  const CHAR_LOWERCASE_Z = 122
+  const CHAR_UPPERCASE_A = 65
+  const CHAR_UPPERCASE_Z = 90
+  exports.CHAR_BACKWARD_SLASH = CHAR_BACKWARD_SLASH
+  exports.CHAR_COLON = CHAR_COLON
+  exports.CHAR_FORWARD_SLASH = CHAR_FORWARD_SLASH
+  exports.CHAR_LOWERCASE_A = CHAR_LOWERCASE_A
+  exports.CHAR_LOWERCASE_Z = CHAR_LOWERCASE_Z
+  exports.CHAR_UPPERCASE_A = CHAR_UPPERCASE_A
+  exports.CHAR_UPPERCASE_Z = CHAR_UPPERCASE_Z
+  exports.UTF8 = UTF8
+})
+
+var require_shared$3 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_platform = require_platform()
+  const require_primordials_string = require_string$1()
+  const require_node_url = require_url()
+  const require_primordials_buffer = require_buffer()
+  const require_constants_encoding = require_encoding()
+  /**
+   * @file Shared internals for the `paths/` module — the leaf-level primitives
+   *   every other path leaf depends on. Kept as a single file so `normalize`,
+   *   `predicates`, `conversion`, and `resolve` can layer above it without
+   *   circular imports.
+   *
+   *   - char-code constants + shared regexps
+   *   - `pathLikeToString` — `string | Buffer | URL` → `string`
+   *   - `normalizePath` and its `msysDriveToNative` / `foldPathForCompare`
+   *     helpers — they live at the leaf because `conversion` and `resolve` call
+   *     `normalizePath` and `predicates` calls `foldPathForCompare`. Hosting
+   *     them one layer up made `paths/normalize` import its own importers, and
+   *     the built CJS barrel then snapshotted those re-exports as `undefined`.
+   *     Nothing here may import a sibling `paths/*` leaf. That is the invariant
+   *     `scripts/repo/check/reexports-have-no-import-cycles.mts` enforces.
+   */
+  const DRIVE_LETTER_REGEXP = /^[A-Za-z]:$/
+  const msysDriveRegExp = /^\/([a-zA-Z])($|\/)/
+  const nodeModulesPathRegExp = /(?:[/\\]|^)node_modules(?:$|[/\\])/
+  const slashRegExp = /[/\\]/
+  function appendNormalizedPathSegment(state, segment, prefix) {
+    if (segment.length === 0 || segment === '.') return
+    if (segment === '..') collapsePathParent(state, prefix)
+    else {
+      state.collapsed += (state.collapsed.length === 0 ? '' : '/') + segment
+      state.segmentCount += 1
+    }
+  }
+  function collapsePathParent(state, prefix) {
+    if (state.segmentCount > 0) {
+      const lastSeparatorIndex = state.collapsed.lastIndexOf('/')
+      if (lastSeparatorIndex === -1) {
+        state.collapsed = ''
+        state.segmentCount = 0
+        if (state.leadingDotDots > 0 && !prefix) {
+          state.collapsed = '..'
+          state.leadingDotDots = 1
+        }
+      } else {
+        const lastSegmentStart = lastSeparatorIndex + 1
+        if (state.collapsed.slice(lastSegmentStart) === '..') {
+          state.collapsed = `${state.collapsed}/..`
+          state.leadingDotDots += 1
+        } else {
+          state.collapsed = state.collapsed.slice(0, lastSeparatorIndex)
+          state.segmentCount -= 1
+        }
+      }
+    } else if (!prefix) {
+      state.collapsed =
+        state.collapsed + (state.collapsed.length === 0 ? '' : '/') + '..'
+      state.leadingDotDots += 1
+    }
+  }
+  /**
+   * Normalize a path for equality comparison — forward slashes, no trailing
+   * separator, lowercased on Windows.
+   *
+   * @example
+   *   ;```typescript
+   *   foldPathForCompare('C:\\Program Files\\') // 'c:/program files'
+   *   ```
+   */
+  function foldPathForCompare(pathLike) {
+    let normalized = normalizePath(pathLike)
+    if (normalized.length > 1 && normalized.endsWith('/'))
+      normalized = normalized.slice(0, -1)
+    return require_constants_platform.isWin32()
+      ? normalized.toLowerCase()
+      : normalized
+  }
+  function hasUncPathPrefix(filepath) {
+    const first = require_primordials_string.StringPrototypeCharCodeAt(
+      filepath,
+      0,
+    )
+    return (
+      filepath.length > 2 &&
+      isPathSeparatorCode(first) &&
+      require_primordials_string.StringPrototypeCharCodeAt(filepath, 1) ===
+        first &&
+      require_primordials_string.StringPrototypeCharCodeAt(filepath, 2) !==
+        first
+    )
+  }
+  function hasUncPathShare(filepath) {
+    const serverEnd = indexOfPathSeparator(
+      filepath,
+      skipPathSeparators(filepath, 2),
+    )
+    return (
+      serverEnd > 2 && skipPathSeparators(filepath, serverEnd) < filepath.length
+    )
+  }
+  /**
+   * Find the next path separator at or after an index.
+   *
+   * Scans char codes for `/` (47) and `\` (92) — the same two characters
+   * `slashRegExp` matches — and allocates nothing. Reaching the same answer
+   * through `search` costs a substring, an options bag, and a regex match per
+   * lookup, which a segment walk pays once per segment.
+   *
+   * @example
+   *   ;```typescript
+   *   indexOfPathSeparator('a/b', 0) // 1
+   *   indexOfPathSeparator('a/b', 2) // -1
+   *   indexOfPathSeparator('a\\b', 0) // 1
+   *   ```
+   *
+   * @param {string} filepath - The path to scan.
+   * @param {number} fromIndex - The index to start scanning at.
+   *
+   * @returns {number} The index of the first separator at or after `fromIndex`,
+   *   or -1 when there is none.
+   */
+  function indexOfPathSeparator(filepath, fromIndex) {
+    const { length } = filepath
+    for (let i = fromIndex; i < length; i += 1) {
+      const code = require_primordials_string.StringPrototypeCharCodeAt(
+        filepath,
+        i,
+      )
+      if (code === 47 || code === 92) return i
+    }
+    return -1
+  }
+  function isPathSeparatorCode(code) {
+    return code === 47 || code === 92
+  }
+  function msysDriveToNative(normalized) {
+    /* c8 ignore start - Windows-only branch. */
+    if (require_constants_platform.isWin32())
+      return normalized.replace(
+        msysDriveRegExp,
+        (_, letter, sep) => `${letter.toUpperCase()}:${sep || '/'}`,
+      )
+    /* c8 ignore stop */
+    return normalized
+  }
+  function normalizedPathPrefix(filepath) {
+    const namespaceKind = require_primordials_string.StringPrototypeCharCodeAt(
+      filepath,
+      2,
+    )
+    if (
+      filepath.length > 4 &&
+      require_primordials_string.StringPrototypeCharCodeAt(filepath, 3) ===
+        92 &&
+      (namespaceKind === 63 || namespaceKind === 46) &&
+      require_primordials_string.StringPrototypeCharCodeAt(filepath, 0) ===
+        92 &&
+      require_primordials_string.StringPrototypeCharCodeAt(filepath, 1) === 92
+    )
+      return {
+        __proto__: null,
+        prefix: '//',
+        start: 2,
+      }
+    if (hasUncPathPrefix(filepath) && hasUncPathShare(filepath))
+      return {
+        __proto__: null,
+        prefix: '//',
+        start: 2,
+      }
+    const start = skipPathSeparators(filepath, 0)
+    return {
+      __proto__: null,
+      prefix: start ? '/' : '',
+      start,
+    }
+  }
+  /**
+   * Normalize a path by converting backslashes to forward slashes and
+   * collapsing segments.
+   *
+   * - Converts all backslashes (`\`) to forward slashes (`/`)
+   * - Collapses repeated slashes
+   * - Resolves `.` and `..` segments
+   * - Preserves UNC path prefixes (`//server/share`)
+   * - Preserves Windows namespace prefixes (`//./`, `//?/`)
+   * - Returns `.` for empty or collapsed paths
+   * - On Windows: MSYS drive letters `/c/path` become `C:/path`
+   *
+   * @example
+   *   ;```typescript
+   *   normalizePath('foo/bar//baz') // 'foo/bar/baz'
+   *   normalizePath('foo/./bar') // 'foo/bar'
+   *   normalizePath('foo/bar/../baz') // 'foo/baz'
+   *   normalizePath('C:\\Users\\u\\file.txt') // 'C:/Users/u/file.txt'
+   *   normalizePath('\\\\server\\share\\file') // '//server/share/file'
+   *   normalizePath('') // '.'
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The path to normalize.
+   *
+   * @returns {string} The normalized path
+   *
+   * @security
+   * **WARNING**: This function resolves `..` patterns as part of normalization, which means
+   * paths like `/../etc/passwd` become `/etc/passwd`. When processing untrusted user input
+   * (HTTP requests, file uploads, URL parameters), you MUST validate for path traversal
+   * attacks BEFORE calling this function.
+   */
+  function normalizePath(pathLike) {
+    const filepath = pathLikeToString(pathLike)
+    const { length } = filepath
+    if (length === 0) return '.'
+    if (length === 1)
+      return require_primordials_string.StringPrototypeCharCodeAt(
+        filepath,
+        0,
+      ) === 92
+        ? '/'
+        : filepath
+    const initial = normalizedPathPrefix(filepath)
+    const { prefix } = initial
+    let { start } = initial
+    let nextIndex = indexOfPathSeparator(filepath, start)
+    if (nextIndex === -1)
+      return normalizeSinglePathSegment(filepath.slice(start), prefix)
+    const state = {
+      collapsed: '',
+      segmentCount: 0,
+      leadingDotDots: 0,
+    }
+    while (nextIndex !== -1) {
+      appendNormalizedPathSegment(
+        state,
+        filepath.slice(start, nextIndex),
+        prefix,
+      )
+      start = skipPathSeparators(filepath, nextIndex + 1)
+      nextIndex = indexOfPathSeparator(filepath, start)
+    }
+    appendNormalizedPathSegment(state, filepath.slice(start), prefix)
+    const { collapsed } = state
+    if (collapsed.length === 0) return prefix || '.'
+    if (
+      DRIVE_LETTER_REGEXP.test(collapsed) &&
+      isPathSeparatorCode(
+        require_primordials_string.StringPrototypeCharCodeAt(filepath, 2),
+      )
+    )
+      return msysDriveToNative(`${prefix}${collapsed}/`)
+    return msysDriveToNative(prefix + collapsed)
+  }
+  function normalizeSinglePathSegment(segment, prefix) {
+    if (segment === '.' || segment.length === 0) return prefix || '.'
+    if (segment === '..')
+      return prefix
+        ? require_primordials_string.StringPrototypeSlice(prefix, 0, -1) || '/'
+        : '..'
+    return msysDriveToNative(prefix + segment)
+  }
+  /**
+   * Convert a path-like value to a string.
+   *
+   * Converts various path-like types (string, Buffer, URL) into a normalized
+   * string representation. Handles different input formats and provides
+   * consistent string output for path operations.
+   *
+   * @example
+   *   ;```typescript
+   *   pathLikeToString('/home/user') // '/home/user'
+   *   pathLikeToString(Buffer.from('/tmp/file')) // '/tmp/file'
+   *   pathLikeToString(new URL('file:///home/user')) // '/home/user'
+   *   pathLikeToString(null) // ''
+   *   ```
+   *
+   * @param {string | Buffer | URL | null | undefined} pathLike - The value to
+   *   convert.
+   *
+   * @returns {string} The string representation, or empty string for
+   *   null/undefined.
+   */
+  function pathLikeToString(pathLike) {
+    if (pathLike === null || pathLike === void 0) return ''
+    if (typeof pathLike === 'string') return pathLike
+    if (require_primordials_buffer.BufferIsBuffer(pathLike))
+      return pathLike.toString('utf8')
+    const url = require_node_url.getNodeUrl()
+    if (pathLike instanceof URL)
+      try {
+        return url.fileURLToPath(pathLike)
+      } catch {
+        const pathname = pathLike.pathname
+        const decodedPathname = decodeURIComponent(pathname)
+        /* c8 ignore start - Windows-only URL drive-letter handling. */
+        if (
+          require_constants_platform.isWin32() &&
+          require_primordials_string.StringPrototypeStartsWith(
+            decodedPathname,
+            '/',
+          )
+        ) {
+          const letter =
+            require_primordials_string.StringPrototypeCharCodeAt(
+              decodedPathname,
+              1,
+            ) | 32
+          if (
+            !(
+              decodedPathname.length >= 3 &&
+              letter >= 97 &&
+              letter <= 122 &&
+              require_primordials_string.StringPrototypeCharAt(
+                decodedPathname,
+                2,
+              ) === ':'
+            )
+          )
+            return decodedPathname
+        }
+        /* c8 ignore stop */
+        return decodedPathname
+      }
+    return String(pathLike)
+  }
+  function skipPathSeparators(filepath, start) {
+    while (
+      isPathSeparatorCode(
+        require_primordials_string.StringPrototypeCharCodeAt(filepath, start),
+      )
+    )
+      start += 1
+    return start
+  }
+  exports.CHAR_BACKWARD_SLASH = require_constants_encoding.CHAR_BACKWARD_SLASH
+  exports.CHAR_COLON = require_constants_encoding.CHAR_COLON
+  exports.CHAR_FORWARD_SLASH = require_constants_encoding.CHAR_FORWARD_SLASH
+  exports.CHAR_LOWERCASE_A = require_constants_encoding.CHAR_LOWERCASE_A
+  exports.CHAR_LOWERCASE_Z = require_constants_encoding.CHAR_LOWERCASE_Z
+  exports.CHAR_UPPERCASE_A = require_constants_encoding.CHAR_UPPERCASE_A
+  exports.CHAR_UPPERCASE_Z = require_constants_encoding.CHAR_UPPERCASE_Z
+  exports.appendNormalizedPathSegment = appendNormalizedPathSegment
+  exports.collapsePathParent = collapsePathParent
+  exports.foldPathForCompare = foldPathForCompare
+  exports.hasUncPathPrefix = hasUncPathPrefix
+  exports.hasUncPathShare = hasUncPathShare
+  exports.indexOfPathSeparator = indexOfPathSeparator
+  exports.isPathSeparatorCode = isPathSeparatorCode
+  exports.msysDriveRegExp = msysDriveRegExp
+  exports.msysDriveToNative = msysDriveToNative
+  exports.nodeModulesPathRegExp = nodeModulesPathRegExp
+  exports.normalizePath = normalizePath
+  exports.normalizeSinglePathSegment = normalizeSinglePathSegment
+  exports.normalizedPathPrefix = normalizedPathPrefix
+  exports.pathLikeToString = pathLikeToString
+  exports.skipPathSeparators = skipPathSeparators
+  exports.slashRegExp = slashRegExp
+})
+
+var require_object = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to `Object` static methods and prototype methods.
+   *   Annex B legacy accessor methods (`__defineGetter__`, `__lookupGetter__`,
+   *   etc.) are exposed alongside the canonical static methods —
+   *   implementations exist in V8, SpiderMonkey, and JavaScriptCore even though
+   *   the spec calls them "normative optional".
+   */
+  const ObjectCtor = Object
+  const ObjectAssign = Object.assign
+  const ObjectCreate = Object.create
+  const ObjectDefineProperties = Object.defineProperties
+  const ObjectDefineProperty = Object.defineProperty
+  const ObjectEntries = Object.entries
+  const ObjectFreeze = Object.freeze
+  const ObjectFromEntries = Object.fromEntries
+  const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor
+  const ObjectGetOwnPropertyDescriptors = Object.getOwnPropertyDescriptors
+  const ObjectGetOwnPropertyNames = Object.getOwnPropertyNames
+  const ObjectGetOwnPropertySymbols = Object.getOwnPropertySymbols
+  const ObjectGetPrototypeOf = Object.getPrototypeOf
+  const ObjectHasOwn = Object.hasOwn
+  const ObjectIs = Object.is
+  const ObjectIsExtensible = Object.isExtensible
+  const ObjectIsFrozen = Object.isFrozen
+  const ObjectIsSealed = Object.isSealed
+  const ObjectKeys = Object.keys
+  const ObjectPreventExtensions = Object.preventExtensions
+  const ObjectSeal = Object.seal
+  const ObjectSetPrototypeOf = Object.setPrototypeOf
+  const ObjectValues = Object.values
+  const ObjectPrototype = Object.prototype
+  const ObjectPrototypeHasOwnProperty = require_primordials_uncurry.uncurryThis(
+    Object.prototype.hasOwnProperty,
+  )
+  const ObjectPrototypeIsPrototypeOf = require_primordials_uncurry.uncurryThis(
+    Object.prototype.isPrototypeOf,
+  )
+  const ObjectPrototypePropertyIsEnumerable =
+    require_primordials_uncurry.uncurryThis(
+      Object.prototype.propertyIsEnumerable,
+    )
+  const ObjectPrototypeToString = require_primordials_uncurry.uncurryThis(
+    Object.prototype.toString,
+  )
+  const ObjectPrototypeValueOf = require_primordials_uncurry.uncurryThis(
+    Object.prototype.valueOf,
+  )
+  const objectProto = Object.prototype
+  const ObjectPrototypeDefineGetter = require_primordials_uncurry.uncurryThis(
+    objectProto.__defineGetter__,
+  )
+  const ObjectPrototypeDefineSetter = require_primordials_uncurry.uncurryThis(
+    objectProto.__defineSetter__,
+  )
+  const ObjectPrototypeLookupGetter = require_primordials_uncurry.uncurryThis(
+    objectProto.__lookupGetter__,
+  )
+  const ObjectPrototypeLookupSetter = require_primordials_uncurry.uncurryThis(
+    objectProto.__lookupSetter__,
+  )
+  exports.ObjectAssign = ObjectAssign
+  exports.ObjectCreate = ObjectCreate
+  exports.ObjectCtor = ObjectCtor
+  exports.ObjectDefineProperties = ObjectDefineProperties
+  exports.ObjectDefineProperty = ObjectDefineProperty
+  exports.ObjectEntries = ObjectEntries
+  exports.ObjectFreeze = ObjectFreeze
+  exports.ObjectFromEntries = ObjectFromEntries
+  exports.ObjectGetOwnPropertyDescriptor = ObjectGetOwnPropertyDescriptor
+  exports.ObjectGetOwnPropertyDescriptors = ObjectGetOwnPropertyDescriptors
+  exports.ObjectGetOwnPropertyNames = ObjectGetOwnPropertyNames
+  exports.ObjectGetOwnPropertySymbols = ObjectGetOwnPropertySymbols
+  exports.ObjectGetPrototypeOf = ObjectGetPrototypeOf
+  exports.ObjectHasOwn = ObjectHasOwn
+  exports.ObjectIs = ObjectIs
+  exports.ObjectIsExtensible = ObjectIsExtensible
+  exports.ObjectIsFrozen = ObjectIsFrozen
+  exports.ObjectIsSealed = ObjectIsSealed
+  exports.ObjectKeys = ObjectKeys
+  exports.ObjectPreventExtensions = ObjectPreventExtensions
+  exports.ObjectPrototype = ObjectPrototype
+  exports.ObjectPrototypeDefineGetter = ObjectPrototypeDefineGetter
+  exports.ObjectPrototypeDefineSetter = ObjectPrototypeDefineSetter
+  exports.ObjectPrototypeHasOwnProperty = ObjectPrototypeHasOwnProperty
+  exports.ObjectPrototypeIsPrototypeOf = ObjectPrototypeIsPrototypeOf
+  exports.ObjectPrototypeLookupGetter = ObjectPrototypeLookupGetter
+  exports.ObjectPrototypeLookupSetter = ObjectPrototypeLookupSetter
+  exports.ObjectPrototypePropertyIsEnumerable =
+    ObjectPrototypePropertyIsEnumerable
+  exports.ObjectPrototypeToString = ObjectPrototypeToString
+  exports.ObjectPrototypeValueOf = ObjectPrototypeValueOf
+  exports.ObjectSeal = ObjectSeal
+  exports.ObjectSetPrototypeOf = ObjectSetPrototypeOf
+  exports.ObjectValues = ObjectValues
+})
+
+var require_predicates$2 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_arrays_predicates = require_predicates$3()
+  const require_primordials_object = require_object()
+  /**
+   * @file Object type guards: `hasKeys`, `hasOwn`, `isObject`, `isPlainObject`.
+   *   All four narrow `unknown` to a typed shape and tolerate `null` /
+   *   `undefined` without throwing.
+   */
+  /**
+   * Check if an object has any enumerable own properties.
+   *
+   * Returns `true` if the object has at least one enumerable own property,
+   * `false` otherwise. Also returns `false` for null/undefined.
+   *
+   * @example
+   *   ;```ts
+   *   hasKeys({ a: 1 }) // true
+   *   hasKeys({}) // false
+   *   hasKeys([]) // false
+   *   hasKeys([1, 2]) // true
+   *   hasKeys(null) // false
+   *   hasKeys(undefined) // false
+   *   hasKeys(Object.create({ inherited: true })) // false
+   *   ```
+   *
+   * @param obj - The value to check.
+   *
+   * @returns `true` if obj has enumerable own properties, `false` otherwise
+   */
+  function hasKeys(obj) {
+    if (obj === null || obj === void 0) return false
+    for (const key in obj)
+      if (require_primordials_object.ObjectHasOwn(obj, key)) return true
+    return false
+  }
+  /**
+   * Check if an object has an own property.
+   *
+   * Type-safe wrapper around `Object.hasOwn()` that returns `false` for
+   * null/undefined instead of throwing. Only checks own properties, not
+   * inherited ones from the prototype chain.
+   *
+   * @example
+   *   ;```ts
+   *   const obj = { name: 'Alice' }
+   *   hasOwn(obj, 'name') // true
+   *   hasOwn(obj, 'age') // false
+   *   hasOwn(obj, 'toString') // false (inherited)
+   *   hasOwn(null, 'name') // false
+   *   ```
+   *
+   * @param obj - The value to check.
+   * @param propKey - The property key to look for.
+   *
+   * @returns `true` if obj has the property as an own property, `false`
+   *   otherwise.
+   */
+  function hasOwn(obj, propKey) {
+    if (obj === null || obj === void 0) return false
+    return require_primordials_object.ObjectHasOwn(obj, propKey)
+  }
+  /**
+   * Check if a value is an object, arrays included.
+   *
+   * Returns `true` for any object type including arrays, dates, etc. Returns
+   * `false` for primitives and `null`. Functions are not considered objects
+   * here (typeof functions === 'function').
+   *
+   * @example
+   *   ;```ts
+   *   isObject({}) // true
+   *   isObject([]) // true
+   *   isObject(new Date()) // true
+   *   isObject(() => {}) // false
+   *   isObject(null) // false
+   *   ```
+   *
+   * @param value - The value to check.
+   *
+   * @returns `true` for any object, arrays included; `false` otherwise
+   */
+  function isObject(value) {
+    return value !== null && typeof value === 'object'
+  }
+  /**
+   * Check if a value is a plain object, so neither an array nor a built-in.
+   *
+   * Returns `true` only for plain objects created with `{}` or
+   * `Object.create(null)`. Returns `false` for arrays, built-in objects (Date,
+   * RegExp, etc.), and primitives.
+   *
+   * @example
+   *   ;```ts
+   *   isPlainObject({}) // true
+   *   isPlainObject({ a: 1 }) // true
+   *   isPlainObject(Object.create(null)) // true
+   *   isPlainObject([]) // false
+   *   isPlainObject(new Date()) // false
+   *   ```
+   *
+   * @param value - The value to check.
+   *
+   * @returns `true` if value is a plain object, `false` otherwise
+   */
+  function isPlainObject(value) {
+    if (
+      value === null ||
+      typeof value !== 'object' ||
+      require_arrays_predicates.isArray(value)
+    )
+      return false
+    const proto = require_primordials_object.ObjectGetPrototypeOf(value)
+    return (
+      proto === null || proto === require_primordials_object.ObjectPrototype
+    )
+  }
+  exports.hasKeys = hasKeys
+  exports.hasOwn = hasOwn
+  exports.isObject = isObject
+  exports.isPlainObject = isPlainObject
+})
+
+var require_error$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Safe references to `Error` and its subclass constructors, plus V8's
+   *   stack-trace API. `Error.isError` is ES2025; `captureStackTrace` /
+   *   `prepareStackTrace` / `stackTraceLimit` are V8 extensions absent on
+   *   JavaScriptCore and SpiderMonkey. Each is typed `Function | undefined` so
+   *   non-V8 importers stay safe.
+   */
+  const ErrorCtor = Error
+  const AggregateErrorCtor = AggregateError
+  const EvalErrorCtor = EvalError
+  const RangeErrorCtor = RangeError
+  const ReferenceErrorCtor = ReferenceError
+  const SyntaxErrorCtor = SyntaxError
+  const TypeErrorCtor = TypeError
+  const URIErrorCtor = URIError
+  const ErrorIsError = Error.isError
+  const ErrorCaptureStackTrace = Error.captureStackTrace
+  const ErrorPrepareStackTrace = Error.prepareStackTrace
+  const stackTraceLimitGetter = (() => {
+    const getter = Error.__lookupGetter__?.('stackTraceLimit')
+    /* c8 ignore start */
+    if (typeof getter === 'function') return () => getter.call(Error)
+    /* c8 ignore stop */
+  })()
+  function ErrorStackTraceLimit() {
+    /* c8 ignore start - non-V8 fallback path unreachable under test */
+    if (stackTraceLimitGetter) return stackTraceLimitGetter()
+    return Error.stackTraceLimit
+    /* c8 ignore stop */
+  }
+  exports.AggregateErrorCtor = AggregateErrorCtor
+  exports.ErrorCaptureStackTrace = ErrorCaptureStackTrace
+  exports.ErrorCtor = ErrorCtor
+  exports.ErrorIsError = ErrorIsError
+  exports.ErrorPrepareStackTrace = ErrorPrepareStackTrace
+  exports.ErrorStackTraceLimit = ErrorStackTraceLimit
+  exports.EvalErrorCtor = EvalErrorCtor
+  exports.RangeErrorCtor = RangeErrorCtor
+  exports.ReferenceErrorCtor = ReferenceErrorCtor
+  exports.SyntaxErrorCtor = SyntaxErrorCtor
+  exports.TypeErrorCtor = TypeErrorCtor
+  exports.URIErrorCtor = URIErrorCtor
+})
+
+var require_map_set = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  const require_primordials_object = require_object()
+  const require_primordials_error = require_error$1()
+  /**
+   * @file Safe references to `Map`, `Set`, `WeakMap`, `WeakSet`, and `WeakRef`.
+   *   Constructors plus uncurried prototype methods. `WeakRef` exposes only its
+   *   constructor — there's a separate `weakRefSafe` wrapper in `./uncurry` for
+   *   the throws-on-non-Object case.
+   */
+  const MapCtor = Map
+  const SetCtor = Set
+  const WeakMapCtor = WeakMap
+  const WeakRefCtor = WeakRef
+  const WeakSetCtor = WeakSet
+  const MapPrototypeClear = require_primordials_uncurry.uncurryThis(
+    Map.prototype.clear,
+  )
+  const MapPrototypeDelete = require_primordials_uncurry.uncurryThis(
+    Map.prototype.delete,
+  )
+  const MapPrototypeEntries = require_primordials_uncurry.uncurryThis(
+    Map.prototype.entries,
+  )
+  const MapPrototypeForEach = require_primordials_uncurry.uncurryThis(
+    Map.prototype.forEach,
+  )
+  const MapPrototypeGet = require_primordials_uncurry.uncurryThis(
+    Map.prototype.get,
+  )
+  const MapPrototypeGetOrInsert =
+    Map.prototype.getOrInsert === void 0
+      ? mapGetOrInsertFallback
+      : require_primordials_uncurry.uncurryThis(Map.prototype.getOrInsert)
+  const MapPrototypeGetOrInsertComputed =
+    Map.prototype.getOrInsertComputed === void 0
+      ? mapGetOrInsertComputedFallback
+      : require_primordials_uncurry.uncurryThis(
+          Map.prototype.getOrInsertComputed,
+        )
+  const MapPrototypeHas = require_primordials_uncurry.uncurryThis(
+    Map.prototype.has,
+  )
+  const MapPrototypeKeys = require_primordials_uncurry.uncurryThis(
+    Map.prototype.keys,
+  )
+  const MapPrototypeSet = require_primordials_uncurry.uncurryThis(
+    Map.prototype.set,
+  )
+  const MapPrototypeValues = require_primordials_uncurry.uncurryThis(
+    Map.prototype.values,
+  )
+  const SetPrototypeAdd = require_primordials_uncurry.uncurryThis(
+    Set.prototype.add,
+  )
+  const SetPrototypeClear = require_primordials_uncurry.uncurryThis(
+    Set.prototype.clear,
+  )
+  const SetPrototypeDelete = require_primordials_uncurry.uncurryThis(
+    Set.prototype.delete,
+  )
+  const SetPrototypeDifference = require_primordials_uncurry.uncurryThis(
+    Set.prototype.difference,
+  )
+  const SetPrototypeEntries = require_primordials_uncurry.uncurryThis(
+    Set.prototype.entries,
+  )
+  const SetPrototypeForEach = require_primordials_uncurry.uncurryThis(
+    Set.prototype.forEach,
+  )
+  const SetPrototypeHas = require_primordials_uncurry.uncurryThis(
+    Set.prototype.has,
+  )
+  const SetPrototypeIntersection = require_primordials_uncurry.uncurryThis(
+    Set.prototype.intersection,
+  )
+  const SetPrototypeIsDisjointFrom = require_primordials_uncurry.uncurryThis(
+    Set.prototype.isDisjointFrom,
+  )
+  const SetPrototypeIsSubsetOf = require_primordials_uncurry.uncurryThis(
+    Set.prototype.isSubsetOf,
+  )
+  const SetPrototypeIsSupersetOf = require_primordials_uncurry.uncurryThis(
+    Set.prototype.isSupersetOf,
+  )
+  const SetPrototypeKeys = require_primordials_uncurry.uncurryThis(
+    Set.prototype.keys,
+  )
+  const SetPrototypeSymmetricDifference =
+    require_primordials_uncurry.uncurryThis(Set.prototype.symmetricDifference)
+  const SetPrototypeUnion = require_primordials_uncurry.uncurryThis(
+    Set.prototype.union,
+  )
+  const SetPrototypeValues = require_primordials_uncurry.uncurryThis(
+    Set.prototype.values,
+  )
+  const SetPrototypeSizeGetter = require_primordials_uncurry.uncurryThis(
+    require_primordials_object.ObjectGetOwnPropertyDescriptor(
+      Set.prototype,
+      'size',
+    ).get,
+  )
+  const WeakMapPrototypeDelete = require_primordials_uncurry.uncurryThis(
+    WeakMap.prototype.delete,
+  )
+  const WeakMapPrototypeGet = require_primordials_uncurry.uncurryThis(
+    WeakMap.prototype.get,
+  )
+  const WeakMapPrototypeGetOrInsert =
+    WeakMap.prototype.getOrInsert === void 0
+      ? weakMapGetOrInsertFallback
+      : require_primordials_uncurry.uncurryThis(WeakMap.prototype.getOrInsert)
+  const WeakMapPrototypeGetOrInsertComputed =
+    WeakMap.prototype.getOrInsertComputed === void 0
+      ? weakMapGetOrInsertComputedFallback
+      : require_primordials_uncurry.uncurryThis(
+          WeakMap.prototype.getOrInsertComputed,
+        )
+  const WeakMapPrototypeHas = require_primordials_uncurry.uncurryThis(
+    WeakMap.prototype.has,
+  )
+  const WeakMapPrototypeSet = require_primordials_uncurry.uncurryThis(
+    WeakMap.prototype.set,
+  )
+  const WeakSetPrototypeAdd = require_primordials_uncurry.uncurryThis(
+    WeakSet.prototype.add,
+  )
+  const WeakSetPrototypeDelete = require_primordials_uncurry.uncurryThis(
+    WeakSet.prototype.delete,
+  )
+  const WeakSetPrototypeHas = require_primordials_uncurry.uncurryThis(
+    WeakSet.prototype.has,
+  )
+  function mapGetOrInsertComputedFallback(map, key, callbackfn) {
+    if (typeof callbackfn !== 'function')
+      throw new require_primordials_error.TypeErrorCtor(
+        `getOrInsertComputed takes a callback. Saw ${typeof callbackfn}, wanted a function computing the value to insert.`,
+      )
+    if (MapPrototypeHas(map, key)) return MapPrototypeGet(map, key)
+    const value = callbackfn(key)
+    MapPrototypeSet(map, key, value)
+    return value
+  }
+  function mapGetOrInsertFallback(map, key, value) {
+    if (MapPrototypeHas(map, key)) return MapPrototypeGet(map, key)
+    MapPrototypeSet(map, key, value)
+    return value
+  }
+  function weakMapGetOrInsertComputedFallback(map, key, callbackfn) {
+    if (typeof callbackfn !== 'function')
+      throw new require_primordials_error.TypeErrorCtor(
+        `getOrInsertComputed takes a callback. Saw ${typeof callbackfn}, wanted a function computing the value to insert.`,
+      )
+    if (WeakMapPrototypeHas(map, key)) return WeakMapPrototypeGet(map, key)
+    const value = callbackfn(key)
+    WeakMapPrototypeSet(map, key, value)
+    return value
+  }
+  function weakMapGetOrInsertFallback(map, key, value) {
+    if (WeakMapPrototypeHas(map, key)) return WeakMapPrototypeGet(map, key)
+    WeakMapPrototypeSet(map, key, value)
+    return value
+  }
+  exports.MapCtor = MapCtor
+  exports.MapPrototypeClear = MapPrototypeClear
+  exports.MapPrototypeDelete = MapPrototypeDelete
+  exports.MapPrototypeEntries = MapPrototypeEntries
+  exports.MapPrototypeForEach = MapPrototypeForEach
+  exports.MapPrototypeGet = MapPrototypeGet
+  exports.MapPrototypeGetOrInsert = MapPrototypeGetOrInsert
+  exports.MapPrototypeGetOrInsertComputed = MapPrototypeGetOrInsertComputed
+  exports.MapPrototypeHas = MapPrototypeHas
+  exports.MapPrototypeKeys = MapPrototypeKeys
+  exports.MapPrototypeSet = MapPrototypeSet
+  exports.MapPrototypeValues = MapPrototypeValues
+  exports.SetCtor = SetCtor
+  exports.SetPrototypeAdd = SetPrototypeAdd
+  exports.SetPrototypeClear = SetPrototypeClear
+  exports.SetPrototypeDelete = SetPrototypeDelete
+  exports.SetPrototypeDifference = SetPrototypeDifference
+  exports.SetPrototypeEntries = SetPrototypeEntries
+  exports.SetPrototypeForEach = SetPrototypeForEach
+  exports.SetPrototypeHas = SetPrototypeHas
+  exports.SetPrototypeIntersection = SetPrototypeIntersection
+  exports.SetPrototypeIsDisjointFrom = SetPrototypeIsDisjointFrom
+  exports.SetPrototypeIsSubsetOf = SetPrototypeIsSubsetOf
+  exports.SetPrototypeIsSupersetOf = SetPrototypeIsSupersetOf
+  exports.SetPrototypeKeys = SetPrototypeKeys
+  exports.SetPrototypeSizeGetter = SetPrototypeSizeGetter
+  exports.SetPrototypeSymmetricDifference = SetPrototypeSymmetricDifference
+  exports.SetPrototypeUnion = SetPrototypeUnion
+  exports.SetPrototypeValues = SetPrototypeValues
+  exports.WeakMapCtor = WeakMapCtor
+  exports.WeakMapPrototypeDelete = WeakMapPrototypeDelete
+  exports.WeakMapPrototypeGet = WeakMapPrototypeGet
+  exports.WeakMapPrototypeGetOrInsert = WeakMapPrototypeGetOrInsert
+  exports.WeakMapPrototypeGetOrInsertComputed =
+    WeakMapPrototypeGetOrInsertComputed
+  exports.WeakMapPrototypeHas = WeakMapPrototypeHas
+  exports.WeakMapPrototypeSet = WeakMapPrototypeSet
+  exports.WeakRefCtor = WeakRefCtor
+  exports.WeakSetCtor = WeakSetCtor
+  exports.WeakSetPrototypeAdd = WeakSetPrototypeAdd
+  exports.WeakSetPrototypeDelete = WeakSetPrototypeDelete
+  exports.WeakSetPrototypeHas = WeakSetPrototypeHas
+  exports.mapGetOrInsertComputedFallback = mapGetOrInsertComputedFallback
+  exports.mapGetOrInsertFallback = mapGetOrInsertFallback
+  exports.weakMapGetOrInsertComputedFallback =
+    weakMapGetOrInsertComputedFallback
+  exports.weakMapGetOrInsertFallback = weakMapGetOrInsertFallback
+})
+
+var require_sentinels = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Core primitives and fundamental constants. Holds sentinels,
+   *   unknown/empty tokens, the internals symbol, and a few shared env-var name
+   *   strings. Intentionally kept small - prefer moving constants to a more
+   *   specific `src/constants/*` module when possible.
+   */
+  const kInternalsSymbol = Symbol('@socketregistry.constants.internals')
+  const LOOP_SENTINEL = 1e6
+  const UNKNOWN_ERROR = 'Unknown error'
+  const UNKNOWN_VALUE = '<unknown>'
+  const EMPTY_FILE = '/* empty */\n'
+  const EMPTY_VALUE = '<value>'
+  const UNDEFINED_TOKEN = void 0
+  const COLUMN_LIMIT = 80
+  const V = 'v'
+  const NODE_AUTH_TOKEN = 'NODE_AUTH_TOKEN'
+  const NODE_ENV = 'NODE_ENV'
+  exports.COLUMN_LIMIT = COLUMN_LIMIT
+  exports.EMPTY_FILE = EMPTY_FILE
+  exports.EMPTY_VALUE = EMPTY_VALUE
+  exports.LOOP_SENTINEL = LOOP_SENTINEL
+  exports.NODE_AUTH_TOKEN = NODE_AUTH_TOKEN
+  exports.NODE_ENV = NODE_ENV
+  exports.UNDEFINED_TOKEN = UNDEFINED_TOKEN
+  exports.UNKNOWN_ERROR = UNKNOWN_ERROR
+  exports.UNKNOWN_VALUE = UNKNOWN_VALUE
+  exports.V = V
+  exports.kInternalsSymbol = kInternalsSymbol
+})
+
+var require_reflect = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Safe references to `Reflect.*`. **IMPORTANT**: do not destructure on
+   *   `Reflect` here. tsgo has a bug that mis-transpiles destructured exports.
+   *   See: https://github.com/SocketDev/socket-packageurl-js/issues/3.
+   */
+  const ReflectApply = Reflect.apply
+  const ReflectConstruct = Reflect.construct
+  const ReflectDefineProperty = Reflect.defineProperty
+  const ReflectDeleteProperty = Reflect.deleteProperty
+  const ReflectGet = Reflect.get
+  const ReflectGetOwnPropertyDescriptor = Reflect.getOwnPropertyDescriptor
+  const ReflectGetPrototypeOf = Reflect.getPrototypeOf
+  const ReflectHas = Reflect.has
+  const ReflectIsExtensible = Reflect.isExtensible
+  const ReflectOwnKeys = Reflect.ownKeys
+  const ReflectPreventExtensions = Reflect.preventExtensions
+  const ReflectSet = Reflect.set
+  const ReflectSetPrototypeOf = Reflect.setPrototypeOf
+  exports.ReflectApply = ReflectApply
+  exports.ReflectConstruct = ReflectConstruct
+  exports.ReflectDefineProperty = ReflectDefineProperty
+  exports.ReflectDeleteProperty = ReflectDeleteProperty
+  exports.ReflectGet = ReflectGet
+  exports.ReflectGetOwnPropertyDescriptor = ReflectGetOwnPropertyDescriptor
+  exports.ReflectGetPrototypeOf = ReflectGetPrototypeOf
+  exports.ReflectHas = ReflectHas
+  exports.ReflectIsExtensible = ReflectIsExtensible
+  exports.ReflectOwnKeys = ReflectOwnKeys
+  exports.ReflectPreventExtensions = ReflectPreventExtensions
+  exports.ReflectSet = ReflectSet
+  exports.ReflectSetPrototypeOf = ReflectSetPrototypeOf
+})
+
+var require_mutate = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_arrays_predicates = require_predicates$3()
+  const require_objects_predicates = require_predicates$2()
+  const require_primordials_error = require_error$1()
+  const require_primordials_map_set = require_map_set()
+  require_sentinels()
+  const require_primordials_reflect = require_reflect()
+  /**
+   * @file Object mutation helpers: a deep recursive `merge`, plus
+   *   `objectAssign` and `objectFreeze` aliasing their natives. `merge`
+   *   includes infinite-loop detection via `LOOP_SENTINEL` because `__proto__`
+   *   and self-referential graphs would otherwise blow the stack on a recursive
+   *   descent.
+   */
+  const DANGEROUS_KEYS = new require_primordials_map_set.SetCtor([
+    '__proto__',
+    'constructor',
+    'prototype',
+  ])
+  /**
+   * Deep merge source object into target object.
+   *
+   * Recursively merges properties from `source` into `target`. Arrays in source
+   * completely replace arrays in target, with no element-wise merging. Objects
+   * are merged recursively. Includes infinite loop detection for safety.
+   *
+   * @example
+   *   ;```ts
+   *   merge(
+   *     { config: { api: 'v1', timeout: 1000 } },
+   *     { config: { api: 'v2', retries: 3 } },
+   *   )
+   *   // { config: { api: 'v2', timeout: 1000, retries: 3 } }
+   *   ```
+   *
+   * @example
+   *   ;```ts
+   *   // Arrays are replaced, not merged
+   *   merge({ arr: [1, 2] }, { arr: [3] }) // { arr: [3] }
+   *   ```
+   *
+   * @param target - The object to merge into, which will be modified.
+   * @param source - The object to merge from.
+   *
+   * @returns The modified target object
+   */
+  function merge(target, source) {
+    if (
+      !require_objects_predicates.isObject(target) ||
+      !require_objects_predicates.isObject(source)
+    )
+      return target
+    const queue = [[target, source]]
+    let pos = 0
+    let { length: queueLength } = queue
+    while (pos < queueLength) {
+      if (pos === 1e6)
+        throw new require_primordials_error.ErrorCtor(
+          'Detected infinite loop in object crawl of merge',
+        )
+      const { 0: currentTarget, 1: currentSource } = queue[pos++]
+      const isSourceArray = require_arrays_predicates.isArray(currentSource)
+      const isTargetArray = require_arrays_predicates.isArray(currentTarget)
+      if (isSourceArray || isTargetArray) continue
+      const keys = require_primordials_reflect.ReflectOwnKeys(currentSource)
+      for (let i = 0, { length } = keys; i < length; i += 1) {
+        const key = keys[i]
+        if (typeof key === 'string' && DANGEROUS_KEYS.has(key)) continue
+        const srcVal = currentSource[key]
+        const targetVal = currentTarget[key]
+        if (require_arrays_predicates.isArray(srcVal))
+          currentTarget[key] = srcVal
+        else if (require_objects_predicates.isObject(srcVal)) {
+          if (
+            require_objects_predicates.isObject(targetVal) &&
+            !require_arrays_predicates.isArray(targetVal)
+          )
+            queue[queueLength++] = [targetVal, srcVal]
+          else currentTarget[key] = srcVal
+        } else currentTarget[key] = srcVal
+      }
+    }
+    return target
+  }
+  /**
+   * Alias for native `Object.assign`.
+   *
+   * Copies all enumerable own properties from one or more source objects to a
+   * target object and returns the modified target object.
+   *
+   * @example
+   *   ;```ts
+   *   objectAssign({ a: 1 }, { b: 2 }) // { a: 1, b: 2 }
+   *   ```
+   */
+  const objectAssign = Object.assign
+  /**
+   * Alias for native `Object.freeze`.
+   *
+   * Freezes an object, preventing new properties from being added and existing
+   * properties from being removed or modified. Makes the object immutable.
+   *
+   * @example
+   *   ;```ts
+   *   const obj = { a: 1 }
+   *   objectFreeze(obj)
+   *   obj.a = 2 // Silently fails (or throws in strict mode)
+   *   ```
+   */
+  const objectFreeze = Object.freeze
+  exports.merge = merge
+  exports.objectAssign = objectAssign
+  exports.objectFreeze = objectFreeze
+})
+
+var require_array$2 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to `Array`, typed-array, `ArrayBuffer`, `DataView`,
+   *   `Atomics`, and shared iterator-prototype primordials. `Array.fromAsync`
+   *   and `Array.prototype.with` are ES2024 / ES2023; the primordial captures
+   *   the live reference at module load so consumers never see a tampered
+   *   global.
+   */
+  const smolPrimordial = require_primordial().getSmolPrimordial()
+  const ArrayCtor = Array
+  const ArrayBufferCtor = ArrayBuffer
+  const DataViewCtor = DataView
+  const Float32ArrayCtor = Float32Array
+  const Float64ArrayCtor = Float64Array
+  const Int8ArrayCtor = Int8Array
+  const Int16ArrayCtor = Int16Array
+  const Int32ArrayCtor = Int32Array
+  const Uint8ArrayCtor = Uint8Array
+  const Uint8ClampedArrayCtor = Uint8ClampedArray
+  const Uint16ArrayCtor = Uint16Array
+  const Uint32ArrayCtor = Uint32Array
+  const ArrayFrom = Array.from
+  const ArrayFromAsync = Array.fromAsync
+  const ArrayIsArray = smolPrimordial?.arrayIsArray ?? Array.isArray
+  const ArrayOf = Array.of
+  const ArrayBufferIsView = ArrayBuffer.isView
+  const AtomicsWait = Atomics.wait
+  const ArrayPrototypeAt = require_primordials_uncurry.uncurryThis(
+    Array.prototype.at,
+  )
+  const ArrayPrototypeConcat = require_primordials_uncurry.uncurryThis(
+    Array.prototype.concat,
+  )
+  const ArrayPrototypeCopyWithin = require_primordials_uncurry.uncurryThis(
+    Array.prototype.copyWithin,
+  )
+  const ArrayPrototypeEntries = require_primordials_uncurry.uncurryThis(
+    Array.prototype.entries,
+  )
+  const ArrayPrototypeEvery = require_primordials_uncurry.uncurryThis(
+    Array.prototype.every,
+  )
+  const ArrayPrototypeFill = require_primordials_uncurry.uncurryThis(
+    Array.prototype.fill,
+  )
+  const ArrayPrototypeFilter = require_primordials_uncurry.uncurryThis(
+    Array.prototype.filter,
+  )
+  const ArrayPrototypeFind = require_primordials_uncurry.uncurryThis(
+    Array.prototype.find,
+  )
+  const ArrayPrototypeFindIndex = require_primordials_uncurry.uncurryThis(
+    Array.prototype.findIndex,
+  )
+  const ArrayPrototypeFindLast = require_primordials_uncurry.uncurryThis(
+    Array.prototype.findLast,
+  )
+  const ArrayPrototypeFindLastIndex = require_primordials_uncurry.uncurryThis(
+    Array.prototype.findLastIndex,
+  )
+  const ArrayPrototypeFlat = require_primordials_uncurry.uncurryThis(
+    Array.prototype.flat,
+  )
+  const ArrayPrototypeFlatMap = require_primordials_uncurry.uncurryThis(
+    Array.prototype.flatMap,
+  )
+  const ArrayPrototypeForEach = require_primordials_uncurry.uncurryThis(
+    Array.prototype.forEach,
+  )
+  const ArrayPrototypeIncludes = require_primordials_uncurry.uncurryThis(
+    Array.prototype.includes,
+  )
+  const ArrayPrototypeIndexOf = require_primordials_uncurry.uncurryThis(
+    Array.prototype.indexOf,
+  )
+  const ArrayPrototypeJoin = require_primordials_uncurry.uncurryThis(
+    Array.prototype.join,
+  )
+  const ArrayPrototypeKeys = require_primordials_uncurry.uncurryThis(
+    Array.prototype.keys,
+  )
+  const ArrayPrototypeLastIndexOf = require_primordials_uncurry.uncurryThis(
+    Array.prototype.lastIndexOf,
+  )
+  const ArrayPrototypeMap = require_primordials_uncurry.uncurryThis(
+    Array.prototype.map,
+  )
+  const ArrayPrototypePop = require_primordials_uncurry.uncurryThis(
+    Array.prototype.pop,
+  )
+  const ArrayPrototypePush = require_primordials_uncurry.uncurryThis(
+    Array.prototype.push,
+  )
+  const ArrayPrototypeReduce = require_primordials_uncurry.uncurryThis(
+    Array.prototype.reduce,
+  )
+  const ArrayPrototypeReduceRight = require_primordials_uncurry.uncurryThis(
+    Array.prototype.reduceRight,
+  )
+  const ArrayPrototypeReverse = require_primordials_uncurry.uncurryThis(
+    Array.prototype.reverse,
+  )
+  const ArrayPrototypeShift = require_primordials_uncurry.uncurryThis(
+    Array.prototype.shift,
+  )
+  const ArrayPrototypeSlice = require_primordials_uncurry.uncurryThis(
+    Array.prototype.slice,
+  )
+  const ArrayPrototypeSome = require_primordials_uncurry.uncurryThis(
+    Array.prototype.some,
+  )
+  const ArrayPrototypeSort = require_primordials_uncurry.uncurryThis(
+    Array.prototype.sort,
+  )
+  const ArrayPrototypeSplice = require_primordials_uncurry.uncurryThis(
+    Array.prototype.splice,
+  )
+  const ArrayPrototypeToLocaleString = require_primordials_uncurry.uncurryThis(
+    Array.prototype.toLocaleString,
+  )
+  const ArrayPrototypeToReversed = require_primordials_uncurry.uncurryThis(
+    Array.prototype.toReversed,
+  )
+  const ArrayPrototypeToSorted = require_primordials_uncurry.uncurryThis(
+    Array.prototype.toSorted,
+  )
+  const ArrayPrototypeToSpliced = require_primordials_uncurry.uncurryThis(
+    Array.prototype.toSpliced,
+  )
+  const ArrayPrototypeToString = require_primordials_uncurry.uncurryThis(
+    Array.prototype.toString,
+  )
+  const ArrayPrototypeUnshift = require_primordials_uncurry.uncurryThis(
+    Array.prototype.unshift,
+  )
+  const ArrayPrototypeValues = require_primordials_uncurry.uncurryThis(
+    Array.prototype.values,
+  )
+  const ArrayPrototypeWith = require_primordials_uncurry.uncurryThis(
+    Array.prototype.with,
+  )
+  const anyIterator = /* @__PURE__ */ new Map().keys()
+  let iteratorLookup = Object.getPrototypeOf(anyIterator)
+  while (iteratorLookup && typeof iteratorLookup.next !== 'function')
+    /* c8 ignore next - Modern V8 puts Iterator.prototype one hop up the chain
+	so the first check already finds .next; the walk-further branch fires
+	only on hypothetical engines where the prototype layout differs. */
+    iteratorLookup = Object.getPrototypeOf(iteratorLookup)
+  const iteratorProto = iteratorLookup
+  const IteratorPrototypeNext = require_primordials_uncurry.uncurryThis(
+    iteratorProto.next,
+  )
+  /* c8 ignore start */
+  const IteratorPrototypeReturn =
+    typeof iteratorProto.return === 'function'
+      ? require_primordials_uncurry.uncurryThis(iteratorProto.return)
+      : void 0
+  /* c8 ignore stop */
+  exports.ArrayBufferCtor = ArrayBufferCtor
+  exports.ArrayBufferIsView = ArrayBufferIsView
+  exports.ArrayCtor = ArrayCtor
+  exports.ArrayFrom = ArrayFrom
+  exports.ArrayFromAsync = ArrayFromAsync
+  exports.ArrayIsArray = ArrayIsArray
+  exports.ArrayOf = ArrayOf
+  exports.ArrayPrototypeAt = ArrayPrototypeAt
+  exports.ArrayPrototypeConcat = ArrayPrototypeConcat
+  exports.ArrayPrototypeCopyWithin = ArrayPrototypeCopyWithin
+  exports.ArrayPrototypeEntries = ArrayPrototypeEntries
+  exports.ArrayPrototypeEvery = ArrayPrototypeEvery
+  exports.ArrayPrototypeFill = ArrayPrototypeFill
+  exports.ArrayPrototypeFilter = ArrayPrototypeFilter
+  exports.ArrayPrototypeFind = ArrayPrototypeFind
+  exports.ArrayPrototypeFindIndex = ArrayPrototypeFindIndex
+  exports.ArrayPrototypeFindLast = ArrayPrototypeFindLast
+  exports.ArrayPrototypeFindLastIndex = ArrayPrototypeFindLastIndex
+  exports.ArrayPrototypeFlat = ArrayPrototypeFlat
+  exports.ArrayPrototypeFlatMap = ArrayPrototypeFlatMap
+  exports.ArrayPrototypeForEach = ArrayPrototypeForEach
+  exports.ArrayPrototypeIncludes = ArrayPrototypeIncludes
+  exports.ArrayPrototypeIndexOf = ArrayPrototypeIndexOf
+  exports.ArrayPrototypeJoin = ArrayPrototypeJoin
+  exports.ArrayPrototypeKeys = ArrayPrototypeKeys
+  exports.ArrayPrototypeLastIndexOf = ArrayPrototypeLastIndexOf
+  exports.ArrayPrototypeMap = ArrayPrototypeMap
+  exports.ArrayPrototypePop = ArrayPrototypePop
+  exports.ArrayPrototypePush = ArrayPrototypePush
+  exports.ArrayPrototypeReduce = ArrayPrototypeReduce
+  exports.ArrayPrototypeReduceRight = ArrayPrototypeReduceRight
+  exports.ArrayPrototypeReverse = ArrayPrototypeReverse
+  exports.ArrayPrototypeShift = ArrayPrototypeShift
+  exports.ArrayPrototypeSlice = ArrayPrototypeSlice
+  exports.ArrayPrototypeSome = ArrayPrototypeSome
+  exports.ArrayPrototypeSort = ArrayPrototypeSort
+  exports.ArrayPrototypeSplice = ArrayPrototypeSplice
+  exports.ArrayPrototypeToLocaleString = ArrayPrototypeToLocaleString
+  exports.ArrayPrototypeToReversed = ArrayPrototypeToReversed
+  exports.ArrayPrototypeToSorted = ArrayPrototypeToSorted
+  exports.ArrayPrototypeToSpliced = ArrayPrototypeToSpliced
+  exports.ArrayPrototypeToString = ArrayPrototypeToString
+  exports.ArrayPrototypeUnshift = ArrayPrototypeUnshift
+  exports.ArrayPrototypeValues = ArrayPrototypeValues
+  exports.ArrayPrototypeWith = ArrayPrototypeWith
+  exports.AtomicsWait = AtomicsWait
+  exports.DataViewCtor = DataViewCtor
+  exports.Float32ArrayCtor = Float32ArrayCtor
+  exports.Float64ArrayCtor = Float64ArrayCtor
+  exports.Int16ArrayCtor = Int16ArrayCtor
+  exports.Int32ArrayCtor = Int32ArrayCtor
+  exports.Int8ArrayCtor = Int8ArrayCtor
+  exports.IteratorPrototypeNext = IteratorPrototypeNext
+  exports.IteratorPrototypeReturn = IteratorPrototypeReturn
+  exports.Uint16ArrayCtor = Uint16ArrayCtor
+  exports.Uint32ArrayCtor = Uint32ArrayCtor
+  exports.Uint8ArrayCtor = Uint8ArrayCtor
+  exports.Uint8ClampedArrayCtor = Uint8ClampedArrayCtor
+})
+
+var require_predicates$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_object = require_object()
+  const require_primordials_error = require_error$1()
+  const require_primordials_string = require_string$1()
+  /**
+   * @file Error type-guard predicates — `isError` (with the `isErrorBuiltin` /
+   *   `isErrorShim` building blocks) and the libuv errno-code narrower
+   *   `isErrnoException`. Both are cross-realm-safe (they use `[[ErrorData]]`
+   *   slot semantics rather than `instanceof Error`).
+   */
+  /**
+   * Reference to the native ES2025 `Error.isError` when the running engine
+   * ships it, otherwise `undefined`. Consumes the single primordial snapshot
+   * ({@link ErrorIsError}) rather than re-probing the global — one capture
+   * point. Exposed separately so tests and callers can detect the fast-path.
+   */
+  const isErrorBuiltin = require_primordials_error.ErrorIsError
+  /**
+   * Narrow a caught value to a Node.js `ErrnoException` — an Error with a
+   * `.code` string set by libuv/syscall failures (e.g. `'ENOENT'`, `'EACCES'`,
+   * `'EBUSY'`, `'EPERM'`). Cross-realm safe (builds on {@link isError}), and
+   * checks that `code` is a string so a merely branded Error without a real
+   * errno code returns `false`.
+   *
+   * @example
+   *   try {
+   *     await fsPromises.readFile(path)
+   *   } catch (e) {
+   *     if (isErrnoException(e) && e.code === 'ENOENT') {
+   *       // … retry, or return default …
+   *     } else {
+   *       throw e
+   *     }
+   *   }
+   */
+  function isErrnoException(value) {
+    if (!isError(value)) return false
+    const code = value.code
+    if (typeof code !== 'string' || code.length === 0) return false
+    const first = require_primordials_string.StringPrototypeCharCodeAt(code, 0)
+    return first >= 65 && first <= 90
+  }
+  /**
+   * `Error.isError` fallback shim — the in-language approximation used when the
+   * native ES2025 method isn't available.
+   *
+   * Exported separately so test suites on engines that ship the native method
+   * can still exercise the shim branch directly. Consumers should prefer
+   * {@link isError}, which picks the native method when present.
+   */
+  function isErrorShim(value) {
+    if (value === null || typeof value !== 'object') return false
+    return (
+      require_primordials_object.ObjectPrototypeToString(value) ===
+      '[object Error]'
+    )
+  }
+  /**
+   * Prefer the native ES2025 `Error.isError` when available (exact
+   * `[[ErrorData]]` slot check, cross-realm-safe); fall back to
+   * {@link isErrorShim} otherwise.
+   */
+  const isError = isErrorBuiltin ?? isErrorShim
+  exports.isErrnoException = isErrnoException
+  exports.isError = isError
+  exports.isErrorBuiltin = isErrorBuiltin
+  exports.isErrorShim = isErrorShim
+})
+
+var require_globals = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Safe references to top-level globals that don't fit a larger
+   *   primordials leaf — primitive constructors (`Boolean`, `BigInt`), `Proxy`,
+   *   `SharedArrayBuffer`, language-level constants (`Infinity`, `NaN`,
+   *   `globalThis`), and the encode/decode helpers. Every reference is captured
+   *   once at module load so consumers reading adversarial input never see a
+   *   tampered global.
+   */
+  const BigIntCtor = BigInt
+  const BooleanCtor = Boolean
+  const ProxyCtor = Proxy
+  const SharedArrayBufferCtor =
+    typeof SharedArrayBuffer === 'undefined' ? void 0 : SharedArrayBuffer
+  const InfinityValue = Infinity
+  const NaNValue = NaN
+  const capturedGlobalThis = globalThis
+  const atob = globalThis.atob
+  const btoa = globalThis.btoa
+  const decodeURIComponent = globalThis.decodeURIComponent
+  const encodeURIComponent = globalThis.encodeURIComponent
+  exports.BigIntCtor = BigIntCtor
+  exports.BooleanCtor = BooleanCtor
+  exports.InfinityValue = InfinityValue
+  exports.NaNValue = NaNValue
+  exports.ProxyCtor = ProxyCtor
+  exports.SharedArrayBufferCtor = SharedArrayBufferCtor
+  exports.atob = atob
+  exports.btoa = btoa
+  exports.decodeURIComponent = decodeURIComponent
+  exports.encodeURIComponent = encodeURIComponent
+  exports.globalThis = capturedGlobalThis
+})
+
+var require_math = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Safe references to `Math` constants and methods. Methods prefer the
+   *   smol fast-path (`node:smol-primordial`) when available — V8 Fast API
+   *   typed implementations TurboFan inlines into JIT'd callers. Constants stay
+   *   as the stock `Math.X` since they are pre-computed scalar values with no
+   *   fast-path benefit.
+   */
+  const smolPrimordial = require_primordial().getSmolPrimordial()
+  const MathE = Math.E
+  const MathLN2 = Math.LN2
+  const MathLN10 = Math.LN10
+  const MathLOG2E = Math.LOG2E
+  const MathLOG10E = Math.LOG10E
+  const MathPI = Math.PI
+  const MathSQRT1_2 = Math.SQRT1_2
+  const MathSQRT2 = Math.SQRT2
+  const MathAbs = smolPrimordial?.mathAbs ?? Math.abs
+  const MathAcos = smolPrimordial?.mathAcos ?? Math.acos
+  const MathAcosh = smolPrimordial?.mathAcosh ?? Math.acosh
+  const MathAsin = smolPrimordial?.mathAsin ?? Math.asin
+  const MathAsinh = smolPrimordial?.mathAsinh ?? Math.asinh
+  const MathAtan = smolPrimordial?.mathAtan ?? Math.atan
+  const MathAtan2 = smolPrimordial?.mathAtan2 ?? Math.atan2
+  const MathAtanh = smolPrimordial?.mathAtanh ?? Math.atanh
+  const MathCbrt = smolPrimordial?.mathCbrt ?? Math.cbrt
+  const MathCeil = smolPrimordial?.mathCeil ?? Math.ceil
+  const MathClz32 = smolPrimordial?.mathClz32 ?? Math.clz32
+  const MathCos = smolPrimordial?.mathCos ?? Math.cos
+  const MathCosh = smolPrimordial?.mathCosh ?? Math.cosh
+  const MathExp = smolPrimordial?.mathExp ?? Math.exp
+  const MathExpm1 = smolPrimordial?.mathExpm1 ?? Math.expm1
+  const MathF16round = Math.f16round
+  const MathFloor = smolPrimordial?.mathFloor ?? Math.floor
+  const MathFround = smolPrimordial?.mathFround ?? Math.fround
+  const MathHypot = smolPrimordial?.mathHypot ?? Math.hypot
+  const MathImul = smolPrimordial?.mathImul ?? Math.imul
+  const MathLog = smolPrimordial?.mathLog ?? Math.log
+  const MathLog1p = smolPrimordial?.mathLog1p ?? Math.log1p
+  const MathLog2 = smolPrimordial?.mathLog2 ?? Math.log2
+  const MathLog10 = smolPrimordial?.mathLog10 ?? Math.log10
+  const MathMax = Math.max
+  const MathMin = Math.min
+  const MathPow = smolPrimordial?.mathPow ?? Math.pow
+  const MathRandom = Math.random
+  const MathRound = smolPrimordial?.mathRound ?? Math.round
+  const MathSign = smolPrimordial?.mathSign ?? Math.sign
+  const MathSin = smolPrimordial?.mathSin ?? Math.sin
+  const MathSinh = smolPrimordial?.mathSinh ?? Math.sinh
+  const MathSqrt = smolPrimordial?.mathSqrt ?? Math.sqrt
+  const MathTan = smolPrimordial?.mathTan ?? Math.tan
+  const MathTanh = smolPrimordial?.mathTanh ?? Math.tanh
+  const MathTrunc = smolPrimordial?.mathTrunc ?? Math.trunc
+  exports.MathAbs = MathAbs
+  exports.MathAcos = MathAcos
+  exports.MathAcosh = MathAcosh
+  exports.MathAsin = MathAsin
+  exports.MathAsinh = MathAsinh
+  exports.MathAtan = MathAtan
+  exports.MathAtan2 = MathAtan2
+  exports.MathAtanh = MathAtanh
+  exports.MathCbrt = MathCbrt
+  exports.MathCeil = MathCeil
+  exports.MathClz32 = MathClz32
+  exports.MathCos = MathCos
+  exports.MathCosh = MathCosh
+  exports.MathE = MathE
+  exports.MathExp = MathExp
+  exports.MathExpm1 = MathExpm1
+  exports.MathF16round = MathF16round
+  exports.MathFloor = MathFloor
+  exports.MathFround = MathFround
+  exports.MathHypot = MathHypot
+  exports.MathImul = MathImul
+  exports.MathLN10 = MathLN10
+  exports.MathLN2 = MathLN2
+  exports.MathLOG10E = MathLOG10E
+  exports.MathLOG2E = MathLOG2E
+  exports.MathLog = MathLog
+  exports.MathLog10 = MathLog10
+  exports.MathLog1p = MathLog1p
+  exports.MathLog2 = MathLog2
+  exports.MathMax = MathMax
+  exports.MathMin = MathMin
+  exports.MathPI = MathPI
+  exports.MathPow = MathPow
+  exports.MathRandom = MathRandom
+  exports.MathRound = MathRound
+  exports.MathSQRT1_2 = MathSQRT1_2
+  exports.MathSQRT2 = MathSQRT2
+  exports.MathSign = MathSign
+  exports.MathSin = MathSin
+  exports.MathSinh = MathSinh
+  exports.MathSqrt = MathSqrt
+  exports.MathTan = MathTan
+  exports.MathTanh = MathTanh
+  exports.MathTrunc = MathTrunc
+})
+
+var require_abort = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Process control helpers. Lazily creates and exposes a shared
+   *   `AbortController` and its `AbortSignal` so cooperating modules can
+   *   coordinate cancellation from a single source.
+   */
+  let abortController
+  /**
+   * Get the process-scoped shared `AbortController` singleton. Cooperating
+   * modules use this to coordinate cancellation across the library.
+   *
+   * @returns The lazily-created shared `AbortController` instance.
+   */
+  function getAbortController() {
+    if (abortController === void 0) abortController = new AbortController()
+    return abortController
+  }
+  /**
+   * Get the process-scoped shared `AbortSignal` singleton. This is the `signal`
+   * property of {@link getAbortController}'s controller and is intended to be
+   * passed to APIs that accept an `AbortSignal`.
+   *
+   * @returns The shared `AbortSignal` instance.
+   */
+  function getAbortSignal() {
+    return getAbortController().signal
+  }
+  exports.getAbortController = getAbortController
+  exports.getAbortSignal = getAbortSignal
+})
+
+var require_shared$2 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_runtime = require_runtime$3()
+  const require_process_abort = require_abort()
+  /**
+   * Get the timers/promises module. Uses a lazy `require` rather than a
+   * top-level import to avoid Webpack bundling issues.
+   *
+   * Intentionally NOT memoized: Node's module cache already makes the repeat
+   * `require` effectively free, and caching the reference breaks fake timers
+   * (`vi.useFakeTimers()` swaps the clock after this module loads; a cached
+   * reference would hold the pre-fake real `setTimeout`, burning real wallclock
+   * on retry backoff and starving the test worker pool).
+   *
+   * @private
+   *
+   * @returns The Node.js timers/promises module
+   */
+  function getTimers() {
+    if (!require_constants_runtime.IS_NODE) return
+    return __require('timers/promises')
+  }
+  exports.getAbortSignal = require_process_abort.getAbortSignal
+  exports.getTimers = getTimers
+})
+
+var require_options$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_process_abort = require_abort()
+  const require_primordials_math = require_math()
+  /**
+   * @file Option-shape normalizers for the iteration / retry helpers. Three
+   *   free functions — kept together because they're a tiny cluster of pure
+   *   transforms that callers cycle through: `resolveRetryOptions`
+   *   (number-shorthand → minimal object) → `normalizeRetryOptions` (defaults +
+   *   signal binding) → `normalizeIterationOptions` (concurrency + retries
+   *   combined).
+   */
+  /**
+   * Normalize options for iteration functions.
+   *
+   * Converts various option formats into a consistent structure with defaults
+   * applied. Handles number shorthand for concurrency and ensures minimum
+   * values.
+   *
+   * @example
+   *   // Number shorthand for concurrency
+   *   normalizeIterationOptions(5)
+   *   // => { concurrency: 5, retries: {...}, signal: AbortSignal }
+   *
+   * @example
+   *   // Full options
+   *   normalizeIterationOptions({ concurrency: 3, retries: 2 })
+   *   // => { concurrency: 3, retries: {...}, signal: AbortSignal }
+   *
+   * @param options - Concurrency as number, or full options object, or
+   *   undefined.
+   *
+   * @returns Normalized options with concurrency, retries, and signal
+   */
+  function normalizeIterationOptions(options) {
+    const {
+      concurrency = 1,
+      retries,
+      signal = require_process_abort.getAbortSignal(),
+    } = {
+      __proto__: null,
+      ...(typeof options === 'number' ? { concurrency: options } : options),
+    }
+    return {
+      __proto__: null,
+      concurrency: require_primordials_math.MathMax(1, concurrency),
+      retries: normalizeRetryOptions({
+        signal,
+        ...resolveRetryOptions(retries),
+      }),
+      signal,
+    }
+  }
+  /**
+   * Normalize options for retry functionality.
+   *
+   * Converts various retry option formats — a bare retry count, a partial
+   * options object, or undefined — into a complete configuration with every
+   * default filled in.
+   *
+   * @example
+   *   // Number shorthand
+   *   normalizeRetryOptions(3)
+   *   // => { retries: 3, baseDelayMs: 200, backoffFactor: 2, ... }
+   *
+   * @example
+   *   // Full options with defaults filled in
+   *   normalizeRetryOptions({ retries: 5, baseDelayMs: 500 })
+   *   // => { retries: 5, baseDelayMs: 500, backoffFactor: 2, jitter: true, ... }
+   *
+   * @param options - Retry count as number, or full options object, or
+   *   undefined.
+   *
+   * @returns Normalized retry options with all properties set
+   */
+  function normalizeRetryOptions(options) {
+    const {
+      args = [],
+      backoffFactor = 2,
+      baseDelayMs = 200,
+      jitter = true,
+      maxDelayMs = 1e4,
+      onRetry,
+      onRetryCancelOnFalse = false,
+      onRetryRethrow = false,
+      retries = 0,
+      signal = require_process_abort.getAbortSignal(),
+    } = resolveRetryOptions(options)
+    return {
+      args,
+      backoffFactor,
+      baseDelayMs,
+      jitter,
+      maxDelayMs,
+      onRetry,
+      onRetryCancelOnFalse,
+      onRetryRethrow,
+      retries,
+      signal,
+    }
+  }
+  /**
+   * Resolve retry options from various input formats.
+   *
+   * Converts shorthand and partial options into a base configuration that can
+   * be further normalized. This is an internal helper for option processing.
+   *
+   * @example
+   *   resolveRetryOptions(3)
+   *   // => { retries: 3, baseDelayMs: 200, maxDelayMs: 10000, backoffFactor: 2 }
+   *
+   * @example
+   *   resolveRetryOptions({ retries: 5, maxDelayMs: 5000 })
+   *   // => { retries: 5, baseDelayMs: 200, maxDelayMs: 5000, backoffFactor: 2 }
+   *
+   * @param options - Retry count as number, or partial options object, or
+   *   undefined.
+   *
+   * @returns Resolved retry options with defaults for basic properties
+   */
+  function resolveRetryOptions(options) {
+    const defaults = {
+      __proto__: null,
+      retries: 0,
+      baseDelayMs: 200,
+      maxDelayMs: 1e4,
+      backoffFactor: 2,
+    }
+    if (typeof options === 'number')
+      return {
+        ...defaults,
+        retries: options,
+      }
+    return options
+      ? {
+          ...defaults,
+          ...options,
+        }
+      : defaults
+  }
+  exports.normalizeIterationOptions = normalizeIterationOptions
+  exports.normalizeRetryOptions = normalizeRetryOptions
+  exports.resolveRetryOptions = resolveRetryOptions
+})
+
+var require_retry = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  require_sentinels()
+  const require_primordials_math = require_math()
+  const require_promises_shared = require_shared$2()
+  const require_promises_options = require_options$1()
+  /**
+   * @file `pRetry` — exponential-backoff retry with optional jitter,
+   *   abort-signal support, and an `onRetry` hook for customizing delays or
+   *   canceling retries entirely. Cycles with `iterate.ts`: pRetry is called by
+   *   pEach / pEachChunk / pFilter / pFilterChunk to apply per-item retry. ESM
+   *   tolerates the cycle since both sides reference each other through
+   *   functions only.
+   */
+  /**
+   * Retry an async function with exponential backoff.
+   *
+   * Attempts to execute a function multiple times with increasing delays
+   * between attempts. Implements exponential backoff with optional jitter to
+   * prevent thundering herd problems. Supports custom retry logic via `onRetry`
+   * callback.
+   *
+   * The delay calculation follows: `min(baseDelayMs * (backoffFactor **
+   * attempt), maxDelayMs)` With jitter: adds random value between 0 and
+   * calculated delay.
+   *
+   * @example
+   *   // Simple retry: 3 attempts with default backoff
+   *   const data = await pRetry(async () => {
+   *     return await fetchData()
+   *   }, 3)
+   *
+   * @example
+   *   // Custom backoff strategy
+   *   const result = await pRetry(
+   *     async () => {
+   *       return await unreliableOperation()
+   *     },
+   *     {
+   *       retries: 5,
+   *       baseDelayMs: 1000, // Start at 1 second
+   *       backoffFactor: 2, // Double each time
+   *       maxDelayMs: 30000, // Cap at 30 seconds
+   *       jitter: true, // Add randomness
+   *     },
+   *   )
+   *   // Delays: ~1s, ~2s, ~4s, ~8s, ~16s (each ± random jitter)
+   *
+   * @example
+   *   // With custom retry logic
+   *   const data = await pRetry(
+   *     async () => {
+   *       return await apiCall()
+   *     },
+   *     {
+   *       retries: 3,
+   *       onRetry: (attempt, error, delay) => {
+   *         console.log(`Attempt ${attempt} failed: ${error}`)
+   *         console.log(`Waiting ${delay}ms before retry...`)
+   *
+   *         // Cancel retries for client errors (4xx)
+   *         if (error.statusCode >= 400 && error.statusCode < 500) {
+   *           return false
+   *         }
+   *
+   *         // Use longer delay for rate limit errors
+   *         if (error.statusCode === 429) {
+   *           return 60000 // Wait 1 minute
+   *         }
+   *       },
+   *       onRetryCancelOnFalse: true,
+   *     },
+   *   )
+   *
+   * @example
+   *   // With cancellation support
+   *   const controller = new AbortController()
+   *   setTimeout(() => controller.abort(), 5000) // Cancel after 5s
+   *
+   *   const result = await pRetry(
+   *     async ({ signal }) => {
+   *       return await longRunningTask(signal)
+   *     },
+   *     {
+   *       retries: 10,
+   *       signal: controller.signal,
+   *     },
+   *   )
+   *   // Returns undefined if aborted
+   *
+   * @example
+   *   // Pass arguments to callback
+   *   const result = await pRetry(
+   *     async (url, options) => {
+   *       return await fetch(url, options)
+   *     },
+   *     {
+   *       retries: 3,
+   *       args: ['https://api.example.com', { method: 'POST' }],
+   *     },
+   *   )
+   *
+   * @template T - The return type of the callback function.
+   *
+   * @param callbackFn - Async function to retry.
+   * @param options - Retry count as number, or full retry options, or
+   *   undefined.
+   *
+   * @returns Promise resolving to callback result, or `undefined` if aborted
+   *
+   * @throws {Error} The last error if all retry attempts fail
+   */
+  async function pRetry(callbackFn, options) {
+    const {
+      args,
+      backoffFactor,
+      baseDelayMs,
+      jitter,
+      maxDelayMs,
+      onRetry,
+      onRetryCancelOnFalse,
+      onRetryRethrow,
+      retries,
+      signal,
+    } = require_promises_options.normalizeRetryOptions(options)
+    function isAborted() {
+      return signal?.aborted
+    }
+    if (isAborted()) return
+    if (retries === 0) return await callbackFn(...(args || []), { signal })
+    const timers = require_promises_shared.getTimers()
+    let attempts = retries
+    let delay = baseDelayMs
+    let error = void 0
+    /* c8 ignore start */
+    function resolveRetryDelay(e, waitTime) {
+      if (typeof onRetry === 'function')
+        try {
+          const result = onRetry(retries - attempts, e, waitTime)
+          if (result === false && onRetryCancelOnFalse) return false
+          if (typeof result === 'number' && result >= 0)
+            waitTime = require_primordials_math.MathMin(result, maxDelayMs)
+        } catch (onRetryError) {
+          if (onRetryRethrow) throw onRetryError
+        }
+      return waitTime
+    }
+    /* c8 ignore stop */
+    while (attempts-- >= 0) {
+      /* c8 ignore start */
+      if (isAborted()) return
+      /* c8 ignore stop */
+      try {
+        return await callbackFn(...(args || []), { signal })
+      } catch (e) {
+        error = e
+        if (attempts < 0) break
+        let waitTime = delay
+        if (jitter)
+          waitTime += require_primordials_math.MathFloor(
+            require_primordials_math.MathRandom() * delay,
+          )
+        waitTime = require_primordials_math.MathMin(waitTime, maxDelayMs)
+        const retryDelay = resolveRetryDelay(e, waitTime)
+        if (retryDelay === false) break
+        waitTime = retryDelay
+        try {
+          await timers.setTimeout(waitTime, void 0, { signal })
+        } catch {
+          return
+        }
+        /* c8 ignore stop */
+        /* c8 ignore start */
+        if (isAborted()) return
+        /* c8 ignore stop */
+        delay = require_primordials_math.MathMin(
+          delay * backoffFactor,
+          maxDelayMs,
+        )
+      }
+    }
+    if (error !== void 0) throw error
+  }
+  exports.pRetry = pRetry
+})
+
+var require_path$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const nodePath = require_runtime$3().IS_NODE
+    ? /*@__PURE__*/ __require('path')
+    : void 0
+  function getNodePath() {
+    return nodePath
+  }
+  const PathBasename = nodePath?.basename
+  const PathDirname = nodePath?.dirname
+  const PathExtname = nodePath?.extname
+  const PathIsAbsolute = nodePath?.isAbsolute
+  const PathJoin = nodePath?.join
+  const PathRelative = nodePath?.relative
+  const PathResolve = nodePath?.resolve
+  exports.PathBasename = PathBasename
+  exports.PathDirname = PathDirname
+  exports.PathExtname = PathExtname
+  exports.PathIsAbsolute = PathIsAbsolute
+  exports.PathJoin = PathJoin
+  exports.PathRelative = PathRelative
+  exports.PathResolve = PathResolve
+  exports.getNodePath = getNodePath
+})
+
+var require_socket$2 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Socket.dev branding and identifier constants. Centralizes API base
+   *   URLs, website/docs URLs, npm scopes, GitHub org/repo
+   *   names, and app name strings used across the Socket toolchain.
+   */
+  const SOCKET_API_BASE_URL = 'https://api.socket.dev/v0'
+  const SOCKET_WEBSITE_URL = 'https://socket.dev'
+  const SOCKET_CONTACT_URL = 'https://socket.dev/contact'
+  const SOCKET_DASHBOARD_URL = 'https://socket.dev/dashboard'
+  const SOCKET_API_TOKENS_URL =
+    'https://socket.dev/dashboard/settings/api-tokens'
+  const SOCKET_PRICING_URL = 'https://socket.dev/pricing'
+  const SOCKET_STATUS_URL = 'https://status.socket.dev'
+  const SOCKET_DOCS_URL = 'https://docs.socket.dev'
+  const SOCKET_DOCS_CONTACT_URL = 'https://docs.socket.dev/docs/contact-support'
+  const SOCKET_REGISTRY_SCOPE = '@socketregistry'
+  const SOCKET_SECURITY_SCOPE = '@socketsecurity'
+  const SOCKET_OVERRIDE_SCOPE = '@socketoverride'
+  const SOCKET_GITHUB_ORG = 'SocketDev'
+  const SOCKET_REGISTRY_REPO_NAME = 'socket-registry'
+  const SOCKET_REGISTRY_PACKAGE_NAME = '@socketsecurity/registry'
+  const SOCKET_REGISTRY_NPM_ORG = 'socketregistry'
+  const SOCKET_DIR_PREFIX = '_'
+  const SOCKET_DIR = {
+    __proto__: null,
+    cacache: `_cacache`,
+    dlx: `_dlx`,
+    state: `_state`,
+    wheelhouse: `_wheelhouse`,
+  }
+  const SOCKET_LIB_NAME = '@socketsecurity/lib'
+  const SOCKET_LIB_VERSION = '7.0.3'
+  const SOCKET_IPC_HANDSHAKE = 'SOCKET_IPC_HANDSHAKE'
+  const CACHE_SOCKET_API_DIR = 'socket-api'
+  const REGISTRY = 'registry'
+  const REGISTRY_SCOPE_DELIMITER = '__'
+  exports.CACHE_SOCKET_API_DIR = CACHE_SOCKET_API_DIR
+  exports.REGISTRY = REGISTRY
+  exports.REGISTRY_SCOPE_DELIMITER = REGISTRY_SCOPE_DELIMITER
+  exports.SOCKET_API_BASE_URL = SOCKET_API_BASE_URL
+  exports.SOCKET_API_TOKENS_URL = SOCKET_API_TOKENS_URL
+  exports.SOCKET_CONTACT_URL = SOCKET_CONTACT_URL
+  exports.SOCKET_DASHBOARD_URL = SOCKET_DASHBOARD_URL
+  exports.SOCKET_DIR = SOCKET_DIR
+  exports.SOCKET_DIR_PREFIX = SOCKET_DIR_PREFIX
+  exports.SOCKET_DOCS_CONTACT_URL = SOCKET_DOCS_CONTACT_URL
+  exports.SOCKET_DOCS_URL = SOCKET_DOCS_URL
+  exports.SOCKET_GITHUB_ORG = SOCKET_GITHUB_ORG
+  exports.SOCKET_IPC_HANDSHAKE = SOCKET_IPC_HANDSHAKE
+  exports.SOCKET_LIB_NAME = SOCKET_LIB_NAME
+  exports.SOCKET_LIB_VERSION = SOCKET_LIB_VERSION
+  exports.SOCKET_OVERRIDE_SCOPE = SOCKET_OVERRIDE_SCOPE
+  exports.SOCKET_PRICING_URL = SOCKET_PRICING_URL
+  exports.SOCKET_REGISTRY_NPM_ORG = SOCKET_REGISTRY_NPM_ORG
+  exports.SOCKET_REGISTRY_PACKAGE_NAME = SOCKET_REGISTRY_PACKAGE_NAME
+  exports.SOCKET_REGISTRY_REPO_NAME = SOCKET_REGISTRY_REPO_NAME
+  exports.SOCKET_REGISTRY_SCOPE = SOCKET_REGISTRY_SCOPE
+  exports.SOCKET_SECURITY_SCOPE = SOCKET_SECURITY_SCOPE
+  exports.SOCKET_STATUS_URL = SOCKET_STATUS_URL
+  exports.SOCKET_WEBSITE_URL = SOCKET_WEBSITE_URL
+})
+
+var require_boolean = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * Convert an environment variable value to a boolean.
+   *
+   * @example
+   *   ;```typescript
+   *   import { envAsBoolean } from '@socketsecurity/lib/env/boolean'
+   *
+   *   envAsBoolean('true') // true
+   *   envAsBoolean('1') // true
+   *   envAsBoolean('yes') // true
+   *   envAsBoolean('  true  ') // true (trimmed)
+   *   envAsBoolean('  true  ', { trim: false }) // false (strict)
+   *   envAsBoolean(undefined) // false
+   *   envAsBoolean(undefined, { defaultValue: true }) // true
+   *   ```
+   *
+   * @param value - The value to convert.
+   * @param options - Options bag: `defaultValue`, `trim`.
+   *
+   * @returns `true` if value is '1', 'true', or 'yes' (case-insensitive), `false`
+   *   otherwise.
+   */
+  function envAsBoolean(value, options) {
+    const { defaultValue = false, trim = true } = {
+      __proto__: null,
+      ...options,
+    }
+    if (typeof value === 'string') {
+      const candidate = trim ? value.trim() : value
+      if (!candidate) return !!defaultValue
+      const lower = candidate.toLowerCase()
+      return lower === '1' || lower === 'true' || lower === 'yes'
+    }
+    if (value === null || value === void 0) return !!defaultValue
+    return !!value
+  }
+  exports.envAsBoolean = envAsBoolean
+})
+
+var require_async_hooks = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_runtime = require_runtime$3()
+  let asyncHooks
+  function getNodeAsyncHooks() {
+    if (!require_constants_runtime.IS_NODE) return
+    asyncHooks ??= /*@__PURE__*/ __require('async_hooks')
+    return asyncHooks
+  }
+  exports.getNodeAsyncHooks = getNodeAsyncHooks
+})
+
+var require_rewire$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_runtime = require_runtime$3()
+  const require_primordials_object = require_object()
+  const require_objects_predicates = require_predicates$2()
+  const require_env_boolean = require_boolean()
+  const require_node_async_hooks = require_async_hooks()
+  const require_primordials_map_set = require_map_set()
+  let isolatedOverridesStorage
+  const sharedOverridesSymbol = Symbol.for(
+    '@socketsecurity/lib/env/rewire/test-overrides',
+  )
+  const globalThisRef = globalThis
+  if (
+    require_env_boolean.envAsBoolean(safeProcessEnv()?.['VITEST']) &&
+    !globalThisRef[sharedOverridesSymbol]
+  )
+    globalThisRef[sharedOverridesSymbol] =
+      new require_primordials_map_set.MapCtor()
+  const sharedOverrides = globalThisRef[sharedOverridesSymbol]
+  /**
+   * Clear a specific environment variable override.
+   *
+   * @example
+   *   ;```typescript
+   *   import { setEnv, clearEnv } from '@socketsecurity/lib/env/rewire'
+   *
+   *   setEnv('CI', '1')
+   *   clearEnv('CI')
+   *   ```
+   *
+   * @param key - The environment variable name to clear.
+   */
+  function clearEnv(key) {
+    sharedOverrides?.delete(key)
+  }
+  /**
+   * Lazily load the async_hooks module. Aliases the canonical
+   * `node/async-hooks` accessor, the single owner of the bundler-safe require;
+   * kept as an export so this module's surface is unchanged.
+   *
+   * @private
+   */
+  const getAsyncHooks = require_node_async_hooks.getNodeAsyncHooks
+  /**
+   * Get an environment variable value, checking overrides first.
+   *
+   * Resolution order: 1. Isolated overrides (temporary - set via
+   * withEnv/withEnvSync) 2. Shared overrides (persistent - set via setEnv in
+   * beforeEach) 3. process.env (including vi.stubEnv modifications)
+   *
+   * @example
+   *   ;```typescript
+   *   import { getEnvValue } from '@socketsecurity/lib/env/rewire'
+   *
+   *   const value = getEnvValue('NODE_ENV')
+   *   // e.g. 'production' or undefined
+   *   ```
+   *
+   * @internal Used by env getters to support test rewiring
+   */
+  function getEnvValue(key) {
+    const isolatedOverrides = getIsolatedOverrides()
+    if (isolatedOverrides?.has(key)) return isolatedOverrides.get(key)
+    if (sharedOverrides?.has(key)) return sharedOverrides.get(key)
+    return safeProcessEnv()?.[key]
+  }
+  /**
+   * Get the current isolated-override map, or undefined when none is active.
+   * Off Node, in browser bundles, there is no AsyncLocalStorage and no isolated
+   * context — env getters fall straight through to the other tiers.
+   *
+   * @private
+   */
+  function getIsolatedOverrides() {
+    return require_constants_runtime.IS_NODE
+      ? getIsolatedOverridesStorage().getStore()
+      : void 0
+  }
+  /**
+   * Get the process-scoped AsyncLocalStorage used for nested env overrides
+   * (withEnv/withEnvSync).
+   *
+   * Constructed LAZILY (memoized) rather than at module-eval: an
+   * AsyncLocalStorage holds a live native handle, and constructing it at import
+   * time pins that handle into every module transitively importing this leaf —
+   * aborting V8 --build-snapshot serialization. Deferring to first use keeps
+   * the single-store semantics while leaving module import snapshot-safe.
+   *
+   * @private
+   */
+  function getIsolatedOverridesStorage() {
+    if (isolatedOverridesStorage === void 0) {
+      const { AsyncLocalStorage } = require_node_async_hooks.getNodeAsyncHooks()
+      isolatedOverridesStorage = new AsyncLocalStorage()
+    }
+    return isolatedOverridesStorage
+  }
+  /**
+   * Check if an environment variable has been overridden.
+   *
+   * @example
+   *   ;```typescript
+   *   import { setEnv, hasOverride } from '@socketsecurity/lib/env/rewire'
+   *
+   *   hasOverride('CI') // false
+   *   setEnv('CI', '1')
+   *   hasOverride('CI') // true
+   *   ```
+   *
+   * @param key - The environment variable name to check.
+   *
+   * @returns `true` if the variable has been overridden, `false` otherwise
+   */
+  function hasOverride(key) {
+    return !!(getIsolatedOverrides()?.has(key) || sharedOverrides?.has(key))
+  }
+  /**
+   * Check if an environment variable key exists, checking overrides first.
+   *
+   * Resolution order: 1. Isolated overrides (temporary - set via
+   * withEnv/withEnvSync) 2. Shared overrides (persistent - set via setEnv in
+   * beforeEach) 3. process.env (including vi.stubEnv modifications)
+   *
+   * @example
+   *   ;```typescript
+   *   import { isInEnv } from '@socketsecurity/lib/env/rewire'
+   *
+   *   isInEnv('PATH') // true (usually set)
+   *   isInEnv('MISSING') // false
+   *   ```
+   *
+   * @internal Used by env getters to check for key presence rather than value
+   *   truthiness.
+   */
+  function isInEnv(key) {
+    if (getIsolatedOverrides()?.has(key)) return true
+    if (sharedOverrides?.has(key)) return true
+    const env = safeProcessEnv()
+    return env ? require_objects_predicates.hasOwn(env, key) : false
+  }
+  /**
+   * Clear all environment variable overrides. Useful in afterEach hooks to
+   * ensure clean test state.
+   *
+   * @example
+   *   ;```typescript
+   *   import { resetEnv } from './rewire.mjs'
+   *
+   *   afterEach(() => {
+   *     resetEnv()
+   *   })
+   *   ```
+   */
+  function resetEnv() {
+    sharedOverrides?.clear()
+  }
+  /**
+   * Read `process.env` without assuming a real Node `process`. Probes the
+   * GLOBAL `process` via `typeof` (no `node:process` import — webpack throws
+   * UnhandledSchemeError on `node:` specifiers before the `browser`-field stubs
+   * apply), so browser bundles load this leaf cleanly and env getters read as
+   * unset instead of throwing.
+   *
+   * @private
+   */
+  function safeProcessEnv() {
+    return typeof process !== 'undefined' && process ? process.env : void 0
+  }
+  /**
+   * Set an environment variable override for testing. This does not modify
+   * process.env, only affects env getters.
+   *
+   * Works in test hooks (beforeEach) without needing AsyncLocalStorage context.
+   * Vitest's module isolation ensures each test file has independent overrides.
+   *
+   * @example
+   *   ;```typescript
+   *   import { setEnv, resetEnv } from './rewire.mjs'
+   *   import { isCI } from './ci.mjs'
+   *
+   *   beforeEach(() => {
+   *     setEnv('CI', '1')
+   *   })
+   *
+   *   afterEach(() => {
+   *     resetEnv()
+   *   })
+   *
+   *   it('should detect CI environment', () => {
+   *     expect(isCI()).toBe(true)
+   *   })
+   *   ```
+   */
+  function setEnv(key, value) {
+    sharedOverrides?.set(key, value)
+  }
+  /**
+   * Run code with environment overrides in an isolated AsyncLocalStorage
+   * context. Creates true context isolation - overrides don't leak to
+   * concurrent code.
+   *
+   * Useful for tests that need temporary overrides without affecting other
+   * tests or for nested override scenarios.
+   *
+   * @example
+   *   ;```typescript
+   *   import { withEnv } from './rewire.mjs'
+   *   import { isCI } from './ci.mjs'
+   *
+   *   // Temporary override in isolated context
+   *   await withEnv({ CI: '1' }, async () => {
+   *     expect(isCI()).toBe(true)
+   *   })
+   *   expect(isCI()).toBe(false) // Override is gone
+   *   ```
+   *
+   * @example
+   *   ;```typescript
+   *   // Nested overrides work correctly
+   *   setEnv('CI', '1') // Shared override (persistent)
+   *
+   *   await withEnv({ CI: '0' }, async () => {
+   *     expect(isCI()).toBe(false) // Isolated override takes precedence
+   *   })
+   *
+   *   expect(isCI()).toBe(true) // Back to shared override
+   *   ```
+   */
+  async function withEnv(overrides, fn) {
+    const map = new require_primordials_map_set.MapCtor(
+      require_primordials_object.ObjectEntries(overrides),
+    )
+    return await getIsolatedOverridesStorage().run(map, fn)
+  }
+  /**
+   * Synchronous version of withEnv for non-async code.
+   *
+   * @example
+   *   ;```typescript
+   *   import { withEnvSync } from './rewire.mjs'
+   *   import { isCI } from './ci.mjs'
+   *
+   *   const result = withEnvSync({ CI: '1' }, () => {
+   *     return isCI()
+   *   })
+   *   expect(result).toBe(true)
+   *   ```
+   */
+  function withEnvSync(overrides, fn) {
+    const map = new require_primordials_map_set.MapCtor(
+      require_primordials_object.ObjectEntries(overrides),
+    )
+    return getIsolatedOverridesStorage().run(map, fn)
+  }
+  exports.clearEnv = clearEnv
+  exports.getAsyncHooks = getAsyncHooks
+  exports.getEnvValue = getEnvValue
+  exports.getIsolatedOverrides = getIsolatedOverrides
+  exports.getIsolatedOverridesStorage = getIsolatedOverridesStorage
+  exports.hasOverride = hasOverride
+  exports.isInEnv = isInEnv
+  exports.resetEnv = resetEnv
+  exports.safeProcessEnv = safeProcessEnv
+  exports.setEnv = setEnv
+  exports.withEnv = withEnv
+  exports.withEnvSync = withEnvSync
+})
+
+var require_home = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_rewire = require_rewire$1()
+  /**
+   * @file HOME environment variable getter with Windows fallback. Returns the
+   *   user's home directory. On Windows, HOME is typically unset — fall back to
+   *   USERPROFILE before giving up, matching the resolution order used by npm,
+   *   git, and Node's os.homedir().
+   */
+  /**
+   * Returns the user's home directory path.
+   *
+   * Resolution order:
+   *
+   * 1. `$HOME` (POSIX, and sometimes set on Windows by shells like Git Bash)
+   * 2. `$USERPROFILE` (Windows default, e.g. `C:\Users\alice`)
+   *
+   * Returns `undefined` only when neither is set, which on modern systems is
+   * exceedingly rare outside of sandboxed or minimal-env test harnesses.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getHome } from '@socketsecurity/lib/env/home'
+   *
+   *   const home = getHome()
+   *   // POSIX: '/Users/alice'
+   *   // Windows: 'C:\\Users\\alice'
+   *   ```
+   *
+   * @returns The user's home directory path, or `undefined` if not resolvable
+   */
+  function getHome() {
+    return (
+      require_env_rewire.getEnvValue('HOME') ??
+      require_env_rewire.getEnvValue('USERPROFILE')
+    )
+  }
+  exports.getHome = getHome
+})
+
+var require_number$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to `Number`, its constants, predicates, and parse
+   *   helpers. Predicates prefer the smol fast-path (`node:smol-primordial`);
+   *   static `parseFloat` / `parseInt` use the FastOneByteString-typed bindings
+   *   for ASCII inputs and fall back to stock `Number.parse*` otherwise.
+   */
+  const smolPrimordial = require_primordial().getSmolPrimordial()
+  const NumberCtor = Number
+  const NumberEPSILON = Number.EPSILON
+  const NumberMAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER
+  const NumberMAX_VALUE = Number.MAX_VALUE
+  const NumberMIN_SAFE_INTEGER = Number.MIN_SAFE_INTEGER
+  const NumberMIN_VALUE = Number.MIN_VALUE
+  const NumberNEGATIVE_INFINITY = Number.NEGATIVE_INFINITY
+  const NumberPOSITIVE_INFINITY = Number.POSITIVE_INFINITY
+  const NumberIsFinite = smolPrimordial?.numberIsFinite ?? Number.isFinite
+  const NumberIsInteger = smolPrimordial?.numberIsInteger ?? Number.isInteger
+  const NumberIsNaN = smolPrimordial?.numberIsNaN ?? Number.isNaN
+  const NumberIsSafeInteger =
+    smolPrimordial?.numberIsSafeInteger ?? Number.isSafeInteger
+  const NumberParseFloat = smolPrimordial?.numberParseFloat ?? Number.parseFloat
+  const smolParseInt10 = smolPrimordial?.numberParseInt10
+  const stockParseInt = Number.parseInt
+  /* c8 ignore start - the smol Fast API binding ships only on socket-btm's smol Node binary, so this body cannot run under the stock-Node runner */
+  function smolNumberParseInt(s, radix) {
+    return radix === void 0 || radix === 10
+      ? smolParseInt10(s)
+      : stockParseInt(s, radix)
+  }
+  /* c8 ignore stop */
+  const NumberParseInt = smolParseInt10 ? smolNumberParseInt : stockParseInt
+  const NumberPrototypeToExponential = require_primordials_uncurry.uncurryThis(
+    Number.prototype.toExponential,
+  )
+  const NumberPrototypeToFixed = require_primordials_uncurry.uncurryThis(
+    Number.prototype.toFixed,
+  )
+  const NumberPrototypeToPrecision = require_primordials_uncurry.uncurryThis(
+    Number.prototype.toPrecision,
+  )
+  const NumberPrototypeToString = require_primordials_uncurry.uncurryThis(
+    Number.prototype.toString,
+  )
+  const NumberPrototypeValueOf = require_primordials_uncurry.uncurryThis(
+    Number.prototype.valueOf,
+  )
+  exports.NumberCtor = NumberCtor
+  exports.NumberEPSILON = NumberEPSILON
+  exports.NumberIsFinite = NumberIsFinite
+  exports.NumberIsInteger = NumberIsInteger
+  exports.NumberIsNaN = NumberIsNaN
+  exports.NumberIsSafeInteger = NumberIsSafeInteger
+  exports.NumberMAX_SAFE_INTEGER = NumberMAX_SAFE_INTEGER
+  exports.NumberMAX_VALUE = NumberMAX_VALUE
+  exports.NumberMIN_SAFE_INTEGER = NumberMIN_SAFE_INTEGER
+  exports.NumberMIN_VALUE = NumberMIN_VALUE
+  exports.NumberNEGATIVE_INFINITY = NumberNEGATIVE_INFINITY
+  exports.NumberPOSITIVE_INFINITY = NumberPOSITIVE_INFINITY
+  exports.NumberParseFloat = NumberParseFloat
+  exports.NumberParseInt = NumberParseInt
+  exports.NumberPrototypeToExponential = NumberPrototypeToExponential
+  exports.NumberPrototypeToFixed = NumberPrototypeToFixed
+  exports.NumberPrototypeToPrecision = NumberPrototypeToPrecision
+  exports.NumberPrototypeToString = NumberPrototypeToString
+  exports.NumberPrototypeValueOf = NumberPrototypeValueOf
+  exports.smolNumberParseInt = smolNumberParseInt
+})
+
+var require_number = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_number = require_number$1()
+  /**
+   * @file `envAsNumber` — coerce an env-var-shaped value into a number. `mode:
+   *   'int'` uses `parseInt(_, 10)`; `mode: 'float'` uses `Number()`.
+   *   Non-finite results round-trip through `defaultValue` unless
+   *   `allowInfinity: true` is set.
+   */
+  /**
+   * Convert an environment variable value to a number.
+   *
+   * @example
+   *   ;```typescript
+   *   import { envAsNumber } from '@socketsecurity/lib/env/number'
+   *
+   *   envAsNumber('3000') // 3000 (int mode)
+   *   envAsNumber('3.14', { mode: 'float' }) // 3.14
+   *   envAsNumber('abc') // 0
+   *   envAsNumber(undefined, { defaultValue: 42 }) // 42
+   *   ```
+   *
+   * @param value - The value to convert.
+   * @param options - Options bag: `defaultValue`, `mode`, `allowInfinity`.
+   *
+   * @returns The parsed number, or the default value if parsing fails
+   */
+  function envAsNumber(value, options) {
+    const {
+      allowInfinity = false,
+      defaultValue = 0,
+      mode = 'int',
+    } = {
+      __proto__: null,
+      ...options,
+    }
+    if (value === void 0 || value === null) return defaultValue
+    const num =
+      mode === 'float'
+        ? require_primordials_number.NumberCtor(String(value))
+        : require_primordials_number.NumberParseInt(String(value), 10)
+    if (typeof value === 'string') {
+      if (!value || require_primordials_number.NumberIsNaN(num))
+        return defaultValue
+      if (!require_primordials_number.NumberIsFinite(num))
+        return allowInfinity ? num : defaultValue
+      return num || 0
+    }
+    return (
+      (require_primordials_number.NumberIsFinite(num)
+        ? num
+        : require_primordials_number.NumberCtor(defaultValue)) || 0
+    )
+  }
+  exports.envAsNumber = envAsNumber
+})
+
+var require_socket_mcp = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_rewire = require_rewire$1()
+  const require_primordials_number = require_number$1()
+  const require_env_number = require_number()
+  /**
+   * @file Socket MCP HTTP server environment variable getters. Covers the MCP
+   *   transport (HTTP mode, port) and the OAuth credentials / proxy-trust
+   *   settings the MCP HTTP server reads at startup.
+   */
+  /**
+   * Whether the MCP server should run in HTTP mode. MCP_HTTP_MODE — when set to
+   * the literal string `'true'`, the MCP server serves over HTTP instead of
+   * stdio. Returns `false` for any other value, unset included.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getMcpHttpMode } from '@socketsecurity/lib/env/socket-mcp'
+   *
+   *   if (getMcpHttpMode()) {
+   *     startHttpServer()
+   *   }
+   *   ```
+   *
+   * @returns `true` if HTTP mode is enabled, `false` otherwise
+   */
+  function getMcpHttpMode() {
+    return require_env_rewire.getEnvValue('MCP_HTTP_MODE') === 'true'
+  }
+  /**
+   * MCP HTTP server listen port. MCP_PORT — port the MCP HTTP server binds to.
+   * Defaults to `3000`, matching socket-mcp's documented default. Invalid /
+   * non-numeric values also fall back to `3000`.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getMcpPort } from '@socketsecurity/lib/env/socket-mcp'
+   *
+   *   const port = getMcpPort()
+   *   ```
+   *
+   * @returns The MCP server port (default `3000`)
+   */
+  function getMcpPort() {
+    const parsed = require_env_number.envAsNumber(
+      require_env_rewire.getEnvValue('MCP_PORT'),
+    )
+    return require_primordials_number.NumberIsFinite(parsed) && parsed > 0
+      ? parsed
+      : 3e3
+  }
+  /**
+   * OAuth introspection client ID for the MCP HTTP server.
+   * SOCKET_OAUTH_INTROSPECTION_CLIENT_ID — client credential used to call the
+   * issuer's introspection endpoint. Empty string when unset.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketOauthIntrospectionClientId } from '@socketsecurity/lib/env/socket-mcp'
+   *
+   *   const clientId = getSocketOauthIntrospectionClientId()
+   *   ```
+   *
+   * @returns The OAuth client ID, or `''` if not set
+   */
+  function getSocketOauthIntrospectionClientId() {
+    return (
+      require_env_rewire.getEnvValue('SOCKET_OAUTH_INTROSPECTION_CLIENT_ID') ??
+      ''
+    )
+  }
+  /**
+   * OAuth introspection client secret for the MCP HTTP server.
+   * SOCKET_OAUTH_INTROSPECTION_CLIENT_SECRET — paired with the client ID for
+   * authenticated introspection requests. Empty string when unset.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketOauthIntrospectionClientSecret } from '@socketsecurity/lib/env/socket-mcp'
+   *
+   *   const clientSecret = getSocketOauthIntrospectionClientSecret()
+   *   ```
+   *
+   * @returns The OAuth client secret, or `''` if not set
+   */
+  function getSocketOauthIntrospectionClientSecret() {
+    return (
+      require_env_rewire.getEnvValue(
+        'SOCKET_OAUTH_INTROSPECTION_CLIENT_SECRET',
+      ) ?? ''
+    )
+  }
+  /**
+   * OAuth issuer URL for the MCP HTTP server. SOCKET_OAUTH_ISSUER — issuer to
+   * validate inbound OAuth tokens against. Returns the empty string when unset;
+   * callers treat empty as "no issuer configured".
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketOauthIssuer } from '@socketsecurity/lib/env/socket-mcp'
+   *
+   *   const issuer = getSocketOauthIssuer()
+   *   if (issuer) { ... }
+   *   ```
+   *
+   * @returns The OAuth issuer URL, or `''` if not set
+   */
+  function getSocketOauthIssuer() {
+    return require_env_rewire.getEnvValue('SOCKET_OAUTH_ISSUER') ?? ''
+  }
+  /**
+   * Required OAuth scopes for the MCP HTTP server. SOCKET_OAUTH_REQUIRED_SCOPES
+   * — whitespace-separated list of scopes inbound tokens must carry. Defaults
+   * to `'packages:list'`, the minimum scope socket-mcp's depscore tool needs.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketOauthRequiredScopes } from '@socketsecurity/lib/env/socket-mcp'
+   *
+   *   const scopes = getSocketOauthRequiredScopes().split(/\s+/u)
+   *   ```
+   *
+   * @returns The required-scopes string, defaulting to `'packages:list'`
+   */
+  function getSocketOauthRequiredScopes() {
+    return (
+      require_env_rewire.getEnvValue('SOCKET_OAUTH_REQUIRED_SCOPES') ??
+      'packages:list'
+    )
+  }
+  /**
+   * Whether the MCP HTTP server should trust upstream proxy headers.
+   * TRUST_PROXY — when set to the literal string `'true'`, the server honors
+   * `X-Forwarded-Host` / `X-Forwarded-Proto` when composing OAuth metadata
+   * URLs. Off by default to prevent header spoofing when no upstream proxy is
+   * present.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getTrustProxy } from '@socketsecurity/lib/env/socket-mcp'
+   *
+   *   if (getTrustProxy()) { ... }
+   *   ```
+   *
+   * @returns `true` if proxy headers are trusted, `false` otherwise
+   */
+  function getTrustProxy() {
+    return require_env_rewire.getEnvValue('TRUST_PROXY') === 'true'
+  }
+  exports.getMcpHttpMode = getMcpHttpMode
+  exports.getMcpPort = getMcpPort
+  exports.getSocketOauthIntrospectionClientId =
+    getSocketOauthIntrospectionClientId
+  exports.getSocketOauthIntrospectionClientSecret =
+    getSocketOauthIntrospectionClientSecret
+  exports.getSocketOauthIssuer = getSocketOauthIssuer
+  exports.getSocketOauthRequiredScopes = getSocketOauthRequiredScopes
+  exports.getTrustProxy = getTrustProxy
+})
+
+var require_socket$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_boolean = require_boolean()
+  const require_env_rewire = require_rewire$1()
+  const require_env_number = require_number()
+  const require_env_socket_mcp = require_socket_mcp()
+  /**
+   * @file Socket Security environment variable getters.
+   */
+  /**
+   * SOCKET_ACCEPT_RISKS environment variable getter. Whether to accept all
+   * Socket Security risks.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketAcceptRisks } from '@socketsecurity/lib/env/socket'
+   *
+   *   if (getSocketAcceptRisks()) {
+   *     console.log('All risks accepted')
+   *   }
+   *   ```
+   *
+   * @returns `true` if risks are accepted, `false` otherwise
+   */
+  function getSocketAcceptRisks() {
+    return require_env_boolean.envAsBoolean(
+      require_env_rewire.getEnvValue('SOCKET_ACCEPT_RISKS'),
+    )
+  }
+  /**
+   * SOCKET_API_BASE_URL environment variable getter. Socket Security API base
+   * URL.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketApiBaseUrl } from '@socketsecurity/lib/env/socket'
+   *
+   *   const baseUrl = getSocketApiBaseUrl()
+   *   // e.g. 'https://api.socket.dev' or undefined
+   *   ```
+   *
+   * @returns The API base URL, or `undefined` if not set
+   */
+  function getSocketApiBaseUrl() {
+    return require_env_rewire.getEnvValue('SOCKET_API_BASE_URL')
+  }
+  /**
+   * SOCKET_API_PROXY environment variable getter. Proxy URL for Socket Security
+   * API requests.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketApiProxy } from '@socketsecurity/lib/env/socket'
+   *
+   *   const proxy = getSocketApiProxy()
+   *   // e.g. 'http://proxy.example.com:8080' or undefined
+   *   ```
+   *
+   * @returns The API proxy URL, or `undefined` if not set
+   */
+  function getSocketApiProxy() {
+    return require_env_rewire.getEnvValue('SOCKET_API_PROXY')
+  }
+  /**
+   * SOCKET_API_TIMEOUT environment variable getter. Timeout in milliseconds for
+   * Socket Security API requests.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketApiTimeout } from '@socketsecurity/lib/env/socket'
+   *
+   *   const timeout = getSocketApiTimeout()
+   *   // e.g. 30000 or 0 if not set
+   *   ```
+   *
+   * @returns The timeout in milliseconds, or `0` if not set
+   */
+  function getSocketApiTimeout() {
+    return require_env_number.envAsNumber(
+      require_env_rewire.getEnvValue('SOCKET_API_TIMEOUT'),
+    )
+  }
+  /**
+   * Socket Security API authentication token.
+   *
+   * Checks the canonical SOCKET_API_TOKEN first, then a chain of legacy aliases
+   * for full v1.x backward compatibility plus the bare SOCKET_API_KEY form used
+   * by older MCP-server installs:
+   *
+   * SOCKET_API_TOKEN → SOCKET_API_KEY → SOCKET_CLI_API_TOKEN →
+   * SOCKET_CLI_API_KEY → SOCKET_SECURITY_API_TOKEN → SOCKET_SECURITY_API_KEY.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
+   *
+   *   const token = getSocketApiToken()
+   *   // e.g. a Socket API token string or undefined
+   *   ```
+   *
+   * @returns The API token, or `undefined` if no name in the chain is set
+   */
+  function getSocketApiToken() {
+    return (
+      require_env_rewire.getEnvValue('SOCKET_API_TOKEN') ||
+      require_env_rewire.getEnvValue('SOCKET_API_KEY') ||
+      require_env_rewire.getEnvValue('SOCKET_CLI_API_TOKEN') ||
+      require_env_rewire.getEnvValue('SOCKET_CLI_API_KEY') ||
+      require_env_rewire.getEnvValue('SOCKET_SECURITY_API_TOKEN') ||
+      require_env_rewire.getEnvValue('SOCKET_SECURITY_API_KEY')
+    )
+  }
+  /**
+   * Socket API endpoint URL override. SOCKET_API_URL — when set, replaces the
+   * app's default Socket API base. Each consumer composes its own default (e.g.
+   * socket-mcp's depscore endpoint vs. socket-cli's scan endpoints), so this
+   * helper returns the raw override and lets the caller fall back.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketApiUrl } from '@socketsecurity/lib/env/socket'
+   *
+   *   const apiUrl = getSocketApiUrl() ?? 'https://api.socket.dev/v0/...'
+   *   ```
+   *
+   * @returns The API URL override, or `undefined` if not set
+   */
+  function getSocketApiUrl() {
+    return require_env_rewire.getEnvValue('SOCKET_API_URL')
+  }
+  /**
+   * Git branch name for the current Socket scan. SOCKET_BRANCH_NAME — set by CI
+   * / GHA to label the scan with the source branch. Used by basics and coana.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketBranchName } from '@socketsecurity/lib/env/socket'
+   *
+   *   const branch = getSocketBranchName()
+   *   ```
+   *
+   * @returns The branch name, or `undefined` if not set
+   */
+  function getSocketBranchName() {
+    return require_env_rewire.getEnvValue('SOCKET_BRANCH_NAME')
+  }
+  /**
+   * SOCKET_CACACHE_DIR environment variable getter. Overrides the default
+   * Socket cacache directory location.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketCacacheDirEnv } from '@socketsecurity/lib/env/socket'
+   *
+   *   const dir = getSocketCacacheDirEnv()
+   *   // e.g. '/tmp/.socket-cache' or undefined
+   *   ```
+   *
+   * @returns The cacache directory path, or `undefined` if not set
+   */
+  function getSocketCacacheDirEnv() {
+    return require_env_rewire.getEnvValue('SOCKET_CACACHE_DIR')
+  }
+  /**
+   * SOCKET_CLOUD_AUTH_URL environment variable getter. SocketCloud OAuth
+   * authorization URL. depot's better-auth provider config reads this to
+   * override the default authorize endpoint when pointing at a staging or
+   * self-hosted SocketCloud server.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketCloudAuthUrl } from '@socketsecurity/lib/env/socket'
+   *
+   *   const url =
+   *     getSocketCloudAuthUrl() ?? 'https://api.socket.dev/v1/oauth2/authorize'
+   *   ```
+   *
+   * @returns The override URL, or `undefined` when default applies
+   */
+  function getSocketCloudAuthUrl() {
+    return require_env_rewire.getEnvValue('SOCKET_CLOUD_AUTH_URL')
+  }
+  /**
+   * SOCKET_CLOUD_CLIENT_ID environment variable getter. OAuth client ID for
+   * SocketCloud. Required (alongside SOCKET_CLOUD_CLIENT_SECRET) to enable the
+   * SocketCloud auth provider. Returns `undefined` when not configured —
+   * callers should treat that as "SocketCloud auth disabled".
+   *
+   * @returns The client ID, or `undefined` if not set
+   */
+  function getSocketCloudClientId() {
+    return require_env_rewire.getEnvValue('SOCKET_CLOUD_CLIENT_ID')
+  }
+  /**
+   * SOCKET_CLOUD_CLIENT_SECRET environment variable getter. OAuth client secret
+   * for SocketCloud. Required (alongside SOCKET_CLOUD_CLIENT_ID) to enable the
+   * SocketCloud auth provider. Returns `undefined` when not configured.
+   *
+   * @returns The client secret, or `undefined` if not set
+   */
+  function getSocketCloudClientSecret() {
+    return require_env_rewire.getEnvValue('SOCKET_CLOUD_CLIENT_SECRET')
+  }
+  /**
+   * SOCKET_CLOUD_INTROSPECT_URL environment variable getter. SocketCloud OAuth
+   * token-introspection URL. depot uses this to verify access tokens against
+   * the SocketCloud authorization server. Defaults handled at the call site.
+   *
+   * @returns The override URL, or `undefined` when default applies
+   */
+  function getSocketCloudIntrospectUrl() {
+    return require_env_rewire.getEnvValue('SOCKET_CLOUD_INTROSPECT_URL')
+  }
+  /**
+   * SOCKET_CLOUD_TOKEN_URL environment variable getter. SocketCloud OAuth
+   * token-exchange URL. depot's better-auth provider config reads this to
+   * override the default token endpoint.
+   *
+   * @returns The override URL, or `undefined` when default applies
+   */
+  function getSocketCloudTokenUrl() {
+    return require_env_rewire.getEnvValue('SOCKET_CLOUD_TOKEN_URL')
+  }
+  /**
+   * SOCKET_CLOUD_USERINFO_URL environment variable getter. SocketCloud OAuth
+   * userinfo endpoint. depot uses this to fetch the authenticated principal's
+   * profile after an OAuth code exchange.
+   *
+   * @returns The override URL, or `undefined` when default applies
+   */
+  function getSocketCloudUserinfoUrl() {
+    return require_env_rewire.getEnvValue('SOCKET_CLOUD_USERINFO_URL')
+  }
+  /**
+   * SOCKET_CONFIG environment variable getter. Socket Security configuration
+   * file path.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketConfig } from '@socketsecurity/lib/env/socket'
+   *
+   *   const config = getSocketConfig()
+   *   // e.g. '/tmp/project/socket.yml' or undefined
+   *   ```
+   *
+   * @returns The config file path, or `undefined` if not set
+   */
+  function getSocketConfig() {
+    return require_env_rewire.getEnvValue('SOCKET_CONFIG')
+  }
+  /**
+   * SOCKET_DEBUG environment variable getter. Controls Socket-specific debug
+   * output.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketDebug } from '@socketsecurity/lib/env/socket'
+   *
+   *   const debug = getSocketDebug()
+   *   // e.g. '*' or 'api' or undefined
+   *   ```
+   *
+   * @returns The Socket debug filter, or `undefined` if not set
+   */
+  function getSocketDebug() {
+    return require_env_rewire.getEnvValue('SOCKET_DEBUG')
+  }
+  /**
+   * SOCKET_DLX_DIR environment variable getter. Overrides the default Socket
+   * DLX directory location.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketDlxDirEnv } from '@socketsecurity/lib/env/socket'
+   *
+   *   const dlxDir = getSocketDlxDirEnv()
+   *   // e.g. '/tmp/.socket-dlx' or undefined
+   *   ```
+   *
+   * @returns The DLX directory path, or `undefined` if not set
+   */
+  function getSocketDlxDirEnv() {
+    return require_env_rewire.getEnvValue('SOCKET_DLX_DIR')
+  }
+  /**
+   * SOCKET_HOME environment variable getter. Socket Security home directory
+   * path.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketHome } from '@socketsecurity/lib/env/socket'
+   *
+   *   const home = getSocketHome()
+   *   // e.g. '/tmp/.socket' or undefined
+   *   ```
+   *
+   * @returns The Socket home directory, or `undefined` if not set
+   */
+  function getSocketHome() {
+    return require_env_rewire.getEnvValue('SOCKET_HOME')
+  }
+  /**
+   * SOCKET_NO_API_TOKEN environment variable getter. Whether to skip Socket
+   * Security API token requirement.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketNoApiToken } from '@socketsecurity/lib/env/socket'
+   *
+   *   if (getSocketNoApiToken()) {
+   *     console.log('API token requirement skipped')
+   *   }
+   *   ```
+   *
+   * @returns `true` if the API token requirement is skipped, `false` otherwise
+   */
+  function getSocketNoApiToken() {
+    return require_env_boolean.envAsBoolean(
+      require_env_rewire.getEnvValue('SOCKET_NO_API_TOKEN'),
+    )
+  }
+  /**
+   * SOCKET_NPM_REGISTRY environment variable getter. Alternative name for the
+   * Socket NPM registry URL.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketNpmRegistry } from '@socketsecurity/lib/env/socket'
+   *
+   *   const registry = getSocketNpmRegistry()
+   *   // e.g. 'https://npm.socket.dev/' or undefined
+   *   ```
+   *
+   * @returns The Socket NPM registry URL, or `undefined` if not set
+   */
+  function getSocketNpmRegistry() {
+    return require_env_rewire.getEnvValue('SOCKET_NPM_REGISTRY')
+  }
+  /**
+   * SOCKET_ORG_SLUG environment variable getter. Socket Security organization
+   * slug identifier.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketOrgSlug } from '@socketsecurity/lib/env/socket'
+   *
+   *   const slug = getSocketOrgSlug()
+   *   // e.g. 'my-org' or undefined
+   *   ```
+   *
+   * @returns The organization slug, or `undefined` if not set
+   */
+  function getSocketOrgSlug() {
+    return require_env_rewire.getEnvValue('SOCKET_ORG_SLUG')
+  }
+  /**
+   * SOCKET_REGISTRY_URL environment variable getter. Socket Registry URL for
+   * package installation.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketRegistryUrl } from '@socketsecurity/lib/env/socket'
+   *
+   *   const registryUrl = getSocketRegistryUrl()
+   *   // e.g. 'https://registry.socket.dev/' or undefined
+   *   ```
+   *
+   * @returns The Socket registry URL, or `undefined` if not set
+   */
+  function getSocketRegistryUrl() {
+    return require_env_rewire.getEnvValue('SOCKET_REGISTRY_URL')
+  }
+  /**
+   * Repository name for the current Socket scan. SOCKET_REPOSITORY_NAME
+   * (canonical) — set by CI / GHA to label the scan with the source repository.
+   * Also accepts `SOCKET_REPO_NAME` as an alias. Used by basics and coana.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketRepositoryName } from '@socketsecurity/lib/env/socket'
+   *
+   *   const repo = getSocketRepositoryName()
+   *   ```
+   *
+   * @returns The repository name, or `undefined` if neither is set
+   */
+  function getSocketRepositoryName() {
+    return (
+      require_env_rewire.getEnvValue('SOCKET_REPOSITORY_NAME') ||
+      require_env_rewire.getEnvValue('SOCKET_REPO_NAME')
+    )
+  }
+  /**
+   * SOCKET_STATE_DIR environment variable getter. Overrides the default Socket
+   * state directory (~/.socket/_state) location.
+   *
+   * @returns The state directory path, or `undefined` if not set
+   */
+  function getSocketStateDirEnv() {
+    return require_env_rewire.getEnvValue('SOCKET_STATE_DIR')
+  }
+  /**
+   * SOCKET_VIEW_ALL_RISKS environment variable getter. Whether to view all
+   * Socket Security risks.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getSocketViewAllRisks } from '@socketsecurity/lib/env/socket'
+   *
+   *   if (getSocketViewAllRisks()) {
+   *     console.log('Viewing all risks')
+   *   }
+   *   ```
+   *
+   * @returns `true` if viewing all risks, `false` otherwise
+   */
+  function getSocketViewAllRisks() {
+    return require_env_boolean.envAsBoolean(
+      require_env_rewire.getEnvValue('SOCKET_VIEW_ALL_RISKS'),
+    )
+  }
+  exports.getMcpHttpMode = require_env_socket_mcp.getMcpHttpMode
+  exports.getMcpPort = require_env_socket_mcp.getMcpPort
+  exports.getSocketAcceptRisks = getSocketAcceptRisks
+  exports.getSocketApiBaseUrl = getSocketApiBaseUrl
+  exports.getSocketApiProxy = getSocketApiProxy
+  exports.getSocketApiTimeout = getSocketApiTimeout
+  exports.getSocketApiToken = getSocketApiToken
+  exports.getSocketApiUrl = getSocketApiUrl
+  exports.getSocketBranchName = getSocketBranchName
+  exports.getSocketCacacheDirEnv = getSocketCacacheDirEnv
+  exports.getSocketCloudAuthUrl = getSocketCloudAuthUrl
+  exports.getSocketCloudClientId = getSocketCloudClientId
+  exports.getSocketCloudClientSecret = getSocketCloudClientSecret
+  exports.getSocketCloudIntrospectUrl = getSocketCloudIntrospectUrl
+  exports.getSocketCloudTokenUrl = getSocketCloudTokenUrl
+  exports.getSocketCloudUserinfoUrl = getSocketCloudUserinfoUrl
+  exports.getSocketConfig = getSocketConfig
+  exports.getSocketDebug = getSocketDebug
+  exports.getSocketDlxDirEnv = getSocketDlxDirEnv
+  exports.getSocketHome = getSocketHome
+  exports.getSocketNoApiToken = getSocketNoApiToken
+  exports.getSocketNpmRegistry = getSocketNpmRegistry
+  exports.getSocketOauthIntrospectionClientId =
+    require_env_socket_mcp.getSocketOauthIntrospectionClientId
+  exports.getSocketOauthIntrospectionClientSecret =
+    require_env_socket_mcp.getSocketOauthIntrospectionClientSecret
+  exports.getSocketOauthIssuer = require_env_socket_mcp.getSocketOauthIssuer
+  exports.getSocketOauthRequiredScopes =
+    require_env_socket_mcp.getSocketOauthRequiredScopes
+  exports.getSocketOrgSlug = getSocketOrgSlug
+  exports.getSocketRegistryUrl = getSocketRegistryUrl
+  exports.getSocketRepositoryName = getSocketRepositoryName
+  exports.getSocketStateDirEnv = getSocketStateDirEnv
+  exports.getSocketViewAllRisks = getSocketViewAllRisks
+  exports.getTrustProxy = require_env_socket_mcp.getTrustProxy
+})
+
+var require_windows = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_rewire = require_rewire$1()
+  const require_node_path = require_path$1()
+  const require_paths_shared = require_shared$3()
+  /**
+   * @file Windows environment variable getters. Provides access to
+   *   Windows-specific user directory paths.
+   */
+  /**
+   * APPDATA environment variable. Points to the Application Data directory on
+   * Windows.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getAppdata } from '@socketsecurity/lib/env/windows'
+   *
+   *   const appdata = getAppdata()
+   *   // e.g. 'C:\\Users\\Public\\AppData\\Roaming' or undefined
+   *   ```
+   *
+   * @returns The Windows AppData roaming directory, or `undefined` if not set
+   */
+  function getAppdata() {
+    return require_env_rewire.getEnvValue('APPDATA')
+  }
+  /**
+   * The Windows roaming Application Data directory, falling back to the
+   * conventional location under `homeDir` when APPDATA is unset. Sole owner of
+   * the `AppData/Roaming` tail: every caller reads it from here so a relocation
+   * is a one-file edit.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getAppdataDir } from '@socketsecurity/lib/env/windows'
+   *
+   *   const dir = getAppdataDir(os.homedir())
+   *   // e.g. 'C:\\Users\\Public\\AppData\\Roaming'
+   *   ```
+   *
+   * @param homeDir - The user home directory used for the fallback.
+   *
+   * @returns The roaming AppData directory path
+   */
+  function getAppdataDir(homeDir) {
+    const path = require_node_path.getNodePath()
+    return (
+      getAppdata() ??
+      require_paths_shared.normalizePath(
+        path.join(homeDir, 'AppData', 'Roaming'),
+      )
+    )
+  }
+  /**
+   * COMSPEC environment variable. Points to the Windows command processor
+   * (typically cmd.exe).
+   *
+   * @example
+   *   ;```typescript
+   *   import { getComspec } from '@socketsecurity/lib/env/windows'
+   *
+   *   const comspec = getComspec()
+   *   // e.g. 'C:\\Windows\\system32\\cmd.exe' or undefined
+   *   ```
+   *
+   * @returns The path to the command processor, or `undefined` if not set
+   */
+  function getComspec() {
+    return require_env_rewire.getEnvValue('COMSPEC')
+  }
+  /**
+   * LOCALAPPDATA environment variable. Points to the Local Application Data
+   * directory on Windows.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getLocalappdata } from '@socketsecurity/lib/env/windows'
+   *
+   *   const localAppdata = getLocalappdata()
+   *   // e.g. 'C:\\Users\\Public\\AppData\\Local' or undefined
+   *   ```
+   *
+   * @returns The Windows local AppData directory, or `undefined` if not set
+   */
+  function getLocalappdata() {
+    return require_env_rewire.getEnvValue('LOCALAPPDATA')
+  }
+  /**
+   * USERPROFILE environment variable. Windows user home directory path.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getUserprofile } from '@socketsecurity/lib/env/windows'
+   *
+   *   const userprofile = getUserprofile()
+   *   // e.g. 'C:\\Users\\Public' or undefined
+   *   ```
+   *
+   * @returns The Windows user profile directory, or `undefined` if not set
+   */
+  function getUserprofile() {
+    return require_env_rewire.getEnvValue('USERPROFILE')
+  }
+  exports.getAppdata = getAppdata
+  exports.getAppdataDir = getAppdataDir
+  exports.getComspec = getComspec
+  exports.getLocalappdata = getLocalappdata
+  exports.getUserprofile = getUserprofile
+})
+
+var require_xdg = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_rewire = require_rewire$1()
+  /**
+   * @file XDG Base Directory Specification environment variable getters. Provides
+   *   access to XDG user directories on Unix systems.
+   */
+  /**
+   * XDG_CACHE_HOME environment variable. XDG Base Directory specification cache
+   * directory.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getXdgCacheHome } from '@socketsecurity/lib/env/xdg'
+   *
+   *   const cacheDir = getXdgCacheHome()
+   *   // e.g. '/tmp/.cache' or undefined
+   *   ```
+   *
+   * @returns The XDG cache directory path, or `undefined` if not set
+   */
+  function getXdgCacheHome() {
+    return require_env_rewire.getEnvValue('XDG_CACHE_HOME')
+  }
+  /**
+   * XDG_CONFIG_HOME environment variable. XDG Base Directory specification
+   * config directory.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getXdgConfigHome } from '@socketsecurity/lib/env/xdg'
+   *
+   *   const configDir = getXdgConfigHome()
+   *   // e.g. '/tmp/.config' or undefined
+   *   ```
+   *
+   * @returns The XDG config directory path, or `undefined` if not set
+   */
+  function getXdgConfigHome() {
+    return require_env_rewire.getEnvValue('XDG_CONFIG_HOME')
+  }
+  /**
+   * XDG_DATA_HOME environment variable. Points to the user's data directory on
+   * Unix systems.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getXdgDataHome } from '@socketsecurity/lib/env/xdg'
+   *
+   *   const dataDir = getXdgDataHome()
+   *   // e.g. '/tmp/.local/share' or undefined
+   *   ```
+   *
+   * @returns The XDG data directory path, or `undefined` if not set
+   */
+  function getXdgDataHome() {
+    return require_env_rewire.getEnvValue('XDG_DATA_HOME')
+  }
+  /**
+   * XDG_RUNTIME_DIR environment variable. XDG Base Directory specification
+   * runtime directory — the home for ephemeral, owner-only runtime objects such
+   * as daemon sockets and locks. Set by systemd to `/run/user/<uid>`; absent on
+   * macOS and many non-systemd setups, so callers must provide a fallback.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getXdgRuntimeDir } from '@socketsecurity/lib/env/xdg'
+   *
+   *   const runtimeDir = getXdgRuntimeDir()
+   *   // e.g. '/run/user/1000' or undefined
+   *   ```
+   *
+   * @returns The XDG runtime directory path, or `undefined` if not set
+   */
+  function getXdgRuntimeDir() {
+    return require_env_rewire.getEnvValue('XDG_RUNTIME_DIR')
+  }
+  exports.getXdgCacheHome = getXdgCacheHome
+  exports.getXdgConfigHome = getXdgConfigHome
+  exports.getXdgDataHome = getXdgDataHome
+  exports.getXdgRuntimeDir = getXdgRuntimeDir
+})
+
+var require_dirnames = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Directory name and path pattern constants.
+   */
+  const NODE_MODULES = 'node_modules'
+  const DOT_GIT_DIR = '.git'
+  const DOT_GITHUB = '.github'
+  const DOT_SOCKET_DIR = '.socket'
+  const CACHE_DIR = 'cache'
+  const CACHE_TTL_DIR = 'ttl'
+  const RUN_DIR = 'run'
+  const NODE_MODULES_GLOB_RECURSIVE = '**/node_modules'
+  const SLASH_NODE_MODULES_SLASH = '/node_modules/'
+  exports.CACHE_DIR = CACHE_DIR
+  exports.CACHE_TTL_DIR = CACHE_TTL_DIR
+  exports.DOT_GITHUB = DOT_GITHUB
+  exports.DOT_GIT_DIR = DOT_GIT_DIR
+  exports.DOT_SOCKET_DIR = DOT_SOCKET_DIR
+  exports.NODE_MODULES = NODE_MODULES
+  exports.NODE_MODULES_GLOB_RECURSIVE = NODE_MODULES_GLOB_RECURSIVE
+  exports.RUN_DIR = RUN_DIR
+  exports.SLASH_NODE_MODULES_SLASH = SLASH_NODE_MODULES_SLASH
+})
+
+var require_rewire = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_map_set = require_map_set()
+  /**
+   * @file Path rewiring utilities for testing. Allows tests to override
+   *   os.tmpdir() and os.homedir() without directly modifying them. Features:
+   *
+   *   - Test-friendly setPath/clearPath/resetPaths that work in
+   *     beforeEach/afterEach
+   *   - Automatic cache invalidation for path-dependent modules
+   *   - Thread-safe for concurrent test execution
+   */
+  const stateSymbol = Symbol.for('@socketsecurity/lib/paths/rewire/state')
+  const globalState = globalThis
+  if (!globalState[stateSymbol])
+    globalState[stateSymbol] = {
+      testOverrides: new require_primordials_map_set.MapCtor(),
+      cacheInvalidationCallbacks: [],
+    }
+  const sharedState = globalState[stateSymbol]
+  const testOverrides = sharedState.testOverrides
+  const cacheInvalidationCallbacks = sharedState.cacheInvalidationCallbacks
+  /**
+   * Clear a specific path override.
+   */
+  function clearPath(key) {
+    testOverrides.delete(key)
+    invalidateCaches()
+  }
+  /**
+   * Get a path value, checking overrides first.
+   *
+   * Resolution order:
+   *
+   * 1. Test overrides, set via setPath in beforeEach.
+   * 2. Original function call, recomputed on every call.
+   *
+   * `originalFn` is not memoized here: its typical inputs (env vars such as
+   * HOME / SOCKET_HOME, os.homedir(), os.tmpdir()) can change without going
+   * through setPath/clearPath/resetPaths - `env/rewire`'s setEnv/clearEnv, or a
+   * direct process.env write, update those inputs without calling this
+   * module's invalidateCaches(). A memo keyed only on `key` would then serve a
+   * value computed against the OLD input forever, since nothing here observes
+   * the env change to know the memo is stale. `originalFn` is a cheap pure
+   * read (a string join, an env lookup) in every current caller, so recomputing
+   * it every call costs nothing measurable and removes the staleness class
+   * entirely.
+   *
+   * @internal Used by path getters to support test rewiring
+   */
+  function getPathValue(key, originalFn) {
+    if (testOverrides.has(key)) return testOverrides.get(key)
+    return originalFn()
+  }
+  /**
+   * Check if a path has been overridden.
+   */
+  function hasOverride(key) {
+    return testOverrides.has(key)
+  }
+  /**
+   * Run every registered cache-invalidation callback. Called automatically
+   * when setPath/clearPath/resetPaths are used, so a module that maintains its
+   * OWN cache derived from a path (via registerCacheInvalidation) still gets
+   * to clear it on override changes. getPathValue itself has nothing to
+   * invalidate - it no longer memoizes - so this only reaches other modules'
+   * registered caches.
+   *
+   * @internal Primarily for internal use, but exported for advanced testing
+   */
+  function invalidateCaches() {
+    for (const callback of cacheInvalidationCallbacks)
+      try {
+        callback()
+      } catch {}
+  }
+  /**
+   * Register a cache invalidation callback. Called by modules that need to
+   * clear their caches when paths change.
+   *
+   * @internal Used by paths.ts and fs.ts
+   */
+  function registerCacheInvalidation(callback) {
+    cacheInvalidationCallbacks.push(callback)
+  }
+  /**
+   * Clear all path overrides and reset caches. Useful in afterEach hooks to
+   * ensure clean test state.
+   *
+   * @example
+   *   ;```typescript
+   *   import { resetPaths } from '#paths/rewire'
+   *
+   *   afterEach(() => {
+   *     resetPaths()
+   *   })
+   *   ```
+   */
+  function resetPaths() {
+    testOverrides.clear()
+    invalidateCaches()
+  }
+  /**
+   * Set a path override for testing. This triggers cache invalidation for
+   * path-dependent modules.
+   *
+   * @example
+   *   ;```typescript
+   *   import { setPath, resetPaths } from '#paths/rewire'
+   *   import { getOsTmpDir } from './'
+   *
+   *   beforeEach(() => {
+   *     setPath('tmpdir', '/custom/tmp')
+   *   })
+   *
+   *   afterEach(() => {
+   *     resetPaths()
+   *   })
+   *
+   *   it('should use custom temp directory', () => {
+   *     expect(getOsTmpDir()).toBe('/custom/tmp')
+   *   })
+   *   ```
+   */
+  function setPath(key, value) {
+    testOverrides.set(key, value)
+    invalidateCaches()
+  }
+  exports.clearPath = clearPath
+  exports.getPathValue = getPathValue
+  exports.hasOverride = hasOverride
+  exports.invalidateCaches = invalidateCaches
+  exports.registerCacheInvalidation = registerCacheInvalidation
+  exports.resetPaths = resetPaths
+  exports.setPath = setPath
+})
+
+var require_socket = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_os = require_os()
+  const require_constants_platform = require_platform()
+  const require_constants_socket = require_socket$2()
+  const require_env_home = require_home()
+  const require_env_socket = require_socket$1()
+  const require_node_path = require_path$1()
+  const require_paths_shared = require_shared$3()
+  const require_env_windows = require_windows()
+  const require_env_xdg = require_xdg()
+  const require_paths_dirnames = require_dirnames()
+  const require_paths_rewire = require_rewire()
+  /**
+   * @file Path utilities for Socket ecosystem directories. Platform-aware
+   *   resolution for the shared ~/.socket/ layout. The `_`-prefixed entries are
+   *   Socket-managed DIRS rather than apps: `_cacache` content-addressable
+   *   cache; `_dlx/<hash>/` name+version binary store (node, jre, python, sfw,
+   *   …); `_state/<app>/` version-LESS persistent app state (daemon socket +
+   *   lock + OAuth refresh; mirrors pnpm `state-dir` / XDG_STATE_HOME), with
+   *   `_state/<app>/run/` for a daemon's socket/lock/pid; `_wheelhouse` shared
+   *   bin across Socket tools. Generic per-app dirs
+   *   (`getSocketAppDir('<name>')`) nest under the same `_`-prefix.
+   */
+  /**
+   * Get the OS home directory. Can be overridden in tests using
+   * setPath('homedir', ...) from paths/rewire.
+   */
+  function getOsHomeDir() {
+    const os = require_node_os.getNodeOs()
+    return require_paths_rewire.getPathValue('homedir', () => os.homedir())
+  }
+  /**
+   * Get the OS temporary directory. Can be overridden in tests using
+   * setPath('tmpdir', ...) from paths/rewire.
+   */
+  /**
+   * Get the OS temporary directory. Can be overridden in tests using
+   * setPath('tmpdir', ...) from paths/rewire.
+   */
+  function getOsTmpDir() {
+    const os = require_node_os.getNodeOs()
+    return require_paths_rewire.getPathValue('tmpdir', () => os.tmpdir())
+  }
+  /**
+   * Resolve the runtime socket path for a local daemon named `name`. Distinct
+   * from getSocketAppRuntimeDir (the persistent ~/.socket/_state/<app>/run/
+   * home): the SOCKET endpoint itself belongs in the ephemeral, owner-only XDG
+   * runtime dir — correctly permissioned and auto-cleaned on logout — while the
+   * downloaded daemon binary + durable token cache live under ~/.socket. The
+   * daemon and every client MUST compute the identical path (1 path, 1
+   * reference), so this is the single resolver both sides call.
+   *
+   * Resolution:
+   *
+   * - Windows: `\\.\pipe\<name>-sock` (named pipe; Unix sockets are unavailable
+   *   pre-Win10 1803, same framing/semantics). Returned raw — a pipe path is
+   *   not a filesystem path and must not be slash-normalized.
+   * - `$XDG_RUNTIME_DIR/<name>.sock` when XDG_RUNTIME_DIR is set (systemd
+   *   `/run/user/<uid>/`).
+   * - Else `$TMPDIR/<name>-<uid>.sock` (the `<uid>` suffix avoids collisions when
+   *   TMPDIR is shared across users on a multi-tenant box).
+   */
+  function getRuntimeSocketPath(name) {
+    if (require_constants_platform.isWin32()) return `\\\\.\\pipe\\${name}-sock`
+    const path = require_node_path.getNodePath()
+    const xdgRuntimeDir = require_env_xdg.getXdgRuntimeDir()
+    if (xdgRuntimeDir)
+      return require_paths_shared.normalizePath(
+        path.join(xdgRuntimeDir, `${name}.sock`),
+      )
+    const { uid } = require_node_os.getNodeOs().userInfo()
+    return require_paths_shared.normalizePath(
+      path.join(getOsTmpDir(), `${name}-${uid}.sock`),
+    )
+  }
+  /**
+   * Get a Socket app cache directory (~/.socket/_<appName>/cache).
+   */
+  /**
+   * Get a Socket app cache directory (~/.socket/_<appName>/cache).
+   */
+  function getSocketAppCacheDir(appName) {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketAppDir(appName), require_paths_dirnames.CACHE_DIR),
+    )
+  }
+  /**
+   * Get a Socket app TTL cache directory (~/.socket/_<appName>/cache/ttl).
+   */
+  /**
+   * Get a Socket app TTL cache directory (~/.socket/_<appName>/cache/ttl).
+   */
+  function getSocketAppCacheTtlDir(appName) {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketAppCacheDir(appName), 'ttl'),
+    )
+  }
+  /**
+   * Get a Socket app directory (~/.socket/_<appName>). The `_` prefix is
+   * applied here; pass the bare app name (e.g. 'socket', 'registry').
+   */
+  /**
+   * Get a Socket app directory (~/.socket/_<appName>). The `_` prefix is
+   * applied here; pass the bare app name (e.g. 'socket', 'registry').
+   */
+  function getSocketAppDir(appName) {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketUserDir(), `_${appName}`),
+    )
+  }
+  /**
+   * Get the Socket cacache directory (~/.socket/_cacache). Override precedence:
+   * setPath('socket-cacache-dir', …) → SOCKET_CACACHE_DIR env →
+   * $SOCKET_HOME/_cacache → $HOME/.socket/_cacache.
+   */
+  /**
+   * Get an app's runtime directory (~/.socket/_state/<app>/run/) — the home for
+   * a daemon's Unix socket + `concurrency.lock` + `<socket>.pid`. Version-less
+   * so the socket path is stable across binary upgrades.
+   */
+  function getSocketAppRuntimeDir(appName) {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketAppStateDir(appName), 'run'),
+    )
+  }
+  /**
+   * Get the Socket user directory (~/.socket). Override precedence:
+   * setPath('socket-user-dir', …) → SOCKET_HOME env → $HOME/.socket →
+   * /tmp/.socket (Unix) or %TEMP%.socket (Windows).
+   */
+  /**
+   * Get an app's persistent state directory (~/.socket/_state/<app>/). The
+   * `<app>` is a real app such as sockeye or acorn, nesting its version-less
+   * state inside the `_state` infra dir.
+   */
+  function getSocketAppStateDir(appName) {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketStateDir(), appName),
+    )
+  }
+  /**
+   * Get an app's runtime directory (~/.socket/_state/<app>/run/) — the home for
+   * a daemon's Unix socket + `concurrency.lock` + `<socket>.pid`. Version-less
+   * so the socket path is stable across binary upgrades.
+   */
+  /**
+   * Get the Socket cacache directory (~/.socket/_cacache). Override precedence:
+   * setPath('socket-cacache-dir', …) → SOCKET_CACACHE_DIR env →
+   * $SOCKET_HOME/_cacache → $HOME/.socket/_cacache.
+   */
+  function getSocketCacacheDir() {
+    return require_paths_rewire.getPathValue('socket-cacache-dir', () => {
+      if (require_env_socket.getSocketCacacheDirEnv())
+        return require_paths_shared.normalizePath(
+          require_env_socket.getSocketCacacheDirEnv(),
+        )
+      const path = require_node_path.getNodePath()
+      return require_paths_shared.normalizePath(
+        path.join(
+          getSocketUserDir(),
+          require_constants_socket.SOCKET_DIR.cacache,
+        ),
+      )
+    })
+  }
+  /**
+   * Get the Socket DLX directory (~/.socket/_dlx) — the name+version binary
+   * store (node, jre, python, sfw, …). Override precedence:
+   * setPath('socket-dlx-dir', …) → SOCKET_DLX_DIR env → $SOCKET_HOME/_dlx →
+   * $HOME/.socket/_dlx.
+   */
+  /**
+   * Get the Socket DLX directory (~/.socket/_dlx) — the name+version binary
+   * store (node, jre, python, sfw, …). Override precedence:
+   * setPath('socket-dlx-dir', …) → SOCKET_DLX_DIR env → $SOCKET_HOME/_dlx →
+   * $HOME/.socket/_dlx.
+   */
+  function getSocketDlxDir() {
+    return require_paths_rewire.getPathValue('socket-dlx-dir', () => {
+      if (require_env_socket.getSocketDlxDirEnv())
+        return require_paths_shared.normalizePath(
+          require_env_socket.getSocketDlxDirEnv(),
+        )
+      const path = require_node_path.getNodePath()
+      return require_paths_shared.normalizePath(
+        path.join(getSocketUserDir(), require_constants_socket.SOCKET_DIR.dlx),
+      )
+    })
+  }
+  /**
+   * Get the Socket home directory (~/.socket). Alias for getSocketUserDir() for
+   * consistency across Socket projects.
+   */
+  /**
+   * Get the Socket home directory (~/.socket). Alias for getSocketUserDir() for
+   * consistency across Socket projects.
+   */
+  function getSocketHomePath() {
+    return getSocketUserDir()
+  }
+  /**
+   * Get the Wheelhouse rack directory (~/.socket/_wheelhouse/rack) — the tool
+   * STORE. Every `_wheelhouse`-managed CLI tool keeps its real binaries here,
+   * racked by name + version as `<rack>/<tool>/<version>/…` (the wheelhouse
+   * analog of Homebrew's `Cellar/`). The handles on PATH live in
+   * `<wheelhouse>/bin` (getSocketWheelhouseBinDir) and point into the rack.
+   * Inherits the `_wheelhouse` override chain (SOCKET_HOME /
+   * setPath('socket-wheelhouse-dir')).
+   */
+  function getSocketRackDir() {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketWheelhouseDir(), 'rack'),
+    )
+  }
+  /**
+   * Get a racked tool's version directory (~/.socket/_wheelhouse/rack/<tool>/
+   * <version>) — the per-tool, per-version home under the rack. The
+   * 1-path-1-reference owner of a tool install destination: installers resolve
+   * their extract/copy target through this, and the `<wheelhouse>/bin/<tool>`
+   * shim points at a binary inside it.
+   */
+  function getSocketRackToolDir(options) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketRackDir(), opts.tool, opts.version),
+    )
+  }
+  /**
+   * Get the Wheelhouse repo-clones directory
+   * (~/.socket/_wheelhouse/repo-clones). Sits beside the per-tool dirs sfw,
+   * codedb, janus, and bin under `_wheelhouse`. The home for reference clones
+   * of EXTERNAL repos an agent reviews, each as `<org>-<repo>` lowercased +
+   * dash-cased (e.g. `justrach-codedb`).
+   *
+   * Smallest-practical clone form (smallest disk + fastest initial fetch
+   * without the treeless tax): `git clone` --depth=1 --single-branch
+   * --filter=blob:none <url> <dest> `--depth=1` truncates history,
+   * `--single-branch` skips other refs, and `--filter=blob:none` (a BLOBLESS
+   * partial clone) fetches file blobs lazily on first access — so the initial
+   * download is tree-metadata only. (Treeless `--filter=tree:0` is smaller
+   * still but refetches trees on every walk, which is slow + breaks offline, so
+   * it is NOT the default.)
+   *
+   * Deliberately OUTSIDE `~/projects/` so Socket's sibling-walk tooling (e.g.
+   * cascade `--all`) never mistakes a reference clone for a Socket repo
+   * checkout. Disposable: a reference cache, not a working tree. Inherits the
+   * `_wheelhouse` override chain (SOCKET_HOME /
+   * setPath('socket-wheelhouse-dir')).
+   */
+  function getSocketRepoClonesDir() {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketWheelhouseDir(), 'repo-clones'),
+    )
+  }
+  /**
+   * Get the Socket state directory (~/.socket/_state) — version-LESS persistent
+   * app state (the home for daemon sockets, locks, OAuth refresh, durable
+   * caches that survive version bumps; mirrors pnpm `state-dir` /
+   * XDG_STATE_HOME). Override precedence: setPath('socket-state-dir', …) →
+   * SOCKET_STATE_DIR env → $SOCKET_HOME/_state → $HOME/.socket/_state.
+   */
+  function getSocketStateDbPath(appName) {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketStateDir(), `${appName}.sqlite`),
+    )
+  }
+  function getSocketStateDir() {
+    return require_paths_rewire.getPathValue('socket-state-dir', () => {
+      if (require_env_socket.getSocketStateDirEnv())
+        return require_paths_shared.normalizePath(
+          require_env_socket.getSocketStateDirEnv(),
+        )
+      const path = require_node_path.getNodePath()
+      return require_paths_shared.normalizePath(
+        path.join(
+          getSocketUserDir(),
+          require_constants_socket.SOCKET_DIR.state,
+        ),
+      )
+    })
+  }
+  /**
+   * Get the Socket user directory (~/.socket). Override precedence:
+   * setPath('socket-user-dir', …) → SOCKET_HOME env → $HOME/.socket →
+   * /tmp/.socket (Unix) or %TEMP%.socket (Windows).
+   */
+  function getSocketUserDir() {
+    return require_paths_rewire.getPathValue('socket-user-dir', () => {
+      const socketHome = require_env_socket.getSocketHome()
+      if (socketHome) return require_paths_shared.normalizePath(socketHome)
+      const path = require_node_path.getNodePath()
+      return require_paths_shared.normalizePath(
+        path.join(getUserHomeDir(), require_paths_dirnames.DOT_SOCKET_DIR),
+      )
+    })
+  }
+  /**
+   * Get the Wheelhouse bin directory (~/.socket/_wheelhouse/bin) — the single
+   * directory placed on PATH. Holds only flat handles (thin exec shims or
+   * symlinks), one per tool, each pointing at a real binary racked under
+   * `<wheelhouse>/rack/<tool>/<version>/…` (getSocketRackToolDir). The shim IS
+   * the bin, the npm `prefix/bin` / Homebrew `bin/` model: PATH lookup does not
+   * recurse, so this dir stays flat (never a `bin/<tool>/` subdir). Inherits
+   * the `_wheelhouse` override chain (SOCKET_HOME /
+   * setPath('socket-wheelhouse-dir')).
+   */
+  function getSocketWheelhouseBinDir() {
+    const path = require_node_path.getNodePath()
+    return require_paths_shared.normalizePath(
+      path.join(getSocketWheelhouseDir(), 'bin'),
+    )
+  }
+  /**
+   * Get the Socket Wheelhouse directory (~/.socket/_wheelhouse). Shared
+   * location, common across Socket repos, for binaries that every Socket repo
+   * can reach without each one re-downloading and re-extracting per-repo. Tool
+   * installers (janus, sfw, etc.) rack their resolved executables under
+   * `<wheelhouse>/rack/<tool>/<version>/…` (getSocketRackToolDir) and expose a
+   * handle in `<wheelhouse>/bin` (getSocketWheelhouseBinDir); consumers add
+   * that one `bin/` to PATH. Override precedence:
+   * setPath('socket-wheelhouse-dir', …) → $SOCKET_HOME/_wheelhouse →
+   * $HOME/.socket/_wheelhouse.
+   */
+  function getSocketWheelhouseDir() {
+    return require_paths_rewire.getPathValue('socket-wheelhouse-dir', () => {
+      const path = require_node_path.getNodePath()
+      return require_paths_shared.normalizePath(
+        path.join(
+          getSocketUserDir(),
+          require_constants_socket.SOCKET_DIR.wheelhouse,
+        ),
+      )
+    })
+  }
+  /**
+   * Get the user's home directory. Uses environment variables directly to
+   * support test mocking. Falls back to temporary directory if home is not
+   * available.
+   *
+   * Priority order: 1. HOME (Unix) 2. USERPROFILE (Windows) 3.
+   * getNodeOs().homedir() 4. Fallback: getNodeOs().tmpdir() for restricted
+   * envs.
+   */
+  /**
+   * Get the user's home directory. Uses environment variables directly to
+   * support test mocking. Falls back to temporary directory if home is not
+   * available.
+   *
+   * Priority order: 1. HOME (Unix) 2. USERPROFILE (Windows) 3.
+   * getNodeOs().homedir() 4. Fallback: getNodeOs().tmpdir() for restricted
+   * envs.
+   */
+  function getUserHomeDir() {
+    const home = require_env_home.getHome()
+    if (home) return home
+    const userProfile = require_env_windows.getUserprofile()
+    if (userProfile) return userProfile
+    try {
+      const osHome = getOsHomeDir()
+      if (osHome) return osHome
+    } catch {}
+    /* c8 ignore next 2 - Triple-fallback only fires when HOME +
+		USERPROFILE + os.homedir() all fail; not reachable in tests. */
+    return getOsTmpDir()
+  }
+  exports.getOsHomeDir = getOsHomeDir
+  exports.getOsTmpDir = getOsTmpDir
+  exports.getRuntimeSocketPath = getRuntimeSocketPath
+  exports.getSocketAppCacheDir = getSocketAppCacheDir
+  exports.getSocketAppCacheTtlDir = getSocketAppCacheTtlDir
+  exports.getSocketAppDir = getSocketAppDir
+  exports.getSocketAppRuntimeDir = getSocketAppRuntimeDir
+  exports.getSocketAppStateDir = getSocketAppStateDir
+  exports.getSocketCacacheDir = getSocketCacacheDir
+  exports.getSocketDlxDir = getSocketDlxDir
+  exports.getSocketHomePath = getSocketHomePath
+  exports.getSocketRackDir = getSocketRackDir
+  exports.getSocketRackToolDir = getSocketRackToolDir
+  exports.getSocketRepoClonesDir = getSocketRepoClonesDir
+  exports.getSocketStateDbPath = getSocketStateDbPath
+  exports.getSocketStateDir = getSocketStateDir
+  exports.getSocketUserDir = getSocketUserDir
+  exports.getSocketWheelhouseBinDir = getSocketWheelhouseBinDir
+  exports.getSocketWheelhouseDir = getSocketWheelhouseDir
+  exports.getUserHomeDir = getUserHomeDir
+})
+
+var require_shared$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_node_path = require_path$1()
+  const require_paths_socket = require_socket()
+  /**
+   * @file Private state shared between `fs/safe` and `fs/path-cache`. The
+   *   `shared.ts` filename keeps this module out of the generated package.json
+   *   `exports` map (the `dist/**\/shared.*` ignore pattern in
+   *   `scripts/repo/package-exports.config.mts` filters it out), so it is not
+   *   part of the public surface — it exists only to give the two leaves above
+   *   a common owner for the allowed-directory cache. The cache is invalidated
+   *   by `invalidatePathCache()` in `fs/path-cache.ts` whenever paths are
+   *   rewired in tests (`paths/rewire.ts` registers `invalidatePathCache` as
+   *   one of its cache callbacks); `getDefaultAllowedDirectories()` rehydrates
+   *   on next call.
+   */
+  let cachedAllowedDirs
+  /**
+   * Whether every pattern resolves inside an allowed tree.
+   *
+   * `extraDirs` names additional roots for THIS call. The default roots stay
+   * untouched: {@link getDefaultAllowedDirectories} hands back a fresh array, so
+   * appending here cannot widen the allow-list for a later caller.
+   *
+   * @param patterns - Delete patterns, resolved against the process cwd.
+   * @param extraDirs - Extra roots permitted for this call.
+   *
+   * @returns `true` when each pattern is contained by some allowed root.
+   */
+  function areAllPathsInAllowedDirs(patterns, extraDirs) {
+    if (!patterns.length) return false
+    const path = require_node_path.getNodePath()
+    const roots = getDefaultAllowedDirectories()
+    if (extraDirs)
+      for (let i = 0, { length } = extraDirs; i < length; i += 1) {
+        const extraDir = extraDirs[i]
+        if (extraDir) roots.push(path.resolve(extraDir))
+      }
+    return patterns.every(pattern => {
+      const resolvedPath = path.resolve(pattern)
+      for (let i = 0, { length } = roots; i < length; i += 1) {
+        const root = roots[i]
+        if (
+          !(resolvedPath === root || resolvedPath.startsWith(root + path.sep))
+        )
+          continue
+        if (!path.relative(root, resolvedPath).startsWith('..')) return true
+      }
+      return false
+    })
+  }
+  /**
+   * Clear the cached allowed-directories list. Used by `invalidatePathCache()`
+   * when test path rewiring changes any of the underlying paths so the next
+   * read picks up the new resolved values.
+   */
+  function clearDefaultAllowedDirectories() {
+    cachedAllowedDirs = void 0
+  }
+  /**
+   * Get resolved allowed directories for safe deletion with lazy caching. These
+   * directories are resolved once and cached for the process lifetime.
+   *
+   * BOTH the resolved and the real path of each directory are listed, because
+   * they differ whenever a component is a symlink and a caller may hold either
+   * form. On macOS, `os.tmpdir()` can contain a symlinked component.
+   * A caller that uses `fs.realpathSync` holds the real path instead.
+   * Listing both forms permits cleanup through either path to the allowed tree.
+   */
+  function getDefaultAllowedDirectories() {
+    if (cachedAllowedDirs === void 0) {
+      const fs = require_node_fs.getNodeFs()
+      const path = require_node_path.getNodePath()
+      const dirs = /* @__PURE__ */ new Set()
+      for (const dir of [
+        require_paths_socket.getOsTmpDir(),
+        require_paths_socket.getSocketCacacheDir(),
+        require_paths_socket.getSocketUserDir(),
+      ]) {
+        const resolved = path.resolve(dir)
+        dirs.add(resolved)
+        try {
+          dirs.add(fs.realpathSync(resolved))
+        } catch {}
+      }
+      cachedAllowedDirs = [...dirs]
+    }
+    return [...cachedAllowedDirs]
+  }
+  exports.areAllPathsInAllowedDirs = areAllPathsInAllowedDirs
+  exports.clearDefaultAllowedDirectories = clearDefaultAllowedDirectories
+  exports.getDefaultAllowedDirectories = getDefaultAllowedDirectories
+})
+
+var require_process$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Safe call-through accessors for the `process` global's methods and
+   *   value reads. The `process` object reference is captured once at module
+   *   load (immune to a later `globalThis.process = …` reassignment), but each
+   *   method is CALLED at access time off that captured object — so
+   *   `vi.spyOn(process, 'cwd')`, which mutates the same captured object, still
+   *   intercepts. Binding the method reference instead
+   *   (`process.cwd.bind(process)`) would freeze it and break that test
+   *   injection point, so we deliberately keep the late call. Consumers read
+   *   cwd / platform / env / argv through these instead of touching `process`
+   *   directly; enforced Socket-wide by `socket/prefer-process-primordial`.
+   *   This is the `process` leaf of the node-module primordials: where
+   *   `node/fs` / `node/path` lazy-load a `node:` module behind a function,
+   *   this captures the always-present `process` global and routes its hot
+   *   reads through one tamper-resistant surface.
+   */
+  const SafeProcess = process
+  /**
+   * The CPU architecture token (`'x64'` / `'arm64'` / …).
+   */
+  function processArch() {
+    return SafeProcess.arch
+  }
+  /**
+   * The argv array (`[execPath, scriptPath, ...args]`).
+   *
+   * @example
+   *   ;```typescript
+   *   const entry = processArgv()[1]
+   *   ```
+   */
+  function processArgv() {
+    return SafeProcess.argv
+  }
+  /**
+   * The current working directory. Call-through to the captured process's `cwd`
+   * — late-bound so test spies still intercept.
+   *
+   * @example
+   *   ;```typescript
+   *   const dir = processCwd()
+   *   ```
+   */
+  function processCwd() {
+    return SafeProcess.cwd()
+  }
+  /**
+   * Emit a process warning. Call-through so a test spy on `process.emitWarning`
+   * still intercepts.
+   */
+  function processEmitWarning(...args) {
+    SafeProcess.emitWarning(...args)
+  }
+  /**
+   * The process environment object. Returns the live `process.env` off the
+   * captured process (call-through, so a test that swaps `process.env` is
+   * seen).
+   *
+   * @example
+   *   ;```typescript
+   *   const token = processEnv()['SOCKET_API_TOKEN']
+   *   ```
+   */
+  function processEnv() {
+    return SafeProcess.env
+  }
+  /**
+   * The absolute path to the Node executable (`process.execPath`).
+   */
+  function processExecPath() {
+    return SafeProcess.execPath
+  }
+  /**
+   * Schedule a callback on the next tick. Call-through (late-bound).
+   */
+  function processNextTick(...args) {
+    SafeProcess.nextTick(...args)
+  }
+  /**
+   * The process id.
+   */
+  function processPid() {
+    return SafeProcess.pid
+  }
+  /**
+   * The OS platform token (`'darwin'` / `'linux'` / `'win32'` / …).
+   *
+   * @example
+   *   ;```typescript
+   *   if (processPlatform() === 'win32') { … }
+   *   ```
+   */
+  function processPlatform() {
+    return SafeProcess.platform
+  }
+  /**
+   * The standard error stream. Returned off the captured process so a test that
+   * spies on `process.stderr.write` still intercepts.
+   */
+  function processStderr() {
+    return SafeProcess.stderr
+  }
+  /**
+   * The standard output stream. Returned off the captured process so a test
+   * that spies on `process.stdout.write` still intercepts.
+   */
+  function processStdout() {
+    return SafeProcess.stdout
+  }
+  /**
+   * The Node version string (`process.version`, e.g. `'v26.2.0'`).
+   */
+  function processVersion() {
+    return SafeProcess.version
+  }
+  exports.processArch = processArch
+  exports.processArgv = processArgv
+  exports.processCwd = processCwd
+  exports.processEmitWarning = processEmitWarning
+  exports.processEnv = processEnv
+  exports.processExecPath = processExecPath
+  exports.processNextTick = processNextTick
+  exports.processPid = processPid
+  exports.processPlatform = processPlatform
+  exports.processStderr = processStderr
+  exports.processStdout = processStdout
+  exports.processVersion = processVersion
+})
+
+var require_promise = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to `Promise` static methods, prototype methods, and
+   *   the ES2024 `withResolvers` factory. Static methods are bound to `Promise`
+   *   so callers can pass them around as standalone functions
+   *   (`PromiseAll(arr)` instead of `Promise.all(arr)`); the `this`-receiver
+   *   capture matches Node's primordials convention.
+   */
+  const PromiseCtor = Promise
+  const PromiseAll = Promise.all.bind(Promise)
+  const PromiseAllSettled = Promise.allSettled.bind(Promise)
+  const PromiseAny = Promise.any.bind(Promise)
+  const PromiseRace = Promise.race.bind(Promise)
+  const PromiseReject = Promise.reject.bind(Promise)
+  const PromiseResolve = Promise.resolve.bind(Promise)
+  const PromiseWithResolvers = Promise.withResolvers?.bind(Promise)
+  const PromisePrototypeCatch = require_primordials_uncurry.uncurryThis(
+    Promise.prototype.catch,
+  )
+  const PromisePrototypeFinally = require_primordials_uncurry.uncurryThis(
+    Promise.prototype.finally,
+  )
+  const PromisePrototypeThen = require_primordials_uncurry.uncurryThis(
+    Promise.prototype.then,
+  )
+  exports.PromiseAll = PromiseAll
+  exports.PromiseAllSettled = PromiseAllSettled
+  exports.PromiseAny = PromiseAny
+  exports.PromiseCtor = PromiseCtor
+  exports.PromisePrototypeCatch = PromisePrototypeCatch
+  exports.PromisePrototypeFinally = PromisePrototypeFinally
+  exports.PromisePrototypeThen = PromisePrototypeThen
+  exports.PromiseRace = PromiseRace
+  exports.PromiseReject = PromiseReject
+  exports.PromiseResolve = PromiseResolve
+  exports.PromiseWithResolvers = PromiseWithResolvers
+})
+
+var require_regexp = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to `RegExp` and its prototype methods.
+   *   `RegExp.escape` is ES2025; the primordial is typed `Function | undefined`
+   *   so older runtimes still load. The Symbol-keyed `[Symbol.match]` /
+   *   `[Symbol.replace]` slots are exposed alongside the named methods because
+   *   some callers use them via dynamic dispatch (e.g. `String.prototype.match`
+   *   invokes `RegExp.prototype[Symbol.match]` internally).
+   */
+  const RegExpCtor = RegExp
+  const RegExpEscape = RegExp.escape
+  const RegExpPrototypeExec = require_primordials_uncurry.uncurryThis(
+    RegExp.prototype.exec,
+  )
+  const RegExpPrototypeTest = require_primordials_uncurry.uncurryThis(
+    RegExp.prototype.test,
+  )
+  const RegExpPrototypeSymbolMatch = require_primordials_uncurry.uncurryThis(
+    RegExp.prototype[Symbol.match],
+  )
+  const RegExpPrototypeSymbolReplace = require_primordials_uncurry.uncurryThis(
+    RegExp.prototype[Symbol.replace],
+  )
+  exports.RegExpCtor = RegExpCtor
+  exports.RegExpEscape = RegExpEscape
+  exports.RegExpPrototypeExec = RegExpPrototypeExec
+  exports.RegExpPrototypeSymbolMatch = RegExpPrototypeSymbolMatch
+  exports.RegExpPrototypeSymbolReplace = RegExpPrototypeSymbolReplace
+  exports.RegExpPrototypeTest = RegExpPrototypeTest
+})
+
+/**
+ * Bundled from pico-pack
+ * This is a zero-dependency bundle created by rolldown.
+ */
+var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  var __create = Object.create
+  var __defProp = Object.defineProperty
+  var __name = (target, value) =>
+    __defProp(target, 'name', {
+      value,
+      configurable: true,
+    })
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor
+  var __getOwnPropNames = Object.getOwnPropertyNames
+  var __getProtoOf = Object.getPrototypeOf
+  var __hasOwnProp = Object.prototype.hasOwnProperty
+  var __esmMin = (fn, res, err) => () => {
+    if (err) throw err[0]
+    try {
+      return (fn && (res = fn((fn = 0))), res)
+    } catch (e) {
+      throw ((err = [e]), e)
+    }
+  }
+  var __commonJSMin = (cb, mod) => () => (
+    mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+    mod.exports
+  )
+  var __exportAll = (all, no_symbols) => {
+    let target = {}
+    for (var name in all)
+      __defProp(target, name, {
+        get: all[name],
+        enumerable: true,
+      })
+    if (!no_symbols) __defProp(target, Symbol.toStringTag, { value: 'Module' })
+    return target
+  }
+  var __copyProps = (to, from, except, desc) => {
+    if ((from && typeof from === 'object') || typeof from === 'function')
+      for (
+        var keys = __getOwnPropNames(from), i = 0, n = keys.length, key;
+        i < n;
+        i++
+      ) {
+        key = keys[i]
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, {
+            get: (k => from[k]).bind(null, key),
+            enumerable:
+              !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+          })
+      }
+    return to
+  }
+  var __toESM = (mod, isNodeMode, target) => (
+    (target = mod != null ? __create(__getProtoOf(mod)) : {}),
+    __copyProps(
+      isNodeMode ||
+        !mod ||
+        !mod.__esModule ||
+        !__hasOwnProp.call(mod, 'default')
+        ? __defProp(target, 'default', {
+            value: mod,
+            enumerable: true,
+          })
+        : target,
+      mod,
+    )
+  )
+  var __toCommonJS = mod =>
+    __hasOwnProp.call(mod, 'module.exports')
+      ? mod['module.exports']
+      : __copyProps(__defProp({}, '__esModule', { value: true }), mod)
+  let node_fs = __require('fs')
+  node_fs = __toESM(node_fs, 1)
+  let node_fs_promises = __require('fs/promises')
+  node_fs_promises = __toESM(node_fs_promises, 1)
+  let node_path$1 = __require('path')
+  node_path$1 = __toESM(node_path$1, 1)
+  let node_process$1 = __require('process')
+  node_process$1 = __toESM(node_process$1, 1)
+  let node_stream = __require('stream')
+  let node_events = __require('events')
+  let node_stream_promises = __require('stream/promises')
+  let node_util$1 = __require('util')
+  let node_child_process = __require('child_process')
+  let node_url = __require('url')
+  let node_os$1 = __require('os')
+  const {
+    ArrayIsArray: _p_ArrayIsArray,
+    ArrayPrototypeFlat: _p_ArrayPrototypeFlat,
+    ArrayPrototypeFlatMap: _p_ArrayPrototypeFlatMap,
+    ArrayPrototypeUnshift: _p_ArrayPrototypeUnshift,
+  } = require_array$2()
+  const {
+    AggregateErrorCtor: _p_AggregateErrorCtor,
+    ErrorCtor: _p_ErrorCtor,
+    RangeErrorCtor: _p_RangeErrorCtor,
+    SyntaxErrorCtor: _p_SyntaxErrorCtor,
+    TypeErrorCtor: _p_TypeErrorCtor,
+  } = require_error$1()
+  const {
+    MapCtor: _p_MapCtor,
+    SetCtor: _p_SetCtor,
+    WeakMapCtor: _p_WeakMapCtor,
+  } = require_map_set()
+  const {
+    MathAbs: _p_MathAbs,
+    MathMax: _p_MathMax,
+    MathMin: _p_MathMin,
+    MathPow: _p_MathPow,
+  } = require_math()
+  const {
+    NumberIsFinite: _p_NumberIsFinite,
+    NumberIsInteger: _p_NumberIsInteger,
+    NumberIsSafeInteger: _p_NumberIsSafeInteger,
+    NumberParseInt: _p_NumberParseInt,
+  } = require_number$1()
+  const {
+    ObjectAssign: _p_ObjectAssign,
+    ObjectCreate: _p_ObjectCreate,
+    ObjectDefineProperty: _p_ObjectDefineProperty,
+    ObjectKeys: _p_ObjectKeys,
+  } = require_object()
+  const { processCwd: _p_processCwd, processNextTick: _p_processNextTick } =
+    require_process$1()
+  const {
+    PromiseAll: _p_PromiseAll,
+    PromiseCtor: _p_PromiseCtor,
+    PromiseRace: _p_PromiseRace,
+    PromiseResolve: _p_PromiseResolve,
+  } = require_promise()
+  const { RegExpCtor: _p_RegExpCtor } = require_regexp()
+  const {
+    StringFromCharCode: _p_StringFromCharCode,
+    StringPrototypeCharAt: _p_StringPrototypeCharAt,
+    StringPrototypeCharCodeAt: _p_StringPrototypeCharCodeAt,
+    StringPrototypeEndsWith: _p_StringPrototypeEndsWith,
+    StringPrototypeLocaleCompare: _p_StringPrototypeLocaleCompare,
+    StringPrototypePadStart: _p_StringPrototypePadStart,
+    StringPrototypeRepeat: _p_StringPrototypeRepeat,
+    StringPrototypeReplaceAll: _p_StringPrototypeReplaceAll,
+    StringPrototypeStartsWith: _p_StringPrototypeStartsWith,
+    StringPrototypeToLowerCase: _p_StringPrototypeToLowerCase,
+    StringPrototypeTrim: _p_StringPrototypeTrim,
+  } = require_string$1()
+  node_os$1 = __toESM(node_os$1, 1)
+  var require_constants$2 = /* @__PURE__ */ __commonJSMin(
+    (exports$14, module$13) => {
+      const WIN_SLASH = '\\\\/'
+      const WIN_NO_SLASH = `[^${WIN_SLASH}]`
+      const DEFAULT_MAX_EXTGLOB_RECURSION = 0
+      /**
+       * Posix glob regex.
+       */
+      const DOT_LITERAL = '\\.'
+      const PLUS_LITERAL = '\\+'
+      const QMARK_LITERAL = '\\?'
+      const SLASH_LITERAL = '\\/'
+      const ONE_CHAR = '(?=.)'
+      const QMARK = '[^/]'
+      const END_ANCHOR = `(?:${SLASH_LITERAL}|$)`
+      const START_ANCHOR = `(?:^|${SLASH_LITERAL})`
+      const DOTS_SLASH = `${DOT_LITERAL}{1,2}${END_ANCHOR}`
+      const POSIX_CHARS = {
+        DOT_LITERAL,
+        PLUS_LITERAL,
+        QMARK_LITERAL,
+        SLASH_LITERAL,
+        ONE_CHAR,
+        QMARK,
+        END_ANCHOR,
+        DOTS_SLASH,
+        NO_DOT: `(?!${DOT_LITERAL})`,
+        NO_DOTS: `(?!${START_ANCHOR}${DOTS_SLASH})`,
+        NO_DOT_SLASH: `(?!${DOT_LITERAL}{0,1}${END_ANCHOR})`,
+        NO_DOTS_SLASH: `(?!${DOTS_SLASH})`,
+        QMARK_NO_DOT: `[^.${SLASH_LITERAL}]`,
+        STAR: `${QMARK}*?`,
+        START_ANCHOR,
+        SEP: '/',
+      }
+      /**
+       * Windows glob regex.
+       */
+      const WINDOWS_CHARS = {
+        ...POSIX_CHARS,
+        SLASH_LITERAL: `[${WIN_SLASH}]`,
+        QMARK: WIN_NO_SLASH,
+        STAR: `${WIN_NO_SLASH}*?`,
+        DOTS_SLASH: `${DOT_LITERAL}{1,2}(?:[${WIN_SLASH}]|$)`,
+        NO_DOT: `(?!${DOT_LITERAL})`,
+        NO_DOTS: `(?!(?:^|[${WIN_SLASH}])${DOT_LITERAL}{1,2}(?:[${WIN_SLASH}]|$))`,
+        NO_DOT_SLASH: `(?!${DOT_LITERAL}{0,1}(?:[${WIN_SLASH}]|$))`,
+        NO_DOTS_SLASH: `(?!${DOT_LITERAL}{1,2}(?:[${WIN_SLASH}]|$))`,
+        QMARK_NO_DOT: `[^.${WIN_SLASH}]`,
+        START_ANCHOR: `(?:^|[${WIN_SLASH}])`,
+        END_ANCHOR: `(?:[${WIN_SLASH}]|$)`,
+        SEP: '\\',
+      }
+      module$13.exports = {
+        DEFAULT_MAX_EXTGLOB_RECURSION,
+        MAX_LENGTH: 65536,
+        POSIX_REGEX_SOURCE: {
+          __proto__: null,
+          alnum: 'a-zA-Z0-9',
+          alpha: 'a-zA-Z',
+          ascii: '\\x00-\\x7F',
+          blank: ' \\t',
+          cntrl: '\\x00-\\x1F\\x7F',
+          digit: '0-9',
+          graph: '\\x21-\\x7E',
+          lower: 'a-z',
+          print: '\\x20-\\x7E ',
+          punct: '\\-!"#$%&\'()\\*+,./:;<=>?@[\\]^_`{|}~',
+          space: ' \\t\\r\\n\\v\\f',
+          upper: 'A-Z',
+          word: 'A-Za-z0-9_',
+          xdigit: 'A-Fa-f0-9',
+        },
+        REGEX_BACKSLASH: /\\(?![*+?^${}(|)[\]])/g,
+        REGEX_NON_SPECIAL_CHARS: /^[^@![\].,$*+?^{}()|\\/]+/,
+        REGEX_SPECIAL_CHARS: /[-*+?.^${}(|)[\]]/,
+        REGEX_SPECIAL_CHARS_BACKREF: /(\\?)((\W)(\3*))/g,
+        REGEX_SPECIAL_CHARS_GLOBAL: /([-*+?.^${}(|)[\]])/g,
+        REGEX_REMOVE_BACKSLASH: /(?:\[.*?[^\\]\]|\\(?=.))/g,
+        REPLACEMENTS: {
+          __proto__: null,
+          '***': '*',
+          '**/**': '**',
+          '**/**/**': '**',
+        },
+        CHAR_0: 48,
+        CHAR_9: 57,
+        CHAR_UPPERCASE_A: 65,
+        CHAR_LOWERCASE_A: 97,
+        CHAR_UPPERCASE_Z: 90,
+        CHAR_LOWERCASE_Z: 122,
+        CHAR_LEFT_PARENTHESES: 40,
+        CHAR_RIGHT_PARENTHESES: 41,
+        CHAR_ASTERISK: 42,
+        CHAR_AMPERSAND: 38,
+        CHAR_AT: 64,
+        CHAR_BACKWARD_SLASH: 92,
+        CHAR_CARRIAGE_RETURN: 13,
+        CHAR_CIRCUMFLEX_ACCENT: 94,
+        CHAR_COLON: 58,
+        CHAR_COMMA: 44,
+        CHAR_DOT: 46,
+        CHAR_DOUBLE_QUOTE: 34,
+        CHAR_EQUAL: 61,
+        CHAR_EXCLAMATION_MARK: 33,
+        CHAR_FORM_FEED: 12,
+        CHAR_FORWARD_SLASH: 47,
+        CHAR_GRAVE_ACCENT: 96,
+        CHAR_HASH: 35,
+        CHAR_HYPHEN_MINUS: 45,
+        CHAR_LEFT_ANGLE_BRACKET: 60,
+        CHAR_LEFT_CURLY_BRACE: 123,
+        CHAR_LEFT_SQUARE_BRACKET: 91,
+        CHAR_LINE_FEED: 10,
+        CHAR_NO_BREAK_SPACE: 160,
+        CHAR_PERCENT: 37,
+        CHAR_PLUS: 43,
+        CHAR_QUESTION_MARK: 63,
+        CHAR_RIGHT_ANGLE_BRACKET: 62,
+        CHAR_RIGHT_CURLY_BRACE: 125,
+        CHAR_RIGHT_SQUARE_BRACKET: 93,
+        CHAR_SEMICOLON: 59,
+        CHAR_SINGLE_QUOTE: 39,
+        CHAR_SPACE: 32,
+        CHAR_TAB: 9,
+        CHAR_UNDERSCORE: 95,
+        CHAR_VERTICAL_LINE: 124,
+        CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279,
+        /**
+         * Create EXTGLOB_CHARS.
+         */
+        extglobChars(chars) {
+          return {
+            '!': {
+              type: 'negate',
+              open: '(?:(?!(?:',
+              close: `))${chars.STAR})`,
+            },
+            '?': {
+              type: 'qmark',
+              open: '(?:',
+              close: ')?',
+            },
+            '+': {
+              type: 'plus',
+              open: '(?:',
+              close: ')+',
+            },
+            '*': {
+              type: 'star',
+              open: '(?:',
+              close: ')*',
+            },
+            '@': {
+              type: 'at',
+              open: '(?:',
+              close: ')',
+            },
+          }
+        },
+        /**
+         * Create GLOB_CHARS.
+         */
+        globChars(win32) {
+          return win32 === true ? WINDOWS_CHARS : POSIX_CHARS
+        },
+      }
+    },
+  )
+  var require_utils$3 = /* @__PURE__ */ __commonJSMin(exports$15 => {
+    const {
+      REGEX_BACKSLASH,
+      REGEX_REMOVE_BACKSLASH,
+      REGEX_SPECIAL_CHARS,
+      REGEX_SPECIAL_CHARS_GLOBAL,
+    } = require_constants$2()
+    exports$15.isObject = val =>
+      val !== null && typeof val === 'object' && !_p_ArrayIsArray(val)
+    exports$15.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str)
+    exports$15.isRegexChar = str =>
+      str.length === 1 && exports$15.hasRegexChars(str)
+    exports$15.escapeRegex = str =>
+      str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1')
+    exports$15.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/')
+    exports$15.isWindows = () => {
+      if (typeof navigator !== 'undefined' && navigator.platform) {
+        const platform = navigator.platform.toLowerCase()
+        return platform === 'win32' || platform === 'windows'
+      }
+      if (typeof process !== 'undefined' && process.platform)
+        return process.platform === 'win32'
+      return false
+    }
+    exports$15.removeBackslashes = str => {
+      return str.replace(REGEX_REMOVE_BACKSLASH, match => {
+        return match === '\\' ? '' : match
+      })
+    }
+    exports$15.escapeLast = (input, char, lastIdx) => {
+      const idx = input.lastIndexOf(char, lastIdx)
+      if (idx === -1) return input
+      if (input[idx - 1] === '\\')
+        return exports$15.escapeLast(input, char, idx - 1)
+      return `${input.slice(0, idx)}\\${input.slice(idx)}`
+    }
+    exports$15.removePrefix = (input, state = {}) => {
+      let output = input
+      if (_p_StringPrototypeStartsWith(output, './')) {
+        output = output.slice(2)
+        state.prefix = './'
+      }
+      return output
+    }
+    exports$15.wrapOutput = (input, state = {}, options = {}) => {
+      let output = `${options.contains ? '' : '^'}(?:${input})${options.contains ? '' : '$'}`
+      if (state.negated === true) output = `(?:^(?!${output}).*$)`
+      return output
+    }
+    exports$15.basename = (path, { windows } = {}) => {
+      const segs = path.split(windows ? /[\\/]/ : '/')
+      const last = segs[segs.length - 1]
+      if (last === '') return segs[segs.length - 2]
+      return last
+    }
+  })
+  var require_scan = /* @__PURE__ */ __commonJSMin((exports$16, module$14) => {
+    const utils = require_utils$3()
+    const {
+      CHAR_ASTERISK,
+      CHAR_AT,
+      CHAR_BACKWARD_SLASH,
+      CHAR_COMMA,
+      CHAR_DOT,
+      CHAR_EXCLAMATION_MARK,
+      CHAR_FORWARD_SLASH,
+      CHAR_LEFT_CURLY_BRACE,
+      CHAR_LEFT_PARENTHESES,
+      CHAR_LEFT_SQUARE_BRACKET,
+      CHAR_PLUS,
+      CHAR_QUESTION_MARK,
+      CHAR_RIGHT_CURLY_BRACE,
+      CHAR_RIGHT_PARENTHESES,
+      CHAR_RIGHT_SQUARE_BRACKET,
+    } = require_constants$2()
+    const isPathSeparator = code => {
+      return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH
+    }
+    const depth = token => {
+      if (token.isPrefix !== true) token.depth = token.isGlobstar ? Infinity : 1
+    }
+    /**
+     * Quickly scans a glob pattern and returns an object with a handful of
+     * useful properties, like `isGlob`, `path` (the leading non-glob, if it
+     * exists), `glob` (the actual pattern), `negated` (true if the path starts
+     * with `!` but not with `!(`) and `negatedExtglob` (true if the path starts
+     * with `!(`).
+     *
+     * ```js
+     * const pm = require('picomatch');
+     * console.log(pm.scan('foo/bar/*.js'));
+     * { isGlob: true, input: 'foo/bar/*.js', base: 'foo/bar', glob: '*.js' }
+     * ```
+     *
+     * @param {String} `str`
+     * @param {Object} `options`
+     *
+     * @returns {Object} Returns an object with tokens and regex source string.
+     *
+     * @api public
+     */
+    const scan = (input, options) => {
+      const opts = options || {}
+      const length = input.length - 1
+      const scanToEnd =
+        opts.parts === true || opts.tokens === true || opts.scanToEnd === true
+      const slashes = []
+      const tokens = []
+      const parts = []
+      let str = input
+      let index = -1
+      let start = 0
+      let lastIndex = 0
+      let isBrace = false
+      let isBracket = false
+      let isGlob = false
+      let isExtglob = false
+      let isGlobstar = false
+      let braceEscaped = false
+      let backslashes = false
+      let negated = false
+      let negatedExtglob = false
+      let finished = false
+      let braces = 0
+      let prev
+      let code
+      let token = {
+        value: '',
+        depth: 0,
+        isGlob: false,
+      }
+      const eos = () => index >= length
+      const peek = () => _p_StringPrototypeCharCodeAt(str, index + 1)
+      const advance = () => {
+        prev = code
+        return _p_StringPrototypeCharCodeAt(str, ++index)
+      }
+      while (index < length) {
+        code = advance()
+        let next
+        if (code === CHAR_BACKWARD_SLASH) {
+          backslashes = token.backslashes = true
+          code = advance()
+          if (code === CHAR_LEFT_CURLY_BRACE) braceEscaped = true
+          continue
+        }
+        if (braceEscaped === true || code === CHAR_LEFT_CURLY_BRACE) {
+          braces++
+          while (eos() !== true && (code = advance())) {
+            if (code === CHAR_BACKWARD_SLASH) {
+              backslashes = token.backslashes = true
+              advance()
+              continue
+            }
+            if (code === CHAR_LEFT_CURLY_BRACE) {
+              braces++
+              continue
+            }
+            if (
+              braceEscaped !== true &&
+              code === CHAR_DOT &&
+              (code = advance()) === CHAR_DOT
+            ) {
+              isBrace = token.isBrace = true
+              isGlob = token.isGlob = true
+              finished = true
+              if (scanToEnd === true) continue
+              break
+            }
+            if (braceEscaped !== true && code === CHAR_COMMA) {
+              isBrace = token.isBrace = true
+              isGlob = token.isGlob = true
+              finished = true
+              if (scanToEnd === true) continue
+              break
+            }
+            if (code === CHAR_RIGHT_CURLY_BRACE) {
+              braces--
+              if (braces === 0) {
+                braceEscaped = false
+                isBrace = token.isBrace = true
+                finished = true
+                break
+              }
+            }
+          }
+          if (scanToEnd === true) continue
+          break
+        }
+        if (code === CHAR_FORWARD_SLASH) {
+          slashes.push(index)
+          tokens.push(token)
+          token = {
+            value: '',
+            depth: 0,
+            isGlob: false,
+          }
+          if (finished === true) continue
+          if (prev === CHAR_DOT && index === start + 1) {
+            start += 2
+            continue
+          }
+          lastIndex = index + 1
+          continue
+        }
+        if (opts.noext !== true) {
+          if (
+            (code === CHAR_PLUS ||
+              code === CHAR_AT ||
+              code === CHAR_ASTERISK ||
+              code === CHAR_QUESTION_MARK ||
+              code === CHAR_EXCLAMATION_MARK) === true &&
+            peek() === CHAR_LEFT_PARENTHESES
+          ) {
+            isGlob = token.isGlob = true
+            isExtglob = token.isExtglob = true
+            finished = true
+            if (code === CHAR_EXCLAMATION_MARK && index === start)
+              negatedExtglob = true
+            if (scanToEnd === true) {
+              let parens = 0
+              while (eos() !== true && (code = advance())) {
+                if (code === CHAR_BACKWARD_SLASH) {
+                  backslashes = token.backslashes = true
+                  advance()
+                  continue
+                }
+                if (code === CHAR_LEFT_PARENTHESES) {
+                  parens++
+                  continue
+                }
+                if (code === CHAR_RIGHT_PARENTHESES && --parens === 0) {
+                  finished = true
+                  break
+                }
+              }
+              continue
+            }
+            break
+          }
+        }
+        if (code === CHAR_ASTERISK) {
+          if (prev === CHAR_ASTERISK) isGlobstar = token.isGlobstar = true
+          isGlob = token.isGlob = true
+          finished = true
+          if (scanToEnd === true) continue
+          break
+        }
+        if (code === CHAR_QUESTION_MARK) {
+          isGlob = token.isGlob = true
+          finished = true
+          if (scanToEnd === true) continue
+          break
+        }
+        if (code === CHAR_LEFT_SQUARE_BRACKET) {
+          while (eos() !== true && (next = advance())) {
+            if (next === CHAR_BACKWARD_SLASH) {
+              backslashes = token.backslashes = true
+              advance()
+              continue
+            }
+            if (next === CHAR_RIGHT_SQUARE_BRACKET) {
+              isBracket = token.isBracket = true
+              isGlob = token.isGlob = true
+              finished = true
+              break
+            }
+          }
+          if (scanToEnd === true) continue
+          break
+        }
+        if (
+          opts.nonegate !== true &&
+          code === CHAR_EXCLAMATION_MARK &&
+          index === start
+        ) {
+          negated = token.negated = true
+          start++
+          continue
+        }
+        if (opts.noparen !== true && code === CHAR_LEFT_PARENTHESES) {
+          isGlob = token.isGlob = true
+          if (scanToEnd === true) {
+            let parens = 1
+            while (eos() !== true && (code = advance())) {
+              if (code === CHAR_BACKWARD_SLASH) {
+                backslashes = token.backslashes = true
+                advance()
+                continue
+              }
+              if (code === CHAR_LEFT_PARENTHESES) {
+                parens++
+                continue
+              }
+              if (code === CHAR_RIGHT_PARENTHESES && --parens === 0) {
+                finished = true
+                break
+              }
+            }
+            continue
+          }
+          break
+        }
+        if (isGlob === true) {
+          finished = true
+          if (scanToEnd === true) continue
+          break
+        }
+      }
+      if (opts.noext === true) {
+        isExtglob = false
+        isGlob = false
+      }
+      let base = str
+      let prefix = ''
+      let glob = ''
+      if (start > 0) {
+        prefix = str.slice(0, start)
+        str = str.slice(start)
+        lastIndex -= start
+      }
+      if (base && isGlob === true && lastIndex > 0) {
+        base = str.slice(0, lastIndex)
+        glob = str.slice(lastIndex)
+      } else if (isGlob === true) {
+        base = ''
+        glob = str
+      } else base = str
+      if (base && base !== '' && base !== '/' && base !== str) {
+        if (
+          isPathSeparator(_p_StringPrototypeCharCodeAt(base, base.length - 1))
+        )
+          base = base.slice(0, -1)
+      }
+      if (opts.unescape === true) {
+        if (glob) glob = utils.removeBackslashes(glob)
+        if (base && backslashes === true) base = utils.removeBackslashes(base)
+      }
+      const state = {
+        prefix,
+        input,
+        start,
+        base,
+        glob,
+        isBrace,
+        isBracket,
+        isGlob,
+        isExtglob,
+        isGlobstar,
+        negated,
+        negatedExtglob,
+      }
+      if (opts.tokens === true) {
+        state.maxDepth = 0
+        if (!isPathSeparator(code)) tokens.push(token)
+        state.tokens = tokens
+      }
+      if (opts.parts === true || opts.tokens === true) {
+        let prevIndex
+        for (let idx = 0; idx < slashes.length; idx++) {
+          const n = prevIndex !== void 0 ? prevIndex + 1 : start
+          const i = slashes[idx]
+          const value = input.slice(n, i)
+          if (opts.tokens) {
+            if (idx === 0 && start !== 0) {
+              tokens[idx].isPrefix = true
+              tokens[idx].value = prefix
+            } else tokens[idx].value = value
+            depth(tokens[idx])
+            state.maxDepth += tokens[idx].depth
+          }
+          if (i >= start) {
+            parts.push(value)
+            prevIndex = i
+          }
+        }
+        const n = prevIndex !== void 0 ? prevIndex + 1 : start
+        const value = input.slice(n)
+        parts.push(value)
+        if (opts.tokens && prevIndex && prevIndex + 1 < input.length) {
+          tokens[tokens.length - 1].value = value
+          depth(tokens[tokens.length - 1])
+          state.maxDepth += tokens[tokens.length - 1].depth
+        }
+        state.slashes = slashes
+        state.parts = parts
+      }
+      return state
+    }
+    module$14.exports = scan
+  })
+  var require_parse$1 = /* @__PURE__ */ __commonJSMin(
+    (exports$17, module$15) => {
+      const constants = require_constants$2()
+      const utils = require_utils$3()
+      /**
+       * Constants.
+       */
+      const {
+        MAX_LENGTH,
+        POSIX_REGEX_SOURCE,
+        REGEX_NON_SPECIAL_CHARS,
+        REGEX_SPECIAL_CHARS_BACKREF,
+        REPLACEMENTS,
+      } = constants
+      /**
+       * Helpers.
+       */
+      const expandRange = (args, options) => {
+        if (typeof options.expandRange === 'function')
+          return options.expandRange(...args, options)
+        args.sort()
+        const value = `[${args.join('-')}]`
+        try {
+          new _p_RegExpCtor(value)
+        } catch (ex) {
+          return args.map(v => utils.escapeRegex(v)).join('..')
+        }
+        return value
+      }
+      /**
+       * Create the message for a syntax error.
+       */
+      const syntaxError = (type, char) => {
+        return `Missing ${type}: "${char}" - use "\\\\${char}" to match literal characters`
+      }
+      const splitTopLevel = input => {
+        const parts = []
+        let bracket = 0
+        let paren = 0
+        let quote = 0
+        let value = ''
+        let escaped = false
+        for (const ch of input) {
+          if (escaped === true) {
+            value += ch
+            escaped = false
+            continue
+          }
+          if (ch === '\\') {
+            value += ch
+            escaped = true
+            continue
+          }
+          if (ch === '"') {
+            quote = quote === 1 ? 0 : 1
+            value += ch
+            continue
+          }
+          if (quote === 0) {
+            if (ch === '[') bracket++
+            else if (ch === ']' && bracket > 0) bracket--
+            else if (bracket === 0) {
+              if (ch === '(') paren++
+              else if (ch === ')' && paren > 0) paren--
+              else if (ch === '|' && paren === 0) {
+                parts.push(value)
+                value = ''
+                continue
+              }
+            }
+          }
+          value += ch
+        }
+        parts.push(value)
+        return parts
+      }
+      const isPlainBranch = branch => {
+        let escaped = false
+        for (const ch of branch) {
+          if (escaped === true) {
+            escaped = false
+            continue
+          }
+          if (ch === '\\') {
+            escaped = true
+            continue
+          }
+          if (/[?*+@!()[\]{}]/.test(ch)) return false
+        }
+        return true
+      }
+      const normalizeSimpleBranch = branch => {
+        let value = _p_StringPrototypeTrim(branch)
+        let changed = true
+        while (changed === true) {
+          changed = false
+          if (/^@\([^\\()[\]{}|]+\)$/.test(value)) {
+            value = value.slice(2, -1)
+            changed = true
+          }
+        }
+        if (!isPlainBranch(value)) return
+        return value.replace(/\\(.)/g, '$1')
+      }
+      const hasRepeatedCharPrefixOverlap = branches => {
+        const values = branches.map(normalizeSimpleBranch).filter(Boolean)
+        for (let i = 0; i < values.length; i++)
+          for (let j = i + 1; j < values.length; j++) {
+            const a = values[i]
+            const b = values[j]
+            const char = a[0]
+            if (
+              !char ||
+              a !== _p_StringPrototypeRepeat(char, a.length) ||
+              b !== _p_StringPrototypeRepeat(char, b.length)
+            )
+              continue
+            if (
+              a === b ||
+              _p_StringPrototypeStartsWith(a, b) ||
+              _p_StringPrototypeStartsWith(b, a)
+            )
+              return true
+          }
+        return false
+      }
+      const parseRepeatedExtglob = (pattern, requireEnd = true) => {
+        if ((pattern[0] !== '+' && pattern[0] !== '*') || pattern[1] !== '(')
+          return
+        let bracket = 0
+        let paren = 0
+        let quote = 0
+        let escaped = false
+        for (let i = 1; i < pattern.length; i++) {
+          const ch = pattern[i]
+          if (escaped === true) {
+            escaped = false
+            continue
+          }
+          if (ch === '\\') {
+            escaped = true
+            continue
+          }
+          if (ch === '"') {
+            quote = quote === 1 ? 0 : 1
+            continue
+          }
+          if (quote === 1) continue
+          if (ch === '[') {
+            bracket++
+            continue
+          }
+          if (ch === ']' && bracket > 0) {
+            bracket--
+            continue
+          }
+          if (bracket > 0) continue
+          if (ch === '(') {
+            paren++
+            continue
+          }
+          if (ch === ')') {
+            paren--
+            if (paren === 0) {
+              if (requireEnd === true && i !== pattern.length - 1) return
+              return {
+                type: pattern[0],
+                body: pattern.slice(2, i),
+                end: i,
+              }
+            }
+          }
+        }
+      }
+      const buildCharClassStar = chars => {
+        return `${chars.length === 1 ? utils.escapeRegex(chars[0]) : `[${chars.map(ch => utils.escapeRegex(ch)).join('')}]`}*`
+      }
+      const getStarExtglobSequenceChars = pattern => {
+        let index = 0
+        const chars = []
+        while (index < pattern.length) {
+          const match = parseRepeatedExtglob(pattern.slice(index), false)
+          if (!match || match.type !== '*') return
+          const branches = splitTopLevel(match.body).map(branch =>
+            _p_StringPrototypeTrim(branch),
+          )
+          if (branches.length !== 1) return
+          const branch = normalizeSimpleBranch(branches[0])
+          if (!branch || branch.length !== 1) return
+          chars.push(branch)
+          index += match.end + 1
+        }
+        if (chars.length < 1) return
+        return chars
+      }
+      const repeatedExtglobRecursion = pattern => {
+        let depth = 0
+        let value = _p_StringPrototypeTrim(pattern)
+        let match = parseRepeatedExtglob(value)
+        while (match) {
+          depth++
+          value = match.body.trim()
+          match = parseRepeatedExtglob(value)
+        }
+        return depth
+      }
+      const analyzeRepeatedExtglob = (body, options) => {
+        if (options.maxExtglobRecursion === false) return { risky: false }
+        const max =
+          typeof options.maxExtglobRecursion === 'number'
+            ? options.maxExtglobRecursion
+            : constants.DEFAULT_MAX_EXTGLOB_RECURSION
+        const branches = splitTopLevel(body).map(branch =>
+          _p_StringPrototypeTrim(branch),
+        )
+        if (branches.length > 1) {
+          if (
+            branches.some(branch => branch === '') ||
+            branches.some(branch => /^[*?]+$/.test(branch)) ||
+            hasRepeatedCharPrefixOverlap(branches)
+          )
+            return { risky: true }
+        }
+        const safeChars = []
+        let sawStarSequence = false
+        let combinable = true
+        for (const branch of branches) {
+          const chars = getStarExtglobSequenceChars(branch)
+          if (chars) {
+            sawStarSequence = true
+            safeChars.push(...chars)
+            continue
+          }
+          const literal = normalizeSimpleBranch(branch)
+          if (literal && literal.length === 1) {
+            safeChars.push(literal)
+            continue
+          }
+          combinable = false
+          if (repeatedExtglobRecursion(branch) > max) return { risky: true }
+        }
+        if (sawStarSequence)
+          return combinable
+            ? {
+                risky: true,
+                safeOutput: buildCharClassStar([...new _p_SetCtor(safeChars)]),
+              }
+            : { risky: true }
+        return { risky: false }
+      }
+      /**
+       * Parse the given input string.
+       *
+       * @param {String} input
+       * @param {Object} options
+       *
+       * @returns {Object}
+       */
+      const parse = (input, options) => {
+        if (typeof input !== 'string')
+          throw new _p_TypeErrorCtor('Expected a string')
+        input = REPLACEMENTS[input] || input
+        const opts = { ...options }
+        const max =
+          typeof opts.maxLength === 'number'
+            ? _p_MathMin(MAX_LENGTH, opts.maxLength)
+            : MAX_LENGTH
+        let len = input.length
+        if (len > max)
+          throw new _p_SyntaxErrorCtor(
+            `Input length: ${len}, exceeds maximum allowed length: ${max}`,
+          )
+        const bos = {
+          type: 'bos',
+          value: '',
+          output: opts.prepend || '',
+        }
+        const tokens = [bos]
+        const capture = opts.capture ? '' : '?:'
+        const PLATFORM_CHARS = constants.globChars(opts.windows)
+        const EXTGLOB_CHARS = constants.extglobChars(PLATFORM_CHARS)
+        const {
+          DOT_LITERAL,
+          PLUS_LITERAL,
+          SLASH_LITERAL,
+          ONE_CHAR,
+          DOTS_SLASH,
+          NO_DOT,
+          NO_DOT_SLASH,
+          NO_DOTS_SLASH,
+          QMARK,
+          QMARK_NO_DOT,
+          STAR,
+          START_ANCHOR,
+        } = PLATFORM_CHARS
+        const globstar = opts => {
+          return `(${capture}(?:(?!${START_ANCHOR}${opts.dot ? DOTS_SLASH : DOT_LITERAL}).)*?)`
+        }
+        const nodot = opts.dot ? '' : NO_DOT
+        const qmarkNoDot = opts.dot ? QMARK : QMARK_NO_DOT
+        let star = opts.bash === true ? globstar(opts) : STAR
+        if (opts.capture) star = `(${star})`
+        if (typeof opts.noext === 'boolean') opts.noextglob = opts.noext
+        const state = {
+          input,
+          index: -1,
+          start: 0,
+          dot: opts.dot === true,
+          consumed: '',
+          output: '',
+          prefix: '',
+          backtrack: false,
+          negated: false,
+          brackets: 0,
+          braces: 0,
+          parens: 0,
+          quotes: 0,
+          globstar: false,
+          tokens,
+        }
+        input = utils.removePrefix(input, state)
+        len = input.length
+        const extglobs = []
+        const braces = []
+        const stack = []
+        let prev = bos
+        let value
+        /**
+         * Tokenizing helpers.
+         */
+        const eos = () => state.index === len - 1
+        const peek = (state.peek = (n = 1) => input[state.index + n])
+        const advance = (state.advance = () => input[++state.index] || '')
+        const remaining = () => input.slice(state.index + 1)
+        const consume = (value = '', num = 0) => {
+          state.consumed += value
+          state.index += num
+        }
+        const append = token => {
+          state.output += token.output != null ? token.output : token.value
+          consume(token.value)
+        }
+        const negate = () => {
+          let count = 1
+          while (peek() === '!' && (peek(2) !== '(' || peek(3) === '?')) {
+            advance()
+            state.start++
+            count++
+          }
+          if (count % 2 === 0) return false
+          state.negated = true
+          state.start++
+          return true
+        }
+        const increment = type => {
+          state[type]++
+          stack.push(type)
+        }
+        const decrement = type => {
+          state[type]--
+          stack.pop()
+        }
+        /**
+         * Push tokens onto the tokens array. This helper speeds up
+         * tokenizing by 1) helping us avoid backtracking as much as possible,
+         * and 2) helping us avoid creating extra tokens when consecutive
+         * characters are plain text. This improves performance and simplifies
+         * lookbehinds.
+         */
+        const push = tok => {
+          if (prev.type === 'globstar') {
+            const isBrace =
+              state.braces > 0 && (tok.type === 'comma' || tok.type === 'brace')
+            const isExtglob =
+              tok.extglob === true ||
+              (extglobs.length && (tok.type === 'pipe' || tok.type === 'paren'))
+            if (
+              tok.type !== 'slash' &&
+              tok.type !== 'paren' &&
+              !isBrace &&
+              !isExtglob
+            ) {
+              state.output = state.output.slice(0, -prev.output.length)
+              prev.type = 'star'
+              prev.value = '*'
+              prev.output = star
+              state.output += prev.output
+            }
+          }
+          if (extglobs.length && tok.type !== 'paren')
+            extglobs[extglobs.length - 1].inner += tok.value
+          if (tok.value || tok.output) append(tok)
+          if (prev && prev.type === 'text' && tok.type === 'text') {
+            prev.output = (prev.output || prev.value) + tok.value
+            prev.value += tok.value
+            return
+          }
+          tok.prev = prev
+          tokens.push(tok)
+          prev = tok
+        }
+        const extglobOpen = (type, value) => {
+          const token = {
+            ...EXTGLOB_CHARS[value],
+            conditions: 1,
+            inner: '',
+          }
+          token.prev = prev
+          token.parens = state.parens
+          token.output = state.output
+          token.startIndex = state.index
+          token.tokensIndex = tokens.length
+          const output = (opts.capture ? '(' : '') + token.open
+          increment('parens')
+          push({
+            type,
+            value,
+            output: state.output ? '' : ONE_CHAR,
+          })
+          push({
+            type: 'paren',
+            extglob: true,
+            value: advance(),
+            output,
+          })
+          extglobs.push(token)
+        }
+        const extglobClose = token => {
+          const literal = input.slice(token.startIndex, state.index + 1)
+          const body = input.slice(token.startIndex + 2, state.index)
+          const analysis = analyzeRepeatedExtglob(body, opts)
+          if (
+            (token.type === 'plus' || token.type === 'star') &&
+            analysis.risky
+          ) {
+            const safeOutput = analysis.safeOutput
+              ? (token.output ? '' : ONE_CHAR) +
+                (opts.capture
+                  ? `(${analysis.safeOutput})`
+                  : analysis.safeOutput)
+              : void 0
+            const open = tokens[token.tokensIndex]
+            open.type = 'text'
+            open.value = literal
+            open.output = safeOutput || utils.escapeRegex(literal)
+            for (let i = token.tokensIndex + 1; i < tokens.length; i++) {
+              tokens[i].value = ''
+              tokens[i].output = ''
+              delete tokens[i].suffix
+            }
+            state.output = token.output + open.output
+            state.backtrack = true
+            push({
+              type: 'paren',
+              extglob: true,
+              value,
+              output: '',
+            })
+            decrement('parens')
+            return
+          }
+          let output = token.close + (opts.capture ? ')' : '')
+          let rest
+          if (token.type === 'negate') {
+            let extglobStar = star
+            if (
+              token.inner &&
+              token.inner.length > 1 &&
+              token.inner.includes('/')
+            )
+              extglobStar = globstar(opts)
+            if (extglobStar !== star || eos() || /^\)+$/.test(remaining()))
+              output = token.close = `)$))${extglobStar}`
+            if (
+              token.inner.includes('*') &&
+              (rest = remaining()) &&
+              /^\.[^\\/.]+$/.test(rest)
+            )
+              output = token.close = `)${
+                parse(rest, {
+                  ...options,
+                  fastpaths: false,
+                }).output
+              })${extglobStar})`
+            if (token.prev.type === 'bos') state.negatedExtglob = true
+          }
+          push({
+            type: 'paren',
+            extglob: true,
+            value,
+            output,
+          })
+          decrement('parens')
+        }
+        /**
+         * Fast paths.
+         */
+        if (opts.fastpaths !== false && !/(^[*!]|[/()[\]{}"])/.test(input)) {
+          let backslashes = false
+          let output = input.replace(
+            REGEX_SPECIAL_CHARS_BACKREF,
+            (m, esc, chars, first, rest, index) => {
+              if (first === '\\') {
+                backslashes = true
+                return m
+              }
+              if (first === '?') {
+                if (esc)
+                  return (
+                    esc +
+                    first +
+                    (rest ? _p_StringPrototypeRepeat(QMARK, rest.length) : '')
+                  )
+                if (index === 0)
+                  return (
+                    qmarkNoDot +
+                    (rest ? _p_StringPrototypeRepeat(QMARK, rest.length) : '')
+                  )
+                return _p_StringPrototypeRepeat(QMARK, chars.length)
+              }
+              if (first === '.')
+                return _p_StringPrototypeRepeat(DOT_LITERAL, chars.length)
+              if (first === '*') {
+                if (esc) return esc + first + (rest ? star : '')
+                return star
+              }
+              return esc ? m : `\\${m}`
+            },
+          )
+          if (backslashes === true) {
+            if (opts.unescape === true) output = output.replace(/\\/g, '')
+            else
+              output = output.replace(/\\+/g, m => {
+                return m.length % 2 === 0 ? '\\\\' : m ? '\\' : ''
+              })
+          }
+          if (output === input && opts.contains === true) {
+            state.output = input
+            return state
+          }
+          state.output = utils.wrapOutput(output, state, options)
+          return state
+        }
+        /**
+         * Tokenize input until we reach end-of-string.
+         */
+        while (!eos()) {
+          value = advance()
+          if (value === '\0') continue
+          /**
+           * Escaped characters.
+           */
+          if (value === '\\') {
+            const next = peek()
+            if (next === '/' && opts.bash !== true) continue
+            if (next === '.' || next === ';') continue
+            if (!next) {
+              value += '\\'
+              push({
+                type: 'text',
+                value,
+              })
+              continue
+            }
+            const match = /^\\+/.exec(remaining())
+            let slashes = 0
+            if (match && match[0].length > 2) {
+              slashes = match[0].length
+              state.index += slashes
+              if (slashes % 2 !== 0) value += '\\'
+            }
+            if (opts.unescape === true) value = advance()
+            else value += advance()
+            if (state.brackets === 0) {
+              push({
+                type: 'text',
+                value,
+              })
+              continue
+            }
+          }
+          /**
+           * If we're inside a regex character class, continue
+           * until we reach the closing bracket.
+           */
+          if (
+            state.brackets > 0 &&
+            (value !== ']' || prev.value === '[' || prev.value === '[^')
+          ) {
+            if (opts.posix !== false && value === ':') {
+              const inner = prev.value.slice(1)
+              if (inner.includes('[')) {
+                prev.posix = true
+                if (inner.includes(':')) {
+                  const idx = prev.value.lastIndexOf('[')
+                  const pre = prev.value.slice(0, idx)
+                  const rest = prev.value.slice(idx + 2)
+                  const posix = POSIX_REGEX_SOURCE[rest]
+                  if (posix) {
+                    prev.value = pre + posix
+                    state.backtrack = true
+                    advance()
+                    if (!bos.output && tokens.indexOf(prev) === 1)
+                      bos.output = ONE_CHAR
+                    continue
+                  }
+                }
+              }
+            }
+            if (
+              (value === '[' && peek() !== ':') ||
+              (value === '-' && peek() === ']')
+            )
+              value = `\\${value}`
+            if (value === ']' && (prev.value === '[' || prev.value === '[^'))
+              value = `\\${value}`
+            if (opts.posix === true && value === '!' && prev.value === '[')
+              value = '^'
+            prev.value += value
+            append({ value })
+            continue
+          }
+          /**
+           * If we're inside a quoted string, continue
+           * until we reach the closing double quote.
+           */
+          if (state.quotes === 1 && value !== '"') {
+            value = utils.escapeRegex(value)
+            prev.value += value
+            append({ value })
+            continue
+          }
+          /**
+           * Double quotes.
+           */
+          if (value === '"') {
+            state.quotes = state.quotes === 1 ? 0 : 1
+            if (opts.keepQuotes === true)
+              push({
+                type: 'text',
+                value,
+              })
+            continue
+          }
+          /**
+           * Parentheses.
+           */
+          if (value === '(') {
+            increment('parens')
+            push({
+              type: 'paren',
+              value,
+            })
+            continue
+          }
+          if (value === ')') {
+            if (state.parens === 0 && opts.strictBrackets === true)
+              throw new _p_SyntaxErrorCtor(syntaxError('opening', '('))
+            const extglob = extglobs[extglobs.length - 1]
+            if (extglob && state.parens === extglob.parens + 1) {
+              extglobClose(extglobs.pop())
+              continue
+            }
+            push({
+              type: 'paren',
+              value,
+              output: state.parens ? ')' : '\\)',
+            })
+            decrement('parens')
+            continue
+          }
+          /**
+           * Square brackets.
+           */
+          if (value === '[') {
+            if (opts.nobracket === true || !remaining().includes(']')) {
+              if (opts.nobracket !== true && opts.strictBrackets === true)
+                throw new _p_SyntaxErrorCtor(syntaxError('closing', ']'))
+              value = `\\${value}`
+            } else increment('brackets')
+            push({
+              type: 'bracket',
+              value,
+            })
+            continue
+          }
+          if (value === ']') {
+            if (
+              opts.nobracket === true ||
+              (prev && prev.type === 'bracket' && prev.value.length === 1)
+            ) {
+              push({
+                type: 'text',
+                value,
+                output: `\\${value}`,
+              })
+              continue
+            }
+            if (state.brackets === 0) {
+              if (opts.strictBrackets === true)
+                throw new _p_SyntaxErrorCtor(syntaxError('opening', '['))
+              push({
+                type: 'text',
+                value,
+                output: `\\${value}`,
+              })
+              continue
+            }
+            decrement('brackets')
+            const prevValue = prev.value.slice(1)
+            if (
+              prev.posix !== true &&
+              prevValue[0] === '^' &&
+              !prevValue.includes('/')
+            )
+              value = `/${value}`
+            prev.value += value
+            append({ value })
+            if (
+              opts.literalBrackets === false ||
+              utils.hasRegexChars(prevValue)
+            )
+              continue
+            const escaped = utils.escapeRegex(prev.value)
+            state.output = state.output.slice(0, -prev.value.length)
+            if (opts.literalBrackets === true) {
+              state.output += escaped
+              prev.value = escaped
+              continue
+            }
+            prev.value = `(${capture}${escaped}|${prev.value})`
+            state.output += prev.value
+            continue
+          }
+          /**
+           * Braces.
+           */
+          if (value === '{' && opts.nobrace !== true) {
+            increment('braces')
+            const open = {
+              type: 'brace',
+              value,
+              output: '(',
+              outputIndex: state.output.length,
+              tokensIndex: state.tokens.length,
+            }
+            braces.push(open)
+            push(open)
+            continue
+          }
+          if (value === '}') {
+            const brace = braces[braces.length - 1]
+            if (opts.nobrace === true || !brace) {
+              push({
+                type: 'text',
+                value,
+                output: value,
+              })
+              continue
+            }
+            let output = ')'
+            if (brace.dots === true) {
+              const arr = tokens.slice()
+              const range = []
+              for (let i = arr.length - 1; i >= 0; i--) {
+                tokens.pop()
+                if (arr[i].type === 'brace') break
+                if (arr[i].type !== 'dots')
+                  _p_ArrayPrototypeUnshift(range, arr[i].value)
+              }
+              output = expandRange(range, opts)
+              state.backtrack = true
+            }
+            if (brace.comma !== true && brace.dots !== true) {
+              const out = state.output.slice(0, brace.outputIndex)
+              const toks = state.tokens.slice(brace.tokensIndex)
+              brace.value = brace.output = '\\{'
+              value = output = '\\}'
+              state.output = out
+              for (const t of toks) state.output += t.output || t.value
+            }
+            push({
+              type: 'brace',
+              value,
+              output,
+            })
+            decrement('braces')
+            braces.pop()
+            continue
+          }
+          /**
+           * Pipes.
+           */
+          if (value === '|') {
+            if (extglobs.length > 0) extglobs[extglobs.length - 1].conditions++
+            push({
+              type: 'text',
+              value,
+            })
+            continue
+          }
+          /**
+           * Commas.
+           */
+          if (value === ',') {
+            let output = value
+            const brace = braces[braces.length - 1]
+            if (brace && stack[stack.length - 1] === 'braces') {
+              brace.comma = true
+              output = '|'
+            }
+            push({
+              type: 'comma',
+              value,
+              output,
+            })
+            continue
+          }
+          /**
+           * Slashes.
+           */
+          if (value === '/') {
+            if (prev.type === 'dot' && state.index === state.start + 1) {
+              state.start = state.index + 1
+              state.consumed = ''
+              state.output = ''
+              tokens.pop()
+              prev = bos
+              continue
+            }
+            push({
+              type: 'slash',
+              value,
+              output: SLASH_LITERAL,
+            })
+            continue
+          }
+          /**
+           * Dots.
+           */
+          if (value === '.') {
+            if (state.braces > 0 && prev.type === 'dot') {
+              if (prev.value === '.') prev.output = DOT_LITERAL
+              const brace = braces[braces.length - 1]
+              prev.type = 'dots'
+              prev.output += value
+              prev.value += value
+              brace.dots = true
+              continue
+            }
+            if (
+              state.braces + state.parens === 0 &&
+              prev.type !== 'bos' &&
+              prev.type !== 'slash'
+            ) {
+              push({
+                type: 'text',
+                value,
+                output: DOT_LITERAL,
+              })
+              continue
+            }
+            push({
+              type: 'dot',
+              value,
+              output: DOT_LITERAL,
+            })
+            continue
+          }
+          /**
+           * Question marks.
+           */
+          if (value === '?') {
+            if (
+              !(prev && prev.value === '(') &&
+              opts.noextglob !== true &&
+              peek() === '(' &&
+              peek(2) !== '?'
+            ) {
+              extglobOpen('qmark', value)
+              continue
+            }
+            if (prev && prev.type === 'paren') {
+              const next = peek()
+              let output = value
+              if (
+                (prev.value === '(' && !/[!=<:]/.test(next)) ||
+                (next === '<' && !/<([!=]|\w+>)/.test(remaining()))
+              )
+                output = `\\${value}`
+              push({
+                type: 'text',
+                value,
+                output,
+              })
+              continue
+            }
+            if (
+              opts.dot !== true &&
+              (prev.type === 'slash' || prev.type === 'bos')
+            ) {
+              push({
+                type: 'qmark',
+                value,
+                output: QMARK_NO_DOT,
+              })
+              continue
+            }
+            push({
+              type: 'qmark',
+              value,
+              output: QMARK,
+            })
+            continue
+          }
+          /**
+           * Exclamation.
+           */
+          if (value === '!') {
+            if (opts.noextglob !== true && peek() === '(') {
+              if (peek(2) !== '?' || !/[!=<:]/.test(peek(3))) {
+                extglobOpen('negate', value)
+                continue
+              }
+            }
+            if (opts.nonegate !== true && state.index === 0) {
+              negate()
+              continue
+            }
+          }
+          /**
+           * Plus.
+           */
+          if (value === '+') {
+            if (opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
+              extglobOpen('plus', value)
+              continue
+            }
+            if ((prev && prev.value === '(') || opts.regex === false) {
+              push({
+                type: 'plus',
+                value,
+                output: PLUS_LITERAL,
+              })
+              continue
+            }
+            if (
+              (prev &&
+                (prev.type === 'bracket' ||
+                  prev.type === 'paren' ||
+                  prev.type === 'brace')) ||
+              state.parens > 0
+            ) {
+              push({
+                type: 'plus',
+                value,
+              })
+              continue
+            }
+            push({
+              type: 'plus',
+              value: PLUS_LITERAL,
+            })
+            continue
+          }
+          /**
+           * Plain text.
+           */
+          if (value === '@') {
+            if (opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
+              push({
+                type: 'at',
+                extglob: true,
+                value,
+                output: '',
+              })
+              continue
+            }
+            push({
+              type: 'text',
+              value,
+            })
+            continue
+          }
+          /**
+           * Plain text.
+           */
+          if (value !== '*') {
+            if (value === '$' || value === '^') value = `\\${value}`
+            const match = REGEX_NON_SPECIAL_CHARS.exec(remaining())
+            if (match) {
+              value += match[0]
+              state.index += match[0].length
+            }
+            push({
+              type: 'text',
+              value,
+            })
+            continue
+          }
+          /**
+           * Stars.
+           */
+          if (prev && (prev.type === 'globstar' || prev.star === true)) {
+            prev.type = 'star'
+            prev.star = true
+            prev.value += value
+            prev.output = star
+            state.backtrack = true
+            state.globstar = true
+            consume(value)
+            continue
+          }
+          let rest = remaining()
+          if (opts.noextglob !== true && /^\([^?]/.test(rest)) {
+            extglobOpen('star', value)
+            continue
+          }
+          if (prev.type === 'star') {
+            if (opts.noglobstar === true) {
+              consume(value)
+              continue
+            }
+            const prior = prev.prev
+            const before = prior.prev
+            const isStart = prior.type === 'slash' || prior.type === 'bos'
+            const afterStar =
+              before && (before.type === 'star' || before.type === 'globstar')
+            if (
+              opts.bash === true &&
+              (!isStart || (rest[0] && rest[0] !== '/'))
+            ) {
+              push({
+                type: 'star',
+                value,
+                output: '',
+              })
+              continue
+            }
+            const isBrace =
+              state.braces > 0 &&
+              (prior.type === 'comma' || prior.type === 'brace')
+            const isExtglob =
+              extglobs.length &&
+              (prior.type === 'pipe' || prior.type === 'paren')
+            if (!isStart && prior.type !== 'paren' && !isBrace && !isExtglob) {
+              push({
+                type: 'star',
+                value,
+                output: '',
+              })
+              continue
+            }
+            while (rest.slice(0, 3) === '/**') {
+              const after = input[state.index + 4]
+              if (after && after !== '/') break
+              rest = rest.slice(3)
+              consume('/**', 3)
+            }
+            const isEnd =
+              eos() ||
+              (state.parens > 0 &&
+                rest === ')'.repeat(state.parens) &&
+                !extglobs.some(extglob => extglob.type === 'negate'))
+            if (prior.type === 'bos' && eos()) {
+              prev.type = 'globstar'
+              prev.value += value
+              prev.output = globstar(opts)
+              state.output = prev.output
+              state.globstar = true
+              consume(value)
+              continue
+            }
+            if (
+              prior.type === 'slash' &&
+              prior.prev.type !== 'bos' &&
+              !afterStar &&
+              isEnd
+            ) {
+              state.output = state.output.slice(
+                0,
+                -(prior.output + prev.output).length,
+              )
+              prior.output = `(?:${prior.output}`
+              prev.type = 'globstar'
+              prev.output = globstar(opts) + (opts.strictSlashes ? ')' : '|$)')
+              prev.value += value
+              state.globstar = true
+              state.output += prior.output + prev.output
+              consume(value)
+              continue
+            }
+            if (
+              prior.type === 'slash' &&
+              prior.prev.type !== 'bos' &&
+              rest[0] === '/'
+            ) {
+              const end = rest[1] !== void 0 ? '|$' : ''
+              state.output = state.output.slice(
+                0,
+                -(prior.output + prev.output).length,
+              )
+              prior.output = `(?:${prior.output}`
+              prev.type = 'globstar'
+              prev.output = `${globstar(opts)}${SLASH_LITERAL}|${SLASH_LITERAL}${end})`
+              prev.value += value
+              state.output += prior.output + prev.output
+              state.globstar = true
+              consume(value + advance())
+              push({
+                type: 'slash',
+                value: '/',
+                output: '',
+              })
+              continue
+            }
+            if (prior.type === 'bos' && rest[0] === '/') {
+              prev.type = 'globstar'
+              prev.value += value
+              prev.output = `(?:^|${SLASH_LITERAL}|${globstar(opts)}${SLASH_LITERAL})`
+              state.output = prev.output
+              state.globstar = true
+              consume(value + advance())
+              push({
+                type: 'slash',
+                value: '/',
+                output: '',
+              })
+              continue
+            }
+            state.output = state.output.slice(0, -prev.output.length)
+            prev.type = 'globstar'
+            prev.output = globstar(opts)
+            prev.value += value
+            state.output += prev.output
+            state.globstar = true
+            consume(value)
+            continue
+          }
+          const token = {
+            type: 'star',
+            value,
+            output: star,
+          }
+          if (opts.bash === true) {
+            token.output = '.*?'
+            if (prev.type === 'bos' || prev.type === 'slash')
+              token.output = nodot + token.output
+            push(token)
+            continue
+          }
+          if (
+            prev &&
+            (prev.type === 'bracket' || prev.type === 'paren') &&
+            opts.regex === true
+          ) {
+            token.output = value
+            push(token)
+            continue
+          }
+          if (
+            state.index === state.start ||
+            prev.type === 'slash' ||
+            prev.type === 'dot'
+          ) {
+            if (prev.type === 'dot') {
+              state.output += NO_DOT_SLASH
+              prev.output += NO_DOT_SLASH
+            } else if (opts.dot === true) {
+              state.output += NO_DOTS_SLASH
+              prev.output += NO_DOTS_SLASH
+            } else {
+              state.output += nodot
+              prev.output += nodot
+            }
+            if (peek() !== '*') {
+              state.output += ONE_CHAR
+              prev.output += ONE_CHAR
+            }
+          }
+          push(token)
+        }
+        while (state.brackets > 0) {
+          if (opts.strictBrackets === true)
+            throw new _p_SyntaxErrorCtor(syntaxError('closing', ']'))
+          state.output = utils.escapeLast(state.output, '[')
+          decrement('brackets')
+        }
+        while (state.parens > 0) {
+          if (opts.strictBrackets === true)
+            throw new _p_SyntaxErrorCtor(syntaxError('closing', ')'))
+          state.output = utils.escapeLast(state.output, '(')
+          decrement('parens')
+        }
+        while (state.braces > 0) {
+          if (opts.strictBrackets === true)
+            throw new _p_SyntaxErrorCtor(syntaxError('closing', '}'))
+          state.output = utils.escapeLast(state.output, '{')
+          decrement('braces')
+        }
+        if (
+          opts.strictSlashes !== true &&
+          (prev.type === 'star' || prev.type === 'bracket')
+        )
+          push({
+            type: 'maybe_slash',
+            value: '',
+            output: `${SLASH_LITERAL}?`,
+          })
+        if (state.backtrack === true) {
+          state.output = ''
+          for (const token of state.tokens) {
+            state.output += token.output != null ? token.output : token.value
+            if (token.suffix) state.output += token.suffix
+          }
+        }
+        return state
+      }
+      /**
+       * Fast paths for creating regular expressions for common glob patterns.
+       * This can significantly speed up processing and has very little downside
+       * impact when none of the fast paths match.
+       */
+      parse.fastpaths = (input, options) => {
+        const opts = { ...options }
+        const max =
+          typeof opts.maxLength === 'number'
+            ? _p_MathMin(MAX_LENGTH, opts.maxLength)
+            : MAX_LENGTH
+        const len = input.length
+        if (len > max)
+          throw new _p_SyntaxErrorCtor(
+            `Input length: ${len}, exceeds maximum allowed length: ${max}`,
+          )
+        input = REPLACEMENTS[input] || input
+        const {
+          DOT_LITERAL,
+          SLASH_LITERAL,
+          ONE_CHAR,
+          DOTS_SLASH,
+          NO_DOT,
+          NO_DOTS,
+          NO_DOTS_SLASH,
+          STAR,
+          START_ANCHOR,
+        } = constants.globChars(opts.windows)
+        const nodot = opts.dot ? NO_DOTS : NO_DOT
+        const slashDot = opts.dot ? NO_DOTS_SLASH : NO_DOT
+        const capture = opts.capture ? '' : '?:'
+        const state = {
+          negated: false,
+          prefix: '',
+        }
+        let star = opts.bash === true ? '.*?' : STAR
+        if (opts.capture) star = `(${star})`
+        const globstar = opts => {
+          if (opts.noglobstar === true) return star
+          return `(${capture}(?:(?!${START_ANCHOR}${opts.dot ? DOTS_SLASH : DOT_LITERAL}).)*?)`
+        }
+        const create = str => {
+          switch (str) {
+            case '*':
+              return `${nodot}${ONE_CHAR}${star}`
+            case '.*':
+              return `${DOT_LITERAL}${ONE_CHAR}${star}`
+            case '*.*':
+              return `${nodot}${star}${DOT_LITERAL}${ONE_CHAR}${star}`
+            case '*/*':
+              return `${nodot}${star}${SLASH_LITERAL}${ONE_CHAR}${slashDot}${star}`
+            case '**':
+              return nodot + globstar(opts)
+            case '**/*':
+              return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${slashDot}${ONE_CHAR}${star}`
+            case '**/*.*':
+              return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${slashDot}${star}${DOT_LITERAL}${ONE_CHAR}${star}`
+            case '**/.*':
+              return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${DOT_LITERAL}${ONE_CHAR}${star}`
+            default: {
+              const match = /^(.*?)\.(\w+)$/.exec(str)
+              if (!match) return
+              const source = create(match[1])
+              if (!source) return
+              return source + DOT_LITERAL + match[2]
+            }
+          }
+        }
+        let source = create(utils.removePrefix(input, state))
+        if (source && opts.strictSlashes !== true) source += `${SLASH_LITERAL}?`
+        return source
+      }
+      module$15.exports = parse
+    },
+  )
+  var require_picomatch$1 = /* @__PURE__ */ __commonJSMin(
+    (exports$18, module$16) => {
+      const scan = require_scan()
+      const parse = require_parse$1()
+      const utils = require_utils$3()
+      const constants = require_constants$2()
+      const isObject = val =>
+        val && typeof val === 'object' && !_p_ArrayIsArray(val)
+      /**
+       * Creates a matcher function from one or more glob patterns. The
+       * returned function takes a string to match as its first argument,
+       * and returns true if the string is a match. The returned matcher
+       * function also takes a boolean as the second argument that, when true,
+       * returns an object with additional information.
+       *
+       * ```js
+       * const picomatch = require('picomatch')
+       * // picomatch(glob[, options]);
+       *
+       * const isMatch = picomatch('*.!(*a)')
+       * console.log(isMatch('a.a')) //=> false
+       * console.log(isMatch('a.b')) //=> true
+       *
+       * // For environments without `node.js`, `picomatch/posix` provides you a dependency-free matcher, without automatic OS detection.
+       * const picomatch = require('picomatch/posix')
+       * // the same API, defaulting to posix paths
+       * const isMatch = picomatch('a/*')
+       * console.log(isMatch('a\\b')) //=> false
+       * console.log(isMatch('a/b')) //=> true
+       *
+       * // you can still configure the matcher function to accept windows paths
+       * const isMatch = picomatch('a/*', { options: windows })
+       * console.log(isMatch('a\\b')) //=> true
+       * console.log(isMatch('a/b')) //=> true
+       * ```
+       *
+       * @param {String | Array} `globs` One or more glob patterns.
+       * @param {Object} [`options`]
+       *
+       * @returns {Function | undefined} Returns a matcher function.
+       *
+       * @name picomatch
+       *
+       * @api public
+       */
+      const picomatch = (glob, options, returnState = false) => {
+        if (_p_ArrayIsArray(glob)) {
+          const fns = glob.map(input => picomatch(input, options, returnState))
+          const arrayMatcher = str => {
+            for (const isMatch of fns) {
+              const state = isMatch(str)
+              if (state) return state
+            }
+            return false
+          }
+          return arrayMatcher
+        }
+        const isState = isObject(glob) && glob.tokens && glob.input
+        if (glob === '' || (typeof glob !== 'string' && !isState))
+          throw new _p_TypeErrorCtor(
+            'Expected pattern to be a non-empty string',
+          )
+        const opts = options || {}
+        const posix = opts.windows
+        const regex = isState
+          ? picomatch.compileRe(glob, options)
+          : picomatch.makeRe(glob, options, false, true)
+        const state = regex.state
+        delete regex.state
+        let isIgnored = () => false
+        if (opts.ignore) {
+          const ignoreOpts = {
+            ...options,
+            ignore: null,
+            onMatch: null,
+            onResult: null,
+          }
+          isIgnored = picomatch(opts.ignore, ignoreOpts, returnState)
+        }
+        const matcher = (input, returnObject = false) => {
+          const { isMatch, match, output } = picomatch.test(
+            input,
+            regex,
+            options,
+            {
+              glob,
+              posix,
+            },
+          )
+          const result = {
+            glob,
+            state,
+            regex,
+            posix,
+            input,
+            output,
+            match,
+            isMatch,
+          }
+          if (typeof opts.onResult === 'function') opts.onResult(result)
+          if (isMatch === false) {
+            result.isMatch = false
+            return returnObject ? result : false
+          }
+          if (isIgnored(input)) {
+            if (typeof opts.onIgnore === 'function') opts.onIgnore(result)
+            result.isMatch = false
+            return returnObject ? result : false
+          }
+          if (typeof opts.onMatch === 'function') opts.onMatch(result)
+          return returnObject ? result : true
+        }
+        if (returnState) matcher.state = state
+        return matcher
+      }
+      /**
+       * Test `input` with the given `regex`. This is used by the main
+       * `picomatch()` function to test the input string.
+       *
+       * ```js
+       * const picomatch = require('picomatch')
+       * // picomatch.test(input, regex[, options]);
+       *
+       * console.log(picomatch.test('foo/bar', /^(?:([^/]*?)\/([^/]*?))$/))
+       * // { isMatch: true, match: [ 'foo/', 'foo', 'bar' ], output: 'foo/bar' }
+       * ```
+       *
+       * @param {String} `input` String to test.
+       * @param {RegExp} `regex`
+       *
+       * @returns {Object} Returns an object with matching info.
+       *
+       * @api public
+       */
+      picomatch.test = (input, regex, options, { glob, posix } = {}) => {
+        if (typeof input !== 'string')
+          throw new _p_TypeErrorCtor('Expected input to be a string')
+        if (input === '')
+          return {
+            isMatch: false,
+            output: '',
+          }
+        const opts = options || {}
+        const format = opts.format || (posix ? utils.toPosixSlashes : null)
+        let match = input === glob
+        let output = match && format ? format(input) : input
+        if (match === false) {
+          output = format ? format(input) : input
+          match = output === glob
+        }
+        if (match === false || opts.capture === true) {
+          if (opts.matchBase === true || opts.basename === true)
+            match = picomatch.matchBase(input, regex, options, posix)
+          else match = regex.exec(output)
+        }
+        return {
+          isMatch: Boolean(match),
+          match,
+          output,
+        }
+      }
+      /**
+       * Match the basename of a filepath.
+       *
+       * ```js
+       * const picomatch = require('picomatch');
+       * // picomatch.matchBase(input, glob[, options]);
+       * console.log(picomatch.matchBase('foo/bar.js', '*.js'); // true
+       * ```
+       *
+       * @param {String} `input` String to test.
+       * @param {RegExp | String} `glob` Glob pattern or regex created by
+       *   [.makeRe](#makeRe).
+       *
+       * @returns {Boolean}
+       *
+       * @api public
+       */
+      picomatch.matchBase = (
+        input,
+        glob,
+        options,
+        posix = options && options.windows,
+      ) => {
+        return (
+          glob instanceof RegExp ? glob : picomatch.makeRe(glob, options)
+        ).test(utils.basename(input, { windows: posix }))
+      }
+      /**
+       * Returns true if **any** of the given glob `patterns` match the
+       * specified `string`.
+       *
+       * ```js
+       * const picomatch = require('picomatch')
+       * // picomatch.isMatch(string, patterns[, options]);
+       *
+       * console.log(picomatch.isMatch('a.a', ['b.*', '*.a'])) //=> true
+       * console.log(picomatch.isMatch('a.a', 'b.*')) //=> false
+       * ```
+       *
+       * @param {String | Array} str The string to test.
+       * @param {String | Array} patterns One or more glob patterns to use for
+       *   matching.
+       * @param {Object} [options] See available [options](#options).
+       *
+       * @returns {Boolean} Returns true if any patterns match `str`
+       *
+       * @api public
+       */
+      picomatch.isMatch = (str, patterns, options) =>
+        picomatch(patterns, options)(str)
+      /**
+       * Parse a glob pattern to create the source string for a regular
+       * expression.
+       *
+       * ```js
+       * const picomatch = require('picomatch');
+       * const result = picomatch.parse(pattern[, options]);
+       * ```
+       *
+       * @param {String} `pattern`
+       * @param {Object} `options`
+       *
+       * @returns {Object} Returns an object with useful properties and output to
+       *   be used as a regex source string.
+       *
+       * @api public
+       */
+      picomatch.parse = (pattern, options) => {
+        if (_p_ArrayIsArray(pattern))
+          return pattern.map(p => picomatch.parse(p, options))
+        return parse(pattern, {
+          ...options,
+          fastpaths: false,
+        })
+      }
+      /**
+       * Scan a glob pattern to separate the pattern into segments.
+       *
+       * ```js
+       * const picomatch = require('picomatch');
+       * // picomatch.scan(input[, options]);
+       *
+       * const result = picomatch.scan('!./foo/*.js');
+       * console.log(result);
+       * { prefix: '!./',
+       *   input: '!./foo/*.js',
+       *   start: 3,
+       *   base: 'foo',
+       *   glob: '*.js',
+       *   isBrace: false,
+       *   isBracket: false,
+       *   isGlob: true,
+       *   isExtglob: false,
+       *   isGlobstar: false,
+       *   negated: true }
+       * ```
+       *
+       * @param {String} `input` Glob pattern to scan.
+       * @param {Object} `options`
+       *
+       * @returns {Object} Returns an object with
+       *
+       * @api public
+       */
+      picomatch.scan = (input, options) => scan(input, options)
+      /**
+       * Compile a regular expression from the `state` object returned by the
+       * [parse()](#parse) method.
+       *
+       * ```js
+       * const picomatch = require('picomatch')
+       * const state = picomatch.parse('*.js')
+       * // picomatch.compileRe(state[, options]);
+       *
+       * console.log(picomatch.compileRe(state))
+       * //=> /^(?:(?!\.)(?=.)[^/]*?\.js)$/
+       * ```
+       *
+       * @param {Object} `state`
+       * @param {Object} `options`
+       * @param {Boolean} `returnOutput` Intended for implementors, this argument
+       *   allows you to return the raw output from the parser.
+       * @param {Boolean} `returnState` Adds the state to a `state` property on
+       *   the returned regex. Useful for implementors and debugging.
+       *
+       * @returns {RegExp}
+       *
+       * @api public
+       */
+      picomatch.compileRe = (
+        state,
+        options,
+        returnOutput = false,
+        returnState = false,
+      ) => {
+        if (returnOutput === true) return state.output
+        const opts = options || {}
+        const prepend = opts.contains ? '' : '^'
+        const append = opts.contains ? '' : '$'
+        let source = `${prepend}(?:${state.output})${append}`
+        if (state && state.negated === true) source = `^(?!${source}).*$`
+        const regex = picomatch.toRegex(source, options)
+        if (returnState === true) regex.state = state
+        return regex
+      }
+      /**
+       * Create a regular expression from a parsed glob pattern.
+       *
+       * ```js
+       * const picomatch = require('picomatch')
+       * // picomatch.makeRe(state[, options]);
+       *
+       * const result = picomatch.makeRe('*.js')
+       * console.log(result)
+       * //=> /^(?:(?!\.)(?=.)[^/]*?\.js)$/
+       * ```
+       *
+       * @param {String} `state` The object returned from the `.parse` method.
+       * @param {Object} `options`
+       * @param {Boolean} `returnOutput` Implementors may use this argument to
+       *   return the compiled output, instead of a regular expression. This is
+       *   not exposed on the options to prevent end-users from mutating the
+       *   result.
+       * @param {Boolean} `returnState` Implementors may use this argument to
+       *   return the state from the parsed glob with the returned regular
+       *   expression.
+       *
+       * @returns {RegExp} Returns a regex created from the given pattern.
+       *
+       * @api public
+       */
+      picomatch.makeRe = (
+        input,
+        options = {},
+        returnOutput = false,
+        returnState = false,
+      ) => {
+        if (!input || typeof input !== 'string')
+          throw new _p_TypeErrorCtor('Expected a non-empty string')
+        let parsed = {
+          negated: false,
+          fastpaths: true,
+        }
+        if (
+          options.fastpaths !== false &&
+          (input[0] === '.' || input[0] === '*')
+        )
+          parsed.output = parse.fastpaths(input, options)
+        if (!parsed.output) parsed = parse(input, options)
+        return picomatch.compileRe(parsed, options, returnOutput, returnState)
+      }
+      /**
+       * Create a regular expression from the given regex source string.
+       *
+       * ```js
+       * const picomatch = require('picomatch')
+       * // picomatch.toRegex(source[, options]);
+       *
+       * const { output } = picomatch.parse('*.js')
+       * console.log(picomatch.toRegex(output))
+       * //=> /^(?:(?!\.)(?=.)[^/]*?\.js)$/
+       * ```
+       *
+       * @param {String} `source` Regular expression source string.
+       * @param {Object} `options`
+       *
+       * @returns {RegExp}
+       *
+       * @api public
+       */
+      picomatch.toRegex = (source, options) => {
+        try {
+          const opts = options || {}
+          return new _p_RegExpCtor(
+            source,
+            opts.flags || (opts.nocase ? 'i' : ''),
+          )
+        } catch (err) {
+          if (options && options.debug === true) throw err
+          return /$^/
+        }
+      }
+      /**
+       * Picomatch constants.
+       *
+       * @returns {Object}
+       */
+      picomatch.constants = constants
+      /**
+       * Expose "picomatch"
+       */
+      module$16.exports = picomatch
+    },
+  )
+  var require_picomatch = /* @__PURE__ */ __commonJSMin(
+    (exports$19, module$17) => {
+      const pico = require_picomatch$1()
+      const utils = require_utils$3()
+      function picomatch(glob, options, returnState = false) {
+        if (options && (options.windows === null || options.windows === void 0))
+          options = {
+            ...options,
+            windows: utils.isWindows(),
+          }
+        return pico(glob, options, returnState)
+      }
+      _p_ObjectAssign(picomatch, pico)
+      module$17.exports = picomatch
+    },
+  )
+  function mergeStreams(streams) {
+    if (!_p_ArrayIsArray(streams))
+      throw new _p_TypeErrorCtor(
+        `Expected an array, got \`${typeof streams}\`.`,
+      )
+    for (const stream of streams) validateStream(stream)
+    const objectMode = streams.some(
+      ({ readableObjectMode }) => readableObjectMode,
+    )
+    const highWaterMark = getHighWaterMark(streams, objectMode)
+    const passThroughStream = new MergedStream({
+      objectMode,
+      writableHighWaterMark: highWaterMark,
+      readableHighWaterMark: highWaterMark,
+    })
+    for (const stream of streams) passThroughStream.add(stream)
+    return passThroughStream
+  }
+  var getHighWaterMark
+  var MergedStream
+  var onMergedStreamFinished
+  var onMergedStreamEnd
+  var onInputStreamsUnpipe
+  var validateStream
+  var endWhenStreamsDone
+  var afterMergedStreamFinished
+  var onInputStreamEnd
+  var onInputStreamUnpipe
+  var endStream
+  var errorOrAbortStream
+  var isAbortError
+  var abortStream
+  var errorStream
+  var noop
+  var updateMaxListeners
+  var PASSTHROUGH_LISTENERS_COUNT
+  var PASSTHROUGH_LISTENERS_PER_STREAM
+  var init_merge_streams = __esmMin(() => {
+    getHighWaterMark = (streams, objectMode) => {
+      if (streams.length === 0)
+        return (0, node_stream.getDefaultHighWaterMark)(objectMode)
+      const highWaterMarks = streams
+        .filter(({ readableObjectMode }) => readableObjectMode === objectMode)
+        .map(({ readableHighWaterMark }) => readableHighWaterMark)
+      return _p_MathMax(...highWaterMarks)
+    }
+    MergedStream = class extends node_stream.PassThrough {
+      #streams = /* @__PURE__ */ new _p_SetCtor([])
+      #ended = /* @__PURE__ */ new _p_SetCtor([])
+      #aborted = /* @__PURE__ */ new _p_SetCtor([])
+      #onFinished
+      #unpipeEvent = Symbol('unpipe')
+      #streamPromises = /* @__PURE__ */ new _p_WeakMapCtor()
+      add(stream) {
+        validateStream(stream)
+        if (this.#streams.has(stream)) return
+        this.#streams.add(stream)
+        this.#onFinished ??= onMergedStreamFinished(
+          this,
+          this.#streams,
+          this.#unpipeEvent,
+        )
+        const streamPromise = endWhenStreamsDone({
+          passThroughStream: this,
+          stream,
+          streams: this.#streams,
+          ended: this.#ended,
+          aborted: this.#aborted,
+          onFinished: this.#onFinished,
+          unpipeEvent: this.#unpipeEvent,
+        })
+        this.#streamPromises.set(stream, streamPromise)
+        stream.pipe(this, { end: false })
+      }
+      async remove(stream) {
+        validateStream(stream)
+        if (!this.#streams.has(stream)) return false
+        const streamPromise = this.#streamPromises.get(stream)
+        if (streamPromise === void 0) return false
+        this.#streamPromises.delete(stream)
+        stream.unpipe(this)
+        await streamPromise
+        return true
+      }
+    }
+    onMergedStreamFinished = async (
+      passThroughStream,
+      streams,
+      unpipeEvent,
+    ) => {
+      updateMaxListeners(passThroughStream, PASSTHROUGH_LISTENERS_COUNT)
+      const controller = new AbortController()
+      try {
+        await _p_PromiseRace([
+          onMergedStreamEnd(passThroughStream, controller),
+          onInputStreamsUnpipe(
+            passThroughStream,
+            streams,
+            unpipeEvent,
+            controller,
+          ),
+        ])
+      } finally {
+        controller.abort()
+        updateMaxListeners(passThroughStream, -PASSTHROUGH_LISTENERS_COUNT)
+      }
+    }
+    onMergedStreamEnd = async (passThroughStream, { signal }) => {
+      try {
+        await (0, node_stream_promises.finished)(passThroughStream, {
+          signal,
+          cleanup: true,
+        })
+      } catch (error) {
+        errorOrAbortStream(passThroughStream, error)
+        throw error
+      }
+    }
+    onInputStreamsUnpipe = async (
+      passThroughStream,
+      streams,
+      unpipeEvent,
+      { signal },
+    ) => {
+      for await (const [unpipedStream] of (0, node_events.on)(
+        passThroughStream,
+        'unpipe',
+        { signal },
+      ))
+        if (streams.has(unpipedStream)) unpipedStream.emit(unpipeEvent)
+    }
+    validateStream = stream => {
+      if (typeof stream?.pipe !== 'function')
+        throw new _p_TypeErrorCtor(
+          `Expected a readable stream, got: \`${typeof stream}\`.`,
+        )
+    }
+    endWhenStreamsDone = async ({
+      passThroughStream,
+      stream,
+      streams,
+      ended,
+      aborted,
+      onFinished,
+      unpipeEvent,
+    }) => {
+      updateMaxListeners(passThroughStream, PASSTHROUGH_LISTENERS_PER_STREAM)
+      const controller = new AbortController()
+      try {
+        await _p_PromiseRace([
+          afterMergedStreamFinished(onFinished, stream, controller),
+          onInputStreamEnd({
+            passThroughStream,
+            stream,
+            streams,
+            ended,
+            aborted,
+            controller,
+          }),
+          onInputStreamUnpipe({
+            stream,
+            streams,
+            ended,
+            aborted,
+            unpipeEvent,
+            controller,
+          }),
+        ])
+      } finally {
+        controller.abort()
+        updateMaxListeners(passThroughStream, -PASSTHROUGH_LISTENERS_PER_STREAM)
+      }
+      if (streams.size > 0 && streams.size === ended.size + aborted.size) {
+        if (ended.size === 0 && aborted.size > 0) abortStream(passThroughStream)
+        else endStream(passThroughStream)
+      }
+    }
+    afterMergedStreamFinished = async (onFinished, stream, { signal }) => {
+      try {
+        await onFinished
+        if (!signal.aborted) abortStream(stream)
+      } catch (error) {
+        if (!signal.aborted) errorOrAbortStream(stream, error)
+      }
+    }
+    onInputStreamEnd = async ({
+      passThroughStream,
+      stream,
+      streams,
+      ended,
+      aborted,
+      controller: { signal },
+    }) => {
+      try {
+        await (0, node_stream_promises.finished)(stream, {
+          signal,
+          cleanup: true,
+          readable: true,
+          writable: false,
+        })
+        if (streams.has(stream)) ended.add(stream)
+      } catch (error) {
+        if (signal.aborted || !streams.has(stream)) return
+        if (isAbortError(error)) aborted.add(stream)
+        else errorStream(passThroughStream, error)
+      }
+    }
+    onInputStreamUnpipe = async ({
+      stream,
+      streams,
+      ended,
+      aborted,
+      unpipeEvent,
+      controller: { signal },
+    }) => {
+      await (0, node_events.once)(stream, unpipeEvent, { signal })
+      if (!stream.readable)
+        return (0, node_events.once)(signal, 'abort', { signal })
+      streams.delete(stream)
+      ended.delete(stream)
+      aborted.delete(stream)
+    }
+    endStream = stream => {
+      if (stream.writable) stream.end()
+    }
+    errorOrAbortStream = (stream, error) => {
+      if (isAbortError(error)) abortStream(stream)
+      else errorStream(stream, error)
+    }
+    isAbortError = error => error?.code === 'ERR_STREAM_PREMATURE_CLOSE'
+    abortStream = stream => {
+      if (stream.readable || stream.writable) stream.destroy()
+    }
+    errorStream = (stream, error) => {
+      if (!stream.destroyed) {
+        stream.once('error', noop)
+        stream.destroy(error)
+      }
+    }
+    noop = () => {}
+    updateMaxListeners = (passThroughStream, increment) => {
+      const maxListeners = passThroughStream.getMaxListeners()
+      if (maxListeners !== 0 && maxListeners !== Number.POSITIVE_INFINITY)
+        passThroughStream.setMaxListeners(maxListeners + increment)
+    }
+    PASSTHROUGH_LISTENERS_COUNT = 2
+    PASSTHROUGH_LISTENERS_PER_STREAM = 1
+  })
+  var require_array$1 = /* @__PURE__ */ __commonJSMin(exports$20 => {
+    _p_ObjectDefineProperty(exports$20, '__esModule', { value: true })
+    exports$20.splitWhen = exports$20.flatten = void 0
+    function flatten(items) {
+      return items.reduce((collection, item) => [].concat(collection, item), [])
+    }
+    exports$20.flatten = flatten
+    function splitWhen(items, predicate) {
+      const result = [[]]
+      let groupIndex = 0
+      for (const item of items)
+        if (predicate(item)) {
+          groupIndex++
+          result[groupIndex] = []
+        } else result[groupIndex].push(item)
+      return result
+    }
+    exports$20.splitWhen = splitWhen
+  })
+  var require_errno = /* @__PURE__ */ __commonJSMin(exports$21 => {
+    _p_ObjectDefineProperty(exports$21, '__esModule', { value: true })
+    exports$21.isEnoentCodeError = void 0
+    function isEnoentCodeError(error) {
+      return error.code === 'ENOENT'
+    }
+    exports$21.isEnoentCodeError = isEnoentCodeError
+  })
+  var require_fs$3 = /* @__PURE__ */ __commonJSMin(exports$22 => {
+    _p_ObjectDefineProperty(exports$22, '__esModule', { value: true })
+    exports$22.createDirentFromStats = void 0
+    var DirentFromStats = class {
+      constructor(name, stats) {
+        this.name = name
+        this.isBlockDevice = stats.isBlockDevice.bind(stats)
+        this.isCharacterDevice = stats.isCharacterDevice.bind(stats)
+        this.isDirectory = stats.isDirectory.bind(stats)
+        this.isFIFO = stats.isFIFO.bind(stats)
+        this.isFile = stats.isFile.bind(stats)
+        this.isSocket = stats.isSocket.bind(stats)
+        this.isSymbolicLink = stats.isSymbolicLink.bind(stats)
+      }
+    }
+    function createDirentFromStats(name, stats) {
+      return new DirentFromStats(name, stats)
+    }
+    exports$22.createDirentFromStats = createDirentFromStats
+  })
+  var require_path = /* @__PURE__ */ __commonJSMin(exports$23 => {
+    _p_ObjectDefineProperty(exports$23, '__esModule', { value: true })
+    exports$23.convertPosixPathToPattern =
+      exports$23.convertWindowsPathToPattern =
+      exports$23.convertPathToPattern =
+      exports$23.escapePosixPath =
+      exports$23.escapeWindowsPath =
+      exports$23.escape =
+      exports$23.removeLeadingDotSegment =
+      exports$23.makeAbsolute =
+      exports$23.unixify =
+        void 0
+    const os$2 = __require('os')
+    const path$11 = __require('path')
+    const IS_WINDOWS_PLATFORM = os$2.platform() === 'win32'
+    const LEADING_DOT_SEGMENT_CHARACTERS_COUNT = 2
+    /**
+     * All non-escaped special characters. Posix: ()*?[]{|}, !+@ before (, ! at
+     * the beginning, \ before non-special characters. Windows: (){}[], !+@
+     * before (, ! at the beginning.
+     */
+    const POSIX_UNESCAPED_GLOB_SYMBOLS_RE =
+      /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g
+    const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()[\]{}]|^!|[!+@](?=\())/g
+    /**
+     * The device path (.\ or ?).
+     * https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths.
+     */
+    const DOS_DEVICE_PATH_RE = /^\\\\([.?])/
+    /**
+     * All backslashes except those escaping special characters. Windows:
+     * !()+@{}
+     * https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions.
+     */
+    const WINDOWS_BACKSLASHES_RE = /\\(?![!()+@[\]{}])/g
+    /**
+     * Designed to work only with simple paths: `dir\\file`.
+     */
+    function unixify(filepath) {
+      return filepath.replace(/\\/g, '/')
+    }
+    exports$23.unixify = unixify
+    function makeAbsolute(cwd, filepath) {
+      return path$11.resolve(cwd, filepath)
+    }
+    exports$23.makeAbsolute = makeAbsolute
+    function removeLeadingDotSegment(entry) {
+      if (_p_StringPrototypeCharAt(entry, 0) === '.') {
+        const secondCharactery = _p_StringPrototypeCharAt(entry, 1)
+        if (secondCharactery === '/' || secondCharactery === '\\')
+          return entry.slice(LEADING_DOT_SEGMENT_CHARACTERS_COUNT)
+      }
+      return entry
+    }
+    exports$23.removeLeadingDotSegment = removeLeadingDotSegment
+    exports$23.escape = IS_WINDOWS_PLATFORM
+      ? escapeWindowsPath
+      : escapePosixPath
+    function escapeWindowsPath(pattern) {
+      return pattern.replace(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2')
+    }
+    exports$23.escapeWindowsPath = escapeWindowsPath
+    function escapePosixPath(pattern) {
+      return pattern.replace(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2')
+    }
+    exports$23.escapePosixPath = escapePosixPath
+    exports$23.convertPathToPattern = IS_WINDOWS_PLATFORM
+      ? convertWindowsPathToPattern
+      : convertPosixPathToPattern
+    function convertWindowsPathToPattern(filepath) {
+      return escapeWindowsPath(filepath)
+        .replace(DOS_DEVICE_PATH_RE, '//$1')
+        .replace(WINDOWS_BACKSLASHES_RE, '/')
+    }
+    exports$23.convertWindowsPathToPattern = convertWindowsPathToPattern
+    function convertPosixPathToPattern(filepath) {
+      return escapePosixPath(filepath)
+    }
+    exports$23.convertPosixPathToPattern = convertPosixPathToPattern
+  })
+  var require_is_extglob = /* @__PURE__ */ __commonJSMin(
+    (exports$24, module$18) => {
+      /*!
+       * is-extglob <https://github.com/jonschlinkert/is-extglob>
+       *
+       * Copyright (c) 2014-2016, Jon Schlinkert.
+       * Licensed under the MIT License.
+       */
+      module$18.exports = function isExtglob(str) {
+        if (typeof str !== 'string' || str === '') return false
+        var match
+        while ((match = /(\\).|([@?!+*]\(.*\))/g.exec(str))) {
+          if (match[2]) return true
+          str = str.slice(match.index + match[0].length)
+        }
+        return false
+      }
+    },
+  )
+  var require_is_glob = /* @__PURE__ */ __commonJSMin(
+    (exports$25, module$19) => {
+      /*!
+       * is-glob <https://github.com/jonschlinkert/is-glob>
+       *
+       * Copyright (c) 2014-2017, Jon Schlinkert.
+       * Released under the MIT License.
+       */
+      var isExtglob = require_is_extglob()
+      var chars = {
+        '{': '}',
+        '(': ')',
+        '[': ']',
+      }
+      var strictCheck = function (str) {
+        if (str[0] === '!') return true
+        var index = 0
+        var pipeIndex = -2
+        var closeSquareIndex = -2
+        var closeCurlyIndex = -2
+        var closeParenIndex = -2
+        var backSlashIndex = -2
+        while (index < str.length) {
+          if (str[index] === '*') return true
+          if (str[index + 1] === '?' && /[\].+)]/.test(str[index])) return true
+          if (
+            closeSquareIndex !== -1 &&
+            str[index] === '[' &&
+            str[index + 1] !== ']'
+          ) {
+            if (closeSquareIndex < index)
+              closeSquareIndex = str.indexOf(']', index)
+            if (closeSquareIndex > index) {
+              if (backSlashIndex === -1 || backSlashIndex > closeSquareIndex)
+                return true
+              backSlashIndex = str.indexOf('\\', index)
+              if (backSlashIndex === -1 || backSlashIndex > closeSquareIndex)
+                return true
+            }
+          }
+          if (
+            closeCurlyIndex !== -1 &&
+            str[index] === '{' &&
+            str[index + 1] !== '}'
+          ) {
+            closeCurlyIndex = str.indexOf('}', index)
+            if (closeCurlyIndex > index) {
+              backSlashIndex = str.indexOf('\\', index)
+              if (backSlashIndex === -1 || backSlashIndex > closeCurlyIndex)
+                return true
+            }
+          }
+          if (
+            closeParenIndex !== -1 &&
+            str[index] === '(' &&
+            str[index + 1] === '?' &&
+            /[:!=]/.test(str[index + 2]) &&
+            str[index + 3] !== ')'
+          ) {
+            closeParenIndex = str.indexOf(')', index)
+            if (closeParenIndex > index) {
+              backSlashIndex = str.indexOf('\\', index)
+              if (backSlashIndex === -1 || backSlashIndex > closeParenIndex)
+                return true
+            }
+          }
+          if (
+            pipeIndex !== -1 &&
+            str[index] === '(' &&
+            str[index + 1] !== '|'
+          ) {
+            if (pipeIndex < index) pipeIndex = str.indexOf('|', index)
+            if (pipeIndex !== -1 && str[pipeIndex + 1] !== ')') {
+              closeParenIndex = str.indexOf(')', pipeIndex)
+              if (closeParenIndex > pipeIndex) {
+                backSlashIndex = str.indexOf('\\', pipeIndex)
+                if (backSlashIndex === -1 || backSlashIndex > closeParenIndex)
+                  return true
+              }
+            }
+          }
+          if (str[index] === '\\') {
+            var open = str[index + 1]
+            index += 2
+            var close = chars[open]
+            if (close) {
+              var n = str.indexOf(close, index)
+              if (n !== -1) index = n + 1
+            }
+            if (str[index] === '!') return true
+          } else index++
+        }
+        return false
+      }
+      var relaxedCheck = function (str) {
+        if (str[0] === '!') return true
+        var index = 0
+        while (index < str.length) {
+          if (/[*?{}()[\]]/.test(str[index])) return true
+          if (str[index] === '\\') {
+            var open = str[index + 1]
+            index += 2
+            var close = chars[open]
+            if (close) {
+              var n = str.indexOf(close, index)
+              if (n !== -1) index = n + 1
+            }
+            if (str[index] === '!') return true
+          } else index++
+        }
+        return false
+      }
+      module$19.exports = function isGlob(str, options) {
+        if (typeof str !== 'string' || str === '') return false
+        if (isExtglob(str)) return true
+        var check = strictCheck
+        if (options && options.strict === false) check = relaxedCheck
+        return check(str)
+      }
+    },
+  )
+  var require_glob_parent = /* @__PURE__ */ __commonJSMin(
+    (exports$26, module$20) => {
+      var isGlob = require_is_glob()
+      var pathPosixDirname = __require('path').posix.dirname
+      var isWin32 = __require('os').platform() === 'win32'
+      var slash = '/'
+      var backslash = /\\/g
+      var enclosure = /[\{\[].*[\}\]]$/
+      var globby = /(^|[^\\])([\{\[]|\([^\)]+$)/
+      var escaped = /\\([\!\*\?\|\[\]\(\)\{\}])/g
+      /**
+       * @param {string} str
+       * @param {Object} opts
+       * @param {boolean} [opts.flipBackslashes=true]
+       *
+       * @returns {string}
+       */
+      module$20.exports = function globParent(str, opts) {
+        if (
+          _p_ObjectAssign({ flipBackslashes: true }, opts).flipBackslashes &&
+          isWin32 &&
+          str.indexOf(slash) < 0
+        )
+          str = str.replace(backslash, slash)
+        if (enclosure.test(str)) str += slash
+        str += 'a'
+        do str = pathPosixDirname(str)
+        while (isGlob(str) || globby.test(str))
+        return str.replace(escaped, '$1')
+      }
+    },
+  )
+  var require_utils$2 = /* @__PURE__ */ __commonJSMin(exports$27 => {
+    exports$27.isInteger = num => {
+      if (typeof num === 'number') return _p_NumberIsInteger(num)
+      if (typeof num === 'string' && _p_StringPrototypeTrim(num) !== '')
+        return _p_NumberIsInteger(Number(num))
+      return false
+    }
+    /**
+     * Find a node of the given type.
+     */
+    exports$27.find = (node, type) =>
+      node.nodes.find(node => node.type === type)
+    /**
+     * Find a node of the given type.
+     */
+    exports$27.exceedsLimit = (min, max, step = 1, limit) => {
+      if (limit === false) return false
+      if (!exports$27.isInteger(min) || !exports$27.isInteger(max)) return false
+      return (Number(max) - Number(min)) / Number(step) >= limit
+    }
+    /**
+     * Escape the given node with '' before node.value.
+     */
+    exports$27.escapeNode = (block, n = 0, type) => {
+      const node = block.nodes[n]
+      if (!node) return
+      if (
+        (type && node.type === type) ||
+        node.type === 'open' ||
+        node.type === 'close'
+      ) {
+        if (node.escaped !== true) {
+          node.value = '\\' + node.value
+          node.escaped = true
+        }
+      }
+    }
+    /**
+     * Returns true if the given brace node should be enclosed in literal
+     * braces.
+     */
+    exports$27.encloseBrace = node => {
+      if (node.type !== 'brace') return false
+      if ((node.commas >> (0 + node.ranges)) >> 0 === 0) {
+        node.invalid = true
+        return true
+      }
+      return false
+    }
+    /**
+     * Returns true if a brace node is invalid.
+     */
+    exports$27.isInvalidBrace = block => {
+      if (block.type !== 'brace') return false
+      if (block.invalid === true || block.dollar) return true
+      if ((block.commas >> (0 + block.ranges)) >> 0 === 0) {
+        block.invalid = true
+        return true
+      }
+      if (block.open !== true || block.close !== true) {
+        block.invalid = true
+        return true
+      }
+      return false
+    }
+    /**
+     * Returns true if a node is an open or close node.
+     */
+    exports$27.isOpenOrClose = node => {
+      if (node.type === 'open' || node.type === 'close') return true
+      return node.open === true || node.close === true
+    }
+    /**
+     * Reduce an array of text nodes.
+     */
+    exports$27.reduce = nodes =>
+      nodes.reduce((acc, node) => {
+        if (node.type === 'text') acc.push(node.value)
+        if (node.type === 'range') node.type = 'text'
+        return acc
+      }, [])
+    /**
+     * Flatten an array.
+     */
+    exports$27.flatten = (...args) => {
+      const result = []
+      const flat = arr => {
+        for (let i = 0; i < arr.length; i++) {
+          const ele = arr[i]
+          if (_p_ArrayIsArray(ele)) {
+            flat(ele)
+            continue
+          }
+          if (ele !== void 0) result.push(ele)
+        }
+        return result
+      }
+      flat(args)
+      return result
+    }
+  })
+  var require_stringify = /* @__PURE__ */ __commonJSMin(
+    (exports$28, module$21) => {
+      const utils = require_utils$2()
+      module$21.exports = (ast, options = {}) => {
+        const stringify = (node, parent = {}) => {
+          const invalidBlock =
+            options.escapeInvalid && utils.isInvalidBrace(parent)
+          const invalidNode =
+            node.invalid === true && options.escapeInvalid === true
+          let output = ''
+          if (node.value) {
+            if ((invalidBlock || invalidNode) && utils.isOpenOrClose(node))
+              return '\\' + node.value
+            return node.value
+          }
+          if (node.value) return node.value
+          if (node.nodes)
+            for (const child of node.nodes) output += stringify(child)
+          return output
+        }
+        return stringify(ast)
+      }
+    },
+  )
+  /*!
+   * is-number <https://github.com/jonschlinkert/is-number>
+   *
+   * Copyright (c) 2014-present, Jon Schlinkert.
+   * Released under the MIT License.
+   */
+  var require_is_number = /* @__PURE__ */ __commonJSMin(
+    (exports$29, module$22) => {
+      module$22.exports = function (num) {
+        if (typeof num === 'number') return num - num === 0
+        if (typeof num === 'string' && _p_StringPrototypeTrim(num) !== '')
+          return Number.isFinite ? _p_NumberIsFinite(+num) : isFinite(+num)
+        return false
+      }
+    },
+  )
+  /*!
+   * to-regex-range <https://github.com/micromatch/to-regex-range>
+   *
+   * Copyright (c) 2015-present, Jon Schlinkert.
+   * Released under the MIT License.
+   */
+  var require_to_regex_range = /* @__PURE__ */ __commonJSMin(
+    (exports$30, module$23) => {
+      const isNumber = require_is_number()
+      const toRegexRange = (min, max, options) => {
+        if (isNumber(min) === false)
+          throw new _p_TypeErrorCtor(
+            'toRegexRange: expected the first argument to be a number',
+          )
+        if (max === void 0 || min === max) return String(min)
+        if (isNumber(max) === false)
+          throw new _p_TypeErrorCtor(
+            'toRegexRange: expected the second argument to be a number.',
+          )
+        let opts = {
+          relaxZeros: true,
+          ...options,
+        }
+        if (typeof opts.strictZeros === 'boolean')
+          opts.relaxZeros = opts.strictZeros === false
+        let relax = String(opts.relaxZeros)
+        let shorthand = String(opts.shorthand)
+        let capture = String(opts.capture)
+        let wrap = String(opts.wrap)
+        let cacheKey =
+          min + ':' + max + '=' + relax + shorthand + capture + wrap
+        if (toRegexRange.cache.hasOwnProperty(cacheKey))
+          return toRegexRange.cache[cacheKey].result
+        let a = _p_MathMin(min, max)
+        let b = _p_MathMax(min, max)
+        if (_p_MathAbs(a - b) === 1) {
+          let result = min + '|' + max
+          if (opts.capture) return `(${result})`
+          if (opts.wrap === false) return result
+          return `(?:${result})`
+        }
+        let isPadded = hasPadding(min) || hasPadding(max)
+        let state = {
+          min,
+          max,
+          a,
+          b,
+        }
+        let positives = []
+        let negatives = []
+        if (isPadded) {
+          state.isPadded = isPadded
+          state.maxLen = String(state.max).length
+        }
+        if (a < 0) {
+          negatives = splitToPatterns(
+            b < 0 ? _p_MathAbs(b) : 1,
+            _p_MathAbs(a),
+            state,
+            opts,
+          )
+          a = state.a = 0
+        }
+        if (b >= 0) positives = splitToPatterns(a, b, state, opts)
+        state.negatives = negatives
+        state.positives = positives
+        state.result = collatePatterns(negatives, positives, opts)
+        if (opts.capture === true) state.result = `(${state.result})`
+        else if (opts.wrap !== false && positives.length + negatives.length > 1)
+          state.result = `(?:${state.result})`
+        toRegexRange.cache[cacheKey] = state
+        return state.result
+      }
+      function collatePatterns(neg, pos, options) {
+        let onlyNegative = filterPatterns(neg, pos, '-', false, options) || []
+        let onlyPositive = filterPatterns(pos, neg, '', false, options) || []
+        let intersected = filterPatterns(neg, pos, '-?', true, options) || []
+        return onlyNegative.concat(intersected).concat(onlyPositive).join('|')
+      }
+      function splitToRanges(min, max) {
+        let nines = 1
+        let zeros = 1
+        let stop = countNines(min, nines)
+        let stops = /* @__PURE__ */ new _p_SetCtor([max])
+        while (min <= stop && stop <= max) {
+          stops.add(stop)
+          nines += 1
+          stop = countNines(min, nines)
+        }
+        stop = countZeros(max + 1, zeros) - 1
+        while (min < stop && stop <= max) {
+          stops.add(stop)
+          zeros += 1
+          stop = countZeros(max + 1, zeros) - 1
+        }
+        stops = [...stops]
+        stops.sort(compare)
+        return stops
+      }
+      /**
+       * Convert a range to a regex pattern.
+       *
+       * @param {Number} `start`
+       * @param {Number} `stop`
+       *
+       * @returns {String}
+       */
+      function rangeToPattern(start, stop, options) {
+        if (start === stop)
+          return {
+            pattern: start,
+            count: [],
+            digits: 0,
+          }
+        let zipped = zip(start, stop)
+        let digits = zipped.length
+        let pattern = ''
+        let count = 0
+        for (let i = 0; i < digits; i++) {
+          let [startDigit, stopDigit] = zipped[i]
+          if (startDigit === stopDigit) pattern += startDigit
+          else if (startDigit !== '0' || stopDigit !== '9')
+            pattern += toCharacterClass(startDigit, stopDigit, options)
+          else count++
+        }
+        if (count) pattern += options.shorthand === true ? '\\d' : '[0-9]'
+        return {
+          pattern,
+          count: [count],
+          digits,
+        }
+      }
+      function splitToPatterns(min, max, tok, options) {
+        let ranges = splitToRanges(min, max)
+        let tokens = []
+        let start = min
+        let prev
+        for (let i = 0; i < ranges.length; i++) {
+          let max = ranges[i]
+          let obj = rangeToPattern(String(start), String(max), options)
+          let zeros = ''
+          if (!tok.isPadded && prev && prev.pattern === obj.pattern) {
+            if (prev.count.length > 1) prev.count.pop()
+            prev.count.push(obj.count[0])
+            prev.string = prev.pattern + toQuantifier(prev.count)
+            start = max + 1
+            continue
+          }
+          if (tok.isPadded) zeros = padZeros(max, tok, options)
+          obj.string = zeros + obj.pattern + toQuantifier(obj.count)
+          tokens.push(obj)
+          start = max + 1
+          prev = obj
+        }
+        return tokens
+      }
+      function filterPatterns(arr, comparison, prefix, intersection, options) {
+        let result = []
+        for (let ele of arr) {
+          let { string } = ele
+          if (!intersection && !contains(comparison, 'string', string))
+            result.push(prefix + string)
+          if (intersection && contains(comparison, 'string', string))
+            result.push(prefix + string)
+        }
+        return result
+      }
+      /**
+       * Zip strings.
+       */
+      function zip(a, b) {
+        let arr = []
+        for (let i = 0; i < a.length; i++) arr.push([a[i], b[i]])
+        return arr
+      }
+      function compare(a, b) {
+        return a > b ? 1 : b > a ? -1 : 0
+      }
+      function contains(arr, key, val) {
+        return arr.some(ele => ele[key] === val)
+      }
+      function countNines(min, len) {
+        return Number(String(min).slice(0, -len) + '9'.repeat(len))
+      }
+      function countZeros(integer, zeros) {
+        return integer - (integer % _p_MathPow(10, zeros))
+      }
+      function toQuantifier(digits) {
+        let [start = 0, stop = ''] = digits
+        if (stop || start > 1) return `{${start + (stop ? ',' + stop : '')}}`
+        return ''
+      }
+      function toCharacterClass(a, b, options) {
+        return `[${a}${b - a === 1 ? '' : '-'}${b}]`
+      }
+      function hasPadding(str) {
+        return /^-?(0+)\d/.test(str)
+      }
+      function padZeros(value, tok, options) {
+        if (!tok.isPadded) return value
+        let diff = _p_MathAbs(tok.maxLen - String(value).length)
+        let relax = options.relaxZeros !== false
+        switch (diff) {
+          case 0:
+            return ''
+          case 1:
+            return relax ? '0?' : '0'
+          case 2:
+            return relax ? '0{0,2}' : '00'
+          default:
+            return relax ? `0{0,${diff}}` : `0{${diff}}`
+        }
+      }
+      /**
+       * Cache.
+       */
+      toRegexRange.cache = {}
+      toRegexRange.clearCache = () => (toRegexRange.cache = {})
+      /**
+       * Expose `toRegexRange`
+       */
+      module$23.exports = toRegexRange
+    },
+  )
+  /*!
+   * fill-range <https://github.com/jonschlinkert/fill-range>
+   *
+   * Copyright (c) 2014-present, Jon Schlinkert.
+   * Licensed under the MIT License.
+   */
+  var require_fill_range = /* @__PURE__ */ __commonJSMin(
+    (exports$31, module$24) => {
+      const util$1 = __require('util')
+      const toRegexRange = require_to_regex_range()
+      const isObject = val =>
+        val !== null && typeof val === 'object' && !_p_ArrayIsArray(val)
+      const transform = toNumber => {
+        return value => (toNumber === true ? Number(value) : String(value))
+      }
+      const isValidValue = value => {
+        return (
+          typeof value === 'number' ||
+          (typeof value === 'string' && value !== '')
+        )
+      }
+      const isNumber = num => _p_NumberIsInteger(+num)
+      const zeros = input => {
+        let value = `${input}`
+        let index = -1
+        if (value[0] === '-') value = value.slice(1)
+        if (value === '0') return false
+        while (value[++index] === '0');
+        return index > 0
+      }
+      const stringify = (start, end, options) => {
+        if (typeof start === 'string' || typeof end === 'string') return true
+        return options.stringify === true
+      }
+      const pad = (input, maxLength, toNumber) => {
+        if (maxLength > 0) {
+          let dash = input[0] === '-' ? '-' : ''
+          if (dash) input = input.slice(1)
+          input =
+            dash +
+            _p_StringPrototypePadStart(
+              input,
+              dash ? maxLength - 1 : maxLength,
+              '0',
+            )
+        }
+        if (toNumber === false) return String(input)
+        return input
+      }
+      const toMaxLen = (input, maxLength) => {
+        let negative = input[0] === '-' ? '-' : ''
+        if (negative) {
+          input = input.slice(1)
+          maxLength--
+        }
+        while (input.length < maxLength) input = '0' + input
+        return negative ? '-' + input : input
+      }
+      const toSequence = (parts, options, maxLen) => {
+        parts.negatives.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        parts.positives.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        let prefix = options.capture ? '' : '?:'
+        let positives = ''
+        let negatives = ''
+        let result
+        if (parts.positives.length)
+          positives = parts.positives
+            .map(v => toMaxLen(String(v), maxLen))
+            .join('|')
+        if (parts.negatives.length)
+          negatives = `-(${prefix}${parts.negatives.map(v => toMaxLen(String(v), maxLen)).join('|')})`
+        if (positives && negatives) result = `${positives}|${negatives}`
+        else result = positives || negatives
+        if (options.wrap) return `(${prefix}${result})`
+        return result
+      }
+      const toRange = (a, b, isNumbers, options) => {
+        if (isNumbers)
+          return toRegexRange(a, b, {
+            wrap: false,
+            ...options,
+          })
+        let start = _p_StringFromCharCode(a)
+        if (a === b) return start
+        return `[${start}-${_p_StringFromCharCode(b)}]`
+      }
+      const toRegex = (start, end, options) => {
+        if (_p_ArrayIsArray(start)) {
+          let wrap = options.wrap === true
+          let prefix = options.capture ? '' : '?:'
+          return wrap ? `(${prefix}${start.join('|')})` : start.join('|')
+        }
+        return toRegexRange(start, end, options)
+      }
+      const rangeError = (...args) => {
+        return /* @__PURE__ */ new _p_RangeErrorCtor(
+          'Invalid range arguments: ' + util$1.inspect(...args),
+        )
+      }
+      const invalidRange = (start, end, options) => {
+        if (options.strictRanges === true) throw rangeError([start, end])
+        return []
+      }
+      const invalidStep = (step, options) => {
+        if (options.strictRanges === true)
+          throw new _p_TypeErrorCtor(`Expected step "${step}" to be a number`)
+        return []
+      }
+      const fillNumbers = (start, end, step = 1, options = {}) => {
+        let a = Number(start)
+        let b = Number(end)
+        if (!_p_NumberIsInteger(a) || !_p_NumberIsInteger(b)) {
+          if (options.strictRanges === true) throw rangeError([start, end])
+          return []
+        }
+        if (a === 0) a = 0
+        if (b === 0) b = 0
+        let descending = a > b
+        let startString = String(start)
+        let endString = String(end)
+        let stepString = String(step)
+        step = _p_MathMax(_p_MathAbs(step), 1)
+        let padded = zeros(startString) || zeros(endString) || zeros(stepString)
+        let maxLen = padded
+          ? _p_MathMax(startString.length, endString.length, stepString.length)
+          : 0
+        let toNumber =
+          padded === false && stringify(start, end, options) === false
+        let format = options.transform || transform(toNumber)
+        if (options.toRegex && step === 1)
+          return toRange(
+            toMaxLen(start, maxLen),
+            toMaxLen(end, maxLen),
+            true,
+            options,
+          )
+        let parts = {
+          negatives: [],
+          positives: [],
+        }
+        let push = num =>
+          parts[num < 0 ? 'negatives' : 'positives'].push(_p_MathAbs(num))
+        let range = []
+        let index = 0
+        while (descending ? a >= b : a <= b) {
+          if (options.toRegex === true && step > 1) push(a)
+          else range.push(pad(format(a, index), maxLen, toNumber))
+          a = descending ? a - step : a + step
+          index++
+        }
+        if (options.toRegex === true)
+          return step > 1
+            ? toSequence(parts, options, maxLen)
+            : toRegex(range, null, {
+                wrap: false,
+                ...options,
+              })
+        return range
+      }
+      const fillLetters = (start, end, step = 1, options = {}) => {
+        if (
+          (!isNumber(start) && start.length > 1) ||
+          (!isNumber(end) && end.length > 1)
+        )
+          return invalidRange(start, end, options)
+        let format = options.transform || (val => _p_StringFromCharCode(val))
+        let a = `${start}`.charCodeAt(0)
+        let b = `${end}`.charCodeAt(0)
+        let descending = a > b
+        let min = _p_MathMin(a, b)
+        let max = _p_MathMax(a, b)
+        if (options.toRegex && step === 1)
+          return toRange(min, max, false, options)
+        let range = []
+        let index = 0
+        while (descending ? a >= b : a <= b) {
+          range.push(format(a, index))
+          a = descending ? a - step : a + step
+          index++
+        }
+        if (options.toRegex === true)
+          return toRegex(range, null, {
+            wrap: false,
+            options,
+          })
+        return range
+      }
+      const fill = (start, end, step, options = {}) => {
+        if (end == null && isValidValue(start)) return [start]
+        if (!isValidValue(start) || !isValidValue(end))
+          return invalidRange(start, end, options)
+        if (typeof step === 'function')
+          return fill(start, end, 1, { transform: step })
+        if (isObject(step)) return fill(start, end, 0, step)
+        let opts = { ...options }
+        if (opts.capture === true) opts.wrap = true
+        step = step || opts.step || 1
+        if (!isNumber(step)) {
+          if (step != null && !isObject(step)) return invalidStep(step, opts)
+          return fill(start, end, 1, step)
+        }
+        if (isNumber(start) && isNumber(end))
+          return fillNumbers(start, end, step, opts)
+        return fillLetters(start, end, _p_MathMax(_p_MathAbs(step), 1), opts)
+      }
+      module$24.exports = fill
+    },
+  )
+  var require_compile = /* @__PURE__ */ __commonJSMin(
+    (exports$32, module$25) => {
+      const fill = require_fill_range()
+      const utils = require_utils$2()
+      const compile = (ast, options = {}) => {
+        const walk = (node, parent = {}) => {
+          const invalidBlock = utils.isInvalidBrace(parent)
+          const invalidNode =
+            node.invalid === true && options.escapeInvalid === true
+          const invalid = invalidBlock === true || invalidNode === true
+          const prefix = options.escapeInvalid === true ? '\\' : ''
+          let output = ''
+          if (node.isOpen === true) return prefix + node.value
+          if (node.isClose === true) {
+            console.log('node.isClose', prefix, node.value)
+            return prefix + node.value
+          }
+          if (node.type === 'open') return invalid ? prefix + node.value : '('
+          if (node.type === 'close') return invalid ? prefix + node.value : ')'
+          if (node.type === 'comma')
+            return node.prev.type === 'comma' ? '' : invalid ? node.value : '|'
+          if (node.value) return node.value
+          if (node.nodes && node.ranges > 0) {
+            const args = utils.reduce(node.nodes)
+            const range = fill(...args, {
+              ...options,
+              wrap: false,
+              toRegex: true,
+              strictZeros: true,
+            })
+            if (range.length !== 0)
+              return args.length > 1 && range.length > 1 ? `(${range})` : range
+          }
+          if (node.nodes)
+            for (const child of node.nodes) output += walk(child, node)
+          return output
+        }
+        return walk(ast)
+      }
+      module$25.exports = compile
+    },
+  )
+  var require_expand = /* @__PURE__ */ __commonJSMin(
+    (exports$33, module$26) => {
+      const fill = require_fill_range()
+      const stringify = require_stringify()
+      const utils = require_utils$2()
+      const append = (queue = '', stash = '', enclose = false) => {
+        const result = []
+        queue = [].concat(queue)
+        stash = [].concat(stash)
+        if (!stash.length) return queue
+        if (!queue.length)
+          return enclose ? utils.flatten(stash).map(ele => `{${ele}}`) : stash
+        for (const item of queue)
+          if (_p_ArrayIsArray(item))
+            for (const value of item) result.push(append(value, stash, enclose))
+          else
+            for (let ele of stash) {
+              if (enclose === true && typeof ele === 'string') ele = `{${ele}}`
+              result.push(
+                _p_ArrayIsArray(ele) ? append(item, ele, enclose) : item + ele,
+              )
+            }
+        return utils.flatten(result)
+      }
+      const expand = (ast, options = {}) => {
+        const rangeLimit =
+          options.rangeLimit === void 0 ? 1e3 : options.rangeLimit
+        const walk = (node, parent = {}) => {
+          node.queue = []
+          let p = parent
+          let q = parent.queue
+          while (p.type !== 'brace' && p.type !== 'root' && p.parent) {
+            p = p.parent
+            q = p.queue
+          }
+          if (node.invalid || node.dollar) {
+            q.push(append(q.pop(), stringify(node, options)))
+            return
+          }
+          if (
+            node.type === 'brace' &&
+            node.invalid !== true &&
+            node.nodes.length === 2
+          ) {
+            q.push(append(q.pop(), ['{}']))
+            return
+          }
+          if (node.nodes && node.ranges > 0) {
+            const args = utils.reduce(node.nodes)
+            if (utils.exceedsLimit(...args, options.step, rangeLimit))
+              throw new _p_RangeErrorCtor(
+                'expanded array length exceeds range limit. Use options.rangeLimit to increase or disable the limit.',
+              )
+            let range = fill(...args, options)
+            if (range.length === 0) range = stringify(node, options)
+            q.push(append(q.pop(), range))
+            node.nodes = []
+            return
+          }
+          const enclose = utils.encloseBrace(node)
+          let queue = node.queue
+          let block = node
+          while (
+            block.type !== 'brace' &&
+            block.type !== 'root' &&
+            block.parent
+          ) {
+            block = block.parent
+            queue = block.queue
+          }
+          for (let i = 0; i < node.nodes.length; i++) {
+            const child = node.nodes[i]
+            if (child.type === 'comma' && node.type === 'brace') {
+              if (i === 1) queue.push('')
+              queue.push('')
+              continue
+            }
+            if (child.type === 'close') {
+              q.push(append(q.pop(), queue, enclose))
+              continue
+            }
+            if (child.value && child.type !== 'open') {
+              queue.push(append(queue.pop(), child.value))
+              continue
+            }
+            if (child.nodes) walk(child, node)
+          }
+          return queue
+        }
+        return utils.flatten(walk(ast))
+      }
+      module$26.exports = expand
+    },
+  )
+  var require_constants$1 = /* @__PURE__ */ __commonJSMin(
+    (exports$34, module$27) => {
+      module$27.exports = {
+        MAX_LENGTH: 1e4,
+        CHAR_0: '0',
+        CHAR_9: '9',
+        CHAR_UPPERCASE_A: 'A',
+        CHAR_LOWERCASE_A: 'a',
+        CHAR_UPPERCASE_Z: 'Z',
+        CHAR_LOWERCASE_Z: 'z',
+        CHAR_LEFT_PARENTHESES: '(',
+        CHAR_RIGHT_PARENTHESES: ')',
+        CHAR_ASTERISK: '*',
+        CHAR_AMPERSAND: '&',
+        CHAR_AT: '@',
+        CHAR_BACKSLASH: '\\',
+        CHAR_BACKTICK: '`',
+        CHAR_CARRIAGE_RETURN: '\r',
+        CHAR_CIRCUMFLEX_ACCENT: '^',
+        CHAR_COLON: ':',
+        CHAR_COMMA: ',',
+        CHAR_DOLLAR: '$',
+        CHAR_DOT: '.',
+        CHAR_DOUBLE_QUOTE: '"',
+        CHAR_EQUAL: '=',
+        CHAR_EXCLAMATION_MARK: '!',
+        CHAR_FORM_FEED: '\f',
+        CHAR_FORWARD_SLASH: '/',
+        CHAR_HASH: '#',
+        CHAR_HYPHEN_MINUS: '-',
+        CHAR_LEFT_ANGLE_BRACKET: '<',
+        CHAR_LEFT_CURLY_BRACE: '{',
+        CHAR_LEFT_SQUARE_BRACKET: '[',
+        CHAR_LINE_FEED: '\n',
+        CHAR_NO_BREAK_SPACE: '\xA0',
+        CHAR_PERCENT: '%',
+        CHAR_PLUS: '+',
+        CHAR_QUESTION_MARK: '?',
+        CHAR_RIGHT_ANGLE_BRACKET: '>',
+        CHAR_RIGHT_CURLY_BRACE: '}',
+        CHAR_RIGHT_SQUARE_BRACKET: ']',
+        CHAR_SEMICOLON: ';',
+        CHAR_SINGLE_QUOTE: "'",
+        CHAR_SPACE: ' ',
+        CHAR_TAB: '	',
+        CHAR_UNDERSCORE: '_',
+        CHAR_VERTICAL_LINE: '|',
+        CHAR_ZERO_WIDTH_NOBREAK_SPACE: '﻿',
+      }
+    },
+  )
+  var require_parse = /* @__PURE__ */ __commonJSMin((exports$35, module$28) => {
+    const stringify = require_stringify()
+    /**
+     * Constants.
+     */
+    const {
+      MAX_LENGTH,
+      CHAR_BACKSLASH,
+      CHAR_BACKTICK,
+      CHAR_COMMA,
+      CHAR_DOT,
+      CHAR_LEFT_PARENTHESES,
+      CHAR_RIGHT_PARENTHESES,
+      CHAR_LEFT_CURLY_BRACE,
+      CHAR_RIGHT_CURLY_BRACE,
+      CHAR_LEFT_SQUARE_BRACKET,
+      CHAR_RIGHT_SQUARE_BRACKET,
+      CHAR_DOUBLE_QUOTE,
+      CHAR_SINGLE_QUOTE,
+      CHAR_NO_BREAK_SPACE,
+      CHAR_ZERO_WIDTH_NOBREAK_SPACE,
+    } = require_constants$1()
+    /**
+     * Parse.
+     */
+    const parse = (input, options = {}) => {
+      if (typeof input !== 'string')
+        throw new _p_TypeErrorCtor('Expected a string')
+      const opts = options || {}
+      const max =
+        typeof opts.maxLength === 'number'
+          ? _p_MathMin(MAX_LENGTH, opts.maxLength)
+          : MAX_LENGTH
+      if (input.length > max)
+        throw new _p_SyntaxErrorCtor(
+          `Input length (${input.length}), exceeds max characters (${max})`,
+        )
+      const ast = {
+        type: 'root',
+        input,
+        nodes: [],
+      }
+      const stack = [ast]
+      let block = ast
+      let prev = ast
+      let brackets = 0
+      const length = input.length
+      let index = 0
+      let depth = 0
+      let value
+      /**
+       * Helpers.
+       */
+      const advance = () => input[index++]
+      const push = node => {
+        if (node.type === 'text' && prev.type === 'dot') prev.type = 'text'
+        if (prev && prev.type === 'text' && node.type === 'text') {
+          prev.value += node.value
+          return
+        }
+        block.nodes.push(node)
+        node.parent = block
+        node.prev = prev
+        prev = node
+        return node
+      }
+      push({ type: 'bos' })
+      while (index < length) {
+        block = stack[stack.length - 1]
+        value = advance()
+        /**
+         * Invalid chars.
+         */
+        if (
+          value === CHAR_ZERO_WIDTH_NOBREAK_SPACE ||
+          value === CHAR_NO_BREAK_SPACE
+        )
+          continue
+        /**
+         * Escaped chars.
+         */
+        if (value === CHAR_BACKSLASH) {
+          push({
+            type: 'text',
+            value: (options.keepEscaping ? value : '') + advance(),
+          })
+          continue
+        }
+        /**
+         * Right square bracket (literal): ']'
+         */
+        if (value === CHAR_RIGHT_SQUARE_BRACKET) {
+          push({
+            type: 'text',
+            value: '\\' + value,
+          })
+          continue
+        }
+        /**
+         * Left square bracket: '['
+         */
+        if (value === CHAR_LEFT_SQUARE_BRACKET) {
+          brackets++
+          let next
+          while (index < length && (next = advance())) {
+            value += next
+            if (next === CHAR_LEFT_SQUARE_BRACKET) {
+              brackets++
+              continue
+            }
+            if (next === CHAR_BACKSLASH) {
+              value += advance()
+              continue
+            }
+            if (next === CHAR_RIGHT_SQUARE_BRACKET) {
+              brackets--
+              if (brackets === 0) break
+            }
+          }
+          push({
+            type: 'text',
+            value,
+          })
+          continue
+        }
+        /**
+         * Parentheses.
+         */
+        if (value === CHAR_LEFT_PARENTHESES) {
+          block = push({
+            type: 'paren',
+            nodes: [],
+          })
+          stack.push(block)
+          push({
+            type: 'text',
+            value,
+          })
+          continue
+        }
+        if (value === CHAR_RIGHT_PARENTHESES) {
+          if (block.type !== 'paren') {
+            push({
+              type: 'text',
+              value,
+            })
+            continue
+          }
+          block = stack.pop()
+          push({
+            type: 'text',
+            value,
+          })
+          block = stack[stack.length - 1]
+          continue
+        }
+        /**
+         * Quotes: '|"|`
+         */
+        if (
+          value === CHAR_DOUBLE_QUOTE ||
+          value === CHAR_SINGLE_QUOTE ||
+          value === CHAR_BACKTICK
+        ) {
+          const open = value
+          let next
+          if (options.keepQuotes !== true) value = ''
+          while (index < length && (next = advance())) {
+            if (next === CHAR_BACKSLASH) {
+              value += next + advance()
+              continue
+            }
+            if (next === open) {
+              if (options.keepQuotes === true) value += next
+              break
+            }
+            value += next
+          }
+          push({
+            type: 'text',
+            value,
+          })
+          continue
+        }
+        /**
+         * Left curly brace: '{'
+         */
+        if (value === CHAR_LEFT_CURLY_BRACE) {
+          depth++
+          block = push({
+            type: 'brace',
+            open: true,
+            close: false,
+            dollar:
+              (prev.value && prev.value.slice(-1) === '$') ||
+              block.dollar === true,
+            depth,
+            commas: 0,
+            ranges: 0,
+            nodes: [],
+          })
+          stack.push(block)
+          push({
+            type: 'open',
+            value,
+          })
+          continue
+        }
+        /**
+         * Right curly brace: '}'
+         */
+        if (value === CHAR_RIGHT_CURLY_BRACE) {
+          if (block.type !== 'brace') {
+            push({
+              type: 'text',
+              value,
+            })
+            continue
+          }
+          const type = 'close'
+          block = stack.pop()
+          block.close = true
+          push({
+            type,
+            value,
+          })
+          depth--
+          block = stack[stack.length - 1]
+          continue
+        }
+        /**
+         * Comma: ','
+         */
+        if (value === CHAR_COMMA && depth > 0) {
+          if (block.ranges > 0) {
+            block.ranges = 0
+            const open = block.nodes.shift()
+            block.nodes = [
+              open,
+              {
+                type: 'text',
+                value: stringify(block),
+              },
+            ]
+          }
+          push({
+            type: 'comma',
+            value,
+          })
+          block.commas++
+          continue
+        }
+        /**
+         * Dot: '.'
+         */
+        if (value === CHAR_DOT && depth > 0 && block.commas === 0) {
+          const siblings = block.nodes
+          if (depth === 0 || siblings.length === 0) {
+            push({
+              type: 'text',
+              value,
+            })
+            continue
+          }
+          if (prev.type === 'dot') {
+            block.range = []
+            prev.value += value
+            prev.type = 'range'
+            if (block.nodes.length !== 3 && block.nodes.length !== 5) {
+              block.invalid = true
+              block.ranges = 0
+              prev.type = 'text'
+              continue
+            }
+            block.ranges++
+            block.args = []
+            continue
+          }
+          if (prev.type === 'range') {
+            siblings.pop()
+            const before = siblings[siblings.length - 1]
+            before.value += prev.value + value
+            prev = before
+            block.ranges--
+            continue
+          }
+          push({
+            type: 'dot',
+            value,
+          })
+          continue
+        }
+        /**
+         * Text.
+         */
+        push({
+          type: 'text',
+          value,
+        })
+      }
+      do {
+        block = stack.pop()
+        if (block.type !== 'root') {
+          block.nodes.forEach(node => {
+            if (!node.nodes) {
+              if (node.type === 'open') node.isOpen = true
+              if (node.type === 'close') node.isClose = true
+              if (!node.nodes) node.type = 'text'
+              node.invalid = true
+            }
+          })
+          const parent = stack[stack.length - 1]
+          const index = parent.nodes.indexOf(block)
+          parent.nodes.splice(index, 1, ...block.nodes)
+        }
+      } while (stack.length > 0)
+      push({ type: 'eos' })
+      return ast
+    }
+    module$28.exports = parse
+  })
+  var require_braces = /* @__PURE__ */ __commonJSMin(
+    (exports$36, module$29) => {
+      const stringify = require_stringify()
+      const compile = require_compile()
+      const expand = require_expand()
+      const parse = require_parse()
+      /**
+       * Expand the given pattern or create a regex-compatible string.
+       *
+       * ```js
+       * const braces = require('braces')
+       * console.log(braces('{a,b,c}', { compile: true })) //=> ['(a|b|c)']
+       * console.log(braces('{a,b,c}')) //=> ['a', 'b', 'c']
+       * ```
+       *
+       * @param {String} `str`
+       * @param {Object} `options`
+       *
+       * @returns {String}
+       *
+       * @api public
+       */
+      const braces = (input, options = {}) => {
+        let output = []
+        if (_p_ArrayIsArray(input))
+          for (const pattern of input) {
+            const result = braces.create(pattern, options)
+            if (_p_ArrayIsArray(result)) output.push(...result)
+            else output.push(result)
+          }
+        else output = [].concat(braces.create(input, options))
+        if (options && options.expand === true && options.nodupes === true)
+          output = [...new _p_SetCtor(output)]
+        return output
+      }
+      /**
+       * Parse the given `str` with the given `options`.
+       *
+       * ```js
+       * // braces.parse(pattern, [, options]);
+       * const ast = braces.parse('a/{b,c}/d')
+       * console.log(ast)
+       * ```
+       *
+       * @param {String} pattern Brace pattern to parse.
+       * @param {Object} options
+       *
+       * @returns {Object} Returns an AST
+       *
+       * @api public
+       */
+      braces.parse = (input, options = {}) => parse(input, options)
+      /**
+       * Creates a braces string from an AST, or an AST node.
+       *
+       * ```js
+       * const braces = require('braces')
+       * let ast = braces.parse('foo/{a,b}/bar')
+       * console.log(stringify(ast.nodes[2])) //=> '{a,b}'
+       * ```
+       *
+       * @param {String} `input` Brace pattern or AST.
+       * @param {Object} `options`
+       *
+       * @returns {Array} Returns an array of expanded values.
+       *
+       * @api public
+       */
+      braces.stringify = (input, options = {}) => {
+        if (typeof input === 'string')
+          return stringify(braces.parse(input, options), options)
+        return stringify(input, options)
+      }
+      /**
+       * Compiles a brace pattern into a regex-compatible, optimized string.
+       * This method is called by the main [braces](#braces) function by
+       * default.
+       *
+       * ```js
+       * const braces = require('braces')
+       * console.log(braces.compile('a/{b,c}/d'))
+       * //=> ['a/(b|c)/d']
+       * ```
+       *
+       * @param {String} `input` Brace pattern or AST.
+       * @param {Object} `options`
+       *
+       * @returns {Array} Returns an array of expanded values.
+       *
+       * @api public
+       */
+      braces.compile = (input, options = {}) => {
+        if (typeof input === 'string') input = braces.parse(input, options)
+        return compile(input, options)
+      }
+      /**
+       * Expands a brace pattern into an array. This method is called by the
+       * main [braces](#braces) function when `options.expand` is true. Before
+       * using this method it's recommended that you read the [performance
+       * notes](#performance)) and advantages of using [.compile](#compile)
+       * instead.
+       *
+       * ```js
+       * const braces = require('braces')
+       * console.log(braces.expand('a/{b,c}/d'))
+       * //=> ['a/b/d', 'a/c/d'];
+       * ```
+       *
+       * @param {String} `pattern` Brace pattern.
+       * @param {Object} `options`
+       *
+       * @returns {Array} Returns an array of expanded values.
+       *
+       * @api public
+       */
+      braces.expand = (input, options = {}) => {
+        if (typeof input === 'string') input = braces.parse(input, options)
+        let result = expand(input, options)
+        if (options.noempty === true) result = result.filter(Boolean)
+        if (options.nodupes === true) result = [...new _p_SetCtor(result)]
+        return result
+      }
+      /**
+       * Processes a brace pattern and returns either an expanded array (if
+       * `options.expand` is true), a highly optimized regex-compatible string.
+       * This method is called by the main [braces](#braces) function.
+       *
+       * ```js
+       * const braces = require('braces')
+       * console.log(
+       *   braces.create('user-{200..300}/project-{a,b,c}-{1..10}'),
+       * )
+       * //=> 'user-(20[0-9]|2[1-9][0-9]|300)/project-(a|b|c)-([1-9]|10)'
+       * ```
+       *
+       * @param {String} `pattern` Brace pattern.
+       * @param {Object} `options`
+       *
+       * @returns {Array} Returns an array of expanded values.
+       *
+       * @api public
+       */
+      braces.create = (input, options = {}) => {
+        if (input === '' || input.length < 3) return [input]
+        return options.expand !== true
+          ? braces.compile(input, options)
+          : braces.expand(input, options)
+      }
+      /**
+       * Expose "braces"
+       */
+      module$29.exports = braces
+    },
+  )
+  var require_micromatch = /* @__PURE__ */ __commonJSMin(
+    (exports$37, module$30) => {
+      const util = __require('util')
+      const braces = require_braces()
+      const picomatch = require_picomatch()
+      const utils = require_utils$3()
+      const isEmptyString = v => v === '' || v === './'
+      const hasBraces = v => {
+        const index = v.indexOf('{')
+        return index > -1 && v.indexOf('}', index) > -1
+      }
+      /**
+       * Returns an array of strings that match one or more glob patterns.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm(list, patterns[, options]);
+       *
+       * console.log(mm(['a.js', 'a.txt'], ['*.js']))
+       * //=> [ 'a.js' ]
+       * ```
+       *
+       * @param {String | string[]} `list` List of strings to match.
+       * @param {String | string[]} `patterns` One or more glob patterns to use
+       *   for matching.
+       * @param {Object} `options` See available [options](#options)
+       *
+       * @returns {Array} Returns an array of matches
+       *
+       * @summary false
+       *
+       * @api public
+       */
+      const micromatch = (list, patterns, options) => {
+        patterns = [].concat(patterns)
+        list = [].concat(list)
+        let omit = /* @__PURE__ */ new _p_SetCtor()
+        let keep = /* @__PURE__ */ new _p_SetCtor()
+        let items = /* @__PURE__ */ new _p_SetCtor()
+        let negatives = 0
+        let onResult = state => {
+          items.add(state.output)
+          if (options && options.onResult) options.onResult(state)
+        }
+        for (let i = 0; i < patterns.length; i++) {
+          let isMatch = picomatch(
+            String(patterns[i]),
+            {
+              ...options,
+              onResult,
+            },
+            true,
+          )
+          let negated = isMatch.state.negated || isMatch.state.negatedExtglob
+          if (negated) negatives++
+          for (let item of list) {
+            let matched = isMatch(item, true)
+            if (!(negated ? !matched.isMatch : matched.isMatch)) continue
+            if (negated) omit.add(matched.output)
+            else {
+              omit.delete(matched.output)
+              keep.add(matched.output)
+            }
+          }
+        }
+        let matches = (
+          negatives === patterns.length ? [...items] : [...keep]
+        ).filter(item => !omit.has(item))
+        if (options && matches.length === 0) {
+          if (options.failglob === true)
+            throw new _p_ErrorCtor(
+              `No matches found for "${patterns.join(', ')}"`,
+            )
+          if (options.nonull === true || options.nullglob === true)
+            return options.unescape
+              ? patterns.map(p => p.replace(/\\/g, ''))
+              : patterns
+        }
+        return matches
+      }
+      /**
+       * Backwards compatibility.
+       */
+      micromatch.match = micromatch
+      /**
+       * Returns a matcher function from the given glob `pattern` and `options`.
+       * The returned function takes a string to match as its only argument and
+       * returns true if the string is a match.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.matcher(pattern[, options]);
+       *
+       * const isMatch = mm.matcher('*.!(*a)')
+       * console.log(isMatch('a.a')) //=> false
+       * console.log(isMatch('a.b')) //=> true
+       * ```
+       *
+       * @param {String} `pattern` Glob pattern.
+       * @param {Object} `options`
+       *
+       * @returns {Function} Returns a matcher function.
+       *
+       * @api public
+       */
+      micromatch.matcher = (pattern, options) => picomatch(pattern, options)
+      /**
+       * Returns true if **any** of the given glob `patterns` match the
+       * specified `string`.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.isMatch(string, patterns[, options]);
+       *
+       * console.log(mm.isMatch('a.a', ['b.*', '*.a'])) //=> true
+       * console.log(mm.isMatch('a.a', 'b.*')) //=> false
+       * ```
+       *
+       * @param {String} `str` The string to test.
+       * @param {String | Array} `patterns` One or more glob patterns to use for
+       *   matching.
+       * @param {Object} `[options]` See available [options](#options).
+       *
+       * @returns {Boolean} Returns true if any patterns match `str`
+       *
+       * @api public
+       */
+      micromatch.isMatch = (str, patterns, options) =>
+        picomatch(patterns, options)(str)
+      /**
+       * Backwards compatibility.
+       */
+      micromatch.any = micromatch.isMatch
+      /**
+       * Returns a list of strings that _**do not match any**_ of the given
+       * `patterns`.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.not(list, patterns[, options]);
+       *
+       * console.log(mm.not(['a.a', 'b.b', 'c.c'], '*.a'))
+       * //=> ['b.b', 'c.c']
+       * ```
+       *
+       * @param {Array} `list` Array of strings to match.
+       * @param {String | Array} `patterns` One or more glob pattern to use for
+       *   matching.
+       * @param {Object} `options` See available [options](#options) for changing
+       *   how matches are performed.
+       *
+       * @returns {Array} Returns an array of strings that **do not match** the
+       *   given patterns.
+       *
+       * @api public
+       */
+      micromatch.not = (list, patterns, options = {}) => {
+        patterns = [].concat(patterns).map(String)
+        let result = /* @__PURE__ */ new _p_SetCtor()
+        let items = []
+        let onResult = state => {
+          if (options.onResult) options.onResult(state)
+          items.push(state.output)
+        }
+        let matches = new _p_SetCtor(
+          micromatch(list, patterns, {
+            ...options,
+            onResult,
+          }),
+        )
+        for (let item of items) if (!matches.has(item)) result.add(item)
+        return [...result]
+      }
+      /**
+       * Returns true if the given `string` contains the given pattern. Similar
+       * to [.isMatch](#isMatch) but the pattern can match any part of the
+       * string.
+       *
+       * ```js
+       * var mm = require('micromatch')
+       * // mm.contains(string, pattern[, options]);
+       *
+       * console.log(mm.contains('aa/bb/cc', '*b'))
+       * //=> true
+       * console.log(mm.contains('aa/bb/cc', '*d'))
+       * //=> false
+       * ```
+       *
+       * @param {String} `str` The string to match.
+       * @param {String | Array} `patterns` Glob pattern to use for matching.
+       * @param {Object} `options` See available [options](#options) for changing
+       *   how matches are performed.
+       *
+       * @returns {Boolean} Returns true if any of the patterns matches any part
+       *   of `str`.
+       *
+       * @api public
+       */
+      micromatch.contains = (str, pattern, options) => {
+        if (typeof str !== 'string')
+          throw new _p_TypeErrorCtor(
+            `Expected a string: "${util.inspect(str)}"`,
+          )
+        if (_p_ArrayIsArray(pattern))
+          return pattern.some(p => micromatch.contains(str, p, options))
+        if (typeof pattern === 'string') {
+          if (isEmptyString(str) || isEmptyString(pattern)) return false
+          if (
+            str.includes(pattern) ||
+            (_p_StringPrototypeStartsWith(str, './') &&
+              str.slice(2).includes(pattern))
+          )
+            return true
+        }
+        return micromatch.isMatch(str, pattern, {
+          ...options,
+          contains: true,
+        })
+      }
+      /**
+       * Filter the keys of the given object with the given `glob` pattern and
+       * `options`. Does not attempt to match nested keys. If you need this
+       * feature, use [glob-object][] instead.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.matchKeys(object, patterns[, options]);
+       *
+       * const obj = { aa: 'a', ab: 'b', ac: 'c' }
+       * console.log(mm.matchKeys(obj, '*b'))
+       * //=> { ab: 'b' }
+       * ```
+       *
+       * @param {Object} `object` The object with keys to filter.
+       * @param {String | Array} `patterns` One or more glob patterns to use for
+       *   matching.
+       * @param {Object} `options` See available [options](#options) for changing
+       *   how matches are performed.
+       *
+       * @returns {Object} Returns an object with only keys that match the given
+       *   patterns.
+       *
+       * @api public
+       */
+      micromatch.matchKeys = (obj, patterns, options) => {
+        if (!utils.isObject(obj))
+          throw new _p_TypeErrorCtor(
+            'Expected the first argument to be an object',
+          )
+        let keys = micromatch(_p_ObjectKeys(obj), patterns, options)
+        let res = {}
+        for (let key of keys) res[key] = obj[key]
+        return res
+      }
+      /**
+       * Returns true if some of the strings in the given `list` match any of
+       * the given glob `patterns`.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.some(list, patterns[, options]);
+       *
+       * console.log(mm.some(['foo.js', 'bar.js'], ['*.js', '!foo.js']))
+       * // true
+       * console.log(mm.some(['foo.js'], ['*.js', '!foo.js']))
+       * // false
+       * ```
+       *
+       * @param {String | Array} `list` The string or array of strings to test.
+       *   Returns as soon as the first match is found.
+       * @param {String | Array} `patterns` One or more glob patterns to use for
+       *   matching.
+       * @param {Object} `options` See available [options](#options) for changing
+       *   how matches are performed.
+       *
+       * @returns {Boolean} Returns true if any `patterns` matches any of the
+       *   strings in `list`
+       *
+       * @api public
+       */
+      micromatch.some = (list, patterns, options) => {
+        let items = [].concat(list)
+        for (let pattern of [].concat(patterns)) {
+          let isMatch = picomatch(String(pattern), options)
+          if (items.some(item => isMatch(item))) return true
+        }
+        return false
+      }
+      /**
+       * Returns true if every string in the given `list` matches
+       * any of the given glob `patterns`.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.every(list, patterns[, options]);
+       *
+       * console.log(mm.every('foo.js', ['foo.js']))
+       * // true
+       * console.log(mm.every(['foo.js', 'bar.js'], ['*.js']))
+       * // true
+       * console.log(mm.every(['foo.js', 'bar.js'], ['*.js', '!foo.js']))
+       * // false
+       * console.log(mm.every(['foo.js'], ['*.js', '!foo.js']))
+       * // false
+       * ```
+       *
+       * @param {String | Array} `list` The string or array of strings to test.
+       * @param {String | Array} `patterns` One or more glob patterns to use for
+       *   matching.
+       * @param {Object} `options` See available [options](#options) for changing
+       *   how matches are performed.
+       *
+       * @returns {Boolean} Returns true if all `patterns` matches all of the
+       *   strings in `list`
+       *
+       * @api public
+       */
+      micromatch.every = (list, patterns, options) => {
+        let items = [].concat(list)
+        for (let pattern of [].concat(patterns)) {
+          let isMatch = picomatch(String(pattern), options)
+          if (!items.every(item => isMatch(item))) return false
+        }
+        return true
+      }
+      /**
+       * Returns true if **all** of the given `patterns` match
+       * the specified string.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.all(string, patterns[, options]);
+       *
+       * console.log(mm.all('foo.js', ['foo.js']))
+       * // true
+       *
+       * console.log(mm.all('foo.js', ['*.js', '!foo.js']))
+       * // false
+       *
+       * console.log(mm.all('foo.js', ['*.js', 'foo.js']))
+       * // true
+       *
+       * console.log(mm.all('foo.js', ['*.js', 'f*', '*o*', '*o.js']))
+       * // true
+       * ```
+       *
+       * @param {String | Array} `str` The string to test.
+       * @param {String | Array} `patterns` One or more glob patterns to use for
+       *   matching.
+       * @param {Object} `options` See available [options](#options) for changing
+       *   how matches are performed.
+       *
+       * @returns {Boolean} Returns true if any patterns match `str`
+       *
+       * @api public
+       */
+      micromatch.all = (str, patterns, options) => {
+        if (typeof str !== 'string')
+          throw new _p_TypeErrorCtor(
+            `Expected a string: "${util.inspect(str)}"`,
+          )
+        return [].concat(patterns).every(p => picomatch(p, options)(str))
+      }
+      /**
+       * Returns an array of matches captured by `pattern` in `string, or `null`
+       * if the pattern did not match.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.capture(pattern, string[, options]);
+       *
+       * console.log(mm.capture('test/*.js', 'test/foo.js'))
+       * //=> ['foo']
+       * console.log(mm.capture('test/*.js', 'foo/bar.css'))
+       * //=> null
+       * ```
+       *
+       * @param {String} `glob` Glob pattern to use for matching. @param
+       * {String} `input` String to match @param {Object} `options` See
+       * available [options](#options) for changing how matches are performed
+       * @return {Array|null} Returns an array of captures if the input matches
+       * the glob pattern, otherwise `null`. @api public.
+       */
+      micromatch.capture = (glob, input, options) => {
+        let posix = utils.isWindows(options)
+        let match = picomatch
+          .makeRe(String(glob), {
+            ...options,
+            capture: true,
+          })
+          .exec(posix ? utils.toPosixSlashes(input) : input)
+        if (match) return match.slice(1).map(v => (v === void 0 ? '' : v))
+      }
+      /**
+       * Create a regular expression from the given glob `pattern`.
+       *
+       * ```js
+       * const mm = require('micromatch')
+       * // mm.makeRe(pattern[, options]);
+       *
+       * console.log(mm.makeRe('*.js'))
+       * //=> /^(?:(\.[\\\/])?(?!\.)(?=.)[^\/]*?\.js)$/
+       * ```
+       *
+       * @param {String} `pattern` A glob pattern to convert to regex.
+       * @param {Object} `options`
+       *
+       * @returns {RegExp} Returns a regex created from the given pattern.
+       *
+       * @api public
+       */
+      micromatch.makeRe = (...args) => picomatch.makeRe(...args)
+      /**
+       * Scan a glob pattern to separate the pattern into segments. Used
+       * by the [split](#split) method.
+       *
+       * ```js
+       * const mm = require('micromatch');
+       * const state = mm.scan(pattern[, options]);
+       * ```
+       *
+       * @param {String} `pattern`
+       * @param {Object} `options`
+       *
+       * @returns {Object} Returns an object with
+       *
+       * @api public
+       */
+      micromatch.scan = (...args) => picomatch.scan(...args)
+      /**
+       * Parse a glob pattern to create the source string for a regular
+       * expression.
+       *
+       * ```js
+       * const mm = require('micromatch');
+       * const state = mm.parse(pattern[, options]);
+       * ```
+       *
+       * @param {String} `glob`
+       * @param {Object} `options`
+       *
+       * @returns {Object} Returns an object with useful properties and output to
+       *   be used as regex source string.
+       *
+       * @api public
+       */
+      micromatch.parse = (patterns, options) => {
+        let res = []
+        for (let pattern of [].concat(patterns || []))
+          for (let str of braces(String(pattern), options))
+            res.push(picomatch.parse(str, options))
+        return res
+      }
+      /**
+       * Process the given brace `pattern`.
+       *
+       * ```js
+       * const { braces } = require('micromatch')
+       * console.log(braces('foo/{a,b,c}/bar'))
+       * //=> [ 'foo/(a|b|c)/bar' ]
+       *
+       * console.log(braces('foo/{a,b,c}/bar', { expand: true }))
+       * //=> [ 'foo/a/bar', 'foo/b/bar', 'foo/c/bar' ]
+       * ```
+       *
+       * @param {String} `pattern` String with brace pattern to process.
+       * @param {Object} `options` Any [options](#options) to change how expansion
+       *   is performed. See the [braces][] library for all available options.
+       *
+       * @returns {Array}
+       *
+       * @api public
+       */
+      micromatch.braces = (pattern, options) => {
+        if (typeof pattern !== 'string')
+          throw new _p_TypeErrorCtor('Expected a string')
+        if ((options && options.nobrace === true) || !hasBraces(pattern))
+          return [pattern]
+        return braces(pattern, options)
+      }
+      /**
+       * Expand braces.
+       */
+      micromatch.braceExpand = (pattern, options) => {
+        if (typeof pattern !== 'string')
+          throw new _p_TypeErrorCtor('Expected a string')
+        return micromatch.braces(pattern, {
+          ...options,
+          expand: true,
+        })
+      }
+      /**
+       * Expose micromatch.
+       */
+      micromatch.hasBraces = hasBraces
+      module$30.exports = micromatch
+    },
+  )
+  var require_pattern = /* @__PURE__ */ __commonJSMin(exports$38 => {
+    _p_ObjectDefineProperty(exports$38, '__esModule', { value: true })
+    exports$38.isAbsolute =
+      exports$38.partitionAbsoluteAndRelative =
+      exports$38.removeDuplicateSlashes =
+      exports$38.matchAny =
+      exports$38.convertPatternsToRe =
+      exports$38.makeRe =
+      exports$38.getPatternParts =
+      exports$38.expandBraceExpansion =
+      exports$38.expandPatternsWithBraceExpansion =
+      exports$38.isAffectDepthOfReadingPattern =
+      exports$38.endsWithSlashGlobStar =
+      exports$38.hasGlobStar =
+      exports$38.getBaseDirectory =
+      exports$38.isPatternRelatedToParentDirectory =
+      exports$38.getPatternsOutsideCurrentDirectory =
+      exports$38.getPatternsInsideCurrentDirectory =
+      exports$38.getPositivePatterns =
+      exports$38.getNegativePatterns =
+      exports$38.isPositivePattern =
+      exports$38.isNegativePattern =
+      exports$38.convertToNegativePattern =
+      exports$38.convertToPositivePattern =
+      exports$38.isDynamicPattern =
+      exports$38.isStaticPattern =
+        void 0
+    const path$10 = __require('path')
+    const globParent = require_glob_parent()
+    const micromatch = require_micromatch()
+    const GLOBSTAR = '**'
+    const ESCAPE_SYMBOL = '\\'
+    const COMMON_GLOB_SYMBOLS_RE = /[*?]|^!/
+    const REGEX_CHARACTER_CLASS_SYMBOLS_RE = /\[[^[]*]/
+    const REGEX_GROUP_SYMBOLS_RE = /(?:^|[^!*+?@])\([^(]*\|[^|]*\)/
+    const GLOB_EXTENSION_SYMBOLS_RE = /[!*+?@]\([^(]*\)/
+    const BRACE_EXPANSION_SEPARATORS_RE = /,|\.\./
+    /**
+     * Matches a sequence of two or more consecutive slashes, excluding the
+     * first two slashes at the beginning of the string. The latter is due to
+     * the presence of the device path at the beginning of the UNC path.
+     */
+    const DOUBLE_SLASH_RE = /(?!^)\/{2,}/g
+    function isStaticPattern(pattern, options = {}) {
+      return !isDynamicPattern(pattern, options)
+    }
+    exports$38.isStaticPattern = isStaticPattern
+    function isDynamicPattern(pattern, options = {}) {
+      /**
+       * A special case with an empty string is necessary for matching patterns
+       * that start with a forward slash. An empty string cannot be a dynamic
+       * pattern. For example, the pattern `/lib/*` will be spread into parts:
+       * '', 'lib', '*'.
+       */
+      if (pattern === '') return false
+      /**
+       * When the `caseSensitiveMatch` option is disabled, all patterns must be
+       * marked as dynamic, because we cannot check filepath directly (without
+       * read directory).
+       */
+      if (
+        options.caseSensitiveMatch === false ||
+        pattern.includes(ESCAPE_SYMBOL)
+      )
+        return true
+      if (
+        COMMON_GLOB_SYMBOLS_RE.test(pattern) ||
+        REGEX_CHARACTER_CLASS_SYMBOLS_RE.test(pattern) ||
+        REGEX_GROUP_SYMBOLS_RE.test(pattern)
+      )
+        return true
+      if (options.extglob !== false && GLOB_EXTENSION_SYMBOLS_RE.test(pattern))
+        return true
+      if (options.braceExpansion !== false && hasBraceExpansion(pattern))
+        return true
+      return false
+    }
+    exports$38.isDynamicPattern = isDynamicPattern
+    function hasBraceExpansion(pattern) {
+      const openingBraceIndex = pattern.indexOf('{')
+      if (openingBraceIndex === -1) return false
+      const closingBraceIndex = pattern.indexOf('}', openingBraceIndex + 1)
+      if (closingBraceIndex === -1) return false
+      const braceContent = pattern.slice(openingBraceIndex, closingBraceIndex)
+      return BRACE_EXPANSION_SEPARATORS_RE.test(braceContent)
+    }
+    function convertToPositivePattern(pattern) {
+      return isNegativePattern(pattern) ? pattern.slice(1) : pattern
+    }
+    exports$38.convertToPositivePattern = convertToPositivePattern
+    function convertToNegativePattern(pattern) {
+      return '!' + pattern
+    }
+    exports$38.convertToNegativePattern = convertToNegativePattern
+    function isNegativePattern(pattern) {
+      return _p_StringPrototypeStartsWith(pattern, '!') && pattern[1] !== '('
+    }
+    exports$38.isNegativePattern = isNegativePattern
+    function isPositivePattern(pattern) {
+      return !isNegativePattern(pattern)
+    }
+    exports$38.isPositivePattern = isPositivePattern
+    function getNegativePatterns(patterns) {
+      return patterns.filter(isNegativePattern)
+    }
+    exports$38.getNegativePatterns = getNegativePatterns
+    function getPositivePatterns(patterns) {
+      return patterns.filter(isPositivePattern)
+    }
+    exports$38.getPositivePatterns = getPositivePatterns
+    /**
+     * Returns patterns that can be applied inside the current directory.
+     *
+     * @example
+     *   // ['./*', '*', 'a/*']
+     *   getPatternsInsideCurrentDirectory(['./*', '*', 'a/*', '../*', './../*'])
+     */
+    function getPatternsInsideCurrentDirectory(patterns) {
+      return patterns.filter(
+        pattern => !isPatternRelatedToParentDirectory(pattern),
+      )
+    }
+    exports$38.getPatternsInsideCurrentDirectory =
+      getPatternsInsideCurrentDirectory
+    /**
+     * Returns patterns to be expanded relative to (outside) the current
+     * directory.
+     *
+     * @example
+     *   // ['../*', './../*']
+     *   getPatternsInsideCurrentDirectory(['./*', '*', 'a/*', '../*', './../*'])
+     */
+    function getPatternsOutsideCurrentDirectory(patterns) {
+      return patterns.filter(isPatternRelatedToParentDirectory)
+    }
+    exports$38.getPatternsOutsideCurrentDirectory =
+      getPatternsOutsideCurrentDirectory
+    function isPatternRelatedToParentDirectory(pattern) {
+      return (
+        _p_StringPrototypeStartsWith(pattern, '..') ||
+        _p_StringPrototypeStartsWith(pattern, './..')
+      )
+    }
+    exports$38.isPatternRelatedToParentDirectory =
+      isPatternRelatedToParentDirectory
+    function getBaseDirectory(pattern) {
+      return globParent(pattern, { flipBackslashes: false })
+    }
+    exports$38.getBaseDirectory = getBaseDirectory
+    function hasGlobStar(pattern) {
+      return pattern.includes(GLOBSTAR)
+    }
+    exports$38.hasGlobStar = hasGlobStar
+    function endsWithSlashGlobStar(pattern) {
+      return _p_StringPrototypeEndsWith(pattern, '/**')
+    }
+    exports$38.endsWithSlashGlobStar = endsWithSlashGlobStar
+    function isAffectDepthOfReadingPattern(pattern) {
+      const basename = path$10.basename(pattern)
+      return endsWithSlashGlobStar(pattern) || isStaticPattern(basename)
+    }
+    exports$38.isAffectDepthOfReadingPattern = isAffectDepthOfReadingPattern
+    function expandPatternsWithBraceExpansion(patterns) {
+      return patterns.reduce((collection, pattern) => {
+        return collection.concat(expandBraceExpansion(pattern))
+      }, [])
+    }
+    exports$38.expandPatternsWithBraceExpansion =
+      expandPatternsWithBraceExpansion
+    function expandBraceExpansion(pattern) {
+      const patterns = micromatch.braces(pattern, {
+        expand: true,
+        nodupes: true,
+        keepEscaping: true,
+      })
+      /**
+       * Sort the patterns by length so that the same depth patterns are
+       * processed side by side. `a/{b,}/{c,}/*` – `['a///*', 'a/b//*',
+       * 'a//c/*', 'a/b/c/*']`
+       */
+      patterns.sort((a, b) => a.length - b.length)
+      /**
+       * Micromatch can return an empty string in the case of patterns like
+       * `{a,}`.
+       */
+      return patterns.filter(pattern => pattern !== '')
+    }
+    exports$38.expandBraceExpansion = expandBraceExpansion
+    function getPatternParts(pattern, options) {
+      let { parts } = micromatch.scan(
+        pattern,
+        _p_ObjectAssign(_p_ObjectAssign({}, options), { parts: true }),
+      )
+      /**
+       * The scan method returns an empty array in some cases.
+       * See micromatch/picomatch#58 for more details.
+       */
+      if (parts.length === 0) parts = [pattern]
+      /**
+       * The scan method does not return an empty part for the pattern with a
+       * forward slash. This is another part of micromatch/picomatch#58.
+       */
+      if (parts[0].startsWith('/')) {
+        parts[0] = parts[0].slice(1)
+        _p_ArrayPrototypeUnshift(parts, '')
+      }
+      return parts
+    }
+    exports$38.getPatternParts = getPatternParts
+    function makeRe(pattern, options) {
+      return micromatch.makeRe(pattern, options)
+    }
+    exports$38.makeRe = makeRe
+    function convertPatternsToRe(patterns, options) {
+      return patterns.map(pattern => makeRe(pattern, options))
+    }
+    exports$38.convertPatternsToRe = convertPatternsToRe
+    function matchAny(entry, patternsRe) {
+      return patternsRe.some(patternRe => patternRe.test(entry))
+    }
+    exports$38.matchAny = matchAny
+    /**
+     * This package only works with forward slashes as a path separator. Because
+     * of this, we cannot use the standard `path.normalize` method, because on
+     * Windows platform it will use of backslashes.
+     */
+    function removeDuplicateSlashes(pattern) {
+      return pattern.replace(DOUBLE_SLASH_RE, '/')
+    }
+    exports$38.removeDuplicateSlashes = removeDuplicateSlashes
+    function partitionAbsoluteAndRelative(patterns) {
+      const absolute = []
+      const relative = []
+      for (const pattern of patterns)
+        if (isAbsolute(pattern)) absolute.push(pattern)
+        else relative.push(pattern)
+      return [absolute, relative]
+    }
+    exports$38.partitionAbsoluteAndRelative = partitionAbsoluteAndRelative
+    function isAbsolute(pattern) {
+      return path$10.isAbsolute(pattern)
+    }
+    exports$38.isAbsolute = isAbsolute
+  })
+  var require_merge2 = /* @__PURE__ */ __commonJSMin(
+    (exports$39, module$31) => {
+      const PassThrough = __require('stream').PassThrough
+      const slice = Array.prototype.slice
+      module$31.exports = merge2
+      function merge2() {
+        const streamsQueue = []
+        const args = slice.call(arguments)
+        let merging = false
+        let options = args[args.length - 1]
+        if (options && !_p_ArrayIsArray(options) && options.pipe == null)
+          args.pop()
+        else options = {}
+        const doEnd = options.end !== false
+        const doPipeError = options.pipeError === true
+        if (options.objectMode == null) options.objectMode = true
+        if (options.highWaterMark == null) options.highWaterMark = 65536
+        const mergedStream = PassThrough(options)
+        function addStream() {
+          for (let i = 0, len = arguments.length; i < len; i++)
+            streamsQueue.push(pauseStreams(arguments[i], options))
+          mergeStream()
+          return this
+        }
+        function mergeStream() {
+          if (merging) return
+          merging = true
+          let streams = streamsQueue.shift()
+          if (!streams) {
+            _p_processNextTick(endStream)
+            return
+          }
+          if (!_p_ArrayIsArray(streams)) streams = [streams]
+          let pipesCount = streams.length + 1
+          function next() {
+            if (--pipesCount > 0) return
+            merging = false
+            mergeStream()
+          }
+          function pipe(stream) {
+            function onend() {
+              stream.removeListener('merge2UnpipeEnd', onend)
+              stream.removeListener('end', onend)
+              if (doPipeError) stream.removeListener('error', onerror)
+              next()
+            }
+            function onerror(err) {
+              mergedStream.emit('error', err)
+            }
+            if (stream._readableState.endEmitted) return next()
+            stream.on('merge2UnpipeEnd', onend)
+            stream.on('end', onend)
+            if (doPipeError) stream.on('error', onerror)
+            stream.pipe(mergedStream, { end: false })
+            stream.resume()
+          }
+          for (let i = 0; i < streams.length; i++) pipe(streams[i])
+          next()
+        }
+        function endStream() {
+          merging = false
+          mergedStream.emit('queueDrain')
+          if (doEnd) mergedStream.end()
+        }
+        mergedStream.setMaxListeners(0)
+        mergedStream.add = addStream
+        mergedStream.on('unpipe', function (stream) {
+          stream.emit('merge2UnpipeEnd')
+        })
+        if (args.length) addStream.apply(null, args)
+        return mergedStream
+      }
+      function pauseStreams(streams, options) {
+        if (!_p_ArrayIsArray(streams)) {
+          if (!streams._readableState && streams.pipe)
+            streams = streams.pipe(PassThrough(options))
+          if (!streams._readableState || !streams.pause || !streams.pipe)
+            throw new _p_ErrorCtor('Only readable stream can be merged.')
+          streams.pause()
+        } else
+          for (let i = 0, len = streams.length; i < len; i++)
+            streams[i] = pauseStreams(streams[i], options)
+        return streams
+      }
+    },
+  )
+  var require_stream$3 = /* @__PURE__ */ __commonJSMin(exports$40 => {
+    _p_ObjectDefineProperty(exports$40, '__esModule', { value: true })
+    exports$40.merge = void 0
+    const merge2 = require_merge2()
+    function merge(streams) {
+      const mergedStream = merge2(streams)
+      streams.forEach(stream => {
+        stream.once('error', error => mergedStream.emit('error', error))
+      })
+      mergedStream.once('close', () => propagateCloseEventToSources(streams))
+      mergedStream.once('end', () => propagateCloseEventToSources(streams))
+      return mergedStream
+    }
+    exports$40.merge = merge
+    function propagateCloseEventToSources(streams) {
+      streams.forEach(stream => stream.emit('close'))
+    }
+  })
+  var require_string = /* @__PURE__ */ __commonJSMin(exports$41 => {
+    _p_ObjectDefineProperty(exports$41, '__esModule', { value: true })
+    exports$41.isEmpty = exports$41.isString = void 0
+    function isString(input) {
+      return typeof input === 'string'
+    }
+    exports$41.isString = isString
+    function isEmpty(input) {
+      return input === ''
+    }
+    exports$41.isEmpty = isEmpty
+  })
+  var require_utils$1 = /* @__PURE__ */ __commonJSMin(exports$42 => {
+    _p_ObjectDefineProperty(exports$42, '__esModule', { value: true })
+    exports$42.string =
+      exports$42.stream =
+      exports$42.pattern =
+      exports$42.path =
+      exports$42.fs =
+      exports$42.errno =
+      exports$42.array =
+        void 0
+    exports$42.array = require_array$1()
+    exports$42.errno = require_errno()
+    exports$42.fs = require_fs$3()
+    exports$42.path = require_path()
+    exports$42.pattern = require_pattern()
+    exports$42.stream = require_stream$3()
+    exports$42.string = require_string()
+  })
+  var require_tasks = /* @__PURE__ */ __commonJSMin(exports$43 => {
+    _p_ObjectDefineProperty(exports$43, '__esModule', { value: true })
+    exports$43.convertPatternGroupToTask =
+      exports$43.convertPatternGroupsToTasks =
+      exports$43.groupPatternsByBaseDirectory =
+      exports$43.getNegativePatternsAsPositive =
+      exports$43.getPositivePatterns =
+      exports$43.convertPatternsToTasks =
+      exports$43.generate =
+        void 0
+    const utils = require_utils$1()
+    function generate(input, settings) {
+      const patterns = processPatterns(input, settings)
+      const ignore = processPatterns(settings.ignore, settings)
+      const positivePatterns = getPositivePatterns(patterns)
+      const negativePatterns = getNegativePatternsAsPositive(patterns, ignore)
+      const staticPatterns = positivePatterns.filter(pattern =>
+        utils.pattern.isStaticPattern(pattern, settings),
+      )
+      const dynamicPatterns = positivePatterns.filter(pattern =>
+        utils.pattern.isDynamicPattern(pattern, settings),
+      )
+      const staticTasks = convertPatternsToTasks(
+        staticPatterns,
+        negativePatterns,
+        false,
+      )
+      const dynamicTasks = convertPatternsToTasks(
+        dynamicPatterns,
+        negativePatterns,
+        true,
+      )
+      return staticTasks.concat(dynamicTasks)
+    }
+    exports$43.generate = generate
+    function processPatterns(input, settings) {
+      let patterns = input
+      /**
+       * The original pattern like `{,*,**,a/*}` can lead to problems checking
+       * the depth when matching entry and some problems with the micromatch
+       * package (see fast-glob issues: #365, #394).
+       *
+       * To solve this problem, we expand all patterns containing brace
+       * expansion. This can lead to a slight slowdown in matching in the case
+       * of a large set of patterns after expansion.
+       */
+      if (settings.braceExpansion)
+        patterns = utils.pattern.expandPatternsWithBraceExpansion(patterns)
+      /**
+       * If the `baseNameMatch` option is enabled, we must add globstar to
+       * patterns, so that they can be used at any nesting level.
+       *
+       * We do this here, because otherwise we have to complicate the filtering
+       * logic. For example, we need to change the pattern in the filter before
+       * creating a regular expression. There is no need to change the patterns
+       * in the application. Only on the input.
+       */
+      if (settings.baseNameMatch)
+        patterns = patterns.map(pattern =>
+          pattern.includes('/') ? pattern : `**/${pattern}`,
+        )
+      /**
+       * This method also removes duplicate slashes that may have been in the
+       * pattern or formed as a result of expansion.
+       */
+      return patterns.map(pattern =>
+        utils.pattern.removeDuplicateSlashes(pattern),
+      )
+    }
+    /**
+     * Returns tasks grouped by basic pattern directories.
+     *
+     * Patterns that can be found inside (`./`) and outside (`../`) the current
+     * directory are handled separately. This is necessary because directory
+     * traversal starts at the base directory and goes deeper.
+     */
+    function convertPatternsToTasks(positive, negative, dynamic) {
+      const tasks = []
+      const patternsOutsideCurrentDirectory =
+        utils.pattern.getPatternsOutsideCurrentDirectory(positive)
+      const patternsInsideCurrentDirectory =
+        utils.pattern.getPatternsInsideCurrentDirectory(positive)
+      const outsideCurrentDirectoryGroup = groupPatternsByBaseDirectory(
+        patternsOutsideCurrentDirectory,
+      )
+      const insideCurrentDirectoryGroup = groupPatternsByBaseDirectory(
+        patternsInsideCurrentDirectory,
+      )
+      tasks.push(
+        ...convertPatternGroupsToTasks(
+          outsideCurrentDirectoryGroup,
+          negative,
+          dynamic,
+        ),
+      )
+      if ('.' in insideCurrentDirectoryGroup)
+        tasks.push(
+          convertPatternGroupToTask(
+            '.',
+            patternsInsideCurrentDirectory,
+            negative,
+            dynamic,
+          ),
+        )
+      else
+        tasks.push(
+          ...convertPatternGroupsToTasks(
+            insideCurrentDirectoryGroup,
+            negative,
+            dynamic,
+          ),
+        )
+      return tasks
+    }
+    exports$43.convertPatternsToTasks = convertPatternsToTasks
+    function getPositivePatterns(patterns) {
+      return utils.pattern.getPositivePatterns(patterns)
+    }
+    exports$43.getPositivePatterns = getPositivePatterns
+    function getNegativePatternsAsPositive(patterns, ignore) {
+      return utils.pattern
+        .getNegativePatterns(patterns)
+        .concat(ignore)
+        .map(utils.pattern.convertToPositivePattern)
+    }
+    exports$43.getNegativePatternsAsPositive = getNegativePatternsAsPositive
+    function groupPatternsByBaseDirectory(patterns) {
+      return patterns.reduce((collection, pattern) => {
+        const base = utils.pattern.getBaseDirectory(pattern)
+        if (base in collection) collection[base].push(pattern)
+        else collection[base] = [pattern]
+        return collection
+      }, {})
+    }
+    exports$43.groupPatternsByBaseDirectory = groupPatternsByBaseDirectory
+    function convertPatternGroupsToTasks(positive, negative, dynamic) {
+      return _p_ObjectKeys(positive).map(base => {
+        return convertPatternGroupToTask(
+          base,
+          positive[base],
+          negative,
+          dynamic,
+        )
+      })
+    }
+    exports$43.convertPatternGroupsToTasks = convertPatternGroupsToTasks
+    function convertPatternGroupToTask(base, positive, negative, dynamic) {
+      return {
+        dynamic,
+        positive,
+        negative,
+        base,
+        patterns: [].concat(
+          positive,
+          negative.map(utils.pattern.convertToNegativePattern),
+        ),
+      }
+    }
+    exports$43.convertPatternGroupToTask = convertPatternGroupToTask
+  })
+  var require_async$5 = /* @__PURE__ */ __commonJSMin(exports$44 => {
+    _p_ObjectDefineProperty(exports$44, '__esModule', { value: true })
+    exports$44.read = void 0
+    function read(path, settings, callback) {
+      settings.fs.lstat(path, (lstatError, lstat) => {
+        if (lstatError !== null) {
+          callFailureCallback(callback, lstatError)
+          return
+        }
+        if (!lstat.isSymbolicLink() || !settings.followSymbolicLink) {
+          callSuccessCallback(callback, lstat)
+          return
+        }
+        settings.fs.stat(path, (statError, stat) => {
+          if (statError !== null) {
+            if (settings.throwErrorOnBrokenSymbolicLink) {
+              callFailureCallback(callback, statError)
+              return
+            }
+            callSuccessCallback(callback, lstat)
+            return
+          }
+          if (settings.markSymbolicLink) stat.isSymbolicLink = () => true
+          callSuccessCallback(callback, stat)
+        })
+      })
+    }
+    exports$44.read = read
+    function callFailureCallback(callback, error) {
+      callback(error)
+    }
+    function callSuccessCallback(callback, result) {
+      callback(null, result)
+    }
+  })
+  var require_sync$5 = /* @__PURE__ */ __commonJSMin(exports$45 => {
+    _p_ObjectDefineProperty(exports$45, '__esModule', { value: true })
+    exports$45.read = void 0
+    function read(path, settings) {
+      const lstat = settings.fs.lstatSync(path)
+      if (!lstat.isSymbolicLink() || !settings.followSymbolicLink) return lstat
+      try {
+        const stat = settings.fs.statSync(path)
+        if (settings.markSymbolicLink) stat.isSymbolicLink = () => true
+        return stat
+      } catch (error) {
+        if (!settings.throwErrorOnBrokenSymbolicLink) return lstat
+        throw error
+      }
+    }
+    exports$45.read = read
+  })
+  var require_fs$2 = /* @__PURE__ */ __commonJSMin(exports$46 => {
+    _p_ObjectDefineProperty(exports$46, '__esModule', { value: true })
+    exports$46.createFileSystemAdapter = exports$46.FILE_SYSTEM_ADAPTER = void 0
+    const fs$6 = __require('fs')
+    exports$46.FILE_SYSTEM_ADAPTER = {
+      lstat: fs$6.lstat,
+      stat: fs$6.stat,
+      lstatSync: fs$6.lstatSync,
+      statSync: fs$6.statSync,
+    }
+    function createFileSystemAdapter(fsMethods) {
+      if (fsMethods === void 0) return exports$46.FILE_SYSTEM_ADAPTER
+      return _p_ObjectAssign(
+        _p_ObjectAssign({}, exports$46.FILE_SYSTEM_ADAPTER),
+        fsMethods,
+      )
+    }
+    exports$46.createFileSystemAdapter = createFileSystemAdapter
+  })
+  var require_settings$3 = /* @__PURE__ */ __commonJSMin(exports$47 => {
+    _p_ObjectDefineProperty(exports$47, '__esModule', { value: true })
+    const fs = require_fs$2()
+    var Settings = class {
+      constructor(_options = {}) {
+        this._options = _options
+        this.followSymbolicLink = this._getValue(
+          this._options.followSymbolicLink,
+          true,
+        )
+        this.fs = fs.createFileSystemAdapter(this._options.fs)
+        this.markSymbolicLink = this._getValue(
+          this._options.markSymbolicLink,
+          false,
+        )
+        this.throwErrorOnBrokenSymbolicLink = this._getValue(
+          this._options.throwErrorOnBrokenSymbolicLink,
+          true,
+        )
+      }
+      _getValue(option, value) {
+        return option !== null && option !== void 0 ? option : value
+      }
+    }
+    exports$47.default = Settings
+  })
+  var require_out$3 = /* @__PURE__ */ __commonJSMin(exports$48 => {
+    _p_ObjectDefineProperty(exports$48, '__esModule', { value: true })
+    exports$48.statSync = exports$48.stat = exports$48.Settings = void 0
+    const async = require_async$5()
+    const sync = require_sync$5()
+    const settings_1 = require_settings$3()
+    exports$48.Settings = settings_1.default
+    function stat(path, optionsOrSettingsOrCallback, callback) {
+      if (typeof optionsOrSettingsOrCallback === 'function') {
+        async.read(path, getSettings(), optionsOrSettingsOrCallback)
+        return
+      }
+      async.read(path, getSettings(optionsOrSettingsOrCallback), callback)
+    }
+    exports$48.stat = stat
+    function statSync(path, optionsOrSettings) {
+      const settings = getSettings(optionsOrSettings)
+      return sync.read(path, settings)
+    }
+    exports$48.statSync = statSync
+    function getSettings(settingsOrOptions = {}) {
+      if (settingsOrOptions instanceof settings_1.default)
+        return settingsOrOptions
+      return new settings_1.default(settingsOrOptions)
+    }
+  })
+  var require_queue_microtask = /* @__PURE__ */ __commonJSMin(
+    (exports$49, module$32) => {
+      /*! queue-microtask. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+      let promise
+      module$32.exports =
+        typeof queueMicrotask === 'function'
+          ? queueMicrotask.bind(typeof window !== 'undefined' ? void 0 : global)
+          : cb =>
+              (promise || (promise = _p_PromiseResolve())).then(cb).catch(err =>
+                setTimeout(() => {
+                  throw err
+                }, 0),
+              )
+    },
+  )
+  var require_run_parallel = /* @__PURE__ */ __commonJSMin(
+    (exports$50, module$33) => {
+      /*! run-parallel. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+      module$33.exports = runParallel
+      const queueMicrotask = require_queue_microtask()
+      function runParallel(tasks, cb) {
+        let results
+        let pending
+        let keys
+        let isSync = true
+        if (_p_ArrayIsArray(tasks)) {
+          results = []
+          pending = tasks.length
+        } else {
+          keys = _p_ObjectKeys(tasks)
+          results = {}
+          pending = keys.length
+        }
+        function done(err) {
+          function end() {
+            if (cb) cb(err, results)
+            cb = null
+          }
+          if (isSync) queueMicrotask(end)
+          else end()
+        }
+        function each(i, err, result) {
+          results[i] = result
+          if (--pending === 0 || err) done(err)
+        }
+        if (!pending) done(null)
+        else if (keys)
+          keys.forEach(function (key) {
+            tasks[key](function (err, result) {
+              each(key, err, result)
+            })
+          })
+        else
+          tasks.forEach(function (task, i) {
+            task(function (err, result) {
+              each(i, err, result)
+            })
+          })
+        isSync = false
+      }
+    },
+  )
+  var require_constants = /* @__PURE__ */ __commonJSMin(exports$51 => {
+    _p_ObjectDefineProperty(exports$51, '__esModule', { value: true })
+    exports$51.IS_SUPPORT_READDIR_WITH_FILE_TYPES = void 0
+    const NODE_PROCESS_VERSION_PARTS = process.versions.node.split('.')
+    if (
+      NODE_PROCESS_VERSION_PARTS[0] === void 0 ||
+      NODE_PROCESS_VERSION_PARTS[1] === void 0
+    )
+      throw new _p_ErrorCtor(
+        `Unexpected behavior. The 'process.versions.node' variable has invalid value: ${process.versions.node}`,
+      )
+    const MAJOR_VERSION = _p_NumberParseInt(NODE_PROCESS_VERSION_PARTS[0], 10)
+    const MINOR_VERSION = _p_NumberParseInt(NODE_PROCESS_VERSION_PARTS[1], 10)
+    const SUPPORTED_MAJOR_VERSION = 10
+    /**
+     * IS `true` for Node.js 10.10 and greater.
+     */
+    exports$51.IS_SUPPORT_READDIR_WITH_FILE_TYPES =
+      MAJOR_VERSION > SUPPORTED_MAJOR_VERSION ||
+      (MAJOR_VERSION === SUPPORTED_MAJOR_VERSION && MINOR_VERSION >= 10)
+  })
+  var require_fs$1 = /* @__PURE__ */ __commonJSMin(exports$52 => {
+    _p_ObjectDefineProperty(exports$52, '__esModule', { value: true })
+    exports$52.createDirentFromStats = void 0
+    var DirentFromStats = class {
+      constructor(name, stats) {
+        this.name = name
+        this.isBlockDevice = stats.isBlockDevice.bind(stats)
+        this.isCharacterDevice = stats.isCharacterDevice.bind(stats)
+        this.isDirectory = stats.isDirectory.bind(stats)
+        this.isFIFO = stats.isFIFO.bind(stats)
+        this.isFile = stats.isFile.bind(stats)
+        this.isSocket = stats.isSocket.bind(stats)
+        this.isSymbolicLink = stats.isSymbolicLink.bind(stats)
+      }
+    }
+    function createDirentFromStats(name, stats) {
+      return new DirentFromStats(name, stats)
+    }
+    exports$52.createDirentFromStats = createDirentFromStats
+  })
+  var require_utils = /* @__PURE__ */ __commonJSMin(exports$53 => {
+    _p_ObjectDefineProperty(exports$53, '__esModule', { value: true })
+    exports$53.fs = void 0
+    exports$53.fs = require_fs$1()
+  })
+  var require_common$1 = /* @__PURE__ */ __commonJSMin(exports$54 => {
+    _p_ObjectDefineProperty(exports$54, '__esModule', { value: true })
+    exports$54.joinPathSegments = void 0
+    function joinPathSegments(a, b, separator) {
+      /**
+       * The correct handling of cases when the first segment is a root (`/`,
+       * `C:/`) or UNC path (`//?/C:/`).
+       */
+      if (_p_StringPrototypeEndsWith(a, separator)) return a + b
+      return a + separator + b
+    }
+    exports$54.joinPathSegments = joinPathSegments
+  })
+  var require_async$4 = /* @__PURE__ */ __commonJSMin(exports$55 => {
+    _p_ObjectDefineProperty(exports$55, '__esModule', { value: true })
+    exports$55.readdir =
+      exports$55.readdirWithFileTypes =
+      exports$55.read =
+        void 0
+    const fsStat = require_out$3()
+    const rpl = require_run_parallel()
+    const constants_1 = require_constants()
+    const utils = require_utils()
+    const common = require_common$1()
+    function read(directory, settings, callback) {
+      if (!settings.stats && constants_1.IS_SUPPORT_READDIR_WITH_FILE_TYPES) {
+        readdirWithFileTypes(directory, settings, callback)
+        return
+      }
+      readdir(directory, settings, callback)
+    }
+    exports$55.read = read
+    function readdirWithFileTypes(directory, settings, callback) {
+      settings.fs.readdir(
+        directory,
+        { withFileTypes: true },
+        (readdirError, dirents) => {
+          if (readdirError !== null) {
+            callFailureCallback(callback, readdirError)
+            return
+          }
+          const entries = dirents.map(dirent => ({
+            dirent,
+            name: dirent.name,
+            path: common.joinPathSegments(
+              directory,
+              dirent.name,
+              settings.pathSegmentSeparator,
+            ),
+          }))
+          if (!settings.followSymbolicLinks) {
+            callSuccessCallback(callback, entries)
+            return
+          }
+          const tasks = entries.map(entry => makeRplTaskEntry(entry, settings))
+          rpl(tasks, (rplError, rplEntries) => {
+            if (rplError !== null) {
+              callFailureCallback(callback, rplError)
+              return
+            }
+            callSuccessCallback(callback, rplEntries)
+          })
+        },
+      )
+    }
+    exports$55.readdirWithFileTypes = readdirWithFileTypes
+    function makeRplTaskEntry(entry, settings) {
+      return done => {
+        if (!entry.dirent.isSymbolicLink()) {
+          done(null, entry)
+          return
+        }
+        settings.fs.stat(entry.path, (statError, stats) => {
+          if (statError !== null) {
+            if (settings.throwErrorOnBrokenSymbolicLink) {
+              done(statError)
+              return
+            }
+            done(null, entry)
+            return
+          }
+          entry.dirent = utils.fs.createDirentFromStats(entry.name, stats)
+          done(null, entry)
+        })
+      }
+    }
+    function readdir(directory, settings, callback) {
+      settings.fs.readdir(directory, (readdirError, names) => {
+        if (readdirError !== null) {
+          callFailureCallback(callback, readdirError)
+          return
+        }
+        const tasks = names.map(name => {
+          const path = common.joinPathSegments(
+            directory,
+            name,
+            settings.pathSegmentSeparator,
+          )
+          return done => {
+            fsStat.stat(path, settings.fsStatSettings, (error, stats) => {
+              if (error !== null) {
+                done(error)
+                return
+              }
+              const entry = {
+                name,
+                path,
+                dirent: utils.fs.createDirentFromStats(name, stats),
+              }
+              if (settings.stats) entry.stats = stats
+              done(null, entry)
+            })
+          }
+        })
+        rpl(tasks, (rplError, entries) => {
+          if (rplError !== null) {
+            callFailureCallback(callback, rplError)
+            return
+          }
+          callSuccessCallback(callback, entries)
+        })
+      })
+    }
+    exports$55.readdir = readdir
+    function callFailureCallback(callback, error) {
+      callback(error)
+    }
+    function callSuccessCallback(callback, result) {
+      callback(null, result)
+    }
+  })
+  var require_sync$4 = /* @__PURE__ */ __commonJSMin(exports$56 => {
+    _p_ObjectDefineProperty(exports$56, '__esModule', { value: true })
+    exports$56.readdir =
+      exports$56.readdirWithFileTypes =
+      exports$56.read =
+        void 0
+    const fsStat = require_out$3()
+    const constants_1 = require_constants()
+    const utils = require_utils()
+    const common = require_common$1()
+    function read(directory, settings) {
+      if (!settings.stats && constants_1.IS_SUPPORT_READDIR_WITH_FILE_TYPES)
+        return readdirWithFileTypes(directory, settings)
+      return readdir(directory, settings)
+    }
+    exports$56.read = read
+    function readdirWithFileTypes(directory, settings) {
+      return settings.fs
+        .readdirSync(directory, { withFileTypes: true })
+        .map(dirent => {
+          const entry = {
+            dirent,
+            name: dirent.name,
+            path: common.joinPathSegments(
+              directory,
+              dirent.name,
+              settings.pathSegmentSeparator,
+            ),
+          }
+          if (entry.dirent.isSymbolicLink() && settings.followSymbolicLinks)
+            try {
+              const stats = settings.fs.statSync(entry.path)
+              entry.dirent = utils.fs.createDirentFromStats(entry.name, stats)
+            } catch (error) {
+              if (settings.throwErrorOnBrokenSymbolicLink) throw error
+            }
+          return entry
+        })
+    }
+    exports$56.readdirWithFileTypes = readdirWithFileTypes
+    function readdir(directory, settings) {
+      return settings.fs.readdirSync(directory).map(name => {
+        const entryPath = common.joinPathSegments(
+          directory,
+          name,
+          settings.pathSegmentSeparator,
+        )
+        const stats = fsStat.statSync(entryPath, settings.fsStatSettings)
+        const entry = {
+          name,
+          path: entryPath,
+          dirent: utils.fs.createDirentFromStats(name, stats),
+        }
+        if (settings.stats) entry.stats = stats
+        return entry
+      })
+    }
+    exports$56.readdir = readdir
+  })
+  var require_fs = /* @__PURE__ */ __commonJSMin(exports$57 => {
+    _p_ObjectDefineProperty(exports$57, '__esModule', { value: true })
+    exports$57.createFileSystemAdapter = exports$57.FILE_SYSTEM_ADAPTER = void 0
+    const fs$5 = __require('fs')
+    exports$57.FILE_SYSTEM_ADAPTER = {
+      lstat: fs$5.lstat,
+      stat: fs$5.stat,
+      lstatSync: fs$5.lstatSync,
+      statSync: fs$5.statSync,
+      readdir: fs$5.readdir,
+      readdirSync: fs$5.readdirSync,
+    }
+    function createFileSystemAdapter(fsMethods) {
+      if (fsMethods === void 0) return exports$57.FILE_SYSTEM_ADAPTER
+      return _p_ObjectAssign(
+        _p_ObjectAssign({}, exports$57.FILE_SYSTEM_ADAPTER),
+        fsMethods,
+      )
+    }
+    exports$57.createFileSystemAdapter = createFileSystemAdapter
+  })
+  var require_settings$2 = /* @__PURE__ */ __commonJSMin(exports$58 => {
+    _p_ObjectDefineProperty(exports$58, '__esModule', { value: true })
+    const path$9 = __require('path')
+    const fsStat = require_out$3()
+    const fs = require_fs()
+    var Settings = class {
+      constructor(_options = {}) {
+        this._options = _options
+        this.followSymbolicLinks = this._getValue(
+          this._options.followSymbolicLinks,
+          false,
+        )
+        this.fs = fs.createFileSystemAdapter(this._options.fs)
+        this.pathSegmentSeparator = this._getValue(
+          this._options.pathSegmentSeparator,
+          path$9.sep,
+        )
+        this.stats = this._getValue(this._options.stats, false)
+        this.throwErrorOnBrokenSymbolicLink = this._getValue(
+          this._options.throwErrorOnBrokenSymbolicLink,
+          true,
+        )
+        this.fsStatSettings = new fsStat.Settings({
+          followSymbolicLink: this.followSymbolicLinks,
+          fs: this.fs,
+          throwErrorOnBrokenSymbolicLink: this.throwErrorOnBrokenSymbolicLink,
+        })
+      }
+      _getValue(option, value) {
+        return option !== null && option !== void 0 ? option : value
+      }
+    }
+    exports$58.default = Settings
+  })
+  var require_out$2 = /* @__PURE__ */ __commonJSMin(exports$59 => {
+    _p_ObjectDefineProperty(exports$59, '__esModule', { value: true })
+    exports$59.Settings = exports$59.scandirSync = exports$59.scandir = void 0
+    const async = require_async$4()
+    const sync = require_sync$4()
+    const settings_1 = require_settings$2()
+    exports$59.Settings = settings_1.default
+    function scandir(path, optionsOrSettingsOrCallback, callback) {
+      if (typeof optionsOrSettingsOrCallback === 'function') {
+        async.read(path, getSettings(), optionsOrSettingsOrCallback)
+        return
+      }
+      async.read(path, getSettings(optionsOrSettingsOrCallback), callback)
+    }
+    exports$59.scandir = scandir
+    function scandirSync(path, optionsOrSettings) {
+      const settings = getSettings(optionsOrSettings)
+      return sync.read(path, settings)
+    }
+    exports$59.scandirSync = scandirSync
+    function getSettings(settingsOrOptions = {}) {
+      if (settingsOrOptions instanceof settings_1.default)
+        return settingsOrOptions
+      return new settings_1.default(settingsOrOptions)
+    }
+  })
+  var require_reusify = /* @__PURE__ */ __commonJSMin(
+    (exports$60, module$34) => {
+      function reusify(Constructor) {
+        var head = new Constructor()
+        var tail = head
+        function get() {
+          var current = head
+          if (current.next) head = current.next
+          else {
+            head = new Constructor()
+            tail = head
+          }
+          current.next = null
+          return current
+        }
+        function release(obj) {
+          tail.next = obj
+          tail = obj
+        }
+        return {
+          get,
+          release,
+        }
+      }
+      module$34.exports = reusify
+    },
+  )
+  var require_queue = /* @__PURE__ */ __commonJSMin((exports$61, module$35) => {
+    var reusify = require_reusify()
+    function fastqueue(context, worker, _concurrency) {
+      if (typeof context === 'function') {
+        _concurrency = worker
+        worker = context
+        context = null
+      }
+      if (!(_concurrency >= 1))
+        throw new _p_ErrorCtor(
+          'fastqueue concurrency must be equal to or greater than 1',
+        )
+      var cache = reusify(Task)
+      var queueHead = null
+      var queueTail = null
+      var _running = 0
+      var errorHandler = null
+      var self = {
+        push,
+        drain: noop,
+        saturated: noop,
+        pause,
+        paused: false,
+        get concurrency() {
+          return _concurrency
+        },
+        set concurrency(value) {
+          if (!(value >= 1))
+            throw new _p_ErrorCtor(
+              'fastqueue concurrency must be equal to or greater than 1',
+            )
+          _concurrency = value
+          if (self.paused) return
+          for (; queueHead && _running < _concurrency;) {
+            _running++
+            release()
+          }
+        },
+        running,
+        resume,
+        idle,
+        length,
+        getQueue,
+        unshift,
+        empty: noop,
+        kill,
+        killAndDrain,
+        error,
+        abort,
+      }
+      return self
+      function running() {
+        return _running
+      }
+      function pause() {
+        self.paused = true
+      }
+      function length() {
+        var current = queueHead
+        var counter = 0
+        while (current) {
+          current = current.next
+          counter++
+        }
+        return counter
+      }
+      function getQueue() {
+        var current = queueHead
+        var tasks = []
+        while (current) {
+          tasks.push(current.value)
+          current = current.next
+        }
+        return tasks
+      }
+      function resume() {
+        if (!self.paused) return
+        self.paused = false
+        if (queueHead === null) {
+          _running++
+          release()
+          return
+        }
+        for (; queueHead && _running < _concurrency;) {
+          _running++
+          release()
+        }
+      }
+      function idle() {
+        return _running === 0 && self.length() === 0
+      }
+      function push(value, done) {
+        var current = cache.get()
+        current.context = context
+        current.release = release
+        current.value = value
+        current.callback = done || noop
+        current.errorHandler = errorHandler
+        if (_running >= _concurrency || self.paused) {
+          if (queueTail) {
+            queueTail.next = current
+            queueTail = current
+          } else {
+            queueHead = current
+            queueTail = current
+            self.saturated()
+          }
+        } else {
+          _running++
+          worker.call(context, current.value, current.worked)
+        }
+      }
+      function unshift(value, done) {
+        var current = cache.get()
+        current.context = context
+        current.release = release
+        current.value = value
+        current.callback = done || noop
+        current.errorHandler = errorHandler
+        if (_running >= _concurrency || self.paused) {
+          if (queueHead) {
+            current.next = queueHead
+            queueHead = current
+          } else {
+            queueHead = current
+            queueTail = current
+            self.saturated()
+          }
+        } else {
+          _running++
+          worker.call(context, current.value, current.worked)
+        }
+      }
+      function release(holder) {
+        if (holder) cache.release(holder)
+        var next = queueHead
+        if (next && _running <= _concurrency) {
+          if (!self.paused) {
+            if (queueTail === queueHead) queueTail = null
+            queueHead = next.next
+            next.next = null
+            worker.call(context, next.value, next.worked)
+            if (queueTail === null) self.empty()
+          } else _running--
+        } else if (--_running === 0) self.drain()
+      }
+      function kill() {
+        queueHead = null
+        queueTail = null
+        self.drain = noop
+      }
+      function killAndDrain() {
+        queueHead = null
+        queueTail = null
+        self.drain()
+        self.drain = noop
+      }
+      function abort() {
+        var current = queueHead
+        queueHead = null
+        queueTail = null
+        while (current) {
+          var next = current.next
+          var callback = current.callback
+          var errorHandler = current.errorHandler
+          var val = current.value
+          var context = current.context
+          current.value = null
+          current.callback = noop
+          current.errorHandler = null
+          if (errorHandler)
+            errorHandler(/* @__PURE__ */ new _p_ErrorCtor('abort'), val)
+          callback.call(context, /* @__PURE__ */ new _p_ErrorCtor('abort'))
+          current.release(current)
+          current = next
+        }
+        self.drain = noop
+      }
+      function error(handler) {
+        errorHandler = handler
+      }
+    }
+    function noop() {}
+    function Task() {
+      this.value = null
+      this.callback = noop
+      this.next = null
+      this.release = noop
+      this.context = null
+      this.errorHandler = null
+      var self = this
+      this.worked = function worked(err, result) {
+        var callback = self.callback
+        var errorHandler = self.errorHandler
+        var val = self.value
+        self.value = null
+        self.callback = noop
+        if (self.errorHandler) errorHandler(err, val)
+        callback.call(self.context, err, result)
+        self.release(self)
+      }
+    }
+    function queueAsPromised(context, worker, _concurrency) {
+      if (typeof context === 'function') {
+        _concurrency = worker
+        worker = context
+        context = null
+      }
+      function asyncWrapper(arg, cb) {
+        worker.call(this, arg).then(function (res) {
+          cb(null, res)
+        }, cb)
+      }
+      var queue = fastqueue(context, asyncWrapper, _concurrency)
+      var pushCb = queue.push
+      var unshiftCb = queue.unshift
+      queue.push = push
+      queue.unshift = unshift
+      queue.drained = drained
+      return queue
+      function push(value) {
+        var p = new _p_PromiseCtor(function (resolve, reject) {
+          pushCb(value, function (err, result) {
+            if (err) {
+              reject(err)
+              return
+            }
+            resolve(result)
+          })
+        })
+        p.catch(noop)
+        return p
+      }
+      function unshift(value) {
+        var p = new _p_PromiseCtor(function (resolve, reject) {
+          unshiftCb(value, function (err, result) {
+            if (err) {
+              reject(err)
+              return
+            }
+            resolve(result)
+          })
+        })
+        p.catch(noop)
+        return p
+      }
+      function drained() {
+        return new _p_PromiseCtor(function (resolve) {
+          _p_processNextTick(function () {
+            if (queue.idle()) resolve()
+            else {
+              var previousDrain = queue.drain
+              queue.drain = function () {
+                if (typeof previousDrain === 'function') previousDrain()
+                resolve()
+                queue.drain = previousDrain
+              }
+            }
+          })
+        })
+      }
+    }
+    module$35.exports = fastqueue
+    module$35.exports.promise = queueAsPromised
+  })
+  var require_common = /* @__PURE__ */ __commonJSMin(exports$62 => {
+    _p_ObjectDefineProperty(exports$62, '__esModule', { value: true })
+    exports$62.joinPathSegments =
+      exports$62.replacePathSegmentSeparator =
+      exports$62.isAppliedFilter =
+      exports$62.isFatalError =
+        void 0
+    function isFatalError(settings, error) {
+      if (settings.errorFilter === null) return true
+      return !settings.errorFilter(error)
+    }
+    exports$62.isFatalError = isFatalError
+    function isAppliedFilter(filter, value) {
+      return filter === null || filter(value)
+    }
+    exports$62.isAppliedFilter = isAppliedFilter
+    function replacePathSegmentSeparator(filepath, separator) {
+      return filepath.split(/[/\\]/).join(separator)
+    }
+    exports$62.replacePathSegmentSeparator = replacePathSegmentSeparator
+    function joinPathSegments(a, b, separator) {
+      if (a === '') return b
+      /**
+       * The correct handling of cases when the first segment is a root (`/`,
+       * `C:/`) or UNC path (`//?/C:/`).
+       */
+      if (_p_StringPrototypeEndsWith(a, separator)) return a + b
+      return a + separator + b
+    }
+    exports$62.joinPathSegments = joinPathSegments
+  })
+  var require_reader$1 = /* @__PURE__ */ __commonJSMin(exports$63 => {
+    _p_ObjectDefineProperty(exports$63, '__esModule', { value: true })
+    const common = require_common()
+    var Reader = class {
+      constructor(_root, _settings) {
+        this._root = _root
+        this._settings = _settings
+        this._root = common.replacePathSegmentSeparator(
+          _root,
+          _settings.pathSegmentSeparator,
+        )
+      }
+    }
+    exports$63.default = Reader
+  })
+  var require_async$3 = /* @__PURE__ */ __commonJSMin(exports$64 => {
+    _p_ObjectDefineProperty(exports$64, '__esModule', { value: true })
+    const events_1 = __require('events')
+    const fsScandir = require_out$2()
+    const fastq = require_queue()
+    const common = require_common()
+    const reader_1 = require_reader$1()
+    var AsyncReader = class extends reader_1.default {
+      constructor(_root, _settings) {
+        super(_root, _settings)
+        this._settings = _settings
+        this._scandir = fsScandir.scandir
+        this._emitter = new events_1.EventEmitter()
+        this._queue = fastq(this._worker.bind(this), this._settings.concurrency)
+        this._isFatalError = false
+        this._isDestroyed = false
+        this._queue.drain = () => {
+          if (!this._isFatalError) this._emitter.emit('end')
+        }
+      }
+      read() {
+        this._isFatalError = false
+        this._isDestroyed = false
+        setImmediate(() => {
+          this._pushToQueue(this._root, this._settings.basePath)
+        })
+        return this._emitter
+      }
+      get isDestroyed() {
+        return this._isDestroyed
+      }
+      destroy() {
+        if (this._isDestroyed)
+          throw new _p_ErrorCtor('The reader is already destroyed')
+        this._isDestroyed = true
+        this._queue.killAndDrain()
+      }
+      onEntry(callback) {
+        this._emitter.on('entry', callback)
+      }
+      onError(callback) {
+        this._emitter.once('error', callback)
+      }
+      onEnd(callback) {
+        this._emitter.once('end', callback)
+      }
+      _pushToQueue(directory, base) {
+        const queueItem = {
+          directory,
+          base,
+        }
+        this._queue.push(queueItem, error => {
+          if (error !== null) this._handleError(error)
+        })
+      }
+      _worker(item, done) {
+        this._scandir(
+          item.directory,
+          this._settings.fsScandirSettings,
+          (error, entries) => {
+            if (error !== null) {
+              done(error, void 0)
+              return
+            }
+            for (const entry of entries) this._handleEntry(entry, item.base)
+            done(null, void 0)
+          },
+        )
+      }
+      _handleError(error) {
+        if (this._isDestroyed || !common.isFatalError(this._settings, error))
+          return
+        this._isFatalError = true
+        this._isDestroyed = true
+        this._emitter.emit('error', error)
+      }
+      _handleEntry(entry, base) {
+        if (this._isDestroyed || this._isFatalError) return
+        const fullpath = entry.path
+        if (base !== void 0)
+          entry.path = common.joinPathSegments(
+            base,
+            entry.name,
+            this._settings.pathSegmentSeparator,
+          )
+        if (common.isAppliedFilter(this._settings.entryFilter, entry))
+          this._emitEntry(entry)
+        if (
+          entry.dirent.isDirectory() &&
+          common.isAppliedFilter(this._settings.deepFilter, entry)
+        )
+          this._pushToQueue(fullpath, base === void 0 ? void 0 : entry.path)
+      }
+      _emitEntry(entry) {
+        this._emitter.emit('entry', entry)
+      }
+    }
+    exports$64.default = AsyncReader
+  })
+  var require_async$2 = /* @__PURE__ */ __commonJSMin(exports$65 => {
+    _p_ObjectDefineProperty(exports$65, '__esModule', { value: true })
+    const async_1 = require_async$3()
+    var AsyncProvider = class {
+      constructor(_root, _settings) {
+        this._root = _root
+        this._settings = _settings
+        this._reader = new async_1.default(this._root, this._settings)
+        this._storage = []
+      }
+      read(callback) {
+        this._reader.onError(error => {
+          callFailureCallback(callback, error)
+        })
+        this._reader.onEntry(entry => {
+          this._storage.push(entry)
+        })
+        this._reader.onEnd(() => {
+          callSuccessCallback(callback, this._storage)
+        })
+        this._reader.read()
+      }
+    }
+    exports$65.default = AsyncProvider
+    function callFailureCallback(callback, error) {
+      callback(error)
+    }
+    function callSuccessCallback(callback, entries) {
+      callback(null, entries)
+    }
+  })
+  var require_stream$2 = /* @__PURE__ */ __commonJSMin(exports$66 => {
+    _p_ObjectDefineProperty(exports$66, '__esModule', { value: true })
+    const stream_1$2 = __require('stream')
+    const async_1 = require_async$3()
+    var StreamProvider = class {
+      constructor(_root, _settings) {
+        this._root = _root
+        this._settings = _settings
+        this._reader = new async_1.default(this._root, this._settings)
+        this._stream = new stream_1$2.Readable({
+          objectMode: true,
+          read: () => {},
+          destroy: () => {
+            if (!this._reader.isDestroyed) this._reader.destroy()
+          },
+        })
+      }
+      read() {
+        this._reader.onError(error => {
+          this._stream.emit('error', error)
+        })
+        this._reader.onEntry(entry => {
+          this._stream.push(entry)
+        })
+        this._reader.onEnd(() => {
+          this._stream.push(null)
+        })
+        this._reader.read()
+        return this._stream
+      }
+    }
+    exports$66.default = StreamProvider
+  })
+  var require_sync$3 = /* @__PURE__ */ __commonJSMin(exports$67 => {
+    _p_ObjectDefineProperty(exports$67, '__esModule', { value: true })
+    const fsScandir = require_out$2()
+    const common = require_common()
+    const reader_1 = require_reader$1()
+    var SyncReader = class extends reader_1.default {
+      constructor() {
+        super(...arguments)
+        this._scandir = fsScandir.scandirSync
+        this._storage = []
+        this._queue = /* @__PURE__ */ new _p_SetCtor()
+      }
+      read() {
+        this._pushToQueue(this._root, this._settings.basePath)
+        this._handleQueue()
+        return this._storage
+      }
+      _pushToQueue(directory, base) {
+        this._queue.add({
+          directory,
+          base,
+        })
+      }
+      _handleQueue() {
+        for (const item of this._queue.values())
+          this._handleDirectory(item.directory, item.base)
+      }
+      _handleDirectory(directory, base) {
+        try {
+          const entries = this._scandir(
+            directory,
+            this._settings.fsScandirSettings,
+          )
+          for (const entry of entries) this._handleEntry(entry, base)
+        } catch (error) {
+          this._handleError(error)
+        }
+      }
+      _handleError(error) {
+        if (!common.isFatalError(this._settings, error)) return
+        throw error
+      }
+      _handleEntry(entry, base) {
+        const fullpath = entry.path
+        if (base !== void 0)
+          entry.path = common.joinPathSegments(
+            base,
+            entry.name,
+            this._settings.pathSegmentSeparator,
+          )
+        if (common.isAppliedFilter(this._settings.entryFilter, entry))
+          this._pushToStorage(entry)
+        if (
+          entry.dirent.isDirectory() &&
+          common.isAppliedFilter(this._settings.deepFilter, entry)
+        )
+          this._pushToQueue(fullpath, base === void 0 ? void 0 : entry.path)
+      }
+      _pushToStorage(entry) {
+        this._storage.push(entry)
+      }
+    }
+    exports$67.default = SyncReader
+  })
+  var require_sync$2 = /* @__PURE__ */ __commonJSMin(exports$68 => {
+    _p_ObjectDefineProperty(exports$68, '__esModule', { value: true })
+    const sync_1 = require_sync$3()
+    var SyncProvider = class {
+      constructor(_root, _settings) {
+        this._root = _root
+        this._settings = _settings
+        this._reader = new sync_1.default(this._root, this._settings)
+      }
+      read() {
+        return this._reader.read()
+      }
+    }
+    exports$68.default = SyncProvider
+  })
+  var require_settings$1 = /* @__PURE__ */ __commonJSMin(exports$69 => {
+    _p_ObjectDefineProperty(exports$69, '__esModule', { value: true })
+    const path$8 = __require('path')
+    const fsScandir = require_out$2()
+    var Settings = class {
+      constructor(_options = {}) {
+        this._options = _options
+        this.basePath = this._getValue(this._options.basePath, void 0)
+        this.concurrency = this._getValue(
+          this._options.concurrency,
+          Number.POSITIVE_INFINITY,
+        )
+        this.deepFilter = this._getValue(this._options.deepFilter, null)
+        this.entryFilter = this._getValue(this._options.entryFilter, null)
+        this.errorFilter = this._getValue(this._options.errorFilter, null)
+        this.pathSegmentSeparator = this._getValue(
+          this._options.pathSegmentSeparator,
+          path$8.sep,
+        )
+        this.fsScandirSettings = new fsScandir.Settings({
+          followSymbolicLinks: this._options.followSymbolicLinks,
+          fs: this._options.fs,
+          pathSegmentSeparator: this._options.pathSegmentSeparator,
+          stats: this._options.stats,
+          throwErrorOnBrokenSymbolicLink:
+            this._options.throwErrorOnBrokenSymbolicLink,
+        })
+      }
+      _getValue(option, value) {
+        return option !== null && option !== void 0 ? option : value
+      }
+    }
+    exports$69.default = Settings
+  })
+  var require_out$1 = /* @__PURE__ */ __commonJSMin(exports$70 => {
+    _p_ObjectDefineProperty(exports$70, '__esModule', { value: true })
+    exports$70.Settings =
+      exports$70.walkStream =
+      exports$70.walkSync =
+      exports$70.walk =
+        void 0
+    const async_1 = require_async$2()
+    const stream_1 = require_stream$2()
+    const sync_1 = require_sync$2()
+    const settings_1 = require_settings$1()
+    exports$70.Settings = settings_1.default
+    function walk(directory, optionsOrSettingsOrCallback, callback) {
+      if (typeof optionsOrSettingsOrCallback === 'function') {
+        new async_1.default(directory, getSettings()).read(
+          optionsOrSettingsOrCallback,
+        )
+        return
+      }
+      new async_1.default(
+        directory,
+        getSettings(optionsOrSettingsOrCallback),
+      ).read(callback)
+    }
+    exports$70.walk = walk
+    function walkSync(directory, optionsOrSettings) {
+      const settings = getSettings(optionsOrSettings)
+      return new sync_1.default(directory, settings).read()
+    }
+    exports$70.walkSync = walkSync
+    function walkStream(directory, optionsOrSettings) {
+      const settings = getSettings(optionsOrSettings)
+      return new stream_1.default(directory, settings).read()
+    }
+    exports$70.walkStream = walkStream
+    function getSettings(settingsOrOptions = {}) {
+      if (settingsOrOptions instanceof settings_1.default)
+        return settingsOrOptions
+      return new settings_1.default(settingsOrOptions)
+    }
+  })
+  var require_reader = /* @__PURE__ */ __commonJSMin(exports$71 => {
+    _p_ObjectDefineProperty(exports$71, '__esModule', { value: true })
+    const path$7 = __require('path')
+    const fsStat = require_out$3()
+    const utils = require_utils$1()
+    var Reader = class {
+      constructor(_settings) {
+        this._settings = _settings
+        this._fsStatSettings = new fsStat.Settings({
+          followSymbolicLink: this._settings.followSymbolicLinks,
+          fs: this._settings.fs,
+          throwErrorOnBrokenSymbolicLink: this._settings.followSymbolicLinks,
+        })
+      }
+      _getFullEntryPath(filepath) {
+        return path$7.resolve(this._settings.cwd, filepath)
+      }
+      _makeEntry(stats, pattern) {
+        const entry = {
+          name: pattern,
+          path: pattern,
+          dirent: utils.fs.createDirentFromStats(pattern, stats),
+        }
+        if (this._settings.stats) entry.stats = stats
+        return entry
+      }
+      _isFatalError(error) {
+        return (
+          !utils.errno.isEnoentCodeError(error) &&
+          !this._settings.suppressErrors
+        )
+      }
+    }
+    exports$71.default = Reader
+  })
+  var require_stream$1 = /* @__PURE__ */ __commonJSMin(exports$72 => {
+    _p_ObjectDefineProperty(exports$72, '__esModule', { value: true })
+    const stream_1$1 = __require('stream')
+    const fsStat = require_out$3()
+    const fsWalk = require_out$1()
+    const reader_1 = require_reader()
+    var ReaderStream = class extends reader_1.default {
+      constructor() {
+        super(...arguments)
+        this._walkStream = fsWalk.walkStream
+        this._stat = fsStat.stat
+      }
+      dynamic(root, options) {
+        return this._walkStream(root, options)
+      }
+      static(patterns, options) {
+        const filepaths = patterns.map(this._getFullEntryPath, this)
+        const stream = new stream_1$1.PassThrough({ objectMode: true })
+        stream._write = (index, _enc, done) => {
+          return this._getEntry(filepaths[index], patterns[index], options)
+            .then(entry => {
+              if (entry !== null && options.entryFilter(entry))
+                stream.push(entry)
+              if (index === filepaths.length - 1) stream.end()
+              done()
+            })
+            .catch(done)
+        }
+        for (let i = 0; i < filepaths.length; i++) stream.write(i)
+        return stream
+      }
+      _getEntry(filepath, pattern, options) {
+        return this._getStat(filepath)
+          .then(stats => this._makeEntry(stats, pattern))
+          .catch(error => {
+            if (options.errorFilter(error)) return null
+            throw error
+          })
+      }
+      _getStat(filepath) {
+        return new _p_PromiseCtor((resolve, reject) => {
+          this._stat(filepath, this._fsStatSettings, (error, stats) => {
+            return error === null ? resolve(stats) : reject(error)
+          })
+        })
+      }
+    }
+    exports$72.default = ReaderStream
+  })
+  var require_async$1 = /* @__PURE__ */ __commonJSMin(exports$73 => {
+    _p_ObjectDefineProperty(exports$73, '__esModule', { value: true })
+    const fsWalk = require_out$1()
+    const reader_1 = require_reader()
+    const stream_1 = require_stream$1()
+    var ReaderAsync = class extends reader_1.default {
+      constructor() {
+        super(...arguments)
+        this._walkAsync = fsWalk.walk
+        this._readerStream = new stream_1.default(this._settings)
+      }
+      dynamic(root, options) {
+        return new _p_PromiseCtor((resolve, reject) => {
+          this._walkAsync(root, options, (error, entries) => {
+            if (error === null) resolve(entries)
+            else reject(error)
+          })
+        })
+      }
+      async static(patterns, options) {
+        const entries = []
+        const stream = this._readerStream.static(patterns, options)
+        return new _p_PromiseCtor((resolve, reject) => {
+          stream.once('error', reject)
+          stream.on('data', entry => entries.push(entry))
+          stream.once('end', () => resolve(entries))
+        })
+      }
+    }
+    exports$73.default = ReaderAsync
+  })
+  var require_matcher = /* @__PURE__ */ __commonJSMin(exports$74 => {
+    _p_ObjectDefineProperty(exports$74, '__esModule', { value: true })
+    const utils = require_utils$1()
+    var Matcher = class {
+      constructor(_patterns, _settings, _micromatchOptions) {
+        this._patterns = _patterns
+        this._settings = _settings
+        this._micromatchOptions = _micromatchOptions
+        this._storage = []
+        this._fillStorage()
+      }
+      _fillStorage() {
+        for (const pattern of this._patterns) {
+          const segments = this._getPatternSegments(pattern)
+          const sections = this._splitSegmentsIntoSections(segments)
+          this._storage.push({
+            complete: sections.length <= 1,
+            pattern,
+            segments,
+            sections,
+          })
+        }
+      }
+      _getPatternSegments(pattern) {
+        return utils.pattern
+          .getPatternParts(pattern, this._micromatchOptions)
+          .map(part => {
+            if (!utils.pattern.isDynamicPattern(part, this._settings))
+              return {
+                dynamic: false,
+                pattern: part,
+              }
+            return {
+              dynamic: true,
+              pattern: part,
+              patternRe: utils.pattern.makeRe(part, this._micromatchOptions),
+            }
+          })
+      }
+      _splitSegmentsIntoSections(segments) {
+        return utils.array.splitWhen(
+          segments,
+          segment =>
+            segment.dynamic && utils.pattern.hasGlobStar(segment.pattern),
+        )
+      }
+    }
+    exports$74.default = Matcher
+  })
+  var require_partial = /* @__PURE__ */ __commonJSMin(exports$75 => {
+    _p_ObjectDefineProperty(exports$75, '__esModule', { value: true })
+    const matcher_1 = require_matcher()
+    var PartialMatcher = class extends matcher_1.default {
+      match(filepath) {
+        const parts = filepath.split('/')
+        const levels = parts.length
+        const patterns = this._storage.filter(
+          info => !info.complete || info.segments.length > levels,
+        )
+        for (const pattern of patterns) {
+          const section = pattern.sections[0]
+          /**
+           * In this case, the pattern has a globstar and we must read all
+           * directories unconditionally, but only if the level has reached the
+           * end of the first group.
+           *
+           * Fixtures/{a,b}/**
+           * ^ true/false  ^ always true.
+           */
+          if (!pattern.complete && levels > section.length) return true
+          if (
+            parts.every((part, index) => {
+              const segment = pattern.segments[index]
+              if (segment.dynamic && segment.patternRe.test(part)) return true
+              if (!segment.dynamic && segment.pattern === part) return true
+              return false
+            })
+          )
+            return true
+        }
+        return false
+      }
+    }
+    exports$75.default = PartialMatcher
+  })
+  var require_deep = /* @__PURE__ */ __commonJSMin(exports$76 => {
+    _p_ObjectDefineProperty(exports$76, '__esModule', { value: true })
+    const utils = require_utils$1()
+    const partial_1 = require_partial()
+    var DeepFilter = class {
+      constructor(_settings, _micromatchOptions) {
+        this._settings = _settings
+        this._micromatchOptions = _micromatchOptions
+      }
+      getFilter(basePath, positive, negative) {
+        const matcher = this._getMatcher(positive)
+        const negativeRe = this._getNegativePatternsRe(negative)
+        return entry => this._filter(basePath, entry, matcher, negativeRe)
+      }
+      _getMatcher(patterns) {
+        return new partial_1.default(
+          patterns,
+          this._settings,
+          this._micromatchOptions,
+        )
+      }
+      _getNegativePatternsRe(patterns) {
+        const affectDepthOfReadingPatterns = patterns.filter(
+          utils.pattern.isAffectDepthOfReadingPattern,
+        )
+        return utils.pattern.convertPatternsToRe(
+          affectDepthOfReadingPatterns,
+          this._micromatchOptions,
+        )
+      }
+      _filter(basePath, entry, matcher, negativeRe) {
+        if (this._isSkippedByDeep(basePath, entry.path)) return false
+        if (this._isSkippedSymbolicLink(entry)) return false
+        const filepath = utils.path.removeLeadingDotSegment(entry.path)
+        if (this._isSkippedByPositivePatterns(filepath, matcher)) return false
+        return this._isSkippedByNegativePatterns(filepath, negativeRe)
+      }
+      _isSkippedByDeep(basePath, entryPath) {
+        /**
+         * Avoid unnecessary depth calculations when it doesn't matter.
+         */
+        if (this._settings.deep === Infinity) return false
+        return this._getEntryLevel(basePath, entryPath) >= this._settings.deep
+      }
+      _getEntryLevel(basePath, entryPath) {
+        const entryPathDepth = entryPath.split('/').length
+        if (basePath === '') return entryPathDepth
+        return entryPathDepth - basePath.split('/').length
+      }
+      _isSkippedSymbolicLink(entry) {
+        return (
+          !this._settings.followSymbolicLinks && entry.dirent.isSymbolicLink()
+        )
+      }
+      _isSkippedByPositivePatterns(entryPath, matcher) {
+        return !this._settings.baseNameMatch && !matcher.match(entryPath)
+      }
+      _isSkippedByNegativePatterns(entryPath, patternsRe) {
+        return !utils.pattern.matchAny(entryPath, patternsRe)
+      }
+    }
+    exports$76.default = DeepFilter
+  })
+  var require_entry$1 = /* @__PURE__ */ __commonJSMin(exports$77 => {
+    _p_ObjectDefineProperty(exports$77, '__esModule', { value: true })
+    const utils = require_utils$1()
+    var EntryFilter = class {
+      constructor(_settings, _micromatchOptions) {
+        this._settings = _settings
+        this._micromatchOptions = _micromatchOptions
+        this.index = /* @__PURE__ */ new _p_MapCtor()
+      }
+      getFilter(positive, negative) {
+        const [absoluteNegative, relativeNegative] =
+          utils.pattern.partitionAbsoluteAndRelative(negative)
+        const patterns = {
+          positive: {
+            all: utils.pattern.convertPatternsToRe(
+              positive,
+              this._micromatchOptions,
+            ),
+          },
+          negative: {
+            absolute: utils.pattern.convertPatternsToRe(
+              absoluteNegative,
+              _p_ObjectAssign(_p_ObjectAssign({}, this._micromatchOptions), {
+                dot: true,
+              }),
+            ),
+            relative: utils.pattern.convertPatternsToRe(
+              relativeNegative,
+              _p_ObjectAssign(_p_ObjectAssign({}, this._micromatchOptions), {
+                dot: true,
+              }),
+            ),
+          },
+        }
+        return entry => this._filter(entry, patterns)
+      }
+      _filter(entry, patterns) {
+        const filepath = utils.path.removeLeadingDotSegment(entry.path)
+        if (this._settings.unique && this._isDuplicateEntry(filepath))
+          return false
+        if (this._onlyFileFilter(entry) || this._onlyDirectoryFilter(entry))
+          return false
+        const isMatched = this._isMatchToPatternsSet(
+          filepath,
+          patterns,
+          entry.dirent.isDirectory(),
+        )
+        if (this._settings.unique && isMatched)
+          this._createIndexRecord(filepath)
+        return isMatched
+      }
+      _isDuplicateEntry(filepath) {
+        return this.index.has(filepath)
+      }
+      _createIndexRecord(filepath) {
+        this.index.set(filepath, void 0)
+      }
+      _onlyFileFilter(entry) {
+        return this._settings.onlyFiles && !entry.dirent.isFile()
+      }
+      _onlyDirectoryFilter(entry) {
+        return this._settings.onlyDirectories && !entry.dirent.isDirectory()
+      }
+      _isMatchToPatternsSet(filepath, patterns, isDirectory) {
+        if (
+          !this._isMatchToPatterns(filepath, patterns.positive.all, isDirectory)
+        )
+          return false
+        if (
+          this._isMatchToPatterns(
+            filepath,
+            patterns.negative.relative,
+            isDirectory,
+          )
+        )
+          return false
+        if (
+          this._isMatchToAbsoluteNegative(
+            filepath,
+            patterns.negative.absolute,
+            isDirectory,
+          )
+        )
+          return false
+        return true
+      }
+      _isMatchToAbsoluteNegative(filepath, patternsRe, isDirectory) {
+        if (patternsRe.length === 0) return false
+        const fullpath = utils.path.makeAbsolute(this._settings.cwd, filepath)
+        return this._isMatchToPatterns(fullpath, patternsRe, isDirectory)
+      }
+      _isMatchToPatterns(filepath, patternsRe, isDirectory) {
+        if (patternsRe.length === 0) return false
+        const isMatched = utils.pattern.matchAny(filepath, patternsRe)
+        if (!isMatched && isDirectory)
+          return utils.pattern.matchAny(filepath + '/', patternsRe)
+        return isMatched
+      }
+    }
+    exports$77.default = EntryFilter
+  })
+  var require_error = /* @__PURE__ */ __commonJSMin(exports$78 => {
+    _p_ObjectDefineProperty(exports$78, '__esModule', { value: true })
+    const utils = require_utils$1()
+    var ErrorFilter = class {
+      constructor(_settings) {
+        this._settings = _settings
+      }
+      getFilter() {
+        return error => this._isNonFatalError(error)
+      }
+      _isNonFatalError(error) {
+        return (
+          utils.errno.isEnoentCodeError(error) || this._settings.suppressErrors
+        )
+      }
+    }
+    exports$78.default = ErrorFilter
+  })
+  var require_entry = /* @__PURE__ */ __commonJSMin(exports$79 => {
+    _p_ObjectDefineProperty(exports$79, '__esModule', { value: true })
+    const utils = require_utils$1()
+    var EntryTransformer = class {
+      constructor(_settings) {
+        this._settings = _settings
+      }
+      getTransformer() {
+        return entry => this._transform(entry)
+      }
+      _transform(entry) {
+        let filepath = entry.path
+        if (this._settings.absolute) {
+          filepath = utils.path.makeAbsolute(this._settings.cwd, filepath)
+          filepath = utils.path.unixify(filepath)
+        }
+        if (this._settings.markDirectories && entry.dirent.isDirectory())
+          filepath += '/'
+        if (!this._settings.objectMode) return filepath
+        return _p_ObjectAssign(_p_ObjectAssign({}, entry), { path: filepath })
+      }
+    }
+    exports$79.default = EntryTransformer
+  })
+  var require_provider = /* @__PURE__ */ __commonJSMin(exports$80 => {
+    _p_ObjectDefineProperty(exports$80, '__esModule', { value: true })
+    const path$6 = __require('path')
+    const deep_1 = require_deep()
+    const entry_1 = require_entry$1()
+    const error_1 = require_error()
+    const entry_2 = require_entry()
+    var Provider = class {
+      constructor(_settings) {
+        this._settings = _settings
+        this.errorFilter = new error_1.default(this._settings)
+        this.entryFilter = new entry_1.default(
+          this._settings,
+          this._getMicromatchOptions(),
+        )
+        this.deepFilter = new deep_1.default(
+          this._settings,
+          this._getMicromatchOptions(),
+        )
+        this.entryTransformer = new entry_2.default(this._settings)
+      }
+      _getRootDirectory(task) {
+        return path$6.resolve(this._settings.cwd, task.base)
+      }
+      _getReaderOptions(task) {
+        const basePath = task.base === '.' ? '' : task.base
+        return {
+          basePath,
+          pathSegmentSeparator: '/',
+          concurrency: this._settings.concurrency,
+          deepFilter: this.deepFilter.getFilter(
+            basePath,
+            task.positive,
+            task.negative,
+          ),
+          entryFilter: this.entryFilter.getFilter(task.positive, task.negative),
+          errorFilter: this.errorFilter.getFilter(),
+          followSymbolicLinks: this._settings.followSymbolicLinks,
+          fs: this._settings.fs,
+          stats: this._settings.stats,
+          throwErrorOnBrokenSymbolicLink:
+            this._settings.throwErrorOnBrokenSymbolicLink,
+          transform: this.entryTransformer.getTransformer(),
+        }
+      }
+      _getMicromatchOptions() {
+        return {
+          dot: this._settings.dot,
+          matchBase: this._settings.baseNameMatch,
+          nobrace: !this._settings.braceExpansion,
+          nocase: !this._settings.caseSensitiveMatch,
+          noext: !this._settings.extglob,
+          noglobstar: !this._settings.globstar,
+          posix: true,
+          strictSlashes: false,
+        }
+      }
+    }
+    exports$80.default = Provider
+  })
+  var require_async = /* @__PURE__ */ __commonJSMin(exports$81 => {
+    _p_ObjectDefineProperty(exports$81, '__esModule', { value: true })
+    const async_1 = require_async$1()
+    const provider_1 = require_provider()
+    var ProviderAsync = class extends provider_1.default {
+      constructor() {
+        super(...arguments)
+        this._reader = new async_1.default(this._settings)
+      }
+      async read(task) {
+        const root = this._getRootDirectory(task)
+        const options = this._getReaderOptions(task)
+        return (await this.api(root, task, options)).map(entry =>
+          options.transform(entry),
+        )
+      }
+      api(root, task, options) {
+        if (task.dynamic) return this._reader.dynamic(root, options)
+        return this._reader.static(task.patterns, options)
+      }
+    }
+    exports$81.default = ProviderAsync
+  })
+  var require_stream$3 = /* @__PURE__ */ __commonJSMin(exports$82 => {
+    _p_ObjectDefineProperty(exports$82, '__esModule', { value: true })
+    const stream_1 = __require('stream')
+    const stream_2 = require_stream$1()
+    const provider_1 = require_provider()
+    var ProviderStream = class extends provider_1.default {
+      constructor() {
+        super(...arguments)
+        this._reader = new stream_2.default(this._settings)
+      }
+      read(task) {
+        const root = this._getRootDirectory(task)
+        const options = this._getReaderOptions(task)
+        const source = this.api(root, task, options)
+        const destination = new stream_1.Readable({
+          objectMode: true,
+          read: () => {},
+        })
+        source
+          .once('error', error => destination.emit('error', error))
+          .on('data', entry =>
+            destination.emit('data', options.transform(entry)),
+          )
+          .once('end', () => destination.emit('end'))
+        destination.once('close', () => source.destroy())
+        return destination
+      }
+      api(root, task, options) {
+        if (task.dynamic) return this._reader.dynamic(root, options)
+        return this._reader.static(task.patterns, options)
+      }
+    }
+    exports$82.default = ProviderStream
+  })
+  var require_sync$1 = /* @__PURE__ */ __commonJSMin(exports$83 => {
+    _p_ObjectDefineProperty(exports$83, '__esModule', { value: true })
+    const fsStat = require_out$3()
+    const fsWalk = require_out$1()
+    const reader_1 = require_reader()
+    var ReaderSync = class extends reader_1.default {
+      constructor() {
+        super(...arguments)
+        this._walkSync = fsWalk.walkSync
+        this._statSync = fsStat.statSync
+      }
+      dynamic(root, options) {
+        return this._walkSync(root, options)
+      }
+      static(patterns, options) {
+        const entries = []
+        for (const pattern of patterns) {
+          const filepath = this._getFullEntryPath(pattern)
+          const entry = this._getEntry(filepath, pattern, options)
+          if (entry === null || !options.entryFilter(entry)) continue
+          entries.push(entry)
+        }
+        return entries
+      }
+      _getEntry(filepath, pattern, options) {
+        try {
+          const stats = this._getStat(filepath)
+          return this._makeEntry(stats, pattern)
+        } catch (error) {
+          if (options.errorFilter(error)) return null
+          throw error
+        }
+      }
+      _getStat(filepath) {
+        return this._statSync(filepath, this._fsStatSettings)
+      }
+    }
+    exports$83.default = ReaderSync
+  })
+  var require_sync = /* @__PURE__ */ __commonJSMin(exports$84 => {
+    _p_ObjectDefineProperty(exports$84, '__esModule', { value: true })
+    const sync_1 = require_sync$1()
+    const provider_1 = require_provider()
+    var ProviderSync = class extends provider_1.default {
+      constructor() {
+        super(...arguments)
+        this._reader = new sync_1.default(this._settings)
+      }
+      read(task) {
+        const root = this._getRootDirectory(task)
+        const options = this._getReaderOptions(task)
+        return this.api(root, task, options).map(options.transform)
+      }
+      api(root, task, options) {
+        if (task.dynamic) return this._reader.dynamic(root, options)
+        return this._reader.static(task.patterns, options)
+      }
+    }
+    exports$84.default = ProviderSync
+  })
+  var require_settings = /* @__PURE__ */ __commonJSMin(exports$85 => {
+    _p_ObjectDefineProperty(exports$85, '__esModule', { value: true })
+    exports$85.DEFAULT_FILE_SYSTEM_ADAPTER = void 0
+    const fs$4 = __require('fs')
+    const os$1 = __require('os')
+    /**
+     * The `os.cpus` method can return zero. We expect the number of cores to be
+     * greater than zero.
+     * https://github.com/nodejs/node/blob/7faeddf23a98c53896f8b574a6e66589e8fb1eb8/lib/os.js#L106-L107.
+     */
+    const CPU_COUNT = _p_MathMax(os$1.cpus().length, 1)
+    exports$85.DEFAULT_FILE_SYSTEM_ADAPTER = {
+      lstat: fs$4.lstat,
+      lstatSync: fs$4.lstatSync,
+      stat: fs$4.stat,
+      statSync: fs$4.statSync,
+      readdir: fs$4.readdir,
+      readdirSync: fs$4.readdirSync,
+    }
+    var Settings = class {
+      constructor(_options = {}) {
+        this._options = _options
+        this.absolute = this._getValue(this._options.absolute, false)
+        this.baseNameMatch = this._getValue(this._options.baseNameMatch, false)
+        this.braceExpansion = this._getValue(this._options.braceExpansion, true)
+        this.caseSensitiveMatch = this._getValue(
+          this._options.caseSensitiveMatch,
+          true,
+        )
+        this.concurrency = this._getValue(this._options.concurrency, CPU_COUNT)
+        this.cwd = this._getValue(this._options.cwd, _p_processCwd())
+        this.deep = this._getValue(this._options.deep, Infinity)
+        this.dot = this._getValue(this._options.dot, false)
+        this.extglob = this._getValue(this._options.extglob, true)
+        this.followSymbolicLinks = this._getValue(
+          this._options.followSymbolicLinks,
+          true,
+        )
+        this.fs = this._getFileSystemMethods(this._options.fs)
+        this.globstar = this._getValue(this._options.globstar, true)
+        this.ignore = this._getValue(this._options.ignore, [])
+        this.markDirectories = this._getValue(
+          this._options.markDirectories,
+          false,
+        )
+        this.objectMode = this._getValue(this._options.objectMode, false)
+        this.onlyDirectories = this._getValue(
+          this._options.onlyDirectories,
+          false,
+        )
+        this.onlyFiles = this._getValue(this._options.onlyFiles, true)
+        this.stats = this._getValue(this._options.stats, false)
+        this.suppressErrors = this._getValue(
+          this._options.suppressErrors,
+          false,
+        )
+        this.throwErrorOnBrokenSymbolicLink = this._getValue(
+          this._options.throwErrorOnBrokenSymbolicLink,
+          false,
+        )
+        this.unique = this._getValue(this._options.unique, true)
+        if (this.onlyDirectories) this.onlyFiles = false
+        if (this.stats) this.objectMode = true
+        this.ignore = [].concat(this.ignore)
+      }
+      _getValue(option, value) {
+        return option === void 0 ? value : option
+      }
+      _getFileSystemMethods(methods = {}) {
+        return _p_ObjectAssign(
+          _p_ObjectAssign({}, exports$85.DEFAULT_FILE_SYSTEM_ADAPTER),
+          methods,
+        )
+      }
+    }
+    exports$85.default = Settings
+  })
+  var require_out = /* @__PURE__ */ __commonJSMin((exports$86, module$36) => {
+    const taskManager = require_tasks()
+    const async_1 = require_async()
+    const stream_1 = require_stream$3()
+    const sync_1 = require_sync()
+    const settings_1 = require_settings()
+    const utils = require_utils$1()
+    async function FastGlob(source, options) {
+      assertPatternsInput(source)
+      const works = getWorks(source, async_1.default, options)
+      const result = await _p_PromiseAll(works)
+      return utils.array.flatten(result)
+    }
+    ;(function (FastGlob) {
+      FastGlob.glob = FastGlob
+      FastGlob.globSync = sync
+      FastGlob.globStream = stream
+      FastGlob.async = FastGlob
+      function sync(source, options) {
+        assertPatternsInput(source)
+        const works = getWorks(source, sync_1.default, options)
+        return utils.array.flatten(works)
+      }
+      FastGlob.sync = sync
+      function stream(source, options) {
+        assertPatternsInput(source)
+        const works = getWorks(source, stream_1.default, options)
+        /**
+         * The stream returned by the provider cannot work with an asynchronous
+         * iterator. To support asynchronous iterators, regardless of the number
+         * of tasks, we always multiplex streams. This affects performance
+         * (+25%). I don't see best solution right now.
+         */
+        return utils.stream.merge(works)
+      }
+      FastGlob.stream = stream
+      function generateTasks(source, options) {
+        assertPatternsInput(source)
+        const patterns = [].concat(source)
+        const settings = new settings_1.default(options)
+        return taskManager.generate(patterns, settings)
+      }
+      FastGlob.generateTasks = generateTasks
+      function isDynamicPattern(source, options) {
+        assertPatternsInput(source)
+        const settings = new settings_1.default(options)
+        return utils.pattern.isDynamicPattern(source, settings)
+      }
+      FastGlob.isDynamicPattern = isDynamicPattern
+      function escapePath(source) {
+        assertPatternsInput(source)
+        return utils.path.escape(source)
+      }
+      FastGlob.escapePath = escapePath
+      function convertPathToPattern(source) {
+        assertPatternsInput(source)
+        return utils.path.convertPathToPattern(source)
+      }
+      FastGlob.convertPathToPattern = convertPathToPattern
+      ;(function (posix) {
+        function escapePath(source) {
+          assertPatternsInput(source)
+          return utils.path.escapePosixPath(source)
+        }
+        posix.escapePath = escapePath
+        function convertPathToPattern(source) {
+          assertPatternsInput(source)
+          return utils.path.convertPosixPathToPattern(source)
+        }
+        posix.convertPathToPattern = convertPathToPattern
+      })(FastGlob.posix || (FastGlob.posix = {}))
+      ;(function (win32) {
+        function escapePath(source) {
+          assertPatternsInput(source)
+          return utils.path.escapeWindowsPath(source)
+        }
+        win32.escapePath = escapePath
+        function convertPathToPattern(source) {
+          assertPatternsInput(source)
+          return utils.path.convertWindowsPathToPattern(source)
+        }
+        win32.convertPathToPattern = convertPathToPattern
+      })(FastGlob.win32 || (FastGlob.win32 = {}))
+    })(FastGlob || (FastGlob = {}))
+    function getWorks(source, _Provider, options) {
+      const patterns = [].concat(source)
+      const settings = new settings_1.default(options)
+      const tasks = taskManager.generate(patterns, settings)
+      const provider = new _Provider(settings)
+      return tasks.map(provider.read, provider)
+    }
+    function assertPatternsInput(input) {
+      if (
+        ![]
+          .concat(input)
+          .every(
+            item => utils.string.isString(item) && !utils.string.isEmpty(item),
+          )
+      )
+        throw new _p_TypeErrorCtor(
+          'Patterns must be a string (non empty) or an array of strings',
+        )
+    }
+    module$36.exports = FastGlob
+  })
+  var init_default = __esmMin(() => {})
+  function toPath(urlOrPath) {
+    return urlOrPath instanceof URL
+      ? (0, node_url.fileURLToPath)(urlOrPath)
+      : urlOrPath
+  }
+  var init_node = __esmMin(() => {
+    init_default()
+    ;(0, node_util$1.promisify)(node_child_process.execFile)
+  })
+  var require_ignore = /* @__PURE__ */ __commonJSMin(
+    (exports$87, module$37) => {
+      function makeArray(subject) {
+        return _p_ArrayIsArray(subject) ? subject : [subject]
+      }
+      const UNDEFINED = void 0
+      const EMPTY = ''
+      const SPACE = ' '
+      const ESCAPE = '\\'
+      const REGEX_TEST_BLANK_LINE = /^\s+$/
+      const REGEX_INVALID_TRAILING_BACKSLASH = /(?:[^\\]|^)\\$/
+      const REGEX_REPLACE_LEADING_EXCAPED_EXCLAMATION = /^\\!/
+      const REGEX_REPLACE_LEADING_EXCAPED_HASH = /^\\#/
+      const REGEX_SPLITALL_CRLF = /\r?\n/g
+      const REGEX_TEST_INVALID_PATH = /^\.{0,2}\/|^\.{1,2}$/
+      const REGEX_TEST_TRAILING_SLASH = /\/$/
+      const SLASH = '/'
+      let TMP_KEY_IGNORE = 'node-ignore'
+      /* istanbul ignore else */
+      if (typeof Symbol !== 'undefined')
+        TMP_KEY_IGNORE = Symbol.for('node-ignore')
+      const KEY_IGNORE = TMP_KEY_IGNORE
+      const define = (object, key, value) => {
+        _p_ObjectDefineProperty(object, key, { value })
+        return value
+      }
+      const REGEX_REGEXP_RANGE = /([0-z])-([0-z])/g
+      const RETURN_FALSE = () => false
+      const sanitizeRange = range =>
+        range.replace(REGEX_REGEXP_RANGE, (match, from, to) =>
+          _p_StringPrototypeCharCodeAt(from, 0) <=
+          _p_StringPrototypeCharCodeAt(to, 0)
+            ? match
+            : EMPTY,
+        )
+      const cleanRangeBackSlash = slashes => {
+        const { length } = slashes
+        return slashes.slice(0, length - (length % 2))
+      }
+      const REPLACERS = [
+        [/^\uFEFF/, () => EMPTY],
+        [
+          /((?:\\\\)*?)(\\?\s+)$/,
+          (_, m1, m2) => m1 + (m2.indexOf('\\') === 0 ? SPACE : EMPTY),
+        ],
+        [
+          /(\\+?)\s/g,
+          (_, m1) => {
+            const { length } = m1
+            return m1.slice(0, length - (length % 2)) + SPACE
+          },
+        ],
+        [/[\\$.|*+(){^]/g, match => `\\${match}`],
+        [/(?!\\)\?/g, () => '[^/]'],
+        [/^\//, () => '^'],
+        [/\//g, () => '\\/'],
+        [/^\^*\\\*\\\*\\\//, () => '^(?:.*\\/)?'],
+        [
+          /^(?=[^^])/,
+          function startingReplacer() {
+            return !/\/(?!$)/.test(this) ? '(?:^|\\/)' : '^'
+          },
+        ],
+        [
+          /\\\/\\\*\\\*(?=\\\/|$)/g,
+          (_, index, str) =>
+            index + 6 < str.length ? '(?:\\/[^\\/]+)*' : '\\/.+',
+        ],
+        [
+          /(^|[^\\]+)(\\\*)+(?=.+)/g,
+          (_, p1, p2) => {
+            return p1 + p2.replace(/\\\*/g, '[^\\/]*')
+          },
+        ],
+        [/\\\\\\(?=[$.|*+(){^])/g, () => ESCAPE],
+        [/\\\\/g, () => ESCAPE],
+        [
+          /(\\)?\[([^\]/]*?)(\\*)($|\])/g,
+          (match, leadEscape, range, endEscape, close) =>
+            leadEscape === ESCAPE
+              ? `\\[${range}${cleanRangeBackSlash(endEscape)}${close}`
+              : close === ']'
+                ? endEscape.length % 2 === 0
+                  ? `[${sanitizeRange(range)}${endEscape}]`
+                  : '[]'
+                : '[]',
+        ],
+        [
+          /(?:[^*])$/,
+          match => (/\/$/.test(match) ? `${match}$` : `${match}(?=$|\\/$)`),
+        ],
+      ]
+      const REGEX_REPLACE_TRAILING_WILDCARD = /(^|\\\/)?\\\*$/
+      const MODE_IGNORE = 'regex'
+      const MODE_CHECK_IGNORE = 'checkRegex'
+      const TRAILING_WILD_CARD_REPLACERS = {
+        [MODE_IGNORE](_, p1) {
+          return `${p1 ? `${p1}[^/]+` : '[^/]*'}(?=$|\\/$)`
+        },
+        [MODE_CHECK_IGNORE](_, p1) {
+          return `${p1 ? `${p1}[^/]*` : '[^/]*'}(?=$|\\/$)`
+        },
+      }
+      const makeRegexPrefix = pattern =>
+        REPLACERS.reduce(
+          (prev, [matcher, replacer]) =>
+            prev.replace(matcher, replacer.bind(pattern)),
+          pattern,
+        )
+      const isString = subject => typeof subject === 'string'
+      const checkPattern = pattern =>
+        pattern &&
+        isString(pattern) &&
+        !REGEX_TEST_BLANK_LINE.test(pattern) &&
+        !REGEX_INVALID_TRAILING_BACKSLASH.test(pattern) &&
+        pattern.indexOf('#') !== 0
+      const splitPattern = pattern =>
+        pattern.split(REGEX_SPLITALL_CRLF).filter(Boolean)
+      var IgnoreRule = class {
+        constructor(pattern, mark, body, ignoreCase, negative, prefix) {
+          this.pattern = pattern
+          this.mark = mark
+          this.negative = negative
+          define(this, 'body', body)
+          define(this, 'ignoreCase', ignoreCase)
+          define(this, 'regexPrefix', prefix)
+        }
+        get regex() {
+          const key = '_regex'
+          if (this[key]) return this[key]
+          return this._make(MODE_IGNORE, key)
+        }
+        get checkRegex() {
+          const key = '_checkRegex'
+          if (this[key]) return this[key]
+          return this._make(MODE_CHECK_IGNORE, key)
+        }
+        _make(mode, key) {
+          const str = this.regexPrefix.replace(
+            REGEX_REPLACE_TRAILING_WILDCARD,
+            TRAILING_WILD_CARD_REPLACERS[mode],
+          )
+          const regex = this.ignoreCase
+            ? new _p_RegExpCtor(str, 'i')
+            : new _p_RegExpCtor(str)
+          return define(this, key, regex)
+        }
+      }
+      const createRule = ({ pattern, mark }, ignoreCase) => {
+        let negative = false
+        let body = pattern
+        if (body.indexOf('!') === 0) {
+          negative = true
+          body = body.substr(1)
+        }
+        body = body
+          .replace(REGEX_REPLACE_LEADING_EXCAPED_EXCLAMATION, '!')
+          .replace(REGEX_REPLACE_LEADING_EXCAPED_HASH, '#')
+        const regexPrefix = makeRegexPrefix(body)
+        return new IgnoreRule(
+          pattern,
+          mark,
+          body,
+          ignoreCase,
+          negative,
+          regexPrefix,
+        )
+      }
+      var RuleManager = class {
+        constructor(ignoreCase) {
+          this._ignoreCase = ignoreCase
+          this._rules = []
+        }
+        _add(pattern) {
+          if (pattern && pattern[KEY_IGNORE]) {
+            this._rules = this._rules.concat(pattern._rules._rules)
+            this._added = true
+            return
+          }
+          if (isString(pattern)) pattern = { pattern }
+          if (checkPattern(pattern.pattern)) {
+            const rule = createRule(pattern, this._ignoreCase)
+            this._added = true
+            this._rules.push(rule)
+          }
+        }
+        add(pattern) {
+          this._added = false
+          makeArray(
+            isString(pattern) ? splitPattern(pattern) : pattern,
+          ).forEach(this._add, this)
+          return this._added
+        }
+        test(path, checkUnignored, mode) {
+          let ignored = false
+          let unignored = false
+          let matchedRule
+          this._rules.forEach(rule => {
+            const { negative } = rule
+            if (
+              (unignored === negative && ignored !== unignored) ||
+              (negative && !ignored && !unignored && !checkUnignored)
+            )
+              return
+            if (!rule[mode].test(path)) return
+            ignored = !negative
+            unignored = negative
+            matchedRule = negative ? UNDEFINED : rule
+          })
+          const ret = {
+            ignored,
+            unignored,
+          }
+          if (matchedRule) ret.rule = matchedRule
+          return ret
+        }
+      }
+      const throwError = (message, Ctor) => {
+        throw new Ctor(message)
+      }
+      const checkPath = (path, originalPath, doThrow) => {
+        if (!isString(path))
+          return doThrow(
+            `path must be a string, but got \`${originalPath}\``,
+            TypeError,
+          )
+        if (!path) return doThrow(`path must not be empty`, TypeError)
+        if (checkPath.isNotRelative(path))
+          return doThrow(
+            `path should be a \`path.relative()\`d string, but got "${originalPath}"`,
+            RangeError,
+          )
+        return true
+      }
+      const isNotRelative = path => REGEX_TEST_INVALID_PATH.test(path)
+      checkPath.isNotRelative = isNotRelative
+      /* istanbul ignore next */
+      checkPath.convert = p => p
+      var Ignore = class {
+        constructor({
+          ignorecase = true,
+          ignoreCase = ignorecase,
+          allowRelativePaths = false,
+        } = {}) {
+          define(this, KEY_IGNORE, true)
+          this._rules = new RuleManager(ignoreCase)
+          this._strictPathCheck = !allowRelativePaths
+          this._initCache()
+        }
+        _initCache() {
+          this._ignoreCache = _p_ObjectCreate(null)
+          this._testCache = _p_ObjectCreate(null)
+        }
+        add(pattern) {
+          if (this._rules.add(pattern)) this._initCache()
+          return this
+        }
+        addPattern(pattern) {
+          return this.add(pattern)
+        }
+        _test(originalPath, cache, checkUnignored, slices) {
+          const path = originalPath && checkPath.convert(originalPath)
+          checkPath(
+            path,
+            originalPath,
+            this._strictPathCheck ? throwError : RETURN_FALSE,
+          )
+          return this._t(path, cache, checkUnignored, slices)
+        }
+        checkIgnore(path) {
+          if (!REGEX_TEST_TRAILING_SLASH.test(path)) return this.test(path)
+          const slices = path.split(SLASH).filter(Boolean)
+          slices.pop()
+          if (slices.length) {
+            const parent = this._t(
+              slices.join(SLASH) + SLASH,
+              this._testCache,
+              true,
+              slices,
+            )
+            if (parent.ignored) return parent
+          }
+          return this._rules.test(path, false, MODE_CHECK_IGNORE)
+        }
+        _t(path, cache, checkUnignored, slices) {
+          if (path in cache) return cache[path]
+          if (!slices) slices = path.split(SLASH).filter(Boolean)
+          slices.pop()
+          if (!slices.length)
+            return (cache[path] = this._rules.test(
+              path,
+              checkUnignored,
+              MODE_IGNORE,
+            ))
+          const parent = this._t(
+            slices.join(SLASH) + SLASH,
+            cache,
+            checkUnignored,
+            slices,
+          )
+          return (cache[path] = parent.ignored
+            ? parent
+            : this._rules.test(path, checkUnignored, MODE_IGNORE))
+        }
+        ignores(path) {
+          return this._test(path, this._ignoreCache, false).ignored
+        }
+        createFilter() {
+          return path => !this.ignores(path)
+        }
+        filter(paths) {
+          return makeArray(paths).filter(this.createFilter())
+        }
+        test(path) {
+          return this._test(path, this._testCache, true)
+        }
+      }
+      const factory = options => new Ignore(options)
+      const isPathValid = path =>
+        checkPath(path && checkPath.convert(path), path, RETURN_FALSE)
+      /* istanbul ignore next */
+      const setupWindows = () => {
+        const makePosix = str =>
+          /^\\\\\?\\/.test(str) || /["<>|\u0000-\u001F]+/u.test(str)
+            ? str
+            : str.replace(/\\/g, '/')
+        checkPath.convert = makePosix
+        const REGEX_TEST_WINDOWS_PATH_ABSOLUTE = /^[a-z]:\//i
+        checkPath.isNotRelative = path =>
+          REGEX_TEST_WINDOWS_PATH_ABSOLUTE.test(path) || isNotRelative(path)
+      }
+      /* istanbul ignore next */
+      if (typeof process !== 'undefined' && process.platform === 'win32')
+        setupWindows()
+      module$37.exports = factory
+      factory.default = factory
+      module$37.exports.isPathValid = isPathValid
+      define(module$37.exports, Symbol.for('setupWindows'), setupWindows)
+    },
+  )
+  function isPathInside(childPath, parentPath) {
+    const relation = node_path$1.default.relative(parentPath, childPath)
+    return Boolean(
+      relation &&
+      relation !== '..' &&
+      !_p_StringPrototypeStartsWith(relation, `..${node_path$1.default.sep}`) &&
+      relation !== node_path$1.default.resolve(childPath),
+    )
+  }
+  var init_is_path_inside = __esmMin(() => {})
+  function slash(path) {
+    if (_p_StringPrototypeStartsWith(path, '\\\\?\\')) return path
+    return path.replace(/\\/g, '/')
+  }
+  var init_slash = __esmMin(() => {})
+  var import_out$2
+  var import_ignore$1
+  var import_micromatch
+  var isNegativePattern
+  var normalizeAbsolutePatternToRelative
+  var absolutePrefixesMatch
+  var getStaticAbsolutePathPrefix
+  var normalizeNegativePattern
+  var bindFsMethod
+  var promisifyFsMethod
+  var normalizeDirectoryPatternForFastGlob
+  var getParentDirectoryPrefix
+  var adjustIgnorePatternsForParentDirectories
+  var getAsyncStatMethod
+  var getStatSyncMethod$1
+  var pathHasGitDirectory
+  var buildPathChain
+  var findGitRootInChain
+  var findGitRootSyncUncached
+  var findGitRootSync
+  var findGitRootAsyncUncached
+  var findGitRoot
+  var isWithinGitRoot
+  var getParentGitignorePaths
+  var GITIGNORE_WILDCARDS
+  var hasGitignoreWildcards
+  var MICROMATCH_ONLY_SYNTAX
+  var unescapeGitignorePattern
+  var normalizeGitignorePatternForIgnore
+  var toLiteralPattern
+  var finalSegment
+  var toStandaloneRule
+  var isInsideCwd
+  var anchorToCwd
+  var createNameComparer
+  var getNegationFinalSegments
+  var negationsCouldRescue
+  var expandBraceGroups
+  var convertIgnorePatternsForIgnoreFileSearch
+  var getRulePrune
+  var buildPrunePatternsAndGuards
+  var convertPatternsForFastGlob
+  var init_utilities = __esmMin(() => {
+    import_out$2 = /* @__PURE__ */ __toESM(require_out(), 1)
+    import_ignore$1 = /* @__PURE__ */ __toESM(require_ignore(), 1)
+    init_is_path_inside()
+    import_micromatch = /* @__PURE__ */ __toESM(require_micromatch(), 1)
+    init_slash()
+    isNegativePattern = pattern => pattern[0] === '!'
+    normalizeAbsolutePatternToRelative = pattern => {
+      if (!_p_StringPrototypeStartsWith(pattern, '/')) return pattern
+      const inner = pattern.slice(1)
+      const firstSlashIndex = inner.indexOf('/')
+      const firstSegment =
+        firstSlashIndex > 0 ? inner.slice(0, firstSlashIndex) : inner
+      if (
+        firstSlashIndex > 0 &&
+        !import_out$2.default.isDynamicPattern(firstSegment)
+      )
+        return pattern
+      return inner
+    }
+    absolutePrefixesMatch = (positivePrefix, negativePrefix) =>
+      negativePrefix === positivePrefix
+    getStaticAbsolutePathPrefix = pattern => {
+      if (!node_path$1.default.isAbsolute(pattern)) return
+      const staticSegments = []
+      for (const segment of pattern.split('/')) {
+        if (!segment) continue
+        if (import_out$2.default.isDynamicPattern(segment)) break
+        staticSegments.push(segment)
+      }
+      return staticSegments.length === 0
+        ? void 0
+        : `/${staticSegments.join('/')}`
+    }
+    normalizeNegativePattern = (
+      pattern,
+      positiveAbsolutePathPrefixes = [],
+      hasRelativePositivePattern = false,
+    ) => {
+      if (!_p_StringPrototypeStartsWith(pattern, '/')) return pattern
+      const normalizedPattern = normalizeAbsolutePatternToRelative(pattern)
+      if (normalizedPattern !== pattern) return normalizedPattern
+      if (hasRelativePositivePattern) return pattern.slice(1)
+      const negativeAbsolutePathPrefix = getStaticAbsolutePathPrefix(pattern)
+      return negativeAbsolutePathPrefix !== void 0 &&
+        positiveAbsolutePathPrefixes.some(positiveAbsolutePathPrefix =>
+          absolutePrefixesMatch(
+            positiveAbsolutePathPrefix,
+            negativeAbsolutePathPrefix,
+          ),
+        )
+        ? pattern
+        : pattern.slice(1)
+    }
+    bindFsMethod = (object, methodName) => {
+      const method = object?.[methodName]
+      return typeof method === 'function' ? method.bind(object) : void 0
+    }
+    promisifyFsMethod = (object, methodName) => {
+      const method = object?.[methodName]
+      if (typeof method !== 'function') return
+      return (0, node_util$1.promisify)(method.bind(object))
+    }
+    normalizeDirectoryPatternForFastGlob = pattern => {
+      if (!_p_StringPrototypeEndsWith(pattern, '/')) return pattern
+      const trimmedPattern = pattern.replace(/\/+$/u, '')
+      if (!trimmedPattern) return '/**'
+      if (trimmedPattern === '**') return '**/**'
+      const hasLeadingSlash = _p_StringPrototypeStartsWith(trimmedPattern, '/')
+      const hasInnerSlash = (
+        hasLeadingSlash ? trimmedPattern.slice(1) : trimmedPattern
+      ).includes('/')
+      return `${!hasLeadingSlash && !hasInnerSlash && !_p_StringPrototypeStartsWith(trimmedPattern, '**/') ? '**/' : ''}${trimmedPattern}/**`
+    }
+    getParentDirectoryPrefix = pattern => {
+      const match = (
+        isNegativePattern(pattern) ? pattern.slice(1) : pattern
+      ).match(/^(\.\.\/)+/)
+      return match ? match[0] : ''
+    }
+    adjustIgnorePatternsForParentDirectories = (patterns, ignorePatterns) => {
+      if (patterns.length === 0 || ignorePatterns.length === 0)
+        return ignorePatterns
+      const parentPrefixes = patterns.map(pattern =>
+        getParentDirectoryPrefix(pattern),
+      )
+      const firstPrefix = parentPrefixes[0]
+      if (!firstPrefix) return ignorePatterns
+      if (!parentPrefixes.every(prefix => prefix === firstPrefix))
+        return ignorePatterns
+      return ignorePatterns.map(pattern => {
+        if (
+          _p_StringPrototypeStartsWith(pattern, '**/') &&
+          !_p_StringPrototypeStartsWith(pattern, '../')
+        )
+          return firstPrefix + pattern
+        return pattern
+      })
+    }
+    getAsyncStatMethod = fsImplementation =>
+      bindFsMethod(fsImplementation?.promises, 'stat') ??
+      bindFsMethod(node_fs.default.promises, 'stat')
+    getStatSyncMethod$1 = /* @__PURE__ */ __name(fsImplementation => {
+      if (fsImplementation) return bindFsMethod(fsImplementation, 'statSync')
+      return bindFsMethod(node_fs.default, 'statSync')
+    }, 'getStatSyncMethod')
+    pathHasGitDirectory = stats =>
+      Boolean(stats?.isDirectory?.() || stats?.isFile?.())
+    buildPathChain = (startPath, rootPath) => {
+      const chain = []
+      let currentPath = startPath
+      chain.push(currentPath)
+      while (currentPath !== rootPath) {
+        const parentPath = node_path$1.default.dirname(currentPath)
+        if (parentPath === currentPath) break
+        currentPath = parentPath
+        chain.push(currentPath)
+      }
+      return chain
+    }
+    findGitRootInChain = async (paths, statMethod) => {
+      for (const directory of paths) {
+        const gitPath = node_path$1.default.join(directory, '.git')
+        try {
+          const stats = await statMethod(gitPath)
+          if (pathHasGitDirectory(stats)) return directory
+        } catch {}
+      }
+    }
+    findGitRootSyncUncached = (cwd, fsImplementation) => {
+      const statSyncMethod = getStatSyncMethod$1(fsImplementation)
+      if (!statSyncMethod) return
+      const currentPath = node_path$1.default.resolve(cwd)
+      const { root } = node_path$1.default.parse(currentPath)
+      const chain = buildPathChain(currentPath, root)
+      for (const directory of chain) {
+        const gitPath = node_path$1.default.join(directory, '.git')
+        try {
+          const stats = statSyncMethod(gitPath)
+          if (pathHasGitDirectory(stats)) return directory
+        } catch {}
+      }
+    }
+    findGitRootSync = (cwd, fsImplementation) => {
+      if (typeof cwd !== 'string')
+        throw new _p_TypeErrorCtor('cwd must be a string')
+      return findGitRootSyncUncached(cwd, fsImplementation)
+    }
+    findGitRootAsyncUncached = async (cwd, fsImplementation) => {
+      const statMethod = getAsyncStatMethod(fsImplementation)
+      if (!statMethod) return findGitRootSync(cwd, fsImplementation)
+      const currentPath = node_path$1.default.resolve(cwd)
+      const { root } = node_path$1.default.parse(currentPath)
+      const chain = buildPathChain(currentPath, root)
+      return findGitRootInChain(chain, statMethod)
+    }
+    findGitRoot = async (cwd, fsImplementation) => {
+      if (typeof cwd !== 'string')
+        throw new _p_TypeErrorCtor('cwd must be a string')
+      return findGitRootAsyncUncached(cwd, fsImplementation)
+    }
+    isWithinGitRoot = (gitRoot, cwd) => {
+      const resolvedGitRoot = node_path$1.default.resolve(gitRoot)
+      const resolvedCwd = node_path$1.default.resolve(cwd)
+      return (
+        resolvedCwd === resolvedGitRoot ||
+        isPathInside(resolvedCwd, resolvedGitRoot)
+      )
+    }
+    getParentGitignorePaths = (gitRoot, cwd) => {
+      if (gitRoot && typeof gitRoot !== 'string')
+        throw new _p_TypeErrorCtor('gitRoot must be a string or undefined')
+      if (typeof cwd !== 'string')
+        throw new _p_TypeErrorCtor('cwd must be a string')
+      if (!gitRoot) return []
+      if (!isWithinGitRoot(gitRoot, cwd)) return []
+      return [
+        ...buildPathChain(
+          node_path$1.default.resolve(cwd),
+          node_path$1.default.resolve(gitRoot),
+        ),
+      ]
+        .reverse()
+        .map(directory => node_path$1.default.join(directory, '.gitignore'))
+    }
+    GITIGNORE_WILDCARDS = /(?<!\\)[*?[]/u
+    hasGitignoreWildcards = value => GITIGNORE_WILDCARDS.test(value)
+    MICROMATCH_ONLY_SYNTAX = /[(){}|\\]/u
+    unescapeGitignorePattern = value =>
+      _p_StringPrototypeReplaceAll(value, /\\(.)/gu, '$1')
+    normalizeGitignorePatternForIgnore = value =>
+      _p_StringPrototypeReplaceAll(value, /\\(.)/gu, (match, character) =>
+        '*[]\\'.includes(character) ? match : character,
+      )
+    toLiteralPattern = value =>
+      import_out$2.default.escapePath(unescapeGitignorePattern(value))
+    finalSegment = value => value.replace(/\/+$/u, '').split('/').pop()
+    toStandaloneRule = value => value.replace(/^([#!])/u, String.raw`\$1`)
+    isInsideCwd = relativePath =>
+      relativePath !== '' &&
+      !_p_StringPrototypeStartsWith(relativePath, '..') &&
+      !node_path$1.default.isAbsolute(relativePath)
+    anchorToCwd = (directory, body, cwd) => {
+      const relativePath = slash(
+        node_path$1.default.relative(
+          cwd,
+          node_path$1.default.join(directory, body),
+        ),
+      )
+      return isInsideCwd(relativePath) ? relativePath : void 0
+    }
+    createNameComparer = () => {
+      const nameMatchers = /* @__PURE__ */ new _p_MapCtor()
+      const matchesName = (pattern, name) => {
+        const namePath = unescapeGitignorePattern(name)
+        if (!(0, import_ignore$1.isPathValid)(namePath)) return true
+        const normalizedPattern = normalizeGitignorePatternForIgnore(pattern)
+        let nameMatcher = nameMatchers.get(normalizedPattern)
+        if (!nameMatcher) {
+          nameMatcher = (0, import_ignore$1.default)().add([
+            toStandaloneRule(normalizedPattern),
+          ])
+          nameMatchers.set(normalizedPattern, nameMatcher)
+        }
+        return nameMatcher.ignores(namePath)
+      }
+      return (pattern, name) => {
+        if (hasGitignoreWildcards(pattern) && hasGitignoreWildcards(name))
+          return true
+        return hasGitignoreWildcards(name)
+          ? matchesName(name, pattern)
+          : matchesName(pattern, name)
+      }
+    }
+    getNegationFinalSegments = rules =>
+      rules
+        .filter(rule => isNegativePattern(rule.pattern))
+        .map(rule => finalSegment(rule.pattern.slice(1)))
+        .filter(Boolean)
+    negationsCouldRescue = (rules, names) => {
+      if (names.length === 0) return false
+      const couldNameTheSamePath = createNameComparer()
+      return getNegationFinalSegments(rules).some(negation =>
+        names.some(name => couldNameTheSamePath(name, negation)),
+      )
+    }
+    expandBraceGroups = pattern => {
+      if (!pattern.includes('{')) return [pattern]
+      const expandedPatterns = import_out$2.default
+        .generateTasks(pattern)
+        .flatMap(task => task.patterns)
+      return expandedPatterns.length > 0 ? expandedPatterns : [pattern]
+    }
+    convertIgnorePatternsForIgnoreFileSearch = (
+      ignorePatterns,
+      searchPatterns,
+    ) => {
+      if (ignorePatterns.length === 0) return ignorePatterns
+      const couldNameTheSamePath = createNameComparer()
+      const expandedSearchPatterns = _p_ArrayPrototypeFlatMap(
+        searchPatterns,
+        pattern => expandBraceGroups(pattern),
+      )
+      if (
+        expandedSearchPatterns.some(pattern =>
+          MICROMATCH_ONLY_SYNTAX.test(
+            pattern.slice(0, pattern.lastIndexOf('/') + 1),
+          ),
+        )
+      )
+        return []
+      const ignoreFileNames = expandedSearchPatterns
+        .map(pattern => finalSegment(pattern))
+        .filter(Boolean)
+      const couldNameAnIgnoreFile = pattern => {
+        const name = finalSegment(pattern.replace(/\/\*\*$/u, ''))
+        if (!name || MICROMATCH_ONLY_SYNTAX.test(name)) return true
+        return ignoreFileNames.some(ignoreFileName =>
+          MICROMATCH_ONLY_SYNTAX.test(ignoreFileName)
+            ? hasGitignoreWildcards(name) ||
+              import_micromatch.default.isMatch(
+                unescapeGitignorePattern(name),
+                ignoreFileName,
+                {
+                  dot: true,
+                  nocase: true,
+                },
+              )
+            : couldNameTheSamePath(name, ignoreFileName),
+        )
+      }
+      return ignorePatterns.filter(
+        pattern =>
+          !expandBraceGroups(pattern).some(expanded =>
+            couldNameAnIgnoreFile(expanded),
+          ),
+      )
+    }
+    getRulePrune = (
+      { pattern, directory },
+      {
+        cwd,
+        matcher,
+        hasNegations,
+        canSkipAtAnyDepth,
+        canMatchIgnoreFile,
+        gitignoreOnlySearch,
+      },
+    ) => {
+      if (isNegativePattern(pattern)) return
+      const isDirectoryPattern = _p_StringPrototypeEndsWith(pattern, '/')
+      const clean = pattern.replace(/\/+$/u, '')
+      if (!clean) return
+      const body =
+        _p_StringPrototypeStartsWith(clean, '**/') &&
+        !clean.slice(3).includes('/')
+          ? clean.slice(3)
+          : clean
+      if (canMatchIgnoreFile(finalSegment(body))) return
+      const isGlob = hasGitignoreWildcards(body)
+      if (isGlob && MICROMATCH_ONLY_SYNTAX.test(body)) return
+      const toFastGlob = value =>
+        normalizeDirectoryPatternForFastGlob(
+          `/${value}${isDirectoryPattern ? '/' : ''}`,
+        ).replace(/^\//u, '')
+      if (!body.includes('/') && canSkipAtAnyDepth(body)) {
+        const relativeDirectory = slash(
+          node_path$1.default.relative(cwd, directory),
+        )
+        return {
+          pattern: toFastGlob(
+            `${isInsideCwd(relativeDirectory) ? `${import_out$2.default.escapePath(relativeDirectory)}/` : ''}**/${isGlob ? body : toLiteralPattern(body)}`,
+          ),
+          guardName: body,
+        }
+      }
+      const anchoredBody = body.replace(/^\//u, '')
+      const target = anchorToCwd(
+        directory,
+        isGlob ? anchoredBody : unescapeGitignorePattern(anchoredBody),
+        cwd,
+      )
+      if (target === void 0) return
+      const guardName = finalSegment(anchoredBody)
+      if (isGlob)
+        return hasNegations
+          ? void 0
+          : {
+              pattern: toFastGlob(target),
+              guardName,
+            }
+      if (
+        !matcher(
+          node_path$1.default.resolve(cwd, target) + node_path$1.default.sep,
+        ).ignored
+      )
+        return
+      const needsGuard = !gitignoreOnlySearch || target.includes('/')
+      return {
+        pattern: toFastGlob(import_out$2.default.escapePath(target)),
+        guardName: needsGuard ? guardName : void 0,
+      }
+    }
+    buildPrunePatternsAndGuards = (
+      rules,
+      matcher,
+      cwd,
+      { gitignoreOnlySearch = false, searchesForGitignoreFiles = false } = {},
+    ) => {
+      if (!matcher || !cwd || !rules || rules.length === 0)
+        return {
+          patterns: [],
+          guardNames: [],
+        }
+      const negationNames = getNegationFinalSegments(rules)
+      const couldNameTheSamePath = createNameComparer()
+      const context = {
+        cwd,
+        matcher,
+        hasNegations: negationNames.length > 0,
+        canSkipAtAnyDepth: pattern =>
+          !negationNames.some(name => couldNameTheSamePath(pattern, name)),
+        canMatchIgnoreFile: pattern =>
+          searchesForGitignoreFiles &&
+          couldNameTheSamePath(pattern, '.gitignore'),
+        gitignoreOnlySearch,
+      }
+      const patterns = []
+      const guardNames = []
+      for (const rule of rules) {
+        const prune = getRulePrune(rule, context)
+        if (!prune) continue
+        patterns.push(prune.pattern)
+        if (prune.guardName !== void 0) guardNames.push(prune.guardName)
+      }
+      return {
+        patterns,
+        guardNames,
+      }
+    }
+    convertPatternsForFastGlob = (rules, matcher, cwd) =>
+      buildPrunePatternsAndGuards(rules, matcher, cwd).patterns
+  })
+  var import_out$1
+  var import_ignore
+  var defaultIgnoredDirectories
+  var ignoreFilesGlobOptions
+  var GITIGNORE_FILES_PATTERN
+  var MAX_INCLUDE_DEPTH
+  var getReadFileMethod
+  var getReadFileSyncMethod
+  var shouldSkipIgnoreFileError
+  var createReadError
+  var createIgnoreFileReadError
+  var createGitConfigReadError
+  var processIgnoreFileCore
+  var readIgnoreFilesSafely
+  var readIgnoreFilesSafelySync
+  var dedupePaths
+  var globIgnoreFiles
+  var normalizeIgnoreFileLine
+  var readIgnoreFileLines
+  var getIgnoreRules
+  var buildIgnoreResult
+  var applyBaseToPattern
+  var parseIgnoreFile
+  var toRelativePath
+  var notIgnored
+  var createIgnoreMatcher
+  var normalizeOptions$1
+  var unescapeGitQuotedValue
+  var parseGitConfigValue
+  var resolveConfigPath
+  var parseGitConfigSection
+  var parseGitConfigEntry
+  var parseIncludeIfCondition
+  var normalizeGitConfigConditionPattern
+  var gitConfigGlobToRegex
+  var matchesIncludeIfCondition
+  var shouldIncludeConfigSection
+  var createExcludesFileValue
+  var parseGitConfigForExcludesFile
+  var readGitConfigFile
+  var getExcludesFileFromGitConfigSync
+  var getExcludesFileFromGitConfigAsync
+  var resolveGitDirectoryFromFile
+  var getGitDirectorySync
+  var getGitDirectoryAsync
+  var getXdgConfigHome
+  var getGitConfigPaths
+  var getDefaultGlobalGitignorePath
+  var resolveExcludesFilePath
+  var readGlobalGitignoreContent
+  var getGlobalGitignoreFile
+  var getGlobalGitignoreFileAsync
+  var buildGlobalMatcher
+  var getKnownIgnoreFilePaths
+  var getKnownIgnoreFileSearchOptions
+  var getKnownIgnoreFilePattern
+  var getMatchingKnownIgnoreFilePaths
+  var globKnownIgnoreFilePaths
+  var filterKnownIgnoreFilePathsAsync
+  var filterKnownIgnoreFilePathsSync
+  var getIgnoreFileSearchPrune
+  var withPrunedSearch
+  var getUnreadPaths
+  var collectIgnoreFileArtifactsAsync
+  var collectIgnoreFileArtifactsSync
+  var getPatternsFromIgnoreFiles
+  var getIgnorePatternsAndPredicate
+  var getIgnorePatternsAndPredicateSync
+  var init_ignore = __esmMin(() => {
+    import_out$1 = /* @__PURE__ */ __toESM(require_out(), 1)
+    import_ignore = /* @__PURE__ */ __toESM(require_ignore(), 1)
+    init_is_path_inside()
+    init_slash()
+    init_node()
+    init_utilities()
+    defaultIgnoredDirectories = [
+      '**/node_modules',
+      '**/flow-typed',
+      '**/coverage',
+      '**/.git',
+    ]
+    ignoreFilesGlobOptions = {
+      absolute: true,
+      dot: true,
+    }
+    GITIGNORE_FILES_PATTERN = '**/.gitignore'
+    MAX_INCLUDE_DEPTH = 10
+    getReadFileMethod = fsImplementation =>
+      bindFsMethod(fsImplementation?.promises, 'readFile') ??
+      bindFsMethod(node_fs_promises.default, 'readFile') ??
+      promisifyFsMethod(fsImplementation, 'readFile')
+    getReadFileSyncMethod = fsImplementation =>
+      bindFsMethod(fsImplementation, 'readFileSync') ??
+      bindFsMethod(node_fs.default, 'readFileSync')
+    shouldSkipIgnoreFileError = (error, suppressErrors) => {
+      if (!error) return Boolean(suppressErrors)
+      if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return true
+      return Boolean(suppressErrors)
+    }
+    createReadError = (kind, filePath, error) => {
+      const prefix = `Failed to read ${kind} at ${filePath}`
+      if (error instanceof Error)
+        return new _p_ErrorCtor(`${prefix}: ${error.message}`, { cause: error })
+      return /* @__PURE__ */ new _p_ErrorCtor(`${prefix}: ${String(error)}`)
+    }
+    createIgnoreFileReadError = (filePath, error) =>
+      createReadError('ignore file', filePath, error)
+    createGitConfigReadError = (filePath, error) =>
+      createReadError('git config', filePath, error)
+    processIgnoreFileCore = (filePath, readMethod, suppressErrors) => {
+      try {
+        return {
+          filePath,
+          content: readMethod(filePath, 'utf8'),
+        }
+      } catch (error) {
+        if (shouldSkipIgnoreFileError(error, suppressErrors)) return
+        throw createIgnoreFileReadError(filePath, error)
+      }
+    }
+    readIgnoreFilesSafely = async (paths, readFileMethod, suppressErrors) => {
+      return (
+        await _p_PromiseAll(
+          paths.map(async filePath => {
+            try {
+              return {
+                filePath,
+                content: await readFileMethod(filePath, 'utf8'),
+              }
+            } catch (error) {
+              if (shouldSkipIgnoreFileError(error, suppressErrors)) return
+              throw createIgnoreFileReadError(filePath, error)
+            }
+          }),
+        )
+      ).filter(Boolean)
+    }
+    readIgnoreFilesSafelySync = (paths, readFileSyncMethod, suppressErrors) =>
+      paths
+        .map(filePath =>
+          processIgnoreFileCore(filePath, readFileSyncMethod, suppressErrors),
+        )
+        .filter(Boolean)
+    dedupePaths = paths => {
+      const seen = /* @__PURE__ */ new _p_SetCtor()
+      return paths.filter(filePath => {
+        if (seen.has(filePath)) return false
+        seen.add(filePath)
+        return true
+      })
+    }
+    globIgnoreFiles = (globFunction, patterns, normalizedOptions) =>
+      globFunction(patterns, {
+        ...normalizedOptions,
+        ...ignoreFilesGlobOptions,
+      })
+    normalizeIgnoreFileLine = line => {
+      line = line.replace(/^\uFEFF/u, '')
+      let whitespaceStart = line.length
+      while (whitespaceStart > 0 && /\s/u.test(line[whitespaceStart - 1]))
+        whitespaceStart--
+      if (whitespaceStart === line.length) return line
+      let backslashCount = 0
+      for (
+        let index = whitespaceStart - 1;
+        index >= 0 && line[index] === '\\';
+        index--
+      )
+        backslashCount++
+      return backslashCount % 2 === 1
+        ? line.slice(0, whitespaceStart) + ' '
+        : line.slice(0, whitespaceStart)
+    }
+    readIgnoreFileLines = content =>
+      content
+        .split(/\r?\n/)
+        .map(line => normalizeIgnoreFileLine(line))
+        .filter(line => line && !_p_StringPrototypeStartsWith(line, '#'))
+    getIgnoreRules = files =>
+      _p_ArrayPrototypeFlatMap(files, file => {
+        const directory = node_path$1.default.dirname(file.filePath)
+        return readIgnoreFileLines(file.content).map(pattern => ({
+          pattern,
+          directory,
+        }))
+      })
+    buildIgnoreResult = (files, normalizedOptions, gitRoot) => {
+      const baseDir = gitRoot || normalizedOptions.cwd
+      const patterns = getPatternsFromIgnoreFiles(files, baseDir)
+      const matcher = createIgnoreMatcher(
+        patterns,
+        normalizedOptions.cwd,
+        baseDir,
+      )
+      return {
+        patterns,
+        rules: getIgnoreRules(files),
+        matcher,
+        predicate: fileOrDirectory => matcher(fileOrDirectory).ignored,
+        usingGitRoot: Boolean(gitRoot && gitRoot !== normalizedOptions.cwd),
+      }
+    }
+    applyBaseToPattern = (pattern, base) => {
+      if (!base) return pattern
+      const isNegative = isNegativePattern(pattern)
+      const cleanPattern = isNegative ? pattern.slice(1) : pattern
+      const slashIndex = cleanPattern.indexOf('/')
+      const hasNonTrailingSlash =
+        slashIndex !== -1 && slashIndex !== cleanPattern.length - 1
+      let result
+      if (!hasNonTrailingSlash)
+        result = node_path$1.default.posix.join(base, '**', cleanPattern)
+      else if (_p_StringPrototypeStartsWith(cleanPattern, '/'))
+        result = node_path$1.default.posix.join(base, cleanPattern.slice(1))
+      else result = node_path$1.default.posix.join(base, cleanPattern)
+      return isNegative ? '!' + result : result
+    }
+    parseIgnoreFile = (file, cwd) => {
+      const base = slash(
+        node_path$1.default.relative(
+          cwd,
+          node_path$1.default.dirname(file.filePath),
+        ),
+      )
+      return readIgnoreFileLines(file.content).map(pattern =>
+        applyBaseToPattern(pattern, base),
+      )
+    }
+    toRelativePath = (fileOrDirectory, cwd) => {
+      if (node_path$1.default.isAbsolute(fileOrDirectory)) {
+        const relativePath = node_path$1.default.relative(cwd, fileOrDirectory)
+        if (relativePath && !isPathInside(fileOrDirectory, cwd)) return
+        return relativePath
+      }
+      if (_p_StringPrototypeStartsWith(fileOrDirectory, './'))
+        return fileOrDirectory.slice(2)
+      if (_p_StringPrototypeStartsWith(fileOrDirectory, '../')) return
+      return fileOrDirectory
+    }
+    notIgnored = {
+      ignored: false,
+      unignored: false,
+    }
+    createIgnoreMatcher = (patterns, cwd, baseDir) => {
+      const ignores = (0, import_ignore.default)().add(patterns)
+      const resolvedCwd = node_path$1.default.normalize(
+        node_path$1.default.resolve(cwd),
+      )
+      const resolvedBaseDir = node_path$1.default.normalize(
+        node_path$1.default.resolve(baseDir),
+      )
+      return fileOrDirectory => {
+        fileOrDirectory = toPath(fileOrDirectory)
+        const hasTrailingSeparator = /[/\\]$/.test(fileOrDirectory)
+        if (
+          node_path$1.default.normalize(
+            node_path$1.default.resolve(fileOrDirectory),
+          ) === resolvedCwd
+        )
+          return notIgnored
+        let relativePath = toRelativePath(fileOrDirectory, resolvedBaseDir)
+        if (relativePath === void 0) return notIgnored
+        if (!relativePath) return notIgnored
+        if (
+          hasTrailingSeparator &&
+          !_p_StringPrototypeEndsWith(relativePath, node_path$1.default.sep)
+        )
+          relativePath += node_path$1.default.sep
+        return ignores.test(slash(relativePath))
+      }
+    }
+    normalizeOptions$1 = /* @__PURE__ */ __name((options = {}) => {
+      const ignoreOption = options.ignore
+        ? _p_ArrayIsArray(options.ignore)
+          ? options.ignore
+          : [options.ignore]
+        : []
+      const cwd = toPath(options.cwd) ?? node_process$1.default.cwd()
+      const deep =
+        typeof options.deep === 'number'
+          ? _p_MathMax(0, options.deep) + 1
+          : Number.POSITIVE_INFINITY
+      return {
+        cwd,
+        suppressErrors: options.suppressErrors ?? false,
+        deep,
+        ignore: [...ignoreOption, ...defaultIgnoredDirectories],
+        followSymbolicLinks: options.followSymbolicLinks ?? true,
+        concurrency: options.concurrency,
+        throwErrorOnBrokenSymbolicLink:
+          options.throwErrorOnBrokenSymbolicLink ?? false,
+        fs: options.fs,
+      }
+    }, 'normalizeOptions')
+    unescapeGitQuotedValue = value =>
+      _p_StringPrototypeReplaceAll(
+        value,
+        /\\(["\\abfnrtv])/g,
+        (_match, escapedCharacter) => {
+          switch (escapedCharacter) {
+            case 'a':
+              return '\x07'
+            case 'b':
+              return '\b'
+            case 'f':
+              return '\f'
+            case 'n':
+              return '\n'
+            case 'r':
+              return '\r'
+            case 't':
+              return '	'
+            case 'v':
+              return '\v'
+            default:
+              return escapedCharacter
+          }
+        },
+      )
+    parseGitConfigValue = value => {
+      const trimmedValue = _p_StringPrototypeTrim(value)
+      const quotedMatch = trimmedValue.match(
+        /^"((?:[^"\\]|\\.)*)"\s*(?:[#;].*)?$/,
+      )
+      if (quotedMatch) return unescapeGitQuotedValue(quotedMatch[1])
+      return trimmedValue.replace(/\s[#;].*$/, '').trim()
+    }
+    resolveConfigPath = (filePath, configPath) => {
+      if (_p_StringPrototypeStartsWith(configPath, '~/')) {
+        const homeDirectory = node_os$1.default.homedir()
+        const resolved = node_path$1.default.join(
+          homeDirectory,
+          configPath.slice(2),
+        )
+        if (!isPathInside(resolved, homeDirectory))
+          return node_path$1.default.join(
+            homeDirectory,
+            '.globby-invalid-path-traversal',
+          )
+        return resolved
+      }
+      if (node_path$1.default.isAbsolute(configPath)) return configPath
+      return node_path$1.default.resolve(
+        node_path$1.default.dirname(filePath),
+        configPath,
+      )
+    }
+    parseGitConfigSection = line => {
+      if (!_p_StringPrototypeStartsWith(line, '[')) return
+      let inQuotes = false
+      let isEscaped = false
+      for (let index = 1; index < line.length; index++) {
+        const character = line[index]
+        if (isEscaped) {
+          isEscaped = false
+          continue
+        }
+        if (character === '\\') {
+          isEscaped = true
+          continue
+        }
+        if (character === '"') {
+          inQuotes = !inQuotes
+          continue
+        }
+        if (character === ']' && !inQuotes) {
+          const remainder = line.slice(index + 1).trimStart()
+          if (
+            remainder &&
+            !_p_StringPrototypeStartsWith(remainder, '#') &&
+            !_p_StringPrototypeStartsWith(remainder, ';')
+          )
+            return
+          return line.slice(1, index).trim()
+        }
+      }
+    }
+    parseGitConfigEntry = line => {
+      const match = line.match(/^([A-Za-z\d-.]+)\s*=\s*(.*)$/)
+      if (!match) return
+      return {
+        key: match[1].toLowerCase(),
+        value: parseGitConfigValue(match[2]),
+      }
+    }
+    parseIncludeIfCondition = section => {
+      if (!section) return
+      const match = section.match(/^includeif\s+"([^"]+)"$/i)
+      return match ? match[1] : void 0
+    }
+    normalizeGitConfigConditionPattern = (pattern, configFilePath) => {
+      if (_p_StringPrototypeStartsWith(pattern, '~/'))
+        pattern = node_path$1.default.join(
+          node_os$1.default.homedir(),
+          pattern.slice(2),
+        )
+      else if (_p_StringPrototypeStartsWith(pattern, './'))
+        pattern = node_path$1.default.resolve(
+          node_path$1.default.dirname(configFilePath),
+          pattern.slice(2),
+        )
+      else if (!node_path$1.default.isAbsolute(pattern))
+        pattern = `**/${pattern}`
+      if (_p_StringPrototypeEndsWith(pattern, '/')) pattern += '**'
+      return slash(pattern)
+    }
+    gitConfigGlobToRegex = (pattern, flags) => {
+      let regex = ''
+      for (let index = 0; index < pattern.length; index++) {
+        const character = pattern[index]
+        const nextCharacter = pattern[index + 1]
+        const nextNextCharacter = pattern[index + 2]
+        if (
+          character === '*' &&
+          nextCharacter === '*' &&
+          nextNextCharacter === '/'
+        ) {
+          regex += '(?:.*/)?'
+          index += 2
+          continue
+        }
+        if (character === '*' && nextCharacter === '*') {
+          regex += '.*'
+          index += 1
+          continue
+        }
+        if (character === '*') {
+          regex += '[^/]*'
+          continue
+        }
+        if (character === '?') {
+          regex += '[^/]'
+          continue
+        }
+        if (character === '[') {
+          const closingBracketIndex = pattern.indexOf(']', index + 1)
+          if (closingBracketIndex !== -1) {
+            const bracketContent = pattern.slice(index + 1, closingBracketIndex)
+            if (bracketContent) {
+              const negatedBracketContent =
+                bracketContent[0] === '!'
+                  ? `^${bracketContent.slice(1)}`
+                  : bracketContent
+              regex += `[${negatedBracketContent}]`
+              index = closingBracketIndex
+              continue
+            }
+          }
+        }
+        regex += /[|\\{}()[\]^$+?.]/.test(character)
+          ? `\\${character}`
+          : character
+      }
+      try {
+        return new _p_RegExpCtor(`^${regex}$`, flags)
+      } catch {
+        return /(?!)/
+      }
+    }
+    matchesIncludeIfCondition = (condition, gitDirectory, configFilePath) => {
+      if (!gitDirectory) return false
+      const match = condition.match(/^(gitdir|gitdir\/i):(.*)$/i)
+      if (!match) return false
+      const [, keyword, rawPattern] = match
+      const pattern = normalizeGitConfigConditionPattern(
+        _p_StringPrototypeTrim(rawPattern),
+        configFilePath,
+      )
+      const isCaseInsensitive =
+        _p_StringPrototypeToLowerCase(keyword) === 'gitdir/i'
+      const regularExpression = gitConfigGlobToRegex(
+        pattern,
+        isCaseInsensitive ? 'i' : void 0,
+      )
+      const normalizedGitDirectory = slash(
+        node_path$1.default.resolve(gitDirectory),
+      )
+      return regularExpression.test(normalizedGitDirectory)
+    }
+    shouldIncludeConfigSection = (section, gitDirectory, configFilePath) => {
+      if (_p_StringPrototypeToLowerCase(section) === 'include') return true
+      const condition = parseIncludeIfCondition(section)
+      return condition
+        ? matchesIncludeIfCondition(condition, gitDirectory, configFilePath)
+        : false
+    }
+    createExcludesFileValue = (value, declaringFilePath) => ({
+      value,
+      declaringFilePath,
+    })
+    parseGitConfigForExcludesFile = (content, normalizedPath, gitDirectory) => {
+      let currentSection
+      let excludesFile
+      const includePaths = []
+      for (const line of content.split(/\r?\n/)) {
+        const trimmed = _p_StringPrototypeTrim(line)
+        if (
+          !trimmed ||
+          _p_StringPrototypeStartsWith(trimmed, '#') ||
+          _p_StringPrototypeStartsWith(trimmed, ';')
+        )
+          continue
+        if (_p_StringPrototypeStartsWith(trimmed, '[')) {
+          currentSection = parseGitConfigSection(trimmed)
+          continue
+        }
+        const entry = parseGitConfigEntry(trimmed)
+        if (!entry) continue
+        if (
+          _p_StringPrototypeToLowerCase(currentSection) === 'core' &&
+          entry.key === 'excludesfile'
+        ) {
+          excludesFile = createExcludesFileValue(entry.value, normalizedPath)
+          continue
+        }
+        if (
+          shouldIncludeConfigSection(
+            currentSection,
+            gitDirectory,
+            normalizedPath,
+          ) &&
+          entry.key === 'path' &&
+          entry.value
+        )
+          includePaths.push(resolveConfigPath(normalizedPath, entry.value))
+      }
+      return {
+        excludesFile,
+        includePaths,
+      }
+    }
+    readGitConfigFile = (normalizedPath, readMethod, suppressErrors) => {
+      try {
+        return readMethod(normalizedPath, 'utf8')
+      } catch (error) {
+        if (shouldSkipIgnoreFileError(error, suppressErrors)) return
+        throw createGitConfigReadError(normalizedPath, error)
+      }
+    }
+    getExcludesFileFromGitConfigSync = (
+      filePath,
+      readFileSync,
+      gitDirectory,
+      options = {},
+    ) => {
+      const {
+        suppressErrors,
+        includeStack = /* @__PURE__ */ new _p_SetCtor(),
+        depth = 0,
+      } = options
+      const normalizedPath = node_path$1.default.resolve(filePath)
+      if (includeStack.has(normalizedPath)) return
+      if (depth >= MAX_INCLUDE_DEPTH) return
+      includeStack.add(normalizedPath)
+      const content = readGitConfigFile(
+        normalizedPath,
+        readFileSync,
+        suppressErrors,
+      )
+      if (content === void 0) {
+        includeStack.delete(normalizedPath)
+        return
+      }
+      let { excludesFile, includePaths } = parseGitConfigForExcludesFile(
+        content,
+        normalizedPath,
+        gitDirectory,
+      )
+      for (const includePath of includePaths) {
+        const includedExcludesFile = getExcludesFileFromGitConfigSync(
+          includePath,
+          readFileSync,
+          gitDirectory,
+          {
+            suppressErrors,
+            includeStack,
+            depth: depth + 1,
+          },
+        )
+        if (includedExcludesFile !== void 0) excludesFile = includedExcludesFile
+      }
+      includeStack.delete(normalizedPath)
+      return excludesFile
+    }
+    getExcludesFileFromGitConfigAsync = async (
+      filePath,
+      readFile,
+      gitDirectory,
+      options = {},
+    ) => {
+      const {
+        suppressErrors,
+        includeStack = /* @__PURE__ */ new _p_SetCtor(),
+        depth = 0,
+      } = options
+      const normalizedPath = node_path$1.default.resolve(filePath)
+      if (includeStack.has(normalizedPath)) return
+      if (depth >= MAX_INCLUDE_DEPTH) return
+      includeStack.add(normalizedPath)
+      let content
+      try {
+        content = await readFile(normalizedPath, 'utf8')
+      } catch (error) {
+        includeStack.delete(normalizedPath)
+        if (shouldSkipIgnoreFileError(error, suppressErrors)) return
+        throw createGitConfigReadError(normalizedPath, error)
+      }
+      let { excludesFile, includePaths } = parseGitConfigForExcludesFile(
+        content,
+        normalizedPath,
+        gitDirectory,
+      )
+      for (const includePath of includePaths) {
+        const includedExcludesFile = await getExcludesFileFromGitConfigAsync(
+          includePath,
+          readFile,
+          gitDirectory,
+          {
+            suppressErrors,
+            includeStack,
+            depth: depth + 1,
+          },
+        )
+        if (includedExcludesFile !== void 0) excludesFile = includedExcludesFile
+      }
+      includeStack.delete(normalizedPath)
+      return excludesFile
+    }
+    resolveGitDirectoryFromFile = (gitFilePath, content) => {
+      const match = content.match(/^gitdir:\s*(.+?)\s*$/i)
+      if (!match) return gitFilePath
+      return node_path$1.default.resolve(
+        node_path$1.default.dirname(gitFilePath),
+        match[1],
+      )
+    }
+    getGitDirectorySync = (gitRoot, readFileSync) => {
+      if (!gitRoot) return
+      const gitFilePath = node_path$1.default.join(gitRoot, '.git')
+      try {
+        return resolveGitDirectoryFromFile(
+          gitFilePath,
+          readFileSync(gitFilePath, 'utf8'),
+        )
+      } catch {
+        return gitFilePath
+      }
+    }
+    getGitDirectoryAsync = async (gitRoot, readFile) => {
+      if (!gitRoot) return
+      const gitFilePath = node_path$1.default.join(gitRoot, '.git')
+      try {
+        return resolveGitDirectoryFromFile(
+          gitFilePath,
+          await readFile(gitFilePath, 'utf8'),
+        )
+      } catch {
+        return gitFilePath
+      }
+    }
+    getXdgConfigHome = () =>
+      node_process$1.default.env.XDG_CONFIG_HOME ||
+      node_path$1.default.join(node_os$1.default.homedir(), '.config')
+    getGitConfigPaths = () => {
+      if ('GIT_CONFIG_GLOBAL' in node_process$1.default.env) {
+        const value = node_process$1.default.env.GIT_CONFIG_GLOBAL
+        return value ? [value] : []
+      }
+      return [
+        node_path$1.default.join(getXdgConfigHome(), 'git', 'config'),
+        node_path$1.default.join(node_os$1.default.homedir(), '.gitconfig'),
+      ]
+    }
+    getDefaultGlobalGitignorePath = () =>
+      node_path$1.default.join(getXdgConfigHome(), 'git', 'ignore')
+    resolveExcludesFilePath = excludesFileConfig => {
+      if (excludesFileConfig?.value === '') return
+      if (excludesFileConfig === void 0) return getDefaultGlobalGitignorePath()
+      return resolveConfigPath(
+        excludesFileConfig.declaringFilePath,
+        excludesFileConfig.value,
+      )
+    }
+    readGlobalGitignoreContent = (filePath, readMethod, suppressErrors) => {
+      try {
+        return {
+          filePath,
+          content: readMethod(filePath, 'utf8'),
+        }
+      } catch (error) {
+        if (shouldSkipIgnoreFileError(error, suppressErrors)) return
+        throw createIgnoreFileReadError(filePath, error)
+      }
+    }
+    getGlobalGitignoreFile = (options = {}) => {
+      const cwd = toPath(options.cwd) ?? node_process$1.default.cwd()
+      const readFileSync = getReadFileSyncMethod(options.fs)
+      const gitRoot = findGitRootSync(cwd, options.fs)
+      const gitDirectory = getGitDirectorySync(gitRoot, readFileSync)
+      let excludesFileConfig
+      for (const gitConfigPath of getGitConfigPaths()) {
+        const value = getExcludesFileFromGitConfigSync(
+          gitConfigPath,
+          readFileSync,
+          gitDirectory,
+          { suppressErrors: options.suppressErrors },
+        )
+        if (value !== void 0) excludesFileConfig = value
+      }
+      const filePath = resolveExcludesFilePath(excludesFileConfig)
+      return filePath === void 0
+        ? void 0
+        : readGlobalGitignoreContent(
+            filePath,
+            readFileSync,
+            options.suppressErrors,
+          )
+    }
+    getGlobalGitignoreFileAsync = async (options = {}) => {
+      const cwd = toPath(options.cwd) ?? node_process$1.default.cwd()
+      const readFile = getReadFileMethod(options.fs)
+      const gitRoot = await findGitRoot(cwd, options.fs)
+      const gitDirectory = await getGitDirectoryAsync(gitRoot, readFile)
+      const excludesFileConfig = (
+        await _p_PromiseAll(
+          getGitConfigPaths().map(gitConfigPath =>
+            getExcludesFileFromGitConfigAsync(
+              gitConfigPath,
+              readFile,
+              gitDirectory,
+              { suppressErrors: options.suppressErrors },
+            ),
+          ),
+        )
+      ).findLast(value => value !== void 0)
+      const filePath = resolveExcludesFilePath(excludesFileConfig)
+      if (filePath === void 0) return
+      try {
+        return {
+          filePath,
+          content: await readFile(filePath, 'utf8'),
+        }
+      } catch (error) {
+        if (shouldSkipIgnoreFileError(error, options.suppressErrors)) return
+        throw createIgnoreFileReadError(filePath, error)
+      }
+    }
+    buildGlobalMatcher = (globalIgnoreFile, cwd, rootDirectory = cwd) => {
+      const patterns = parseIgnoreFile(
+        globalIgnoreFile,
+        node_path$1.default.dirname(globalIgnoreFile.filePath),
+      )
+      return createIgnoreMatcher(patterns, cwd, rootDirectory)
+    }
+    getKnownIgnoreFilePaths = (patterns, normalizedOptions, gitRoot) => {
+      if (![patterns].flat().includes('**/.gitignore')) return []
+      return gitRoot
+        ? getParentGitignorePaths(gitRoot, normalizedOptions.cwd)
+        : [node_path$1.default.join(normalizedOptions.cwd, '.gitignore')]
+    }
+    getKnownIgnoreFileSearchOptions = (patterns, normalizedOptions) => ({
+      ...normalizedOptions,
+      ignore: [
+        ...normalizedOptions.ignore,
+        ...[patterns]
+          .flat()
+          .filter(pattern => isNegativePattern(pattern))
+          .map(pattern => pattern.slice(1)),
+      ],
+    })
+    getKnownIgnoreFilePattern = (filePath, cwd) => {
+      const pattern = isPathInside(filePath, cwd)
+        ? node_path$1.default.relative(cwd, filePath)
+        : filePath
+      return import_out$1.default.convertPathToPattern(pattern)
+    }
+    getMatchingKnownIgnoreFilePaths = (knownPaths, matchingPaths) => {
+      const matchingPathSet = new _p_SetCtor(
+        matchingPaths.map(filePath => node_path$1.default.resolve(filePath)),
+      )
+      return knownPaths.filter(filePath =>
+        matchingPathSet.has(node_path$1.default.resolve(filePath)),
+      )
+    }
+    globKnownIgnoreFilePaths = (
+      globFunction,
+      knownPaths,
+      patterns,
+      normalizedOptions,
+    ) => {
+      if (knownPaths.length === 0) return []
+      return globIgnoreFiles(
+        globFunction,
+        knownPaths.map(filePath =>
+          getKnownIgnoreFilePattern(filePath, normalizedOptions.cwd),
+        ),
+        getKnownIgnoreFileSearchOptions(patterns, normalizedOptions),
+      )
+    }
+    filterKnownIgnoreFilePathsAsync = async (
+      knownPaths,
+      patterns,
+      normalizedOptions,
+    ) => {
+      const matchingPaths = await globKnownIgnoreFilePaths(
+        import_out$1.default,
+        knownPaths,
+        patterns,
+        normalizedOptions,
+      )
+      return getMatchingKnownIgnoreFilePaths(knownPaths, matchingPaths)
+    }
+    filterKnownIgnoreFilePathsSync = (
+      knownPaths,
+      patterns,
+      normalizedOptions,
+    ) => {
+      const matchingPaths = globKnownIgnoreFilePaths(
+        import_out$1.default.sync,
+        knownPaths,
+        patterns,
+        normalizedOptions,
+      )
+      return getMatchingKnownIgnoreFilePaths(knownPaths, matchingPaths)
+    }
+    getIgnoreFileSearchPrune = (
+      searchPatterns,
+      files,
+      normalizedOptions,
+      gitRoot,
+    ) => {
+      if (files.length === 0)
+        return {
+          patterns: [],
+          guardNames: [],
+        }
+      const { cwd } = normalizedOptions
+      const baseDir = gitRoot || cwd
+      const ignorePatterns = getPatternsFromIgnoreFiles(files, baseDir)
+      const matcher = createIgnoreMatcher(ignorePatterns, cwd, baseDir)
+      const searchPatternsArray = [searchPatterns].flat()
+      const gitignoreOnlySearch = searchPatternsArray.every(
+        pattern => pattern === GITIGNORE_FILES_PATTERN,
+      )
+      const searchesForGitignoreFiles = searchPatternsArray.includes(
+        GITIGNORE_FILES_PATTERN,
+      )
+      return buildPrunePatternsAndGuards(getIgnoreRules(files), matcher, cwd, {
+        gitignoreOnlySearch,
+        searchesForGitignoreFiles,
+      })
+    }
+    withPrunedSearch = (normalizedOptions, prunePatterns) =>
+      prunePatterns.length === 0
+        ? normalizedOptions
+        : {
+            ...normalizedOptions,
+            ignore: [...normalizedOptions.ignore, ...prunePatterns],
+          }
+    getUnreadPaths = (childPaths, knownPaths) => {
+      const alreadyRead = new _p_SetCtor(
+        knownPaths.map(filePath => node_path$1.default.resolve(filePath)),
+      )
+      return dedupePaths(childPaths).filter(
+        filePath => !alreadyRead.has(node_path$1.default.resolve(filePath)),
+      )
+    }
+    collectIgnoreFileArtifactsAsync = async (
+      patterns,
+      options,
+      includeParentIgnoreFiles,
+    ) => {
+      const normalizedOptions = normalizeOptions$1(options)
+      const readFileMethod = getReadFileMethod(normalizedOptions.fs)
+      const gitRoot = includeParentIgnoreFiles
+        ? await findGitRoot(normalizedOptions.cwd, normalizedOptions.fs)
+        : void 0
+      const knownPaths = await filterKnownIgnoreFilePathsAsync(
+        getKnownIgnoreFilePaths(patterns, normalizedOptions, gitRoot),
+        patterns,
+        normalizedOptions,
+      )
+      const knownFiles = await readIgnoreFilesSafely(
+        knownPaths,
+        readFileMethod,
+        normalizedOptions.suppressErrors,
+      )
+      const { patterns: prunePatterns, guardNames } = getIgnoreFileSearchPrune(
+        patterns,
+        knownFiles,
+        normalizedOptions,
+        gitRoot,
+      )
+      const childPaths = await globIgnoreFiles(
+        import_out$1.default,
+        patterns,
+        withPrunedSearch(normalizedOptions, prunePatterns),
+      )
+      let childFiles = await readIgnoreFilesSafely(
+        getUnreadPaths(childPaths, knownPaths),
+        readFileMethod,
+        normalizedOptions.suppressErrors,
+      )
+      if (negationsCouldRescue(getIgnoreRules(childFiles), guardNames)) {
+        const allPaths = await globIgnoreFiles(
+          import_out$1.default,
+          patterns,
+          normalizedOptions,
+        )
+        childFiles = await readIgnoreFilesSafely(
+          getUnreadPaths(allPaths, knownPaths),
+          readFileMethod,
+          normalizedOptions.suppressErrors,
+        )
+      }
+      return {
+        files: [...knownFiles, ...childFiles],
+        normalizedOptions,
+        gitRoot,
+      }
+    }
+    collectIgnoreFileArtifactsSync = (
+      patterns,
+      options,
+      includeParentIgnoreFiles,
+    ) => {
+      const normalizedOptions = normalizeOptions$1(options)
+      const readFileSyncMethod = getReadFileSyncMethod(normalizedOptions.fs)
+      const gitRoot = includeParentIgnoreFiles
+        ? findGitRootSync(normalizedOptions.cwd, normalizedOptions.fs)
+        : void 0
+      const knownPaths = filterKnownIgnoreFilePathsSync(
+        getKnownIgnoreFilePaths(patterns, normalizedOptions, gitRoot),
+        patterns,
+        normalizedOptions,
+      )
+      const knownFiles = readIgnoreFilesSafelySync(
+        knownPaths,
+        readFileSyncMethod,
+        normalizedOptions.suppressErrors,
+      )
+      const { patterns: prunePatterns, guardNames } = getIgnoreFileSearchPrune(
+        patterns,
+        knownFiles,
+        normalizedOptions,
+        gitRoot,
+      )
+      const childPaths = globIgnoreFiles(
+        import_out$1.default.sync,
+        patterns,
+        withPrunedSearch(normalizedOptions, prunePatterns),
+      )
+      let childFiles = readIgnoreFilesSafelySync(
+        getUnreadPaths(childPaths, knownPaths),
+        readFileSyncMethod,
+        normalizedOptions.suppressErrors,
+      )
+      if (negationsCouldRescue(getIgnoreRules(childFiles), guardNames)) {
+        const allPaths = globIgnoreFiles(
+          import_out$1.default.sync,
+          patterns,
+          normalizedOptions,
+        )
+        childFiles = readIgnoreFilesSafelySync(
+          getUnreadPaths(allPaths, knownPaths),
+          readFileSyncMethod,
+          normalizedOptions.suppressErrors,
+        )
+      }
+      return {
+        files: [...knownFiles, ...childFiles],
+        normalizedOptions,
+        gitRoot,
+      }
+    }
+    getPatternsFromIgnoreFiles = (files, baseDir) =>
+      _p_ArrayPrototypeFlatMap(files, file => parseIgnoreFile(file, baseDir))
+    getIgnorePatternsAndPredicate = async (
+      patterns,
+      options,
+      includeParentIgnoreFiles = false,
+    ) => {
+      const { files, normalizedOptions, gitRoot } =
+        await collectIgnoreFileArtifactsAsync(
+          patterns,
+          options,
+          includeParentIgnoreFiles,
+        )
+      return buildIgnoreResult(files, normalizedOptions, gitRoot)
+    }
+    getIgnorePatternsAndPredicateSync = (
+      patterns,
+      options,
+      includeParentIgnoreFiles = false,
+    ) => {
+      const { files, normalizedOptions, gitRoot } =
+        collectIgnoreFileArtifactsSync(
+          patterns,
+          options,
+          includeParentIgnoreFiles,
+        )
+      return buildIgnoreResult(files, normalizedOptions, gitRoot)
+    }
+  })
+  var import_out
+  var assertPatternsInput
+  var getStatMethod
+  var getStatSyncMethod
+  var isDirectory
+  var isDirectorySync
+  var normalizePathForDirectoryGlob
+  var shouldExpandGlobstarDirectory
+  var getDirectoryGlob
+  var directoryToGlob
+  var directoryToGlobSync
+  var toPatternsArray
+  var checkCwdOption
+  var normalizeOptions
+  var normalizeArguments
+  var normalizeArgumentsSync
+  var getIgnoreFilesPatterns
+  var isPathIgnored
+  var hasIgnoredAncestorDirectory
+  var combinePredicate
+  var buildIgnoreFilterResult
+  var getIgnoreFileSearchOptions
+  var applyIgnoreFilesAndGetFilter
+  var applyIgnoreFilesAndGetFilterSync
+  var assertGlobalGitignoreSyncSupport
+  var globalGitignoreAsyncStatErrorMessage
+  var assertGlobalGitignoreAsyncSupport
+  var createPathResolver
+  var createAsyncDirectoryCheck
+  var createDirectoryCheck
+  var createFilterFunctionAsync
+  var createFilterFunction
+  var unionFastGlobResults
+  var unionFastGlobResultsAsync
+  var convertNegativePatterns
+  var applyParentDirectoryIgnoreAdjustments
+  var appendPruneIgnorePatterns
+  var normalizeExpandDirectoriesOption
+  var generateTasks
+  var generateTasksSync
+  var globby
+  var globbySync
+  var convertPathToPattern
+  var init_globby = __esmMin(() => {
+    init_merge_streams()
+    import_out = /* @__PURE__ */ __toESM(require_out(), 1)
+    init_node()
+    init_ignore()
+    init_utilities()
+    assertPatternsInput = patterns => {
+      if (patterns.some(pattern => typeof pattern !== 'string'))
+        throw new _p_TypeErrorCtor(
+          'Patterns must be a string or an array of strings',
+        )
+    }
+    getStatMethod = fsImplementation => {
+      if (fsImplementation)
+        return (
+          bindFsMethod(fsImplementation.promises, 'stat') ??
+          promisifyFsMethod(fsImplementation, 'stat')
+        )
+      return bindFsMethod(node_fs.default.promises, 'stat')
+    }
+    getStatSyncMethod = fsImplementation =>
+      bindFsMethod(fsImplementation, 'statSync') ??
+      bindFsMethod(node_fs.default, 'statSync')
+    isDirectory = async (path, fsImplementation) => {
+      try {
+        return (await getStatMethod(fsImplementation)(path)).isDirectory()
+      } catch {
+        return false
+      }
+    }
+    isDirectorySync = (path, fsImplementation) => {
+      try {
+        return getStatSyncMethod(fsImplementation)(path).isDirectory()
+      } catch {
+        return false
+      }
+    }
+    normalizePathForDirectoryGlob = (filePath, cwd) => {
+      const path = isNegativePattern(filePath) ? filePath.slice(1) : filePath
+      return node_path$1.default.isAbsolute(path)
+        ? path
+        : node_path$1.default.join(cwd, path)
+    }
+    shouldExpandGlobstarDirectory = pattern => {
+      const match = pattern?.match(/\*\*\/([^/]+)$/)
+      if (!match) return false
+      const dirname = match[1]
+      const hasWildcards = /[*?[\]{}]/.test(dirname)
+      const hasExtension =
+        node_path$1.default.extname(dirname) &&
+        !_p_StringPrototypeStartsWith(dirname, '.')
+      return !hasWildcards && !hasExtension
+    }
+    getDirectoryGlob = ({ directoryPath, files, extensions }) => {
+      const extensionGlob =
+        extensions?.length > 0
+          ? `.${extensions.length > 1 ? `{${extensions.join(',')}}` : extensions[0]}`
+          : ''
+      return files
+        ? files.map(file =>
+            node_path$1.default.posix.join(
+              directoryPath,
+              `**/${node_path$1.default.extname(file) ? file : `${file}${extensionGlob}`}`,
+            ),
+          )
+        : [
+            node_path$1.default.posix.join(
+              directoryPath,
+              `**${extensionGlob ? `/*${extensionGlob}` : ''}`,
+            ),
+          ]
+    }
+    directoryToGlob = async (
+      directoryPaths,
+      {
+        cwd = node_process$1.default.cwd(),
+        files,
+        extensions,
+        fs: fsImplementation,
+      } = {},
+    ) => {
+      return (
+        await _p_PromiseAll(
+          directoryPaths.map(async directoryPath => {
+            const checkPattern = isNegativePattern(directoryPath)
+              ? directoryPath.slice(1)
+              : directoryPath
+            if (shouldExpandGlobstarDirectory(checkPattern))
+              return getDirectoryGlob({
+                directoryPath,
+                files,
+                extensions,
+              })
+            const pathToCheck = normalizePathForDirectoryGlob(
+              directoryPath,
+              cwd,
+            )
+            return (await isDirectory(pathToCheck, fsImplementation))
+              ? getDirectoryGlob({
+                  directoryPath,
+                  files,
+                  extensions,
+                })
+              : directoryPath
+          }),
+        )
+      ).flat()
+    }
+    directoryToGlobSync = (
+      directoryPaths,
+      {
+        cwd = node_process$1.default.cwd(),
+        files,
+        extensions,
+        fs: fsImplementation,
+      } = {},
+    ) =>
+      _p_ArrayPrototypeFlatMap(directoryPaths, directoryPath => {
+        const checkPattern = isNegativePattern(directoryPath)
+          ? directoryPath.slice(1)
+          : directoryPath
+        if (shouldExpandGlobstarDirectory(checkPattern))
+          return getDirectoryGlob({
+            directoryPath,
+            files,
+            extensions,
+          })
+        const pathToCheck = normalizePathForDirectoryGlob(directoryPath, cwd)
+        return isDirectorySync(pathToCheck, fsImplementation)
+          ? getDirectoryGlob({
+              directoryPath,
+              files,
+              extensions,
+            })
+          : directoryPath
+      })
+    toPatternsArray = patterns => {
+      patterns = [...new _p_SetCtor([patterns].flat())]
+      assertPatternsInput(patterns)
+      return patterns
+    }
+    checkCwdOption = (cwd, fsImplementation = node_fs.default) => {
+      if (!cwd || !fsImplementation.statSync) return
+      let stats
+      try {
+        stats = fsImplementation.statSync(cwd)
+      } catch {
+        return
+      }
+      if (!stats.isDirectory())
+        throw new _p_ErrorCtor(
+          `The \`cwd\` option must be a path to a directory, got: ${cwd}`,
+        )
+    }
+    normalizeOptions = (options = {}) => {
+      const ignore = options.ignore
+        ? _p_ArrayIsArray(options.ignore)
+          ? options.ignore
+          : [options.ignore]
+        : []
+      options = {
+        ...options,
+        ignore,
+        expandDirectories: options.expandDirectories ?? true,
+        cwd: toPath(options.cwd),
+      }
+      checkCwdOption(options.cwd, options.fs)
+      return options
+    }
+    normalizeArguments = function_ => async (patterns, options) =>
+      function_(toPatternsArray(patterns), normalizeOptions(options))
+    normalizeArgumentsSync = function_ => (patterns, options) =>
+      function_(toPatternsArray(patterns), normalizeOptions(options))
+    getIgnoreFilesPatterns = options => {
+      const { ignoreFiles, gitignore } = options
+      const patterns = ignoreFiles ? toPatternsArray(ignoreFiles) : []
+      if (gitignore) patterns.push(GITIGNORE_FILES_PATTERN)
+      return patterns
+    }
+    isPathIgnored = (matcher, globalMatcher, path) => {
+      const globalResult = globalMatcher ? globalMatcher(path) : void 0
+      const result = matcher ? matcher(path) : void 0
+      if (result?.unignored) return false
+      return Boolean(result?.ignored || globalResult?.ignored)
+    }
+    hasIgnoredAncestorDirectory = (matcher, globalMatcher, file) => {
+      let currentPath = file
+      while (true) {
+        const parentDirectory = node_path$1.default.dirname(currentPath)
+        if (parentDirectory === currentPath) return false
+        if (
+          isPathIgnored(
+            matcher,
+            globalMatcher,
+            `${parentDirectory}${node_path$1.default.sep}`,
+          )
+        )
+          return true
+        currentPath = parentDirectory
+      }
+    }
+    combinePredicate = (matcher, globalMatcher) => {
+      if (!matcher && !globalMatcher) return false
+      return file => {
+        if ((matcher ? matcher(file) : void 0)?.unignored)
+          return (
+            (globalMatcher ? globalMatcher(file) : void 0)?.ignored &&
+            hasIgnoredAncestorDirectory(matcher, globalMatcher, file)
+          )
+        return isPathIgnored(matcher, globalMatcher, file)
+      }
+    }
+    buildIgnoreFilterResult = ({
+      options,
+      cwd,
+      ignoreResult: { rules, matcher },
+      globalMatcher,
+      createFilter,
+    }) => {
+      const finalPredicate = combinePredicate(matcher, globalMatcher)
+      return {
+        options,
+        pruneIgnorePatterns: convertPatternsForFastGlob(rules, matcher, cwd),
+        filter: createFilter(finalPredicate, cwd, options.fs),
+      }
+    }
+    getIgnoreFileSearchOptions = (options, searchPatterns) => ({
+      ...options,
+      ignore: convertIgnorePatternsForIgnoreFileSearch(
+        options.ignore,
+        searchPatterns,
+      ),
+    })
+    applyIgnoreFilesAndGetFilter = async options => {
+      const cwd = options.cwd ?? node_process$1.default.cwd()
+      const ignoreFilesPatterns = getIgnoreFilesPatterns(options)
+      const globalIgnoreFile = options.globalGitignore
+        ? await getGlobalGitignoreFileAsync(options)
+        : void 0
+      if (ignoreFilesPatterns.length === 0 && !globalIgnoreFile)
+        return {
+          options,
+          pruneIgnorePatterns: [],
+          filter: createFilterFunctionAsync(false, cwd, options.fs),
+        }
+      const includeParentIgnoreFiles = options.gitignore === true
+      const ignoreResult =
+        ignoreFilesPatterns.length > 0
+          ? await getIgnorePatternsAndPredicate(
+              ignoreFilesPatterns,
+              getIgnoreFileSearchOptions(options, ignoreFilesPatterns),
+              includeParentIgnoreFiles,
+            )
+          : {
+              rules: [],
+              matcher: false,
+            }
+      const globalGitRoot = globalIgnoreFile
+        ? await findGitRoot(cwd, options.fs)
+        : void 0
+      const globalMatcher = globalIgnoreFile
+        ? buildGlobalMatcher(globalIgnoreFile, cwd, globalGitRoot ?? cwd)
+        : void 0
+      return buildIgnoreFilterResult({
+        options,
+        cwd,
+        ignoreResult,
+        globalMatcher,
+        createFilter: createFilterFunctionAsync,
+      })
+    }
+    applyIgnoreFilesAndGetFilterSync = options => {
+      const cwd = options.cwd ?? node_process$1.default.cwd()
+      const ignoreFilesPatterns = getIgnoreFilesPatterns(options)
+      const globalIgnoreFile = options.globalGitignore
+        ? getGlobalGitignoreFile(options)
+        : void 0
+      if (ignoreFilesPatterns.length === 0 && !globalIgnoreFile)
+        return {
+          options,
+          pruneIgnorePatterns: [],
+          filter: createFilterFunction(false, cwd, options.fs),
+        }
+      const includeParentIgnoreFiles = options.gitignore === true
+      const ignoreResult =
+        ignoreFilesPatterns.length > 0
+          ? getIgnorePatternsAndPredicateSync(
+              ignoreFilesPatterns,
+              getIgnoreFileSearchOptions(options, ignoreFilesPatterns),
+              includeParentIgnoreFiles,
+            )
+          : {
+              rules: [],
+              matcher: false,
+            }
+      const globalGitRoot = globalIgnoreFile
+        ? findGitRootSync(cwd, options.fs)
+        : void 0
+      const globalMatcher = globalIgnoreFile
+        ? buildGlobalMatcher(globalIgnoreFile, cwd, globalGitRoot ?? cwd)
+        : void 0
+      return buildIgnoreFilterResult({
+        options,
+        cwd,
+        ignoreResult,
+        globalMatcher,
+        createFilter: createFilterFunction,
+      })
+    }
+    assertGlobalGitignoreSyncSupport = options => {
+      if (options.globalGitignore && options.fs && !options.fs.statSync)
+        throw new _p_ErrorCtor(
+          'The `globalGitignore` option in `globbySync()` requires `fs.statSync` when a custom `fs` is provided.',
+        )
+    }
+    globalGitignoreAsyncStatErrorMessage =
+      'The `globalGitignore` option in `globby()` and `globbyStream()` requires `fs.promises.stat` or `fs.stat` when a custom `fs` is provided.'
+    assertGlobalGitignoreAsyncSupport = options => {
+      if (!options.globalGitignore || !options.fs) return
+      if (!options.fs.promises?.stat && !options.fs.stat)
+        throw new _p_ErrorCtor(globalGitignoreAsyncStatErrorMessage)
+    }
+    createPathResolver = cwd => {
+      const basePath = cwd || node_process$1.default.cwd()
+      const pathCache = /* @__PURE__ */ new _p_MapCtor()
+      return pathKey => {
+        let absolutePath = pathCache.get(pathKey)
+        if (absolutePath === void 0) {
+          if (pathCache.size > 1e4) pathCache.clear()
+          absolutePath = node_path$1.default.isAbsolute(pathKey)
+            ? pathKey
+            : node_path$1.default.resolve(basePath, pathKey)
+          pathCache.set(pathKey, absolutePath)
+        }
+        return absolutePath
+      }
+    }
+    createAsyncDirectoryCheck = fsMethod => {
+      const directoryCache = /* @__PURE__ */ new _p_MapCtor()
+      return async absolutePath => {
+        let isDirectory = directoryCache.get(absolutePath)
+        if (isDirectory !== void 0) return isDirectory
+        try {
+          const stats = await fsMethod?.(absolutePath)
+          isDirectory = Boolean(stats?.isDirectory())
+        } catch {
+          isDirectory = false
+        }
+        if (directoryCache.size > 1e4) directoryCache.clear()
+        directoryCache.set(absolutePath, isDirectory)
+        return isDirectory
+      }
+    }
+    createDirectoryCheck = fsMethod => {
+      const directoryCache = /* @__PURE__ */ new _p_MapCtor()
+      return absolutePath => {
+        let isDirectory = directoryCache.get(absolutePath)
+        if (isDirectory !== void 0) return isDirectory
+        try {
+          isDirectory = Boolean(fsMethod?.(absolutePath)?.isDirectory())
+        } catch {
+          isDirectory = false
+        }
+        if (directoryCache.size > 1e4) directoryCache.clear()
+        directoryCache.set(absolutePath, isDirectory)
+        return isDirectory
+      }
+    }
+    createFilterFunctionAsync = (isIgnored, cwd, fsImplementation) => {
+      const resolveAbsolutePath = createPathResolver(cwd)
+      const isDirectoryEntry = createAsyncDirectoryCheck(
+        getStatMethod(fsImplementation),
+      )
+      return async fastGlobResult => {
+        if (!isIgnored) return true
+        const absolutePath = resolveAbsolutePath(
+          node_path$1.default.normalize(fastGlobResult.path ?? fastGlobResult),
+        )
+        if (isIgnored(absolutePath)) return false
+        return !(
+          (await isDirectoryEntry(absolutePath)) &&
+          isIgnored(`${absolutePath}${node_path$1.default.sep}`)
+        )
+      }
+    }
+    createFilterFunction = (isIgnored, cwd, fsImplementation) => {
+      const seen = /* @__PURE__ */ new _p_SetCtor()
+      const resolveAbsolutePath = createPathResolver(cwd)
+      const isDirectoryEntry = createDirectoryCheck(
+        getStatSyncMethod(fsImplementation),
+      )
+      return fastGlobResult => {
+        const pathKey = node_path$1.default.normalize(
+          fastGlobResult.path ?? fastGlobResult,
+        )
+        if (seen.has(pathKey)) return false
+        if (isIgnored) {
+          const absolutePath = resolveAbsolutePath(pathKey)
+          if (isIgnored(absolutePath)) return false
+          if (
+            isDirectoryEntry(absolutePath) &&
+            isIgnored(`${absolutePath}${node_path$1.default.sep}`)
+          )
+            return false
+        }
+        seen.add(pathKey)
+        return true
+      }
+    }
+    unionFastGlobResults = (results, filter) =>
+      _p_ArrayPrototypeFlat(results).filter(fastGlobResult =>
+        filter(fastGlobResult),
+      )
+    unionFastGlobResultsAsync = async (results, filter) => {
+      results = _p_ArrayPrototypeFlat(results)
+      const matches = await _p_PromiseAll(
+        results.map(fastGlobResult => filter(fastGlobResult)),
+      )
+      const seen = /* @__PURE__ */ new _p_SetCtor()
+      return results.filter((fastGlobResult, index) => {
+        if (!matches[index]) return false
+        const pathKey = node_path$1.default.normalize(
+          fastGlobResult.path ?? fastGlobResult,
+        )
+        if (seen.has(pathKey)) return false
+        seen.add(pathKey)
+        return true
+      })
+    }
+    convertNegativePatterns = (patterns, options) => {
+      if (
+        patterns.length > 0 &&
+        patterns.every(pattern => isNegativePattern(pattern))
+      ) {
+        if (options.expandNegationOnlyPatterns === false) return []
+        patterns = ['**/*', ...patterns]
+      }
+      const positiveAbsolutePathPrefixes = []
+      let hasRelativePositivePattern = false
+      const normalizedPatterns = []
+      for (const pattern of patterns) {
+        if (isNegativePattern(pattern)) {
+          normalizedPatterns.push(
+            `!${normalizeNegativePattern(pattern.slice(1), positiveAbsolutePathPrefixes, hasRelativePositivePattern)}`,
+          )
+          continue
+        }
+        normalizedPatterns.push(pattern)
+        const staticAbsolutePathPrefix = getStaticAbsolutePathPrefix(pattern)
+        if (staticAbsolutePathPrefix === void 0) {
+          hasRelativePositivePattern = true
+          continue
+        }
+        positiveAbsolutePathPrefixes.push(staticAbsolutePathPrefix)
+      }
+      patterns = normalizedPatterns
+      const tasks = []
+      while (patterns.length > 0) {
+        const index = patterns.findIndex(pattern => isNegativePattern(pattern))
+        if (index === -1) {
+          tasks.push({
+            patterns,
+            options,
+          })
+          break
+        }
+        const ignorePattern = patterns[index].slice(1)
+        for (const task of tasks) task.options.ignore.push(ignorePattern)
+        if (index !== 0)
+          tasks.push({
+            patterns: patterns.slice(0, index),
+            options: {
+              ...options,
+              ignore: [...options.ignore, ignorePattern],
+            },
+          })
+        patterns = patterns.slice(index + 1)
+      }
+      return tasks
+    }
+    applyParentDirectoryIgnoreAdjustments = tasks =>
+      tasks.map(task => ({
+        patterns: task.patterns,
+        options: {
+          ...task.options,
+          ignore: adjustIgnorePatternsForParentDirectories(
+            task.patterns,
+            task.options.ignore,
+          ),
+        },
+      }))
+    appendPruneIgnorePatterns = (tasks, pruneIgnorePatterns) =>
+      pruneIgnorePatterns.length === 0
+        ? tasks
+        : tasks.map(task => ({
+            patterns: task.patterns,
+            options: {
+              ...task.options,
+              ignore: [...task.options.ignore, ...pruneIgnorePatterns],
+            },
+          }))
+    normalizeExpandDirectoriesOption = (options, cwd) => ({
+      ...(cwd ? { cwd } : {}),
+      ...(_p_ArrayIsArray(options) ? { files: options } : options),
+    })
+    generateTasks = async (patterns, options, pruneIgnorePatterns = []) => {
+      const globTasks = convertNegativePatterns(patterns, options)
+      const { cwd, expandDirectories, fs: fsImplementation } = options
+      if (!expandDirectories)
+        return appendPruneIgnorePatterns(
+          applyParentDirectoryIgnoreAdjustments(globTasks),
+          pruneIgnorePatterns,
+        )
+      const directoryToGlobOptions = {
+        ...normalizeExpandDirectoriesOption(expandDirectories, cwd),
+        fs: fsImplementation,
+      }
+      const tasks = await _p_PromiseAll(
+        globTasks.map(async task => {
+          let { patterns, options } = task
+          ;[patterns, options.ignore] = await _p_PromiseAll([
+            directoryToGlob(patterns, directoryToGlobOptions),
+            directoryToGlob(options.ignore, {
+              cwd,
+              fs: fsImplementation,
+            }),
+          ])
+          options.ignore = adjustIgnorePatternsForParentDirectories(
+            patterns,
+            options.ignore,
+          )
+          return {
+            patterns,
+            options,
+          }
+        }),
+      )
+      return appendPruneIgnorePatterns(tasks, pruneIgnorePatterns)
+    }
+    generateTasksSync = (patterns, options, pruneIgnorePatterns = []) => {
+      const globTasks = convertNegativePatterns(patterns, options)
+      const { cwd, expandDirectories, fs: fsImplementation } = options
+      if (!expandDirectories)
+        return appendPruneIgnorePatterns(
+          applyParentDirectoryIgnoreAdjustments(globTasks),
+          pruneIgnorePatterns,
+        )
+      const directoryToGlobSyncOptions = {
+        ...normalizeExpandDirectoriesOption(expandDirectories, cwd),
+        fs: fsImplementation,
+      }
+      const tasks = globTasks.map(task => {
+        let { patterns, options } = task
+        patterns = directoryToGlobSync(patterns, directoryToGlobSyncOptions)
+        options.ignore = directoryToGlobSync(options.ignore, {
+          cwd,
+          fs: fsImplementation,
+        })
+        options.ignore = adjustIgnorePatternsForParentDirectories(
+          patterns,
+          options.ignore,
+        )
+        return {
+          patterns,
+          options,
+        }
+      })
+      return appendPruneIgnorePatterns(tasks, pruneIgnorePatterns)
+    }
+    globby = normalizeArguments(async (patterns, options) => {
+      assertGlobalGitignoreAsyncSupport(options)
+      const {
+        options: modifiedOptions,
+        pruneIgnorePatterns,
+        filter,
+      } = await applyIgnoreFilesAndGetFilter(options)
+      const tasks = await generateTasks(
+        patterns,
+        modifiedOptions,
+        pruneIgnorePatterns,
+      )
+      const results = await _p_PromiseAll(
+        tasks.map(task => (0, import_out.default)(task.patterns, task.options)),
+      )
+      return unionFastGlobResultsAsync(results, filter)
+    })
+    globbySync = normalizeArgumentsSync((patterns, options) => {
+      assertGlobalGitignoreSyncSupport(options)
+      const {
+        options: modifiedOptions,
+        pruneIgnorePatterns,
+        filter,
+      } = applyIgnoreFilesAndGetFilterSync(options)
+      const results = generateTasksSync(
+        patterns,
+        modifiedOptions,
+        pruneIgnorePatterns,
+      ).map(task => import_out.default.sync(task.patterns, task.options))
+      return unionFastGlobResults(results, filter)
+    })
+    normalizeArgumentsSync((patterns, options) => {
+      assertGlobalGitignoreAsyncSupport(options)
+      const seen = /* @__PURE__ */ new _p_SetCtor()
+      return node_stream.Readable.from(
+        (async function* () {
+          const {
+            options: modifiedOptions,
+            pruneIgnorePatterns,
+            filter,
+          } = await applyIgnoreFilesAndGetFilter(options)
+          const tasks = await generateTasks(
+            patterns,
+            modifiedOptions,
+            pruneIgnorePatterns,
+          )
+          if (tasks.length === 0) return
+          const streams = tasks.map(task =>
+            import_out.default.stream(task.patterns, task.options),
+          )
+          for await (const fastGlobResult of mergeStreams(streams)) {
+            const pathKey = node_path$1.default.normalize(
+              fastGlobResult.path ?? fastGlobResult,
+            )
+            if (!seen.has(pathKey) && (await filter(fastGlobResult))) {
+              seen.add(pathKey)
+              yield fastGlobResult
+            }
+          }
+        })(),
+      )
+    })
+    normalizeArgumentsSync((patterns, options) =>
+      patterns.some(pattern =>
+        import_out.default.isDynamicPattern(pattern, options),
+      ),
+    )
+    normalizeArguments(generateTasks)
+    normalizeArgumentsSync(generateTasksSync)
+    ;({ convertPathToPattern } = import_out.default)
+  })
+  function isPathCwd(path_) {
+    let cwd = node_process$1.default.cwd()
+    path_ = node_path$1.default.resolve(path_)
+    if (node_process$1.default.platform === 'win32') {
+      cwd = _p_StringPrototypeToLowerCase(cwd)
+      path_ = _p_StringPrototypeToLowerCase(path_)
+    }
+    return path_ === cwd
+  }
+  var init_is_path_cwd = __esmMin(() => {})
+  async function pMap(
+    iterable,
+    mapper,
+    { concurrency = Number.POSITIVE_INFINITY, stopOnError = true, signal } = {},
+  ) {
+    return new _p_PromiseCtor((resolve_, reject_) => {
+      if (
+        iterable[Symbol.iterator] === void 0 &&
+        iterable[Symbol.asyncIterator] === void 0
+      )
+        throw new _p_TypeErrorCtor(
+          `Expected \`input\` to be either an \`Iterable\` or \`AsyncIterable\`, got (${typeof iterable})`,
+        )
+      if (typeof mapper !== 'function')
+        throw new _p_TypeErrorCtor('Mapper function is required')
+      if (
+        !(
+          (_p_NumberIsSafeInteger(concurrency) && concurrency >= 1) ||
+          concurrency === Number.POSITIVE_INFINITY
+        )
+      )
+        throw new _p_TypeErrorCtor(
+          `Expected \`concurrency\` to be an integer from 1 and up or \`Infinity\`, got \`${concurrency}\` (${typeof concurrency})`,
+        )
+      const result = []
+      const errors = []
+      const skippedIndexesMap = /* @__PURE__ */ new _p_MapCtor()
+      let isRejected = false
+      let isResolved = false
+      let isIterableDone = false
+      let resolvingCount = 0
+      let currentIndex = 0
+      const iterator =
+        iterable[Symbol.iterator] === void 0
+          ? iterable[Symbol.asyncIterator]()
+          : iterable[Symbol.iterator]()
+      const signalListener = () => {
+        reject(signal.reason)
+      }
+      const cleanup = () => {
+        signal?.removeEventListener('abort', signalListener)
+      }
+      const resolve = value => {
+        resolve_(value)
+        cleanup()
+      }
+      const reject = reason => {
+        isRejected = true
+        isResolved = true
+        reject_(reason)
+        cleanup()
+      }
+      if (signal) {
+        if (signal.aborted) {
+          reject(signal.reason)
+          return
+        }
+        signal.addEventListener('abort', signalListener, { once: true })
+      }
+      const next = async () => {
+        if (isResolved) return
+        const nextItem = await iterator.next()
+        const index = currentIndex
+        currentIndex++
+        if (nextItem.done) {
+          isIterableDone = true
+          if (resolvingCount === 0 && !isResolved) {
+            if (!stopOnError && errors.length > 0) {
+              reject(new _p_AggregateErrorCtor(errors))
+              return
+            }
+            isResolved = true
+            if (skippedIndexesMap.size === 0) {
+              resolve(result)
+              return
+            }
+            const pureResult = []
+            for (const [index, value] of result.entries()) {
+              if (skippedIndexesMap.get(index) === pMapSkip) continue
+              pureResult.push(value)
+            }
+            resolve(pureResult)
+          }
+          return
+        }
+        resolvingCount++
+        ;(async () => {
+          try {
+            const element = await nextItem.value
+            if (isResolved) return
+            const value = await mapper(element, index)
+            if (value === pMapSkip) skippedIndexesMap.set(index, value)
+            result[index] = value
+            resolvingCount--
+            await next()
+          } catch (error) {
+            if (stopOnError) reject(error)
+            else {
+              errors.push(error)
+              resolvingCount--
+              try {
+                await next()
+              } catch (error) {
+                reject(error)
+              }
+            }
+          }
+        })()
+      }
+      ;(async () => {
+        for (let index = 0; index < concurrency; index++) {
+          try {
+            await next()
+          } catch (error) {
+            reject(error)
+            break
+          }
+          if (isIterableDone || isRejected) break
+        }
+      })()
+    })
+  }
+  var pMapSkip
+  var init_p_map = __esmMin(() => {
+    pMapSkip = Symbol('skip')
+  })
+  var toString
+  var PresentableError
+  var init_presentable_error = __esmMin(() => {
+    ;({ toString } = Object.prototype)
+    PresentableError = class PresentableError extends Error {
+      constructor(message, { cause } = {}) {
+        super()
+        if (message instanceof PresentableError) return message
+        if (typeof message !== 'string')
+          throw new _p_TypeErrorCtor('Message required.')
+        this.name = 'PresentableError'
+        this.message = message
+        this.cause = cause
+      }
+      get isPresentable() {
+        return true
+      }
+    }
+  })
+  var del_exports = /* @__PURE__ */ __exportAll({
+    deleteAsync: () => deleteAsync$1,
+    deleteSync: () => deleteSync$1,
+  })
+  function safeCheck(file, cwd) {
+    if (isPathCwd(file))
+      throw new PresentableError(
+        'Cannot delete the current working directory. Can be overridden with the `force` option.',
+      )
+    if (!isPathInside(file, cwd))
+      throw new PresentableError(
+        'Cannot delete files/directories outside the current working directory. Can be overridden with the `force` option.',
+      )
+  }
+  function normalizePatterns(patterns) {
+    patterns = _p_ArrayIsArray(patterns) ? patterns : [patterns]
+    patterns = patterns.map(pattern => {
+      if (
+        node_process$1.default.platform === 'win32' &&
+        (0, import_is_glob.default)(pattern) === false
+      )
+        return slash(pattern)
+      return pattern
+    })
+    return patterns
+  }
+  async function deleteAsync$1(
+    patterns,
+    {
+      force,
+      dryRun,
+      cwd = node_process$1.default.cwd(),
+      onProgress = () => {},
+      ...options
+    } = {},
+  ) {
+    options = {
+      expandDirectories: false,
+      onlyFiles: false,
+      followSymbolicLinks: false,
+      cwd,
+      ...options,
+    }
+    patterns = normalizePatterns(patterns)
+    const files = (await globby(patterns, options)).sort((a, b) =>
+      _p_StringPrototypeLocaleCompare(b, a),
+    )
+    if (files.length === 0)
+      onProgress({
+        totalCount: 0,
+        deletedCount: 0,
+        percent: 1,
+      })
+    let deletedCount = 0
+    const mapper = async file => {
+      file = node_path$1.default.resolve(cwd, file)
+      if (!force) safeCheck(file, cwd)
+      if (!dryRun)
+        await node_fs_promises.default.rm(file, {
+          recursive: true,
+          force: true,
+        })
+      deletedCount += 1
+      onProgress({
+        totalCount: files.length,
+        deletedCount,
+        percent: deletedCount / files.length,
+        path: file,
+      })
+      return file
+    }
+    const removedFiles = await pMap(files, mapper, options)
+    removedFiles.sort((a, b) => _p_StringPrototypeLocaleCompare(a, b))
+    return removedFiles
+  }
+  function deleteSync$1(
+    patterns,
+    { force, dryRun, cwd = node_process$1.default.cwd(), ...options } = {},
+  ) {
+    options = {
+      expandDirectories: false,
+      onlyFiles: false,
+      followSymbolicLinks: false,
+      cwd,
+      ...options,
+    }
+    patterns = normalizePatterns(patterns)
+    const removedFiles = globbySync(patterns, options)
+      .sort((a, b) => _p_StringPrototypeLocaleCompare(b, a))
+      .map(file => {
+        file = node_path$1.default.resolve(cwd, file)
+        if (!force) safeCheck(file, cwd)
+        if (!dryRun)
+          node_fs.default.rmSync(file, {
+            recursive: true,
+            force: true,
+          })
+        return file
+      })
+    removedFiles.sort((a, b) => _p_StringPrototypeLocaleCompare(a, b))
+    return removedFiles
+  }
+  var import_is_glob
+  var init_del = __esmMin(() => {
+    init_globby()
+    import_is_glob = /* @__PURE__ */ __toESM(require_is_glob(), 1)
+    init_is_path_cwd()
+    init_is_path_inside()
+    init_p_map()
+    init_slash()
+    init_presentable_error()
+    __name(deleteAsync$1, 'deleteAsync')
+    __name(deleteSync$1, 'deleteSync')
+  })
+  const picomatch = require_picomatch()
+  const { deleteAsync, deleteSync } = (init_del(), __toCommonJS(del_exports))
+  const fastGlob = require_out()
+  const del = {
+    deleteAsync,
+    deleteSync,
+  }
+  const glob = fastGlob.globStream
+    ? {
+        glob: fastGlob,
+        globStream: fastGlob.globStream,
+        globSync: fastGlob.sync,
+      }
+    : fastGlob
+  module.exports = {
+    del,
+    glob,
+    picomatch,
+  }
+})
+
+var require_del = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  const { del } = require_pico_pack()
+  module.exports = del
+})
+
+var require_safe = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_arrays_predicates = require_predicates$3()
+  const require_paths_shared = require_shared$3()
+  const require_objects_mutate = require_mutate()
+  const require_primordials_array = require_array$2()
+  const require_errors_predicates = require_predicates$1()
+  const require_primordials_globals = require_globals()
+  const require_promises_retry = require_retry()
+  const require_fs_shared = require_shared$1()
+  /**
+   * @file Safe deletion + idempotent directory creation. The delete helpers
+   *   gate destructive operations behind an "allowed directories" allow-list
+   *   (temp dir, cacache dir, ~/.socket). A path outside those either names its
+   *   own root via `allowedDirs` or `cwd`, which keeps containment enforced
+   *   against the named tree, or calls `forceDelete`, which drops the boundary
+   *   altogether. Three names, widest to narrowest: `forceDelete` ignores
+   *   location, `safeDelete` widens by location, `strictDelete` refuses a
+   *   root-resolving target outright. Forcing is a NAME rather than an option
+   *   so a linter can match it at the call site and a reader can grep it. The
+   *   mkdir helpers default to `recursive: true` and swallow `EEXIST` so
+   *   concurrent callers don't race-condition each other. The allow-list
+   *   carries each directory twice — as `path.resolve` returns it and as its
+   *   real path — because a symlinked component makes those differ and a caller
+   *   may hold either. On macOS, `os.tmpdir()` can contain a symlinked
+   *   component. Walking or globbing the temp tree can return its real path
+   *   instead. Both forms must match the allowed tree. The two forms are
+   *   computed once per process and cached, so this costs a handful of
+   *   `realpathSync` calls at first use and plain string comparisons
+   *   thereafter. The target path is deliberately NOT resolved per call: that
+   *   would put a syscall on every delete and need a cache keyed by caller
+   *   input, which is the kind that grows without bound.
+   *
+   * @warning `forceDelete`/`forceDeleteSync` drop the boundary that stands
+   *   between a delete and a working checkout. `socket/no-force-delete` flags
+   *   every call, so clearing it takes an explicit escape comment. AI agents:
+   *   ask the operator before reaching for either, and name what you intend to
+   *   delete - `safeDelete` with `allowedDirs`, or `strictDelete`, is almost
+   *   always the right answer.
+   */
+  const defaultRemoveOptions = require_objects_mutate.objectFreeze({
+    __proto__: null,
+    maxRetries: 3,
+    recursive: true,
+    retryDelay: 200,
+  })
+  let delModule
+  function getDel() {
+    if (delModule === void 0) delModule = require_del()
+    return delModule
+  }
+  async function runDelete(filepath, options, runOptions) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const patterns = require_arrays_predicates.isArray(filepath)
+      ? filepath.map(require_paths_shared.pathLikeToString)
+      : [require_paths_shared.pathLikeToString(filepath)]
+    const shouldForce =
+      runOptions?.forced === true ||
+      require_fs_shared.areAllPathsInAllowedDirs(patterns, opts.allowedDirs)
+    const maxRetries = opts.maxRetries ?? defaultRemoveOptions.maxRetries
+    const retryDelay = opts.retryDelay ?? defaultRemoveOptions.retryDelay
+    /* c8 ignore start - External del call */
+    const del = getDel()
+    await require_promises_retry.pRetry(
+      async () => {
+        await del.deleteAsync(patterns, {
+          ...(opts.cwd === void 0 ? {} : { cwd: opts.cwd }),
+          dryRun: false,
+          force: shouldForce,
+          onlyFiles: false,
+        })
+      },
+      {
+        retries: maxRetries,
+        baseDelayMs: retryDelay,
+        backoffFactor: 2,
+        signal: opts.signal,
+      },
+    )
+    /* c8 ignore stop */
+  }
+  function runDeleteSync(filepath, options, runOptions) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const patterns = require_arrays_predicates.isArray(filepath)
+      ? filepath.map(require_paths_shared.pathLikeToString)
+      : [require_paths_shared.pathLikeToString(filepath)]
+    const shouldForce =
+      runOptions?.forced === true ||
+      require_fs_shared.areAllPathsInAllowedDirs(patterns, opts.allowedDirs)
+    const maxRetries = opts.maxRetries ?? defaultRemoveOptions.maxRetries
+    const retryDelay = opts.retryDelay ?? defaultRemoveOptions.retryDelay
+    /* c8 ignore start - External del call */
+    const del = getDel()
+    let lastError
+    let delay = retryDelay
+    for (let attempt = 0; attempt <= maxRetries; attempt++)
+      try {
+        del.deleteSync(patterns, {
+          ...(opts.cwd === void 0 ? {} : { cwd: opts.cwd }),
+          dryRun: false,
+          force: shouldForce,
+          onlyFiles: false,
+        })
+        return
+      } catch (e) {
+        lastError = e
+        if (attempt < maxRetries) {
+          const waitMs = delay
+          if (require_primordials_globals.SharedArrayBufferCtor !== void 0)
+            require_primordials_array.AtomicsWait(
+              new require_primordials_array.Int32ArrayCtor(
+                new require_primordials_globals.SharedArrayBufferCtor(4),
+              ),
+              0,
+              0,
+              waitMs,
+            )
+          delay *= 2
+        }
+      }
+    if (lastError) throw lastError
+    /* c8 ignore stop */
+  }
+  /**
+   * Safely delete a file or directory asynchronously with built-in protections.
+   *
+   * Uses [`del`](https://socket.dev/npm/package/del/overview/8.0.1) for safer
+   * deletion with these safety features:
+   *
+   * - By default, prevents deleting the current working directory (cwd) and above
+   * - Allows deleting descendant paths within cwd without the force option
+   * - Automatically uses force: true for temp directory, cacache, and ~/.socket
+   *   subdirectories
+   * - Protects against accidental deletion of parent directories via `../` paths
+   *
+   * @example
+   *   ;```ts
+   *   // Delete files within cwd (safe by default)
+   *   await safeDelete('./build')
+   *   await safeDelete('./dist')
+   *
+   *   // Delete with glob patterns
+   *   await safeDelete(['./temp/**', '!./temp/keep.txt'])
+   *
+   *   // Delete with custom retry settings
+   *   await safeDelete('./flaky-dir', { maxRetries: 5, retryDelay: 500 })
+   *
+   *   // Delete cwd or above on purpose - a different function, by name
+   *   await forceDelete('../parent-dir')
+   *   ```
+   *
+   * @param filepath - Path or array of paths to delete (supports glob patterns)
+   * @param options - Deletion options including retries and recursion.
+   * @param options.allowedDirs - Extra roots the target may sit inside, for this
+   *   call only. Names a sibling tree the caller owns without lifting the
+   *   boundary; prefer it over reaching for `forceDelete`.
+   *
+   * @throws {Error} When attempting to delete protected paths
+   * option.
+   */
+  async function safeDelete(filepath, options) {
+    await runDelete(filepath, options)
+  }
+  /**
+   * Safely delete a file or directory synchronously with built-in protections.
+   *
+   * Uses [`del`](https://socket.dev/npm/package/del/overview/8.0.1) for safer
+   * deletion with these safety features:
+   *
+   * - By default, prevents deleting the current working directory (cwd) and above
+   * - Allows deleting descendant paths within cwd without the force option
+   * - Automatically uses force: true for temp directory, cacache, and ~/.socket
+   *   subdirectories
+   * - Protects against accidental deletion of parent directories via `../` paths
+   *
+   * @example
+   *   ;```ts
+   *   // Delete files within cwd (safe by default)
+   *   safeDeleteSync('./build')
+   *   safeDeleteSync('./dist')
+   *
+   *   // Delete with glob patterns
+   *   safeDeleteSync(['./temp/**', '!./temp/keep.txt'])
+   *
+   *   // Delete multiple paths
+   *   safeDeleteSync(['./coverage', './reports'])
+   *
+   *   // Delete cwd or above on purpose - a different function, by name
+   *   forceDeleteSync('../parent-dir')
+   *   ```
+   *
+   * @param filepath - Path or array of paths to delete (supports glob patterns)
+   * @param options - Deletion options including retries and recursion.
+   * @param options.allowedDirs - Extra roots the target may sit inside, for this
+   *   call only. Names a sibling tree the caller owns without lifting the
+   *   boundary; prefer it over reaching for `forceDeleteSync`.
+   *
+   * @throws {Error} When attempting to delete protected paths.
+   */
+  function safeDeleteSync(filepath, options) {
+    runDeleteSync(filepath, options)
+  }
+  /**
+   * Safely create a directory asynchronously, ignoring EEXIST errors. This
+   * function wraps fs.promises.mkdir and handles the race condition where the
+   * directory might already exist, which is common in concurrent code.
+   *
+   * Unlike fs.promises.mkdir with recursive:true, this function: - Silently
+   * ignores EEXIST errors when the directory already exists - Re-throws all
+   * other errors (permissions, invalid path, etc.) - Works reliably in
+   * multi-process/concurrent scenarios - Defaults to recursive: true for
+   * convenient nested directory creation.
+   *
+   * @example
+   *   ;```ts
+   *   // Create a directory recursively by default, no error if it exists
+   *   await safeMkdir('./config')
+   *
+   *   // Create nested directories (recursive: true is the default)
+   *   await safeMkdir('./data/cache/temp')
+   *
+   *   // Create with specific permissions
+   *   await safeMkdir('./secure', { mode: 0o700 })
+   *
+   *   // Explicitly disable recursive behavior
+   *   await safeMkdir('./single-level', { recursive: false })
+   *   ```
+   *
+   * @param path - Directory path to create.
+   * @param options - Options including recursive (default: true) and mode
+   *   settings.
+   *
+   * @returns Promise that resolves when directory is created or already exists
+   */
+  async function safeMkdir(path, options) {
+    const fs = require_node_fs.getNodeFs()
+    const opts = {
+      __proto__: null,
+      recursive: true,
+      ...options,
+    }
+    try {
+      await fs.promises.mkdir(path, opts)
+    } catch (e) {
+      if (!require_errors_predicates.isErrnoException(e) || e.code !== 'EEXIST')
+        throw e
+    }
+    /* c8 ignore stop */
+  }
+  /**
+   * Safely create a directory synchronously, ignoring EEXIST errors. This
+   * function wraps fs.mkdirSync and handles the race condition where the
+   * directory might already exist, which is common in concurrent code.
+   *
+   * Unlike fs.mkdirSync with recursive:true, this function: - Silently ignores
+   * EEXIST errors when the directory already exists - Re-throws all other
+   * errors (permissions, invalid path, etc.) - Works reliably in
+   * multi-process/concurrent scenarios - Defaults to recursive: true for
+   * convenient nested directory creation.
+   *
+   * @example
+   *   ;```ts
+   *   // Create a directory recursively by default, no error if it exists
+   *   safeMkdirSync('./config')
+   *
+   *   // Create nested directories (recursive: true is the default)
+   *   safeMkdirSync('./data/cache/temp')
+   *
+   *   // Create with specific permissions
+   *   safeMkdirSync('./secure', { mode: 0o700 })
+   *
+   *   // Explicitly disable recursive behavior
+   *   safeMkdirSync('./single-level', { recursive: false })
+   *   ```
+   *
+   * @param path - Directory path to create.
+   * @param options - Options including recursive (default: true) and mode
+   *   settings.
+   */
+  function safeMkdirSync(path, options) {
+    const fs = require_node_fs.getNodeFs()
+    const opts = {
+      __proto__: null,
+      recursive: true,
+      ...options,
+    }
+    try {
+      fs.mkdirSync(path, opts)
+    } catch (e) {
+      if (!require_errors_predicates.isErrnoException(e) || e.code !== 'EEXIST')
+        throw e
+    }
+    /* c8 ignore stop */
+  }
+  exports.getDel = getDel
+  exports.runDelete = runDelete
+  exports.runDeleteSync = runDeleteSync
+  exports.safeDelete = safeDelete
+  exports.safeDeleteSync = safeDeleteSync
+  exports.safeMkdir = safeMkdir
+  exports.safeMkdirSync = safeMkdirSync
+})
+
+var import_safe$2 = require_safe()
+const LEGACY_RULE_FILE = 'CLAUDE.md'
+const RULE_FILE = 'AGENTS.md'
+function ruleStat(file) {
+  return lstatSync(file, { throwIfNoEntry: false })
+}
+function isRulePointer(body) {
+  const oldBody = POINTER_BODY.slice(21)
+  return [POINTER_BODY, oldBody].some(
+    pointer =>
+      body.trim() === pointer.trim() ||
+      body.trim() === (pointer + '\n@AGENTS.md\n').trim(),
+  )
+}
+function isGeneratedRuleBody(body) {
+  const normalized = body.replaceAll('\r\n', '\n')
+  if (isRulePointer(normalized)) return true
+  const oldBody = POINTER_BODY.slice(21)
+  if (
+    ![
+      '# Engineering rules\n\nThe authoritative engineering rules for this repository are in `./AGENTS.md` (`./CLAUDE.md` imports the same file). Read and follow them.\n',
+      oldBody,
+    ].some(pointer => normalized.trimStart().startsWith(pointer.trimEnd()))
+  )
+    return false
+  const lines = normalized.split(/\r?\n/)
+  const markers = lines.filter(line =>
+    /^\s*<!--\s*(?:(?:BEGIN|END)\s+)?<?\/?\s*fleet\b/i.test(line),
+  )
+  const starts = lines.flatMap((line, index) => {
+    const match =
+      /^\s*<!--\s*(?:BEGIN\s+)?<(fleet(?:-canonical)?)>\s*-->\s*$/i.exec(line)
+    return match ? [[index, match[1].toLowerCase()]] : []
+  })
+  const ends = lines.flatMap((line, index) => {
+    const match =
+      /^\s*<!--\s*(?:END\s+)?<\/(fleet(?:-canonical)?)>\s*-->\s*$/i.exec(line)
+    return match ? [[index, match[1].toLowerCase()]] : []
+  })
+  if (markers.length === 0) return false
+  if (
+    markers.length !== 2 ||
+    starts.length !== 1 ||
+    ends.length !== 1 ||
+    starts[0][0] >= ends[0][0] ||
+    starts[0][1] !== ends[0][1]
+  )
+    throw new Error(
+      'Cannot classify engineering rules. Where: generated rule pointer. Saw: ambiguous fleet markers; wanted: one complete fleet block. Fix: restore authored AGENTS.md before continuing.',
+    )
+  return isRulePointer(
+    [...lines.slice(0, starts[0][0]), ...lines.slice(ends[0][0] + 1)].join(
+      '\n',
+    ),
+  )
+}
+function committedRuleBody(dest, revision) {
+  const entry = execFileSync(
+    'git',
+    ['ls-tree', revision, '--', LEGACY_RULE_FILE],
+    {
+      cwd: dest,
+      encoding: 'utf8',
+    },
+  )
+  const match = /^(100644|100755) blob ([a-f0-9]+)\tCLAUDE\.md\n$/.exec(entry)
+  if (!match) return
+  return execFileSync('git', ['cat-file', 'blob', match[2]], {
+    cwd: dest,
+    encoding: 'utf8',
+  })
+}
+function recoverRuleAuthority(dest) {
+  if (committedRuleBody(dest, 'HEAD') === void 0)
+    throw new Error(
+      `Cannot recover engineering rules in ${dest}: HEAD:CLAUDE.md is not a regular tracked file. Restore authored AGENTS.md before continuing.`,
+    )
+  const revisions = execFileSync(
+    'git',
+    ['rev-list', '--first-parent', '--max-count=32', 'HEAD'],
+    {
+      cwd: dest,
+      encoding: 'utf8',
+    },
+  )
+    .trim()
+    .split(/\r?\n/)
+  for (let i = 0, { length } = revisions; i < length; i += 1) {
+    const revision = revisions[i]
+    const body = committedRuleBody(dest, revision)
+    if (body?.trim() && !isGeneratedRuleBody(body)) return body
+  }
+  throw new Error(
+    `Cannot recover engineering rules in ${dest}: the latest 32 first-parent commits contain no authored CLAUDE.md. Restore authored AGENTS.md before continuing.`,
+  )
+}
+function migrateRuleFile(dest, options) {
+  const { preservedPaths } = {
+    __proto__: null,
+    ...options,
+  }
+  if (preservedPaths?.has('CLAUDE.md') || preservedPaths?.has('AGENTS.md'))
+    return false
+  return migrateUnpreservedRuleFile(dest)
+}
+function migrateUnpreservedRuleFile(dest) {
+  const legacy = path.join(dest, LEGACY_RULE_FILE)
+  const current = path.join(dest, RULE_FILE)
+  const currentStat = ruleStat(current)
+  if (currentStat?.isSymbolicLink()) {
+    const target = readlinkSync(current)
+    if (target !== 'CLAUDE.md' && target !== './CLAUDE.md')
+      throw new Error(
+        `Cannot migrate engineering rules at ${current}: unexpected symlink target. Restore a regular AGENTS.md before continuing.`,
+      )
+  } else if (currentStat) {
+    if (!currentStat.isFile())
+      throw new Error(
+        `Cannot migrate engineering rules at ${current}: expected a regular file. Restore authored AGENTS.md before continuing.`,
+      )
+    if (!isGeneratedRuleBody(readFileSync(current, 'utf8'))) return false
+  }
+  const legacyStat = ruleStat(legacy)
+  if (!legacyStat && !currentStat) return false
+  if (!legacyStat?.isFile())
+    throw new Error(
+      `Cannot migrate engineering rules at ${legacy}: expected a regular authored file. Restore authored AGENTS.md before continuing.`,
+    )
+  const body = readFileSync(legacy, 'utf8')
+  if (!isGeneratedRuleBody(body)) {
+    if (!body.trim())
+      throw new Error(
+        `Cannot migrate engineering rules at ${legacy}: the file is empty. Restore authored AGENTS.md before continuing.`,
+      )
+    renameSync(legacy, current)
+    return true
+  }
+  const recovered = recoverRuleAuthority(dest)
+  const temporary = current + '.' + crypto.randomUUID() + '.tmp'
+  writeFileSync(temporary, recovered, { flag: 'wx' })
+  try {
+    renameSync(temporary, current)
+  } finally {
+    if (ruleStat(temporary)) (0, import_safe$2.safeDeleteSync)(temporary)
+  }
+  return true
+}
+
 function updateGitignoreOwners(stack, marker) {
   const name = marker[2]
   if (marker[1] === '/') {
@@ -117,10 +15529,10 @@ function composeGitignore(config) {
   return [
     '# <fleet>',
     ...((options.denyByDefault ?? current.denyByDefault) ? ['*', '!*/'] : []),
+    ...trimGitignoreLines(fleet),
     ...(allowed.length
       ? ['# <fleet-allowlist>', ...allowed, '# </fleet-allowlist>']
       : []),
-    ...trimGitignoreLines(fleet),
     ...(pack.length
       ? ['# <fleet-pack>', ...trimGitignoreLines(pack), '# </fleet-pack>']
       : []),
@@ -132,8 +15544,30 @@ function composeGitignore(config) {
   ].join('\n')
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/paths/util.mts
+function sharedClaudeHooksFleetPath(root) {
+  return path.join(root, '.claude', 'hooks', 'fleet')
+}
+function sharedFleetHookBundlePath(fleetHooksDir) {
+  return path.join(fleetHooksDir, '_dist', 'fleet-pack.generated.cjs')
+}
+function sharedClaudeSettingsJsonPath(root) {
+  return path.join(root, '.claude', 'settings.json')
+}
+function sharedConfigFleetOxlintPluginPath(root) {
+  return path.join(root, '.config', 'fleet', 'oxlint-plugin')
+}
+function sharedConfigFleetOxlintPluginMjsPath(root) {
+  return path.join(root, '.config', 'fleet', 'oxlint-plugin.generated.mjs')
+}
+function sharedLocalSharePath(root) {
+  return path.join(root, '.local', 'share')
+}
+function sharedFleetPnpmWorkspaceFleetYamlPath(root) {
+  return path.join(root, 'fleet', 'pnpm-workspace.fleet.yaml')
+}
+function sharedFleetTsconfigCheckJsonPath(root) {
+  return path.join(root, 'fleet', 'tsconfig.check.json')
+}
 function sharedScriptsRepoCommitCascadeManifestFleetFilesJsonPath(root) {
   return path.join(
     root,
@@ -150,13 +15584,13 @@ function sharedSystem32TarExePath(root) {
 function sharedTemplateBasePath(root) {
   return path.join(root, 'template', 'base', 'universal')
 }
+var init_util = __esmMin(() => {})
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/helpers.mts
+init_util()
 const HYBRID_BUNDLE_PATHS = /* @__PURE__ */ new Set([
   '.gitattributes',
   '.gitignore',
-  'CLAUDE.md',
+  'AGENTS.md',
 ])
 /**
  * Normalize bundle-manifest paths to their portable `/` wire format.
@@ -381,8 +15815,6 @@ function verifySegments(segmentsDir, manifest) {
   return problems
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/applied-state.mts
 const SETTINGS_CANDIDATES = [
   '.config/repo/socket-wheelhouse.json',
   '.config/socket-wheelhouse.json',
@@ -462,12 +15894,12 @@ function readBuildShape(dest) {
  */
 function readDeclaredCapabilities(dest) {
   const p = resolveSettingsPath(dest)
-  if (!p) return []
+  if (!p) return
   try {
     const json = JSON.parse(readFileSync(p, 'utf8'))
     return Object.keys(json.capabilities ?? {})
   } catch {
-    return []
+    return
   }
 }
 function readAppliedRef(dest) {
@@ -513,8 +15945,6 @@ function writeAppliedRef(dest, ref) {
   writeFileSync(p, `${ref}\n`)
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/workspace-migration.mts
 function isWorkspaceRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
@@ -592,8 +16022,6 @@ function migrateWorkspaceSettings(dest, yaml) {
   return kept.join('\n')
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/yaml-merge.mts
 const COL0_KEY_RE = /^[A-Za-z][\w-]*:/
 /**
  * Splice off a block's trailing separator run — the comment/blank lines at the
@@ -817,8 +16245,6 @@ function mergeWorkspaceYaml(config) {
     .replace(/\n+$/, '')}\n`
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/dependency-patches.mts
 function packageNameFromSpec(spec) {
   const normalized = spec.startsWith('/') ? spec.slice(1) : spec
   const separator = normalized.lastIndexOf('@')
@@ -913,15 +16339,12 @@ function prepareWorkspacePatchMerge(config) {
   }
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/release/github/config.mts
 function githubReleaseEnabled(config) {
   return config?.release?.github !== false
 }
+var init_config = __esmMin(() => {})
 
-//#endregion
-//#region template/base/universal/scripts/fleet/lib/conditional-config.mts
-function isPlainObject(value) {
+function isPlainObject$3(value) {
   if (value === null || typeof value !== 'object' || Array.isArray(value))
     return false
   const prototype = Object.getPrototypeOf(value)
@@ -929,7 +16352,7 @@ function isPlainObject(value) {
 }
 function hasCodeql(raw) {
   const github = raw['github']
-  return isPlainObject(github) && github['codeql'] === true
+  return isPlainObject$3(github) && github['codeql'] === true
 }
 function markerCompilesRust(value) {
   const build = value['build']
@@ -953,26 +16376,26 @@ function markerCompilesRust(value) {
 }
 function hasNonEmptyPrebakes(raw) {
   const docker = raw['docker']
-  if (!isPlainObject(docker)) return false
+  if (!isPlainObject$3(docker)) return false
   const prebakes = docker['prebakes']
-  if (!isPlainObject(prebakes)) return false
+  if (!isPlainObject$3(prebakes)) return false
   const list = prebakes['prebakes']
   return Array.isArray(list) && list.length > 0
 }
 function hasNapiPlatforms(raw) {
   const napi = raw['napi']
-  if (!isPlainObject(napi)) return false
+  if (!isPlainObject$3(napi)) return false
   const platforms = napi['platforms']
   return Array.isArray(platforms) && platforms.length > 0
 }
 function buildsAsGithubAction(raw) {
   const build = raw['build']
-  if (!isPlainObject(build)) return false
+  if (!isPlainObject$3(build)) return false
   return build['from'] === 'github-action'
 }
 function publishesToGhcr(raw) {
   const ghcr = raw['ghcr']
-  return isPlainObject(ghcr)
+  return isPlainObject$3(ghcr)
 }
 /**
  * True when the repo bundles VENDORED dependencies, so it needs the fleet
@@ -983,14 +16406,14 @@ function publishesToGhcr(raw) {
  */
 function bundlesVendoredDeps(raw) {
   const build = raw['build']
-  return isPlainObject(build) && build['bundlesVendoredDeps'] === true
+  return isPlainObject$3(build) && build['bundlesVendoredDeps'] === true
 }
 function publishesCrates(raw) {
   return publishesRegistry(raw, 'crates-registry')
 }
 function publishesNpm(raw) {
   const release = raw['release']
-  if (isPlainObject(release)) {
+  if (isPlainObject$3(release)) {
     const packages = release['publishedPackages']
     if (Array.isArray(packages) && packages.length === 0) return false
   }
@@ -1001,7 +16424,7 @@ function publishesRegistry(raw, registry) {
   const secondaries = raw['secondaries']
   if (Array.isArray(secondaries)) channels.push(...secondaries)
   return channels.some(
-    channel => isPlainObject(channel) && channel['from'] === registry,
+    channel => isPlainObject$3(channel) && channel['from'] === registry,
   )
 }
 /**
@@ -1036,9 +16459,11 @@ function configFlagHolds(flag, raw) {
       return false
   }
 }
+var init_conditional_config = __esmMin(() => {
+  init_config()
+})
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/conditional-files.mts
+init_conditional_config()
 function readConditionalSettings(dest) {
   const settings = resolveSettingsPath(dest)
   if (settings === void 0) return {}
@@ -1088,8 +16513,183 @@ function filterManifestForConditions(manifest, dest) {
   }
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/dep0-io.mts
+const ALWAYS_TRACKED_GITHUB_PREFIXES = [
+  '.github/actions/fleet/_shared/',
+  '.github/actions/fleet/cache-pnpm-store/',
+  '.github/actions/fleet/checkout/',
+  '.github/actions/fleet/debug/',
+  '.github/actions/fleet/expose-actions-runtime/',
+  '.github/actions/fleet/github-ci-fix-app-token/',
+  '.github/actions/fleet/github-payload-app-token/',
+  '.github/actions/fleet/github-pr-branch-app-token/',
+  '.github/actions/fleet/github-status-check/',
+  '.github/actions/fleet/install/',
+  '.github/actions/fleet/setup-and-install/',
+  '.github/actions/fleet/setup/',
+  '.github/dependabot.yml',
+  '.github/workflows/',
+]
+/**
+ * Non-GitHub surfaces a member must keep tracked. The unifying rule for BOTH
+ * lists: anything a consumer reads BEFORE our fetch runs has to be in the
+ * commit. pnpm reads `.npmrc` and resolves `patchedDependencies` at install
+ * time, which on a thin member happens after hydration but on a FRESH clone
+ * can precede it; git resolves `core.hooksPath` from the working tree on
+ * every operation; `tsc -p` and editors read tsconfig/.editorconfig at rest;
+ * the dep-0 bootstrap runs from a fresh clone. Same rule, different consumers.
+ *
+ * These cannot live in ALWAYS_TRACKED_GITHUB_PREFIXES: that predicate is
+ * `.github/`-scoped by construction, so a `.npmrc` entry there would never
+ * be reached.
+ */
+const ALWAYS_TRACKED_PREFIXES = [
+  '.claude/output-styles/fleet.md',
+  '.config/fleet/.prettierignore',
+  '.config/fleet/oxlintrc.json',
+  '.config/fleet/tsconfig.check.json',
+  '.config/repo/external-tools.json',
+  '.config/repo/socket-wheelhouse-schema.json',
+  '.editorconfig',
+  '.git-hooks/',
+  '.npmrc',
+  'assets/fleet/badge-follow-bluesky.svg',
+  'assets/fleet/badge-follow-x.svg',
+  'assets/fleet/important.LICENSE',
+  'assets/fleet/important.svg',
+  'assets/fleet/socket-combomark-dark.svg',
+  'assets/fleet/socket-combomark-light.svg',
+  'patches/fleet/@polka__url@1.0.0-next.29.patch',
+  'patches/fleet/brace-expansion@5.0.12.patch',
+  'patches/fleet/minimatch@10.2.6.patch',
+  'patches/fleet/run-local-ci@0.18.1.patch',
+  'patches/fleet/vitest@5.0.0.patch',
+  'scripts/fleet/npm/scan-ci.mts',
+  'scripts/fleet/npm/scan-receipt.mts',
+  'scripts/fleet/registry-infra/npm/scan-ndjson.mts',
+  'scripts/fleet/registry-infra/npm/scan.mts',
+  'scripts/repo/bootstrap/',
+]
+/**
+ * True when `relPath` is any always-tracked surface, GitHub or not. This is
+ * what an untrack set should consult; the GitHub-only predicate below stays
+ * exported for callers that mean the CI surface specifically.
+ */
+function isAlwaysTrackedSurface(relPath) {
+  const p = relPath.replaceAll('\\', '/')
+  for (let i = 0, { length } = ALWAYS_TRACKED_PREFIXES; i < length; i += 1) {
+    const prefix = ALWAYS_TRACKED_PREFIXES[i]
+    if (prefix.endsWith('/') ? p.startsWith(prefix) : p === prefix) return true
+  }
+  return isAlwaysTrackedGitHubSurface(p)
+}
+/**
+ * True when `relPath`, repo-relative, either separator, is part of the GitHub
+ * CI surface a member must keep git-tracked even when thin — a workflow file,
+ * dependabot.yml, or a `.github/actions/fleet/**` dir bundle.json marks
+ * `tracked: true` (the bootstrap-critical closure a job needs through the
+ * fleet-pack download+install). Everything else under `.github/actions/
+ * fleet/**` resolves at step-execution time from the workspace, so the pack
+ * delivers it mid-job and it stays untracked.
+ */
+function isAlwaysTrackedGitHubSurface(relPath) {
+  const p = relPath.replaceAll('\\', '/')
+  for (
+    let i = 0, { length } = ALWAYS_TRACKED_GITHUB_PREFIXES;
+    i < length;
+    i += 1
+  ) {
+    const prefix = ALWAYS_TRACKED_GITHUB_PREFIXES[i]
+    if (p.startsWith(prefix) || `${p}/` === prefix) return true
+  }
+  return false
+}
+
+/**
+ * The hybrid (segment + settingsSegment) path set fleetPackOwnedPaths excludes
+ * from its wholly-fleet list.
+ */
+function computeHybridPaths(manifest) {
+  const hybridPaths = new Set(
+    (manifest.segments ?? []).map(entry => normalizeBundlePath(entry.path)),
+  )
+  if (manifest.settingsSegment !== void 0)
+    hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))
+  return hybridPaths
+}
+
+function fleetTrackedAllowlist(manifest, current, aliases) {
+  const hybrid = computeHybridPaths(manifest)
+  const candidates = [
+    ...Object.keys(manifest.files),
+    ...hybrid,
+    ...current
+      .filter(line => line.startsWith('!/') && !line.endsWith('/'))
+      .map(line => {
+        const entry = line.slice(2)
+        return (
+          manifest.movedPaths?.find(move => move.from === entry)?.to ?? entry
+        )
+      }),
+  ].map(normalizeBundlePath)
+  const removed = manifest.removedPaths ?? []
+  const allowed = [
+    ...new Set(
+      candidates.filter(
+        entry =>
+          (isAlwaysTrackedSurface(entry) || hybrid.has(entry)) &&
+          !aliases.includes(entry) &&
+          !removed.some(
+            removedPath =>
+              entry === removedPath || entry.startsWith(`${removedPath}/`),
+          ),
+      ),
+    ),
+  ].toSorted()
+  const entries = /* @__PURE__ */ new Set()
+  for (const entry of allowed) {
+    const parts = normalizeBundlePath(entry).split('/')
+    for (let index = 1; index < parts.length; index += 1)
+      entries.add(`!/${parts.slice(0, index).join('/')}/`)
+    entries.add(`!/${entry}`)
+  }
+  return ['# <fleet-allowlist>', ...entries, '# </fleet-allowlist>'].join('\n')
+}
+function assertFleetTrackedPathsVisible(dest, allowlist) {
+  if (!existsSync(path.join(dest, '.git'))) return
+  const files = allowlist
+    .split('\n')
+    .filter(line => line.startsWith('!/') && !line.endsWith('/'))
+    .map(line => line.slice(2))
+  if (files.length === 0) return
+  let ignored
+  try {
+    ignored = execFileSync(
+      'git',
+      ['check-ignore', '--no-index', '--stdin', '-z'],
+      {
+        cwd: dest,
+        encoding: 'utf8',
+        input: `${files.join('\0')}\0`,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      },
+    )
+  } catch (error) {
+    if (
+      error !== null &&
+      typeof error === 'object' &&
+      'status' in error &&
+      error.status === 1
+    )
+      return
+    throw error
+  }
+  const conflicts = ignored.split('\0').filter(Boolean)
+  if (conflicts.length)
+    throw new Error(
+      `Tracked fleet paths remain ignored. Where: ${dest}/.gitignore. Saw: ${conflicts.join(', ')}; wanted manifest-owned tracked paths visible to Git. Fix: use git check-ignore --no-index -v on these paths and remove or narrow the conflicting repo ignore rule; preserve the fleet allowlist.`,
+    )
+}
+
 /**
  * @file Dep-0 I/O shim for the fleet bundle fetcher. `fleet.mjs` — the built
  *   bootstrap fetcher — runs on a BARE clone with NO node_modules, before the
@@ -1190,23 +16790,6 @@ const dep0Logger = {
   },
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/install-fleet-pack-prune.mts
-/**
- * The hybrid (segment + settingsSegment) path set fleetPackOwnedPaths excludes
- * from its wholly-fleet list.
- */
-function computeHybridPaths(manifest) {
-  const hybridPaths = new Set(
-    (manifest.segments ?? []).map(entry => normalizeBundlePath(entry.path)),
-  )
-  if (manifest.settingsSegment !== void 0)
-    hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))
-  return hybridPaths
-}
-
-//#endregion
-//#region template/base/universal/scripts/fleet/fs/fleet-canonical-splice.mts
 const FLEET_CANONICAL_END_SENTINEL = ['#fleet', 'canonical', 'end'].join('-')
 const FLEET_CANONICAL_SPLICE_FILES = [
   '.config/fleet/oxlintrc.json',
@@ -1299,100 +16882,7 @@ function spliceFleetCanonicalContent(source, target) {
   return source.slice(0, sourceBoundary) + seed + targetTail
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/github/tracked-surface.mts
-const ALWAYS_TRACKED_GITHUB_PREFIXES = [
-  '.github/actions/fleet/_shared/',
-  '.github/actions/fleet/cache-pnpm-store/',
-  '.github/actions/fleet/checkout/',
-  '.github/actions/fleet/debug/',
-  '.github/actions/fleet/expose-actions-runtime/',
-  '.github/actions/fleet/github-ci-fix-app-token/',
-  '.github/actions/fleet/github-payload-app-token/',
-  '.github/actions/fleet/github-pr-branch-app-token/',
-  '.github/actions/fleet/github-status-check/',
-  '.github/actions/fleet/install/',
-  '.github/actions/fleet/setup-and-install/',
-  '.github/actions/fleet/setup/',
-  '.github/dependabot.yml',
-  '.github/workflows/',
-]
-/**
- * Non-GitHub surfaces a member must keep tracked. The unifying rule for BOTH
- * lists: anything a consumer reads BEFORE our fetch runs has to be in the
- * commit. pnpm reads `.npmrc` and resolves `patchedDependencies` at install
- * time, which on a thin member happens after hydration but on a FRESH clone
- * can precede it; git resolves `core.hooksPath` from the working tree on
- * every operation; `tsc -p` and editors read tsconfig/.editorconfig at rest;
- * the dep-0 bootstrap runs from a fresh clone. Same rule, different consumers.
- *
- * These cannot live in ALWAYS_TRACKED_GITHUB_PREFIXES: that predicate is
- * `.github/`-scoped by construction, so a `.npmrc` entry there would never
- * be reached.
- */
-const ALWAYS_TRACKED_PREFIXES = [
-  '.claude/output-styles/fleet.md',
-  '.config/fleet/.prettierignore',
-  '.config/fleet/oxlintrc.json',
-  '.config/fleet/tsconfig.check.json',
-  '.config/repo/external-tools.json',
-  '.config/repo/socket-wheelhouse-schema.json',
-  '.editorconfig',
-  '.git-hooks/',
-  '.npmrc',
-  'assets/fleet/badge-follow-bluesky.svg',
-  'assets/fleet/badge-follow-x.svg',
-  'assets/fleet/important.LICENSE',
-  'assets/fleet/important.svg',
-  'assets/fleet/socket-combomark-dark.svg',
-  'assets/fleet/socket-combomark-light.svg',
-  'patches/fleet/@polka__url@1.0.0-next.29.patch',
-  'patches/fleet/brace-expansion@5.0.9.patch',
-  'patches/fleet/minimatch@10.2.6.patch',
-  'patches/fleet/run-local-ci@0.18.1.patch',
-  'patches/fleet/vitest@5.0.0.patch',
-  'scripts/fleet/npm/scan-ci.mts',
-  'scripts/fleet/npm/scan-receipt.mts',
-  'scripts/fleet/registry-infra/npm/scan-ndjson.mts',
-  'scripts/fleet/registry-infra/npm/scan.mts',
-  'scripts/repo/bootstrap/',
-]
-/**
- * True when `relPath` is any always-tracked surface, GitHub or not. This is
- * what an untrack set should consult; the GitHub-only predicate below stays
- * exported for callers that mean the CI surface specifically.
- */
-function isAlwaysTrackedSurface(relPath) {
-  const p = relPath.replaceAll('\\', '/')
-  for (let i = 0, { length } = ALWAYS_TRACKED_PREFIXES; i < length; i += 1)
-    if (p.startsWith(ALWAYS_TRACKED_PREFIXES[i])) return true
-  return isAlwaysTrackedGitHubSurface(p)
-}
-/**
- * True when `relPath`, repo-relative, either separator, is part of the GitHub
- * CI surface a member must keep git-tracked even when thin — a workflow file,
- * dependabot.yml, or a `.github/actions/fleet/**` dir bundle.json marks
- * `tracked: true` (the bootstrap-critical closure a job needs through the
- * fleet-pack download+install). Everything else under `.github/actions/
- * fleet/**` resolves at step-execution time from the workspace, so the pack
- * delivers it mid-job and it stays untracked.
- */
-function isAlwaysTrackedGitHubSurface(relPath) {
-  const p = relPath.replaceAll('\\', '/')
-  for (
-    let i = 0, { length } = ALWAYS_TRACKED_GITHUB_PREFIXES;
-    i < length;
-    i += 1
-  ) {
-    const prefix = ALWAYS_TRACKED_GITHUB_PREFIXES[i]
-    if (p.startsWith(prefix) || `${p}/` === prefix) return true
-  }
-  return false
-}
-
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/fleet-pack-manifest.mts
-const logger$3 = getDep0Logger()
+const logger$5 = getDep0Logger()
 function normalizeManifestEntryPath(entry) {
   return normalizeBundlePath(entry.path)
 }
@@ -1464,7 +16954,7 @@ function filterManifestForShape(manifest, shape) {
 /**
  * Compute the gitignore entries for thin mode — the wholly-fleet files that the
  * download/fetch action supplies, so they need not be git-tracked. Hybrid paths
- * (manifest.segments — CLAUDE.md, pnpm-workspace.yaml, …) are merged per repo
+ * (manifest.segments — AGENTS.md, pnpm-workspace.yaml, …) are merged per repo
  * and stay tracked, so they're excluded. The DESIGNATED sentinel-splice files
  * are hybrids too — they carry a member tail below the fleet-canonical end
  * sentinel that only the member's git history preserves; untracking one turns
@@ -1514,17 +17004,16 @@ function extractFleetBlockLines(target) {
   return parseGitignoreSections(target).fleet.filter(line => line.trim() !== '')
 }
 /**
- * Non-Claude harness surfaces the fleet GENERATES, never tracks.
+ * Harness surfaces the fleet generates from tracked authority files.
  *
  * Each is a projection of a Claude-side source: `AGENTS.md` and the rule dirs
- * point at CLAUDE.md, `opencode.json` / `.codex/` project `.mcp.json`, and
+ * point at AGENTS.md, `opencode.json` / `.codex/` project `.mcp.json`, and
  * `.agents/skills/` flattens `.claude/skills/` for the hosts that discover
  * skills one level deep. Regenerating them is cheap; tracking them means every
  * member carries a copy that drifts and conflicts.
  *
- * Listed here so a hydrate ignores AND untracks the whole set. Before this,
- * only `.agents/` was named, so a member that had committed `AGENTS.md` or
- * `.codex/` kept it tracked forever and the generator fought git on every run.
+ * Thin conversion ignores and untracks these generated surfaces. AGENTS.md
+ * remains tracked as the authoritative repository rules.
  */
 const HARNESS_ALIAS_PATHS = [
   '.agents/',
@@ -1534,7 +17023,7 @@ const HARNESS_ALIAS_PATHS = [
   '.kiro/',
   '.opencode/',
   '.windsurf/',
-  'AGENTS.md',
+  'CLAUDE.md',
   'opencode.json',
 ]
 function isLegacyFleetRegionUntrackEntry(line) {
@@ -1606,38 +17095,6 @@ function stripLegacyUntrackEntriesFromFleetBlock(target) {
 /**
  * Refresh exact tracked fleet paths using the active ownership classification.
  */
-function fleetTrackedAllowlist(manifest, current) {
-  const candidates = [
-    ...Object.keys(manifest.files),
-    ...current
-      .filter(line => line.startsWith('!/'))
-      .map(line => {
-        const entry = line.slice(2)
-        return (
-          manifest.movedPaths?.find(move => move.from === entry)?.to ?? entry
-        )
-      }),
-  ]
-  const removed = manifest.removedPaths ?? []
-  return [
-    '# <fleet-allowlist>',
-    ...[
-      ...new Set(
-        candidates.filter(
-          entry =>
-            isAlwaysTrackedSurface(entry) &&
-            !removed.some(
-              removedPath =>
-                entry === removedPath || entry.startsWith(`${removedPath}/`),
-            ),
-        ),
-      ),
-    ]
-      .toSorted()
-      .map(entry => `!/${entry}`),
-    '# </fleet-allowlist>',
-  ].join('\n')
-}
 function refreshFleetPackIgnores(config) {
   const { dest, manifest } = {
     __proto__: null,
@@ -1663,15 +17120,18 @@ function refreshFleetPackIgnores(config) {
     packEndMarker(),
   ].join('\n')
   const sections = parseGitignoreSections(migrated)
-  const fleetAllowlist = sections.denyByDefault
-    ? fleetTrackedAllowlist(manifest, sections.fleetAllowlist)
-    : void 0
+  const fleetAllowlist = fleetTrackedAllowlist(
+    manifest,
+    sections.fleetAllowlist,
+    HARNESS_ALIAS_PATHS,
+  )
   const updated = composeGitignore({
     packBlock,
     target: migrated,
     fleetAllowlist,
   })
   writeFileSync(gitignorePath, updated)
+  assertFleetTrackedPathsVisible(dest, fleetAllowlist)
 }
 function readFleetTrackedPaths(dest) {
   try {
@@ -1763,14 +17223,12 @@ function untrackFleetPackPaths(config) {
         },
       )
     } catch (e) {
-      logger$3.log(
+      logger$5.log(
         `install-fleet: --thin: git rm --cached failed (non-fatal) — ${errorMessage(e)}`,
       )
     }
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/member-manifest.mts
 function effectiveMemberManifest(manifest, dest) {
   return filterManifestForCapabilities(
     filterManifestForShape(
@@ -1781,8 +17239,6 @@ function effectiveMemberManifest(manifest, dest) {
   )
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/process/script-meta.mts
 /**
  * True when argv carries a bare `--`.
  *
@@ -1857,8 +17313,6 @@ function describeManifestText(meta, config) {
   )
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/process/script-result.mts
 function renderScriptResult(result) {
   if (
     !Number.isInteger(result.exitCode) ||
@@ -1875,24 +17329,26 @@ function renderScriptResult(result) {
     ...(result.error === void 0 ? {} : { error: result.error }),
   })
 }
-var ScriptExit = class extends Error {
-  exitCode
-  constructor(exitCode) {
-    if (!Number.isInteger(exitCode) || exitCode < 1 || exitCode > 255)
-      throw new Error(
-        'Script abort requires an integer exit code between 1 and 255.',
+var ScriptExit
+var init_script_result = __esmMin(() => {
+  ScriptExit = class extends Error {
+    exitCode
+    constructor(exitCode) {
+      if (!Number.isInteger(exitCode) || exitCode < 1 || exitCode > 255)
+        throw new Error(
+          'Script abort requires an integer exit code between 1 and 255.',
+        )
+      super(
+        `Script stopped with exit code ${exitCode}. Review the preceding diagnostic and retry.`,
       )
-    super(
-      `Script stopped with exit code ${exitCode}. Review the preceding diagnostic and retry.`,
-    )
-    this.name = 'ScriptExit'
-    this.exitCode = exitCode
+      this.name = 'ScriptExit'
+      this.exitCode = exitCode
+    }
   }
-}
+})
 
-//#endregion
-//#region template/base/universal/scripts/fleet/process/run-main-minimal.mts
-function errorMessage$1(error) {
+init_script_result()
+function errorMessage$2(error) {
   if (error instanceof Error) return error.message
   return String(error)
 }
@@ -1938,7 +17394,7 @@ async function runMainMinimalAsync(main, meta) {
       throw new Error('This script has not declared JSON execution support.')
     await invokeMinimalMain(main, meta)
   } catch (error) {
-    const message = errorMessage$1(error)
+    const message = errorMessage$2(error)
     const exitCode = error instanceof ScriptExit ? error.exitCode : 1
     process.exitCode = exitCode
     if (json)
@@ -1969,8 +17425,121 @@ async function invokeMinimalMain(main, meta) {
     process.stderr.write(`${result.error}\n`)
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/fs/mirror-lock.mts
+/**
+ * @file The prebuilt dispatch-launcher variant contract - ONE list of
+ *   (platform, arch) → filename shared by the release-bundle producer, which
+ *   stages CI-built binaries under {@link LAUNCHER_VARIANTS_REL_DIR}, the
+ *   dir-mirror skip list so a hydrated binary never reads as drift, and
+ *   `build-snapshot-launcher.mts`, which copies a matching prebuilt instead of
+ *   invoking `cc`. Names follow the same `<platform>-<arch>` convention pnpm
+ *   uses for its own prebuilt binaries, on node's `process.platform` and
+ *   `process.arch` tokens (darwin, linux, win32; x64, arm64). The fetcher
+ *   matches those tokens at runtime to pick its launcher, so the spellings are
+ *   a contract. Linux binaries link libc statically, so each architecture
+ *   serves both glibc and musl. Windows ships x64 and arm64 binaries.
+ *   darwin ships TWO THIN per-arch binaries rather than one fat universal. A
+ *   fat build would have to be staged under both darwin names, since lookup is
+ *   by (platform, arch), which writes the same 50 KB twice; the thin pair is
+ *   43,600 bytes against 101,328. Apple clang ad-hoc linker-signs the thin
+ *   arm64 output exactly as it does the fat one's arm64 slice, so the arm64
+ *   mandatory-signature rule is still satisfied. The launcher is
+ *   ABI-independent - it never links node - so a variant is keyed by OS and
+ *   arch alone and survives every node version switch.
+ */
+const LAUNCHER_VARIANTS_REL_DIR = '.claude/hooks/fleet/_dist/launchers'
+/**
+ * The bundle filename for a (platform, arch) pair — `.exe` suffixed on
+ * Windows, bare elsewhere. Arch names follow node's `process.arch` values.
+ */
+function launcherVariantFileName(platform, arch) {
+  return `dispatch-launcher-${platform}-${arch}${platform === 'win32' ? '.exe' : ''}`
+}
+/**
+ * Every variant the release bundle may carry. A platform+arch absent here
+ * (for example, BSD) falls back to the host `cc` compile, and past that
+ * to the compile-cache baseline — the fail-open ladder is unchanged.
+ */
+const LAUNCHER_VARIANTS = [
+  {
+    arch: 'arm64',
+    fileName: launcherVariantFileName('darwin', 'arm64'),
+    platform: 'darwin',
+  },
+  {
+    arch: 'x64',
+    fileName: launcherVariantFileName('darwin', 'x64'),
+    platform: 'darwin',
+  },
+  {
+    arch: 'arm64',
+    fileName: launcherVariantFileName('linux', 'arm64'),
+    platform: 'linux',
+  },
+  {
+    arch: 'x64',
+    fileName: launcherVariantFileName('linux', 'x64'),
+    platform: 'linux',
+  },
+  {
+    arch: 'arm64',
+    fileName: launcherVariantFileName('win32', 'arm64'),
+    platform: 'win32',
+  },
+  {
+    arch: 'x64',
+    fileName: launcherVariantFileName('win32', 'x64'),
+    platform: 'win32',
+  },
+]
+
+/**
+ * @file Release-only generated artifacts excluded from every directory mirror.
+ *   This leaf module stays independent from the cascade manifest so the dep-0
+ *   bootstrap installer can share the same list without loading bundle.json.
+ */
+const RELEASE_ONLY_DIR_MIRROR_FILES = [
+  '.claude/hooks/fleet/_dist/fleet-pack.generated.cjs',
+  'scripts/fleet/constants/model-pricing.generated.mts',
+  'scripts/fleet/constants/fleet-pack-version.generated.mts',
+  '.claude/hooks/fleet/_dist/fleet-pack.excluded.generated.cjs',
+  '.claude/hooks/fleet/_dist/fleet-pack.snapshot.generated.cjs',
+  '.claude/hooks/fleet/_shared/dispatch-launcher',
+  '.claude/hooks/fleet/_shared/dispatch-launcher.exe',
+  '.claude/hooks/fleet/_shared/node.path',
+  '.claude/hooks/fleet/_shared/snapshot-blob.path',
+  '.claude/hooks/fleet/_shared/dispatch-table.generated.mts',
+  '.claude/hooks/fleet/_shared/dispatch-table.snapshot.generated.mts',
+  '.claude/hooks/fleet/_shared/dispatch-table.excluded.generated.mts',
+  '.claude/hooks/fleet/_shared/dispatch-manifest.generated.json',
+  '.claude/hooks/fleet/_shared/validators.generated.mts',
+  'scripts/fleet/lib/ata-validators.generated.cjs',
+  ...LAUNCHER_VARIANTS.map(
+    variant => `${LAUNCHER_VARIANTS_REL_DIR}/${variant.fileName}`,
+  ),
+]
+
+/**
+ * @file Dep-free error predicates for fleet _shared modules that bundle into
+ *   the dep-0 bootstrap fetcher (fleet.mjs). fleet.mjs runs on a BARE clone
+ *   with no node_modules, so it cannot import @socketsecurity/lib-stable; the
+ *   predicates here are node-builtin-only so rolldown inlines them into the
+ *   single-file bundle. Regular fleet scripts (with node_modules) may import
+ *   the lib's cross-realm-safe {@link isErrnoException} instead, but anything
+ *   that rolls into fleet.mjs imports from here.
+ */
+/**
+ * Duck-type errno-exception guard. A real `NodeJS.ErrnoException` always
+ * carries a string `code` (EACCES, ENOENT, ...); this check is enough for the
+ * branching the bundled modules do (an EACCES on a locked mirror, an ENOENT on
+ * a missing file). The lib's predicate is cross-realm-safe via [[ErrorData]]
+ * slot semantics; that strength is not needed in the bootstrap path, which
+ * handles only same-realm errors it caught itself.
+ */
+function isErrnoException(e) {
+  return typeof e === 'object' && e !== null && typeof e.code === 'string'
+}
+var init_predicates = __esmMin(() => {})
+
 /**
  * @file Mirror-lock lift primitives. The cascade chmods live fleet mirrors
  *   read-only (0444/0555) so stray edits fail at the filesystem level; every
@@ -1984,6 +17553,23 @@ async function invokeMinimalMain(main, meta) {
  *   places files with a plain `copyFileSync`, so it applies the lock itself
  *   rather than inheriting it from a cascade that never runs on that path.
  */
+/**
+ * Lift the lock from ONE file with no re-lock — for generated outputs a child
+ * process rewrites (rolldown writing _dist/fleet-pack.generated.cjs cannot lift
+ * for itself). Generated outputs are regenerated freely and should never carry
+ * the mirror lock; this clears one that an earlier cascade applied. Missing
+ * file is a no-op.
+ */
+function liftMirrorLockSync(filePath) {
+  let stat
+  try {
+    stat = statSync(filePath)
+  } catch {
+    return
+  }
+  const mode = stat.mode & 511
+  if ((mode & 128) === 0) chmodSync(filePath, mode | 128)
+}
 /**
  * Lock ONE file read-only, preserving its executable bit: 0o555 when the file
  * already carries an exec bit so a git-hook shim stays runnable while
@@ -2002,9 +17588,72 @@ function lockFileReadonlySync(filePath) {
     chmodSync(filePath, (mode & 73) === 0 ? 292 : 365)
   } catch {}
 }
+/**
+ * Write `data` to a file in one call: lift any read-only cascade lock, write,
+ * restore the prior mode (0444 stays 0444). A writable or missing target writes
+ * untouched.
+ *
+ * This is the STANDARD writer for `scripts/fleet/**`, not a mirror-only
+ * special case. A caller does not have to know whether its destination is a
+ * cascade mirror, which is the knowledge that keeps going missing: a plain
+ * writeFileSync EACCESes on a locked target, and the failure only surfaces on
+ * the run where that particular file happens to be locked. Routing every write
+ * through here removes the question.
+ *
+ * The cost on an unlocked target is one `statSync`; `chmod` runs only when the
+ * file is actually locked. That is noise against the I/O these generators
+ * already do, so there is no reason to reach for the raw `writeFileSync`.
+ */
+function writeThroughMirrorLock(filePath, data) {
+  withMirrorLockLiftedSync(filePath, () => writeFileSync(filePath, data))
+}
+/**
+ * Sync twin of withMirrorLockLifted for writeFileSync-based generators
+ * (build-hook-bundle, gen/hook-dispatch, the workspace-yaml sweep).
+ *
+ * `options.retryWhen` covers the case a thrown EACCES cannot: a callback that
+ * SPAWNS the writer. rolldown writes the pack from a child process, so a
+ * re-lock mid-build comes back as a non-zero child status, never as an
+ * exception here, and the throw-path retry below never fires. A caller that
+ * spawns passes a predicate over its own result, and a true answer re-lifts
+ * the lock and runs the callback once more.
+ */
+function withMirrorLockLiftedSync(filePath, fn, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  let stat
+  try {
+    stat = statSync(filePath)
+  } catch {
+    stat = void 0
+  }
+  const mode = stat ? stat.mode & 511 : void 0
+  const locked = mode !== void 0 && (mode & 128) === 0
+  if (locked) chmodSync(filePath, mode | 128)
+  try {
+    const result = fn()
+    if (opts.retryWhen?.(result)) {
+      liftMirrorLockSync(filePath)
+      return fn()
+    }
+    return result
+  } catch (e) {
+    if (isErrnoException(e) && e.code === 'EACCES') {
+      liftMirrorLockSync(filePath)
+      return fn()
+    }
+    throw e
+  } finally {
+    if (locked && mode !== void 0) chmodSync(filePath, mode)
+  }
+}
+var init_mirror_lock = __esmMin(() => {
+  init_predicates()
+})
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/local-template-manifest.mts
+init_mirror_lock()
 function localTemplateManifests(filesDir, manifest, dest) {
   const groups = [...(manifest.conditionalScopedFiles ?? [])]
   for (const [file, value] of Object.entries(manifest.files)) {
@@ -2030,6 +17679,16 @@ function localTemplateManifests(filesDir, manifest, dest) {
       const root = path.join(conditionalRoot, name)
       if (statSync(root).isDirectory()) roots.push(root)
     }
+  const repoName = readConditionalSettings(dest)['repoName']
+  if (
+    typeof repoName === 'string' &&
+    repoName !== '.' &&
+    repoName !== '..' &&
+    path.basename(repoName) === repoName
+  ) {
+    const overrideRoot = path.join(filesDir, '..', '..', 'overrides', repoName)
+    if (existsSync(overrideRoot)) roots.push(overrideRoot)
+  }
   const sources = /* @__PURE__ */ new Map()
   for (const root of roots) {
     const expanded = expandManifestForLocalTemplate(root, manifest)
@@ -2151,8 +17810,6 @@ function expandManifestForLocalTemplate(filesDir, manifest) {
   }
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/layered-content.mts
 const TEXT_SOURCE_EXTENSIONS = /* @__PURE__ */ new Set([
   '.cjs',
   '.cts',
@@ -2198,8 +17855,6 @@ function localTemplateFileContent(source, memberPath, templateDir) {
   return rewritten === content ? void 0 : rewritten
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/placement-lock.mts
 /**
  * True when the release-bundle installer should lock what it places.
  *
@@ -2269,7 +17924,7 @@ function placeWithLockRetry(target, write) {
  *   liftMirrorLockSync documents), so locking one breaks the next build.
  * - The DESIGNATED sentinel-splice files — hybrids whose member tail below the
  *   sentinel survives every refresh.
- * - Hybrid segment paths (CLAUDE.md, pnpm-workspace.yaml, settings.json) — merged
+ * - Hybrid segment paths (AGENTS.md, pnpm-workspace.yaml, settings.json) — merged
  *   per repo by installSegments, which writes them straight.
  */
 function isLockablePlacement(config) {
@@ -2285,8 +17940,6 @@ function isLockablePlacement(config) {
   )
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/opencode-settings.mts
 function isOpenCodeRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
@@ -2316,8 +17969,6 @@ function mergeOpenCodeMcpSettings(fleetText, repoText) {
   )}\n`
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/hooks/wiring.mts
 const DISPATCH_EVENTS = ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop']
 const INDEX_REL = '.claude/hooks/fleet/index.cjs'
 const LAUNCHER_REL = '.claude/hooks/fleet/_shared/dispatch-launcher'
@@ -2406,8 +18057,6 @@ function rewriteDispatchCommands(settings, make) {
   return changed
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/settings.mts
 const FLEET_SETTINGS_BEGIN = '// <fleet>'
 const FLEET_SETTINGS_END = '// </fleet>'
 function cloneJson(value) {
@@ -2508,8 +18157,6 @@ function spliceRepoHookEntry(settings, event, matcher, hook) {
   destination.hooks.push(cloneJson(hook))
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/workflow-jobs.mts
 function replaceWorkflowJob(content, rule) {
   const blocks = parseYamlKeyBlocks(content)
   const jobs = blocks.find(block => block.key === 'jobs')
@@ -2521,11 +18168,17 @@ function replaceWorkflowJob(content, rule) {
       .join('\n'),
   )
   const job = entries.find(block => block.key === rule.id)
-  if (
-    !job ||
-    computeSha256(Buffer.from([...job.head, ...job.lines].join('\n'))) !==
-      rule.sha256
-  ) {
+  const digest = job
+    ? computeSha256(Buffer.from([...job.head, ...job.lines].join('\n')))
+    : void 0
+  const historicalRepairJob =
+    rule.id === 'get-green' &&
+    rule.replacementId === 'repair' &&
+    rule.sha256 ===
+      '6fb0cfaabcf917d4a9153b44c77a39792e5b77cf39919b8d9510bd2d0b9099d1' &&
+    digest ===
+      '87d453bba4002dc849e930b6ee629cb12f4eeeed5dc63431863a9aab1a88b057'
+  if (!job || (digest !== rule.sha256 && !historicalRepairJob)) {
     if (
       /scripts\/fleet\/get-green\.mts|pnpm\s+(?:run\s+)?get-green\b/u.test(
         content,
@@ -2605,8 +18258,6 @@ function replaceWorkflowJob(content, rule) {
     )
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/workflow-moves.mts
 function workflowScalar(value) {
   const scalar = value.trim()
   if (/[\\#,]|''/u.test(scalar))
@@ -2742,8 +18393,6 @@ function rewriteWorkflowMoveReferences(content, names) {
     : content
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/install-prune.mts
 /**
  * @file Installer-side manifest SYNC-PRUNE: the three operations that make a
  *   bundle refresh a true sync (place + prune) rather than an additive smear —
@@ -3032,9 +18681,8 @@ function pruneStaleFleetFiles(dest, manifest, previousFiles, options) {
   return pruned
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/install.mts
-const logger$2 = getDep0Logger()
+init_util()
+const logger$4 = getDep0Logger()
 /**
  * Whether the target already holds the exact bytes a placement would write.
  *
@@ -3053,6 +18701,229 @@ function hasIdenticalBytes(source, target) {
     return readFileSync(source).equals(readFileSync(target))
   } catch {
     return false
+  }
+}
+/**
+ * List files recursively under a directory, skipping package manager dirs.
+ */
+function listFilesRecursive(dir, prefix = '') {
+  const files = []
+  if (!existsSync(dir)) return files
+  try {
+    const entries = readdirSync(dir, { withFileTypes: true })
+    for (const entry of entries) {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === '.venv') continue
+        files.push(...listFilesRecursive(path.join(dir, entry.name), rel))
+      } else if (entry.isFile()) files.push(rel)
+    }
+  } catch {}
+  return files
+}
+/**
+ * Recursively copy a directory, skipping package manager directories.
+ */
+function copyDirectorySync(src, dest, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  mkdirSync(dest, { recursive: true })
+  const entries = readdirSync(src, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name)
+    const destPath = path.join(dest, entry.name)
+    if (entry.isDirectory()) {
+      if (entry.name === 'node_modules' || entry.name === '.venv') continue
+      copyDirectorySync(srcPath, destPath, options)
+    } else if (entry.isFile()) {
+      copyFileSync(srcPath, destPath)
+      opts.lock?.(destPath)
+    }
+  }
+}
+/**
+ * Load mirror entries from bundle.json in the repo root, if it exists.
+ * Returns empty array if not found or on parse error.
+ */
+function loadMirrorEntriesFromBundle(dest) {
+  try {
+    const bundlePath = path.join(
+      dest,
+      'scripts/repo/commit-cascade/manifest/bundle.json',
+    )
+    if (!existsSync(bundlePath)) return []
+    const content = readFileSync(bundlePath, 'utf8')
+    return JSON.parse(content).mirror ?? []
+  } catch {
+    return []
+  }
+}
+/**
+ * The lock callback a mirror replace uses, or undefined when locking is off.
+ * Shared so both call sites cannot drift apart and leave a tree writable.
+ */
+function mirrorLockFor(dest, generatedPaths, hybridPaths) {
+  if (!readonlyBundleMirrorsEnabled()) return
+  return target => {
+    const relPath = normalizeBundlePath(path.relative(dest, target))
+    if (
+      isLockablePlacement({
+        generatedPaths,
+        hybridPaths,
+        relPath,
+      })
+    )
+      lockFileReadonlySync(target)
+  }
+}
+/**
+ * Build the bootstrap mirror's skip predicate from the same effective manifest
+ * that placed files. Paths filtered by a capability, condition, or build shape
+ * remain live-only until the matching prune phase handles them. Entries with a
+ * separate source root remain live until their own mirror places them.
+ */
+function mirrorSkipPredicate(manifest, effectiveManifest, mirrorEntries) {
+  const declared = new Set(
+    [
+      ...Object.keys(manifest.files),
+      ...Object.keys(effectiveManifest.files),
+    ].map(normalizeBundlePath),
+  )
+  const separatelyMirrored = mirrorEntries
+    .filter(entry => entry.sourceRoot !== void 0)
+    .map(entry => normalizeBundlePath(entry.path))
+  return relative => {
+    const normalized = normalizeBundlePath(relative)
+    if (declared.has(normalized)) return true
+    for (const prefix of separatelyMirrored)
+      if (normalized === prefix || normalized.startsWith(`${prefix}/`))
+        return true
+    return false
+  }
+}
+/**
+ * Stage a complete mirror, quarantine omitted live files, and atomically swap
+ * the staged directory into place when drift is present.
+ */
+function ensureDirectoryMirrorsMatch(filesDir, dest, mirrorEntries, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  for (const entry of mirrorEntries) {
+    if (entry.type !== 'dir') continue
+    const sourcePath = path.join(filesDir, normalizeBundlePath(entry.path))
+    const targetPath = path.join(dest, entry.path)
+    if (!existsSync(targetPath)) continue
+    const sourceFiles = new Set(
+      listFilesRecursive(sourcePath).map(normalizeBundlePath),
+    )
+    const targetFiles = new Set(
+      listFilesRecursive(targetPath).map(normalizeBundlePath),
+    )
+    const skip = opts.skip ?? (() => false)
+    const comparableTargetFiles = new Set(
+      [...targetFiles].filter(
+        file =>
+          !skip(`${entry.path}/${file}`) &&
+          !RELEASE_ONLY_DIR_MIRROR_FILES.includes(`${entry.path}/${file}`),
+      ),
+    )
+    if (
+      sourceFiles.size > 0 &&
+      comparableTargetFiles.size > 0 &&
+      comparableTargetFiles.size / sourceFiles.size >
+        (entry.maxShrinkRatio ?? 2)
+    ) {
+      const ratio = comparableTargetFiles.size / sourceFiles.size
+      const declaration =
+        entry.maxShrinkRatio === void 0
+          ? 'no maxShrinkRatio declaration'
+          : `maxShrinkRatio=${entry.maxShrinkRatio}`
+      throw new Error(
+        `install-fleet: refused to shrink directory mirror ${entry.path}. Saw ${sourceFiles.size} source file(s) for ${comparableTargetFiles.size} live file(s), a ${ratio.toFixed(2)}x shrink (${declaration}); wanted a declared ratio that covers the replacement. Fix: materialize the complete mirror source or declare the intentional ratio.`,
+      )
+    }
+    let hasDrift = false
+    for (const file of targetFiles)
+      if (
+        !sourceFiles.has(file) &&
+        !skip(`${entry.path}/${file}`) &&
+        !RELEASE_ONLY_DIR_MIRROR_FILES.includes(`${entry.path}/${file}`)
+      ) {
+        hasDrift = true
+        break
+      }
+    if (hasDrift && sourceFiles.size > 0) {
+      const swapRoot = path.join(dest, '.cache', 'repo', 'bootstrap-mirrors')
+      const swapKey = normalizeBundlePath(entry.path).replaceAll('/', '__')
+      const runKey = `${process$1.pid}.${randomUUID()}`
+      const stagePath = path.join(swapRoot, `${swapKey}.${runKey}.incoming`)
+      const oldPath = path.join(swapRoot, `${swapKey}.${runKey}.outgoing`)
+      const quarantineRoot = path.join(
+        dest,
+        '.cache',
+        'repo',
+        'bootstrap-reaped',
+        `${swapKey}.${runKey}`,
+      )
+      try {
+        mkdirSync(stagePath, { recursive: true })
+        copyDirectorySync(sourcePath, stagePath, opts)
+        const preserved = [...targetFiles].filter(
+          file =>
+            skip(`${entry.path}/${file}`) ||
+            RELEASE_ONLY_DIR_MIRROR_FILES.includes(`${entry.path}/${file}`),
+        )
+        for (const file of preserved) {
+          const source = path.join(targetPath, file)
+          const staged = path.join(stagePath, file)
+          mkdirSync(path.dirname(staged), { recursive: true })
+          if (existsSync(staged)) chmodSync(staged, 420)
+          copyFileSync(source, staged)
+          opts.lock?.(staged)
+        }
+        const quarantined = [...targetFiles].filter(
+          file =>
+            !sourceFiles.has(file) &&
+            !skip(`${entry.path}/${file}`) &&
+            !RELEASE_ONLY_DIR_MIRROR_FILES.includes(`${entry.path}/${file}`),
+        )
+        for (const file of quarantined) {
+          const parked = path.join(quarantineRoot, file)
+          mkdirSync(path.dirname(parked), { recursive: true })
+          copyFileSync(path.join(targetPath, file), parked)
+        }
+        mkdirSync(path.dirname(targetPath), { recursive: true })
+        let movedAside = false
+        if (existsSync(targetPath)) {
+          renameSync(targetPath, oldPath)
+          movedAside = true
+        }
+        try {
+          renameSync(stagePath, targetPath)
+        } catch (e) {
+          if (movedAside && existsSync(oldPath)) renameSync(oldPath, targetPath)
+          throw e
+        }
+        if (existsSync(oldPath))
+          rmSync(oldPath, {
+            force: true,
+            recursive: true,
+          })
+      } catch (e) {
+        if (existsSync(stagePath))
+          rmSync(stagePath, {
+            force: true,
+            recursive: true,
+          })
+        logger$4.log(
+          `install-fleet: failed to sync directory mirror ${entry.path}: ${errorMessage(e)}`,
+        )
+      }
+    }
   }
 }
 function isPreservedInstallPath(relative, options) {
@@ -3211,6 +19082,7 @@ function materializeFromLocalTemplate(dest, manifest, options) {
           .map(normalizeBundlePath),
       )
     : options?.preservedPaths
+  migrateRuleFile(dest, { preservedPaths })
   const shaped = effectiveMemberManifest(manifest, dest)
   const total = {
     placed: 0,
@@ -3228,6 +19100,21 @@ function materializeFromLocalTemplate(dest, manifest, options) {
     total.unchanged += result.unchanged
     total.skippedAlwaysTracked += result.skippedAlwaysTracked
     total.refreshedTracked.push(...result.refreshedTracked)
+  }
+  const mirrorEntries = loadMirrorEntriesFromBundle(dest)
+  if (mirrorEntries.length > 0) {
+    const skipMirrorPath = mirrorSkipPredicate(manifest, shaped, mirrorEntries)
+    ensureDirectoryMirrorsMatch(filesDir, dest, mirrorEntries, {
+      lock: mirrorLockFor(
+        dest,
+        new Set((manifest.generatedPaths ?? []).map(normalizeBundlePath)),
+        computeHybridPaths(manifest),
+      ),
+      skip: relative =>
+        skipMirrorPath(relative) ||
+        isPreservedInstallPath(relative, { preservedPaths }) ||
+        (options?.refreshTracked !== true && isAlwaysTrackedSurface(relative)),
+    })
   }
   return total
 }
@@ -3261,7 +19148,7 @@ function untrackGeneratedOutputs(dest, generatedPaths) {
       },
     )
   } catch (e) {
-    logger$2.log(
+    logger$4.log(
       `install-fleet: untracking generated outputs failed (non-fatal) — ${errorMessage(e)}`,
     )
   }
@@ -3271,9 +19158,14 @@ function untrackGeneratedOutputs(dest, generatedPaths) {
  * consumer's existing file (or start with an empty string), splice the block
  * in, and write back.
  */
-function installSegments(segmentsDir, dest, manifest) {
+function installSegments(segmentsDir, dest, manifest, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
   const segments = manifest.segments
   if (!segments || segments.length === 0) return
+  migrateRuleFile(dest, opts)
   for (const entry of segments) {
     const destName = segmentFileName(entry.path)
     const blockPath = path.join(segmentsDir, destName)
@@ -3307,7 +19199,7 @@ function installSettingsSegment(segmentsDir, dest, manifest) {
   if (segment === void 0) return 0
   const sourcePath = path.join(segmentsDir, segmentFileName(segment.path))
   if (!existsSync(sourcePath)) {
-    logger$2.log(
+    logger$4.log(
       `install-fleet: Claude settings segment missing at ${sourcePath} — refusing to merge.`,
     )
     return 1
@@ -3326,7 +19218,7 @@ function installSettingsSegment(segmentsDir, dest, manifest) {
     writeFileSync(targetPath, `${JSON.stringify(merged, void 0, 2)}\n`)
     return 0
   } catch (e) {
-    logger$2.log(
+    logger$4.log(
       `install-fleet: Claude settings merge failed for ${targetPath}: ${errorMessage(e)}. Nothing written.`,
     )
     return 1
@@ -3342,7 +19234,7 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
   if (ws === void 0) return 0
   const fleetFile = path.join(segmentsDir, 'pnpm-workspace.yaml.fleet')
   if (!existsSync(fleetFile)) {
-    logger$2.log(
+    logger$4.log(
       `install-fleet: workspace segment file missing at ${fleetFile} — skipping workspace merge`,
     )
     return 0
@@ -3364,7 +19256,7 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
     })
     writeFileSync(targetPath, merged)
   } catch (e) {
-    logger$2.log(
+    logger$4.log(
       `install-fleet: pnpm-workspace.yaml merge failed — ${errorMessage(e)}. Nothing written.`,
     )
     return 1
@@ -3393,7 +19285,7 @@ const PREPARE_FROM_TEMPLATE =
 function wirePackageJson(dest) {
   const pkgPath = path.join(dest, 'package.json')
   if (!existsSync(pkgPath)) {
-    logger$2.log(
+    logger$4.log(
       `install-fleet: --wire: no package.json at ${pkgPath} — skipping`,
     )
     return
@@ -3418,8 +19310,6 @@ function wirePackageJson(dest) {
   writeFileSync(pkgPath, `${JSON.stringify(pkg, void 0, 2)}\n`)
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/network-errors.mts
 const TLS_CODES = [
   'CERT_HAS_EXPIRED',
   'DEPTH_ZERO_SELF_SIGNED_CERT',
@@ -3536,8 +19426,6 @@ function networkFailureMessage(config) {
   return `${cfg.what} could not reach ${host}.\n  Where: ${cfg.url}\n  Saw:   ${saw}\n  Wanted: an HTTP response from ${host}\n  Retry: ${failure.retryable ? 'yes, this is transient' : 'no, the same attempt fails the same way'}\n  Fix:   ${fixFor(failure, host)}`
 }
 
-//#endregion
-//#region template/base/universal/scripts/fleet/constants/oci-media-types.mts
 const OCI_MANIFEST_ACCEPT = [
   'application/vnd.oci.image.manifest.v1+json',
   'application/vnd.oci.image.index.v1+json',
@@ -3545,8 +19433,6 @@ const OCI_MANIFEST_ACCEPT = [
   'application/vnd.docker.distribution.manifest.list.v2+json',
 ].join(', ')
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/ghcr-fetch.mts
 const GHCR_HOST = 'ghcr.io'
 const MAX_REDIRECTS = 5
 const REQUEST_TIMEOUT_MS = 3e4
@@ -3909,9 +19795,7 @@ async function pullFleetBundleTarball(config) {
   return tarballPath
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/bundle-source.mts
-const logger$1 = getDep0Logger()
+const logger$3 = getDep0Logger()
 const MANIFEST_NAME$1 = 'release-bundle-manifest.json'
 /**
  * Derive the GHCR fleet-pack package repo from the gh `owner/repo`. GHCR
@@ -3977,7 +19861,7 @@ async function fetchBundleSource(config) {
     tmp: cfg.tmp,
     expectedReceipt: cfg.expectedReceipt,
   })
-  logger$1.error(
+  logger$3.error(
     `install-fleet: fetched ${cfg.ref} from ghcr (${ghcrBundleRepo(cfg.repo)}).`,
   )
   return {
@@ -3986,8 +19870,6 @@ async function fetchBundleSource(config) {
   }
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/resolve.mts
 /**
  * @file Green fleet-pack resolution helpers.
  *   Extracted from fleet.mts to keep that file under the 500-line soft cap.
@@ -4020,8 +19902,6 @@ async function resolveGreenPack(repo) {
   }
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/tracked-hydration.mts
 function completeRegion(content, begin, end) {
   const lines = content.split(/\r?\n/)
   const start = lines.indexOf(begin)
@@ -4100,8 +19980,8932 @@ function repairTrackedHydration(dest, options) {
   return repaired
 }
 
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/fleet.mts
+var require_json = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Safe references to `JSON.parse` / `JSON.stringify`. Captured at module
+   *   load so prototype-pollution attacks (e.g. monkey-patching `JSON.parse` to
+   *   leak the parsed payload) can't redirect callers that route through these
+   *   references.
+   */
+  const JSONParse = JSON.parse
+  const JSONStringify = JSON.stringify
+  exports.JSONParse = JSONParse
+  exports.JSONStringify = JSONStringify
+})
+
+var require_array = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_error = require_error$1()
+  const require_primordials_number = require_number$1()
+  const require_primordials_array = require_array$2()
+  const require_primordials_math = require_math()
+  /**
+   * @file Shims for the ES2023 change-array-by-copy methods, both Node 20.
+   *   Only the two the tree consumes are here: `toSorted` and `toReversed`.
+   *   Both produce a DENSE result. Reading a hole yields undefined rather than
+   *   propagating the hole, and `toSorted` places every undefined at the end
+   *   regardless of the comparator, which is the part a `[...arr].sort(cmp)`
+   *   rewrite gets right only by accident and a `filter(Boolean)` rewrite gets
+   *   wrong outright.
+   */
+  const MAX_SAFE_LENGTH = 2 ** 53 - 1
+  /**
+   * The native `Array.prototype.toReversed`, or undefined below Node 20.
+   */
+  const arrayToReversedNative =
+    typeof require_primordials_array.ArrayCtor.prototype.toReversed ===
+    'function'
+      ? arr => arr.toReversed()
+      : void 0
+  /**
+   * `Array.prototype.toReversed` shim.
+   *
+   * Walks the source backwards by index rather than reversing in place, so the
+   * input is never mutated and the output is dense.
+   */
+  function arrayToReversedShim(arr) {
+    const length = toLength(arr.length)
+    const out = new require_primordials_array.ArrayCtor(length)
+    for (let i = 0; i < length; i += 1) out[i] = arr[length - i - 1]
+    return out
+  }
+  const arrayToReversed = arrayToReversedNative ?? arrayToReversedShim
+  /**
+   * The native `Array.prototype.toSorted`, or undefined below Node 20.
+   */
+  const arrayToSortedNative =
+    typeof require_primordials_array.ArrayCtor.prototype.toSorted === 'function'
+      ? (arr, comparator) => arr.toSorted(comparator)
+      : void 0
+  /**
+   * `Array.prototype.toSorted` shim.
+   *
+   * The comparator is validated BEFORE any element is read, so a bad comparator
+   * throws on an empty array too. `sort` then supplies the rest of the
+   * observable contract: a stable order, and undefined last whatever the
+   * comparator says.
+   */
+  function arrayToSortedShim(arr, comparator) {
+    if (comparator !== void 0 && typeof comparator !== 'function')
+      throw new require_primordials_error.TypeErrorCtor(
+        'The comparator must be a function or undefined',
+      )
+    const length = toLength(arr.length)
+    const out = new require_primordials_array.ArrayCtor(length)
+    for (let i = 0; i < length; i += 1) out[i] = arr[i]
+    return require_primordials_array.ArrayPrototypeSort(out, comparator)
+  }
+  const arrayToSorted = arrayToSortedNative ?? arrayToSortedShim
+  /**
+   * The spec's ToLength: a length is clamped to a non-negative integer under
+   * 2^53-1. Without it a `length` of -1 or NaN reaches `new Array(length)` and
+   * throws a RangeError where the spec produces an empty array.
+   */
+  function toLength(value) {
+    const n = require_primordials_number.NumberCtor(value)
+    if (require_primordials_number.NumberIsNaN(n) || n <= 0) return 0
+    return require_primordials_math.MathMin(
+      require_primordials_math.MathFloor(n),
+      MAX_SAFE_LENGTH,
+    )
+  }
+  exports.arrayToReversed = arrayToReversed
+  exports.arrayToReversedNative = arrayToReversedNative
+  exports.arrayToReversedShim = arrayToReversedShim
+  exports.arrayToSorted = arrayToSorted
+  exports.arrayToSortedNative = arrayToSortedNative
+  exports.arrayToSortedShim = arrayToSortedShim
+  exports.toLength = toLength
+})
+
+var require_format$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_object = require_object()
+  const require_primordials_json = require_json()
+  const require_polyfills_array = require_array()
+  /**
+   * @file Shared utilities for JSON formatting preservation and manipulation.
+   *   Provides functions for detecting and preserving indentation, line
+   *   endings, and determining when JSON files should be saved based on content
+   *   changes.
+   */
+  /**
+   * Symbols used to store formatting metadata in JSON objects.
+   */
+  const INDENT_SYMBOL = Symbol.for('indent')
+  const NEWLINE_SYMBOL = Symbol.for('newline')
+  /**
+   * Detect indentation from a JSON string. Space-based indentation returns a
+   * count; mixed indentation returns the string.
+   *
+   * @example
+   *   ;```ts
+   *   detectIndent('{\n  "key": "value"\n}') // => 2
+   *   detectIndent('{\n    "key": "value"\n}') // => 4
+   *   detectIndent('{\n\t"key": "value"\n}') // => '\t'
+   *   ```
+   *
+   * @param json - JSON string to analyze.
+   *
+   * @returns Number of spaces or indentation string, defaults to 2 if not
+   *   detected.
+   */
+  function detectIndent(json) {
+    const match = json.match(/^[{[][\r\n]+(\s+)/m)
+    if (!match) return 2
+    const indent = match[1]
+    if (/^ +$/.test(indent)) return indent.length
+    return indent
+  }
+  /**
+   * Detect newline character(s) from a JSON string. Supports LF (\n) and CRLF
+   * (\r\n) line endings.
+   *
+   * @example
+   *   ;```ts
+   *   detectNewline('{\n  "key": "value"\n}') // => '\n'
+   *   detectNewline('{\r\n  "key": "value"\r\n}') // => '\r\n'
+   *   ```
+   *
+   * @param json - JSON string to analyze.
+   *
+   * @returns Line ending string ('\n' or '\r\n'), defaults to '\n' if not
+   *   detected.
+   */
+  function detectNewline(json) {
+    const match = json.match(/\r?\n/)
+    return match ? match[0] : '\n'
+  }
+  /**
+   * Extract formatting metadata from a JSON string.
+   *
+   * @example
+   *   ;```ts
+   *   const formatting = extractFormatting('{\n  "key": "value"\n}')
+   *   // => { indent: 2, newline: '\n' }
+   *   ```
+   *
+   * @param json - JSON string to analyze.
+   *
+   * @returns Object containing indent and newline formatting
+   */
+  function extractFormatting(json) {
+    return {
+      indent: detectIndent(json),
+      newline: detectNewline(json),
+    }
+  }
+  /**
+   * Get default formatting for JSON files.
+   *
+   * @example
+   *   ;```typescript
+   *   const fmt = getDefaultFormatting()
+   *   // { indent: 2, newline: '\n' }
+   *   ```
+   *
+   * @returns Default formatting (2 spaces, LF line endings)
+   */
+  function getDefaultFormatting() {
+    return {
+      indent: 2,
+      newline: '\n',
+    }
+  }
+  /**
+   * Extract formatting from content object that has symbol-based metadata.
+   *
+   * @example
+   *   ;```typescript
+   *   const content = {
+   *     [Symbol.for('indent')]: 4,
+   *     [Symbol.for('newline')]: '\r\n',
+   *   }
+   *   getFormattingFromContent(content) // { indent: 4, newline: "\r\n" }
+   *   ```
+   *
+   * @param content - Content object with Symbol.for('indent') and
+   *   Symbol.for('newline')
+   *
+   * @returns Formatting metadata, or defaults if symbols not present
+   */
+  function getFormattingFromContent(content) {
+    const indent = content[INDENT_SYMBOL]
+    const newline = content[NEWLINE_SYMBOL]
+    return {
+      indent: indent === void 0 || indent === null ? 2 : indent,
+      newline: newline === void 0 || newline === null ? '\n' : newline,
+    }
+  }
+  /**
+   * Determine if content should be saved based on changes and options. Compares
+   * current content with original content and respects options like
+   * ignoreWhitespace and sort.
+   *
+   * @example
+   *   ;```ts
+   *   const current = { key: 'new-value', [Symbol.for('indent')]: 2 }
+   *   const original = { key: 'old-value', [Symbol.for('indent')]: 2 }
+   *   shouldSave(current, original, '{\n  "key": "old-value"\n}\n')
+   *   // => true
+   *   ```
+   *
+   * @param currentContent - Current content object (may include formatting
+   *   symbols)
+   * @param originalContent - Original content for comparison (may include
+   *   formatting symbols)
+   * @param originalFileContent - Original file content as string (for whitespace
+   *   comparison)
+   * @param options - Options controlling save behavior.
+   *
+   * @returns True if content should be saved, false otherwise
+   */
+  function shouldSave(
+    currentContent,
+    originalContent,
+    originalFileContent,
+    options,
+  ) {
+    const {
+      ignoreWhitespace = false,
+      sort = false,
+      sortFn,
+    } = {
+      __proto__: null,
+      ...options,
+    }
+    const content = stripFormattingSymbols(currentContent)
+    const sortedContent = sortFn
+      ? sortFn(content)
+      : sort
+        ? sortKeys(content)
+        : content
+    const origContent = originalContent
+      ? stripFormattingSymbols(originalContent)
+      : {}
+    if (ignoreWhitespace)
+      return !__require('node:util').isDeepStrictEqual(
+        sortedContent,
+        origContent,
+      )
+    return (
+      stringifyWithFormatting(
+        sortedContent,
+        getFormattingFromContent(currentContent),
+      ).trim() !== originalFileContent.trim()
+    )
+  }
+  /**
+   * Sort object keys alphabetically. Creates a new object with sorted keys
+   * (does not mutate input).
+   *
+   * @example
+   *   ;```ts
+   *   sortKeys({ z: 3, a: 1, m: 2 })
+   *   // => { a: 1, m: 2, z: 3 }
+   *   ```
+   *
+   * @param obj - Object to sort.
+   *
+   * @returns New object with alphabetically sorted keys
+   */
+  function sortKeys(obj) {
+    const sorted = { __proto__: null }
+    const keys = require_polyfills_array.arrayToSorted(
+      require_primordials_object.ObjectKeys(obj),
+    )
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
+      sorted[key] = obj[key]
+    }
+    return sorted
+  }
+  /**
+   * Stringify JSON with specific formatting. Applies indentation and line
+   * ending preferences.
+   *
+   * @example
+   *   ;```ts
+   *   stringifyWithFormatting({ key: 'value' }, { indent: 4, newline: '\r\n' })
+   *   // => '{\r\n    "key": "value"\r\n}\r\n'
+   *   ```
+   *
+   * @param content - Object to stringify.
+   * @param formatting - Formatting preferences: indent and newline.
+   *
+   * @returns Formatted JSON string with trailing newline
+   */
+  function stringifyWithFormatting(content, formatting) {
+    const { indent, newline } = formatting
+    const format = indent === void 0 || indent === null ? '  ' : indent
+    const eol = newline === void 0 || newline === null ? '\n' : newline
+    return `${require_primordials_json.JSONStringify(content, void 0, format)}\n`.replace(
+      /\n/g,
+      () => eol,
+    )
+  }
+  /**
+   * Strip formatting symbols from content object. Removes Symbol.for('indent')
+   * and Symbol.for('newline') from the object.
+   *
+   * @example
+   *   ;```typescript
+   *   const obj = { key: 'value', [Symbol.for('indent')]: 2 }
+   *   stripFormattingSymbols(obj) // { key: "value" }
+   *   ```
+   *
+   * @param content - Content object with potential symbol properties.
+   *
+   * @returns Object with symbols removed
+   */
+  function stripFormattingSymbols(content) {
+    const {
+      [INDENT_SYMBOL]: _indent,
+      [NEWLINE_SYMBOL]: _newline,
+      ...rest
+    } = content
+    return rest
+  }
+  exports.INDENT_SYMBOL = INDENT_SYMBOL
+  exports.NEWLINE_SYMBOL = NEWLINE_SYMBOL
+  exports.detectIndent = detectIndent
+  exports.detectNewline = detectNewline
+  exports.extractFormatting = extractFormatting
+  exports.getDefaultFormatting = getDefaultFormatting
+  exports.getFormattingFromContent = getFormattingFromContent
+  exports.shouldSave = shouldSave
+  exports.sortKeys = sortKeys
+  exports.stringifyWithFormatting = stringifyWithFormatting
+  exports.stripFormattingSymbols = stripFormattingSymbols
+})
+
+var import_format = require_format$1()
+/**
+ * @file Paths for the Codex setup step.
+ */
+const CODEX_SPEC_PATH = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'config.json',
+)
+
+/**
+ * @file Render the Codex lifecycle hook config from config.json.
+ */
+function readCodexHooksSpec(options = {}) {
+  const { specPath = CODEX_SPEC_PATH } = options
+  return readCodexHooksSpecFile(specPath)
+}
+function readCodexHooksSpecFile(specPath) {
+  let parsed
+  try {
+    parsed = JSON.parse(readFileSync(specPath, 'utf8'))
+  } catch {
+    throw new Error(
+      `Invalid Codex hooks spec. Where: ${specPath}. Saw unparseable JSON; wanted a JSON object. Fix the file's syntax.`,
+    )
+  }
+  if (parsed === null || typeof parsed !== 'object')
+    throw new Error(
+      `Invalid Codex hooks spec. Where: ${specPath}. Saw a non-object; wanted a JSON object. Fix the file's shape.`,
+    )
+  const record = parsed
+  const command = record['command']
+  const generatedDescription = record['generatedDescription']
+  const timeoutSeconds = record['timeoutSeconds']
+  const events = record['events']
+  if (typeof command !== 'string' || command.length === 0)
+    throw new Error(
+      `Invalid Codex hooks spec. Where: ${specPath} command. Saw ${String(command)}; wanted a non-empty command. Fix the command field.`,
+    )
+  if (typeof generatedDescription !== 'string')
+    throw new Error(
+      `Invalid Codex hooks spec. Where: ${specPath} generatedDescription. Saw ${typeof generatedDescription}; wanted a string. Fix the generatedDescription field.`,
+    )
+  if (typeof timeoutSeconds !== 'number')
+    throw new Error(
+      `Invalid Codex hooks spec. Where: ${specPath} timeoutSeconds. Saw ${typeof timeoutSeconds}; wanted a number. Fix the timeoutSeconds field.`,
+    )
+  if (events === null || typeof events !== 'object')
+    throw new Error(
+      `Invalid Codex hooks spec. Where: ${specPath} events. Saw a non-object; wanted a map of event names. Fix the events field.`,
+    )
+  const entries = Object.entries(events)
+  const resolved = /* @__PURE__ */ new Map()
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const { 0: name, 1: entry } = entries[i]
+    if (entry === null || typeof entry !== 'object')
+      throw new Error(
+        `Invalid Codex hook event. Where: ${specPath} events.${name}. Saw a non-object; wanted an object. Fix the entry.`,
+      )
+    const matcher = entry['matcher']
+    if (matcher !== void 0 && typeof matcher !== 'string')
+      throw new Error(
+        `Invalid Codex hook matcher. Where: ${specPath} events.${name}.matcher. Saw ${typeof matcher}; wanted a string. Fix the matcher field.`,
+      )
+    resolved.set(name, { matcher })
+  }
+  return {
+    command,
+    events: resolved,
+    generatedDescription,
+    timeoutSeconds,
+  }
+}
+function renderCodexHooksConfig(options = {}) {
+  const { spec = readCodexHooksSpec() } = options
+  const events = [...spec.events]
+  const hooks = /* @__PURE__ */ new Map()
+  for (let i = 0, { length } = events; i < length; i += 1) {
+    const { 0: name, 1: event } = events[i]
+    const entry = {
+      hooks: [
+        {
+          command: `${spec.command} ${name}`,
+          timeout: spec.timeoutSeconds,
+          type: 'command',
+        },
+      ],
+    }
+    hooks.set(
+      name,
+      event.matcher === void 0
+        ? [entry]
+        : [
+            {
+              matcher: event.matcher,
+              ...entry,
+            },
+          ],
+    )
+  }
+  return (0, import_format.stringifyWithFormatting)(
+    {
+      description: spec.generatedDescription,
+      hooks: Object.fromEntries(hooks),
+    },
+    (0, import_format.getDefaultFormatting)(),
+  )
+}
+
+var config_default = {
+  description:
+    'Codex CLI lifecycle hook wiring the fleet generates into .codex/hooks.json. Every event routes to the same cross-CLI runner, so the command and timeout are declared once. An event carrying a matcher applies to every tool.',
+  target: '.codex/hooks.json',
+  generatedDescription:
+    'Fleet lifecycle guards generated from the canonical Claude hook registry.',
+  command: 'node scripts/fleet/cross-cli/run.mts',
+  timeoutSeconds: 10,
+  events: {
+    PostToolUse: { matcher: '.*' },
+    PreToolUse: { matcher: '.*' },
+    SessionStart: {},
+    Stop: {},
+    UserPromptSubmit: {},
+  },
+}
+
+var require_strings = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Plain string comparison. The straight-ASCII three-way compare, no
+   *   locale/numeric awareness — use `localeCompare` / `naturalCompare` from
+   *   the sibling files when those matter.
+   */
+  /**
+   * Simple string comparison.
+   *
+   * @example
+   *   ;```typescript
+   *   compareStr('a', 'b') // -1
+   *   compareStr('b', 'a') // 1
+   *   compareStr('a', 'a') // 0
+   *   ```
+   */
+  function compareStr(a, b) {
+    return a < b ? -1 : a > b ? 1 : 0
+  }
+  /**
+   * Compare two strings by length, longest first.
+   *
+   * This is the order a matcher wants when one candidate is a prefix of
+   * another: it makes the longer name win the span instead of the shorter one
+   * claiming it first. A regex alternation built from an unsorted token list
+   * matches `qodo-ai` inside `qodo-ai-bot`; sorted longest-first, it does not.
+   *
+   * @example
+   *   ;```typescript
+   *   arrayToSorted(['ab', 'abcd', 'abc'], compareStrLengthDesc)
+   *   // ['abcd', 'abc', 'ab']
+   *   ```
+   */
+  function compareStrLengthDesc(a, b) {
+    return b.length - a.length
+  }
+  exports.compareStr = compareStr
+  exports.compareStrLengthDesc = compareStrLengthDesc
+})
+
+var import_strings = require_strings()
+/**
+ * @file Entrypoint detection for fleet scripts. The naive
+ *   `import.meta.url === file://argv[1]` comparison is symlink-fragile:
+ *   Node resolves the REAL path for a module's `import.meta.url` while
+ *   `process.argv[1]` keeps the path as invoked, so a script spawned via a
+ *   symlinked location (macOS `/var` → `/private/var`, the shape every
+ *   mkdtemp-based integration test hits) never matches and `main()` silently
+ *   does not run. Compare realpaths on both sides instead.
+ *   V8 startup-snapshot guard: when a fleet script is bundled into the
+ *   snapshot dispatch pack (e.g. `ai-balancer/probe.mts` is imported by the
+ *   `ai-balancer-proxy-start` hook), `node --build-snapshot <bundle.cjs>`
+ *   sets `process.argv[1]` to the bundle path. A bundled module's
+ *   `import.meta.url` is rewritten to `pathToFileURL(__filename).href`, which
+ *   also resolves to the bundle path, so `isMainModule` returns true and
+ *   `runMain(main)` fires at module-eval — calling `probeHealth()` which
+ *   loads `node:http`, creating `HTTPParser` and `net.Socket` native handles
+ *   V8 refuses to serialize (`CheckGlobalAndEternalHandles` fatal). The
+ *   guard mirrors `isGuardRunContext` in `guard.mts`: a snapshot BUILD pass
+ *   is never a run context for a standalone script.
+ */
+/**
+ * True when the module at `importMetaUrl` is the process entrypoint.
+ * `entryPath` defaults to `process.argv[1]`; injectable for tests.
+ *
+ * Returns false during a V8 `--build-snapshot` pass: a bundled script's
+ * `import.meta.url` and `process.argv[1]` both resolve to the bundle file,
+ * so the entrypoint test would hold and `runMain` would execute `main()` at
+ * module-eval — loading `node:http` (native `HTTPParser` / `Socket` handles
+ * V8 refuses to serialize) and aborting `CheckGlobalAndEternalHandles`. A
+ * deserialized process sees the real entrypoint comparison.
+ */
+function isMainModule$1(importMetaUrl, entryPath) {
+  if (v8.startupSnapshot.isBuildingSnapshot()) return false
+  const entry = entryPath ?? process$1.argv[1]
+  if (!entry) return false
+  try {
+    return realpathSync(fileURLToPath(importMetaUrl)) === realpathSync(entry)
+  } catch {
+    return false
+  }
+}
+
+var require_pony_cause$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  const { SetCtor: _p_SetCtor } = require_map_set()
+  var __commonJSMin = (cb, mod) => () => (
+    mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+    mod.exports
+  )
+  var require_error_with_cause = /* @__PURE__ */ __commonJSMin(
+    (exports$11, module$10) => {
+      module$10.exports = {
+        ErrorWithCause: class ErrorWithCause extends Error {
+          /**
+           * @param {string} message
+           * @param {{ cause?: T }} options
+           */
+          constructor(message, { cause } = {}) {
+            super(message)
+            /**
+             * @type {string}
+             */
+            this.name = ErrorWithCause.name
+            if (cause)
+              /**
+               * @type {T}
+               */
+              this.cause = cause
+            /**
+             * @type {string}
+             */
+            this.message = message
+          }
+        },
+      }
+    },
+  )
+  var require_helpers = /* @__PURE__ */ __commonJSMin(
+    (exports$12, module$11) => {
+      const isError =
+        typeof Error.isError === 'function'
+          ? Error.isError
+          : v =>
+              v !== null &&
+              typeof v === 'object' &&
+              Object.prototype.toString.call(v) === '[object Error]'
+      /**
+       * @template {Error} T
+       *
+       * @param {unknown} err
+       * @param {new (...args: any[]) => T} reference
+       *
+       * @returns {T | undefined}
+       */
+      const findCauseByReference = (err, reference) => {
+        if (!err || !reference) return
+        if (!isError(err)) return
+        if (!(reference.prototype instanceof Error) && reference !== Error)
+          return
+        /**
+         * Ensures we don't go circular.
+         *
+         * @type {Set<Error>}
+         */
+        const seen = /* @__PURE__ */ new _p_SetCtor()
+        /**
+         * @type {Error | undefined}
+         */
+        let currentErr = err
+        while (currentErr && !seen.has(currentErr)) {
+          seen.add(currentErr)
+          if (currentErr instanceof reference) return currentErr
+          currentErr = getErrorCause(currentErr)
+        }
+      }
+      /**
+       * @param {Error | { cause?: unknown | (() => err) }} err
+       *
+       * @returns {Error | undefined}
+       */
+      const getErrorCause = err => {
+        if (!err || typeof err !== 'object' || !('cause' in err)) return
+        if (typeof err.cause === 'function') {
+          const causeResult = err.cause()
+          return isError(causeResult) ? causeResult : void 0
+        } else return isError(err.cause) ? err.cause : void 0
+      }
+      /**
+       * Internal method that keeps a track of which error we have already
+       * added, to avoid circular recursion.
+       *
+       * @private
+       *
+       * @param {Error} err
+       * @param {Set<Error>} seen
+       *
+       * @returns {string}
+       */
+      const _stackWithCauses = (err, seen) => {
+        if (!isError(err)) return ''
+        const stack = err.stack || ''
+        if (seen.has(err)) return stack + '\ncauses have become circular...'
+        const cause = getErrorCause(err)
+        if (cause) {
+          seen.add(err)
+          return stack + '\ncaused by: ' + _stackWithCauses(cause, seen)
+        } else return stack
+      }
+      /**
+       * @param {Error} err
+       *
+       * @returns {string}
+       */
+      const stackWithCauses = err =>
+        _stackWithCauses(err, /* @__PURE__ */ new _p_SetCtor())
+      /**
+       * Internal method that keeps a track of which error we have already
+       * added, to avoid circular recursion.
+       *
+       * @private
+       *
+       * @param {Error} err
+       * @param {Set<Error>} seen
+       * @param {boolean} [skip]
+       *
+       * @returns {string}
+       */
+      const _messageWithCauses = (err, seen, skip) => {
+        if (!isError(err)) return ''
+        const message = skip ? '' : err.message || ''
+        if (seen.has(err)) return message + ': ...'
+        const cause = getErrorCause(err)
+        if (cause) {
+          seen.add(err)
+          const skipIfVErrorStyleCause =
+            'cause' in err && typeof err.cause === 'function'
+          return (
+            message +
+            (skipIfVErrorStyleCause ? '' : ': ') +
+            _messageWithCauses(cause, seen, skipIfVErrorStyleCause)
+          )
+        } else return message
+      }
+      /**
+       * @param {Error} err
+       *
+       * @returns {string}
+       */
+      const messageWithCauses = err =>
+        _messageWithCauses(err, /* @__PURE__ */ new _p_SetCtor())
+      module$11.exports = {
+        findCauseByReference,
+        getErrorCause,
+        stackWithCauses,
+        messageWithCauses,
+      }
+    },
+  )
+  var require_pony_cause = /* @__PURE__ */ __commonJSMin(
+    (exports$13, module$12) => {
+      const { ErrorWithCause } = require_error_with_cause()
+      const {
+        findCauseByReference,
+        getErrorCause,
+        messageWithCauses,
+        stackWithCauses,
+      } = require_helpers()
+      module$12.exports = {
+        ErrorWithCause,
+        findCauseByReference,
+        getErrorCause,
+        stackWithCauses,
+        messageWithCauses,
+      }
+    },
+  )
+  module.exports = require_pony_cause()
+})
+
+var require_message = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_sentinels = require_sentinels()
+  const require_errors_predicates = require_predicates$1()
+  let src_external_pony_cause_js = require_pony_cause$1()
+  /**
+   * @file Human-readable error-message extractor. `errorMessage` walks the
+   *   `cause` chain via pony-cause's `messageWithCauses` for Errors and falls
+   *   back to the shared `UNKNOWN_ERROR` sentinel for everything else.
+   *   `messageWithCauses` and `UNKNOWN_ERROR` are re-exported for callers that
+   *   need them directly.
+   */
+  /**
+   * Extract a human-readable message from any caught value.
+   *
+   * Walks the `cause` chain for Errors (via {@link messageWithCauses}); coerces
+   * primitives and objects to string; returns {@link UNKNOWN_ERROR} for `null`,
+   * `undefined`, empty strings, `[object Object]`, or Errors with no message.
+   *
+   * @example
+   *   try {
+   *     await readConfig(path)
+   *   } catch (e) {
+   *     throw new ErrorCtor(`Failed to read ${path}: ${errorMessage(e)}`, {
+   *       cause: e,
+   *     })
+   *   }
+   */
+  function errorMessage(value) {
+    if (require_errors_predicates.isError(value))
+      return (
+        (0, src_external_pony_cause_js.messageWithCauses)(value) ||
+        'Unknown error'
+      )
+    if (value === null || value === void 0)
+      return require_constants_sentinels.UNKNOWN_ERROR
+    const s = String(value)
+    if (s === '' || s === '[object Object]')
+      return require_constants_sentinels.UNKNOWN_ERROR
+    return s
+  }
+  exports.UNKNOWN_ERROR = require_constants_sentinels.UNKNOWN_ERROR
+  exports.errorMessage = errorMessage
+  exports.messageWithCauses = src_external_pony_cause_js.messageWithCauses
+})
+
+var require_presets = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * Socket Security — The signature theme. Refined violet with subtle shimmer,
+   * designed for focus and elegance.
+   */
+  const SOCKET_THEME = {
+    colors: {
+      primary: [140, 82, 255],
+      success: 'greenBright',
+      error: 'redBright',
+      warning: 'yellowBright',
+      info: 'blueBright',
+      step: 'cyanBright',
+      text: 'white',
+      textDim: 'gray',
+      link: 'cyanBright',
+      prompt: 'primary',
+    },
+    displayName: 'Socket Security',
+    effects: {
+      spinner: {
+        color: 'primary',
+        style: 'socket',
+      },
+      shimmer: {
+        enabled: true,
+        color: 'inherit',
+        direction: 'ltr',
+        speed: 0.33,
+      },
+    },
+    meta: {
+      description: 'Signature theme with refined violet and subtle shimmer',
+      version: '1.0.0',
+    },
+    name: 'socket',
+  }
+  /**
+   * Sunset — Vibrant twilight gradient. Warm sunset palette with orange and
+   * purple/pink tones.
+   */
+  const SUNSET_THEME = {
+    colors: {
+      primary: [255, 140, 100],
+      secondary: [200, 100, 180],
+      success: 'greenBright',
+      error: 'redBright',
+      warning: 'yellowBright',
+      info: 'magentaBright',
+      step: 'magentaBright',
+      text: 'white',
+      textDim: 'gray',
+      link: 'primary',
+      prompt: 'primary',
+    },
+    displayName: 'Sunset',
+    effects: {
+      spinner: {
+        color: 'primary',
+        style: 'dots',
+      },
+      shimmer: {
+        enabled: true,
+        color: [
+          [200, 100, 180],
+          [255, 140, 100],
+        ],
+        direction: 'ltr',
+        speed: 0.4,
+      },
+    },
+    meta: {
+      description: 'Warm sunset theme with purple-to-orange gradient',
+      version: '2.0.0',
+    },
+    name: 'sunset',
+  }
+  /**
+   * Terracotta — Solid warmth. Rich terracotta and ember tones for grounded
+   * confidence.
+   */
+  const TERRACOTTA_THEME = {
+    colors: {
+      primary: [255, 100, 50],
+      secondary: [255, 150, 100],
+      success: 'greenBright',
+      error: 'redBright',
+      warning: 'yellowBright',
+      info: 'blueBright',
+      step: 'cyanBright',
+      text: 'white',
+      textDim: 'gray',
+      link: 'secondary',
+      prompt: 'primary',
+    },
+    displayName: 'Terracotta',
+    effects: {
+      spinner: {
+        color: 'primary',
+        style: 'socket',
+      },
+      shimmer: {
+        enabled: true,
+        color: 'inherit',
+        direction: 'ltr',
+        speed: 0.5,
+      },
+    },
+    meta: {
+      description: 'Solid theme with rich terracotta and ember warmth',
+      version: '1.0.0',
+    },
+    name: 'terracotta',
+  }
+  /**
+   * Lush — Steel elegance. Python-inspired steel blue with golden accents.
+   */
+  const LUSH_THEME = {
+    colors: {
+      primary: [70, 130, 180],
+      secondary: [255, 215, 0],
+      success: 'greenBright',
+      error: 'redBright',
+      warning: 'yellowBright',
+      info: 'blueBright',
+      step: 'cyanBright',
+      text: 'white',
+      textDim: 'gray',
+      link: 'cyanBright',
+      prompt: 'primary',
+    },
+    displayName: 'Lush',
+    effects: {
+      spinner: {
+        color: 'primary',
+        style: 'dots',
+      },
+    },
+    meta: {
+      description: 'Elegant theme with steel blue and golden harmony',
+      version: '1.0.0',
+    },
+    name: 'lush',
+  }
+  /**
+   * Ultra — Premium intensity. Prismatic shimmer for deep analysis, where
+   * complexity meets elegance.
+   */
+  const ULTRA_THEME = {
+    colors: {
+      primary: [140, 82, 255],
+      success: 'greenBright',
+      error: 'redBright',
+      warning: 'yellowBright',
+      info: 'cyanBright',
+      step: 'magentaBright',
+      text: 'whiteBright',
+      textDim: 'gray',
+      link: 'cyanBright',
+      prompt: 'primary',
+    },
+    displayName: 'Ultra',
+    effects: {
+      spinner: {
+        color: 'inherit',
+        style: 'socket',
+      },
+      shimmer: {
+        enabled: true,
+        color: 'rainbow',
+        direction: 'bi',
+        speed: 0.5,
+      },
+    },
+    meta: {
+      description: 'Premium theme with prismatic shimmer for deep analysis',
+      version: '1.0.0',
+    },
+    name: 'ultra',
+  }
+  /**
+   * Theme registry — Curated palette collection.
+   */
+  const THEMES = {
+    __proto__: null,
+    lush: LUSH_THEME,
+    socket: SOCKET_THEME,
+    sunset: SUNSET_THEME,
+    terracotta: TERRACOTTA_THEME,
+    ultra: ULTRA_THEME,
+  }
+  exports.LUSH_THEME = LUSH_THEME
+  exports.SOCKET_THEME = SOCKET_THEME
+  exports.SUNSET_THEME = SUNSET_THEME
+  exports.TERRACOTTA_THEME = TERRACOTTA_THEME
+  exports.THEMES = THEMES
+  exports.ULTRA_THEME = ULTRA_THEME
+})
+
+var require_context = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_async_hooks = require_async_hooks()
+  const require_primordials_map_set = require_map_set()
+  const require_term_themes_presets = require_presets()
+  /**
+   * Emit theme change event to listeners.
+   *
+   * @private
+   */
+  function emitThemeChange(theme) {
+    for (const listener of listeners) listener(theme)
+  }
+  /**
+   * Lazily load the async_hooks module. Aliases the canonical
+   * `node/async-hooks` accessor, the single owner of the bundler-safe require;
+   * kept as an export so this module's surface is unchanged.
+   *
+   * @private
+   */
+  const getAsyncHooks = require_node_async_hooks.getNodeAsyncHooks
+  let themeStorage
+  /**
+   * Fallback theme for global context.
+   */
+  let fallbackTheme = require_term_themes_presets.SOCKET_THEME
+  /**
+   * Registered theme change listeners.
+   */
+  const listeners = new require_primordials_map_set.SetCtor()
+  /**
+   * Get the active theme from context.
+   *
+   * @example
+   *   ;```ts
+   *   const theme = getTheme()
+   *   console.log(theme.displayName)
+   *   ```
+   *
+   * @returns Current theme
+   */
+  function getTheme() {
+    return getThemeStorage().getStore() ?? fallbackTheme
+  }
+  /**
+   * Get the process-scoped AsyncLocalStorage used for theme context isolation.
+   *
+   * Constructed LAZILY (memoized) rather than at module-eval: an
+   * AsyncLocalStorage holds a live native handle, and constructing it at import
+   * time pins that handle into every module transitively importing this leaf —
+   * aborting V8 --build-snapshot serialization. Deferring to first use keeps
+   * the single-store semantics while leaving module import snapshot-safe.
+   *
+   * @private
+   */
+  function getThemeStorage() {
+    if (themeStorage === void 0) {
+      const { AsyncLocalStorage } = getAsyncHooks()
+      themeStorage = new AsyncLocalStorage()
+    }
+    return themeStorage
+  }
+  /**
+   * Subscribe to theme change events.
+   *
+   * @example
+   *   ;```ts
+   *   const unsubscribe = onThemeChange(theme => {
+   *     console.log('Theme:', theme.displayName)
+   *   })
+   *
+   *   // Cleanup
+   *   unsubscribe()
+   *   ```
+   *
+   * @param listener - Change handler.
+   *
+   * @returns Unsubscribe function
+   */
+  function onThemeChange(listener) {
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
+    }
+  }
+  /**
+   * Set the global fallback theme.
+   *
+   * @example
+   *   ;```ts
+   *   setTheme('socket-firewall')
+   *   ```
+   *
+   * @param theme - Theme name or object.
+   */
+  function setTheme(theme) {
+    fallbackTheme =
+      typeof theme === 'string'
+        ? (require_term_themes_presets.THEMES[theme] ?? fallbackTheme)
+        : theme
+    emitThemeChange(fallbackTheme)
+  }
+  /**
+   * Execute async operation with scoped theme. Theme automatically restored on
+   * completion.
+   *
+   * @example
+   *   ;```ts
+   *   await withTheme('ultra', async () => {
+   *     // Operations use Ultra theme
+   *   })
+   *   ```
+   *
+   * @template T - Return type.
+   *
+   * @param theme - Scoped theme.
+   * @param fn - Async operation.
+   *
+   * @returns Operation result
+   */
+  async function withTheme(theme, fn) {
+    const resolvedTheme =
+      typeof theme === 'string'
+        ? (require_term_themes_presets.THEMES[theme] ?? fallbackTheme)
+        : theme
+    return await getThemeStorage().run(resolvedTheme, async () => {
+      emitThemeChange(resolvedTheme)
+      return await fn()
+    })
+  }
+  /**
+   * Execute sync operation with scoped theme. Theme automatically restored on
+   * completion.
+   *
+   * @example
+   *   ;```ts
+   *   const result = withThemeSync('coana', () => {
+   *     return processData()
+   *   })
+   *   ```
+   *
+   * @template T - Return type.
+   *
+   * @param theme - Scoped theme.
+   * @param fn - Sync operation.
+   *
+   * @returns Operation result
+   */
+  function withThemeSync(theme, fn) {
+    const resolvedTheme =
+      typeof theme === 'string'
+        ? (require_term_themes_presets.THEMES[theme] ?? fallbackTheme)
+        : theme
+    return getThemeStorage().run(resolvedTheme, () => {
+      emitThemeChange(resolvedTheme)
+      return fn()
+    })
+  }
+  exports.emitThemeChange = emitThemeChange
+  exports.getAsyncHooks = getAsyncHooks
+  exports.getTheme = getTheme
+  exports.getThemeStorage = getThemeStorage
+  exports.onThemeChange = onThemeChange
+  exports.setTheme = setTheme
+  exports.withTheme = withTheme
+  exports.withThemeSync = withThemeSync
+})
+
+var require_shared = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_map_set = require_map_set()
+  /**
+   * @file Private state shared between the `logger/node` class (which owns the
+   *   public `Logger` surface) and `logger/console-init` (which mutates
+   *   `Logger.prototype` to mirror `globalConsole`). The `_` prefix keeps this
+   *   module out of the generated package.json `exports` map (the `dist/**\/_*`
+   *   ignore pattern in `scripts/fleet/make-package-exports.mts` filters it
+   *   out), so it is not part of the public surface — it exists only to give
+   *   the two leaves above a common owner for the WeakMap-backed lazy-init
+   *   state. Why two WeakMaps instead of `#privateField` slots:
+   *
+   *   - Logger adds dynamic console methods to its prototype at first use (see
+   *     `console-init.ts` `ensurePrototypeInitialized`). Those dynamic methods
+   *     are constructed via the `{ [key]: function () }` shorthand and CANNOT
+   *     access TC39 private fields on `this`.
+   *   - WeakMaps work for both the static methods on the `Logger` class body AND
+   *     the dynamically-attached prototype methods. WeakMap entries are GC'd
+   *     alongside the `Logger` instance.
+   *   - `privateConstructorArgs` is deleted after first `Console` build so we
+   *     don't pin the original args for the lifetime of the logger.
+   */
+  /**
+   * The global `console` reference captured at module load. Pinned to a local
+   * so dynamic `console` overrides at runtime can't affect the logger's source
+   * console (e.g., test rewiring of `globalThis.console`).
+   */
+  const globalConsole = console
+  /**
+   * Property-descriptor template used when registering dynamic console methods
+   * on `Logger.prototype`. Writable + configurable so tests can override;
+   * non-enumerable so the methods don't leak into `for...in` iteration on a
+   * logger instance.
+   */
+  const consolePropAttributes = {
+    __proto__: null,
+    configurable: true,
+    enumerable: false,
+    writable: true,
+  }
+  /**
+   * Cap on the indentation prefix length so a runaway `indent(n)` call with a
+   * huge `n` can't allocate a multi-megabyte string.
+   */
+  const maxIndentation = 1e3
+  const boundConsoleMethodNames = [
+    '_stderrErrorHandler',
+    '_stdoutErrorHandler',
+    'assert',
+    'clear',
+    'count',
+    'countReset',
+    'createTask',
+    'debug',
+    'dir',
+    'dirxml',
+    'error',
+    'info',
+    'log',
+    'table',
+    'time',
+    'timeEnd',
+    'timeLog',
+    'trace',
+    'warn',
+  ]
+  let boundConsoleEntries
+  /**
+   * Pre-bound copies of the console methods that need their original `this` to
+   * function (e.g., `console.error.bind(globalConsole)`). Returns `[name,
+   * boundFn]` pairs so `console-init.ts` can apply them onto the per-instance
+   * Console without re-binding on every call.
+   *
+   * Built LAZILY (memoized) rather than at module-eval:
+   * `fn.bind(globalConsole)` of a native console method produces a bound
+   * function wrapping a native C++ function pointer, which serializes as an
+   * unresolvable external reference and aborts V8 --build-snapshot. Deferring
+   * construction to first Console build keeps the bind-once/reuse win while
+   * leaving module import snapshot-safe.
+   */
+  function getBoundConsoleEntries() {
+    if (boundConsoleEntries === void 0)
+      boundConsoleEntries = boundConsoleMethodNames
+        .filter(n => typeof globalConsole[n] === 'function')
+        .map(n => [n, globalConsole[n].bind(globalConsole)])
+    return boundConsoleEntries
+  }
+  /**
+   * WeakMap storing the Console instance for each Logger.
+   *
+   * Console creation is lazy - deferred until first logging method call. This
+   * allows logger to be imported during early Node.js bootstrap before stdout
+   * is ready, avoiding ERR_CONSOLE_WRITABLE_STREAM errors.
+   */
+  const privateConsole = new require_primordials_map_set.WeakMapCtor()
+  /**
+   * WeakMap storing constructor arguments for lazy Console initialization.
+   *
+   * WeakMap is required instead of a private field (#constructorArgs) because: 1.
+   * Private fields can't be accessed from dynamically created functions 2.
+   * Logger adds console methods dynamically to its prototype 3. These dynamic
+   * methods need constructor args for lazy initialization 4. WeakMap allows
+   * both regular methods and dynamic functions to access args.
+   *
+   * The args are deleted from the WeakMap after Console is created (memory
+   * cleanup).
+   */
+  const privateConstructorArgs = new require_primordials_map_set.WeakMapCtor()
+  exports.consolePropAttributes = consolePropAttributes
+  exports.getBoundConsoleEntries = getBoundConsoleEntries
+  exports.globalConsole = globalConsole
+  exports.maxIndentation = maxIndentation
+  exports.privateConsole = privateConsole
+  exports.privateConstructorArgs = privateConstructorArgs
+})
+
+var require_runtime$2 = /* @__PURE__ */ __commonJSMin(exports => {
+  var __create = Object.create
+  var __defProp = Object.defineProperty
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor
+  var __getOwnPropNames = Object.getOwnPropertyNames
+  var __getProtoOf = Object.getPrototypeOf
+  var __hasOwnProp = Object.prototype.hasOwnProperty
+  var __exportAll = (all, no_symbols) => {
+    let target = {}
+    for (var name in all)
+      __defProp(target, name, {
+        get: all[name],
+        enumerable: true,
+      })
+    if (!no_symbols) __defProp(target, Symbol.toStringTag, { value: 'Module' })
+    return target
+  }
+  var __copyProps = (to, from, except, desc) => {
+    if ((from && typeof from === 'object') || typeof from === 'function')
+      for (
+        var keys = __getOwnPropNames(from), i = 0, n = keys.length, key;
+        i < n;
+        i++
+      ) {
+        key = keys[i]
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, {
+            get: (k => from[k]).bind(null, key),
+            enumerable:
+              !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+          })
+      }
+    return to
+  }
+  var __toESM = (mod, isNodeMode, target) => (
+    (target = mod != null ? __create(__getProtoOf(mod)) : {}),
+    __copyProps(
+      isNodeMode ||
+        !mod ||
+        !mod.__esModule ||
+        !__hasOwnProp.call(mod, 'default')
+        ? __defProp(target, 'default', {
+            value: mod,
+            enumerable: true,
+          })
+        : target,
+      mod,
+    )
+  )
+  exports.__exportAll = __exportAll
+  exports.__toESM = __toESM
+})
+
+/**
+ * Bundled from external-pack
+ * This is a zero-dependency bundle created by rolldown.
+ */
+var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  var __create = Object.create
+  var __defProp = Object.defineProperty
+  var __name = (target, value) =>
+    __defProp(target, 'name', {
+      value,
+      configurable: true,
+    })
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor
+  var __getOwnPropNames = Object.getOwnPropertyNames
+  var __getProtoOf = Object.getPrototypeOf
+  var __hasOwnProp = Object.prototype.hasOwnProperty
+  var __esmMin = (fn, res, err) => () => {
+    if (err) throw err[0]
+    try {
+      return (fn && (res = fn((fn = 0))), res)
+    } catch (e) {
+      throw ((err = [e]), e)
+    }
+  }
+  var __commonJSMin = (cb, mod) => () => (
+    mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+    mod.exports
+  )
+  var __exportAll = (all, no_symbols) => {
+    let target = {}
+    for (var name in all)
+      __defProp(target, name, {
+        get: all[name],
+        enumerable: true,
+      })
+    if (!no_symbols) __defProp(target, Symbol.toStringTag, { value: 'Module' })
+    return target
+  }
+  var __copyProps = (to, from, except, desc) => {
+    if ((from && typeof from === 'object') || typeof from === 'function')
+      for (
+        var keys = __getOwnPropNames(from), i = 0, n = keys.length, key;
+        i < n;
+        i++
+      ) {
+        key = keys[i]
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, {
+            get: (k => from[k]).bind(null, key),
+            enumerable:
+              !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+          })
+      }
+    return to
+  }
+  var __toESM = (mod, isNodeMode, target) => (
+    (target = mod != null ? __create(__getProtoOf(mod)) : {}),
+    __copyProps(
+      isNodeMode ||
+        !mod ||
+        !mod.__esModule ||
+        !__hasOwnProp.call(mod, 'default')
+        ? __defProp(target, 'default', {
+            value: mod,
+            enumerable: true,
+          })
+        : target,
+      mod,
+    )
+  )
+  var __toCommonJS = mod =>
+    __hasOwnProp.call(mod, 'module.exports')
+      ? mod['module.exports']
+      : __copyProps(__defProp({}, '__esModule', { value: true }), mod)
+  let node_process = __require('process')
+  node_process = __toESM(node_process, 1)
+  let node_os = __require('os')
+  node_os = __toESM(node_os, 1)
+  let node_tty = __require('tty')
+  node_tty = __toESM(node_tty, 1)
+  let node_async_hooks = __require('async_hooks')
+  let node_util = __require('util')
+  let node_readline = __require('readline')
+  node_readline = __toESM(node_readline, 1)
+  let node_path = __require('path')
+  const { ArrayFrom: _p_ArrayFrom, ArrayIsArray: _p_ArrayIsArray } =
+    require_array$2()
+  const { ErrorCtor: _p_ErrorCtor, TypeErrorCtor: _p_TypeErrorCtor } =
+    require_error$1()
+  const { SetCtor: _p_SetCtor } = require_map_set()
+  const {
+    MathAbs: _p_MathAbs,
+    MathFloor: _p_MathFloor,
+    MathMax: _p_MathMax,
+    MathMin: _p_MathMin,
+    MathRandom: _p_MathRandom,
+  } = require_math()
+  const {
+    NumberIsNaN: _p_NumberIsNaN,
+    NumberParseFloat: _p_NumberParseFloat,
+    NumberParseInt: _p_NumberParseInt,
+  } = require_number$1()
+  const {
+    ObjectAssign: _p_ObjectAssign,
+    ObjectDefineProperty: _p_ObjectDefineProperty,
+    ObjectEntries: _p_ObjectEntries,
+    ObjectGetPrototypeOf: _p_ObjectGetPrototypeOf,
+    ObjectIs: _p_ObjectIs,
+    ObjectKeys: _p_ObjectKeys,
+  } = require_object()
+  const { processCwd: _p_processCwd } = require_process$1()
+  const { PromiseCtor: _p_PromiseCtor } = require_promise()
+  const { RegExpCtor: _p_RegExpCtor } = require_regexp()
+  const {
+    StringPrototypeCodePointAt: _p_StringPrototypeCodePointAt,
+    StringPrototypeReplaceAll: _p_StringPrototypeReplaceAll,
+    StringPrototypeStartsWith: _p_StringPrototypeStartsWith,
+    StringPrototypeToLowerCase: _p_StringPrototypeToLowerCase,
+    StringPrototypeTrim: _p_StringPrototypeTrim,
+    StringPrototypeTrimEnd: _p_StringPrototypeTrimEnd,
+    StringPrototypeTrimStart: _p_StringPrototypeTrimStart,
+  } = require_string$1()
+  node_path = __toESM(node_path, 1)
+  var require_signals = /* @__PURE__ */ __commonJSMin(exports$2 => {
+    _p_ObjectDefineProperty(exports$2, '__esModule', { value: true })
+    exports$2.signals = void 0
+    /**
+     * This is not the set of all possible signals.
+     *
+     * It IS, however, the set of all signals that trigger
+     * an exit on either Linux or BSD systems.  Linux is a
+     * superset of the signal names supported on BSD, and
+     * the unknown signals just fail to register, so we can
+     * catch that easily enough.
+     *
+     * Windows signals are a different set, since there are
+     * signals that terminate Windows processes, but don't
+     * terminate (or don't even exist) on Posix systems.
+     *
+     * Don't bother with SIGKILL.  It's uncatchable, which
+     * means that we can't fire any callbacks anyway.
+     *
+     * If a user does happen to register a handler on a non-
+     * fatal signal like SIGWINCH or something, and then
+     * exit, it'll end up firing `process.emit('exit')`, so
+     * the handler will be fired anyway.
+     *
+     * SIGBUS, SIGFPE, SIGSEGV and SIGILL, when not raised
+     * artificially, inherently leave the process in a
+     * state from which it is not safe to try and enter JS
+     * listeners.
+     */
+    exports$2.signals = []
+    exports$2.signals.push('SIGHUP', 'SIGINT', 'SIGTERM')
+    if (process.platform !== 'win32')
+      exports$2.signals.push(
+        'SIGALRM',
+        'SIGABRT',
+        'SIGVTALRM',
+        'SIGXCPU',
+        'SIGXFSZ',
+        'SIGUSR2',
+        'SIGTRAP',
+        'SIGSYS',
+        'SIGQUIT',
+        'SIGIOT',
+      )
+    if (process.platform === 'linux')
+      exports$2.signals.push('SIGIO', 'SIGPOLL', 'SIGPWR', 'SIGSTKFLT')
+  })
+  var require_cjs = /* @__PURE__ */ __commonJSMin(exports$3 => {
+    var _a
+    _p_ObjectDefineProperty(exports$3, '__esModule', { value: true })
+    exports$3.unload =
+      exports$3.load =
+      exports$3.onExit =
+      exports$3.signals =
+        void 0
+    const signals_js_1 = require_signals()
+    _p_ObjectDefineProperty(exports$3, 'signals', {
+      enumerable: true,
+      get: function () {
+        return signals_js_1.signals
+      },
+    })
+    const processOk = process =>
+      !!process &&
+      typeof process === 'object' &&
+      typeof process.removeListener === 'function' &&
+      typeof process.emit === 'function' &&
+      typeof process.reallyExit === 'function' &&
+      typeof process.listeners === 'function' &&
+      typeof process.kill === 'function' &&
+      typeof process.pid === 'number' &&
+      typeof process.on === 'function'
+    const kExitEmitter = Symbol.for('signal-exit emitter')
+    const global = globalThis
+    const ObjectDefineProperty = Object.defineProperty.bind(Object)
+    var Emitter = class {
+      emitted = {
+        afterExit: false,
+        exit: false,
+      }
+      listeners = {
+        afterExit: [],
+        exit: [],
+      }
+      count = 0
+      id = _p_MathRandom()
+      constructor() {
+        if (global[kExitEmitter]) return global[kExitEmitter]
+        ObjectDefineProperty(global, kExitEmitter, {
+          value: this,
+          writable: false,
+          enumerable: false,
+          configurable: false,
+        })
+      }
+      on(ev, fn) {
+        this.listeners[ev].push(fn)
+      }
+      removeListener(ev, fn) {
+        const list = this.listeners[ev]
+        const i = list.indexOf(fn)
+        /* c8 ignore start */
+        if (i === -1) return
+        /* c8 ignore stop */
+        if (i === 0 && list.length === 1) list.length = 0
+        else list.splice(i, 1)
+      }
+      emit(ev, code, signal) {
+        if (this.emitted[ev]) return false
+        this.emitted[ev] = true
+        let ret = false
+        for (const fn of this.listeners[ev])
+          ret = fn(code, signal) === true || ret
+        if (ev === 'exit') ret = this.emit('afterExit', code, signal) || ret
+        return ret
+      }
+    }
+    var SignalExitBase = class {}
+    const signalExitWrap = handler => {
+      return {
+        onExit(cb, opts) {
+          return handler.onExit(cb, opts)
+        },
+        load() {
+          return handler.load()
+        },
+        unload() {
+          return handler.unload()
+        },
+      }
+    }
+    var SignalExitFallback = class extends SignalExitBase {
+      onExit() {
+        return () => {}
+      }
+      load() {}
+      unload() {}
+    }
+    var SignalExit = class extends SignalExitBase {
+      /* c8 ignore start */
+      #hupSig = process.platform === 'win32' ? 'SIGINT' : 'SIGHUP'
+      /* c8 ignore stop */
+      #emitter = new Emitter()
+      #process
+      #originalProcessEmit
+      #originalProcessReallyExit
+      #sigListeners = {}
+      #loaded = false
+      constructor(process) {
+        super()
+        this.#process = process
+        this.#sigListeners = {}
+        for (const sig of signals_js_1.signals)
+          this.#sigListeners[sig] = () => {
+            const listeners = this.#process.listeners(sig)
+            let { count } = this.#emitter
+            /* c8 ignore start */
+            const p = process
+            if (
+              typeof p.__signal_exit_emitter__ === 'object' &&
+              typeof p.__signal_exit_emitter__.count === 'number'
+            )
+              count += p.__signal_exit_emitter__.count
+            /* c8 ignore stop */
+            if (listeners.length === count) {
+              this.unload()
+              const ret = this.#emitter.emit('exit', null, sig)
+              /* c8 ignore start */
+              const s = sig === 'SIGHUP' ? this.#hupSig : sig
+              if (!ret) process.kill(process.pid, s)
+            }
+          }
+        this.#originalProcessReallyExit = process.reallyExit
+        this.#originalProcessEmit = process.emit
+      }
+      onExit(cb, opts) {
+        /* c8 ignore start */
+        if (!processOk(this.#process)) return () => {}
+        /* c8 ignore stop */
+        if (this.#loaded === false) this.load()
+        const ev = opts?.alwaysLast ? 'afterExit' : 'exit'
+        this.#emitter.on(ev, cb)
+        return () => {
+          this.#emitter.removeListener(ev, cb)
+          if (
+            this.#emitter.listeners['exit'].length === 0 &&
+            this.#emitter.listeners['afterExit'].length === 0
+          )
+            this.unload()
+        }
+      }
+      load() {
+        if (this.#loaded) return
+        this.#loaded = true
+        this.#emitter.count += 1
+        for (const sig of signals_js_1.signals)
+          try {
+            const fn = this.#sigListeners[sig]
+            if (fn) this.#process.on(sig, fn)
+          } catch (_) {}
+        this.#process.emit = (ev, ...a) => {
+          return this.#processEmit(ev, ...a)
+        }
+        this.#process.reallyExit = code => {
+          return this.#processReallyExit(code)
+        }
+      }
+      unload() {
+        if (!this.#loaded) return
+        this.#loaded = false
+        signals_js_1.signals.forEach(sig => {
+          const listener = this.#sigListeners[sig]
+          /* c8 ignore start */
+          if (!listener)
+            throw new _p_ErrorCtor('Listener not defined for signal: ' + sig)
+          /* c8 ignore stop */
+          try {
+            this.#process.removeListener(sig, listener)
+          } catch (_) {}
+          /* c8 ignore stop */
+        })
+        this.#process.emit = this.#originalProcessEmit
+        this.#process.reallyExit = this.#originalProcessReallyExit
+        this.#emitter.count -= 1
+      }
+      #processReallyExit(code) {
+        /* c8 ignore start */
+        if (!processOk(this.#process)) return 0
+        this.#process.exitCode = code || 0
+        /* c8 ignore stop */
+        this.#emitter.emit('exit', this.#process.exitCode, null)
+        return this.#originalProcessReallyExit.call(
+          this.#process,
+          this.#process.exitCode,
+        )
+      }
+      #processEmit(ev, ...args) {
+        const og = this.#originalProcessEmit
+        if (ev === 'exit' && processOk(this.#process)) {
+          if (typeof args[0] === 'number') this.#process.exitCode = args[0]
+          /* c8 ignore start */
+          const ret = og.call(this.#process, ev, ...args)
+          /* c8 ignore start */
+          this.#emitter.emit('exit', this.#process.exitCode, null)
+          /* c8 ignore stop */
+          return ret
+        } else return og.call(this.#process, ev, ...args)
+      }
+    }
+    const process = globalThis.process
+    ;((_a = signalExitWrap(
+      processOk(process) ? new SignalExit(process) : new SignalExitFallback(),
+    )),
+      (exports$3.onExit = _a.onExit),
+      (exports$3.load = _a.load),
+      (exports$3.unload = _a.unload))
+  })
+  var supports_color_exports = /* @__PURE__ */ __exportAll({
+    createSupportsColor: () => createSupportsColor,
+    default: () => supportsColor$1,
+  })
+  function hasFlag$1(
+    flag,
+    argv = globalThis.Deno ? globalThis.Deno.args : node_process.default.argv,
+  ) {
+    const prefix = _p_StringPrototypeStartsWith(flag, '-')
+      ? ''
+      : flag.length === 1
+        ? '-'
+        : '--'
+    const position = argv.indexOf(prefix + flag)
+    const terminatorPosition = argv.indexOf('--')
+    return (
+      position !== -1 &&
+      (terminatorPosition === -1 || position < terminatorPosition)
+    )
+  }
+  function envForceColor() {
+    if (!('FORCE_COLOR' in env)) return
+    if (env.FORCE_COLOR === 'true') return 1
+    if (env.FORCE_COLOR === 'false') return 0
+    if (env.FORCE_COLOR.length === 0) return 1
+    const level = _p_MathMin(_p_NumberParseInt(env.FORCE_COLOR, 10), 3)
+    if (![0, 1, 2, 3].includes(level)) return
+    return level
+  }
+  function translateLevel(level) {
+    if (level === 0) return false
+    return {
+      level,
+      hasBasic: true,
+      has256: level >= 2,
+      has16m: level >= 3,
+    }
+  }
+  function _supportsColor(haveStream, { streamIsTTY, sniffFlags = true } = {}) {
+    const noFlagForceColor = envForceColor()
+    if (noFlagForceColor !== void 0) flagForceColor = noFlagForceColor
+    const forceColor = sniffFlags ? flagForceColor : noFlagForceColor
+    if (forceColor === 0) return 0
+    if (sniffFlags) {
+      if (
+        hasFlag$1('color=16m') ||
+        hasFlag$1('color=full') ||
+        hasFlag$1('color=truecolor')
+      )
+        return 3
+      if (hasFlag$1('color=256')) return 2
+    }
+    if ('TF_BUILD' in env && 'AGENT_NAME' in env) return 1
+    if (haveStream && !streamIsTTY && forceColor === void 0) return 0
+    const min = forceColor || 0
+    if (env.TERM === 'dumb') return min
+    if (node_process.default.platform === 'win32') {
+      const osRelease = node_os.default.release().split('.')
+      if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586)
+        return Number(osRelease[2]) >= 14931 ? 3 : 2
+      return 1
+    }
+    if ('CI' in env) {
+      if (
+        ['GITHUB_ACTIONS', 'GITEA_ACTIONS', 'CIRCLECI'].some(key => key in env)
+      )
+        return 3
+      if (
+        ['TRAVIS', 'APPVEYOR', 'GITLAB_CI', 'BUILDKITE', 'DRONE'].some(
+          sign => sign in env,
+        ) ||
+        env.CI_NAME === 'codeship'
+      )
+        return 1
+      return min
+    }
+    if ('TEAMCITY_VERSION' in env)
+      return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0
+    if (env.COLORTERM === 'truecolor') return 3
+    if (env.TERM === 'xterm-kitty') return 3
+    if (env.TERM === 'xterm-ghostty') return 3
+    if (env.TERM === 'wezterm') return 3
+    if ('TERM_PROGRAM' in env) {
+      const version = _p_NumberParseInt(
+        (env.TERM_PROGRAM_VERSION || '').split('.')[0],
+        10,
+      )
+      switch (env.TERM_PROGRAM) {
+        case 'iTerm.app':
+          return version >= 3 ? 3 : 2
+        case 'Apple_Terminal':
+          return 2
+      }
+    }
+    if (/-256(color)?$/i.test(env.TERM)) return 2
+    if (
+      /^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(
+        env.TERM,
+      )
+    )
+      return 1
+    if ('COLORTERM' in env) return 1
+    return min
+  }
+  function createSupportsColor(stream, options = {}) {
+    return translateLevel(
+      _supportsColor(stream, {
+        streamIsTTY: stream && stream.isTTY,
+        ...options,
+      }),
+    )
+  }
+  var env
+  var flagForceColor
+  var supportsColor$1
+  var init_supports_color = __esmMin(() => {
+    __name(hasFlag$1, 'hasFlag')
+    ;({ env } = node_process.default)
+    if (
+      hasFlag$1('no-color') ||
+      hasFlag$1('no-colors') ||
+      hasFlag$1('color=false') ||
+      hasFlag$1('color=never')
+    )
+      flagForceColor = 0
+    else if (
+      hasFlag$1('color') ||
+      hasFlag$1('colors') ||
+      hasFlag$1('color=true') ||
+      hasFlag$1('color=always')
+    )
+      flagForceColor = 1
+    supportsColor$1 = {
+      stdout: createSupportsColor({ isTTY: node_tty.default.isatty(1) }),
+      stderr: createSupportsColor({ isTTY: node_tty.default.isatty(2) }),
+    }
+  })
+  var require__stub_has_flag = /* @__PURE__ */ __commonJSMin(
+    (exports$4, module$3) => {
+      module$3.exports = function hasFlag(flag, argv = process.argv) {
+        const prefix = _p_StringPrototypeStartsWith(flag, '-')
+          ? ''
+          : flag.length === 1
+            ? '-'
+            : '--'
+        const position = argv.indexOf(prefix + flag)
+        const terminatorPosition = argv.indexOf('--')
+        return (
+          position !== -1 &&
+          (terminatorPosition === -1 || position < terminatorPosition)
+        )
+      }
+    },
+  )
+  var require_ansi_escapes = /* @__PURE__ */ __commonJSMin(
+    (exports$5, module$4) => {
+      const ansiEscapes = module$4.exports
+      module$4.exports.default = ansiEscapes
+      const ESC = '\x1B['
+      const OSC = '\x1B]'
+      const BEL = '\x07'
+      const SEP = ';'
+      const isTerminalApp = process.env.TERM_PROGRAM === 'Apple_Terminal'
+      ansiEscapes.cursorTo = (x, y) => {
+        if (typeof x !== 'number')
+          throw new _p_TypeErrorCtor('The `x` argument is required')
+        if (typeof y !== 'number') return ESC + (x + 1) + 'G'
+        return ESC + (y + 1) + ';' + (x + 1) + 'H'
+      }
+      ansiEscapes.cursorMove = (x, y) => {
+        if (typeof x !== 'number')
+          throw new _p_TypeErrorCtor('The `x` argument is required')
+        let ret = ''
+        if (x < 0) ret += ESC + -x + 'D'
+        else if (x > 0) ret += ESC + x + 'C'
+        if (y < 0) ret += ESC + -y + 'A'
+        else if (y > 0) ret += ESC + y + 'B'
+        return ret
+      }
+      ansiEscapes.cursorUp = (count = 1) => ESC + count + 'A'
+      ansiEscapes.cursorDown = (count = 1) => ESC + count + 'B'
+      ansiEscapes.cursorForward = (count = 1) => ESC + count + 'C'
+      ansiEscapes.cursorBackward = (count = 1) => ESC + count + 'D'
+      ansiEscapes.cursorLeft = '\x1B[G'
+      ansiEscapes.cursorSavePosition = isTerminalApp ? '\x1B7' : '\x1B[s'
+      ansiEscapes.cursorRestorePosition = isTerminalApp ? '\x1B8' : '\x1B[u'
+      ansiEscapes.cursorGetPosition = '\x1B[6n'
+      ansiEscapes.cursorNextLine = '\x1B[E'
+      ansiEscapes.cursorPrevLine = '\x1B[F'
+      ansiEscapes.cursorHide = '\x1B[?25l'
+      ansiEscapes.cursorShow = '\x1B[?25h'
+      ansiEscapes.eraseLines = count => {
+        let clear = ''
+        for (let i = 0; i < count; i++)
+          clear +=
+            ansiEscapes.eraseLine +
+            (i < count - 1 ? ansiEscapes.cursorUp() : '')
+        if (count) clear += ansiEscapes.cursorLeft
+        return clear
+      }
+      ansiEscapes.eraseEndLine = '\x1B[K'
+      ansiEscapes.eraseStartLine = '\x1B[1K'
+      ansiEscapes.eraseLine = '\x1B[2K'
+      ansiEscapes.eraseDown = '\x1B[J'
+      ansiEscapes.eraseUp = '\x1B[1J'
+      ansiEscapes.eraseScreen = '\x1B[2J'
+      ansiEscapes.scrollUp = '\x1B[S'
+      ansiEscapes.scrollDown = '\x1B[T'
+      ansiEscapes.clearScreen = '\x1Bc'
+      ansiEscapes.clearTerminal =
+        process.platform === 'win32'
+          ? `${ansiEscapes.eraseScreen}${ESC}0f`
+          : `${ansiEscapes.eraseScreen}${ESC}3J${ESC}H`
+      ansiEscapes.beep = BEL
+      ansiEscapes.link = (text, url) => {
+        return [
+          OSC,
+          '8',
+          SEP,
+          SEP,
+          url,
+          BEL,
+          text,
+          OSC,
+          '8',
+          SEP,
+          SEP,
+          BEL,
+        ].join('')
+      }
+      ansiEscapes.image = (buffer, options = {}) => {
+        let ret = `${OSC}1337;File=inline=1`
+        if (options.width) ret += `;width=${options.width}`
+        if (options.height) ret += `;height=${options.height}`
+        if (options.preserveAspectRatio === false)
+          ret += ';preserveAspectRatio=0'
+        return ret + ':' + buffer.toString('base64') + BEL
+      }
+      ansiEscapes.iTerm = {
+        setCwd: (cwd = _p_processCwd()) => `${OSC}50;CurrentDir=${cwd}${BEL}`,
+        annotation: (message, options = {}) => {
+          let ret = `${OSC}1337;`
+          const hasX = typeof options.x !== 'undefined'
+          const hasY = typeof options.y !== 'undefined'
+          if (
+            (hasX || hasY) &&
+            !(hasX && hasY && typeof options.length !== 'undefined')
+          )
+            throw new _p_ErrorCtor(
+              '`x`, `y` and `length` must be defined when `x` or `y` is defined',
+            )
+          message = message.replace(/\|/g, '')
+          ret += options.isHidden ? 'AddHiddenAnnotation=' : 'AddAnnotation='
+          if (options.length > 0)
+            ret += (
+              hasX
+                ? [message, options.length, options.x, options.y]
+                : [options.length, message]
+            ).join('|')
+          else ret += message
+          return ret + BEL
+        },
+      }
+    },
+  )
+  var require__stub_supports_hyperlinks = /* @__PURE__ */ __commonJSMin(
+    (exports$6, module$5) => {
+      const os = __require('os')
+      const process$3 = __require('process')
+      function parseVersion(version) {
+        const parts = /(\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(version || '')
+        if (!parts)
+          return {
+            __proto__: null,
+            major: 0,
+            minor: 0,
+            patch: 0,
+          }
+        return {
+          __proto__: null,
+          major: Number(parts[1] || 0),
+          minor: Number(parts[2] || 0),
+          patch: Number(parts[3] || 0),
+        }
+      }
+      function supported(stream) {
+        const { env } = process$3
+        const forced = env['FORCE_HYPERLINK']
+        if (forced !== void 0 && forced.length > 0)
+          return !(
+            forced === '0' || _p_StringPrototypeToLowerCase(forced) === 'false'
+          )
+        if (env['NO_HYPERLINK'] !== void 0 || env['DOMTERM'])
+          return Boolean(env['DOMTERM'])
+        if (stream && stream.isTTY === false) return false
+        if (env['CI']) return false
+        if (env['WT_SESSION']) return true
+        return (
+          terminalProgramSupportsHyperlinks(env) ??
+          platformSupportsHyperlinks(env)
+        )
+      }
+      function terminalProgramSupportsHyperlinks(env) {
+        if (env['TERM_PROGRAM']) {
+          const version = parseVersion(env['TERM_PROGRAM_VERSION'])
+          switch (env['TERM_PROGRAM']) {
+            case 'ghostty':
+            case 'kitty':
+            case 'rio':
+            case 'WezTerm':
+              return true
+            case 'iTerm.app':
+              return (
+                version.major > 3 || (version.major === 3 && version.minor >= 1)
+              )
+            case 'vscode':
+              return (
+                version.major > 1 ||
+                (version.major === 1 && version.minor >= 72)
+              )
+          }
+        }
+      }
+      function platformSupportsHyperlinks(env) {
+        if (env['VTE_VERSION']) {
+          if (env['VTE_VERSION'] === '0.50.0') return false
+          const version = parseVersion(env['VTE_VERSION'])
+          return version.major > 0 || version.minor >= 50
+        }
+        if (os.platform() === 'win32') {
+          const release = parseVersion(os.release())
+          return release.major >= 10 && release.patch >= 14393
+        }
+        return false
+      }
+      module$5.exports = { supportsHyperlink: supported }
+      _p_ObjectDefineProperty(module$5.exports, 'stdout', {
+        configurable: true,
+        enumerable: true,
+        get: () => supported(process$3.stdout),
+      })
+      _p_ObjectDefineProperty(module$5.exports, 'stderr', {
+        configurable: true,
+        enumerable: true,
+        get: () => supported(process$3.stderr),
+      })
+      module$5.exports.default = module$5.exports
+    },
+  )
+  var require_terminal_link = /* @__PURE__ */ __commonJSMin(
+    (exports$7, module$6) => {
+      const ansiEscapes = require_ansi_escapes()
+      const supportsHyperlinks = require__stub_supports_hyperlinks()
+      const terminalLink = (
+        text,
+        url,
+        { target = 'stdout', ...options } = {},
+      ) => {
+        if (!supportsHyperlinks[target]) {
+          if (options.fallback === false) return text
+          return typeof options.fallback === 'function'
+            ? options.fallback(text, url)
+            : `${text} (\u200B${url}\u200B)`
+        }
+        return ansiEscapes.link(text, url)
+      }
+      module$6.exports = (text, url, options = {}) =>
+        terminalLink(text, url, options)
+      module$6.exports.stderr = (text, url, options = {}) =>
+        terminalLink(text, url, {
+          target: 'stderr',
+          ...options,
+        })
+      module$6.exports.isSupported = supportsHyperlinks.stdout
+      module$6.exports.stderr.isSupported = supportsHyperlinks.stderr
+    },
+  )
+  var require_yoctocolors_cjs$1 = /* @__PURE__ */ __commonJSMin(
+    (exports$8, module$7) => {
+      const hasColors =
+        __require('tty')?.WriteStream?.prototype?.hasColors?.() ?? false
+      const format = (open, close) => {
+        if (!hasColors) return input => input
+        const openCode = `\u001B[${open}m`
+        const closeCode = `\u001B[${close}m`
+        return input => {
+          const string = input + ''
+          let index = string.indexOf(closeCode)
+          if (index === -1) return openCode + string + closeCode
+          let result = openCode
+          let lastIndex = 0
+          const replaceCode = (close === 22 ? closeCode : '') + openCode
+          while (index !== -1) {
+            result += string.slice(lastIndex, index) + replaceCode
+            lastIndex = index + closeCode.length
+            index = string.indexOf(closeCode, lastIndex)
+          }
+          result += string.slice(lastIndex) + closeCode
+          return result
+        }
+      }
+      const colors = {}
+      colors.reset = format(0, 0)
+      colors.bold = format(1, 22)
+      colors.dim = format(2, 22)
+      colors.italic = format(3, 23)
+      colors.underline = format(4, 24)
+      colors.overline = format(53, 55)
+      colors.inverse = format(7, 27)
+      colors.hidden = format(8, 28)
+      colors.strikethrough = format(9, 29)
+      colors.black = format(30, 39)
+      colors.red = format(31, 39)
+      colors.green = format(32, 39)
+      colors.yellow = format(33, 39)
+      colors.blue = format(34, 39)
+      colors.magenta = format(35, 39)
+      colors.cyan = format(36, 39)
+      colors.white = format(37, 39)
+      colors.gray = format(90, 39)
+      colors.bgBlack = format(40, 49)
+      colors.bgRed = format(41, 49)
+      colors.bgGreen = format(42, 49)
+      colors.bgYellow = format(43, 49)
+      colors.bgBlue = format(44, 49)
+      colors.bgMagenta = format(45, 49)
+      colors.bgCyan = format(46, 49)
+      colors.bgWhite = format(47, 49)
+      colors.bgGray = format(100, 49)
+      colors.redBright = format(91, 39)
+      colors.greenBright = format(92, 39)
+      colors.yellowBright = format(93, 39)
+      colors.blueBright = format(94, 39)
+      colors.magentaBright = format(95, 39)
+      colors.cyanBright = format(96, 39)
+      colors.whiteBright = format(97, 39)
+      colors.bgRedBright = format(101, 49)
+      colors.bgGreenBright = format(102, 49)
+      colors.bgYellowBright = format(103, 49)
+      colors.bgBlueBright = format(104, 49)
+      colors.bgMagentaBright = format(105, 49)
+      colors.bgCyanBright = format(106, 49)
+      colors.bgWhiteBright = format(107, 49)
+      module$7.exports = colors
+    },
+  )
+  function isKeybinding(value) {
+    return keybindingLookup.has(value)
+  }
+  function getDefaultKeybindings() {
+    const env = process.env['INQUIRER_KEYBINDINGS']
+    if (!env) return []
+    return _p_ArrayFrom(
+      new _p_SetCtor(
+        _p_StringPrototypeToLowerCase(env)
+          .split(/[\s,]+/)
+          .filter(isKeybinding),
+      ),
+    )
+  }
+  var keybindingLookup
+  var isUpKey
+  var isDownKey
+  var isSpaceKey
+  var isBackspaceKey
+  var isTabKey
+  var isNumberKey
+  var isEnterKey
+  var init_key = __esmMin(() => {
+    keybindingLookup = /* @__PURE__ */ new _p_SetCtor(['emacs', 'vim'])
+    isUpKey = (key, keybindings = []) =>
+      key.name === 'up' ||
+      (keybindings.includes('vim') && key.name === 'k') ||
+      (keybindings.includes('emacs') && key.ctrl && key.name === 'p')
+    isDownKey = (key, keybindings = []) =>
+      key.name === 'down' ||
+      (keybindings.includes('vim') && key.name === 'j') ||
+      (keybindings.includes('emacs') && key.ctrl && key.name === 'n')
+    isSpaceKey = key => key.name === 'space'
+    isBackspaceKey = key => key.name === 'backspace'
+    isTabKey = key => key.name === 'tab'
+    isNumberKey = key => '1234567890'.includes(key.name)
+    isEnterKey = key => key.name === 'enter' || key.name === 'return'
+  })
+  var AbortPromptError
+  var CancelPromptError
+  var ExitPromptError
+  var HookError
+  var ValidationError
+  var init_errors = __esmMin(() => {
+    AbortPromptError = class extends Error {
+      name = 'AbortPromptError'
+      message = 'Prompt was aborted'
+      constructor(options) {
+        super()
+        this.cause = options?.cause
+      }
+    }
+    CancelPromptError = class extends Error {
+      name = 'CancelPromptError'
+      message = 'Prompt was canceled'
+    }
+    ExitPromptError = class extends Error {
+      name = 'ExitPromptError'
+    }
+    HookError = class extends Error {
+      name = 'HookError'
+    }
+    ValidationError = class extends Error {
+      name = 'ValidationError'
+    }
+  })
+  function createStore(rl) {
+    return {
+      rl,
+      hooks: [],
+      hooksCleanup: [],
+      hooksEffect: [],
+      index: 0,
+      handleChange() {},
+    }
+  }
+  function withHooks(rl, cb) {
+    const store = createStore(rl)
+    return hookStorage.run(store, () => {
+      function cycle(render) {
+        store.handleChange = () => {
+          store.index = 0
+          render()
+        }
+        store.handleChange()
+      }
+      return cb(cycle)
+    })
+  }
+  function getStore() {
+    const store = hookStorage.getStore()
+    if (!store)
+      throw new HookError(
+        '[Inquirer] Hook functions can only be called from within a prompt',
+      )
+    return store
+  }
+  function readline() {
+    return getStore().rl
+  }
+  function withUpdates(fn) {
+    const wrapped = (...args) => {
+      const store = getStore()
+      let shouldUpdate = false
+      const oldHandleChange = store.handleChange
+      store.handleChange = () => {
+        shouldUpdate = true
+      }
+      const returnValue = fn(...args)
+      if (shouldUpdate) oldHandleChange()
+      store.handleChange = oldHandleChange
+      return returnValue
+    }
+    return node_async_hooks.AsyncResource.bind(wrapped)
+  }
+  function withPointer(cb) {
+    const store = getStore()
+    const { index } = store
+    const returnValue = cb({
+      get() {
+        return store.hooks[index]
+      },
+      set(value) {
+        store.hooks[index] = value
+      },
+      initialized: index in store.hooks,
+    })
+    store.index++
+    return returnValue
+  }
+  function handleChange() {
+    getStore().handleChange()
+  }
+  var hookStorage
+  var effectScheduler
+  var init_hook_engine = __esmMin(() => {
+    init_errors()
+    hookStorage = new node_async_hooks.AsyncLocalStorage()
+    effectScheduler = {
+      queue(cb) {
+        const store = getStore()
+        const { index } = store
+        store.hooksEffect.push(() => {
+          store.hooksCleanup[index]?.()
+          const cleanFn = cb(readline())
+          if (cleanFn != null && typeof cleanFn !== 'function')
+            throw new ValidationError(
+              'useEffect return value must be a cleanup function or nothing.',
+            )
+          store.hooksCleanup[index] = cleanFn
+        })
+      },
+      run() {
+        const store = getStore()
+        withUpdates(() => {
+          store.hooksEffect.forEach(effect => {
+            effect()
+          })
+          store.hooksEffect.length = 0
+        })()
+      },
+      clearAll() {
+        const store = getStore()
+        store.hooksCleanup.forEach(cleanFn => {
+          cleanFn?.()
+        })
+        store.hooksEffect.length = 0
+        store.hooksCleanup.length = 0
+      },
+    }
+  })
+  function isFactory(value) {
+    return typeof value === 'function'
+  }
+  function useState(defaultValue) {
+    return withPointer(pointer => {
+      const setState = node_async_hooks.AsyncResource.bind(
+        function setState(newValue) {
+          if (pointer.get() !== newValue) {
+            pointer.set(newValue)
+            handleChange()
+          }
+        },
+      )
+      if (pointer.initialized) return [pointer.get(), setState]
+      const value = isFactory(defaultValue) ? defaultValue() : defaultValue
+      pointer.set(value)
+      return [value, setState]
+    })
+  }
+  var init_use_state = __esmMin(() => {
+    init_hook_engine()
+  })
+  function useEffect(cb, depArray) {
+    withPointer(pointer => {
+      const oldDeps = pointer.get()
+      if (
+        !_p_ArrayIsArray(oldDeps) ||
+        depArray.some((dep, i) => !_p_ObjectIs(dep, oldDeps[i]))
+      )
+        effectScheduler.queue(cb)
+      pointer.set(depArray)
+    })
+  }
+  var init_use_effect = __esmMin(() => {
+    init_hook_engine()
+  })
+  function isUnicodeSupported() {
+    if (!node_process.default.platform.startsWith('win'))
+      return node_process.default.env['TERM'] !== 'linux'
+    return (
+      Boolean(false) ||
+      Boolean(node_process.default.env['WT_SESSION']) ||
+      Boolean(node_process.default.env['TERMINUS_SUBLIME']) ||
+      node_process.default.env['ConEmuTask'] === '{cmd::Cmder}' ||
+      node_process.default.env['TERM_PROGRAM'] === 'Terminus-Sublime' ||
+      node_process.default.env['TERM_PROGRAM'] === 'vscode' ||
+      node_process.default.env['TERM'] === 'xterm-256color' ||
+      node_process.default.env['TERM'] === 'alacritty' ||
+      node_process.default.env['TERMINAL_EMULATOR'] === 'JetBrains-JediTerm'
+    )
+  }
+  var common
+  var specialMainSymbols
+  var specialFallbackSymbols
+  var mainSymbols
+  var fallbackSymbols
+  var shouldUseMain
+  var figures
+  var init_dist$10 = __esmMin(() => {
+    common = {
+      circleQuestionMark: '(?)',
+      questionMarkPrefix: '(?)',
+      square: '█',
+      squareDarkShade: '▓',
+      squareMediumShade: '▒',
+      squareLightShade: '░',
+      squareTop: '▀',
+      squareBottom: '▄',
+      squareLeft: '▌',
+      squareRight: '▐',
+      squareCenter: '■',
+      bullet: '●',
+      dot: '․',
+      ellipsis: '…',
+      pointerSmall: '›',
+      triangleUp: '▲',
+      triangleUpSmall: '▴',
+      triangleDown: '▼',
+      triangleDownSmall: '▾',
+      triangleLeftSmall: '◂',
+      triangleRightSmall: '▸',
+      home: '⌂',
+      heart: '♥',
+      musicNote: '♪',
+      musicNoteBeamed: '♫',
+      arrowUp: '↑',
+      arrowDown: '↓',
+      arrowLeft: '←',
+      arrowRight: '→',
+      arrowLeftRight: '↔',
+      arrowUpDown: '↕',
+      almostEqual: '≈',
+      notEqual: '≠',
+      lessOrEqual: '≤',
+      greaterOrEqual: '≥',
+      identical: '≡',
+      infinity: '∞',
+      subscriptZero: '₀',
+      subscriptOne: '₁',
+      subscriptTwo: '₂',
+      subscriptThree: '₃',
+      subscriptFour: '₄',
+      subscriptFive: '₅',
+      subscriptSix: '₆',
+      subscriptSeven: '₇',
+      subscriptEight: '₈',
+      subscriptNine: '₉',
+      oneHalf: '½',
+      oneThird: '⅓',
+      oneQuarter: '¼',
+      oneFifth: '⅕',
+      oneSixth: '⅙',
+      oneEighth: '⅛',
+      twoThirds: '⅔',
+      twoFifths: '⅖',
+      threeQuarters: '¾',
+      threeFifths: '⅗',
+      threeEighths: '⅜',
+      fourFifths: '⅘',
+      fiveSixths: '⅚',
+      fiveEighths: '⅝',
+      sevenEighths: '⅞',
+      line: '─',
+      lineBold: '━',
+      lineDouble: '═',
+      lineDashed0: '┄',
+      lineDashed1: '┅',
+      lineDashed2: '┈',
+      lineDashed3: '┉',
+      lineDashed4: '╌',
+      lineDashed5: '╍',
+      lineDashed6: '╴',
+      lineDashed7: '╶',
+      lineDashed8: '╸',
+      lineDashed9: '╺',
+      lineDashed10: '╼',
+      lineDashed11: '╾',
+      lineDashed12: '−',
+      lineDashed13: '–',
+      lineDashed14: '‐',
+      lineDashed15: '⁃',
+      lineVertical: '│',
+      lineVerticalBold: '┃',
+      lineVerticalDouble: '║',
+      lineVerticalDashed0: '┆',
+      lineVerticalDashed1: '┇',
+      lineVerticalDashed2: '┊',
+      lineVerticalDashed3: '┋',
+      lineVerticalDashed4: '╎',
+      lineVerticalDashed5: '╏',
+      lineVerticalDashed6: '╵',
+      lineVerticalDashed7: '╷',
+      lineVerticalDashed8: '╹',
+      lineVerticalDashed9: '╻',
+      lineVerticalDashed10: '╽',
+      lineVerticalDashed11: '╿',
+      lineDownLeft: '┐',
+      lineDownLeftArc: '╮',
+      lineDownBoldLeftBold: '┓',
+      lineDownBoldLeft: '┒',
+      lineDownLeftBold: '┑',
+      lineDownDoubleLeftDouble: '╗',
+      lineDownDoubleLeft: '╖',
+      lineDownLeftDouble: '╕',
+      lineDownRight: '┌',
+      lineDownRightArc: '╭',
+      lineDownBoldRightBold: '┏',
+      lineDownBoldRight: '┎',
+      lineDownRightBold: '┍',
+      lineDownDoubleRightDouble: '╔',
+      lineDownDoubleRight: '╓',
+      lineDownRightDouble: '╒',
+      lineUpLeft: '┘',
+      lineUpLeftArc: '╯',
+      lineUpBoldLeftBold: '┛',
+      lineUpBoldLeft: '┚',
+      lineUpLeftBold: '┙',
+      lineUpDoubleLeftDouble: '╝',
+      lineUpDoubleLeft: '╜',
+      lineUpLeftDouble: '╛',
+      lineUpRight: '└',
+      lineUpRightArc: '╰',
+      lineUpBoldRightBold: '┗',
+      lineUpBoldRight: '┖',
+      lineUpRightBold: '┕',
+      lineUpDoubleRightDouble: '╚',
+      lineUpDoubleRight: '╙',
+      lineUpRightDouble: '╘',
+      lineUpDownLeft: '┤',
+      lineUpBoldDownBoldLeftBold: '┫',
+      lineUpBoldDownBoldLeft: '┨',
+      lineUpDownLeftBold: '┥',
+      lineUpBoldDownLeftBold: '┩',
+      lineUpDownBoldLeftBold: '┪',
+      lineUpDownBoldLeft: '┧',
+      lineUpBoldDownLeft: '┦',
+      lineUpDoubleDownDoubleLeftDouble: '╣',
+      lineUpDoubleDownDoubleLeft: '╢',
+      lineUpDownLeftDouble: '╡',
+      lineUpDownRight: '├',
+      lineUpBoldDownBoldRightBold: '┣',
+      lineUpBoldDownBoldRight: '┠',
+      lineUpDownRightBold: '┝',
+      lineUpBoldDownRightBold: '┡',
+      lineUpDownBoldRightBold: '┢',
+      lineUpDownBoldRight: '┟',
+      lineUpBoldDownRight: '┞',
+      lineUpDoubleDownDoubleRightDouble: '╠',
+      lineUpDoubleDownDoubleRight: '╟',
+      lineUpDownRightDouble: '╞',
+      lineDownLeftRight: '┬',
+      lineDownBoldLeftBoldRightBold: '┳',
+      lineDownLeftBoldRightBold: '┯',
+      lineDownBoldLeftRight: '┰',
+      lineDownBoldLeftBoldRight: '┱',
+      lineDownBoldLeftRightBold: '┲',
+      lineDownLeftRightBold: '┮',
+      lineDownLeftBoldRight: '┭',
+      lineDownDoubleLeftDoubleRightDouble: '╦',
+      lineDownDoubleLeftRight: '╥',
+      lineDownLeftDoubleRightDouble: '╤',
+      lineUpLeftRight: '┴',
+      lineUpBoldLeftBoldRightBold: '┻',
+      lineUpLeftBoldRightBold: '┷',
+      lineUpBoldLeftRight: '┸',
+      lineUpBoldLeftBoldRight: '┹',
+      lineUpBoldLeftRightBold: '┺',
+      lineUpLeftRightBold: '┶',
+      lineUpLeftBoldRight: '┵',
+      lineUpDoubleLeftDoubleRightDouble: '╩',
+      lineUpDoubleLeftRight: '╨',
+      lineUpLeftDoubleRightDouble: '╧',
+      lineUpDownLeftRight: '┼',
+      lineUpBoldDownBoldLeftBoldRightBold: '╋',
+      lineUpDownBoldLeftBoldRightBold: '╈',
+      lineUpBoldDownLeftBoldRightBold: '╇',
+      lineUpBoldDownBoldLeftRightBold: '╊',
+      lineUpBoldDownBoldLeftBoldRight: '╉',
+      lineUpBoldDownLeftRight: '╀',
+      lineUpDownBoldLeftRight: '╁',
+      lineUpDownLeftBoldRight: '┽',
+      lineUpDownLeftRightBold: '┾',
+      lineUpBoldDownBoldLeftRight: '╂',
+      lineUpDownLeftBoldRightBold: '┿',
+      lineUpBoldDownLeftBoldRight: '╃',
+      lineUpBoldDownLeftRightBold: '╄',
+      lineUpDownBoldLeftBoldRight: '╅',
+      lineUpDownBoldLeftRightBold: '╆',
+      lineUpDoubleDownDoubleLeftDoubleRightDouble: '╬',
+      lineUpDoubleDownDoubleLeftRight: '╫',
+      lineUpDownLeftDoubleRightDouble: '╪',
+      lineCross: '╳',
+      lineBackslash: '╲',
+      lineSlash: '╱',
+    }
+    specialMainSymbols = {
+      tick: '✔',
+      info: 'ℹ',
+      warning: '⚠',
+      cross: '✘',
+      squareSmall: '◻',
+      squareSmallFilled: '◼',
+      circle: '◯',
+      circleFilled: '◉',
+      circleDotted: '◌',
+      circleDouble: '◎',
+      circleCircle: 'ⓞ',
+      circleCross: 'ⓧ',
+      circlePipe: 'Ⓘ',
+      radioOn: '◉',
+      radioOff: '◯',
+      checkboxOn: '☒',
+      checkboxOff: '☐',
+      checkboxCircleOn: 'ⓧ',
+      checkboxCircleOff: 'Ⓘ',
+      pointer: '❯',
+      triangleUpOutline: '△',
+      triangleLeft: '◀',
+      triangleRight: '▶',
+      lozenge: '◆',
+      lozengeOutline: '◇',
+      hamburger: '☰',
+      smiley: '㋡',
+      mustache: '෴',
+      star: '★',
+      play: '▶',
+      nodejs: '⬢',
+      oneSeventh: '⅐',
+      oneNinth: '⅑',
+      oneTenth: '⅒',
+    }
+    specialFallbackSymbols = {
+      tick: '√',
+      info: 'i',
+      warning: '‼',
+      cross: '×',
+      squareSmall: '□',
+      squareSmallFilled: '■',
+      circle: '( )',
+      circleFilled: '(*)',
+      circleDotted: '( )',
+      circleDouble: '( )',
+      circleCircle: '(○)',
+      circleCross: '(×)',
+      circlePipe: '(│)',
+      radioOn: '(*)',
+      radioOff: '( )',
+      checkboxOn: '[×]',
+      checkboxOff: '[ ]',
+      checkboxCircleOn: '(×)',
+      checkboxCircleOff: '( )',
+      pointer: '>',
+      triangleUpOutline: '∆',
+      triangleLeft: '◄',
+      triangleRight: '►',
+      lozenge: '♦',
+      lozengeOutline: '◊',
+      hamburger: '≡',
+      smiley: '☺',
+      mustache: '┌─┐',
+      star: '✶',
+      play: '►',
+      nodejs: '♦',
+      oneSeventh: '1/7',
+      oneNinth: '1/9',
+      oneTenth: '1/10',
+    }
+    mainSymbols = {
+      ...common,
+      ...specialMainSymbols,
+    }
+    fallbackSymbols = {
+      ...common,
+      ...specialFallbackSymbols,
+    }
+    shouldUseMain = isUnicodeSupported()
+    figures = shouldUseMain ? mainSymbols : fallbackSymbols
+    _p_ObjectEntries(specialMainSymbols)
+  })
+  function getDefaultTheme() {
+    return {
+      ...defaultTheme,
+      keybindings: getDefaultKeybindings(),
+    }
+  }
+  var defaultTheme
+  var init_theme = __esmMin(() => {
+    init_dist$10()
+    init_key()
+    defaultTheme = {
+      prefix: {
+        idle: (0, node_util.styleText)('blue', '?'),
+        done: (0, node_util.styleText)('green', figures.tick),
+      },
+      spinner: {
+        interval: 80,
+        frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map(frame =>
+          (0, node_util.styleText)('yellow', frame),
+        ),
+      },
+      keybindings: [],
+      style: {
+        answer: text => (0, node_util.styleText)('cyan', text),
+        message: text => (0, node_util.styleText)('bold', text),
+        error: text => (0, node_util.styleText)('red', `> ${text}`),
+        defaultAnswer: text => (0, node_util.styleText)('dim', `(${text})`),
+        help: text => (0, node_util.styleText)('dim', text),
+        highlight: text => (0, node_util.styleText)('cyan', text),
+        key: text =>
+          (0, node_util.styleText)(
+            'cyan',
+            (0, node_util.styleText)('bold', `<${text}>`),
+          ),
+      },
+    }
+  })
+  function isPlainObject(value) {
+    if (typeof value !== 'object' || value === null) return false
+    let proto = value
+    while (_p_ObjectGetPrototypeOf(proto) !== null)
+      proto = _p_ObjectGetPrototypeOf(proto)
+    return _p_ObjectGetPrototypeOf(value) === proto
+  }
+  function deepMerge(...objects) {
+    const output = {}
+    for (const obj of objects)
+      for (const [key, value] of _p_ObjectEntries(obj)) {
+        const prevValue = output[key]
+        output[key] =
+          isPlainObject(prevValue) && isPlainObject(value)
+            ? deepMerge(prevValue, value)
+            : value
+      }
+    return output
+  }
+  function makeTheme(...themes) {
+    return deepMerge(
+      ...[getDefaultTheme(), ...themes.filter(theme => theme != null)],
+    )
+  }
+  var init_make_theme = __esmMin(() => {
+    init_theme()
+  })
+  function usePrefix({ status = 'idle', theme }) {
+    const [showLoader, setShowLoader] = useState(false)
+    const [tick, setTick] = useState(0)
+    const { prefix, spinner } = makeTheme(theme)
+    useEffect(() => {
+      if (status === 'loading') {
+        let tickInterval
+        let inc = -1
+        const delayTimeout = setTimeout(() => {
+          setShowLoader(true)
+          tickInterval = setInterval(() => {
+            inc = inc + 1
+            setTick(inc % spinner.frames.length)
+          }, spinner.interval)
+        }, 300)
+        return () => {
+          clearTimeout(delayTimeout)
+          clearInterval(tickInterval)
+        }
+      } else setShowLoader(false)
+    }, [status])
+    if (showLoader) return spinner.frames[tick]
+    return typeof prefix === 'string'
+      ? prefix
+      : (prefix[status === 'loading' ? 'idle' : status] ?? prefix['idle'])
+  }
+  var init_use_prefix = __esmMin(() => {
+    init_use_state()
+    init_use_effect()
+    init_make_theme()
+  })
+  function useMemo(fn, dependencies) {
+    return withPointer(pointer => {
+      const prev = pointer.get()
+      if (
+        !prev ||
+        prev.dependencies.length !== dependencies.length ||
+        prev.dependencies.some((dep, i) => dep !== dependencies[i])
+      ) {
+        const value = fn()
+        pointer.set({
+          value,
+          dependencies,
+        })
+        return value
+      }
+      return prev.value
+    })
+  }
+  var init_use_memo = __esmMin(() => {
+    init_hook_engine()
+  })
+  function useRef(val) {
+    return useState({ current: val })[0]
+  }
+  var init_use_ref = __esmMin(() => {
+    init_use_state()
+  })
+  function useKeypress(userHandler) {
+    const signal = useRef(userHandler)
+    signal.current = userHandler
+    useEffect(rl => {
+      let ignore = false
+      const handler = withUpdates((_input, event) => {
+        if (ignore) return
+        signal.current(event, rl)
+      })
+      rl.input.on('keypress', handler)
+      return () => {
+        ignore = true
+        rl.input.removeListener('keypress', handler)
+      }
+    }, [])
+  }
+  var init_use_keypress = __esmMin(() => {
+    init_use_ref()
+    init_use_effect()
+    init_hook_engine()
+  })
+  var require_cli_width = /* @__PURE__ */ __commonJSMin(
+    (exports$9, module$8) => {
+      module$8.exports = cliWidth
+      function normalizeOpts(options) {
+        const defaultOpts = {
+          defaultWidth: 0,
+          output: process.stdout,
+          tty: __require('tty'),
+        }
+        if (!options) return defaultOpts
+        _p_ObjectKeys(defaultOpts).forEach(function (key) {
+          if (!options[key]) options[key] = defaultOpts[key]
+        })
+        return options
+      }
+      function cliWidth(options) {
+        const opts = normalizeOpts(options)
+        if (opts.output.getWindowSize)
+          return opts.output.getWindowSize()[0] || opts.defaultWidth
+        if (opts.tty.getWindowSize)
+          return opts.tty.getWindowSize()[1] || opts.defaultWidth
+        if (opts.output.columns) return opts.output.columns
+        if (process.env.CLI_WIDTH) {
+          const width = parseInt(process.env.CLI_WIDTH, 10)
+          if (!isNaN(width) && width !== 0) return width
+        }
+        return opts.defaultWidth
+      }
+    },
+  )
+  var getCodePointsLength
+  var isFullWidth
+  var isWideNotCJKTNotEmoji
+  var init_utils$1 = __esmMin(() => {
+    getCodePointsLength = (() => {
+      const SURROGATE_PAIR_RE = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g
+      return input => {
+        let surrogatePairsNr = 0
+        SURROGATE_PAIR_RE.lastIndex = 0
+        while (SURROGATE_PAIR_RE.test(input)) surrogatePairsNr += 1
+        return input.length - surrogatePairsNr
+      }
+    })()
+    isFullWidth = x => {
+      return (
+        x === 12288 || (x >= 65281 && x <= 65376) || (x >= 65504 && x <= 65510)
+      )
+    }
+    isWideNotCJKTNotEmoji = x => {
+      return (
+        x === 8987 ||
+        x === 9001 ||
+        (x >= 12272 && x <= 12287) ||
+        (x >= 12289 && x <= 12350) ||
+        (x >= 12441 && x <= 12543) ||
+        (x >= 12549 && x <= 12591) ||
+        (x >= 12593 && x <= 12686) ||
+        (x >= 12688 && x <= 12771) ||
+        (x >= 12783 && x <= 12830) ||
+        (x >= 12832 && x <= 12871) ||
+        (x >= 12880 && x <= 19903) ||
+        (x >= 65040 && x <= 65049) ||
+        (x >= 65072 && x <= 65106) ||
+        (x >= 65108 && x <= 65126) ||
+        (x >= 65128 && x <= 65131) ||
+        (x >= 127488 && x <= 127490) ||
+        (x >= 127504 && x <= 127547) ||
+        (x >= 127552 && x <= 127560) ||
+        (x >= 131072 && x <= 196605) ||
+        (x >= 196608 && x <= 262141)
+      )
+    }
+  })
+  var ANSI_RE
+  var CONTROL_RE
+  var CJKT_WIDE_RE
+  var TAB_RE
+  var EMOJI_RE
+  var LATIN_RE
+  var MODIFIER_RE
+  var NO_TRUNCATION$1
+  var getStringTruncatedWidth
+  var init_dist$9 = __esmMin(() => {
+    init_utils$1()
+    ANSI_RE =
+      /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]|\u001b\]8;[^;]*;.*?(?:\u0007|\u001b\u005c)/y
+    CONTROL_RE = /[\x00-\x08\x0A-\x1F\x7F-\x9F]{1,1000}/y
+    CJKT_WIDE_RE =
+      /(?:(?![\uFF61-\uFF9F\uFF00-\uFFEF])[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Tangut}]){1,1000}/uy
+    TAB_RE = /\t{1,1000}/y
+    EMOJI_RE =
+      /[\u{1F1E6}-\u{1F1FF}]{2}|\u{1F3F4}[\u{E0061}-\u{E007A}]{2}[\u{E0030}-\u{E0039}\u{E0061}-\u{E007A}]{1,3}\u{E007F}|(?:\p{Emoji}\uFE0F\u20E3?|\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\p{Emoji_Presentation})(?:\u200D(?:\p{Emoji_Modifier_Base}\p{Emoji_Modifier}?|\p{Emoji_Presentation}|\p{Emoji}\uFE0F\u20E3?))*/uy
+    LATIN_RE = /(?:[\x20-\x7E\xA0-\xFF](?!\uFE0F)){1,1000}/y
+    MODIFIER_RE = /\p{M}+/gu
+    NO_TRUNCATION$1 = {
+      limit: Infinity,
+      ellipsis: '',
+    }
+    getStringTruncatedWidth = (
+      input,
+      truncationOptions = {},
+      widthOptions = {},
+    ) => {
+      const LIMIT = truncationOptions.limit ?? Infinity
+      const ELLIPSIS = truncationOptions.ellipsis ?? ''
+      const ELLIPSIS_WIDTH =
+        truncationOptions?.ellipsisWidth ??
+        (ELLIPSIS
+          ? getStringTruncatedWidth(ELLIPSIS, NO_TRUNCATION$1, widthOptions)
+              .width
+          : 0)
+      const ANSI_WIDTH = 0
+      const CONTROL_WIDTH = widthOptions.controlWidth ?? 0
+      const TAB_WIDTH = widthOptions.tabWidth ?? 8
+      const EMOJI_WIDTH = widthOptions.emojiWidth ?? 2
+      const FULL_WIDTH_WIDTH = 2
+      const REGULAR_WIDTH = widthOptions.regularWidth ?? 1
+      const WIDE_WIDTH = widthOptions.wideWidth ?? FULL_WIDTH_WIDTH
+      const PARSE_BLOCKS = [
+        [LATIN_RE, REGULAR_WIDTH],
+        [ANSI_RE, ANSI_WIDTH],
+        [CONTROL_RE, CONTROL_WIDTH],
+        [TAB_RE, TAB_WIDTH],
+        [EMOJI_RE, EMOJI_WIDTH],
+        [CJKT_WIDE_RE, WIDE_WIDTH],
+      ]
+      let indexPrev = 0
+      let index = 0
+      let length = input.length
+      let lengthExtra = 0
+      let truncationEnabled = false
+      let truncationIndex = length
+      let truncationLimit = _p_MathMax(0, LIMIT - ELLIPSIS_WIDTH)
+      let unmatchedStart = 0
+      let unmatchedEnd = 0
+      let width = 0
+      let widthExtra = 0
+      outer: while (true) {
+        if (
+          unmatchedEnd > unmatchedStart ||
+          (index >= length && index > indexPrev)
+        ) {
+          const unmatched =
+            input.slice(unmatchedStart, unmatchedEnd) ||
+            input.slice(indexPrev, index)
+          lengthExtra = 0
+          for (const char of _p_StringPrototypeReplaceAll(
+            unmatched,
+            MODIFIER_RE,
+            '',
+          )) {
+            const codePoint = _p_StringPrototypeCodePointAt(char, 0) || 0
+            if (isFullWidth(codePoint)) widthExtra = FULL_WIDTH_WIDTH
+            else if (isWideNotCJKTNotEmoji(codePoint)) widthExtra = WIDE_WIDTH
+            else widthExtra = REGULAR_WIDTH
+            if (width + widthExtra > truncationLimit)
+              truncationIndex = _p_MathMin(
+                truncationIndex,
+                _p_MathMax(unmatchedStart, indexPrev) + lengthExtra,
+              )
+            if (width + widthExtra > LIMIT) {
+              truncationEnabled = true
+              break outer
+            }
+            lengthExtra += char.length
+            width += widthExtra
+          }
+          unmatchedStart = unmatchedEnd = 0
+        }
+        if (index >= length) break outer
+        for (let i = 0, l = PARSE_BLOCKS.length; i < l; i++) {
+          const [BLOCK_RE, BLOCK_WIDTH] = PARSE_BLOCKS[i]
+          BLOCK_RE.lastIndex = index
+          if (BLOCK_RE.test(input)) {
+            lengthExtra =
+              BLOCK_RE === CJKT_WIDE_RE
+                ? getCodePointsLength(input.slice(index, BLOCK_RE.lastIndex))
+                : BLOCK_RE === EMOJI_RE
+                  ? 1
+                  : BLOCK_RE.lastIndex - index
+            widthExtra = lengthExtra * BLOCK_WIDTH
+            if (width + widthExtra > truncationLimit)
+              truncationIndex = _p_MathMin(
+                truncationIndex,
+                index + _p_MathFloor((truncationLimit - width) / BLOCK_WIDTH),
+              )
+            if (width + widthExtra > LIMIT) {
+              truncationEnabled = true
+              break outer
+            }
+            width += widthExtra
+            unmatchedStart = indexPrev
+            unmatchedEnd = index
+            index = indexPrev = BLOCK_RE.lastIndex
+            continue outer
+          }
+        }
+        index += 1
+      }
+      return {
+        width: truncationEnabled ? truncationLimit : width,
+        index: truncationEnabled ? truncationIndex : length,
+        truncated: truncationEnabled,
+        ellipsed: truncationEnabled && LIMIT >= ELLIPSIS_WIDTH,
+      }
+    }
+  })
+  var NO_TRUNCATION
+  var fastStringWidth
+  var init_dist$8 = __esmMin(() => {
+    init_dist$9()
+    NO_TRUNCATION = {
+      limit: Infinity,
+      ellipsis: '',
+      ellipsisWidth: 0,
+    }
+    fastStringWidth = (input, options = {}) => {
+      return getStringTruncatedWidth(input, NO_TRUNCATION, options).width
+    }
+  })
+  function wrapAnsi(string, columns, options) {
+    return String(string)
+      .normalize()
+      .split(CRLF_OR_LF)
+      .map(line => exec(line, columns, options))
+      .join('\n')
+  }
+  var ESC$1
+  var CSI
+  var END_CODE
+  var ANSI_ESCAPE_BELL
+  var ANSI_CSI
+  var ANSI_OSC
+  var ANSI_SGR_TERMINATOR
+  var ANSI_ESCAPE_LINK
+  var GROUP_REGEX
+  var getClosingCode
+  var wrapAnsiCode
+  var wrapAnsiHyperlink
+  var wrapWord
+  var stringVisibleTrimSpacesRight
+  var exec
+  var CRLF_OR_LF
+  var init_main = __esmMin(() => {
+    init_dist$8()
+    ESC$1 = '\x1B'
+    CSI = ''
+    END_CODE = 39
+    ANSI_ESCAPE_BELL = '\x07'
+    ANSI_CSI = '['
+    ANSI_OSC = ']'
+    ANSI_SGR_TERMINATOR = 'm'
+    ANSI_ESCAPE_LINK = `${ANSI_OSC}8;;`
+    GROUP_REGEX = new _p_RegExpCtor(
+      `(?:\\${ANSI_CSI}(?<code>\\d+)m|\\${ANSI_ESCAPE_LINK}(?<uri>.*)${ANSI_ESCAPE_BELL})`,
+      'y',
+    )
+    getClosingCode = openingCode => {
+      if (openingCode >= 30 && openingCode <= 37) return 39
+      if (openingCode >= 90 && openingCode <= 97) return 39
+      if (openingCode >= 40 && openingCode <= 47) return 49
+      if (openingCode >= 100 && openingCode <= 107) return 49
+      if (openingCode === 1 || openingCode === 2) return 22
+      if (openingCode === 3) return 23
+      if (openingCode === 4) return 24
+      if (openingCode === 7) return 27
+      if (openingCode === 8) return 28
+      if (openingCode === 9) return 29
+      if (openingCode === 0) return 0
+    }
+    wrapAnsiCode = code => `${ESC$1}${ANSI_CSI}${code}${ANSI_SGR_TERMINATOR}`
+    wrapAnsiHyperlink = url =>
+      `${ESC$1}${ANSI_ESCAPE_LINK}${url}${ANSI_ESCAPE_BELL}`
+    wrapWord = (rows, word, columns) => {
+      const characters = word[Symbol.iterator]()
+      let isInsideEscape = false
+      let isInsideLinkEscape = false
+      let lastRow = rows.at(-1)
+      let visible = lastRow === void 0 ? 0 : fastStringWidth(lastRow)
+      let currentCharacter = characters.next()
+      let nextCharacter = characters.next()
+      let rawCharacterIndex = 0
+      while (!currentCharacter.done) {
+        const character = currentCharacter.value
+        const characterLength = fastStringWidth(character)
+        if (visible + characterLength <= columns)
+          rows[rows.length - 1] += character
+        else {
+          rows.push(character)
+          visible = 0
+        }
+        if (character === ESC$1 || character === CSI) {
+          isInsideEscape = true
+          isInsideLinkEscape = _p_StringPrototypeStartsWith(
+            word,
+            ANSI_ESCAPE_LINK,
+            rawCharacterIndex + 1,
+          )
+        }
+        if (isInsideEscape) {
+          if (isInsideLinkEscape) {
+            if (character === ANSI_ESCAPE_BELL) {
+              isInsideEscape = false
+              isInsideLinkEscape = false
+            }
+          } else if (character === ANSI_SGR_TERMINATOR) isInsideEscape = false
+        } else {
+          visible += characterLength
+          if (visible === columns && !nextCharacter.done) {
+            rows.push('')
+            visible = 0
+          }
+        }
+        currentCharacter = nextCharacter
+        nextCharacter = characters.next()
+        rawCharacterIndex += character.length
+      }
+      lastRow = rows.at(-1)
+      if (!visible && lastRow !== void 0 && lastRow.length && rows.length > 1)
+        rows[rows.length - 2] += rows.pop()
+    }
+    stringVisibleTrimSpacesRight = string => {
+      const words = string.split(' ')
+      let last = words.length
+      while (last) {
+        if (fastStringWidth(words[last - 1])) break
+        last--
+      }
+      if (last === words.length) return string
+      return words.slice(0, last).join(' ') + words.slice(last).join('')
+    }
+    exec = (string, columns, options = {}) => {
+      if (options.trim !== false && _p_StringPrototypeTrim(string) === '')
+        return ''
+      let returnValue = ''
+      let escapeCode
+      let escapeUrl
+      const words = string.split(' ')
+      let rows = ['']
+      let rowLength = 0
+      for (let index = 0; index < words.length; index++) {
+        const word = words[index]
+        if (options.trim !== false) {
+          const row = rows.at(-1) ?? ''
+          const trimmed = _p_StringPrototypeTrimStart(row)
+          if (row.length !== trimmed.length) {
+            rows[rows.length - 1] = trimmed
+            rowLength = fastStringWidth(trimmed)
+          }
+        }
+        if (index !== 0) {
+          if (
+            rowLength >= columns &&
+            (options.wordWrap === false || options.trim === false)
+          ) {
+            rows.push('')
+            rowLength = 0
+          }
+          if (rowLength || options.trim === false) {
+            rows[rows.length - 1] += ' '
+            rowLength++
+          }
+        }
+        const wordLength = fastStringWidth(word)
+        if (options.hard && wordLength > columns) {
+          const remainingColumns = columns - rowLength
+          const breaksStartingThisLine =
+            1 + _p_MathFloor((wordLength - remainingColumns - 1) / columns)
+          if (_p_MathFloor((wordLength - 1) / columns) < breaksStartingThisLine)
+            rows.push('')
+          wrapWord(rows, word, columns)
+          rowLength = fastStringWidth(rows.at(-1) ?? '')
+          continue
+        }
+        if (rowLength + wordLength > columns && rowLength && wordLength) {
+          if (options.wordWrap === false && rowLength < columns) {
+            wrapWord(rows, word, columns)
+            rowLength = fastStringWidth(rows.at(-1) ?? '')
+            continue
+          }
+          rows.push('')
+          rowLength = 0
+        }
+        if (rowLength + wordLength > columns && options.wordWrap === false) {
+          wrapWord(rows, word, columns)
+          rowLength = fastStringWidth(rows.at(-1) ?? '')
+          continue
+        }
+        rows[rows.length - 1] += word
+        rowLength += wordLength
+      }
+      if (options.trim !== false)
+        rows = rows.map(row => stringVisibleTrimSpacesRight(row))
+      const preString = rows.join('\n')
+      let inSurrogate = false
+      for (let i = 0; i < preString.length; i++) {
+        const character = preString[i]
+        returnValue += character
+        if (!inSurrogate) {
+          inSurrogate = character >= '\ud800' && character <= '\udbff'
+          if (inSurrogate) continue
+        } else inSurrogate = false
+        if (character === ESC$1 || character === CSI) {
+          GROUP_REGEX.lastIndex = i + 1
+          const groups = GROUP_REGEX.exec(preString)?.groups
+          if (groups?.code !== void 0) {
+            const code = _p_NumberParseFloat(groups.code)
+            escapeCode = code === END_CODE ? void 0 : code
+          } else if (groups?.uri !== void 0)
+            escapeUrl = groups.uri.length === 0 ? void 0 : groups.uri
+        }
+        if (preString[i + 1] === '\n') {
+          if (escapeUrl) returnValue += wrapAnsiHyperlink('')
+          const closingCode = escapeCode ? getClosingCode(escapeCode) : void 0
+          if (escapeCode && closingCode)
+            returnValue += wrapAnsiCode(closingCode)
+        } else if (character === '\n') {
+          if (escapeCode && getClosingCode(escapeCode))
+            returnValue += wrapAnsiCode(escapeCode)
+          if (escapeUrl) returnValue += wrapAnsiHyperlink(escapeUrl)
+        }
+      }
+      return returnValue
+    }
+    CRLF_OR_LF = /\r?\n/
+  })
+  /**
+   * Force line returns at specific width. This function is ANSI code friendly
+   * and it'll ignore invisible codes during width calculation.
+   *
+   * @param {string} content
+   * @param {number} width
+   *
+   * @returns {string}
+   */
+  function breakLines(content, width) {
+    return content
+      .split('\n')
+      .flatMap(line =>
+        wrapAnsi(line, width, {
+          trim: false,
+          wordWrap: false,
+        })
+          .split('\n')
+          .map(str => _p_StringPrototypeTrimEnd(str)),
+      )
+      .join('\n')
+  }
+  /**
+   * Returns the width of the active readline, or 80 as default value.
+   *
+   * @returns {number}
+   */
+  function readlineWidth() {
+    return (0, import_cli_width.default)({
+      defaultWidth: 80,
+      output: readline().output,
+    })
+  }
+  var import_cli_width
+  var init_utils = __esmMin(() => {
+    import_cli_width = /* @__PURE__ */ __toESM(require_cli_width(), 1)
+    init_main()
+    init_hook_engine()
+  })
+  function usePointerPosition({ active, renderedItems, pageSize, loop }) {
+    const state = useRef({
+      lastPointer: active,
+      lastActive: void 0,
+    })
+    const { lastPointer, lastActive } = state.current
+    const middle = _p_MathFloor(pageSize / 2)
+    const renderedLength = renderedItems.reduce(
+      (acc, item) => acc + item.length,
+      0,
+    )
+    const defaultPointerPosition = renderedItems
+      .slice(0, active)
+      .reduce((acc, item) => acc + item.length, 0)
+    let pointer = defaultPointerPosition
+    if (renderedLength > pageSize) {
+      if (loop) {
+        /**
+         * Creates the next position for the pointer considering an infinitely
+         * looping list of items to be rendered on the page.
+         *
+         * The goal is to progressively move the cursor to the middle position
+         * as the user move down, and then keep the cursor there. When the user
+         * move up, maintain the cursor position.
+         */
+        pointer = lastPointer
+        if (
+          lastActive != null &&
+          lastActive < active &&
+          active - lastActive < pageSize
+        )
+          pointer = _p_MathMin(
+            middle,
+            _p_MathAbs(active - lastActive) === 1
+              ? _p_MathMin(
+                  lastPointer + (renderedItems[lastActive]?.length ?? 0),
+                  _p_MathMax(defaultPointerPosition, lastPointer),
+                )
+              : lastPointer + active - lastActive,
+          )
+      } else {
+        /**
+         * Creates the next position for the pointer considering a finite list
+         * of items to be rendered on a page.
+         *
+         * The goal is to keep the pointer in the middle of the page whenever
+         * possible, until we reach the bounds of the list (top or bottom). In
+         * which case, the cursor moves progressively to the bottom or top of
+         * the list.
+         */
+        const spaceUnderActive = renderedItems
+          .slice(active)
+          .reduce((acc, item) => acc + item.length, 0)
+        pointer =
+          spaceUnderActive < pageSize - middle
+            ? pageSize - spaceUnderActive
+            : _p_MathMin(defaultPointerPosition, middle)
+      }
+    }
+    state.current.lastPointer = pointer
+    state.current.lastActive = active
+    return pointer
+  }
+  function usePagination({ items, active, renderItem, pageSize, loop = true }) {
+    const width = readlineWidth()
+    const bound = num => ((num % items.length) + items.length) % items.length
+    const renderedItems = items.map((item, index) => {
+      if (item == null) return []
+      return breakLines(
+        renderItem({
+          item,
+          index,
+          isActive: index === active,
+        }),
+        width,
+      ).split('\n')
+    })
+    const renderedLength = renderedItems.reduce(
+      (acc, item) => acc + item.length,
+      0,
+    )
+    const renderItemAtIndex = index => renderedItems[index] ?? []
+    const pointer = usePointerPosition({
+      active,
+      renderedItems,
+      pageSize,
+      loop,
+    })
+    const activeItem = renderItemAtIndex(active).slice(0, pageSize)
+    const activeItemPosition =
+      pointer + activeItem.length <= pageSize
+        ? pointer
+        : pageSize - activeItem.length
+    const pageBuffer = _p_ArrayFrom({ length: pageSize })
+    pageBuffer.splice(activeItemPosition, activeItem.length, ...activeItem)
+    const itemVisited = /* @__PURE__ */ new _p_SetCtor([active])
+    let bufferPointer = activeItemPosition + activeItem.length
+    let itemPointer = bound(active + 1)
+    while (
+      bufferPointer < pageSize &&
+      !itemVisited.has(itemPointer) &&
+      (loop && renderedLength > pageSize
+        ? itemPointer !== active
+        : itemPointer > active)
+    ) {
+      const linesToAdd = renderItemAtIndex(itemPointer).slice(
+        0,
+        pageSize - bufferPointer,
+      )
+      pageBuffer.splice(bufferPointer, linesToAdd.length, ...linesToAdd)
+      itemVisited.add(itemPointer)
+      bufferPointer += linesToAdd.length
+      itemPointer = bound(itemPointer + 1)
+    }
+    bufferPointer = activeItemPosition - 1
+    itemPointer = bound(active - 1)
+    while (
+      bufferPointer >= 0 &&
+      !itemVisited.has(itemPointer) &&
+      (loop && renderedLength > pageSize
+        ? itemPointer !== active
+        : itemPointer < active)
+    ) {
+      const lines = renderItemAtIndex(itemPointer)
+      const linesToAdd = lines.slice(
+        _p_MathMax(0, lines.length - bufferPointer - 1),
+      )
+      pageBuffer.splice(
+        bufferPointer - linesToAdd.length + 1,
+        linesToAdd.length,
+        ...linesToAdd,
+      )
+      itemVisited.add(itemPointer)
+      bufferPointer -= linesToAdd.length
+      itemPointer = bound(itemPointer - 1)
+    }
+    return pageBuffer.filter(line => typeof line === 'string').join('\n')
+  }
+  var init_use_pagination = __esmMin(() => {
+    init_use_ref()
+    init_utils()
+  })
+  var require_lib = /* @__PURE__ */ __commonJSMin((exports$10, module$9) => {
+    const Stream = __require('stream')
+    var MuteStream = class extends Stream {
+      #isTTY = null
+      constructor(opts = {}) {
+        super(opts)
+        this.writable = this.readable = true
+        this.muted = false
+        this.on('pipe', this._onpipe)
+        this.replace = opts.replace
+        this._prompt = opts.prompt || null
+        this._hadControl = false
+      }
+      #destSrc(key, def) {
+        if (this._dest) return this._dest[key]
+        if (this._src) return this._src[key]
+        return def
+      }
+      #proxy(method, ...args) {
+        if (typeof this._dest?.[method] === 'function')
+          this._dest[method](...args)
+        if (typeof this._src?.[method] === 'function')
+          this._src[method](...args)
+      }
+      get isTTY() {
+        if (this.#isTTY !== null) return this.#isTTY
+        return this.#destSrc('isTTY', false)
+      }
+      set isTTY(val) {
+        this.#isTTY = val
+      }
+      get rows() {
+        return this.#destSrc('rows')
+      }
+      get columns() {
+        return this.#destSrc('columns')
+      }
+      mute() {
+        this.muted = true
+      }
+      unmute() {
+        this.muted = false
+      }
+      _onpipe(src) {
+        this._src = src
+      }
+      pipe(dest, options) {
+        this._dest = dest
+        return super.pipe(dest, options)
+      }
+      pause() {
+        if (this._src) return this._src.pause()
+      }
+      resume() {
+        if (this._src) return this._src.resume()
+      }
+      write(c) {
+        if (this.muted) {
+          if (!this.replace) return true
+          if (c.match(/^\u001b/)) {
+            if (c.indexOf(this._prompt) === 0) {
+              c = c.slice(this._prompt.length)
+              c = c.replace(/./g, this.replace)
+              c = this._prompt + c
+            }
+            this._hadControl = true
+            return this.emit('data', c)
+          } else {
+            if (
+              this._prompt &&
+              this._hadControl &&
+              c.indexOf(this._prompt) === 0
+            ) {
+              this._hadControl = false
+              this.emit('data', this._prompt)
+              c = c.slice(this._prompt.length)
+            }
+            c = c.toString().replace(/./g, this.replace)
+          }
+        }
+        this.emit('data', c)
+      }
+      end(c) {
+        if (this.muted) {
+          if (c && this.replace) c = c.toString().replace(/./g, this.replace)
+          else c = null
+        }
+        if (c) this.emit('data', c)
+        this.emit('end')
+      }
+      destroy(...args) {
+        return this.#proxy('destroy', ...args)
+      }
+      destroySoon(...args) {
+        return this.#proxy('destroySoon', ...args)
+      }
+      close(...args) {
+        return this.#proxy('close', ...args)
+      }
+    }
+    module$9.exports = MuteStream
+  })
+  var signals
+  var init_signals = __esmMin(() => {
+    signals = []
+    signals.push('SIGHUP', 'SIGINT', 'SIGTERM')
+    if (process.platform !== 'win32')
+      signals.push(
+        'SIGALRM',
+        'SIGABRT',
+        'SIGVTALRM',
+        'SIGXCPU',
+        'SIGXFSZ',
+        'SIGUSR2',
+        'SIGTRAP',
+        'SIGSYS',
+        'SIGQUIT',
+        'SIGIOT',
+      )
+    if (process.platform === 'linux')
+      signals.push('SIGIO', 'SIGPOLL', 'SIGPWR', 'SIGSTKFLT')
+  })
+  var processOk
+  var kExitEmitter
+  var global
+  var ObjectDefineProperty
+  var Emitter
+  var SignalExitBase
+  var signalExitWrap
+  var SignalExitFallback
+  var SignalExit
+  var process$1
+  var onExit
+  var load
+  var unload
+  var init_mjs = __esmMin(() => {
+    init_signals()
+    processOk = process =>
+      !!process &&
+      typeof process === 'object' &&
+      typeof process.removeListener === 'function' &&
+      typeof process.emit === 'function' &&
+      typeof process.reallyExit === 'function' &&
+      typeof process.listeners === 'function' &&
+      typeof process.kill === 'function' &&
+      typeof process.pid === 'number' &&
+      typeof process.on === 'function'
+    kExitEmitter = Symbol.for('signal-exit emitter')
+    global = globalThis
+    ObjectDefineProperty = Object.defineProperty.bind(Object)
+    Emitter = class {
+      emitted = {
+        afterExit: false,
+        exit: false,
+      }
+      listeners = {
+        afterExit: [],
+        exit: [],
+      }
+      count = 0
+      id = _p_MathRandom()
+      constructor() {
+        if (global[kExitEmitter]) return global[kExitEmitter]
+        ObjectDefineProperty(global, kExitEmitter, {
+          value: this,
+          writable: false,
+          enumerable: false,
+          configurable: false,
+        })
+      }
+      on(ev, fn) {
+        this.listeners[ev].push(fn)
+      }
+      removeListener(ev, fn) {
+        const list = this.listeners[ev]
+        const i = list.indexOf(fn)
+        /* c8 ignore start */
+        if (i === -1) return
+        /* c8 ignore stop */
+        if (i === 0 && list.length === 1) list.length = 0
+        else list.splice(i, 1)
+      }
+      emit(ev, code, signal) {
+        if (this.emitted[ev]) return false
+        this.emitted[ev] = true
+        let ret = false
+        for (const fn of this.listeners[ev])
+          ret = fn(code, signal) === true || ret
+        if (ev === 'exit') ret = this.emit('afterExit', code, signal) || ret
+        return ret
+      }
+    }
+    SignalExitBase = class {}
+    signalExitWrap = handler => {
+      return {
+        onExit(cb, opts) {
+          return handler.onExit(cb, opts)
+        },
+        load() {
+          return handler.load()
+        },
+        unload() {
+          return handler.unload()
+        },
+      }
+    }
+    SignalExitFallback = class extends SignalExitBase {
+      onExit() {
+        return () => {}
+      }
+      load() {}
+      unload() {}
+    }
+    SignalExit = class extends SignalExitBase {
+      /* c8 ignore start */
+      #hupSig = process$1.platform === 'win32' ? 'SIGINT' : 'SIGHUP'
+      /* c8 ignore stop */
+      #emitter = new Emitter()
+      #process
+      #originalProcessEmit
+      #originalProcessReallyExit
+      #sigListeners = {}
+      #loaded = false
+      constructor(process) {
+        super()
+        this.#process = process
+        this.#sigListeners = {}
+        for (const sig of signals)
+          this.#sigListeners[sig] = () => {
+            const listeners = this.#process.listeners(sig)
+            let { count } = this.#emitter
+            /* c8 ignore start */
+            const p = process
+            if (
+              typeof p.__signal_exit_emitter__ === 'object' &&
+              typeof p.__signal_exit_emitter__.count === 'number'
+            )
+              count += p.__signal_exit_emitter__.count
+            /* c8 ignore stop */
+            if (listeners.length === count) {
+              this.unload()
+              const ret = this.#emitter.emit('exit', null, sig)
+              /* c8 ignore start */
+              const s = sig === 'SIGHUP' ? this.#hupSig : sig
+              if (!ret) process.kill(process.pid, s)
+            }
+          }
+        this.#originalProcessReallyExit = process.reallyExit
+        this.#originalProcessEmit = process.emit
+      }
+      onExit(cb, opts) {
+        /* c8 ignore start */
+        if (!processOk(this.#process)) return () => {}
+        /* c8 ignore stop */
+        if (this.#loaded === false) this.load()
+        const ev = opts?.alwaysLast ? 'afterExit' : 'exit'
+        this.#emitter.on(ev, cb)
+        return () => {
+          this.#emitter.removeListener(ev, cb)
+          if (
+            this.#emitter.listeners['exit'].length === 0 &&
+            this.#emitter.listeners['afterExit'].length === 0
+          )
+            this.unload()
+        }
+      }
+      load() {
+        if (this.#loaded) return
+        this.#loaded = true
+        this.#emitter.count += 1
+        for (const sig of signals)
+          try {
+            const fn = this.#sigListeners[sig]
+            if (fn) this.#process.on(sig, fn)
+          } catch (_) {}
+        this.#process.emit = (ev, ...a) => {
+          return this.#processEmit(ev, ...a)
+        }
+        this.#process.reallyExit = code => {
+          return this.#processReallyExit(code)
+        }
+      }
+      unload() {
+        if (!this.#loaded) return
+        this.#loaded = false
+        signals.forEach(sig => {
+          const listener = this.#sigListeners[sig]
+          /* c8 ignore start */
+          if (!listener)
+            throw new _p_ErrorCtor('Listener not defined for signal: ' + sig)
+          /* c8 ignore stop */
+          try {
+            this.#process.removeListener(sig, listener)
+          } catch (_) {}
+          /* c8 ignore stop */
+        })
+        this.#process.emit = this.#originalProcessEmit
+        this.#process.reallyExit = this.#originalProcessReallyExit
+        this.#emitter.count -= 1
+      }
+      #processReallyExit(code) {
+        /* c8 ignore start */
+        if (!processOk(this.#process)) return 0
+        this.#process.exitCode = code || 0
+        /* c8 ignore stop */
+        this.#emitter.emit('exit', this.#process.exitCode, null)
+        return this.#originalProcessReallyExit.call(
+          this.#process,
+          this.#process.exitCode,
+        )
+      }
+      #processEmit(ev, ...args) {
+        const og = this.#originalProcessEmit
+        if (ev === 'exit' && processOk(this.#process)) {
+          if (typeof args[0] === 'number') this.#process.exitCode = args[0]
+          /* c8 ignore start */
+          const ret = og.call(this.#process, ev, ...args)
+          /* c8 ignore start */
+          this.#emitter.emit('exit', this.#process.exitCode, null)
+          /* c8 ignore stop */
+          return ret
+        } else return og.call(this.#process, ev, ...args)
+      }
+    }
+    process$1 = globalThis.process
+    ;({ onExit, load, unload } = signalExitWrap(
+      processOk(process$1)
+        ? new SignalExit(process$1)
+        : new SignalExitFallback(),
+    ))
+  })
+  var ESC
+  var cursorHide
+  var cursorShow
+  var cursorUp
+  var cursorDown
+  var cursorTo
+  var eraseLine
+  var eraseLines
+  var init_dist$7 = __esmMin(() => {
+    ESC = '\x1B['
+    cursorHide = '\x1B[?25l'
+    cursorShow = '\x1B[?25h'
+    cursorUp = (rows = 1) => (rows > 0 ? `${ESC}${rows}A` : '')
+    cursorDown = (rows = 1) => (rows > 0 ? `${ESC}${rows}B` : '')
+    cursorTo = (x, y) => {
+      if (typeof y === 'number' && !_p_NumberIsNaN(y))
+        return `${ESC}${y + 1};${x + 1}H`
+      return `${ESC}${x + 1}G`
+    }
+    eraseLine = '\x1B[2K'
+    eraseLines = lines =>
+      lines > 0
+        ? (eraseLine + cursorUp(1)).repeat(lines - 1) + '\x1B[2K\x1B[G'
+        : ''
+  })
+  var height
+  var lastLine
+  var ScreenManager
+  var init_screen_manager = __esmMin(() => {
+    init_utils()
+    init_dist$7()
+    height = content => content.split('\n').length
+    lastLine = content => content.split('\n').pop() ?? ''
+    ScreenManager = class {
+      height = 0
+      extraLinesUnderPrompt = 0
+      cursorPos
+      rl
+      constructor(rl) {
+        this.rl = rl
+        this.cursorPos = rl.getCursorPos()
+      }
+      write(content) {
+        this.rl.output.unmute()
+        this.rl.output.write(content)
+        this.rl.output.mute()
+      }
+      render(content, bottomContent = '') {
+        const promptLine = lastLine(content)
+        const rawPromptLine = (0, node_util.stripVTControlCharacters)(
+          promptLine,
+        )
+        let prompt = rawPromptLine
+        if (this.rl.line.length > 0)
+          prompt = prompt.slice(0, -this.rl.line.length)
+        this.rl.setPrompt(prompt)
+        this.cursorPos = this.rl.getCursorPos()
+        const width = readlineWidth()
+        content = breakLines(content, width)
+        bottomContent = breakLines(bottomContent, width)
+        if (rawPromptLine.length % width === 0) content += '\n'
+        let output = content + (bottomContent ? '\n' + bottomContent : '')
+        const bottomContentHeight =
+          _p_MathFloor(rawPromptLine.length / width) -
+          this.cursorPos.rows +
+          (bottomContent ? height(bottomContent) : 0)
+        if (bottomContentHeight > 0) output += cursorUp(bottomContentHeight)
+        output += cursorTo(this.cursorPos.cols)
+        /**
+         * Render and store state for future re-rendering.
+         */
+        this.write(
+          cursorDown(this.extraLinesUnderPrompt) +
+            eraseLines(this.height) +
+            output,
+        )
+        this.extraLinesUnderPrompt = bottomContentHeight
+        this.height = height(output)
+      }
+      checkCursorPos() {
+        const cursorPos = this.rl.getCursorPos()
+        if (cursorPos.cols !== this.cursorPos.cols) {
+          this.write(cursorTo(cursorPos.cols))
+          this.cursorPos = cursorPos
+        }
+      }
+      done({ clearContent }) {
+        this.rl.setPrompt('')
+        let output = cursorDown(this.extraLinesUnderPrompt)
+        output += clearContent ? eraseLines(this.height) : '\n'
+        output += '\x1B[G'
+        output += cursorShow
+        this.write(output)
+        this.rl.close()
+      }
+    }
+  })
+  var PromisePolyfill
+  var init_promise_polyfill = __esmMin(() => {
+    PromisePolyfill = class extends Promise {
+      static withResolver() {
+        let resolve
+        let reject
+        return {
+          promise: new _p_PromiseCtor((res, rej) => {
+            resolve = res
+            reject = rej
+          }),
+          resolve,
+          reject,
+        }
+      }
+    }
+  })
+  function getCallSites() {
+    const savedPrepareStackTrace = Error.prepareStackTrace
+    let result = []
+    try {
+      Error.prepareStackTrace = (_, callSites) => {
+        const callSitesWithoutCurrent = callSites.slice(1)
+        result = callSitesWithoutCurrent
+        return callSitesWithoutCurrent
+      }
+      /* @__PURE__ */ new _p_ErrorCtor().stack
+    } catch {
+      return result
+    }
+    Error.prepareStackTrace = savedPrepareStackTrace
+    return result
+  }
+  function createPrompt(view) {
+    const callSites = getCallSites()
+    const prompt = (config, context = {}) => {
+      const { input = process.stdin, signal } = context
+      const cleanups = /* @__PURE__ */ new _p_SetCtor()
+      const output = new import_lib.default()
+      output.pipe(context.output ?? process.stdout)
+      const rl = node_readline.createInterface({
+        terminal: true,
+        input,
+        output,
+      })
+      output.mute()
+      const screen = new ScreenManager(rl)
+      const { promise, resolve, reject } = PromisePolyfill.withResolver()
+      const cancel = () => reject(new CancelPromptError())
+      if (signal) {
+        const abort = () =>
+          reject(new AbortPromptError({ cause: signal.reason }))
+        if (signal.aborted) {
+          abort()
+          return _p_ObjectAssign(promise, { cancel })
+        }
+        signal.addEventListener('abort', abort)
+        cleanups.add(() => signal.removeEventListener('abort', abort))
+      }
+      cleanups.add(
+        onExit((code, signal) => {
+          reject(
+            new ExitPromptError(
+              `User force closed the prompt with ${code} ${signal}`,
+            ),
+          )
+        }),
+      )
+      const sigint = () =>
+        reject(new ExitPromptError(`User force closed the prompt with SIGINT`))
+      rl.on('SIGINT', sigint)
+      cleanups.add(() => rl.removeListener('SIGINT', sigint))
+      return withHooks(rl, cycle => {
+        const hooksCleanup = node_async_hooks.AsyncResource.bind(() =>
+          effectScheduler.clearAll(),
+        )
+        rl.on('close', hooksCleanup)
+        cleanups.add(() => rl.removeListener('close', hooksCleanup))
+        const startCycle = () => {
+          const checkCursorPos = () => screen.checkCursorPos()
+          rl.input.on('keypress', checkCursorPos)
+          cleanups.add(() =>
+            rl.input.removeListener('keypress', checkCursorPos),
+          )
+          let pendingDone = null
+          cycle(() => {
+            let effectsSettled = false
+            try {
+              const nextView = view(config, value => {
+                if (effectsSettled) resolve(value)
+                else pendingDone = { value }
+              })
+              if (nextView === void 0) {
+                let callerFilename = callSites[1]?.getFileName()
+                if (
+                  callerFilename &&
+                  !_p_StringPrototypeStartsWith(callerFilename, 'file://')
+                )
+                  callerFilename = node_path.default.resolve(callerFilename)
+                throw new _p_ErrorCtor(
+                  `Prompt functions must return a string.\n    at ${callerFilename}`,
+                )
+              }
+              const [content, bottomContent] =
+                typeof nextView === 'string' ? [nextView] : nextView
+              screen.render(content, bottomContent)
+              effectScheduler.run()
+            } catch (error) {
+              reject(error)
+            }
+            effectsSettled = true
+            if (pendingDone !== null) {
+              const { value } = pendingDone
+              pendingDone = null
+              resolve(value)
+            }
+          })
+        }
+        if ('readableFlowing' in input) nativeSetImmediate(startCycle)
+        else startCycle()
+        return _p_ObjectAssign(
+          promise
+            .then(
+              answer => {
+                effectScheduler.clearAll()
+                return answer
+              },
+              error => {
+                effectScheduler.clearAll()
+                throw error
+              },
+            )
+            .finally(() => {
+              cleanups.forEach(cleanup => cleanup())
+              screen.done({ clearContent: Boolean(context.clearPromptOnDone) })
+              output.end()
+            })
+            .then(() => promise),
+          { cancel },
+        )
+      })
+    }
+    return prompt
+  }
+  var import_lib
+  var nativeSetImmediate
+  var init_create_prompt = __esmMin(() => {
+    import_lib = /* @__PURE__ */ __toESM(require_lib(), 1)
+    init_mjs()
+    init_screen_manager()
+    init_promise_polyfill()
+    init_hook_engine()
+    init_errors()
+    nativeSetImmediate = globalThis.setImmediate
+  })
+  var Separator
+  var init_Separator = __esmMin(() => {
+    init_dist$10()
+    Separator = class {
+      separator = (0, node_util.styleText)(
+        'dim',
+        _p_ArrayFrom({ length: 15 }).join(figures.line),
+      )
+      type = 'separator'
+      constructor(separator) {
+        if (separator) this.separator = separator
+      }
+      static isSeparator(choice) {
+        return Boolean(
+          choice &&
+          typeof choice === 'object' &&
+          'type' in choice &&
+          choice.type === 'separator',
+        )
+      }
+    }
+  })
+  var init_dist$6 = __esmMin(() => {
+    init_key()
+    init_errors()
+    init_use_prefix()
+    init_use_state()
+    init_use_effect()
+    init_use_memo()
+    init_use_ref()
+    init_use_keypress()
+    init_make_theme()
+    init_use_pagination()
+    init_create_prompt()
+    init_Separator()
+  })
+  var dist_exports$5 = /* @__PURE__ */ __exportAll({
+    Separator: () => Separator,
+    default: () => dist_default$5,
+  })
+  function isSelectable$2(item) {
+    return !Separator.isSeparator(item) && !item.disabled
+  }
+  function isNavigable$1(item) {
+    return !Separator.isSeparator(item)
+  }
+  function isChecked(item) {
+    return !Separator.isSeparator(item) && item.checked
+  }
+  function toggle(item) {
+    return isSelectable$2(item)
+      ? {
+          ...item,
+          checked: !item.checked,
+        }
+      : item
+  }
+  function check(checked) {
+    return function (item) {
+      return isSelectable$2(item)
+        ? {
+            ...item,
+            checked,
+          }
+        : item
+    }
+  }
+  function normalizeChoices$2(choices) {
+    return choices.map(choice => {
+      if (Separator.isSeparator(choice)) return choice
+      if (
+        typeof choice !== 'object' ||
+        choice === null ||
+        !('value' in choice)
+      ) {
+        const name = String(choice)
+        return {
+          value: choice,
+          name,
+          short: name,
+          checkedName: name,
+          disabled: false,
+          checked: false,
+        }
+      }
+      const name = choice.name ?? String(choice.value)
+      const normalizedChoice = {
+        value: choice.value,
+        name,
+        short: choice.short ?? name,
+        checkedName: choice.checkedName ?? name,
+        disabled: choice.disabled ?? false,
+        checked: choice.checked ?? false,
+      }
+      if (choice.description) normalizedChoice.description = choice.description
+      return normalizedChoice
+    })
+  }
+  var checkboxTheme
+  var dist_default$5
+  var init_dist$5 = __esmMin(() => {
+    init_dist$6()
+    init_dist$7()
+    init_dist$10()
+    checkboxTheme = {
+      icon: {
+        checked: (0, node_util.styleText)('green', figures.circleFilled),
+        unchecked: figures.circle,
+        cursor: figures.pointer,
+        disabledChecked: (0, node_util.styleText)(
+          'green',
+          figures.circleDouble,
+        ),
+        disabledUnchecked: '-',
+      },
+      style: {
+        disabled: text => (0, node_util.styleText)('dim', text),
+        renderSelectedChoices: selectedChoices =>
+          selectedChoices.map(choice => choice.short).join(', '),
+        description: text => (0, node_util.styleText)('cyan', text),
+        keysHelpTip: keys =>
+          keys
+            .map(
+              ([key, action]) =>
+                `${(0, node_util.styleText)('bold', key)} ${(0, node_util.styleText)('dim', action)}`,
+            )
+            .join((0, node_util.styleText)('dim', ' • ')),
+      },
+      i18n: { disabledError: 'This option is disabled and cannot be toggled.' },
+    }
+    __name(isSelectable$2, 'isSelectable')
+    __name(isNavigable$1, 'isNavigable')
+    __name(normalizeChoices$2, 'normalizeChoices')
+    dist_default$5 = createPrompt((config, done) => {
+      const {
+        pageSize = 7,
+        loop = true,
+        required,
+        validate = () => true,
+      } = config
+      const shortcuts = {
+        all: 'a',
+        invert: 'i',
+        ...config.shortcuts,
+      }
+      const theme = makeTheme(checkboxTheme, config.theme)
+      const { keybindings } = theme
+      const [status, setStatus] = useState('idle')
+      const prefix = usePrefix({
+        status,
+        theme,
+      })
+      const [items, setItems] = useState(normalizeChoices$2(config.choices))
+      const bounds = useMemo(() => {
+        const first = items.findIndex(isNavigable$1)
+        const last = items.findLastIndex(isNavigable$1)
+        if (first === -1)
+          throw new ValidationError(
+            '[checkbox prompt] No selectable choices. All choices are disabled.',
+          )
+        return {
+          first,
+          last,
+        }
+      }, [items])
+      const [active, setActive] = useState(bounds.first)
+      const [errorMsg, setError] = useState()
+      useKeypress(async key => {
+        if (isEnterKey(key)) {
+          const selection = items.filter(isChecked)
+          const isValid = await validate([...selection])
+          if (required && !selection.length)
+            setError('At least one choice must be selected')
+          else if (isValid === true) {
+            setStatus('done')
+            done(selection.map(choice => choice.value))
+          } else setError(isValid || 'You must select a valid value')
+        } else if (isUpKey(key, keybindings) || isDownKey(key, keybindings)) {
+          if (errorMsg) setError(void 0)
+          if (
+            loop ||
+            (isUpKey(key, keybindings) && active !== bounds.first) ||
+            (isDownKey(key, keybindings) && active !== bounds.last)
+          ) {
+            const offset = isUpKey(key, keybindings) ? -1 : 1
+            let next = active
+            do next = (next + offset + items.length) % items.length
+            while (!isNavigable$1(items[next]))
+            setActive(next)
+          }
+        } else if (isSpaceKey(key)) {
+          const activeItem = items[active]
+          if (activeItem && !Separator.isSeparator(activeItem)) {
+            if (activeItem.disabled) setError(theme.i18n.disabledError)
+            else {
+              setError(void 0)
+              setItems(
+                items.map((choice, i) =>
+                  i === active ? toggle(choice) : choice,
+                ),
+              )
+            }
+          }
+        } else if (key.name === shortcuts.all) {
+          const selectAll = items.some(
+            choice => isSelectable$2(choice) && !choice.checked,
+          )
+          setItems(items.map(check(selectAll)))
+        } else if (key.name === shortcuts.invert) setItems(items.map(toggle))
+        else if (isNumberKey(key)) {
+          const selectedIndex = Number(key.name) - 1
+          let selectableIndex = -1
+          const position = items.findIndex(item => {
+            if (Separator.isSeparator(item)) return false
+            selectableIndex++
+            return selectableIndex === selectedIndex
+          })
+          const selectedItem = items[position]
+          if (selectedItem && isSelectable$2(selectedItem)) {
+            setActive(position)
+            setItems(
+              items.map((choice, i) =>
+                i === position ? toggle(choice) : choice,
+              ),
+            )
+          }
+        }
+      })
+      const message = theme.style.message(config.message, status)
+      let description
+      const page = usePagination({
+        items,
+        active,
+        renderItem({ item, isActive }) {
+          if (Separator.isSeparator(item)) return ` ${item.separator}`
+          const cursor = isActive ? theme.icon.cursor : ' '
+          if (item.disabled) {
+            const disabledLabel =
+              typeof item.disabled === 'string' ? item.disabled : '(disabled)'
+            const checkbox = item.checked
+              ? theme.icon.disabledChecked
+              : theme.icon.disabledUnchecked
+            return theme.style.disabled(
+              `${cursor}${checkbox} ${item.name} ${disabledLabel}`,
+            )
+          }
+          if (isActive) description = item.description
+          const checkbox = item.checked
+            ? theme.icon.checked
+            : theme.icon.unchecked
+          const name = item.checked ? item.checkedName : item.name
+          return (isActive ? theme.style.highlight : x => x)(
+            `${cursor}${checkbox} ${name}`,
+          )
+        },
+        pageSize,
+        loop,
+      })
+      if (status === 'done') {
+        const selection = items.filter(isChecked)
+        return [
+          prefix,
+          message,
+          theme.style.answer(
+            theme.style.renderSelectedChoices(selection, items),
+          ),
+        ]
+          .filter(Boolean)
+          .join(' ')
+      }
+      const keys = [
+        ['↑↓', 'navigate'],
+        ['space', 'select'],
+      ]
+      if (shortcuts.all) keys.push([shortcuts.all, 'all'])
+      if (shortcuts.invert) keys.push([shortcuts.invert, 'invert'])
+      keys.push(['⏎', 'submit'])
+      const helpLine = theme.style.keysHelpTip(keys)
+      return `${[
+        [prefix, message].filter(Boolean).join(' '),
+        page,
+        ' ',
+        description ? theme.style.description(description) : '',
+        errorMsg ? theme.style.error(errorMsg) : '',
+        helpLine,
+      ]
+        .filter(Boolean)
+        .join('\n')
+        .trimEnd()}${cursorHide}`
+    })
+  })
+  var dist_exports$4 = /* @__PURE__ */ __exportAll({
+    default: () => dist_default$4,
+  })
+  function getBooleanValue(value, defaultValue) {
+    let answer = defaultValue !== false
+    if (/^(y|yes)/i.test(value)) answer = true
+    else if (/^(n|no)/i.test(value)) answer = false
+    return answer
+  }
+  function boolToString(value) {
+    return value ? 'Yes' : 'No'
+  }
+  var dist_default$4
+  var init_dist$4 = __esmMin(() => {
+    init_dist$6()
+    dist_default$4 = createPrompt((config, done) => {
+      const { transformer = boolToString } = config
+      const [status, setStatus] = useState('idle')
+      const [value, setValue] = useState('')
+      const theme = makeTheme(config.theme)
+      const prefix = usePrefix({
+        status,
+        theme,
+      })
+      useKeypress((key, rl) => {
+        if (status !== 'idle') return
+        if (isEnterKey(key)) {
+          const answer = getBooleanValue(value, config.default)
+          setValue(transformer(answer))
+          setStatus('done')
+          done(answer)
+        } else if (isTabKey(key)) {
+          const answer = boolToString(!getBooleanValue(value, config.default))
+          rl.clearLine(0)
+          rl.write(answer)
+          setValue(answer)
+        } else setValue(rl.line)
+      })
+      let formattedValue = value
+      let defaultValue = ''
+      if (status === 'done') formattedValue = theme.style.answer(value)
+      else
+        defaultValue = ` ${theme.style.defaultAnswer(config.default === false ? 'y/N' : 'Y/n')}`
+      return `${prefix} ${theme.style.message(config.message, status)}${defaultValue} ${formattedValue}`
+    })
+  })
+  var dist_exports$3 = /* @__PURE__ */ __exportAll({
+    default: () => dist_default$3,
+  })
+  var inputTheme
+  var dist_default$3
+  var init_dist$3 = __esmMin(() => {
+    init_dist$6()
+    inputTheme = { validationFailureMode: 'keep' }
+    dist_default$3 = createPrompt((config, done) => {
+      const { prefill = 'tab' } = config
+      const theme = makeTheme(inputTheme, config.theme)
+      const [status, setStatus] = useState('idle')
+      const [defaultValue, setDefaultValue] = useState(
+        String(config.default ?? ''),
+      )
+      const [errorMsg, setError] = useState()
+      const [value, setValue] = useState('')
+      const prefix = usePrefix({
+        status,
+        theme,
+      })
+      async function validate(value) {
+        const { required, pattern, patternError = 'Invalid input' } = config
+        if (required && !value) return 'You must provide a value'
+        if (pattern && !pattern.test(value)) return patternError
+        if (typeof config.validate === 'function')
+          return (
+            (await config.validate(value)) || 'You must provide a valid value'
+          )
+        return true
+      }
+      useKeypress(async (key, rl) => {
+        if (status !== 'idle') return
+        if (isEnterKey(key)) {
+          const answer = value || defaultValue
+          setStatus('loading')
+          const isValid = await validate(answer)
+          if (isValid === true) {
+            setValue(answer)
+            setStatus('done')
+            done(answer)
+          } else {
+            if (theme.validationFailureMode === 'clear') setValue('')
+            else rl.write(value)
+            setError(isValid)
+            setStatus('idle')
+          }
+        } else if (isBackspaceKey(key) && !value) setDefaultValue('')
+        else if (isTabKey(key) && !value) {
+          setDefaultValue('')
+          rl.clearLine(0)
+          rl.write(defaultValue)
+          setValue(defaultValue)
+        } else {
+          setValue(rl.line)
+          setError(void 0)
+        }
+      })
+      useEffect(rl => {
+        if (prefill === 'editable' && defaultValue) {
+          rl.write(defaultValue)
+          setValue(defaultValue)
+        }
+      }, [])
+      const message = theme.style.message(config.message, status)
+      let formattedValue = value
+      if (typeof config.transformer === 'function')
+        formattedValue = config.transformer(value, {
+          isFinal: status === 'done',
+        })
+      else if (status === 'done') formattedValue = theme.style.answer(value)
+      let defaultStr
+      if (defaultValue && status !== 'done' && !value)
+        defaultStr = theme.style.defaultAnswer(defaultValue)
+      let error = ''
+      if (errorMsg) error = theme.style.error(errorMsg)
+      return [
+        [prefix, message, defaultStr, formattedValue]
+          .filter(v => v !== void 0)
+          .join(' '),
+        error,
+      ]
+    })
+  })
+  var dist_exports$2 = /* @__PURE__ */ __exportAll({
+    default: () => dist_default$2,
+  })
+  var passwordTheme
+  var dist_default$2
+  var init_dist$2 = __esmMin(() => {
+    init_dist$6()
+    init_dist$7()
+    passwordTheme = { style: { maskedText: '[input is masked]' } }
+    dist_default$2 = createPrompt((config, done) => {
+      const { validate = () => true } = config
+      const theme = makeTheme(passwordTheme, config.theme)
+      const [status, setStatus] = useState('idle')
+      const [errorMsg, setError] = useState()
+      const [value, setValue] = useState('')
+      const prefix = usePrefix({
+        status,
+        theme,
+      })
+      useKeypress(async (key, rl) => {
+        if (status !== 'idle') return
+        if (isEnterKey(key)) {
+          const answer = value
+          setStatus('loading')
+          const isValid = await validate(answer)
+          if (isValid === true) {
+            setValue(answer)
+            setStatus('done')
+            done(answer)
+          } else {
+            rl.write(value)
+            setError(isValid || 'You must provide a valid value')
+            setStatus('idle')
+          }
+        } else {
+          setValue(rl.line)
+          setError(void 0)
+        }
+      })
+      const message = theme.style.message(config.message, status)
+      let formattedValue = ''
+      let helpTip
+      if (config.mask)
+        formattedValue = (
+          typeof config.mask === 'string' ? config.mask : '*'
+        ).repeat(value.length)
+      else if (status !== 'done')
+        helpTip = `${theme.style.help(theme.style.maskedText)}${cursorHide}`
+      if (status === 'done') formattedValue = theme.style.answer(formattedValue)
+      let error = ''
+      if (errorMsg) error = theme.style.error(errorMsg)
+      return [
+        [prefix, message, config.mask ? formattedValue : helpTip].join(' '),
+        error,
+      ]
+    })
+  })
+  var dist_exports$1 = /* @__PURE__ */ __exportAll({
+    Separator: () => Separator,
+    default: () => dist_default$1,
+  })
+  function isSelectable$1(item) {
+    return !Separator.isSeparator(item) && !item.disabled
+  }
+  function normalizeChoices$1(choices) {
+    return choices.map(choice => {
+      if (Separator.isSeparator(choice)) return choice
+      if (
+        typeof choice !== 'object' ||
+        choice === null ||
+        !('value' in choice)
+      ) {
+        const name = String(choice)
+        return {
+          value: choice,
+          name,
+          short: name,
+          disabled: false,
+        }
+      }
+      const name = choice.name ?? String(choice.value)
+      const normalizedChoice = {
+        value: choice.value,
+        name,
+        short: choice.short ?? name,
+        disabled: choice.disabled ?? false,
+      }
+      if (choice.description) normalizedChoice.description = choice.description
+      return normalizedChoice
+    })
+  }
+  var searchTheme
+  var dist_default$1
+  var init_dist$1 = __esmMin(() => {
+    init_dist$6()
+    init_dist$10()
+    searchTheme = {
+      icon: { cursor: figures.pointer },
+      style: {
+        disabled: text => (0, node_util.styleText)('dim', `- ${text}`),
+        searchTerm: text => (0, node_util.styleText)('cyan', text),
+        description: text => (0, node_util.styleText)('cyan', text),
+        keysHelpTip: keys =>
+          keys
+            .map(
+              ([key, action]) =>
+                `${(0, node_util.styleText)('bold', key)} ${(0, node_util.styleText)('dim', action)}`,
+            )
+            .join((0, node_util.styleText)('dim', ' • ')),
+      },
+    }
+    __name(isSelectable$1, 'isSelectable')
+    __name(normalizeChoices$1, 'normalizeChoices')
+    dist_default$1 = createPrompt((config, done) => {
+      const { pageSize = 7, validate = () => true } = config
+      const theme = makeTheme(searchTheme, config.theme)
+      const [status, setStatus] = useState('loading')
+      const [searchTerm, setSearchTerm] = useState(config.initialValue ?? '')
+      const [searchResults, setSearchResults] = useState([])
+      const [searchError, setSearchError] = useState()
+      const defaultApplied = useRef(false)
+      const prefix = usePrefix({
+        status,
+        theme,
+      })
+      const bounds = useMemo(() => {
+        return {
+          first: searchResults.findIndex(isSelectable$1),
+          last: searchResults.findLastIndex(isSelectable$1),
+        }
+      }, [searchResults])
+      const [active = bounds.first, setActive] = useState()
+      useEffect(rl => {
+        if (config.initialValue) rl.write(config.initialValue)
+      }, [])
+      useEffect(() => {
+        const controller = new AbortController()
+        setStatus('loading')
+        setSearchError(void 0)
+        const fetchResults = async () => {
+          try {
+            const results = await config.source(searchTerm || void 0, {
+              signal: controller.signal,
+            })
+            if (!controller.signal.aborted) {
+              const normalized = normalizeChoices$1(results)
+              let initialActive
+              if (!defaultApplied.current && 'default' in config) {
+                const defaultIndex = normalized.findIndex(
+                  item => isSelectable$1(item) && item.value === config.default,
+                )
+                initialActive = defaultIndex === -1 ? void 0 : defaultIndex
+                defaultApplied.current = true
+              }
+              setActive(initialActive)
+              setSearchError(void 0)
+              setSearchResults(normalized)
+              setStatus('idle')
+            }
+          } catch (error) {
+            if (!controller.signal.aborted && error instanceof Error)
+              setSearchError(error.message)
+          }
+        }
+        fetchResults()
+        return () => {
+          controller.abort()
+        }
+      }, [searchTerm])
+      const selectedChoice = searchResults[active]
+      useKeypress(async (key, rl) => {
+        if (isEnterKey(key)) {
+          if (selectedChoice) {
+            setStatus('loading')
+            const isValid = await validate(selectedChoice.value)
+            setStatus('idle')
+            if (isValid === true) {
+              setStatus('done')
+              done(selectedChoice.value)
+            } else if (selectedChoice.name === searchTerm)
+              setSearchError(isValid || 'You must provide a valid value')
+            else {
+              rl.write(selectedChoice.name)
+              setSearchTerm(selectedChoice.name)
+            }
+          } else rl.write(searchTerm)
+        } else if (isTabKey(key) && selectedChoice) {
+          rl.clearLine(0)
+          rl.write(selectedChoice.name)
+          setSearchTerm(selectedChoice.name)
+        } else if (status !== 'loading' && (isUpKey(key) || isDownKey(key))) {
+          rl.clearLine(0)
+          if (
+            (isUpKey(key) && active !== bounds.first) ||
+            (isDownKey(key) && active !== bounds.last)
+          ) {
+            const offset = isUpKey(key) ? -1 : 1
+            let next = active
+            do
+              next =
+                (next + offset + searchResults.length) % searchResults.length
+            while (!isSelectable$1(searchResults[next]))
+            setActive(next)
+          }
+        } else setSearchTerm(rl.line)
+      })
+      const message = theme.style.message(config.message, status)
+      const helpLine = theme.style.keysHelpTip([
+        ['↑↓', 'navigate'],
+        ['⏎', 'select'],
+      ])
+      const page = usePagination({
+        items: searchResults,
+        active,
+        renderItem({ item, isActive }) {
+          if (Separator.isSeparator(item)) return ` ${item.separator}`
+          if (item.disabled) {
+            const disabledLabel =
+              typeof item.disabled === 'string' ? item.disabled : '(disabled)'
+            return theme.style.disabled(`${item.name} ${disabledLabel}`)
+          }
+          return (isActive ? theme.style.highlight : x => x)(
+            `${isActive ? theme.icon.cursor : ` `} ${item.name}`,
+          )
+        },
+        pageSize,
+        loop: false,
+      })
+      let error
+      if (searchError) error = theme.style.error(searchError)
+      else if (
+        searchResults.length === 0 &&
+        searchTerm !== '' &&
+        status === 'idle'
+      )
+        error = theme.style.error('No results found')
+      let searchStr
+      if (status === 'done' && selectedChoice)
+        return [prefix, message, theme.style.answer(selectedChoice.short)]
+          .filter(Boolean)
+          .join(' ')
+          .trimEnd()
+      else searchStr = theme.style.searchTerm(searchTerm)
+      const description = selectedChoice?.description
+      return [
+        [prefix, message, searchStr].filter(Boolean).join(' ').trimEnd(),
+        [
+          error ?? page,
+          ' ',
+          description ? theme.style.description(description) : '',
+          helpLine,
+        ]
+          .filter(Boolean)
+          .join('\n')
+          .trimEnd(),
+      ]
+    })
+  })
+  var dist_exports = /* @__PURE__ */ __exportAll({
+    Separator: () => Separator,
+    default: () => dist_default,
+  })
+  function isSelectable(item) {
+    return !Separator.isSeparator(item) && !item.disabled
+  }
+  function isNavigable(item) {
+    return !Separator.isSeparator(item)
+  }
+  function normalizeChoices(choices) {
+    return choices.map(choice => {
+      if (Separator.isSeparator(choice)) return choice
+      if (
+        typeof choice !== 'object' ||
+        choice === null ||
+        !('value' in choice)
+      ) {
+        const name = String(choice)
+        return {
+          value: choice,
+          name,
+          short: name,
+          disabled: false,
+        }
+      }
+      const name = choice.name ?? String(choice.value)
+      const normalizedChoice = {
+        value: choice.value,
+        name,
+        short: choice.short ?? name,
+        disabled: choice.disabled ?? false,
+      }
+      if (choice.description) normalizedChoice.description = choice.description
+      return normalizedChoice
+    })
+  }
+  var selectTheme
+  var dist_default
+  var init_dist = __esmMin(() => {
+    init_dist$6()
+    init_dist$7()
+    init_dist$10()
+    selectTheme = {
+      icon: { cursor: figures.pointer },
+      style: {
+        disabled: text => (0, node_util.styleText)('dim', text),
+        description: text => (0, node_util.styleText)('cyan', text),
+        keysHelpTip: keys =>
+          keys
+            .map(
+              ([key, action]) =>
+                `${(0, node_util.styleText)('bold', key)} ${(0, node_util.styleText)('dim', action)}`,
+            )
+            .join((0, node_util.styleText)('dim', ' • ')),
+      },
+      i18n: {
+        disabledError: 'This option is disabled and cannot be selected.',
+      },
+      indexMode: 'hidden',
+    }
+    dist_default = createPrompt((config, done) => {
+      const { loop = true, pageSize = 7 } = config
+      const theme = makeTheme(selectTheme, config.theme)
+      const { keybindings } = theme
+      const [status, setStatus] = useState('idle')
+      const prefix = usePrefix({
+        status,
+        theme,
+      })
+      const searchTimeoutRef = useRef()
+      const searchEnabled = !keybindings.includes('vim')
+      const items = useMemo(
+        () => normalizeChoices(config.choices),
+        [config.choices],
+      )
+      const bounds = useMemo(() => {
+        const first = items.findIndex(isNavigable)
+        const last = items.findLastIndex(isNavigable)
+        if (first === -1)
+          throw new ValidationError(
+            '[select prompt] No selectable choices. All choices are disabled.',
+          )
+        return {
+          first,
+          last,
+        }
+      }, [items])
+      const defaultItemIndex = useMemo(() => {
+        if (!('default' in config)) return -1
+        return items.findIndex(
+          item => isSelectable(item) && item.value === config.default,
+        )
+      }, [config.default, items])
+      const [active, setActive] = useState(
+        defaultItemIndex === -1 ? bounds.first : defaultItemIndex,
+      )
+      const selectedChoice = items[active]
+      if (selectedChoice == null || Separator.isSeparator(selectedChoice))
+        throw new _p_ErrorCtor('Active index does not point to a choice')
+      const [errorMsg, setError] = useState()
+      useKeypress((key, rl) => {
+        clearTimeout(searchTimeoutRef.current)
+        if (errorMsg) setError(void 0)
+        if (isEnterKey(key)) {
+          if (selectedChoice.disabled) setError(theme.i18n.disabledError)
+          else {
+            setStatus('done')
+            done(selectedChoice.value)
+          }
+        } else if (isUpKey(key, keybindings) || isDownKey(key, keybindings)) {
+          rl.clearLine(0)
+          if (
+            loop ||
+            (isUpKey(key, keybindings) && active !== bounds.first) ||
+            (isDownKey(key, keybindings) && active !== bounds.last)
+          ) {
+            const offset = isUpKey(key, keybindings) ? -1 : 1
+            let next = active
+            do next = (next + offset + items.length) % items.length
+            while (!isNavigable(items[next]))
+            setActive(next)
+          }
+        } else if (isNumberKey(key) && !_p_NumberIsNaN(Number(rl.line))) {
+          const selectedIndex = Number(rl.line) - 1
+          let selectableIndex = -1
+          const position = items.findIndex(item => {
+            if (Separator.isSeparator(item)) return false
+            selectableIndex++
+            return selectableIndex === selectedIndex
+          })
+          const item = items[position]
+          if (item != null && isSelectable(item)) setActive(position)
+          searchTimeoutRef.current = setTimeout(() => {
+            rl.clearLine(0)
+          }, 700)
+        } else if (isBackspaceKey(key)) rl.clearLine(0)
+        else if (searchEnabled) {
+          const searchTerm = rl.line.toLowerCase()
+          const matchIndex = items.findIndex(item => {
+            if (Separator.isSeparator(item) || !isSelectable(item)) return false
+            return item.name.toLowerCase().startsWith(searchTerm)
+          })
+          if (matchIndex !== -1) setActive(matchIndex)
+          searchTimeoutRef.current = setTimeout(() => {
+            rl.clearLine(0)
+          }, 700)
+        }
+      })
+      useEffect(
+        () => () => {
+          clearTimeout(searchTimeoutRef.current)
+        },
+        [],
+      )
+      const message = theme.style.message(config.message, status)
+      const helpLine = theme.style.keysHelpTip([
+        ['↑↓', 'navigate'],
+        ['⏎', 'select'],
+      ])
+      let separatorCount = 0
+      const page = usePagination({
+        items,
+        active,
+        renderItem({ item, isActive, index }) {
+          if (Separator.isSeparator(item)) {
+            separatorCount++
+            return ` ${item.separator}`
+          }
+          const cursor = isActive ? theme.icon.cursor : ' '
+          const indexLabel =
+            theme.indexMode === 'number'
+              ? `${index + 1 - separatorCount}. `
+              : ''
+          if (item.disabled) {
+            const disabledLabel =
+              typeof item.disabled === 'string' ? item.disabled : '(disabled)'
+            const disabledCursor = isActive ? theme.icon.cursor : '-'
+            return theme.style.disabled(
+              `${disabledCursor} ${indexLabel}${item.name} ${disabledLabel}`,
+            )
+          }
+          return (isActive ? theme.style.highlight : x => x)(
+            `${cursor} ${indexLabel}${item.name}`,
+          )
+        },
+        pageSize,
+        loop,
+      })
+      if (status === 'done')
+        return [prefix, message, theme.style.answer(selectedChoice.short)]
+          .filter(Boolean)
+          .join(' ')
+      const { description } = selectedChoice
+      return `${[
+        [prefix, message].filter(Boolean).join(' '),
+        page,
+        ' ',
+        description ? theme.style.description(description) : '',
+        errorMsg ? theme.style.error(errorMsg) : '',
+        helpLine,
+      ]
+        .filter(Boolean)
+        .join('\n')
+        .trimEnd()}${cursorHide}`
+    })
+  })
+  const signalExit = require_cjs()
+  const supportsColor =
+    (init_supports_color(), __toCommonJS(supports_color_exports))
+  const hasFlagNs = require__stub_has_flag()
+  const hasFlag = hasFlagNs.default || hasFlagNs
+  let _terminalLink
+  function getTerminalLink() {
+    if (_terminalLink === void 0) {
+      const ns = require_terminal_link()
+      _terminalLink = ns.default || ns
+    }
+    return _terminalLink
+  }
+  const yoctocolorsCjs = require_yoctocolors_cjs$1()
+  const checkbox = (init_dist$5(), __toCommonJS(dist_exports$5))
+  const confirm = (init_dist$4(), __toCommonJS(dist_exports$4))
+  const input = (init_dist$3(), __toCommonJS(dist_exports$3))
+  const password = (init_dist$2(), __toCommonJS(dist_exports$2))
+  const search = (init_dist$1(), __toCommonJS(dist_exports$1))
+  const select = (init_dist(), __toCommonJS(dist_exports))
+  module.exports = {
+    checkbox,
+    confirm,
+    getTerminalLink,
+    hasFlag,
+    input,
+    password,
+    search,
+    select,
+    signalExit,
+    supportsColor,
+    yoctocolorsCjs,
+  }
+})
+
+var require_supports_color = /* @__PURE__ */ __commonJSMin(
+  (exports, module) => {
+    const { supportsColor } = require_external_pack()
+    const { ObjectAssign: _p_ObjectAssign } = require_object()
+    const eager = supportsColor.default || supportsColor
+    _p_ObjectAssign(module.exports, eager)
+    if (typeof supportsColor.createSupportsColor === 'function')
+      module.exports.createSupportsColor = supportsColor.createSupportsColor
+    module.exports.default = eager
+  },
+)
+
+var require_support = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  let cachedSupportsColor
+  /**
+   * Capability of a stream that accepts no escapes at all.
+   */
+  const COLOR_CAPABILITY_NONE = Object.freeze({
+    palette: 'none',
+    level: 0,
+    hasBasic: false,
+    has256: false,
+    has16m: false,
+  })
+  /**
+   * Resolve what a stream accepts.
+   *
+   * Pass the stream the text is going to. Omitting it resolves nothing and
+   * returns {@link COLOR_CAPABILITY_NONE}, because "no stream named" cannot be
+   * answered as "color is fine".
+   *
+   * @example
+   *   ;```typescript
+   *   getColorCapability({ stream: process.stderr }).has16m
+   *   ```
+   *
+   * @param config - Resolution inputs.
+   *
+   * @returns What the stream accepts.
+   */
+  function getColorCapability(config) {
+    const { sniffFlags, stream } = {
+      __proto__: null,
+      ...config,
+    }
+    if (!stream) return COLOR_CAPABILITY_NONE
+    const options = sniffFlags === void 0 ? void 0 : { sniffFlags }
+    return toColorCapability(
+      getSupportsColor().createSupportsColor(stream, options),
+    )
+  }
+  /**
+   * Get the color detector. Required lazily on first call — see the @file note
+   * on the external-pack top-level.
+   *
+   * @returns The detector module.
+   */
+  function getSupportsColor() {
+    if (cachedSupportsColor === void 0)
+      cachedSupportsColor = require_supports_color()
+    return cachedSupportsColor
+  }
+  /**
+   * Whether a stream accepts any color escape at all.
+   *
+   * The cheap gate to put in front of an escape-emitting write.
+   *
+   * @param config - Resolution inputs.
+   *
+   * @returns `true` when the stream accepts at least the 16-color set.
+   */
+  function isColorSupported(config) {
+    return getColorCapability(config).hasBasic
+  }
+  /**
+   * Whether a stream accepts 24-bit truecolor.
+   *
+   * The gate for an RGB tuple, which has no meaning on a 16-color stream.
+   *
+   * @param config - Resolution inputs.
+   *
+   * @returns `true` when the stream accepts `[38;2;r;g;bm`.
+   */
+  function isTrueColorSupported(config) {
+    return getColorCapability(config).has16m
+  }
+  /**
+   * Convert the detector's result into a {@link ColorCapability}.
+   *
+   * @param info - Detector result, `false` when the stream accepts nothing.
+   *
+   * @returns The equivalent capability.
+   */
+  function toColorCapability(info) {
+    if (!info) return COLOR_CAPABILITY_NONE
+    const { has16m, has256, hasBasic, level } = info
+    return {
+      palette: toColorPalette(level),
+      level,
+      hasBasic,
+      has256,
+      has16m,
+    }
+  }
+  /**
+   * Convert a numeric detector level into its palette name.
+   *
+   * @param level - Level 0 none through 3 truecolor.
+   *
+   * @returns The matching palette name.
+   */
+  function toColorPalette(level) {
+    if (level >= 3) return 'truecolor'
+    if (level === 2) return 'ansi256'
+    if (level === 1) return 'basic'
+    return 'none'
+  }
+  exports.COLOR_CAPABILITY_NONE = COLOR_CAPABILITY_NONE
+  exports.getColorCapability = getColorCapability
+  exports.getSupportsColor = getSupportsColor
+  exports.isColorSupported = isColorSupported
+  exports.isTrueColorSupported = isTrueColorSupported
+  exports.toColorCapability = toColorCapability
+  exports.toColorPalette = toColorPalette
+})
+
+var require_yoctocolors_cjs = /* @__PURE__ */ __commonJSMin(
+  (exports, module) => {
+    const { yoctocolorsCjs } = require_external_pack()
+    module.exports = yoctocolorsCjs
+    module.exports.default = yoctocolorsCjs
+  },
+)
+
+var require_colors = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_term_colors_support = require_support()
+  let cachedYoctocolors
+  /**
+   * Apply a color to text, or return it unchanged when the destination accepts
+   * no color.
+   *
+   * Handles named colors and RGB tuples. The palette a stream accepts decides
+   * which of the two can be honored: an RGB tuple is 24-bit truecolor, so a
+   * stream without truecolor gets plain text rather than an escape it cannot
+   * render.
+   *
+   * @example
+   *   ;```typescript
+   *   applyColor('ok', 'green', { stream: process.stdout })
+   *   ```
+   *
+   * @param text - Text to color.
+   * @param color - Named color or RGB tuple.
+   * @param config - Destination inputs.
+   *
+   * @returns The colored text, or `text` unchanged when color is not accepted.
+   */
+  function applyColor(text, color, config) {
+    const { stream } = {
+      __proto__: null,
+      ...config,
+    }
+    const capability = require_term_colors_support.getColorCapability({
+      stream: stream ?? process.stderr,
+    })
+    if (typeof color === 'string') {
+      if (!capability.hasBasic) return text
+      const formatter = getYoctocolors()[color]
+      return formatter ? formatter(text) : text
+    }
+    if (!capability.has16m) return text
+    const { 0: r, 1: g, 2: b } = color
+    return `\u001B[38;2;${r};${g};${b}m${text}\u001B[39m`
+  }
+  /**
+   * Get the yoctocolors module for terminal colors. Required lazily on first
+   * call — see the @file note on the external-pack top-level.
+   */
+  function getYoctocolors() {
+    if (cachedYoctocolors === void 0)
+      cachedYoctocolors = require_yoctocolors_cjs()
+    return cachedYoctocolors
+  }
+  exports.applyColor = applyColor
+  exports.getYoctocolors = getYoctocolors
+})
+
+/**
+ * Bundled from @socketregistry/is-unicode-supported
+ * This is a zero-dependency bundle created by rolldown.
+ */
+var require_is_unicode_supported$1 = /* @__PURE__ */ __commonJSMin(
+  (exports, module) => {
+    var __commonJSMin = (cb, mod) => () => (
+      mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+      mod.exports
+    )
+    var require_is_unicode_supported = /* @__PURE__ */ __commonJSMin(
+      (exports$1, module$2) => {
+        let _process
+        function getProcess() {
+          if (_process === void 0) _process = __require('process')
+          return _process
+        }
+        module$2.exports = function isUnicodeSupported() {
+          const process = getProcess()
+          if (process.platform !== 'win32') return process.env.TERM !== 'linux'
+          const { env } = process
+          if (
+            env.WT_SESSION ||
+            env.TERMINUS_SUBLIME ||
+            env.ConEmuTask === '{cmd::Cmder}'
+          )
+            return true
+          const { TERM, TERM_PROGRAM } = env
+          return (
+            TERM_PROGRAM === 'Terminus-Sublime' ||
+            TERM_PROGRAM === 'vscode' ||
+            TERM === 'xterm-256color' ||
+            TERM === 'alacritty' ||
+            TERM === 'rxvt-unicode' ||
+            TERM === 'rxvt-unicode-256color' ||
+            env.TERMINAL_EMULATOR === 'JetBrains-JediTerm'
+          )
+        }
+      },
+    )
+    module.exports = require_is_unicode_supported()
+  },
+)
+
+var require_symbols_builder = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_runtime$1 = require_runtime$2()
+  const require_primordials_string = require_string$1()
+  const require_logger_colors = require_colors()
+  let src_external__socketregistry_is_unicode_supported_js =
+    require_is_unicode_supported$1()
+  src_external__socketregistry_is_unicode_supported_js =
+    require_runtime$1.__toESM(
+      src_external__socketregistry_is_unicode_supported_js,
+      1,
+    )
+  /**
+   * @file Free-function helpers for per-instance log-symbol construction +
+   *   symbol stripping. Extracted from `logger/node.ts` (the `Logger` class) so
+   *   the class stays under the 1000-line hard cap and so other callers (alt
+   *   loggers, format helpers) can reuse the same logic without instantiating a
+   *   `Logger`.
+   *
+   *   - `buildLoggerSymbols` — theme + unicode-detection → `LogSymbols` map
+   *   - `stripLoggerSymbols` — strip leading status emoji from a string
+   */
+  /**
+   * Build a `LogSymbols` map for the given theme.
+   *
+   * On unicode-supporting terminals returns the canonical icons (`✔`, `✖`, `⚠`,
+   * `ⓘ`, `→`, `∴`, `↻`); otherwise returns ASCII fallbacks (`√`, `×`, `‼`, `i`,
+   * `>`, `:.`, `@`). Colors are pulled from the supplied theme via
+   * `applyColor`.
+   */
+  function buildLoggerSymbols(theme) {
+    const supported = (0,
+    src_external__socketregistry_is_unicode_supported_js.default)()
+    /* c8 ignore start - ASCII-fallback symbol arms only fire on
+		terminals without unicode support; tests run on unicode TTYs. */
+    return {
+      __proto__: null,
+      fail: require_logger_colors.applyColor(
+        supported ? '✖' : '×',
+        theme.colors.error,
+      ),
+      info: require_logger_colors.applyColor(
+        supported ? 'ⓘ' : 'i',
+        theme.colors.info,
+      ),
+      progress: require_logger_colors.applyColor(
+        supported ? '∴' : ':.',
+        theme.colors.step,
+      ),
+      skip: require_logger_colors.applyColor(
+        supported ? '↻' : '@',
+        theme.colors.step,
+      ),
+      step: require_logger_colors.applyColor(
+        supported ? '→' : '>',
+        theme.colors.step,
+      ),
+      success: require_logger_colors.applyColor(
+        supported ? '✔' : '√',
+        theme.colors.success,
+      ),
+      warn: require_logger_colors.applyColor(
+        supported ? '⚠' : '‼',
+        theme.colors.warning,
+      ),
+    }
+    /* c8 ignore stop */
+  }
+  /**
+   * Strip leading log-status symbols and variation selectors from a string.
+   * Matches both unicode forms (`✖`, `⚠`, `✔`, `ⓘ`, `ℹ`, `→`, `∴`, `↻`) and the
+   * unambiguous ASCII fallback `:.`. Does not strip lone ASCII letters (`i`,
+   * `>`, `@`) since those would mangle real words.
+   *
+   * Handles the trailing variation-selector U+FE0F + whitespace so a `'✔ Done'`
+   * input becomes `'Done'`.
+   */
+  function stripLoggerSymbols(text) {
+    return require_primordials_string.StringPrototypeReplace(
+      text,
+      /^(?::.|[✖✗×⚠‼✔✓√ⓘℹ→∴↻])[️\s]*/u,
+      '',
+    )
+  }
+  exports.buildLoggerSymbols = buildLoggerSymbols
+  exports.stripLoggerSymbols = stripLoggerSymbols
+})
+
+var require_symbols = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_runtime = require_runtime$2()
+  const require_primordials_object = require_object()
+  const require_primordials_reflect = require_reflect()
+  const require_primordials_globals = require_globals()
+  const require_term_themes_context = require_context()
+  const require_logger_shared = require_shared()
+  const require_logger_colors = require_colors()
+  let src_external__socketregistry_is_unicode_supported_js =
+    require_is_unicode_supported$1()
+  src_external__socketregistry_is_unicode_supported_js =
+    require_runtime.__toESM(
+      src_external__socketregistry_is_unicode_supported_js,
+      1,
+    )
+  /**
+   * @file Symbol exports + the `LOG_SYMBOLS` proxy. The two `Symbol.for(...)`
+   *   constants are how the spinner and tests reach into a `Logger` instance to
+   *   bump the call counter and toggle blank-line tracking without exposing
+   *   private fields. The `LOG_SYMBOLS` proxy is the public colored-symbol
+   *   palette that lazily initializes on first access (so importing the logger
+   *   during early Node.js bootstrap doesn't pre-resolve the theme before
+   *   themes are configured) and re-renders whenever `setTheme()` fires
+   *   `onThemeChange`.
+   */
+  let consoleSymbols
+  let kGroupIndentationWidthSymbol
+  function createLogSymbols() {
+    const target = { __proto__: null }
+    let initialized = false
+    const handler = { __proto__: null }
+    const updateSymbols = () => {
+      const supported = (0,
+      src_external__socketregistry_is_unicode_supported_js.default)()
+      const colors = require_logger_colors.getYoctocolors()
+      const theme = require_term_themes_context.getTheme()
+      const successColor = theme.colors.success
+      const errorColor = theme.colors.error
+      const warningColor = theme.colors.warning
+      const infoColor = theme.colors.info
+      const stepColor = theme.colors.step
+      /* c8 ignore start - ASCII-fallback symbol arms only fire on
+			terminals without unicode support; tests run on unicode TTYs. */
+      target['fail'] = require_logger_colors.applyColor(
+        supported ? '✖' : '×',
+        errorColor,
+      )
+      target['info'] = require_logger_colors.applyColor(
+        supported ? 'ⓘ' : 'i',
+        infoColor,
+      )
+      target['progress'] = require_logger_colors.applyColor(
+        supported ? '∴' : ':.',
+        stepColor,
+      )
+      target['reason'] = colors.dim(
+        require_logger_colors.applyColor(supported ? '∴' : ':.', warningColor),
+      )
+      target['skip'] = require_logger_colors.applyColor(
+        supported ? '↻' : '@',
+        stepColor,
+      )
+      target['step'] = require_logger_colors.applyColor(
+        supported ? '→' : '>',
+        stepColor,
+      )
+      target['success'] = require_logger_colors.applyColor(
+        supported ? '✔' : '√',
+        successColor,
+      )
+      target['warn'] = require_logger_colors.applyColor(
+        supported ? '⚠' : '‼',
+        warningColor,
+      )
+      /* c8 ignore stop */
+    }
+    const init = () => {
+      /* c8 ignore start - Idempotent guard; init runs once, second-call branch never re-enters. */
+      if (initialized) return
+      /* c8 ignore stop */
+      updateSymbols()
+      initialized = true
+      for (const trapName in handler) delete handler[trapName]
+    }
+    const reset = () => {
+      /* c8 ignore start - Defensive guard; reset only runs after init, so the un-init branch is unreachable in tests. */
+      if (!initialized) return
+      /* c8 ignore stop */
+      updateSymbols()
+    }
+    for (const trapName of require_primordials_reflect.ReflectOwnKeys(
+      Reflect,
+    )) {
+      const fn = Reflect[trapName]
+      if (typeof fn === 'function')
+        handler[trapName] = (...args) => {
+          init()
+          return fn(...args)
+        }
+    }
+    /* c8 ignore next 4 - onThemeChange callback fires only when
+		setTheme() is called at runtime; tests use the static default
+		theme. */
+    require_term_themes_context.onThemeChange(() => {
+      reset()
+    })
+    return new require_primordials_globals.ProxyCtor(target, handler)
+  }
+  function createLogSymbolsProxyPlaceholder() {}
+  /**
+   * Lazily get console symbols on first access.
+   *
+   * Deferred to avoid accessing global console during early Node.js bootstrap
+   * before stdout is ready.
+   */
+  function getConsoleSymbols() {
+    /* c8 ignore start - Lazy-init second-call branch; module-singleton, the re-init guard never re-enters in tests. */
+    if (consoleSymbols === void 0)
+      consoleSymbols = require_primordials_object.ObjectGetOwnPropertySymbols(
+        require_logger_shared.globalConsole,
+      )
+    /* c8 ignore stop */
+    return consoleSymbols
+  }
+  /**
+   * Lazily get kGroupIndentationWidth symbol on first access.
+   */
+  function getKGroupIndentationWidthSymbol() {
+    /* c8 ignore next - Lazy-init second-call branch; module-singleton. */
+    if (kGroupIndentationWidthSymbol === void 0)
+      kGroupIndentationWidthSymbol =
+        getConsoleSymbols().find(s => s.label === 'kGroupIndentWidth') ??
+        Symbol('kGroupIndentWidth')
+    return kGroupIndentationWidthSymbol
+  }
+  /**
+   * Symbol for incrementing the internal log call counter.
+   *
+   * This is an internal symbol used to track the number of times logging
+   * methods have been called on a logger instance.
+   */
+  const incLogCallCountSymbol = Symbol.for('logger.logCallCount++')
+  /**
+   * Symbol for tracking whether the last logged line was blank.
+   *
+   * This is used internally to prevent multiple consecutive blank lines and to
+   * determine whether to add spacing before certain messages.
+   */
+  const lastWasBlankSymbol = Symbol.for('logger.lastWasBlank')
+  const LOG_SYMBOLS = /*@__PURE__*/ createLogSymbols()
+  exports.LOG_SYMBOLS = LOG_SYMBOLS
+  exports.createLogSymbols = createLogSymbols
+  exports.createLogSymbolsProxyPlaceholder = createLogSymbolsProxyPlaceholder
+  exports.getConsoleSymbols = getConsoleSymbols
+  exports.getKGroupIndentationWidthSymbol = getKGroupIndentationWidthSymbol
+  exports.incLogCallCountSymbol = incLogCallCountSymbol
+  exports.lastWasBlankSymbol = lastWasBlankSymbol
+})
+
+var require_process = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const nodeProcess = require_runtime$3().IS_NODE
+    ? /*@__PURE__*/ __require('process')
+    : void 0
+  function getNodeProcess() {
+    return nodeProcess
+  }
+  exports.getNodeProcess = getNodeProcess
+})
+
+var require_console = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_object = require_object()
+  const require_primordials_reflect = require_reflect()
+  const require_node_process = require_process()
+  const require_logger_shared = require_shared()
+  const require_logger_symbols = require_symbols()
+  const require_logger_node = require_node()
+  let cachedConsole
+  let prototypeInitialized = false
+  /**
+   * Construct a new Console instance.
+   */
+  function constructConsole(...args) {
+    /* c8 ignore next - Lazy-init second-call branch; module-singleton. */
+    if (cachedConsole === void 0)
+      cachedConsole = /* @__PURE__ */ __require('console').Console
+    return require_primordials_reflect.ReflectConstruct(cachedConsole, args)
+  }
+  /**
+   * Lazily add dynamic console methods to Logger prototype.
+   *
+   * This is deferred until first access to avoid calling
+   * Object.entries(globalConsole) during early Node.js bootstrap before stdout
+   * is ready.
+   */
+  function ensurePrototypeInitialized() {
+    if (prototypeInitialized) return
+    prototypeInitialized = true
+    const entries = [
+      [
+        require_logger_symbols.getKGroupIndentationWidthSymbol(),
+        {
+          ...require_logger_shared.consolePropAttributes,
+          value: 2,
+        },
+      ],
+      [
+        Symbol.toStringTag,
+        {
+          __proto__: null,
+          configurable: true,
+          value: 'logger',
+        },
+      ],
+    ]
+    for (const { 0: key, 1: value } of require_primordials_object.ObjectEntries(
+      require_logger_shared.globalConsole,
+    ))
+      if (
+        !require_logger_node.Logger.prototype[key] &&
+        typeof value === 'function'
+      ) {
+        const { [key]: func } = {
+          [key](...args) {
+            /* c8 ignore start */
+            let con = require_logger_shared.privateConsole.get(this)
+            if (con === void 0) {
+              const ctorArgs =
+                require_logger_shared.privateConstructorArgs.get(this) ?? []
+              require_logger_shared.privateConstructorArgs.delete(this)
+              if (ctorArgs.length) con = constructConsole(...ctorArgs)
+              else {
+                const nodeProcess = require_node_process.getNodeProcess()
+                con = constructConsole({
+                  stdout: nodeProcess.stdout,
+                  stderr: nodeProcess.stderr,
+                })
+                for (const {
+                  0: k,
+                  1: method,
+                } of require_logger_shared.getBoundConsoleEntries())
+                  con[k] = method
+              }
+              require_logger_shared.privateConsole.set(this, con)
+            }
+            const result = con[key](...args)
+            /* c8 ignore next */
+            return result === void 0 || result === con ? this : result
+          },
+        }
+        entries.push([
+          key,
+          {
+            ...require_logger_shared.consolePropAttributes,
+            value: func,
+          },
+        ])
+      }
+    require_primordials_object.ObjectDefineProperties(
+      require_logger_node.Logger.prototype,
+      require_primordials_object.ObjectFromEntries(entries),
+    )
+  }
+  /**
+   * Resolve (and lazily construct + cache) the per-instance `Console` for a
+   * logger. Ensures the prototype is initialized, then returns the cached
+   * Console from the `privateConsole` WeakMap, building one from the stored
+   * constructor args (or the default stdout/stderr pair) on first access. This
+   * lazy path is what lets the logger be imported during early Node.js
+   * bootstrap before stdout is ready, avoiding `ERR_CONSOLE_WRITABLE_STREAM`.
+   *
+   * @param logger - The logger whose Console to resolve.
+   */
+  function resolveConsole(logger) {
+    ensurePrototypeInitialized()
+    let con = require_logger_shared.privateConsole.get(logger)
+    /* c8 ignore start - ctorArgs.length-truthy fires when caller seeded
+		constructor args; both arms are exercised across tests but not always
+		in the same run. */
+    if (!con) {
+      const ctorArgs =
+        require_logger_shared.privateConstructorArgs.get(logger) ?? []
+      if (ctorArgs.length) con = constructConsole(...ctorArgs)
+      else {
+        const nodeProcess = require_node_process.getNodeProcess()
+        con = constructConsole({
+          stdout: nodeProcess.stdout,
+          stderr: nodeProcess.stderr,
+        })
+        for (const {
+          0: key,
+          1: method,
+        } of require_logger_shared.getBoundConsoleEntries())
+          con[key] = method
+      }
+      require_logger_shared.privateConsole.set(logger, con)
+      require_logger_shared.privateConstructorArgs.delete(logger)
+    }
+    /* c8 ignore stop */
+    return con
+  }
+  exports.constructConsole = constructConsole
+  exports.ensurePrototypeInitialized = ensurePrototypeInitialized
+  exports.resolveConsole = resolveConsole
+})
+
+var require_console_methods = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_logger_symbols = require_symbols()
+  /**
+   * @file Free-function bodies for the `Logger` methods that are thin,
+   *   chainable mirrors of the underlying `node:console` API (`assert`,
+   *   `count`, `dir`, `dirxml`, `table`, `time`, `timeEnd`, `timeLog`,
+   *   `trace`). Each takes the calling logger plus its already-resolved
+   *   `node:console` instance, delegates to the matching console method,
+   *   updates the shared blank-line / call-count tracking via the exported
+   *   logger symbols, and returns the logger for chaining. Pulling these out of
+   *   `./node` keeps the `Logger` class body under the file-size cap while
+   *   preserving the per-method documentation here. The class retains one-line
+   *   delegators that supply `this` and `this.#getConsole()`.
+   */
+  /**
+   * Logs an assertion failure message if the value is falsy.
+   *
+   * Works like `console.assert()` but returns the logger for chaining. If the
+   * value is truthy, nothing is logged. If falsy, logs an error message with an
+   * assertion failure.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param value - The value to test.
+   * @param message - Optional message and additional arguments to log.
+   */
+  function assertMethod(logger, con, value, message) {
+    con.assert(Boolean(value), message[0], ...message.slice(1))
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return value
+      ? logger
+      : logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  /**
+   * Increments and logs a counter for the given label.
+   *
+   * Each unique label maintains its own counter. Works like `console.count()`.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param label - Optional label for the counter (defaults to 'default').
+   */
+  function countMethod(logger, con, label) {
+    con.count(label)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  /**
+   * Displays an object's properties in a formatted way.
+   *
+   * Works like `console.dir()` with customizable options for depth, colors,
+   * etc. Useful for inspecting complex objects.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param obj - The object to display.
+   * @param options - Optional formatting options (Node.js inspect options).
+   */
+  function dirMethod(logger, con, obj, options) {
+    con.dir(obj, options)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  /**
+   * Displays data as XML/HTML in a formatted way.
+   *
+   * Works like `console.dirxml()`. In Node.js, behaves the same as `dir()`.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param data - The data to display.
+   */
+  function dirxmlMethod(logger, con, data) {
+    con.dirxml(data)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  /**
+   * Displays data in a table format.
+   *
+   * Works like `console.table()`. Accepts arrays of objects or objects with
+   * nested objects. Optionally specify which properties to include in the
+   * table.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param tabularData - The data to display as a table.
+   * @param properties - Optional array of property names to include.
+   */
+  function tableMethod(logger, con, tabularData, properties) {
+    con.table(tabularData, properties ? [...properties] : void 0)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  /**
+   * Ends a timer and logs the elapsed time.
+   *
+   * Logs the duration since `console.time()` or `logger.time()` was called with
+   * the same label. The timer is stopped and removed.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param label - Optional label for the timer (defaults to 'default').
+   */
+  function timeEndMethod(logger, con, label) {
+    con.timeEnd(label)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  /**
+   * Logs the current value of a timer without stopping it.
+   *
+   * Logs the duration since `console.time()` was called with the same label,
+   * but keeps the timer running. Can include additional data to log alongside
+   * the time.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param label - Optional label for the timer (defaults to 'default').
+   * @param data - Additional data to log with the time.
+   */
+  function timeLogMethod(logger, con, label, data) {
+    con.timeLog(label, ...data)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  /**
+   * Starts a timer for measuring elapsed time.
+   *
+   * Creates a timer with the given label. Use `timeEnd()` with the same label
+   * to stop the timer and log the elapsed time, or use `timeLog()` to check the
+   * time without stopping the timer.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param label - Optional label for the timer (defaults to 'default').
+   */
+  function timeMethod(logger, con, label) {
+    con.time(label)
+    return logger
+  }
+  /**
+   * Logs a stack trace to the console.
+   *
+   * Works like `console.trace()`. Shows the call stack leading to where this
+   * method was called. Useful for debugging.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param message - Optional message to display with the trace.
+   * @param args - Additional arguments to log.
+   */
+  function traceMethod(logger, con, message, args) {
+    con.trace(message, ...args)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger[require_logger_symbols.incLogCallCountSymbol]()
+  }
+  exports.assertMethod = assertMethod
+  exports.countMethod = countMethod
+  exports.dirMethod = dirMethod
+  exports.dirxmlMethod = dirxmlMethod
+  exports.tableMethod = tableMethod
+  exports.timeEndMethod = timeEndMethod
+  exports.timeLogMethod = timeLogMethod
+  exports.timeMethod = timeMethod
+  exports.traceMethod = traceMethod
+})
+
+var require_indentation_methods = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_reflect = require_reflect()
+  const require_primordials_math = require_math()
+  const require_logger_shared = require_shared()
+  const require_logger_symbols = require_symbols()
+  /**
+   * @file Free-function bodies for the `Logger` indentation-domain methods
+   *   (`indent`, `dedent`, `resetIndent`, `group`, `groupCollapsed`,
+   *   `groupEnd`). Indentation is tracked at the prefix layer as a per-stream
+   *   string of spaces rather than via `node:console`'s frozen
+   *   `Symbol(kGroupIndent)`, so these helpers read and write that prefix
+   *   through a small accessor context handed in by the calling `Logger`.
+   *   Pulling these out of `./node` keeps the `Logger` class body under the
+   *   file-size cap; the class retains one-line delegators that build the
+   *   context from its private state.
+   */
+  /**
+   * Decrease the indentation prefix by `spaces`.
+   *
+   * On the root logger (`boundStream` undefined) both streams shrink; on a
+   * stream-bound logger only the bound stream shrinks. Returns the logger for
+   * chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param ctx - The logger's indentation accessor context.
+   * @param spaces - Number of spaces to remove (default 2).
+   */
+  function dedentMethod(logger, ctx, spaces) {
+    if (ctx.boundStream) {
+      const current = ctx.getIndent(ctx.boundStream)
+      ctx.setIndent(ctx.boundStream, current.slice(0, -spaces))
+    } else {
+      const stderrCurrent = ctx.getIndent('stderr')
+      const stdoutCurrent = ctx.getIndent('stdout')
+      ctx.setIndent('stderr', stderrCurrent.slice(0, -spaces))
+      ctx.setIndent('stdout', stdoutCurrent.slice(0, -spaces))
+    }
+    return logger
+  }
+  /**
+   * End the current log group and decrease indentation by the group-indent
+   * width.
+   *
+   * Call once per `groupMethod` / `groupCollapsed`. Returns the logger for
+   * chaining.
+   *
+   * @param logger - The calling logger instance.
+   */
+  function groupEndMethod(logger) {
+    logger.dedent(
+      logger[require_logger_symbols.getKGroupIndentationWidthSymbol()],
+    )
+    return logger
+  }
+  /**
+   * Start a new indented log group.
+   *
+   * A provided label is logged via the logger's own `log` before indentation
+   * increases by the group-indent width (default 2). Groups nest; close with
+   * `groupEndMethod`. Returns the logger for chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param label - Optional label to display before the group.
+   */
+  function groupMethod(logger, label) {
+    const { length } = label
+    if (length)
+      require_primordials_reflect.ReflectApply(logger.log, logger, label)
+    logger.indent(
+      logger[require_logger_symbols.getKGroupIndentationWidthSymbol()],
+    )
+    if (length) {
+      logger[require_logger_symbols.lastWasBlankSymbol](false)
+      logger[require_logger_symbols.incLogCallCountSymbol]()
+    }
+    return logger
+  }
+  /**
+   * Increase the indentation prefix by `spaces`, capped at `maxIndentation`.
+   *
+   * On the root logger both streams grow; on a stream-bound logger only the
+   * bound stream grows. Returns the logger for chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param ctx - The logger's indentation accessor context.
+   * @param spaces - Number of spaces to add (default 2).
+   */
+  function indentMethod(logger, ctx, spaces) {
+    const spacesToAdd = ' '.repeat(
+      require_primordials_math.MathMin(
+        spaces,
+        require_logger_shared.maxIndentation,
+      ),
+    )
+    if (ctx.boundStream) {
+      const current = ctx.getIndent(ctx.boundStream)
+      ctx.setIndent(ctx.boundStream, current + spacesToAdd)
+    } else {
+      const stderrCurrent = ctx.getIndent('stderr')
+      const stdoutCurrent = ctx.getIndent('stdout')
+      ctx.setIndent('stderr', stderrCurrent + spacesToAdd)
+      ctx.setIndent('stdout', stdoutCurrent + spacesToAdd)
+    }
+    return logger
+  }
+  /**
+   * Reset all indentation to zero.
+   *
+   * On the root logger both streams reset; on a stream-bound logger only the
+   * bound stream resets. Returns the logger for chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param ctx - The logger's indentation accessor context.
+   */
+  function resetIndentMethod(logger, ctx) {
+    if (ctx.boundStream) ctx.setIndent(ctx.boundStream, '')
+    else {
+      ctx.setIndent('stderr', '')
+      ctx.setIndent('stdout', '')
+    }
+    return logger
+  }
+  exports.dedentMethod = dedentMethod
+  exports.groupEndMethod = groupEndMethod
+  exports.groupMethod = groupMethod
+  exports.indentMethod = indentMethod
+  exports.resetIndentMethod = resetIndentMethod
+})
+
+var require_options = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_term_themes_presets = require_presets()
+  /**
+   * @file Constructor-options parsing for the `Logger` class. Pulls the
+   *   options-shape inspection (null-prototype clone, original-stdout capture,
+   *   theme-name-or-object resolution) out of `./node` so the class constructor
+   *   stays a thin shell over `parseLoggerOptions`. Returns a normalized
+   *   `ParsedLoggerOptions`; the constructor copies the fields onto its private
+   *   slots.
+   */
+  /**
+   * Parse the first `Logger` constructor argument into normalized option slots.
+   *
+   * A `theme` string is resolved against `THEMES`, where an unknown name yields
+   * no theme; a `theme` object is used directly. When the first argument is not
+   * an object, every slot defaults: empty null-prototype options, no stdout,
+   * and no theme.
+   *
+   * @param args - The raw `Logger` constructor arguments.
+   */
+  function parseLoggerOptions(args) {
+    const options = args[0]
+    if (typeof options !== 'object' || options === null)
+      return {
+        options: { __proto__: null },
+        originalStdout: void 0,
+        theme: void 0,
+      }
+    const originalStdout = options.stdout
+    const themeOption = options.theme
+    let theme
+    if (typeof themeOption === 'string')
+      theme = require_term_themes_presets.THEMES[themeOption] ?? void 0
+    else if (themeOption) theme = themeOption
+    return {
+      options: {
+        __proto__: null,
+        ...options,
+      },
+      originalStdout,
+      theme,
+    }
+  }
+  exports.parseLoggerOptions = parseLoggerOptions
+})
+
+var require_strip = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_string = require_string$1()
+  const require_primordials_regexp = require_regexp()
+  /**
+   * @file ANSI escape-code regex factory and stripping helper. Provides
+   *   `ansiRegex()` for matching CSI/OSC sequences and `stripAnsi()` for
+   *   removing ANSI formatting from terminal output.
+   */
+  /**
+   * Create a regular expression for matching ANSI escape codes.
+   *
+   * Inlined ansi-regex:
+   * https://socket.dev/npm/package/ansi-regexp/overview/6.2.2 MIT License
+   * Copyright (c) Sindre Sorhus
+   * [sindresorhus@gmail.com](mailto:sindresorhus@gmail.com)
+   * (https://sindresorhus.com)
+   *
+   * @example
+   *   ;```typescript
+   *   const regex = ansiRegex()
+   *   '\u001b[31mHello\u001b[0m'.match(regex) // ['\u001b[31m', '\u001b[0m']
+   *   ansiRegex({ onlyFirst: true }) // matches only the first code
+   *   ```
+   */
+  function ansiRegex(options) {
+    const { onlyFirst } = options ?? {}
+    return new require_primordials_regexp.RegExpCtor(
+      `(?:\\u001B\\][\\s\\S]*?(?:\\u0007|\\u001B\\u005C|\\u009C))|[\\u001B\\u009B][[\\]()#;?]*(?:\\d{1,4}(?:[;:]\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]`,
+      onlyFirst ? void 0 : 'g',
+    )
+  }
+  const ANSI_FULL = ansiRegex()
+  /**
+   * Strip ANSI escape codes from text. Uses the inlined ansi-regex for
+   * matching.
+   *
+   * @example
+   *   ;```typescript
+   *   stripAnsi('\u001b[31mError\u001b[0m') // 'Error'
+   *   stripAnsi('\u001b[1mBold\u001b[0m') // 'Bold'
+   *   ```
+   */
+  function stripAnsi(text) {
+    return require_primordials_string.StringPrototypeReplace(
+      text,
+      ANSI_FULL,
+      '',
+    )
+  }
+  exports.ansiRegex = ansiRegex
+  exports.stripAnsi = stripAnsi
+})
+
+var require_format = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_string = require_string$1()
+  const require_term_ansi_strip = require_strip()
+  const require_primordials_math = require_math()
+  /**
+   * @file Line formatting helpers: `applyLinePrefix`, `centerText`,
+   *   `indentString`, `repeatString`. Plus the `fromCharCode` re-export so
+   *   callers don't have to reach into `primordials/string` for the most common
+   *   use case.
+   */
+  const fromCharCode = String.fromCharCode
+  /**
+   * Apply a prefix to each line of a string.
+   *
+   * Prepends the specified prefix to the beginning of each line in the input
+   * string. If the string contains newlines, the prefix is added after each
+   * newline as well. When no prefix is provided or prefix is empty, returns the
+   * original string unchanged.
+   *
+   * @example
+   *   ;```ts
+   *   applyLinePrefix('hello\nworld', { prefix: '> ' })
+   *   // Returns: '> hello\n> world'
+   *
+   *   applyLinePrefix('single line', { prefix: '  ' })
+   *   // Returns: '  single line'
+   *
+   *   applyLinePrefix('no prefix')
+   *   // Returns: 'no prefix'
+   *   ```
+   *
+   * @param str - The string to add prefixes to.
+   * @param options - Configuration options.
+   *
+   * @returns The string with prefix applied to each line
+   */
+  function applyLinePrefix(str, options) {
+    const { prefix = '' } = {
+      __proto__: null,
+      ...options,
+    }
+    return prefix.length
+      ? `${prefix}${require_primordials_string.StringPrototypeIncludes(str, '\n') ? str.replace(/\n/g, () => `\n${prefix}`) : str}`
+      : str
+  }
+  /**
+   * Center text within a given width.
+   *
+   * Adds spaces before and after the text to center it within the specified
+   * width. Distributes padding evenly on both sides. When the padding is odd,
+   * the extra space is added to the right side. Strips ANSI codes before
+   * calculating text length to ensure accurate centering of colored text.
+   *
+   * If the text is already wider than or equal to the target width, returns the
+   * original text unchanged. No truncation occurs.
+   *
+   * @example
+   *   ;```ts
+   *   centerText('hello', 11)
+   *   // Returns: '   hello   '
+   *
+   *   centerText('hi', 10)
+   *   // Returns: '    hi    '
+   *
+   *   centerText('odd', 8)
+   *   // Returns: '  odd   ' (2 left, 3 right)
+   *
+   *   centerText('\x1b[31mred\x1b[0m', 7)
+   *   // Returns: '  \x1b[31mred\x1b[0m  '
+   *
+   *   centerText('too long text', 5)
+   *   // Returns: 'too long text' (no truncation)
+   *   ```
+   *
+   * @param text - The text to center (may include ANSI codes)
+   * @param width - The target width in columns.
+   *
+   * @returns The centered text with padding
+   */
+  function centerText(text, width) {
+    const textLength = require_term_ansi_strip.stripAnsi(text).length
+    if (textLength >= width) return text
+    const padding = width - textLength
+    const leftPad = require_primordials_math.MathFloor(padding / 2)
+    const rightPad = padding - leftPad
+    return ' '.repeat(leftPad) + text + ' '.repeat(rightPad)
+  }
+  /**
+   * Indent each line of a string with spaces.
+   *
+   * Adds the specified number of spaces to the beginning of each non-empty line
+   * in the input string. Lines containing only whitespace are not
+   * indented. Uses a regular expression to efficiently handle multi-line
+   * strings.
+   *
+   * @example
+   *   ;```ts
+   *   indentString('hello\nworld', { count: 2 })
+   *   // Returns: '  hello\n  world'
+   *
+   *   indentString('line1\n\nline3', { count: 4 })
+   *   // Returns: '    line1\n\n    line3'
+   *
+   *   indentString('single line')
+   *   // Returns: ' single line' (default: 1 space)
+   *   ```
+   *
+   * @param str - The string to indent.
+   * @param options - Configuration options.
+   *
+   * @returns The indented string
+   */
+  function indentString(str, options) {
+    const { count = 1 } = {
+      __proto__: null,
+      ...options,
+    }
+    return str.replace(/^(?!\s*$)/gm, () => ' '.repeat(count))
+  }
+  /**
+   * Repeat a string a specified number of times.
+   *
+   * Creates a new string by repeating the input string `count` times. Returns
+   * an empty string if count is 0 or negative.
+   *
+   * @example
+   *   ;```ts
+   *   repeatString('hello', 3) // 'hellohellohello'
+   *   repeatString('x', 5) // 'xxxxx'
+   *   repeatString('hello', 0) // ''
+   *   repeatString('hello', -1) // ''
+   *   ```
+   *
+   * @param str - The string to repeat.
+   * @param count - The number of times to repeat the string.
+   *
+   * @returns The repeated string, or empty string if count <= 0
+   */
+  function repeatString(str, count) {
+    if (count <= 0) return ''
+    return require_primordials_string.StringPrototypeRepeat(str, count)
+  }
+  exports.applyLinePrefix = applyLinePrefix
+  exports.centerText = centerText
+  exports.fromCharCode = fromCharCode
+  exports.indentString = indentString
+  exports.repeatString = repeatString
+})
+
+var require_predicates = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * Check if a value is a blank string: empty or only whitespace.
+   *
+   * A blank string is defined as a string that is either: - Completely empty
+   * (length 0) - Contains only whitespace characters (spaces, tabs, newlines,
+   * etc.)
+   *
+   * This is useful for validation when you need to ensure user input contains
+   * actual content, not just whitespace.
+   *
+   * @example
+   *   ;```ts
+   *   isBlankString('') // true
+   *   isBlankString('   ') // true
+   *   isBlankString('\n\t  ') // true
+   *   isBlankString('hello') // false
+   *   isBlankString(null) // false
+   *   ```
+   *
+   * @param value - The value to check.
+   *
+   * @returns `true` if the value is a blank string, `false` otherwise
+   */
+  function isBlankString(value) {
+    return typeof value === 'string' && (!value.length || /^\s+$/.test(value))
+  }
+  /**
+   * Check if a value is a non-empty string.
+   *
+   * Returns `true` only if the value is a string with at least one character.
+   * This includes strings containing only whitespace (use `isBlankString()` if
+   * you want to exclude those). Type guard ensures TypeScript knows the value
+   * is a string after this check.
+   *
+   * @example
+   *   ;```ts
+   *   isNonEmptyString('hello') // true
+   *   isNonEmptyString('   ') // true (contains whitespace)
+   *   isNonEmptyString('') // false
+   *   isNonEmptyString(null) // false
+   *   isNonEmptyString(123) // false
+   *   ```
+   *
+   * @param value - The value to check.
+   *
+   * @returns `true` if the value is a non-empty string, `false` otherwise
+   */
+  function isNonEmptyString(value) {
+    return typeof value === 'string' && value.length > 0
+  }
+  exports.isBlankString = isBlankString
+  exports.isNonEmptyString = isNonEmptyString
+})
+
+var require_semantic_methods = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_reflect = require_reflect()
+  const require_primordials_array = require_array$2()
+  const require_logger_symbols_builder = require_symbols_builder()
+  const require_logger_symbols = require_symbols()
+  const require_strings_format = require_format()
+  const require_strings_predicates = require_predicates()
+  /**
+   * @file Free-function bodies for the symbol-prefixed semantic `Logger`
+   *   methods (`done`, `fail`, `info`, `skip`, `step`, `success`, `warn`). Each
+   *   strips any leading status symbol from the message, re-prefixes it with
+   *   the theme's colored symbol, writes to the appropriate stream (status
+   *   messages to stderr, `step` to stdout), and updates the shared blank-line
+   *   / call-count tracking via the exported logger symbols. Pulling these out
+   *   of `./node` keeps the `Logger` class body under the file-size cap. The
+   *   class retains one-line delegators that resolve `con` / `indent` /
+   *   `symbols` from its private state and forward them here.
+   */
+  /**
+   * Apply a `node:console` method with the given indentation prefix on its
+   * first (string) argument.
+   *
+   * Mirrors the former private `#apply`: when the first argument is a string it
+   * is line-prefixed with `indent`; otherwise the args pass through unchanged.
+   * Tracks the blank-line state for `targetStream` and bumps the call count.
+   * Returns the logger for chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param methodName - The `node:console` method to invoke (`log`, `error`,
+   *   ...).
+   * @param args - The arguments forwarded to the console method.
+   * @param targetStream - The stream the method writes to.
+   * @param indent - The resolved indentation prefix for `targetStream`.
+   */
+  function applyMethod(logger, con, methodName, args, targetStream, indent) {
+    const text = require_primordials_array.ArrayPrototypeAt(args, 0)
+    const hasText = typeof text === 'string'
+    const logArgs = hasText
+      ? [
+          require_strings_format.applyLinePrefix(text, { prefix: indent }),
+          ...require_primordials_array.ArrayPrototypeSlice(args, 1),
+        ]
+      : args
+    require_primordials_reflect.ReflectApply(con[methodName], con, logArgs)
+    logger[require_logger_symbols.lastWasBlankSymbol](
+      hasText && require_strings_predicates.isBlankString(logArgs[0]),
+      targetStream,
+    )
+    logger[require_logger_symbols.incLogCallCountSymbol]()
+    return logger
+  }
+  /**
+   * Logs a main step message with a colored arrow symbol to stdout.
+   *
+   * Strips any leading status symbol from `msg`, re-prefixes it with the
+   * theme's `step` symbol, and writes to stdout (unlike the other semantic
+   * methods, which go to stderr). The blank line before the step is handled by
+   * the caller. Returns the logger for chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param indent - The resolved stdout indentation prefix.
+   * @param symbols - The logger's resolved `LogSymbols` map.
+   * @param msg - The step message to log.
+   * @param extras - Additional arguments to log.
+   */
+  function stepMethod(logger, con, indent, symbols, msg, extras) {
+    const text = require_logger_symbols_builder.stripLoggerSymbols(msg)
+    con.log(
+      require_strings_format.applyLinePrefix(`${symbols.step} ${text}`, {
+        prefix: indent,
+      }),
+      ...extras,
+    )
+    logger[require_logger_symbols.lastWasBlankSymbol](false, 'stdout')
+    logger[require_logger_symbols.incLogCallCountSymbol]()
+    return logger
+  }
+  /**
+   * Strip a leading status symbol, re-prefix with the colored symbol for
+   * `symbolType`, and write to stderr.
+   *
+   * Mirrors the former private `#symbolApply`: status messages (info / fail /
+   * success / warn / skip / done) always go to stderr. Returns the logger for
+   * chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param indent - The resolved stderr indentation prefix.
+   * @param symbols - The logger's resolved `LogSymbols` map.
+   * @param symbolType - The `LogSymbols` key whose symbol prefixes the message.
+   * @param args - The message and additional arguments to log.
+   */
+  function symbolApplyMethod(logger, con, indent, symbols, symbolType, args) {
+    let text = args[0]
+    let extras
+    /* c8 ignore start - text-non-string arm fires only when caller passes
+		an object as the first argument; tests always pass a string. */
+    if (typeof text === 'string') {
+      text = require_logger_symbols_builder.stripLoggerSymbols(text)
+      extras = args.slice(1)
+    } else {
+      extras = args
+      text = ''
+    }
+    /* c8 ignore stop */
+    con.error(
+      require_strings_format.applyLinePrefix(`${symbols[symbolType]} ${text}`, {
+        prefix: indent,
+      }),
+      ...extras,
+    )
+    logger[require_logger_symbols.lastWasBlankSymbol](false, 'stderr')
+    logger[require_logger_symbols.incLogCallCountSymbol]()
+    return logger
+  }
+  exports.applyMethod = applyMethod
+  exports.stepMethod = stepMethod
+  exports.symbolApplyMethod = symbolApplyMethod
+})
+
+var require_stream = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Terminal stream resolution + line-clearing helpers shared by the
+   *   Node-side `Logger` methods that write directly to a stream (`clearLine`,
+   *   `clearVisible`, `progress`). The Logger's `node:console` instance keeps
+   *   its underlying writable streams on the internal `_stderr` / `_stdout`
+   *   symbols; these helpers resolve the right one for a given target stream
+   *   and centralize the TTY-vs-non-TTY clear sequence (`cursorTo(0) +
+   *   clearLine(0)` on a TTY, `\r\x1b[K` fallback elsewhere — which still works
+   *   in CI logs).
+   */
+  /**
+   * Clear the current line on a writable stream. Uses `cursorTo(0) +
+   * clearLine(0)` on a TTY and falls back to `\r\x1b[K` otherwise so the same
+   * call redraws cleanly in both interactive terminals and CI logs.
+   *
+   * @param streamObj - The resolved writable stream to clear.
+   */
+  function clearTerminalLine(streamObj) {
+    if (streamObj.isTTY) {
+      streamObj.cursorTo(0)
+      streamObj.clearLine(0)
+    } else streamObj.write('\r\x1B[K')
+  }
+  /**
+   * Resolve the underlying writable stream for a target stream from a console
+   * instance, casting from the console's internal `_stderr` / `_stdout` slots
+   * to the cursor-aware shape the logger writes to directly.
+   *
+   * @param con - The console instance exposing `_stderr` / `_stdout`.
+   * @param stream - Which target stream to resolve.
+   */
+  function resolveWriteStream(con, stream) {
+    return stream === 'stderr' ? con['_stderr'] : con['_stdout']
+  }
+  exports.clearTerminalLine = clearTerminalLine
+  exports.resolveWriteStream = resolveWriteStream
+})
+
+var require_stream_methods = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_error = require_error$1()
+  const require_logger_symbols = require_symbols()
+  const require_logger_stream = require_stream()
+  /**
+   * @file Free-function bodies for the `Logger` methods that write to or clear
+   *   a raw stream rather than going through the indented `#apply` path
+   *   (`clearLine`, `clearVisible`, `progress`, `write`). Each takes the
+   *   calling logger plus the already-resolved `node:console` instance and
+   *   whatever stream / symbol state it needs, then updates the shared
+   *   blank-line / call-count tracking via the exported logger symbols. Pulling
+   *   these out of `./node` keeps the `Logger` class body under the file-size
+   *   cap; the class retains one-line delegators that resolve the arguments
+   *   from its private state.
+   */
+  /**
+   * Clears the current terminal line on the logger's target stream (TTY and
+   * non-TTY). Useful after `progress()`. Returns the logger for chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param stream - The target stream to clear.
+   */
+  function clearLineMethod(logger, con, stream) {
+    require_logger_stream.clearTerminalLine(
+      require_logger_stream.resolveWriteStream(con, stream),
+    )
+    return logger
+  }
+  /**
+   * Clears the visible terminal screen. Only valid on the main
+   * (non-stream-bound) logger. When the underlying stdout is a TTY, resets
+   * blank-line tracking and invokes `resetCount` to zero the log-call counter.
+   * Returns the logger for chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param boundStream - The logger's bound stream, or `undefined` on the root.
+   * @param resetCount - Callback that zeroes the logger's log-call counter.
+   *
+   * @throws {Error} If called on a stream-bound logger instance.
+   */
+  function clearVisibleMethod(logger, con, boundStream, resetCount) {
+    /* c8 ignore start - clearVisible TTY-mode behavior; tests use non-TTY
+		capture streams so the bound-stream throw and TTY clear branches
+		aren't reached. */
+    if (boundStream)
+      throw new require_primordials_error.ErrorCtor(
+        'clearVisible() is only available on the main logger instance, not on stream-bound instances',
+      )
+    con.clear()
+    if (con['_stdout'].isTTY) {
+      logger[require_logger_symbols.lastWasBlankSymbol](true)
+      resetCount()
+    }
+    return logger
+    /* c8 ignore stop */
+  }
+  /**
+   * Shows a progress indicator (a `∴`-prefixed status message) that can be
+   * cleared with `clearLine()`. Always clears the current line first so
+   * repeated `progress(...)` calls redraw cleanly. Returns the logger for
+   * chaining.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param stream - The target stream to write to.
+   * @param symbols - The logger's resolved `LogSymbols` map.
+   * @param text - The progress message to display.
+   */
+  function progressMethod(logger, con, stream, symbols, text) {
+    const streamObj = require_logger_stream.resolveWriteStream(con, stream)
+    require_logger_stream.clearTerminalLine(streamObj)
+    streamObj.write(`${symbols.progress} ${text}`)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger
+  }
+  /**
+   * Writes text directly to the original stdout stream, bypassing Console
+   * formatting and applying no indentation. Returns the logger for chaining.
+   *
+   * The original stdout is resolved with a three-way fallback: the seeded
+   * `originalStdout`, then the constructor args' `stdout`, then the Console's
+   * internal `_stdout` slot.
+   *
+   * @param logger - The calling logger instance.
+   * @param con - The logger's resolved console instance.
+   * @param originalStdout - The stdout seeded at construction, if any.
+   * @param ctorArgs - The logger's stored constructor args.
+   * @param text - The text to write.
+   */
+  function writeMethod(logger, con, originalStdout, ctorArgs, text) {
+    /* c8 ignore stop */
+    ;(originalStdout || ctorArgs[0]?.stdout || con._stdout).write(text)
+    logger[require_logger_symbols.lastWasBlankSymbol](false)
+    return logger
+  }
+  exports.clearLineMethod = clearLineMethod
+  exports.clearVisibleMethod = clearVisibleMethod
+  exports.progressMethod = progressMethod
+  exports.writeMethod = writeMethod
+})
+
+var require_node = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_reflect = require_reflect()
+  const require_term_themes_context = require_context()
+  const require_logger_shared = require_shared()
+  const require_logger_symbols_builder = require_symbols_builder()
+  const require_logger_symbols = require_symbols()
+  const require_logger_console = require_console()
+  const require_logger_console_methods = require_console_methods()
+  const require_logger_indentation_methods = require_indentation_methods()
+  const require_logger_options = require_options()
+  const require_logger_semantic_methods = require_semantic_methods()
+  const require_logger_stream_methods = require_stream_methods()
+  /**
+   * @file Node-side `Logger` class — owns per-instance state (parent, bound
+   *   stream, indent buffers, theme) and exposes the public surface as thin
+   *   delegators over sibling free-function leaves. Console construction is
+   *   lazy: the constructor stashes its args in `shared.privateConstructorArgs`
+   *   and the `node:console` instance is built on first `#getConsole()`, so the
+   *   logger can be imported during early Node.js bootstrap before stdout is
+   *   ready (avoiding `ERR_CONSOLE_WRITABLE_STREAM`). Method bodies live in the
+   *   leaves: `./console-methods`, `./semantic-methods`,
+   *   `./indentation-methods`, `./stream-methods`, `./console`, `./options`,
+   *   `./symbols`, `./symbols-builder`, `./shared`.
+   */
+  /**
+   * Enhanced console logger with indentation, colored symbols, and stream
+   * management.
+   */
+  var Logger = class Logger {
+    /**
+     * Static reference to log symbols for convenience.
+     */
+    static LOG_SYMBOLS = require_logger_symbols.LOG_SYMBOLS
+    #parent
+    #boundStream
+    #stderrLogger
+    #stdoutLogger
+    #stderrIndention = ''
+    #stdoutIndention = ''
+    #stderrLastWasBlank = false
+    #stdoutLastWasBlank = false
+    #logCallCount = 0
+    #options
+    #originalStdout
+    #theme
+    /**
+     * Creates a new Logger. With no args it uses the default `process.stdout` /
+     * `process.stderr`; an options object customizes stream / theme. See
+     * {@link parseLoggerOptions}.
+     *
+     * @param args - Optional console constructor arguments.
+     */
+    constructor(...args) {
+      require_logger_shared.privateConstructorArgs.set(this, args)
+      const parsed = require_logger_options.parseLoggerOptions(args)
+      this.#options = parsed.options
+      this.#originalStdout = parsed.originalStdout
+      this.#theme = parsed.theme
+    }
+    #apply(methodName, args, stream) {
+      const targetStream =
+        stream || (methodName === 'log' ? 'stdout' : 'stderr')
+      return require_logger_semantic_methods.applyMethod(
+        this,
+        this.#getConsole(),
+        methodName,
+        args,
+        targetStream,
+        this.#getIndent(targetStream),
+      )
+    }
+    #getConsole() {
+      return require_logger_console.resolveConsole(this)
+    }
+    #getIndent(stream) {
+      const root = this.#getRoot()
+      return stream === 'stderr' ? root.#stderrIndention : root.#stdoutIndention
+    }
+    #getLastWasBlank(stream) {
+      const root = this.#getRoot()
+      return stream === 'stderr'
+        ? root.#stderrLastWasBlank
+        : root.#stdoutLastWasBlank
+    }
+    #getRoot() {
+      return this.#parent || this
+    }
+    #getSymbols() {
+      return require_logger_symbols_builder.buildLoggerSymbols(this.#getTheme())
+    }
+    #getTargetStream() {
+      return this.#boundStream || 'stderr'
+    }
+    #getTheme() {
+      return this.#theme ?? require_term_themes_context.getTheme()
+    }
+    #indentCtx() {
+      return {
+        boundStream: this.#boundStream,
+        getIndent: stream => this.#getIndent(stream),
+        setIndent: (stream, value) => this.#setIndent(stream, value),
+      }
+    }
+    #setIndent(stream, value) {
+      const root = this.#getRoot()
+      if (stream === 'stderr') root.#stderrIndention = value
+      else root.#stdoutIndention = value
+    }
+    #setLastWasBlank(stream, value) {
+      const root = this.#getRoot()
+      if (stream === 'stderr') root.#stderrLastWasBlank = value
+      else root.#stdoutLastWasBlank = value
+    }
+    #streamChild(stream) {
+      const ctorArgs =
+        require_logger_shared.privateConstructorArgs.get(this) ?? []
+      const instance = new Logger(...ctorArgs)
+      instance.#parent = this
+      instance.#boundStream = stream
+      instance.#options = {
+        __proto__: null,
+        ...this.#options,
+      }
+      if (this.#theme) instance.#theme = this.#theme
+      return instance
+    }
+    #symbol(symbolType, args) {
+      return require_logger_semantic_methods.symbolApplyMethod(
+        this,
+        this.#getConsole(),
+        this.#getIndent('stderr'),
+        this.#getSymbols(),
+        symbolType,
+        args,
+      )
+    }
+    get stderr() {
+      if (!this.#stderrLogger) this.#stderrLogger = this.#streamChild('stderr')
+      return this.#stderrLogger
+    }
+    get stdout() {
+      if (!this.#stdoutLogger) this.#stdoutLogger = this.#streamChild('stdout')
+      return this.#stdoutLogger
+    }
+    get logCallCount() {
+      return this.#getRoot().#logCallCount
+    }
+    [require_logger_symbols.incLogCallCountSymbol]() {
+      const root = this.#getRoot()
+      root.#logCallCount += 1
+      return this
+    }
+    [require_logger_symbols.lastWasBlankSymbol](value, stream) {
+      if (stream) this.#setLastWasBlank(stream, !!value)
+      else if (this.#boundStream)
+        this.#setLastWasBlank(this.#boundStream, !!value)
+      else {
+        this.#setLastWasBlank('stderr', !!value)
+        this.#setLastWasBlank('stdout', !!value)
+      }
+      return this
+    }
+    assert(value, ...message) {
+      return require_logger_console_methods.assertMethod(
+        this,
+        this.#getConsole(),
+        value,
+        message,
+      )
+    }
+    clearLine() {
+      return require_logger_stream_methods.clearLineMethod(
+        this,
+        this.#getConsole(),
+        this.#getTargetStream(),
+      )
+    }
+    clearVisible() {
+      return require_logger_stream_methods.clearVisibleMethod(
+        this,
+        this.#getConsole(),
+        this.#boundStream,
+        () => {
+          this.#logCallCount = 0
+        },
+      )
+    }
+    count(label) {
+      return require_logger_console_methods.countMethod(
+        this,
+        this.#getConsole(),
+        label,
+      )
+    }
+    /**
+     * Creates a task whose `run()` logs "Starting task: {name}" before running
+     * the provided function and "Completed task: {name}" after.
+     *
+     * @param name - The name of the task.
+     *
+     * @returns A task object with a `run()` method.
+     */
+    createTask(name) {
+      return {
+        run: f => {
+          this.log(`Starting task: ${name}`)
+          const result = f()
+          this.log(`Completed task: ${name}`)
+          return result
+        },
+      }
+    }
+    dedent(spaces = 2) {
+      return require_logger_indentation_methods.dedentMethod(
+        this,
+        this.#indentCtx(),
+        spaces,
+      )
+    }
+    dir(obj, options) {
+      return require_logger_console_methods.dirMethod(
+        this,
+        this.#getConsole(),
+        obj,
+        options,
+      )
+    }
+    dirxml(...data) {
+      return require_logger_console_methods.dirxmlMethod(
+        this,
+        this.#getConsole(),
+        data,
+      )
+    }
+    done(...args) {
+      return this.#symbol('success', args)
+    }
+    error(...args) {
+      return this.#apply('error', args)
+    }
+    errorNewline() {
+      return this.#getLastWasBlank('stderr') ? this : this.error('')
+    }
+    fail(...args) {
+      return this.#symbol('fail', args)
+    }
+    group(...label) {
+      return require_logger_indentation_methods.groupMethod(this, label)
+    }
+    groupCollapsed(...label) {
+      return require_primordials_reflect.ReflectApply(this.group, this, label)
+    }
+    groupEnd() {
+      return require_logger_indentation_methods.groupEndMethod(this)
+    }
+    indent(spaces = 2) {
+      return require_logger_indentation_methods.indentMethod(
+        this,
+        this.#indentCtx(),
+        spaces,
+      )
+    }
+    info(...args) {
+      return this.#symbol('info', args)
+    }
+    log(...args) {
+      return this.#apply('log', args)
+    }
+    logNewline() {
+      return this.#getLastWasBlank('stdout') ? this : this.log('')
+    }
+    progress(text) {
+      return require_logger_stream_methods.progressMethod(
+        this,
+        this.#getConsole(),
+        this.#getTargetStream(),
+        this.#getSymbols(),
+        text,
+      )
+    }
+    resetIndent() {
+      return require_logger_indentation_methods.resetIndentMethod(
+        this,
+        this.#indentCtx(),
+      )
+    }
+    skip(...args) {
+      return this.#symbol('skip', args)
+    }
+    step(msg, ...extras) {
+      if (!this.#getLastWasBlank('stdout')) this.log('')
+      return require_logger_semantic_methods.stepMethod(
+        this,
+        this.#getConsole(),
+        this.#getIndent('stdout'),
+        this.#getSymbols(),
+        msg,
+        extras,
+      )
+    }
+    substep(msg, ...extras) {
+      return this.log(`  ${msg}`, ...extras)
+    }
+    success(...args) {
+      return this.#symbol('success', args)
+    }
+    table(tabularData, properties) {
+      return require_logger_console_methods.tableMethod(
+        this,
+        this.#getConsole(),
+        tabularData,
+        properties,
+      )
+    }
+    time(label) {
+      return require_logger_console_methods.timeMethod(
+        this,
+        this.#getConsole(),
+        label,
+      )
+    }
+    timeEnd(label) {
+      return require_logger_console_methods.timeEndMethod(
+        this,
+        this.#getConsole(),
+        label,
+      )
+    }
+    timeLog(label, ...data) {
+      return require_logger_console_methods.timeLogMethod(
+        this,
+        this.#getConsole(),
+        label,
+        data,
+      )
+    }
+    trace(message, ...args) {
+      return require_logger_console_methods.traceMethod(
+        this,
+        this.#getConsole(),
+        message,
+        args,
+      )
+    }
+    warn(...args) {
+      return this.#symbol('warn', args)
+    }
+    write(text) {
+      return require_logger_stream_methods.writeMethod(
+        this,
+        this.#getConsole(),
+        this.#originalStdout,
+        require_logger_shared.privateConstructorArgs.get(this) ?? [],
+        text,
+      )
+    }
+  }
+  exports.Logger = Logger
+})
+
+var require_default = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_logger_node = require_node()
+  /**
+   * @file Shared-default `Logger` singleton. One process-wide instance,
+   *   constructed lazily on first call so importing the module during early
+   *   bootstrap doesn't try to resolve `node:console` before stdout is ready on
+   *   the Node side, or touch `globalThis.console` during a service-worker cold
+   *   start on the browser side. The `Logger` class itself comes from
+   *   `./logger`, which the package.json `'browser'` condition routes to the
+   *   right implementation per platform.
+   */
+  let sharedLogger
+  function getDefaultLogger() {
+    if (sharedLogger === void 0) sharedLogger = new require_logger_node.Logger()
+    return sharedLogger
+  }
+  exports.getDefaultLogger = getDefaultLogger
+})
+
+var require_ci = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_rewire = require_rewire$1()
+  /**
+   * @file CI environment predicate. Exports `isCI()`, which returns whether the
+   *   `CI` environment variable is present (using the rewire helper so tests
+   *   can override without touching `process.env`). Deliberately not memoized:
+   *   the rewire overrides must stay live between calls.
+   */
+  /**
+   * Returns whether the CI environment variable is set.
+   *
+   * @example
+   *   ;```typescript
+   *   import { isCI } from '@socketsecurity/lib/env/ci'
+   *
+   *   if (isCI()) {
+   *     console.log('Running in CI')
+   *   }
+   *   ```
+   *
+   * @returns `true` if running in a CI environment, `false` otherwise
+   */
+  function isCI() {
+    return require_env_rewire.isInEnv('CI')
+  }
+  exports.isCI = isCI
+})
+
+var require_time = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Time-related numeric constants. Provides millisecond-per-unit
+   *   multipliers (second/minute/hour/day) and derived cache TTLs such as the
+   *   DLX binary cache expiration.
+   */
+  const MILLISECONDS_PER_SECOND = 1e3
+  const MILLISECONDS_PER_MINUTE = 60 * MILLISECONDS_PER_SECOND
+  const MILLISECONDS_PER_HOUR = 60 * MILLISECONDS_PER_MINUTE
+  const MILLISECONDS_PER_DAY = 24 * MILLISECONDS_PER_HOUR
+  const DLX_BINARY_CACHE_TTL = 7 * MILLISECONDS_PER_DAY
+  exports.DLX_BINARY_CACHE_TTL = DLX_BINARY_CACHE_TTL
+  exports.MILLISECONDS_PER_DAY = MILLISECONDS_PER_DAY
+  exports.MILLISECONDS_PER_HOUR = MILLISECONDS_PER_HOUR
+  exports.MILLISECONDS_PER_MINUTE = MILLISECONDS_PER_MINUTE
+  exports.MILLISECONDS_PER_SECOND = MILLISECONDS_PER_SECOND
+})
+
+function normalizeCoverageExpiry(value) {
+  if (value === void 0) return COVERAGE_EXPIRY_MODES[0].value
+  const normalized = typeof value === 'string' ? value.toLowerCase() : ''
+  const mode = COVERAGE_EXPIRY_MODES.find(
+    option =>
+      option.value === normalized ||
+      option.aliases.some(alias => alias === normalized),
+  )
+  if (mode) return mode.value
+  throw new Error(
+    `Coverage expiry is invalid. Where: --expires. Saw: an unsupported value; wanted ${COVERAGE_EXPIRY_VALUES.join(', ')}. Fix: choose an expiry mode.`,
+  )
+}
+var import_time,
+  LANE_BUDGET_MS,
+  TEST_BUDGET_MS,
+  COVERAGE_BASELINE_HEADROOM_RATIO,
+  COVERAGE_EXPIRY_MODES,
+  COVERAGE_EXPIRY_VALUES,
+  COVER_BUDGET_MS
+var init_test_budget = __esmMin(() => {
+  import_time = require_time()
+  LANE_BUDGET_MS = Object.freeze({
+    __proto__: null,
+    fast: 10 * import_time.MILLISECONDS_PER_SECOND,
+    mid: 30 * import_time.MILLISECONDS_PER_SECOND,
+    slow: import_time.MILLISECONDS_PER_MINUTE,
+  })
+  TEST_BUDGET_MS = LANE_BUDGET_MS['fast']
+  COVERAGE_BASELINE_HEADROOM_RATIO = 0.05
+  COVERAGE_EXPIRY_MODES = [
+    {
+      value: 'default',
+      aliases: ['auto', 'yes'],
+    },
+    {
+      value: 'never',
+      aliases: ['no', 'infinity'],
+    },
+  ]
+  COVERAGE_EXPIRY_VALUES = Object.freeze(
+    COVERAGE_EXPIRY_MODES.flatMap(option => [option.value, ...option.aliases]),
+  )
+  COVER_BUDGET_MS = Object.freeze({
+    __proto__: null,
+    ci: 10 * import_time.MILLISECONDS_PER_MINUTE,
+    local: 2 * import_time.MILLISECONDS_PER_MINUTE,
+  })
+})
+
+function extractLane(argv) {
+  const rest = []
+  let lane
+  for (let i = 0, { length } = argv; i < length; i += 1) {
+    const arg = argv[i]
+    let value
+    if (arg === '--lane') {
+      i += 1
+      value = argv[i]
+    } else if (arg.startsWith('--lane=')) value = arg.slice(7)
+    else {
+      rest.push(arg)
+      continue
+    }
+    if (!value || !VALID_LANES.has(value))
+      throw new Error(`Invalid --lane value.
+  Where: scripts/fleet/test.mts CLI argument parsing.
+  Saw: ${value ?? '(missing value)'}; wanted one of fast | mid | slow.\n  Fix: pass --lane fast (the bare \`pnpm test\` default), --lane mid, or --lane slow.`)
+    lane = value
+  }
+  return {
+    lane,
+    rest,
+  }
+}
+var VALID_LANES
+var init_cli_args = __esmMin(() => {
+  VALID_LANES = /* @__PURE__ */ new Set(['fast', 'mid', 'slow'])
+})
+
+var MAX_CAPACITY_TIMEOUT_MS
+var init_budget = __esmMin(() => {
+  MAX_CAPACITY_TIMEOUT_MS = 2 ** 31 - 1
+})
+
+function parseCoverageMaximum(value) {
+  if (value === void 0) return
+  if (typeof value === 'string' && value.toLowerCase() === 'auto') return 'auto'
+  const maximum = Number(value)
+  if (
+    typeof value !== 'string' ||
+    !/^\d+$/u.test(value) ||
+    !Number.isSafeInteger(maximum) ||
+    maximum <= 0 ||
+    maximum > MAX_CAPACITY_TIMEOUT_MS
+  )
+    throw new Error(
+      `Coverage maximum is invalid. Where: --max-ms. Saw: ${String(value)}; wanted auto or a positive integer through ${MAX_CAPACITY_TIMEOUT_MS}. Fix: provide milliseconds or auto.`,
+    )
+  return maximum
+}
+function extractCoverageMaximum(args) {
+  const { tokens, values } = parseArgs$1({
+    args,
+    options: {
+      'max-ms': { type: 'string' },
+      expires: { type: 'string' },
+    },
+    strict: false,
+    allowPositionals: true,
+    tokens: true,
+  })
+  const indices = /* @__PURE__ */ new Set()
+  const names = /* @__PURE__ */ new Set()
+  for (const token of tokens) {
+    if (
+      token.kind !== 'option' ||
+      (token.name !== 'expires' && token.name !== 'max-ms')
+    )
+      continue
+    if (names.has(token.name))
+      throw new Error(
+        `Coverage option is repeated. Where: --${token.name}. Saw: multiple values; wanted one value. Fix: supply the option once.`,
+      )
+    names.add(token.name)
+    indices.add(token.index)
+    if (!token.inlineValue) indices.add(token.index + 1)
+  }
+  return {
+    __proto__: null,
+    maximum: parseCoverageMaximum(values['max-ms']),
+    expires: normalizeCoverageExpiry(values.expires),
+    expiresSpecified: names.has('expires'),
+    rest: args.flatMap((arg, index) => (indices.has(index) ? [] : [arg])),
+  }
+}
+var COVERAGE_HELP
+var init_options = __esmMin(() => {
+  init_test_budget()
+  init_budget()
+  COVERAGE_HELP = `Usage: node scripts/fleet/cover.mts [flags]
+
+  SOCKET_DEBUG=1 DEBUG=fleet:cover  show diagnostic progress and phase timings
+
+  --code-only  run only code coverage, skip type coverage
+  --type-only  run only type coverage
+  --summary    hide the detailed v8 table, show only the summary
+  --lane fast|mid|slow  run one speed lane in a separate artifact directory
+  --measure --lane <lane>  time JavaScript coverage to completion; diagnostic artifacts only, no suite deadline
+  --max-ms <milliseconds>  set the runtime deadline for this run without saving it
+  --max-ms auto --lane <lane>  measure and save a successful complete measurement with ${COVERAGE_BASELINE_HEADROOM_RATIO * 100}% headroom as an allowance; no test overrides
+  --expires ${COVERAGE_EXPIRY_VALUES.join('|')}  expiry for auto budgeting; auto (one month) is the default; values ignore case`
+})
+
+function resolveCoverageScope(argv, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  const lane =
+    (path.basename(argv[1] ?? '') === 'cover.mts'
+      ? extractLane(argv.slice(2)).lane
+      : void 0) ?? opts.inherited
+  if (lane !== void 0 && lane !== 'fast' && lane !== 'mid' && lane !== 'slow')
+    throw new Error('Invalid coverage lane; expected fast, mid, or slow')
+  return lane
+}
+function resolveCoverageMeasurement(argv) {
+  const requested =
+    path.basename(argv[1] ?? '') === 'cover.mts' &&
+    (argv.includes('--measure') ||
+      extractCoverageMaximum(argv.slice(2)).maximum === 'auto')
+  if (requested && !extractLane(argv.slice(2)).lane)
+    throw new Error('Coverage measurement requires --lane fast, mid, or slow.')
+  return requested
+}
+function coverageOutputSegments(lane, options = {}) {
+  return [
+    'coverage',
+    ...({
+      __proto__: null,
+      ...options,
+    }.measurement
+      ? ['measurement']
+      : []),
+    ...(lane ? [`lane-${lane}`] : []),
+  ]
+}
+var import_rewire$2,
+  COVERAGE_SCOPE,
+  COVERAGE_MEASUREMENT,
+  COVERAGE_MEASUREMENT_ARTIFACTS
+var init_scope = __esmMin(() => {
+  init_options()
+  init_cli_args()
+  import_rewire$2 = require_rewire$1()
+  COVERAGE_SCOPE = resolveCoverageScope(process$1.argv, {
+    inherited: (0, import_rewire$2.getEnvValue)('FLEET_COVER_LANE'),
+  })
+  COVERAGE_MEASUREMENT = resolveCoverageMeasurement(process$1.argv)
+  if (COVERAGE_MEASUREMENT) process$1.env['FLEET_COVER_MEASURE'] = '1'
+  COVERAGE_MEASUREMENT_ARTIFACTS =
+    COVERAGE_MEASUREMENT ||
+    (0, import_rewire$2.getEnvValue)('FLEET_COVER_MEASURE') === '1'
+})
+
+function repoRootFromDirectory(directory) {
+  let cur = directory
+  const root = path.parse(cur).root
+  while (cur && cur !== root) {
+    if (existsSync(path.join(cur, 'package.json'))) return cur
+    const parent = path.dirname(cur)
+    if (parent === cur) break
+    cur = parent
+  }
+}
+function resolveRepoRoot$1() {
+  let directories
+  if (typeof process$1.versions['perry'] === 'string') {
+    const cwd = process$1.cwd()
+    directories = [path.dirname(path.resolve(cwd, process$1.execPath)), cwd]
+  } else directories = [path.dirname(fileURLToPath(import.meta.url))]
+  for (let i = 0, { length } = directories; i < length; i += 1) {
+    const directory = directories[i]
+    const root = repoRootFromDirectory(directory)
+    if (root) return root
+  }
+  throw new Error(
+    `Could not resolve repo root. Where: ${directories.join(', ')}. Saw no package.json ancestor; wanted the runtime repository. Fix: restore the repository checkout for this runtime.`,
+  )
+}
+var REPO_ROOT,
+  TOOL_CACHE_DIR,
+  FLEET_CACHE_DIR,
+  FLEET_REPORTS_DIR,
+  CLAUDE_HOME,
+  CLAUDE_ACCOUNT_CONFIG,
+  XDG_DATA_HOME,
+  OPENCODE_HOME
+var init_runtime = __esmMin(() => {
+  init_util()
+  REPO_ROOT = resolveRepoRoot$1()
+  TOOL_CACHE_DIR = path.join(REPO_ROOT, '.cache')
+  FLEET_CACHE_DIR = path.join(TOOL_CACHE_DIR, 'fleet')
+  FLEET_REPORTS_DIR = path.join(FLEET_CACHE_DIR, 'reports')
+  CLAUDE_HOME = path.join(os.homedir(), '.claude')
+  CLAUDE_ACCOUNT_CONFIG = path.join(os.homedir(), '.claude.json')
+  XDG_DATA_HOME = sharedLocalSharePath(os.homedir())
+  OPENCODE_HOME = path.join(XDG_DATA_HOME, 'opencode')
+})
+
+var import_socket$1,
+  BROWSER_BRIDGE_RUNTIME_DIR,
+  BROWSER_BRIDGE_LAST_FAILURE,
+  BROWSER_BRIDGE_LOCAL_ROOT,
+  BROWSER_BRIDGE_LOCAL_ACTIVE,
+  BROWSER_BRIDGE_LOCAL_EXTENSION,
+  BROWSER_BRIDGE_LOCAL_APP,
+  BROWSER_BRIDGE_LOCAL_RECEIPT,
+  BROWSER_BRIDGE_RECEIPT_RELATIVE_PATH,
+  BROWSER_BRIDGE_LOCAL_MANIFEST
+var init_browser = __esmMin(() => {
+  import_socket$1 = require_socket()
+  BROWSER_BRIDGE_RUNTIME_DIR = path.join(
+    (0, import_socket$1.getSocketWheelhouseDir)(),
+    'browser-bridge',
+  )
+  BROWSER_BRIDGE_LAST_FAILURE = path.join(
+    BROWSER_BRIDGE_RUNTIME_DIR,
+    'last-failure.json',
+  )
+  BROWSER_BRIDGE_LOCAL_ROOT = path.join(BROWSER_BRIDGE_RUNTIME_DIR, 'installed')
+  BROWSER_BRIDGE_LOCAL_ACTIVE = path.join(BROWSER_BRIDGE_LOCAL_ROOT, 'active')
+  BROWSER_BRIDGE_LOCAL_EXTENSION = path.join(
+    BROWSER_BRIDGE_LOCAL_ACTIVE,
+    'extension',
+  )
+  BROWSER_BRIDGE_LOCAL_APP = path.join(
+    BROWSER_BRIDGE_LOCAL_ACTIVE,
+    'Wheelhouse Browser Bridge.app',
+  )
+  BROWSER_BRIDGE_LOCAL_RECEIPT = path.join(
+    BROWSER_BRIDGE_LOCAL_ACTIVE,
+    'bridge-build.json',
+  )
+  BROWSER_BRIDGE_RECEIPT_RELATIVE_PATH = path.join(
+    'Contents',
+    'Resources',
+    'bridge-build.json',
+  )
+  BROWSER_BRIDGE_LOCAL_MANIFEST = path.join(
+    os.homedir(),
+    'Library',
+    'Application Support',
+    'Google',
+    'Chrome',
+    'NativeMessagingHosts',
+    'dev.socket.wheelhouse.browser_bridge.json',
+  )
+})
+
+/**
+ * @file Canonical path constants + resolvers for this package. Mantra: 1 path,
+ *   1 reference. Every path the scripts in this directory need — config files,
+ *   lockfiles, build outputs, cache dirs, manifest files — gets constructed
+ *   exactly once here. Every consumer imports the constructed value. A future
+ *   rename or relocation is a one-file edit; consumers don't have to be
+ *   re-audited. Per-package, like package.json: every package that has its own
+ *   `scripts/` directory has its own `paths.mts`. A sub-package can inherit
+ *   from a parent's paths.mts by re-exporting: // packages/foo/bar/paths.mts
+ *   export * from '../../../scripts/fleet/paths.mts' // Add
+ *   sub-package-specific overrides below the export line. export const
+ *   FOO_BAR_DIST = path.join(REPO_ROOT, 'packages', 'foo', 'bar', 'dist')
+ *   Consumers resolve `paths.mts` the same way Node resolves `package.json` —
+ *   relative to the importing file's location, with `..`-walks finding the
+ *   nearest one. Two flavors of path live in this file:
+ *
+ *   1. STATIC CONSTANTS — paths that don't depend on runtime input. Example:
+ *      `REPO_ROOT`, `CONFIG_DIR`, `TOOL_CACHE_DIR`. Importable as-is.
+ *   2. RESOLVER FUNCTIONS — paths that need a search, multiple accepted locations
+ *      or runtime input, a target directory, a package name. Example:
+ *      `findSocketWheelhouseConfig(repoRoot)` resolves
+ *      `.config/repo/socket-wheelhouse.json` when it exists. Resolution from
+ *      script call sites: every script anchors on its own location via
+ *      `fileURLToPath(import.meta.url)`, then walks up to the
+ *      package.json-bearing ancestor. `process.cwd()` is forbidden in scripts/
+ *      per fleet rule (the user / Claude Code may invoke from any subdir).
+ *
+ * @see The fleet rule: CLAUDE.md "1 path, 1 reference" and the
+ *   `socket/no-process-cwd-in-scripts-hooks` oxlint rule.
+ */
+function resolveActiveRunDir(homeDir) {
+  return path.join(
+    homeDir,
+    '.claude',
+    'hooks',
+    'stale-process-sweeper',
+    'active-runs',
+  )
+}
+/**
+ * Absolute path to a given repo root's `package.json`.
+ */
+function resolvePackageJsonPath(repoRoot) {
+  return path.join(repoRoot, 'package.json')
+}
+/**
+ * Absolute path to a given repo root's `pnpm-lock.yaml`. Tooling that analyzes
+ * an arbitrary checkout (a fleet member, a test fixture tree) resolves it from
+ * here instead of rebuilding the segment.
+ */
+function resolvePnpmLockPath(repoRoot) {
+  return path.join(repoRoot, 'pnpm-lock.yaml')
+}
+/**
+ * The pricing data the cost tooling reads, and the module rendered from it.
+ *
+ * The JSON is the editable source the pricing skill writes. The module is a
+ * BUILD OUTPUT: `gen/model-pricing-module.mts` inlines the data there so
+ * rolldown bakes it into `fleet-pack.generated.cjs`, which is why no consumer
+ * needs the JSON on disk and neither file joins the cascade payload.
+ */
+function resolveModelPricingJson(repoRoot) {
+  return path.join(
+    repoRoot,
+    'scripts',
+    'fleet',
+    'constants',
+    'model-pricing.json',
+  )
+}
+var import_socket,
+  import_rewire$1,
+  TONE_SETTINGS_PATH,
+  CLAUDE_USER_SETTINGS,
+  CODEX_HOME,
+  FIRECONNECT_HOME,
+  TEMPLATE_BASE_DIR,
+  CONFIG_DIR,
+  CONFIG_FLEET_DIR,
+  CONFIG_REPO_DIR,
+  CONFIG_FLEET_PLAYWRIGHT_DIR,
+  LOCKSTEP_SCHEMA,
+  NODE_MODULES_DIR,
+  NOTION_BACKUPS_DIR,
+  MCP_BROWSER_OUTPUT_DIR,
+  COMPILE_CACHE_DIR,
+  TYPECHECK_CACHE_DIR,
+  REPO_CACHE_DIR,
+  BROWSER_BRIDGE_EXTENSION_SOURCE_DIR,
+  BROWSER_BRIDGE_MARKER_ASSET_SOURCE_DIR,
+  COVERAGE_DIR,
+  COVERAGE_FINAL_MAIN_PATH,
+  COVERAGE_FINAL_ISOLATED_PATH,
+  COVERAGE_FINAL_ENFORCERS_PATH,
+  COVERAGE_FINAL_CHILDREN_PATH,
+  COVERAGE_FINAL_PATH,
+  COVERAGE_SUMMARY_PATH,
+  COVERAGE_SCRATCH_DIR,
+  COVERAGE_SCRATCH_VITEST_DIR,
+  COVERAGE_CHILDREN_RAW_DIR,
+  CLAUDE_SETTINGS_JSON,
+  HOOKS_ROOT_OVERRIDE,
+  FLEET_HOOKS_DIR,
+  DISPATCH_DIR,
+  DIST_DIR,
+  FLEET_HOOK_INDEX_PATH,
+  DISPATCH_TABLE_PATH,
+  DISPATCH_TABLE_SNAPSHOT_PATH,
+  DISPATCH_TABLE_EXCLUDED_PATH,
+  EXCLUDED_BUNDLE_PATH,
+  BROWSER_BRIDGE_INSTALLER_RELATIVE_PATH,
+  DISPATCH_MANIFEST_PATH,
+  HOOK_VALIDATORS_PATH,
+  ATA_VALIDATORS_REL,
+  ATA_VALIDATORS_PATH,
+  DISPATCH_ENTRY_PATH,
+  HOOK_BUNDLE_PATH,
+  SNAPSHOT_BUNDLE_PATH,
+  OXLINT_PLUGIN_DIR,
+  OXLINT_PLUGIN_SOURCE_ENTRY,
+  OXLINT_PLUGIN_BUNDLE_PATH,
+  PNPM_WORKSPACE_YAML,
+  FLEET_CATALOG_YAML,
+  PACKAGE_JSON,
+  MISE_INSTALLER_PATH,
+  MISE_SHIM_PATH,
+  NODE_VERSION_PATH,
+  PNPM_LOCK,
+  MODEL_PRICING_JSON,
+  MODEL_PRICING_MODULE,
+  TEMPLATE_MODEL_PRICING_JSON,
+  TEMPLATE_MODEL_PRICING_MODULE,
+  FLEET_PACK_VERSION_MODULE,
+  TEMPLATE_FLEET_PACK_VERSION_MODULE,
+  REPO_PACKAGE_JSON,
+  FLEET_SCRIPTS_DIR,
+  FLEET_TYPE_SCRIPT,
+  BUILD_HOOK_BUNDLE_SCRIPT,
+  FLEET_CHECK_DIR,
+  TSCONFIG_CHECK_PATH,
+  TEST_REPO_DIR,
+  AI_BALANCER_RELATIVE_DIR,
+  BALANCER_PROXY_RELATIVE_PATH,
+  BALANCER_PROXY_PATH,
+  LINT_RULE_TEST_DIRS,
+  HOOK_TEST_DIRS,
+  GIT_HOOK_TEST_DIRS,
+  OWNS_RELOCATED_TESTS
+var init_paths = __esmMin(() => {
+  init_scope()
+  init_conditional_config()
+  init_util()
+  init_runtime()
+  import_socket = require_socket()
+  import_rewire$1 = require_rewire$1()
+  init_browser()
+  TONE_SETTINGS_PATH = path.join(
+    (0, import_socket.getSocketHomePath)(),
+    'config',
+    'tone.json',
+  )
+  CLAUDE_USER_SETTINGS = path.join(CLAUDE_HOME, 'settings.json')
+  CODEX_HOME = path.join(os.homedir(), '.codex')
+  FIRECONNECT_HOME = path.join(os.homedir(), '.fireconnect')
+  TEMPLATE_BASE_DIR = sharedTemplateBasePath(REPO_ROOT)
+  CONFIG_DIR = path.join(REPO_ROOT, '.config')
+  CONFIG_FLEET_DIR = path.join(CONFIG_DIR, 'fleet')
+  CONFIG_REPO_DIR = path.join(CONFIG_DIR, 'repo')
+  CONFIG_FLEET_PLAYWRIGHT_DIR = path.join(CONFIG_FLEET_DIR, 'playwright')
+  LOCKSTEP_SCHEMA = path.join(CONFIG_FLEET_DIR, 'lockstep.schema.json')
+  NODE_MODULES_DIR = path.join(REPO_ROOT, 'node_modules')
+  NOTION_BACKUPS_DIR = path.join(
+    (0, import_socket.getSocketWheelhouseDir)(),
+    'notion-backups',
+  )
+  MCP_BROWSER_OUTPUT_DIR = path.join(
+    (0, import_socket.getSocketWheelhouseDir)(),
+    'mcp-browser-output',
+  )
+  COMPILE_CACHE_DIR = path.join(
+    (0, import_socket.getOsTmpDir)(),
+    'socket',
+    'compile-cache',
+  )
+  TYPECHECK_CACHE_DIR = path.join(FLEET_CACHE_DIR, 'typecheck')
+  REPO_CACHE_DIR = path.join(TOOL_CACHE_DIR, 'repo')
+  BROWSER_BRIDGE_EXTENSION_SOURCE_DIR = path.join(
+    import.meta.dirname,
+    'browser',
+    'bridge',
+    'extension',
+  )
+  BROWSER_BRIDGE_MARKER_ASSET_SOURCE_DIR = path.resolve(
+    import.meta.dirname,
+    '..',
+    '..',
+    '.config',
+    'fleet',
+    'playwright',
+  )
+  COVERAGE_DIR = path.join(
+    FLEET_CACHE_DIR,
+    coverageOutputSegments(COVERAGE_SCOPE, {
+      measurement: COVERAGE_MEASUREMENT_ARTIFACTS,
+    }).join(path.sep),
+  )
+  COVERAGE_FINAL_MAIN_PATH = path.join(COVERAGE_DIR, 'coverage-final.main.json')
+  COVERAGE_FINAL_ISOLATED_PATH = path.join(
+    COVERAGE_DIR,
+    'coverage-final.isolated.json',
+  )
+  COVERAGE_FINAL_ENFORCERS_PATH = path.join(
+    COVERAGE_DIR,
+    'coverage-final.enforcers.json',
+  )
+  COVERAGE_FINAL_CHILDREN_PATH = path.join(
+    COVERAGE_DIR,
+    'coverage-final.children.json',
+  )
+  COVERAGE_FINAL_PATH = path.join(COVERAGE_DIR, 'coverage-final.json')
+  COVERAGE_SUMMARY_PATH = path.join(COVERAGE_DIR, 'coverage-summary.json')
+  COVERAGE_SCRATCH_DIR =
+    (0, import_rewire$1.getEnvValue)('FLEET_COVERAGE_SCRATCH_DIR') ||
+    path.join(os.tmpdir(), 'fleet-coverage-scratch')
+  COVERAGE_SCRATCH_VITEST_DIR = path.join(COVERAGE_SCRATCH_DIR, 'vitest')
+  COVERAGE_CHILDREN_RAW_DIR = path.join(COVERAGE_SCRATCH_DIR, 'children-raw')
+  CLAUDE_SETTINGS_JSON = sharedClaudeSettingsJsonPath(REPO_ROOT)
+  HOOKS_ROOT_OVERRIDE = (0, import_rewire$1.getEnvValue)('FLEET_HOOKS_ROOT')
+  FLEET_HOOKS_DIR = HOOKS_ROOT_OVERRIDE
+    ? path.resolve(HOOKS_ROOT_OVERRIDE)
+    : sharedClaudeHooksFleetPath(REPO_ROOT)
+  DISPATCH_DIR = path.join(FLEET_HOOKS_DIR, '_shared')
+  DIST_DIR = path.join(FLEET_HOOKS_DIR, '_dist')
+  FLEET_HOOK_INDEX_PATH = path.join(FLEET_HOOKS_DIR, 'index.cjs')
+  DISPATCH_TABLE_PATH = path.join(DISPATCH_DIR, 'dispatch-table.generated.mts')
+  DISPATCH_TABLE_SNAPSHOT_PATH = path.join(
+    DISPATCH_DIR,
+    'dispatch-table.snapshot.generated.mts',
+  )
+  DISPATCH_TABLE_EXCLUDED_PATH = path.join(
+    DISPATCH_DIR,
+    'dispatch-table.excluded.generated.mts',
+  )
+  EXCLUDED_BUNDLE_PATH = path.join(
+    DIST_DIR,
+    'fleet-pack.excluded.generated.cjs',
+  )
+  BROWSER_BRIDGE_INSTALLER_RELATIVE_PATH = path.join(
+    'Contents',
+    'MacOS',
+    'browser-bridge-installer',
+  )
+  DISPATCH_MANIFEST_PATH = path.join(
+    FLEET_HOOKS_DIR,
+    '_shared',
+    'dispatch-manifest.generated.json',
+  )
+  HOOK_VALIDATORS_PATH = path.join(DISPATCH_DIR, 'validators.generated.mts')
+  ATA_VALIDATORS_REL = 'scripts/fleet/lib/ata-validators.generated.cjs'
+  ATA_VALIDATORS_PATH = path.join(REPO_ROOT, ATA_VALIDATORS_REL)
+  DISPATCH_ENTRY_PATH = path.join(DISPATCH_DIR, 'dispatch-entry.mts')
+  HOOK_BUNDLE_PATH = sharedFleetHookBundlePath(FLEET_HOOKS_DIR)
+  SNAPSHOT_BUNDLE_PATH = path.join(
+    DIST_DIR,
+    'fleet-pack.snapshot.generated.cjs',
+  )
+  OXLINT_PLUGIN_DIR = sharedConfigFleetOxlintPluginPath(REPO_ROOT)
+  OXLINT_PLUGIN_SOURCE_ENTRY = path.join(OXLINT_PLUGIN_DIR, 'index.mts')
+  OXLINT_PLUGIN_BUNDLE_PATH = sharedConfigFleetOxlintPluginMjsPath(REPO_ROOT)
+  PNPM_WORKSPACE_YAML = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
+  FLEET_CATALOG_YAML = sharedFleetPnpmWorkspaceFleetYamlPath(CONFIG_DIR)
+  PACKAGE_JSON = resolvePackageJsonPath(REPO_ROOT)
+  MISE_INSTALLER_PATH = path.join(
+    REPO_ROOT,
+    'scripts',
+    'fleet',
+    'setup',
+    'lib',
+    'install-mise.mjs',
+  )
+  MISE_SHIM_PATH = path.join(
+    (0, import_socket.getSocketWheelhouseDir)(),
+    'bin',
+    process$1.platform === 'win32' ? 'mise.cmd' : 'mise',
+  )
+  NODE_VERSION_PATH = path.join(REPO_ROOT, '.node-version')
+  PNPM_LOCK = resolvePnpmLockPath(REPO_ROOT)
+  MODEL_PRICING_JSON = resolveModelPricingJson(REPO_ROOT)
+  MODEL_PRICING_MODULE = path.join(
+    REPO_ROOT,
+    'scripts',
+    'fleet',
+    'constants',
+    'model-pricing.generated.mts',
+  )
+  TEMPLATE_MODEL_PRICING_JSON = resolveModelPricingJson(TEMPLATE_BASE_DIR)
+  TEMPLATE_MODEL_PRICING_MODULE = path.join(
+    TEMPLATE_BASE_DIR,
+    'scripts',
+    'fleet',
+    'constants',
+    'model-pricing.generated.mts',
+  )
+  FLEET_PACK_VERSION_MODULE = path.join(
+    REPO_ROOT,
+    'scripts',
+    'fleet',
+    'constants',
+    'fleet-pack-version.generated.mts',
+  )
+  TEMPLATE_FLEET_PACK_VERSION_MODULE = path.join(
+    TEMPLATE_BASE_DIR,
+    'scripts',
+    'fleet',
+    'constants',
+    'fleet-pack-version.generated.mts',
+  )
+  REPO_PACKAGE_JSON = path.join(REPO_ROOT, 'package.json')
+  FLEET_SCRIPTS_DIR = path.join('scripts', 'fleet')
+  FLEET_TYPE_SCRIPT = path.join(FLEET_SCRIPTS_DIR, 'type.mts')
+  BUILD_HOOK_BUNDLE_SCRIPT = path.join(
+    FLEET_SCRIPTS_DIR,
+    'build-hook-bundle.mts',
+  )
+  FLEET_CHECK_DIR = path.join(FLEET_SCRIPTS_DIR, 'check')
+  TSCONFIG_CHECK_PATH = sharedFleetTsconfigCheckJsonPath(CONFIG_DIR)
+  TEST_REPO_DIR = path.join(REPO_ROOT, 'test', 'repo')
+  AI_BALANCER_RELATIVE_DIR = 'scripts/fleet/ai/balancer'
+  BALANCER_PROXY_RELATIVE_PATH = `${AI_BALANCER_RELATIVE_DIR}/proxy.mts`
+  BALANCER_PROXY_PATH = path.join(REPO_ROOT, BALANCER_PROXY_RELATIVE_PATH)
+  LINT_RULE_TEST_DIRS = [
+    path.join(REPO_ROOT, 'test', 'fleet', 'unit', 'oxlint-plugin', 'fleet'),
+    path.join(
+      REPO_ROOT,
+      'test',
+      'fleet',
+      'integration',
+      'oxlint-plugin',
+      'fleet',
+    ),
+    path.join(TEST_REPO_DIR, 'unit', 'lint-rules'),
+    path.join(TEST_REPO_DIR, 'integration', 'lint-rules'),
+    path.join(REPO_ROOT, 'test', 'fleet', 'unit', 'lint', 'rules'),
+  ]
+  HOOK_TEST_DIRS = [
+    path.join(TEST_REPO_DIR, 'integration', 'hooks'),
+    path.join(TEST_REPO_DIR, 'integration', 'hooks-shared'),
+    path.join(TEST_REPO_DIR, 'unit', 'hooks'),
+    path.join(TEST_REPO_DIR, 'unit', 'hooks-shared'),
+    path.join(REPO_ROOT, 'test', 'fleet', 'unit', 'hooks'),
+  ]
+  GIT_HOOK_TEST_DIRS = [
+    path.join(TEST_REPO_DIR, 'integration', 'git-hooks'),
+    path.join(TEST_REPO_DIR, 'unit', 'git-hooks'),
+  ]
+  OWNS_RELOCATED_TESTS = existsSync(TEMPLATE_BASE_DIR)
+})
+
+/**
+ * @file The refusal that stands between a computed delete target and a repo
+ *   root. Every `safeDelete*` whose target is BUILT from a variable goes
+ *   through here.
+ *   `path.join(root, rel)` collapses to `root` whenever `rel` is `''` or `'.'`.
+ *   That is not a hypothetical: a delete target assembled from a parsed patch
+ *   key, a scan finding, or a manifest entry is empty exactly when the parse
+ *   found nothing, and `existsSync` says TRUE for a repo root, so an
+ *   existence check waves it through. The result is a checkout deleted with
+ *   its `.git` directory.
+ *   The underlying `safeDelete` carries its own cwd guard, but that guard is
+ *   only armed when `force` is off, and a caller passing no options at all can
+ *   arm nothing — @socketsecurity/lib 6.7.0 computed `force` as
+ *   `opts.force !== false`, which is TRUE for an absent option, so the guard
+ *   was unreachable on every default call. Depending on a dependency's
+ *   internal default is what made this reachable; refusing here does not.
+ *   Four refusals, all cheap and all before any I/O: an empty or dot target, a
+ *   filesystem root, the current working directory or any ancestor of it, and
+ *   any directory that looks like a repository root (it holds `.git`).
+ *   Everything else deletes normally.
+ *   Those four ARE the boundary, so the delegated call names the base as an
+ *   allowed root rather than forcing. The dependency's own cwd guard refuses
+ *   any target outside the process cwd, which is most of what this wrapper
+ *   legitimately deletes: a per-user marker under `~/.claude`, a scratch tree
+ *   in the temp dir, a sibling checkout. Naming the base keeps that guard
+ *   live for every OTHER path, so a target that escapes the base still
+ *   refuses - which a blanket `force` would have waved through.
+ */
+/**
+ * The checkout root at or above `from`, or undefined when there is none.
+ *
+ * Walks UP, so a script running deep under `scripts/fleet/` still names the
+ * repo above it. Stops at the filesystem root.
+ */
+function enclosingCheckoutRoot(from) {
+  let dir = path.resolve(from)
+  const { root } = path.parse(dir)
+  while (dir !== root) {
+    if (existsSync(path.join(dir, '.git'))) return dir
+    dir = path.dirname(dir)
+  }
+}
+/**
+ * The checkouts a live agent session stands in, which no delete may take.
+ *
+ * WHY THE `.git` PROBE BELOW IS NOT ENOUGH. It refuses a target that HOLDS a
+ * `.git` today. The delete that hurts is the one aimed at the host checkout
+ * mid-session, and the host is exactly the directory whose `.git` the same
+ * command is about to remove — the probe passes, then the session loses the
+ * ground it stands on. Naming the session's own roots refuses that by identity
+ * instead of by a probe of the thing being destroyed.
+ *
+ * Two sources, both stable: the harness variable a host exports to its children
+ * (Claude Code sets `CLAUDE_PROJECT_DIR`) and `REPO_ROOT`, which is anchored on
+ * this file rather than on wherever the host was launched. `process.cwd()` is
+ * deliberately absent — `socket/no-process-cwd-in-scripts-hooks` bans it here,
+ * and a script that chdir'd into a scratch tree would otherwise stop protecting
+ * the checkout it came from. Each source is walked up to its checkout root, and
+ * a missing or unreadable one drops out silently.
+ *
+ * Env is read for ADDITIONAL refusals only, never to permit one, so a hostile
+ * value can widen the refusal and can never narrow it.
+ */
+function sessionCheckoutRoots() {
+  const roots = /* @__PURE__ */ new Set()
+  const sources = [
+    (0, import_rewire.getEnvValue)('CLAUDE_PROJECT_DIR'),
+    REPO_ROOT,
+  ]
+  for (let i = 0, { length } = sources; i < length; i += 1) {
+    const source = sources[i]
+    if (typeof source !== 'string' || source.trim() === '') continue
+    const root = enclosingCheckoutRoot(source)
+    if (root !== void 0) roots.add(root)
+  }
+  return [...roots]
+}
+function deleteTargetContainsPath(target, protectedPath, options) {
+  const pathApi =
+    {
+      __proto__: null,
+      ...options,
+    }.path ?? path
+  const relative = pathApi.relative(target, protectedPath)
+  return !pathApi.isAbsolute(relative) && !relative.startsWith('..')
+}
+/**
+ * Why a target is refused, or undefined when it is safe to delete. Pure apart
+ * from the `.git` probe, so the verdict table is directly testable.
+ */
+function deleteRefusalReason(target, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  if (typeof target !== 'string' || target.trim() === '')
+    return 'the target is empty — a path built from a failed parse deletes its base directory'
+  const trimmed = target.trim()
+  if (trimmed === '.' || trimmed === '..')
+    return `the target is "${trimmed}" — a relative self/parent reference deletes the directory it was joined onto`
+  const resolved = path.resolve(trimmed)
+  if (resolved === path.parse(resolved).root)
+    return `the target resolves to the filesystem root (${resolved})`
+  for (const root of sessionCheckoutRoots()) {
+    if (resolved === root)
+      return `the target is a live session's checkout root (${resolved})`
+    if (deleteTargetContainsPath(resolved, root))
+      return `the target contains a live session's checkout root (${root})`
+  }
+  const base = path.resolve(opts.base ?? REPO_ROOT)
+  if (resolved === base)
+    return `the target resolves to the base directory itself (${resolved})`
+  if (deleteTargetContainsPath(resolved, base))
+    return `the target is an ancestor of the base directory (${resolved})`
+  if (existsSync(path.join(resolved, '.git')))
+    return `the target is a repository root — it holds .git (${resolved})`
+}
+/**
+ * Throw the four-ingredient refusal unless `target` is safe to delete.
+ */
+function assertDeletableTarget(target, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  const reason = deleteRefusalReason(target, { base: opts.base })
+  if (reason === void 0) return
+  throw new Error(`Refusing to delete a root-resolving path.
+  Where: ${opts.where ?? 'a guarded safeDelete call site'}\n  Saw:   ${JSON.stringify(target)} — ${reason}.\n  Wanted: a target strictly BELOW the base directory and below any repo root.
+  Fix:   the caller computed an empty or root-collapsing segment; refuse the
+         delete upstream instead of joining it onto a base directory.`)
+}
+/**
+ * The roots a guarded delete may reach into.
+ *
+ * `assertDeletableTarget` has already refused anything that resolves to a
+ * root, so the remaining job is to tell the underlying delete that this base
+ * is legitimate even when it sits outside the cwd - a tmp fixture tree, say.
+ * Naming the base beats forcing: a target elsewhere still refuses.
+ */
+function allowedDirsFor(base) {
+  return [path.resolve(base ?? REPO_ROOT)]
+}
+/**
+ * `safeDeleteSync` behind the root refusal. Use for any target built from a
+ * variable.
+ */
+function strictDeleteSync(target, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  assertDeletableTarget(target, opts)
+  ;(0, import_safe$1.safeDeleteSync)(target, {
+    allowedDirs: allowedDirsFor(opts.base),
+  })
+}
+var import_safe$1, import_rewire
+var init_strict = __esmMin(() => {
+  import_safe$1 = require_safe()
+  init_paths()
+  import_rewire = require_rewire$1()
+})
+
+/**
+ * Active-run markers — a pidfile contract between long-running fleet
+ * commands, coverage, full builds, and the stale-process-sweeper hook.
+ *
+ * The sweeper's "stuck" heuristic kills live-parent test workers that run
+ * long at high CPU and RSS. A coverage-instrumented vitest worker looks
+ * exactly like that while perfectly healthy (incident: three consecutive
+ * `pnpm run cover` runs SIGKILLed at ~15 minutes with flat ~650MB RSS).
+ * A command that registers an active-run marker declares "my worker tree
+ * is doing real work"; the sweeper's stuck branch skips descendants of a
+ * live registered pid. Orphan reaping is unaffected — a dead registrant's
+ * marker is ignored, and cleaned by the next writer.
+ *
+ * CONTRACT (the sweeper hook implements its own tiny reader against the
+ * same layout — keep in lockstep with
+ * `.claude/hooks/fleet/stale-process-sweeper/index.mts`):
+ * directory  ~/.claude/hooks/stale-process-sweeper/active-runs/
+ * entry      one empty file per registrant, named `<pid>`
+ * liveness   the file counts only while `kill -0 <pid>` succeeds.
+ */
+function activeRunsDir(homeDir) {
+  return resolveActiveRunDir(homeDir ?? os.homedir())
+}
+function pidIsAlive(pid) {
+  if (!Number.isFinite(pid) || pid <= 1) return false
+  try {
+    process$1.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+function registerActiveRun(options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  const dir = activeRunsDir(opts.homeDir)
+  mkdirSync(dir, { recursive: true })
+  for (const entry of readdirSync(dir))
+    if (!pidIsAlive(Number(entry)))
+      strictDeleteSync(path.join(dir, entry), {
+        base: dir,
+        where: '_shared/active-run-marker.mts',
+      })
+  writeThroughMirrorLock(path.join(dir, String(opts.pid ?? process$1.pid)), '')
+}
+function unregisterActiveRun(options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  const dir = activeRunsDir(opts.homeDir)
+  const file = path.join(dir, String(opts.pid ?? process$1.pid))
+  if (existsSync(file))
+    (0, import_safe.safeDeleteSync)(file, { allowedDirs: [dir] })
+}
+function readLiveActiveRunPids(options = {}) {
+  let entries
+  try {
+    entries = readdirSync(activeRunsDir(options.homeDir))
+  } catch {
+    return /* @__PURE__ */ new Set()
+  }
+  return new Set(entries.map(Number).filter(pidIsAlive))
+}
+var import_safe
+var init_active_run_marker = __esmMin(() => {
+  import_safe = require_safe()
+  init_strict()
+  init_mirror_lock()
+  init_paths()
+})
+
+function parseHeavyJobOwner(value) {
+  if (typeof value !== 'object' || value === null) return
+  const owner = value
+  if (
+    !Number.isSafeInteger(owner.pid) ||
+    (owner.pid ?? 0) <= 1 ||
+    typeof owner.token !== 'string' ||
+    !/^[a-f\d]{32}$/.test(owner.token) ||
+    typeof owner.job !== 'string' ||
+    typeof owner.root !== 'string'
+  )
+    return
+  return owner
+}
+function isHeavyJobAncestor(owner, pid, rows) {
+  const parents = new Map(rows.map(row => [row.pid, row.ppid]))
+  const seen = /* @__PURE__ */ new Set()
+  while (pid > 1 && !seen.has(pid)) {
+    if (pid === owner) return true
+    seen.add(pid)
+    pid = parents.get(pid) ?? 0
+  }
+  return false
+}
+async function readHeavyJobProcesses() {
+  const windows = process.platform === 'win32'
+  const result = await readHeavyJobTable(
+    windows ? 'powershell.exe' : 'ps',
+    windows
+      ? [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId | ConvertTo-Json -Compress',
+        ]
+      : ['-Ao', 'pid=,ppid='],
+    {
+      encoding: 'utf8',
+      timeout: PROCESS_TABLE_TIMEOUT_MS,
+      maxBuffer: PROCESS_TABLE_MAX_BYTES,
+    },
+  )
+  const output = String(result.stdout ?? '')
+  if (windows) {
+    const value = JSON.parse(output)
+    if (!Array.isArray(value))
+      throw new Error(
+        'Cannot verify heavy job process ancestry. Retry after the process inspector recovers.',
+      )
+    return value.map(row => ({
+      __proto__: null,
+      pid: Number(row.ProcessId),
+      ppid: Number(row.ParentProcessId),
+    }))
+  }
+  return output
+    .trim()
+    .split(/\r?\n/)
+    .map(line => {
+      const { 0: pid, 1: ppid } = line.trim().split(/\s+/).map(Number)
+      return {
+        __proto__: null,
+        pid: pid ?? 0,
+        ppid: ppid ?? 0,
+      }
+    })
+}
+function isHeavyJobProcessAlive(pid) {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    return error.code !== 'ESRCH'
+  }
+}
+var readHeavyJobTable, PROCESS_TABLE_TIMEOUT_MS, PROCESS_TABLE_MAX_BYTES
+var init_owner = __esmMin(() => {
+  readHeavyJobTable = promisify(execFile)
+  PROCESS_TABLE_TIMEOUT_MS = 5e3
+  PROCESS_TABLE_MAX_BYTES = 4194304
+})
+
+var admission_exports = /* @__PURE__ */ __exportAll({
+  HEAVY_JOB_BUSY_EXIT_CODE: () => 75,
+  HEAVY_JOB_OWNER_ENV: () => HEAVY_JOB_OWNER_ENV,
+  HeavyJobBusy: () => HeavyJobBusy,
+  acquireHeavyJob: () => acquireHeavyJob,
+  hasHeavyJobAdmission: () => hasHeavyJobAdmission,
+  heavyJobDirectory: () => heavyJobDirectory,
+  withHeavyJob: () => withHeavyJob,
+})
+function hasHeavyJobAdmission() {
+  return (
+    runtimeActive &&
+    activeScope !== void 0 &&
+    heavyJobContext?.getStore() === activeScope
+  )
+}
+function heavyJobDirectory() {
+  return path.join(os.homedir(), '.socket', '_runtime', 'heavy-job')
+}
+function readOwner(directory, token) {
+  const file = path.join(directory, token)
+  const stat = lstatSync(file)
+  if (!stat.isFile() || stat.size > MAX_OWNER_BYTES)
+    throw new Error(
+      'Heavy job owner is not a bounded regular file. Inspect the per-user admission state.',
+    )
+  const owner = parseHeavyJobOwner(JSON.parse(readFileSync(file, 'utf8')))
+  if (!owner || token !== owner.token)
+    throw new Error(
+      'Heavy job ownership is invalid. Inspect the per-user admission state before retrying.',
+    )
+  return {
+    owner,
+    file,
+  }
+}
+function readOwners(directory) {
+  if (!lstatSync(directory).isDirectory())
+    throw new Error(
+      'Heavy job admission path is not a directory. Inspect the per-user admission state.',
+    )
+  const files = readdirSync(directory)
+  if (!files.length || files.length > MAX_PARTICIPANTS)
+    throw new Error(
+      'Heavy job ownership is unverified. Inspect the per-user admission state before retrying.',
+    )
+  return files.map(token => readOwner(directory, token))
+}
+function removeOwner(directory, file) {
+  assertDeletableTarget(file, { base: directory })
+  try {
+    unlinkSync(file)
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error
+  }
+  assertDeletableTarget(directory, { base: path.dirname(directory) })
+  try {
+    rmdirSync(directory)
+  } catch (error) {
+    if (!['ENOENT', 'ENOTEMPTY', 'EEXIST'].includes(error.code ?? ''))
+      throw error
+  }
+}
+function publishOwner(staging, directory) {
+  try {
+    renameSync(staging, directory)
+    return true
+  } catch (error) {
+    if (!['EEXIST', 'ENOTEMPTY', 'EPERM'].includes(error.code ?? ''))
+      throw error
+    return false
+  }
+}
+function ownerLease(config) {
+  const { directory, token, env, previous, owned } = config
+  env[HEAVY_JOB_OWNER_ENV] = token
+  let released = false
+  return {
+    owned,
+    release() {
+      if (released) return
+      released = true
+      if (env['FLEET_HEAVY_JOB_OWNER'] === token) {
+        if (previous === void 0) delete env[HEAVY_JOB_OWNER_ENV]
+        else env[HEAVY_JOB_OWNER_ENV] = previous
+      }
+      removeOwner(directory, path.join(directory, token))
+    },
+  }
+}
+async function assertExistingRuns(config, pid) {
+  const active = [...(config.activePids ?? readLiveActiveRunPids)()].filter(
+    activePid => activePid !== pid,
+  )
+  if (!active.length) return
+  const rows = await (config.processes ?? readHeavyJobProcesses)()
+  const peer = active.find(
+    activePid => !isHeavyJobAncestor(activePid, pid, rows),
+  )
+  if (peer !== void 0)
+    throw new HeavyJobBusy({
+      pid: peer,
+      token: '',
+      job: 'coverage or build',
+      root: 'the shared active-run registry',
+    })
+}
+async function joinOwner(config) {
+  const {
+    records,
+    admissionConfig,
+    previous,
+    pid,
+    directory,
+    stagedOwner,
+    token,
+  } = config
+  const parent = records.find(record => record.owner.token === previous)
+  if (!parent) return false
+  const identity = lstatSync(directory, { bigint: true })
+  const rows = await (admissionConfig.processes ?? readHeavyJobProcesses)()
+  if (!isHeavyJobAncestor(parent.owner.pid, pid, rows)) return false
+  const file = path.join(directory, token)
+  linkSync(stagedOwner, file)
+  const current = lstatSync(directory, { bigint: true })
+  if (identity.dev !== current.dev || identity.ino !== current.ino) {
+    removeOwner(directory, file)
+    throw new Error(
+      'Heavy job ownership changed during nested admission. Retry after the current job finishes.',
+    )
+  }
+  return true
+}
+async function acquireHeavyJob(config) {
+  if (config.ci ?? (0, import_ci.isCI)())
+    return {
+      owned: false,
+      release() {},
+    }
+  const directory = config.directory ?? heavyJobDirectory()
+  const parent = path.dirname(directory)
+  mkdirSync(parent, {
+    recursive: true,
+    mode: 448,
+  })
+  const pid = config.pid ?? process.pid
+  const env = config.env ?? process.env
+  const previous = env[HEAVY_JOB_OWNER_ENV]
+  const alive = config.alive ?? isHeavyJobProcessAlive
+  const token = crypto.randomBytes(16).toString('hex')
+  const owner = {
+    pid,
+    token,
+    job: config.job,
+    root: config.root ?? REPO_ROOT,
+  }
+  const staging = mkdtempSync(path.join(parent, '.heavy-job-'))
+  const stagedOwner = path.join(staging, token)
+  try {
+    writeFileSync(stagedOwner, JSON.stringify(owner), {
+      mode: 384,
+      flag: 'wx',
+    })
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (publishOwner(staging, directory)) {
+        try {
+          await assertExistingRuns(config, pid)
+        } catch (error) {
+          removeOwner(directory, path.join(directory, token))
+          throw error
+        }
+        return ownerLease({
+          directory,
+          token,
+          env,
+          previous,
+          owned: true,
+        })
+      }
+      const records = readOwners(directory)
+      const living = records.filter(record => alive(record.owner.pid))
+      if (!living.length) {
+        for (const record of records) removeOwner(directory, record.file)
+        continue
+      }
+      if (
+        await joinOwner({
+          records: living,
+          admissionConfig: config,
+          previous,
+          pid,
+          directory,
+          stagedOwner,
+          token,
+        })
+      )
+        return ownerLease({
+          directory,
+          token,
+          env,
+          previous,
+          owned: false,
+        })
+      throw new HeavyJobBusy(living[0].owner)
+    }
+    throw new Error(
+      'Heavy job admission changed during acquisition. Retry after the current job finishes.',
+    )
+  } finally {
+    removeOwner(staging, stagedOwner)
+  }
+}
+async function withHeavyJob(config) {
+  if (config.ci ?? (0, import_ci.isCI)()) return await config.run()
+  if (hasHeavyJobAdmission()) {
+    const scope = activeScope
+    const pending = Promise.resolve().then(config.run)
+    scope.pending.add(pending)
+    try {
+      return await pending
+    } finally {
+      scope.pending.delete(pending)
+    }
+  }
+  if (runtimeActive)
+    throw new HeavyJobBusy({
+      pid: process.pid,
+      token: '',
+      job: 'another invocation in this process',
+      root: REPO_ROOT,
+    })
+  runtimeActive = true
+  try {
+    return await runAdmittedJob(config, await acquireHeavyJob(config))
+  } finally {
+    activeScope = void 0
+    runtimeActive = false
+  }
+}
+async function runAdmittedJob(config, lease) {
+  let signal
+  function stop(next) {
+    signal = next
+    ;(0, import_abort.getAbortController)().abort()
+  }
+  function cleanup() {
+    try {
+      ;(config.unregister ?? unregisterActiveRun)()
+    } finally {
+      lease.release()
+    }
+  }
+  function interrupt() {
+    stop('SIGINT')
+  }
+  function terminate() {
+    stop('SIGTERM')
+  }
+  process.once('exit', cleanup)
+  process.on('SIGINT', interrupt)
+  process.on('SIGTERM', terminate)
+  try {
+    ;(config.register ?? registerActiveRun)()
+    heavyJobContext ??= new AsyncLocalStorage()
+    const scope = { pending: /* @__PURE__ */ new Set() }
+    activeScope = scope
+    try {
+      return await heavyJobContext.run(scope, config.run)
+    } finally {
+      while (scope.pending.size) await Promise.allSettled(scope.pending)
+    }
+  } finally {
+    process.removeListener('exit', cleanup)
+    process.removeListener('SIGINT', interrupt)
+    process.removeListener('SIGTERM', terminate)
+    try {
+      cleanup()
+    } finally {
+      if (signal) process.kill(process.pid, signal)
+    }
+  }
+}
+var import_ci,
+  import_abort,
+  HEAVY_JOB_OWNER_ENV,
+  HEAVY_JOB_BUSY_EXIT_CODE,
+  MAX_OWNER_BYTES,
+  MAX_PARTICIPANTS,
+  heavyJobContext,
+  activeScope,
+  runtimeActive,
+  HeavyJobBusy
+var init_admission = __esmMin(() => {
+  import_ci = require_ci()
+  import_abort = require_abort()
+  init_active_run_marker()
+  init_script_result()
+  init_strict()
+  init_paths()
+  init_owner()
+  HEAVY_JOB_OWNER_ENV = 'FLEET_HEAVY_JOB_OWNER'
+  HEAVY_JOB_BUSY_EXIT_CODE = 75
+  MAX_OWNER_BYTES = 16384
+  MAX_PARTICIPANTS = 1024
+  runtimeActive = false
+  HeavyJobBusy = class extends ScriptExit {
+    constructor(owner) {
+      super(75)
+      this.message = `Heavy job admission is occupied by ${owner.job} (pid ${owner.pid}) at ${owner.root}. Wanted an available host. Retry when that job finishes.`
+    }
+  }
+})
+
+/**
+ * @file Fail-soft entrypoint runner for fleet + repo CLI scripts. Wraps a
+ *   script's `main()` so a throw / rejection can NEVER escape as an unhandled
+ *   rejection + raw stack trace: the error is surfaced via the logger as a
+ *   MESSAGE, never a stack, and the process exits non-zero. `main()` may return
+ *   its exit code (or nothing → 0). This replaces the bare `void (async () => {
+ *   process.exitCode = await main() })()` entry pattern, which crashes with a
+ *   raw stack if `main()` throws. Enforced by
+ *   `scripts/fleet/check/entry-scripts-are-fail-soft.mts` (a fleet CLI entry
+ *   must fail soft — never hard-crash the user). It also owns the whole-argv
+ *   concerns every entry shares, so a new script inherits them instead of
+ *   having to remember each: `--describe` prints the script's one-line purpose,
+ *   `-h`/`--help` prints its usage (both from the {@link ScriptMeta} the entry
+ *   passes, both BEFORE `main()` runs or any lock is taken), `--describe
+ *   --json` (either order) prints the same identity as a machine-readable
+ *   manifest instead, and a bare `--` in argv is refused before `main()`
+ *   runs. Native JSON handlers explicitly declare `json: 'native'`.
+ *   {@link isJsonRequested} lets a script's own `main()` switch its RESULT
+ *   output to structured JSON without re-parsing argv itself. Enforced by
+ *   `scripts/fleet/check/entry-scripts-are-self-describing.mts` (every entry
+ *   script answers --describe and --help without running its side effect).
+ */
+var import_message = require_message()
+var import_default = require_default()
+init_script_result()
+const logger$2 = (0, import_default.getDefaultLogger)()
+/**
+ * The version stamped into a script's manifest: the invoking repo root's
+ * `package.json` version. Fail-soft — a script must answer `--describe`
+ * anywhere, including a cwd with no manifest at all.
+ */
+function repoVersion() {
+  try {
+    return JSON.parse(readFileSync('package.json', 'utf8')).version || '0.0.0'
+  } catch {
+    return '0.0.0'
+  }
+}
+function scriptBasename(filePath, fallback) {
+  return filePath?.split(/[\\/]/u).pop() || fallback
+}
+/**
+ * Run a script's `main()` FAIL-SOFT: set `process.exitCode` to its resolved
+ * return (`?? 0`), and on ANY throw / rejection log the message (never a raw
+ * stack) via the default logger and set `process.exitCode = 1`. Never rethrows,
+ * so a fleet CLI can't crash the user with an unhandled stack. Call it inside
+ * the entrypoint guard:
+ *
+ * @example
+ *   ;```ts
+ *   if (isMainModule(import.meta.url)) {
+ *     runMain(main)
+ *   }
+ *   ```
+ */
+function runMain(main, meta) {
+  executeMain(main, meta)
+}
+async function executeMain(main, meta) {
+  const argv = process$1.argv.slice(2)
+  if (answerScriptHelp(argv, meta)) return
+  const json = isJsonRequested(argv)
+  if (json && !meta?.json) {
+    logger$2.log(
+      renderScriptResult({
+        exitCode: 1,
+        error: 'This script has not declared JSON execution support.',
+      }),
+    )
+    process$1.exitCode = 1
+    return
+  }
+  if (hasBareDoubleDash(argv)) {
+    const scriptName = scriptBasename(process$1.argv[1], 'this script')
+    const error = bareDoubleDashMessage(scriptName)
+    if (json)
+      logger$2.log(
+        renderScriptResult({
+          exitCode: 1,
+          error,
+        }),
+      )
+    else logger$2.error(error)
+    process$1.exitCode = 1
+    return
+  }
+  try {
+    await invokeScriptMain(main, meta)
+  } catch (e) {
+    const exitCode = e instanceof ScriptExit ? e.exitCode : 1
+    if (json)
+      logger$2.log(
+        renderScriptResult({
+          exitCode,
+          error: (0, import_message.errorMessage)(e),
+        }),
+      )
+    else logger$2.error((0, import_message.errorMessage)(e))
+    process$1.exitCode = exitCode
+  }
+}
+function answerScriptHelp(argv, meta) {
+  if (meta) {
+    const request = helpRequest(argv)
+    if (request) {
+      if (request === 'describe' && argv.includes('--json'))
+        logger$2.log(
+          describeManifestText(meta, {
+            name: scriptBasename(process$1.argv[1], 'script'),
+            version: repoVersion(),
+          }),
+        )
+      else logger$2.log(helpText(request, meta))
+      process$1.exitCode = 0
+      return true
+    }
+  }
+  return false
+}
+function applyScriptExitCode(result) {
+  const code =
+    typeof result === 'object' && result !== null ? result.exitCode : result
+  if (typeof code === 'number') process$1.exitCode = code
+  else if (!process$1.exitCode) process$1.exitCode = 0
+}
+async function invokeScriptMain(main, meta) {
+  const json = isJsonRequested(process$1.argv.slice(2))
+  let result
+  if (meta?.heavyJob) {
+    const { withHeavyJob } = await Promise.resolve().then(
+      () => (init_admission(), admission_exports),
+    )
+    result = await withHeavyJob({
+      job: meta.heavyJob,
+      run: async () => await main(),
+    })
+  } else result = await main()
+  applyScriptExitCode(result)
+  if (!json && typeof result === 'object' && result?.error)
+    logger$2.error(result.error)
+  if (json && meta?.json === 'result')
+    logger$2.log(
+      renderScriptResult({
+        ...(typeof result === 'object' && result !== null ? result : {}),
+        exitCode: Number(process$1.exitCode ?? 0),
+      }),
+    )
+}
+
+const logger$1 = (0, import_default.getDefaultLogger)()
+function writeScriptStdout(...args) {
+  return (
+    process$1.argv.includes('--json') ? process$1.stderr : process$1.stdout
+  ).write(...args)
+}
+
+/**
+ * @file Canonical MCP configuration and generated native client paths.
+ */
+init_util()
+const MCP_CONFIG_REL = '.mcp.json'
+const CODEX_MCP_CONFIG_REL = '.codex/config.toml'
+const CODEX_MCP_HOOKS_REL = '.codex/hooks.json'
+const OPENCODE_MCP_ADAPTER_REL = 'opencode.json'
+function mcpConfigFilePath(root, relative) {
+  return path.join(root, relative)
+}
+function canonicalMcpConfigPath(repoRoot) {
+  const template = mcpConfigFilePath(
+    sharedTemplateBasePath(repoRoot),
+    MCP_CONFIG_REL,
+  )
+  return existsSync(template)
+    ? template
+    : mcpConfigFilePath(repoRoot, MCP_CONFIG_REL)
+}
+
+var import_predicates = require_predicates$2()
+const MCP_PROVIDERS = {
+  readme: {
+    connectOrder: 1,
+    serverName: 'fleet-readme',
+    url: 'https://docs.readme.com/mcp',
+    auth: 'api-key',
+    apiKeyEnv: 'README_API_KEY',
+    setupUrl: 'https://dash.readme.com',
+    allowedAuthorizationHosts: ['dash.readme.com'],
+    clients: {
+      claude: { kind: 'api-key-env' },
+      codex: { kind: 'api-key-env' },
+      opencode: { kind: 'api-key-env' },
+    },
+  },
+  refero: {
+    connectOrder: 3,
+    serverName: 'fleet-refero',
+    url: 'https://api.refero.design/mcp',
+    auth: 'oauth',
+    setupUrl: 'https://refero.design/mcp',
+    allowedAuthorizationHosts: ['refero.design', 'api.refero.design'],
+    clients: {
+      claude: { kind: 'oauth' },
+      codex: { kind: 'oauth' },
+      opencode: { kind: 'oauth' },
+    },
+  },
+  sanity: {
+    connectOrder: 2,
+    serverName: 'fleet-sanity',
+    url: 'https://mcp.sanity.io',
+    auth: 'oauth',
+    setupUrl: 'https://www.sanity.io/manage',
+    allowedAuthorizationHosts: ['mcp.sanity.io', 'sanity.io', 'www.sanity.io'],
+    clients: {
+      claude: { kind: 'oauth' },
+      codex: { kind: 'oauth' },
+      opencode: { kind: 'oauth' },
+    },
+  },
+  slack: {
+    connectOrder: 0,
+    serverName: 'fleet-slack-hosted',
+    url: 'https://mcp.slack.com/mcp',
+    auth: 'oauth',
+    localServerName: 'fleet-slack',
+    setupUrl:
+      'https://docs.slack.dev/ai/slack-mcp-server/connect-to-harnesses/',
+    allowedAuthorizationHosts: ['slack.com'],
+    clients: {
+      claude: {
+        kind: 'oauth',
+        clientId: '1601185624273.8899143856786',
+        callbackPort: 3118,
+      },
+      codex: {
+        kind: 'registration-unavailable',
+        reason: 'slack-client-registration-unverified',
+      },
+      opencode: {
+        kind: 'registration-unavailable',
+        reason: 'slack-client-registration-unverified',
+      },
+    },
+  },
+}
+const MCP_PROVIDER_NAMES = Object.entries(MCP_PROVIDERS)
+  .toSorted(([, left], [, right]) => left.connectOrder - right.connectOrder)
+  .map(([name]) => name)
+function findMcpProviderForServer(name) {
+  return Object.values(MCP_PROVIDERS).find(
+    provider => provider.serverName === name,
+  )
+}
+const CREDENTIAL_KEY_PATTERN =
+  /(?:^|[-_])(?:api[-_]?key|auth(?:orization)?|bearer|credential|password|secret|token)(?:$|[-_])/i
+const CREDENTIAL_VALUE_PATTERN = /\bbearer\s+[a-z\d._~+/=-]+/i
+function assertMcpConfigHasNoCredentials(value, options = {}) {
+  const { location = '.mcp.json' } = options
+  if (typeof value === 'string') {
+    if (CREDENTIAL_VALUE_PATTERN.test(value))
+      throw new Error(
+        `Committed MCP config contains a credential at ${location}`,
+      )
+    return
+  }
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index += 1)
+      assertMcpConfigHasNoCredentials(value[index], {
+        location: `${location}[${index}]`,
+      })
+    return
+  }
+  if (!(0, import_predicates.isPlainObject)(value)) return
+  for (const [key, child] of Object.entries(value)) {
+    const normalized = key.replace(/([a-z])([A-Z])/g, '$1-$2')
+    if (CREDENTIAL_KEY_PATTERN.test(normalized))
+      throw new Error(
+        `Committed MCP config contains a credential field at ${location}.${key}`,
+      )
+    assertMcpConfigHasNoCredentials(child, { location: `${location}.${key}` })
+  }
+}
+function parseMcpPublicOAuth(value) {
+  if (value === void 0) return
+  if (!(0, import_predicates.isPlainObject)(value))
+    throw new TypeError('MCP OAuth metadata must be an object')
+  const { clientId, callbackPort } = value
+  if (clientId !== void 0 && (typeof clientId !== 'string' || !clientId))
+    throw new TypeError(
+      'MCP OAuth clientId must be a nonempty public identifier',
+    )
+  if (
+    callbackPort !== void 0 &&
+    (typeof callbackPort !== 'number' ||
+      !Number.isInteger(callbackPort) ||
+      callbackPort < 1 ||
+      callbackPort > 65535)
+  )
+    throw new TypeError(
+      'MCP OAuth callbackPort must be an integer from 1 to 65535',
+    )
+  if (
+    Object.keys(value).some(key => key !== 'callbackPort' && key !== 'clientId')
+  )
+    throw new TypeError(
+      'MCP OAuth metadata only supports clientId and callbackPort',
+    )
+  return {
+    clientId,
+    callbackPort,
+  }
+}
+function parseMcpAuthorizationEnv(provider, headers) {
+  const env = provider?.apiKeyEnv
+  if (headers === void 0) return
+  if (
+    !env ||
+    !(0, import_predicates.isPlainObject)(headers) ||
+    Object.keys(headers).length !== 1 ||
+    headers['Authorization'] !== `Bearer \${${env}}`
+  )
+    throw new TypeError(
+      'MCP credential headers require the registered provider API key environment reference',
+    )
+  return env
+}
+function resolveMcpProviderEndpoint(name, url) {
+  const provider = findMcpProviderForServer(name)
+  const endpointProvider = Object.values(MCP_PROVIDERS).find(
+    item => item.url === url,
+  )
+  if (endpointProvider && endpointProvider !== provider)
+    throw new TypeError(
+      `MCP provider URL requires its registered server name ${endpointProvider.serverName}`,
+    )
+  if (provider && url !== provider.url)
+    throw new TypeError(
+      `MCP provider ${name} requires its registered HTTPS URL`,
+    )
+  return provider
+}
+function parseMcpHttpAuthentication(name, server) {
+  const provider = resolveMcpProviderEndpoint(name, server['url'])
+  assertMcpUrlHasNoCredentials(server['url'])
+  const bearerTokenEnv = parseMcpAuthorizationEnv(provider, server['headers'])
+  assertMcpConfigHasNoCredentials(
+    {
+      ...server,
+      headers: void 0,
+    },
+    { location: name },
+  )
+  const oauth = parseMcpPublicOAuth(server['oauth'])
+  const registeredOAuth = provider?.clients.claude
+  if (
+    registeredOAuth?.kind === 'oauth' &&
+    (oauth?.clientId !== registeredOAuth.clientId ||
+      oauth?.callbackPort !== registeredOAuth.callbackPort)
+  )
+    throw new TypeError(
+      `MCP provider ${name} requires its registered public OAuth metadata`,
+    )
+  if (provider?.auth === 'api-key' && oauth !== void 0)
+    throw new TypeError(
+      `MCP provider ${name} uses an API key environment reference`,
+    )
+  return {
+    ...(bearerTokenEnv === void 0 ? {} : { bearerTokenEnv }),
+    ...(oauth === void 0 ? {} : { oauth }),
+  }
+}
+function assertMcpUrlHasNoCredentials(value) {
+  if (typeof value !== 'string') throw new TypeError('MCP URL must be a string')
+  const url = new URL(value)
+  if (url.username || url.password || url.hash)
+    throw new TypeError('MCP URL cannot contain credentials or a fragment')
+  assertMcpConfigHasNoCredentials(Object.fromEntries(url.searchParams))
+}
+
+/**
+ * @file Pure adapters from the fleet-canonical Claude `.mcp.json` shape to
+ *   project-local Codex and OpenCode configs.
+ *   Credentials never belong in the canonical or generated project files; each
+ *   client owns OAuth state in its user data directory.
+ */
+init_mirror_lock()
+init_paths()
+const OPENCODE_COMMAND_INDENT = ' '.repeat(6)
+const OPENCODE_COMMAND_ITEM_INDENT = ' '.repeat(8)
+function compactOpenCodeCommandArrays(text, servers) {
+  let result = text
+  const items = Object.values(servers)
+  for (let i = 0, { length } = items; i < length; i += 1) {
+    const server = items[i]
+    if (server.kind !== 'stdio') continue
+    const command = [server.command, ...server.args]
+    const compact = `${OPENCODE_COMMAND_INDENT}"command": [${command.map(value => JSON.stringify(value)).join(', ')}]`
+    if (compact.length > 80) continue
+    const expanded = [
+      `${OPENCODE_COMMAND_INDENT}"command": [`,
+      ...command.map(
+        (value, index) =>
+          `${OPENCODE_COMMAND_ITEM_INDENT}${JSON.stringify(value)}${index + 1 < command.length ? ',' : ''}`,
+      ),
+      `${OPENCODE_COMMAND_INDENT}]`,
+    ].join('\n')
+    result = result.replace(expanded, () => compact)
+  }
+  return result
+}
+function main$1() {
+  if (!process$1.argv.includes('--write'))
+    throw new Error(
+      'Usage: node scripts/fleet/mcp/config.mts --write (regenerates project MCP client configs)',
+    )
+  writeMcpClientConfigs(REPO_ROOT)
+  writeScriptStdout('Generated .codex/config.toml and opencode.json.\n')
+}
+function parseStringArray(value, field) {
+  if (!Array.isArray(value) || value.some(item => typeof item !== 'string'))
+    throw new Error(`MCP server ${field} must be an array of strings`)
+  return [...value]
+}
+function sortRecord(record) {
+  return Object.fromEntries(
+    Object.entries(record).toSorted(([left], [right]) =>
+      (0, import_strings.compareStr)(left, right),
+    ),
+  )
+}
+function clientMcpServers(servers, client) {
+  return Object.entries(sortRecord(servers)).filter(
+    ([name]) =>
+      findMcpProviderForServer(name)?.clients[client].kind !==
+      'registration-unavailable',
+  )
+}
+function tomlString(value) {
+  return JSON.stringify(value)
+}
+function tomlStringArray(values) {
+  const compact = JSON.stringify(values)
+  if (`args = ${compact}`.length <= 80) return [`args = ${compact}`]
+  return ['args = [', ...values.map(value => `  ${tomlString(value)},`), ']']
+}
+/**
+ * Parse and validate the one committed MCP authority.
+ */
+function parseCanonicalMcpConfig(text) {
+  let parsed
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error('Canonical .mcp.json must contain valid JSON')
+  }
+  if (
+    !(0, import_predicates.isPlainObject)(parsed) ||
+    !(0, import_predicates.isPlainObject)(parsed['mcpServers'])
+  )
+    throw new Error('Canonical .mcp.json must contain an mcpServers object')
+  assertMcpConfigHasNoCredentials({
+    ...parsed,
+    mcpServers: void 0,
+  })
+  const servers = {}
+  for (const [name, rawServer] of Object.entries(parsed['mcpServers'])) {
+    if (!(0, import_predicates.isPlainObject)(rawServer))
+      throw new Error(`MCP server ${name} must be an object`)
+    if (rawServer['type'] === 'http') {
+      const url = rawServer['url']
+      if (typeof url !== 'string' || url.length === 0)
+        throw new Error(`HTTP MCP server ${name} must have a URL`)
+      servers[name] = {
+        kind: 'http',
+        url,
+        ...parseMcpHttpAuthentication(name, rawServer),
+      }
+      continue
+    }
+    assertMcpConfigHasNoCredentials(rawServer, { location: name })
+    const command = rawServer['command']
+    if (typeof command !== 'string' || command.length === 0)
+      throw new Error(`stdio MCP server ${name} must have a command`)
+    servers[name] = {
+      args: parseStringArray(rawServer['args'] ?? [], `${name}.args`),
+      command,
+      kind: 'stdio',
+    }
+  }
+  return sortRecord(servers)
+}
+function readCanonicalMcpConfig(repoRoot) {
+  return parseCanonicalMcpConfig(
+    readFileSync(canonicalMcpConfigPath(repoRoot), 'utf8'),
+  )
+}
+/**
+ * Render the trusted-project `.codex/config.toml` MCP section.
+ */
+function renderCodexMcpConfig(servers) {
+  const lines = [
+    '# Generated from ../.mcp.json by scripts/fleet/mcp/config.mts.',
+    '# OAuth credentials stay in Codex user storage; do not add them here.',
+  ]
+  for (const [name, server] of clientMcpServers(servers, 'codex')) {
+    const key = /^[\w-]+$/.test(name) ? name : tomlString(name)
+    lines.push('', `[mcp_servers.${key}]`)
+    if (server.kind === 'http') {
+      lines.push(`url = ${tomlString(server.url)}`)
+      if (server.bearerTokenEnv)
+        lines.push(
+          `bearer_token_env_var = ${tomlString(server.bearerTokenEnv)}`,
+        )
+      const oauth = codexMcpOAuth(name, server)
+      if (oauth?.clientId || oauth?.callbackPort) {
+        lines.push('', `[mcp_servers.${key}.oauth]`)
+        if (oauth.clientId)
+          lines.push(`client_id = ${tomlString(oauth.clientId)}`)
+        if (oauth.callbackPort)
+          lines.push(`callback_port = ${oauth.callbackPort}`)
+      }
+    } else {
+      lines.push(`command = ${tomlString(server.command)}`)
+      lines.push(...tomlStringArray(server.args))
+    }
+  }
+  return `${lines.join('\n')}\n`
+}
+function codexMcpOAuth(name, server) {
+  const support = findMcpProviderForServer(name)?.clients.codex
+  if (support?.kind !== 'oauth') return server.oauth
+  return support.clientId || support.callbackPort ? support : void 0
+}
+/**
+ * Render OpenCode's project-root `opencode.json`.
+ */
+function renderOpenCodeMcpConfig(servers) {
+  const entries = {}
+  for (const [name, server] of clientMcpServers(servers, 'opencode'))
+    entries[name] =
+      server.kind === 'http'
+        ? {
+            type: 'remote',
+            url: server.url,
+            ...(server.oauth === void 0 ? {} : { oauth: server.oauth }),
+            ...(server.bearerTokenEnv === void 0
+              ? {}
+              : {
+                  headers: {
+                    Authorization: `Bearer {env:${server.bearerTokenEnv}}`,
+                  },
+                  oauth: false,
+                }),
+          }
+        : {
+            command: [server.command, ...server.args],
+            type: 'local',
+          }
+  return `${compactOpenCodeCommandArrays(
+    JSON.stringify(
+      {
+        $schema: 'https://opencode.ai/config.json',
+        mcp: entries,
+      },
+      void 0,
+      2,
+    ),
+    servers,
+  )}\n`
+}
+const CODEX_ADAPTERS = [
+  {
+    path: CODEX_MCP_CONFIG_REL,
+    render: renderCodexMcpConfig,
+  },
+  {
+    path: CODEX_MCP_HOOKS_REL,
+    render: () => renderCodexHooksConfig(),
+  },
+]
+const CODEX_ADAPTER_PATHS = CODEX_ADAPTERS.map(adapter => adapter.path)
+/**
+ * Write the Codex project adapters into `repoRoot`'s LIVE tree. Generated-
+ * untracked, gitignored, regenerated at setup — so they land at the repo root,
+ * never `template/base/universal`, they are not a cascade source, and never
+ * committed.
+ */
+function writeCodexAdapters(repoRoot, servers) {
+  for (let i = 0, { length } = CODEX_ADAPTERS; i < length; i += 1) {
+    const adapter = CODEX_ADAPTERS[i]
+    const dest = mcpConfigFilePath(repoRoot, adapter.path)
+    mkdirSync(path.dirname(dest), { recursive: true })
+    writeThroughMirrorLock(dest, adapter.render(servers))
+  }
+}
+/**
+ * Regenerate the project MCP adapters from `.mcp.json`.
+ *
+ * The SOURCE is read from `configRoot` — `template/base/universal` in the
+ * wheelhouse, the repo root in a member — because that is where the canonical
+ * `.mcp.json` lives. Every OUTPUT lands in the repo-root LIVE tree,
+ * generated-untracked and gitignored.
+ *
+ * `opencode.json` lands at the repo root, never beside its source in
+ * `template/base/universal`: a generated per-repo alias inside the cascade
+ * source makes the wheelhouse carry a copy no member wants, and leaves a fresh
+ * clone with none at the root, where the harness actually reads it.
+ */
+function writeMcpClientConfigs(repoRoot) {
+  const servers = readCanonicalMcpConfig(repoRoot)
+  writeCodexAdapters(repoRoot, servers)
+  const configPath = mcpConfigFilePath(repoRoot, OPENCODE_MCP_ADAPTER_REL)
+  const existing = existsSync(configPath)
+    ? JSON.parse(readFileSync(configPath, 'utf8'))
+    : {}
+  if (!(0, import_predicates.isPlainObject)(existing))
+    throw new TypeError(
+      'Cannot update opencode.json: expected an object. Fix the existing config before regenerating MCP servers.',
+    )
+  const generated = JSON.parse(renderOpenCodeMcpConfig(servers))
+  writeThroughMirrorLock(
+    configPath,
+    `${compactOpenCodeCommandArrays(
+      JSON.stringify(
+        {
+          ...generated,
+          ...existing,
+          mcp: generated.mcp,
+        },
+        null,
+        2,
+      ),
+      servers,
+    )}\n`,
+  )
+}
+const SCRIPT_META$1 = {
+  describe:
+    'regenerates the Codex and OpenCode MCP client configs from the canonical .mcp.json',
+  help: `Usage: node scripts/fleet/mcp/config.mts --write
+
+  --write  regenerate .codex/config.toml and opencode.json (required)`,
+  json: 'result',
+}
+if (
+  path.basename(fileURLToPath(import.meta.url)) === 'config.mts' &&
+  isMainModule$1(import.meta.url)
+)
+  runMain(main$1, SCRIPT_META$1)
+
+init_mirror_lock()
+const INSTALLED_ADAPTER_PATHS = [
+  ...ADAPTERS.map(adapter => adapter.dest),
+  CODEX_MCP_CONFIG_REL,
+  '.codex/hooks.json',
+  OPENCODE_MCP_ADAPTER_REL,
+]
+function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+function projectMcpClientConfigs(dest, preservedPaths) {
+  const authority = path.join(dest, '.mcp.json')
+  if (!existsSync(authority)) return
+  const servers = parseCanonicalMcpConfig(readFileSync(authority, 'utf8'))
+  const codexPath = path.join(dest, CODEX_MCP_CONFIG_REL)
+  if (
+    !isPreservedInstallPath('.codex/config.toml', { preservedPaths }) &&
+    (!existsSync(codexPath) ||
+      readFileSync(codexPath, 'utf8').startsWith(
+        '# Generated from ../.mcp.json by scripts/fleet/mcp/config.mts.',
+      ))
+  )
+    writeIfChanged(codexPath, renderCodexMcpConfig(servers))
+  const openCodePath = path.join(dest, OPENCODE_MCP_ADAPTER_REL)
+  if (isPreservedInstallPath('opencode.json', { preservedPaths })) return
+  const existing = existsSync(openCodePath)
+    ? JSON.parse(readFileSync(openCodePath, 'utf8'))
+    : {}
+  if (!isPlainObject(existing))
+    throw new TypeError(
+      `Adapter projection failed. Where: ${openCodePath}. Saw: non-object JSON; wanted an OpenCode configuration object. Fix: repair the file and retry installation.`,
+    )
+  const generated = JSON.parse(renderOpenCodeMcpConfig(servers))
+  if (!isPlainObject(generated))
+    throw new TypeError('OpenCode MCP renderer returned invalid JSON.')
+  writeIfChanged(
+    openCodePath,
+    `${JSON.stringify(
+      {
+        ...generated,
+        ...existing,
+        mcp: generated['mcp'],
+      },
+      void 0,
+      2,
+    )}\n`,
+  )
+}
+function assertRegularDestination(file) {
+  const entry = lstatSync(file, { throwIfNoEntry: false })
+  if (entry && !entry.isFile())
+    throw new TypeError(
+      `Adapter projection failed. Where: ${file}. Saw: non-regular destination; wanted a regular file. Fix: remove the conflicting entry and retry installation.`,
+    )
+}
+function writeIfChanged(file, content) {
+  assertRegularDestination(file)
+  if (existsSync(file) && readFileSync(file, 'utf8') === content) return
+  mkdirSync(path.dirname(file), { recursive: true })
+  withMirrorLockLiftedSync(file, () => writeFileSync(file, content, 'utf8'))
+}
+function writeRuleAlias(dest, relative) {
+  const target = path.posix.relative(path.posix.dirname(relative), 'AGENTS.md')
+  try {
+    if (lstatSync(dest).isSymbolicLink() && readlinkSync(dest) === target)
+      return
+    rmSync(dest, { force: true })
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error
+  }
+  mkdirSync(path.dirname(dest), { recursive: true })
+  try {
+    symlinkSync(target, dest)
+  } catch (error) {
+    const code = error?.code
+    if (code !== 'ENOSYS' && code !== 'EPERM') throw error
+    writeIfChanged(dest, POINTER_BODY)
+  }
+}
+function projectInstalledAdapters(dest, options) {
+  const opts = {
+    __proto__: null,
+    ...options,
+  }
+  const { preservedPaths } = opts
+  migrateRuleFile(dest, opts)
+  for (let i = 0, { length } = ADAPTERS; i < length; i += 1) {
+    const adapter = ADAPTERS[i]
+    if (
+      adapter.kind === 'copy' &&
+      !existsSync(path.join(dest, adapter.sourceRel))
+    )
+      throw new Error(
+        `Adapter projection failed. Where: ${path.join(dest, adapter.sourceRel)}. Saw: canonical source missing; wanted extracted fleet source. Fix: verify the fleet pack and retry installation.`,
+      )
+  }
+  const writes = ADAPTERS.filter(adapter => adapter.kind === 'file').map(
+    adapter => [path.join(dest, adapter.dest), adapter.content],
+  )
+  writes.push([
+    path.join(dest, '.codex', 'hooks.json'),
+    renderCodexHooksConfig({
+      spec: {
+        ...config_default,
+        events: new Map(Object.entries(config_default.events)),
+      },
+    }),
+  ])
+  for (const [file, content] of writes) {
+    if (isPreservedInstallPath(path.relative(dest, file), { preservedPaths }))
+      continue
+    writeIfChanged(file, content)
+  }
+  for (let i = 0, { length } = ADAPTERS; i < length; i += 1) {
+    const adapter = ADAPTERS[i]
+    const destination = path.join(dest, adapter.dest)
+    if (isPreservedInstallPath(adapter.dest, { preservedPaths })) continue
+    if (adapter.kind === 'symlink') {
+      writeRuleAlias(destination, adapter.dest)
+      continue
+    }
+    if (adapter.kind !== 'copy') continue
+    const source = path.join(dest, adapter.sourceRel)
+    writeIfChanged(
+      destination,
+      renderAdapterCopy(adapter, readFileSync(source, 'utf8')),
+    )
+  }
+  projectMcpClientConfigs(dest, preservedPaths)
+  return INSTALLED_ADAPTER_PATHS
+}
+
+init_script_result()
+init_util()
 const SCRIPT_META = {
   describe:
     'Fetch, verify, and materialize the current green fleet tooling bundle.',
@@ -4292,6 +29096,11 @@ async function ensureCurrentFleet(config, dependencies) {
     ...dependencies,
   }
   const dest = path.resolve(cfg.dest ?? repoRoot)
+  migrateRuleFile(dest, {
+    preservedPaths: existsSync(path.join(dest, '.git'))
+      ? readFleetTrackedPaths(dest)
+      : void 0,
+  })
   if (existsSync(sharedTemplateBasePath(dest))) return 0
   repairTrackedHydration(dest, { restoreMissing: cfg.repairTracked === true })
   const now = deps.now ?? Date.now
@@ -4473,6 +29282,7 @@ async function installFleet(config) {
     const preservedPaths = preserveTracked
       ? readFleetTrackedPaths(dest)
       : void 0
+    migrateRuleFile(dest, { preservedPaths })
     const runtimeManifest = preservedPaths
       ? {
           ...memberManifest,
@@ -4529,7 +29339,7 @@ async function installFleet(config) {
           },
         }
       : memberManifest
-    installSegments(segmentsDir, dest, runtimeManifest)
+    installSegments(segmentsDir, dest, runtimeManifest, { preservedPaths })
     const settingsResult = installSettingsSegment(
       segmentsDir,
       dest,
@@ -4549,6 +29359,16 @@ async function installFleet(config) {
         dest,
         manifest: runtimeManifest,
       })
+    try {
+      projectInstalledAdapters(dest, { preservedPaths })
+      if (!preserveTracked)
+        untrackGeneratedOutputs(dest, INSTALLED_ADAPTER_PATHS)
+    } catch (error) {
+      logger.log(
+        `install-fleet: adapter projection failed after verified extraction: ${errorMessage(error)}`,
+      )
+      return 1
+    }
     const appliedFiles = fleetPackOwnedPaths(runtimeManifest)
     writeAppliedRef(dest, sourceRef)
     writeAppliedFiles(dest, appliedFiles)
@@ -4639,7 +29459,6 @@ async function main() {
 }
 if (isMainModule()) runMainMinimal(main, SCRIPT_META)
 
-//#endregion
 export {
   GHCR_HOST,
   GREEN_TAG,
@@ -4668,7 +29487,6 @@ export {
   findFleetBlockSpans,
   firstHeader,
   fleetPackOwnedPaths,
-  fleetTrackedAllowlist,
   getAnonymousGhcrToken,
   getGhcrToken,
   ghcrBasicAuthHeader,
@@ -4690,6 +29508,7 @@ export {
   materializeFromLocalTemplate,
   mergeWorkspaceYaml,
   mergeYamlKeyBlock,
+  migrateRuleFile,
   migrateWorkspaceSettings,
   normalizeBundlePath,
   normalizeManifestEntryPath,

@@ -3,6 +3,60 @@ export const NPM_SCAN_RECEIPT_FILE = 'npm-stage-scan-receipt.json'
 const SHA_RE = /^[a-f0-9]{40}$/u
 const STAGE_ID_RE = /^[0-9a-f-]{36}$/u
 
+export function verifyNpmScanSourceBinding(config: {
+  sourceSha: string
+  runHead: string
+  parents: readonly string[]
+  logs: string
+}): void {
+  const committed = [
+    ...config.logs.matchAll(
+      // Match a complete bump receipt, allowing the logger prefix and capturing its commit SHA.
+      /^(?:✔ )?\[bump\].* committed ([0-9a-f]{7,40}) .*via the release App\.$/gmu,
+    ),
+  ].map(match => match[1]!)
+  const resumed = [
+    ...config.logs.matchAll(
+      /^\[bump\] resuming reserved \S+ from ([0-9a-f]{7,40})\.$/gmu,
+    ),
+  ].map(match => match[1]!)
+  const prefixes = [...new Set([...committed, ...resumed])]
+  if (
+    !SHA_RE.test(config.sourceSha) ||
+    !SHA_RE.test(config.runHead) ||
+    prefixes.length !== 1 ||
+    !config.sourceSha.startsWith(prefixes[0]!)
+  ) {
+    throw new Error(
+      'Scan source has no unique release receipt in the original publish run.',
+    )
+  }
+  if (config.sourceSha === config.runHead) {
+    return
+  }
+  if (
+    resumed.length &&
+    config.logs.split(/\r?\n/).includes(`[reserved-source] ${config.sourceSha}`)
+  ) {
+    return
+  }
+  const fetched = new RegExp(
+    `^\\s*\\* branch\\s+${config.sourceSha}\\s+->\\s+FETCH_HEAD\\s*$`,
+    'mu',
+  )
+  if (
+    committed.length &&
+    config.parents.length === 1 &&
+    config.parents[0] === config.runHead &&
+    fetched.test(config.logs)
+  ) {
+    return
+  }
+  throw new Error(
+    'Scan source is neither the reserved source nor a fetched bump child of the original run.',
+  )
+}
+
 export interface NpmRemoteScanReceipt {
   schemaVersion: 1
   repository: string

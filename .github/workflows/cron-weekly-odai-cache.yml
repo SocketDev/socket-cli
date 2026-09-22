@@ -38,7 +38,7 @@ jobs:
   fill:
     cache-mode: write
     name: Prepare model cache
-    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 50
     outputs:
       component-version: ${{ steps.component.outputs.version }}
@@ -204,7 +204,7 @@ jobs:
     cache-mode: read
     name: Verify model cache
     needs: fill
-    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 20
     steps:
       - name: Bootstrap checkout

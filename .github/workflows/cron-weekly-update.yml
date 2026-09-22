@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: weekly-update
@@ -24,7 +25,7 @@ cache-mode: none
 jobs:
   check-updates:
     name: Check for updates
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     outputs:
       actionable: ${{ steps.gate.outputs.actionable }}
@@ -84,10 +85,11 @@ jobs:
     name: Update dependencies
     needs: check-updates
     if: ${{ needs.check-updates.outputs.actionable == 'true' }}
-    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 45
     permissions:
       contents: read
+      pull-requests: read
     steps:
       - name: Bootstrap checkout
         shell: bash
@@ -293,19 +295,22 @@ jobs:
           if [ -z "${NUMBER}" ]; then
             printf "" | node scripts/fleet/weekly-update/pr-body-cli.mts \
               "${BODY_ARGS[@]}" "${LINE_ARGS[@]}" > /tmp/pr-body.md
-            gh pr create \
-              --repo "${REPOSITORY}" \
-              --head "${BRANCH}" \
-              --base "${BASE}" \
-              --title "chore(deps): rolling dependency update" \
-              --body-file /tmp/pr-body.md \
-              --label dependencies --label automation
-            NUMBER="$(gh pr list --repo "${REPOSITORY}" --head "${BRANCH}" --state open --json number --jq ".[0].number // empty")"
+            if ! NUMBER="$(gh api --method POST "repos/${REPOSITORY}/pulls" \
+              -f "head=${BRANCH}" \
+              -f "base=${BASE}" \
+              -f 'title=chore(deps): rolling dependency update' \
+              -F body=@/tmp/pr-body.md --jq .number)"; then
+              printf '%s\n' "${NUMBER}" >&2
+              exit 1
+            fi
+            gh api --method POST "repos/${REPOSITORY}/issues/${NUMBER}/labels" \
+              -f 'labels[]=dependencies' -f 'labels[]=automation' --silent
           else
             gh pr view "${NUMBER}" --repo "${REPOSITORY}" --json body --jq .body \
               | node scripts/fleet/weekly-update/pr-body-cli.mts \
                   "${BODY_ARGS[@]}" "${LINE_ARGS[@]}" > /tmp/pr-body.md
-            gh pr edit "${NUMBER}" --repo "${REPOSITORY}" --body-file /tmp/pr-body.md
+            gh api --method PATCH "repos/${REPOSITORY}/pulls/${NUMBER}" \
+              -F body=@/tmp/pr-body.md --silent
             echo "refreshed PR #${NUMBER} with the ${DATE} entry."
           fi
 

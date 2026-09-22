@@ -23,7 +23,7 @@ inputs:
   node-version:
     description: 'Node.js version'
     required: false
-    default: '26.5.0'
+    default: '26.8.1'
   socket-api-token:
     description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
     required: false
@@ -73,7 +73,7 @@ runs:
         set -euo pipefail
         # Bundle fleet pins beside the action so sparse bootstrap checkouts have them.
         # A repo's own .config/repo/external-tools.json is optional and may contain repo-only tools.
-        TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/external-tools.generated.json"
         # Tool paths used by both the normal (TOOLS_FILE present) and
         # bootstrap (TOOLS_FILE absent) branches below.
         PLAN="${GITHUB_ACTION_PATH}/plan-setup-tools.mjs"
@@ -83,6 +83,7 @@ runs:
         BOOTSTRAP_PLAN="${GITHUB_ACTION_PATH}/bootstrap-pnpm.mjs"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
+        RESOLVER="${GITHUB_ACTION_PATH}/../_shared/resolve-external-tool-asset.generated.mjs"
         INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
         # Canonical platform string (linux-x64, linux-arm64-musl,
         # darwin-arm64, win-x64, …). Detects musl via Node's own
@@ -150,15 +151,23 @@ runs:
           [[ "$ASSET" == *.tgz ]] && SOURCE="npm-registry"
           BINARY_REL="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM_KEY" binary 2>/dev/null || echo "")"
           BINARY_REL="${BINARY_REL:-package/bin/pnpm.cjs}"
+          PROVENANCE_ARGS=(--cache)
           if [ "$SOURCE" = "npm-registry" ]; then
             URL="https://registry.npmjs.org/pnpm/-/${ASSET}"
           else
-            URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            PNPM_PLAN_JSON="$(node "$RESOLVER" --tool pnpm --tools-file "$TOOLS_FILE")"
+            ASSET="$(printf '%s' "$PNPM_PLAN_JSON" | node "$JQ" - asset)"
+            INTEGRITY="$(printf '%s' "$PNPM_PLAN_JSON" | node "$JQ" - integrity)"
+            URL="$(printf '%s' "$PNPM_PLAN_JSON" | node "$JQ" - asset)"
+            SRC="$(printf '%s' "$PNPM_PLAN_JSON" | node "$JQ" - src 2>/dev/null || true)"
+            DATE="$(printf '%s' "$PNPM_PLAN_JSON" | node "$JQ" - date 2>/dev/null || true)"
+            [[ -n "$SRC" ]] && PROVENANCE_ARGS+=(--src "$SRC")
+            [[ -n "$DATE" ]] && PROVENANCE_ARGS+=(--date "$DATE")
           fi
           PNPM_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/pnpm-bin" "$URL" "$INTEGRITY")"
           PNPM_BIN="$PNPM_DIR/pnpm"
           [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
-          node "$INSTALL_TOOL" "$URL" "$INTEGRITY" "$PNPM_DIR" --cache
+          node "$INSTALL_TOOL" "$URL" "$INTEGRITY" "$PNPM_DIR" "${PROVENANCE_ARGS[@]}"
           # If the platform uses the npm-registry shape, the extracted
           # tarball is a JS package — no native binary. Write a wrapper
           # that runs it through the system Node.
@@ -345,28 +354,32 @@ runs:
       shell: bash
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
-        TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/external-tools.generated.json"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
+        RESOLVER="${GITHUB_ACTION_PATH}/../_shared/resolve-external-tool-asset.generated.mjs"
         PLATFORM_KEY="$(node "${GITHUB_ACTION_PATH}/../_shared/platform-key.mjs")"
         export TOOLS_FILE
         NS="$(node "${GITHUB_ACTION_PATH}/plan-setup-tools.mjs" namespace)"
-        UV_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS uv version)"
-        ASSET="$(node "$JQ" "$TOOLS_FILE" $NS uv platforms "$PLATFORM_KEY" asset)"
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS uv platforms "$PLATFORM_KEY" integrity)"
-        UV_REPOSITORY="$(node "$JQ" "$TOOLS_FILE" $NS uv repository)"
-        UV_REPOSITORY="${UV_REPOSITORY#github:}"
+        UV_PLAN_JSON="$(node "$RESOLVER" --tool uv --platform-key "$PLATFORM_KEY" --tools-file "$TOOLS_FILE")"
+        UV_VERSION="$(printf '%s' "$UV_PLAN_JSON" | node "$JQ" - version)"
+        ASSET="$(printf '%s' "$UV_PLAN_JSON" | node "$JQ" - asset)"
+        ASSET_NAME="$(printf '%s' "$UV_PLAN_JSON" | node "$JQ" - assetName)"
+        INTEGRITY="$(printf '%s' "$UV_PLAN_JSON" | node "$JQ" - integrity)"
+        SRC="$(printf '%s' "$UV_PLAN_JSON" | node "$JQ" - src 2>/dev/null || true)"
+        DATE="$(printf '%s' "$UV_PLAN_JSON" | node "$JQ" - date 2>/dev/null || true)"
+        PROVENANCE_ARGS=(--src "$SRC" --date "$DATE")
         UV_DIR="${RUNNER_TOOL_CACHE:-${RUNNER_TEMP:-/tmp}}/socket-uv/${UV_VERSION}-${PLATFORM_KEY}"
         if [[ "$ASSET" == *.zip ]]; then
           UV_BIN_DIR="$UV_DIR"
           UV_EXECUTABLE="uv.exe"
         else
-          UV_BIN_DIR="${UV_DIR}/${ASSET%.tar.gz}"
+          UV_BIN_DIR="${UV_DIR}/${ASSET_NAME%.tar.gz}"
           UV_EXECUTABLE="uv"
         fi
         UV_BIN="${UV_BIN_DIR}/${UV_EXECUTABLE}"
         if [ ! -x "$UV_BIN" ]; then
-          node "$INSTALL_TOOL" "https://github.com/${UV_REPOSITORY}/releases/download/${UV_VERSION}/${ASSET}" "$INTEGRITY" "$UV_DIR"
+          node "$INSTALL_TOOL" "$ASSET" "$INTEGRITY" "$UV_DIR" "${PROVENANCE_ARGS[@]}"
         fi
         if [ ! -x "$UV_BIN" ]; then
           echo "uv installation failed at ${UV_BIN}: expected an executable. Check the pinned release asset." >&2
@@ -396,9 +409,10 @@ runs:
         # platform's integrity (SRI string) there in the same commit.
         # The lib/ scripts below resolve platform → asset → URL →
         # install at the currently-detected runner.
-        TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
+        TOOLS_FILE="${GITHUB_ACTION_PATH}/external-tools.generated.json"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
+        RESOLVER="${GITHUB_ACTION_PATH}/../_shared/resolve-external-tool-asset.generated.mjs"
         INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
         # Branch decisions — flavor selection on SOCKET_API_TOKEN, the
         # tools-file schema probes (tools namespace + canonical-vs-legacy sfw
@@ -433,19 +447,25 @@ runs:
         if [ "$SFW_PLATFORM_KEY" != "$PLATFORM_KEY" ]; then
           echo "SFW uses the verified $SFW_PLATFORM_KEY asset through Windows 11 emulation on $PLATFORM_KEY."
         fi
-        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" asset 2>/dev/null)"; then
+        if ! SFW_PLAN_JSON="$(node "$RESOLVER" --tool "$SFW_PATH" --platform-key "$SFW_PLATFORM_KEY" --tools-file "$TOOLS_FILE" 2>/dev/null)"; then
           echo "SFW (${SFW_FLAVOR}) v${SFW_VERSION} has no asset for ${SFW_PLATFORM_KEY}. Check the pinned tool platform inventory." >&2
           exit 1
         fi
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" integrity)"
+        ASSET="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - asset)"
+        INTEGRITY="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - integrity)"
+        SRC="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - src 2>/dev/null || true)"
+        DATE="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - date 2>/dev/null || true)"
+        PROVENANCE_ARGS=(--cache)
+        [[ -n "$SRC" ]] && PROVENANCE_ARGS+=(--src "$SRC")
+        [[ -n "$DATE" ]] && PROVENANCE_ARGS+=(--date "$DATE")
         SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH binaryName)"
         if [[ "$ASSET" == *.exe ]]; then
           SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
         fi
-        SFW_URL="https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}"
+        SFW_URL="$ASSET"
         SFW_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/sfw-bin" "$SFW_URL" "$INTEGRITY")"
         SFW_BIN="$SFW_DIR/$SFW_BIN_NAME"
-        node "$INSTALL_TOOL" "$SFW_URL" "$INTEGRITY" "$SFW_DIR" "$SFW_BIN_NAME" --cache
+        node "$INSTALL_TOOL" "$SFW_URL" "$INTEGRITY" "$SFW_DIR" "$SFW_BIN_NAME" "${PROVENANCE_ARGS[@]}"
         if [ ! -x "$SFW_BIN" ]; then
           echo "SFW install failed at $SFW_BIN: expected the verified executable. Check the pinned release asset." >&2
           exit 1
@@ -525,18 +545,24 @@ runs:
               SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_VERSION_PATH)"
             fi
             SFW_PLATFORM_KEY="$(PLATFORM_KEY="$PLATFORM_KEY" NS="$NS" SFW_PATH="$SFW_PATH" node "$PLAN" sfw-platform)"
-            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" asset 2>/dev/null)"; then
+            if ! SFW_PLAN_JSON="$(node "$RESOLVER" --tool "$SFW_PATH" --platform-key "$SFW_PLATFORM_KEY" --tools-file "$TOOLS_FILE" 2>/dev/null)"; then
               echo "× SFW-free fallback: no asset for ${PLATFORM} at v${SFW_VERSION}." >&2
               exit 1
             fi
-            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" integrity)"
+            ASSET="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - asset)"
+            INTEGRITY="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - integrity)"
+            SRC="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - src 2>/dev/null || true)"
+            DATE="$(printf '%s' "$SFW_PLAN_JSON" | node "$JQ" - date 2>/dev/null || true)"
+            PROVENANCE_ARGS=(--cache)
+            [[ -n "$SRC" ]] && PROVENANCE_ARGS+=(--src "$SRC")
+            [[ -n "$DATE" ]] && PROVENANCE_ARGS+=(--date "$DATE")
             SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH binaryName)"
             if [[ "$ASSET" == *.exe ]]; then
               SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
             fi
-            SFW_URL="https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}"
+            SFW_URL="$ASSET"
             SFW_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/sfw-bin" "$SFW_URL" "$INTEGRITY")"
-            node "$INSTALL_TOOL" "$SFW_URL" "$INTEGRITY" "$SFW_DIR" "$SFW_BIN_NAME" --cache
+            node "$INSTALL_TOOL" "$SFW_URL" "$INTEGRITY" "$SFW_DIR" "$SFW_BIN_NAME" "${PROVENANCE_ARGS[@]}"
             SFW_BIN="${SFW_DIR}/${SFW_BIN_NAME}"
             if [ ! -x "$SFW_BIN" ]; then
               echo "× SFW-free fallback install failed: $SFW_BIN missing." >&2

@@ -1,0 +1,998 @@
+{
+  "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/scripts/fleet/build/infra/lib/external-tools-schema.json",
+  "description": "Build/release tools the from-scratch bootstrap (tools.mjs) installs before pnpm: pnpm itself and Socket Firewall (free + enterprise SKUs). Shape is the shared { tools: { <name>: ToolEntry } } container validated by scripts/fleet/lib/external-tools-schema.mts.",
+  "tools": {
+    "binutils": {
+      "description": "Private Gemma crash decoder binutils-x86-64-linux-gnu",
+      "version": "2.44-3",
+      "origin": "node-dist",
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://deb.debian.org/debian/pool/main/b/binutils/binutils-x86-64-linux-gnu_2.44-3_amd64.deb",
+          "integrity": "sha256-e6741ce95ff0f7a131c8d9faa3528ccbbc453078bbc62a97da81340ed7462c53"
+        }
+      }
+    },
+    "binutils-ctf": {
+      "description": "Private Gemma crash decoder libctf0",
+      "version": "2.44-3",
+      "origin": "node-dist",
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://deb.debian.org/debian/pool/main/b/binutils/libctf0_2.44-3_amd64.deb",
+          "integrity": "sha256-120cafcd93132a276fa92a8fb4cf39b23d14e5a3e348f4f5580638d71ca95ac5"
+        }
+      }
+    },
+    "binutils-jansson": {
+      "description": "Private Gemma crash decoder libjansson4",
+      "version": "2.14-2+b3",
+      "origin": "node-dist",
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://deb.debian.org/debian/pool/main/j/jansson/libjansson4_2.14-2+b3_amd64.deb",
+          "integrity": "sha256-60707a62fe6c1228c3389b12a13ca4efd76defc5532473e547a29e99cf7d2a6e"
+        }
+      }
+    },
+    "binutils-lib": {
+      "description": "Private Gemma crash decoder libbinutils",
+      "version": "2.44-3",
+      "origin": "node-dist",
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://deb.debian.org/debian/pool/main/b/binutils/libbinutils_2.44-3_amd64.deb",
+          "integrity": "sha256-4f4664c8a8f0ad0c8631c39fab02e3d8d86ccc6f4436a1d59f059dbcb0492679"
+        }
+      }
+    },
+    "binutils-sframe": {
+      "description": "Private Gemma crash decoder libsframe1",
+      "version": "2.44-3",
+      "origin": "node-dist",
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://deb.debian.org/debian/pool/main/b/binutils/libsframe1_2.44-3_amd64.deb",
+          "integrity": "sha256-38f625dfdc582717029ac3a3e97c51d994ec2e7a0e9b230c6b44e40d1276311f"
+        }
+      }
+    },
+    "cargo-fuzz": {
+      "description": "cargo-fuzz — the libFuzzer driver the rust-fuzz workflow runs (pinned, SRI-verified per platform)",
+      "version": "0.13.2",
+      "tag": "0.13.2",
+      "repository": "github:rust-fuzz/cargo-fuzz",
+      "notes": [
+        "Required: the conditional rust-fuzz workflow (marker: fuzz/Cargo.toml). Installed from the GitHub release rather than built with `cargo install`, which is minutes of compile on a cold cache and verifies nothing.",
+        "Upstream publishes x86_64 assets ONLY — no arm64 for any platform — so an arm64 runner or dev machine still needs `cargo install cargo-fuzz`. The workflow runs on ubuntu-latest (x64), which this covers.",
+        "Each integrity was computed download-first (openssl dgst -sha512) against the 0.13.2 release assets."
+      ],
+      "platforms": {
+        "darwin-x64": {
+          "asset": "cargo-fuzz-0.13.2-x86_64-apple-darwin.tar.gz",
+          "integrity": "sha512-hBxTelLnr1W2OWmzilWfb9xxA+w8vt7oMpa6P4f4gIP01dTk/dgsPeVgrNb+hdrcAwOGT4lcJA09HU9Ge0Bz3w=="
+        },
+        "linux-x64": {
+          "asset": "cargo-fuzz-0.13.2-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-siEh6v6EIpguXandB5HcFryQ+7wKEA8exGthPqtonutJ4Kq4nYZq4ReIvSdWckpQHpoKDOl4Uj9zl2Zmmgd6ew=="
+        },
+        "win32-x64": {
+          "asset": "cargo-fuzz-0.13.2-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha512-enXWAROIcPCEpxYxhK5ghiiI8eB9ZGc5HF8Puhdm/FyPgHbCRoXJ5enVBVNC2pgejcTSUtti0B1v2srzmBdSjQ=="
+        }
+      },
+      "origin": "gh-asset"
+    },
+    "claude": {
+      "description": "Claude Code native binary verified through the Anthropic signed release manifest",
+      "origin": "native",
+      "repository": "claude",
+      "version": "2.1.259",
+      "published": "2026-09-02T20:40:41Z",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "claude",
+          "binary": "claude",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/darwin-arm64/claude",
+          "integrity": "sha256-iEuqOP4aYkviXEqRVov1oItc9OfXrPKbd2DjUl2WSJg="
+        },
+        "darwin-x64": {
+          "asset": "claude",
+          "binary": "claude",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/darwin-x64/claude",
+          "integrity": "sha256-r4dBz/DT+1xLiTx8s2E70hso+mHMpFRp1guOXhYeudg="
+        },
+        "linux-arm64": {
+          "asset": "claude",
+          "binary": "claude",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-arm64/claude",
+          "integrity": "sha256-xv8Dw4nM3q4PGencMkiO66YfvvR5b1Mdv7psAPRQQNA="
+        },
+        "linux-arm64-musl": {
+          "asset": "claude",
+          "binary": "claude",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-arm64-musl/claude",
+          "integrity": "sha256-IgOhfQ3d98Wv7OLZSNYNIP3vTyJ//AwcHtF85iIfpls="
+        },
+        "linux-x64": {
+          "asset": "claude",
+          "binary": "claude",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-x64/claude",
+          "integrity": "sha256-991irkFTeAGM0h3ZUOs7rBdKsIWDAwTTuLCYFGv9R7Y="
+        },
+        "linux-x64-musl": {
+          "asset": "claude",
+          "binary": "claude",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-x64-musl/claude",
+          "integrity": "sha256-GllWmSEVAQh+j7MZUiVNA6E+u2Kj5F+VmQ8VE47sbXA="
+        },
+        "win32-arm64": {
+          "asset": "claude.exe",
+          "binary": "claude.exe",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/win32-arm64/claude.exe",
+          "integrity": "sha256-XZZLW8aMGkzWGKb5kq5WJmyzTmiuLErtmqDtaCR90hg="
+        },
+        "win32-x64": {
+          "asset": "claude.exe",
+          "binary": "claude.exe",
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/win32-x64/claude.exe",
+          "integrity": "sha256-hUKQAOybgAgmE+ns0uDTsidsnVsipoGTZXXSxMLzQu0="
+        }
+      }
+    },
+    "codex": {
+      "description": "codex native CLI, pinned publisher release artifacts",
+      "repository": "github:openai/codex",
+      "version": "0.153.4",
+      "versionDate": "2026-09-04",
+      "binaryName": "codex",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "codex-package-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-qe0VbRGa/xQtOdqo3bxeEzC21Tw4Riy1aLrHTPlHEpzM4yVxstaY6R2PudMOLrDTSsNMJEs57Ou1ZVUqk20q9w==",
+          "binary": "bin/codex"
+        },
+        "darwin-x64": {
+          "asset": "codex-package-x86_64-apple-darwin.tar.gz",
+          "integrity": "sha512-NcXodo3Ckr7UXhLevGzYYpi445/J4406/I4WzrduHGARpUmXsITnZ090JMGZ9Z3DaL8BTrQ8qwZ90DooqjE2zQ==",
+          "binary": "bin/codex"
+        },
+        "linux-arm64": {
+          "asset": "codex-package-aarch64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-plmIDQ6pNI9pPpJpWQAq29svm4KsVW14MBYuXoA0Y5GVvUo6dvF4E6qW7JfhlCxPPoMN86gbS0Ts5Ptrbc6Qlg==",
+          "binary": "bin/codex"
+        },
+        "linux-arm64-musl": {
+          "asset": "codex-package-aarch64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-plmIDQ6pNI9pPpJpWQAq29svm4KsVW14MBYuXoA0Y5GVvUo6dvF4E6qW7JfhlCxPPoMN86gbS0Ts5Ptrbc6Qlg==",
+          "binary": "bin/codex"
+        },
+        "linux-x64": {
+          "asset": "codex-package-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-6YPMfyQMQzJWGiQgdIY7g/nzdkyn1cBxhMYzHWX3ntOSjHqMpb6NYu7vcaA7v1ngO++bK97uPbuiFqeTCz7N/w==",
+          "binary": "bin/codex"
+        },
+        "linux-x64-musl": {
+          "asset": "codex-package-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-6YPMfyQMQzJWGiQgdIY7g/nzdkyn1cBxhMYzHWX3ntOSjHqMpb6NYu7vcaA7v1ngO++bK97uPbuiFqeTCz7N/w==",
+          "binary": "bin/codex"
+        },
+        "win32-arm64": {
+          "asset": "codex-package-aarch64-pc-windows-msvc.tar.gz",
+          "integrity": "sha512-G3d2foCnETOENgo7upxX8IvnwC0DUNTlOJu5QduzXm4CqXZZ6yeues8no2FfwMaYAtModE95CHgBQXLUDq1q5Q==",
+          "binary": "bin/codex.exe"
+        },
+        "win32-x64": {
+          "asset": "codex-package-x86_64-pc-windows-msvc.tar.gz",
+          "integrity": "sha512-+eslGChi76luYlP2szi3iw2aGQ81CWOuva05DUBNvnFYj5hqmpvgMczFvIrTpl6g8nzn8hZpnDeV1Rh3A3f0Hw==",
+          "binary": "bin/codex.exe"
+        }
+      },
+      "origin": "gh-asset",
+      "tag": "rust-v0.153.4",
+      "notes": [
+        "Platform SHA-256 values come from GitHub release asset digests at https://api.github.com/repos/openai/codex/releases/tags/rust-v0.153.4. The shared installer verifies downloaded bytes before activation."
+      ]
+    },
+    "fff": {
+      "notes": [
+        "fff (dmtrKovalenko/fff) — fast typo-resistant file-search MCP server (Rust). The installable artifact is the per-platform fff-mcp-<target> binary (the asset IS the executable, codedb-shape). Each integrity was captured download-first then cross-checked against the publisher .sha256 sidecar (computed == sidecar for all 8). install-fff.mjs downloads + SRI-verifies + racks it with a bin/fff-mcp shim.",
+        "0.9.4 published 2026-06-09 and has cleared the 7-day soak on its own, so it carries no soakBypass."
+      ],
+      "description": "fff-mcp — file-search MCP server (pinned, SRI-verified per platform)",
+      "repository": "github:dmtrKovalenko/fff",
+      "version": "0.10.6",
+      "tag": "v0.10.6",
+      "binaryName": "fff-mcp",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "fff-mcp-aarch64-apple-darwin",
+          "integrity": "sha512-VbyMeWW2JeNwHJL7lITiPkz+ZTCcAX0qrZ2zkNsGD/4Z7UXH9bKUYYYaYQI+pH8r1ocJlCQ8dAyfce/9sFKm7A=="
+        },
+        "darwin-x64": {
+          "asset": "fff-mcp-x86_64-apple-darwin",
+          "integrity": "sha512-tM1/o68xY5IxSNJpj37AZb8cTeu7qIg9TU9eVokc2aq6Uvu5rWJzDCLVgsrEEB9MWrQq5oKAGJNkOe6AjazH6g=="
+        },
+        "linux-arm64": {
+          "asset": "fff-mcp-aarch64-unknown-linux-gnu",
+          "integrity": "sha512-3LzyyvariFdoEwXeojLFcJshPN1/fls616d6RORWYEO5iUpGOG8Yk3tezhY25wmtRdE+MLlV8kZ6C5gnN7D0FA=="
+        },
+        "linux-arm64-musl": {
+          "asset": "fff-mcp-aarch64-unknown-linux-musl",
+          "integrity": "sha512-YNZQGSyxCeDTF6dWcMXNDY2228amO2qz4bRv2nQbxi9HqbzdEojroAoRYqCP9lha5daGbGP3srdz2j36MBoKmw=="
+        },
+        "linux-x64": {
+          "asset": "fff-mcp-x86_64-unknown-linux-gnu",
+          "integrity": "sha512-g3jBM57thrgkbTagonlLSrI2Pl3h+BK5P3U4JVcrI9cYgWUpYqbaJyq+rftTshVh0I3S/u5hfsarQt84z6AfOQ=="
+        },
+        "linux-x64-musl": {
+          "asset": "fff-mcp-x86_64-unknown-linux-musl",
+          "integrity": "sha512-uvW4Qo4BAcc9Gj+M2LwDR9xQ4rd0JAUTDIfKptF6/mPHbeFy1bMzqtjiaZOMyaQ57866W2uTT8ep2sy7XtkJsw=="
+        },
+        "win32-arm64": {
+          "asset": "fff-mcp-aarch64-pc-windows-msvc.exe",
+          "integrity": "sha512-MPB7uvbzGSEOldHkZGEVenQeEJc/+Qy4kIo2WWnDOdjARP62TIDINcv0E+Cr3GW+iUImwZZhdNHDRXWZNhlCwg=="
+        },
+        "win32-x64": {
+          "asset": "fff-mcp-x86_64-pc-windows-msvc.exe",
+          "integrity": "sha512-hNpJCAAEvlmYPQ3W65lK6GySD14NtKjE5+mTkDQ/iKBR9FBkjnrrBLSapQez27u1K7blnBiGB778DWi4Q4ePaA=="
+        }
+      },
+      "origin": "gh-asset"
+    },
+    "ffmpeg": {
+      "notes": [
+        "Required by the recording-ui-walkthroughs skill, which encodes walkthrough recordings with it. Nothing builds or ships with ffmpeg.",
+        "A static single-file build per platform, so a recording is reproducible without brew/apt version drift and without an npm postinstall fetching an unverified binary.",
+        "The assets are bare executables rather than archives: download, verify, chmod +x.",
+        "linux-arm and linux-ia32 assets also exist upstream; add them if a runner ever needs one.",
+        "The release tag is authoritative, not the binary's own -version string: builds under tag b6.1.1 report 6.0 on some platforms."
+      ],
+      "description": "ffmpeg — encodes the walkthrough recordings the recording-ui-walkthroughs skill makes (pinned, SRI-verified per platform)",
+      "version": "6.1.1",
+      "versionDate": "2025-11-14",
+      "tag": "b6.1.1",
+      "repository": "github:eugeneware/ffmpeg-static",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "ffmpeg-darwin-arm64",
+          "integrity": "sha512-f9QbXBkYNKwtz+UiJCQjsdi6AaxMMTHK4/+1FtxEOWc9jvUv9/fsDIQYsQs5Kdb0f6yzs73E99F3TdKc+hTHcw=="
+        },
+        "darwin-x64": {
+          "asset": "ffmpeg-darwin-x64",
+          "integrity": "sha512-GGMM2E3ecaslGVXK187xBNxC6qTNzSeSoI0hkU5KTxMyNgW2GVPkHsi7okAD13rwf9qrg+eW+/HMNXPlkivvQQ=="
+        },
+        "linux-arm64": {
+          "asset": "ffmpeg-linux-arm64",
+          "integrity": "sha512-nqRI26ZJM2SVvnj8N9hv0hgj42GaMTu43/b0pL03rHvzerMvYvnMjiUU5KXfH8wJoUsFx1vkK97oxyIOSw2g3Q=="
+        },
+        "linux-x64": {
+          "asset": "ffmpeg-linux-x64",
+          "integrity": "sha512-Eo8YyZMPb+GHzXaa26+TXP+r9h4cY0pYlmikzaKvyszS90RBDDLz46AE/o4w/V2tCErteqZpWkb2p/xtptGT9A=="
+        },
+        "win32-x64": {
+          "asset": "ffmpeg-win32-x64",
+          "integrity": "sha512-YxEIRZu0P5jz90237Kr4mTWYdzbq9ZxutcUqH/TuY5IUBZgf7IiEKh8OSEWH8gg3Mavvw8egVFcZr+fAbv/2RA=="
+        }
+      },
+      "origin": "gh-asset"
+    },
+    "go": {
+      "notes": [
+        "The Go toolchain — installed by the setup-go-toolchain composite action from the official go.dev tarballs. Pinned to the latest stable (go1.26.6, 2026-08-18) with per-platform SHA-256 from the go.dev release manifest (https://go.dev/dl/?mode=json).",
+        "Go ships NO musl tarballs — the glibc archive is statically linked and runs on musl too, so the linux-*-musl canonical keys are absent and the installer falls back to the glibc sibling (linux-x64-musl → linux-x64, linux-arm64-musl → linux-arm64).",
+        "integrity is the object form ({ value, src, date }) — value is `sha256-<hex>` (the publisher checksum shape), src the go.dev release manifest URL, date the pin day. install-tool.mjs parses the hex-after-prefix form and verifies before extract."
+      ],
+      "description": "Go toolchain — official go.dev tarball (pinned, SHA-256-verified per platform before extract)",
+      "version": "1.26.6",
+      "versionDate": "2026-08-18",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "https://go.dev/dl/go1.26.6.darwin-arm64.tar.gz",
+          "integrity": {
+            "value": "sha256-2dc95ce4675829f2df0e86b28bcef3283635902062a5f0580ca659bf570f3204",
+            "src": "https://go.dev/dl/?mode=json",
+            "date": "2026-08-18"
+          }
+        },
+        "darwin-x64": {
+          "asset": "https://go.dev/dl/go1.26.6.darwin-amd64.tar.gz",
+          "integrity": {
+            "value": "sha256-08b65a63f244115121ced6c3b55ad38d801a7442acad5c949a17aad84ae6d684",
+            "src": "https://go.dev/dl/?mode=json",
+            "date": "2026-08-18"
+          }
+        },
+        "linux-arm64": {
+          "asset": "https://go.dev/dl/go1.26.6.linux-arm64.tar.gz",
+          "integrity": {
+            "value": "sha256-d0507e9e9d7fe012aae570108cbd76c15de879e17130ab8cb90d4d7445cb1f2e",
+            "src": "https://go.dev/dl/?mode=json",
+            "date": "2026-08-18"
+          }
+        },
+        "linux-x64": {
+          "asset": "https://go.dev/dl/go1.26.6.linux-amd64.tar.gz",
+          "integrity": {
+            "value": "sha256-708effb774be8237570d0add163225abbdfaf4fca28b2611df167beba4feef89",
+            "src": "https://go.dev/dl/?mode=json",
+            "date": "2026-08-18"
+          }
+        },
+        "win32-arm64": {
+          "asset": "https://go.dev/dl/go1.26.6.windows-arm64.zip",
+          "integrity": {
+            "value": "sha256-06dbe785743d534ef8a469dad88adf7f1b2b438507ccfef9b98e7cf8c97b4b68",
+            "src": "https://go.dev/dl/?mode=json",
+            "date": "2026-08-18"
+          }
+        },
+        "win32-x64": {
+          "asset": "https://go.dev/dl/go1.26.6.windows-amd64.zip",
+          "integrity": {
+            "value": "sha256-5b6c5b556525810463b5c897b50dc7a82d6a3dc0bfaf55d990a7e9f31d6b2318",
+            "src": "https://go.dev/dl/?mode=json",
+            "date": "2026-08-18"
+          }
+        }
+      },
+      "origin": "manager",
+      "manager": "go"
+    },
+    "google-chrome-beta": {
+      "description": "Google Chrome Beta for the Gemma on-device AI backend",
+      "version": "153.0.8010.12-1",
+      "versionDate": "2026-08-26T16:44:52.610924Z",
+      "chromeVersionExclusions": [
+        {
+          "version": "154.0.8037.0-1",
+          "reason": "Linux Gemma session creation fails a cross-library TFLite allocation CFI check in libLiteRtWebGpuAccelerator.so."
+        }
+      ],
+      "notes": [
+        "The updater selects the newest Chrome Beta release that satisfies the workspace soak policy using Google Version History.",
+        "Linux x64 uses an immutable Google Debian package URL. Integrity comes from the official Packages index when listed; archived packages use SHA-512 measured from the official download.",
+        "Publication dates come from https://versionhistory.googleapis.com/v1/chrome/platforms/linux/channels/beta/versions/all/releases."
+      ],
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-beta/google-chrome-beta_153.0.8010.12-1_amd64.deb",
+          "integrity": "sha512-7UbGeK/cyROr8L0RNzpiNn5dc2oJOlvpTjyvXZvuCzXs87bDf3sE/MXREZvLPTOnBxNqioo5us09r7Xji/LPyA=="
+        }
+      },
+      "origin": "node-dist"
+    },
+    "google-chrome-stable": {
+      "notes": [
+        "Google Chrome stable .deb — installed by the setup-odai composite action on Linux runners when google-chrome-stable is not preinstalled. Pinned to 151.0.7922.137-1 (2026-08-18) with the SHA-256 from Google's repo Packages index (https://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages), which is the authoritative checksum source for the .deb.",
+        "origin is `node-dist` (the schema's direct-download-with-per-platform-SRI origin): `asset` is a full URL to the version-pinned pool file under dl.google.com, NOT the floating `google-chrome-stable_current_amd64.deb` the old action used. node-dist is the cleanest existing fit for a direct download with per-platform SRI; a follow-up sweep may rename it to `dist` to drop the Node-specific connotation.",
+        "integrity is the object form ({ value, src, date }) — value is `sha256-<hex>` (the Packages-index checksum), src the Packages index URL, date the pin day. install-tool.mjs downloads + SRI-verifies the .deb (no extraction — .deb is not a recognized archive, so it is left on disk for `apt-get install`), then the action runs `sudo apt-get install -y ./<deb>`.",
+        "Linux x64 ONLY — odai's on-device model runs on ubuntu-latest (x64); other platforms report not-ready and clean-skip, so no other canonical key is pinned here."
+      ],
+      "description": "Google Chrome stable .deb — for the odai on-device AI backend (pinned, SHA-256-verified before apt-get install)",
+      "version": "151.0.7922.137-1",
+      "versionDate": "2026-08-18",
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_151.0.7922.137-1_amd64.deb",
+          "integrity": {
+            "value": "sha256-e6dabf044cf9cd0279cfe86efa431682c18bfc06d06339ce055aaa87ae871727",
+            "src": "https://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages",
+            "date": "2026-08-18"
+          }
+        }
+      },
+      "origin": "node-dist"
+    },
+    "janus": {
+      "notes": [
+        "janus (divmain/janus) — single-binary utility some Socket workflows opt into (NOT a security tool). PROMOTED here from the setup-security-tools external-tools.json so the bootstrap reads ONE canonical tool list (the security-tools installer + the `janus` launcher both read this entry — 1 path 1 reference). GitHub release tarball; install-janus.mjs SRI-verifies + racks it with a bin/janus shim. darwin-arm64 ONLY (divmain/janus ships one platform; the installer + launcher no-op with a clear hint on every other platform — add platforms as upstream builds them).",
+        "Version is stored bare (1.23.2); the installer prepends the `v` tag prefix, matching sfw/codedb/fff.",
+        "1.23.2 published 2026-07-11 and has cleared the 7-day minimumReleaseAge soak on its own, so it carries no soakBypass. external-tools/update.mts auto-bumps janus once a newer release is itself past soak. Known-publisher GitHub-release binary; the sha512 SRI was computed from the downloaded asset bytes."
+      ],
+      "description": "janus — divmain/janus single-binary utility (pinned, SRI-verified)",
+      "repository": "github:divmain/janus",
+      "version": "1.23.2",
+      "tag": "v1.23.2",
+      "binaryName": "janus",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "janus-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-QVqXJHdeKylgE8KQQB2hEATqKZaB1ZGB4gnWZ8vDEK/1f2zQ3XI6k3Y0yTuSvRqGL88w0L80Q17RyXgTlSdPfA=="
+        }
+      },
+      "origin": "gh-asset"
+    },
+    "mbx": {
+      "version": "1.10.1",
+      "tag": "v1.10.1",
+      "repository": "github:jdx/mr-boxington",
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "mbx-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-0s8CmxC7C4IiOn5SNATUJeHvDZNMsEW4OWcSJLZ8hjixm1TXDcDsoIc2g9xFXYFfM+5h41wyB/vHGkA1vKI96w=="
+        },
+        "linux-arm64-musl": {
+          "asset": "mbx-aarch64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-4kxUNgRnyyZegTQAE59BG0xLH6oX6rG9z/1tTxZrFdbTTG0qBt4xQNEz/tlKPNl0uXL5o4JSgHs6FAF66JTA2A=="
+        },
+        "linux-x64-musl": {
+          "asset": "mbx-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-ulAKaVrj3Hb5PSjkJdT4ihoLILtAD4R+Y7Iw02H4mVDRtvksjN3vSUEzoKphIwePpbmxdz9293FPYpfDdJajEA=="
+        },
+        "win32-x64": {
+          "asset": "mbx-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha512-mIH6V6PXASicF3J8AuW9pVOgBkNW+arhNBkH+J8dLKsfvQKbEnrdwoU/QgIBVAz1adPIeuMn5/03Pv491bmgEw=="
+        }
+      },
+      "description": "Cache front-end for cargo: put mbx in front of any cargo command and one cache warms every worktree and CI run, pruning itself to a size budget."
+    },
+    "mise": {
+      "binaryName": "mise",
+      "description": "mise runtime manager, pinned to publisher checksums and restricted to safe locked operation",
+      "notes": [
+        "Integrity values derive from the minisign-signed SHASUMS256.txt release asset.",
+        "Safe mode disables project environment loading, hooks, and plugin scripts."
+      ],
+      "origin": "gh-asset",
+      "repository": "github:jdx/mise",
+      "version": "2026.9.1",
+      "tag": "v2026.9.1",
+      "versionDate": "2026-09-02",
+      "misePolicy": {
+        "autoInstall": false,
+        "autoUpdate": false,
+        "execAutoInstall": false,
+        "idiomaticVersionFileEnableTools": ["node", "rust", "go"],
+        "locked": true,
+        "notFoundAutoInstall": false,
+        "notFoundSystemFallback": false,
+        "paranoid": true,
+        "registryFloating": false,
+        "safe": true,
+        "useVersionsHost": false,
+        "useVersionsHostTrack": false
+      },
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "mise-v2026.9.1-macos-arm64.tar.gz",
+          "binary": "mise/bin/mise",
+          "integrity": "sha256-v+oKtBe0jB6LmUEvyvIM4XQkoyhqh2bX0rAFH+Mh1WU="
+        },
+        "darwin-x64": {
+          "asset": "mise-v2026.9.1-macos-x64.tar.gz",
+          "binary": "mise/bin/mise",
+          "integrity": "sha256-7tdoOMaKpJt78HxGjdSZOFW7s0KkRC9nNVtv++dG5NQ="
+        },
+        "linux-arm64": {
+          "asset": "mise-v2026.9.1-linux-arm64.tar.gz",
+          "binary": "mise/bin/mise",
+          "integrity": "sha256-mNLqe4Ldlmr9uKn06e28p3Gs8qMNKEK/wO/be2HIhqM="
+        },
+        "linux-arm64-musl": {
+          "asset": "mise-v2026.9.1-linux-arm64-musl.tar.gz",
+          "binary": "mise/bin/mise",
+          "integrity": "sha256-32ldvPpUN5IIG9uG+Z/5HD3FuQQ5YXGzCLbvHhVzAYI="
+        },
+        "linux-x64": {
+          "asset": "mise-v2026.9.1-linux-x64.tar.gz",
+          "binary": "mise/bin/mise",
+          "integrity": "sha256-Bj3akUmra+U9qHfC0Xav4OrGjmTPjKKVvQUocgcBxl0="
+        },
+        "linux-x64-musl": {
+          "asset": "mise-v2026.9.1-linux-x64-musl.tar.gz",
+          "binary": "mise/bin/mise",
+          "integrity": "sha256-sTvNi8UWdz/ZtgBojObmwBtiBxrlf2quRL4HE6bYNPE="
+        },
+        "win32-arm64": {
+          "asset": "mise-v2026.9.1-windows-arm64.zip",
+          "binary": "mise/bin/mise.exe",
+          "integrity": "sha256-bC/L7ARk366YI47VON8706NOor2t+VBJo2UOtlL0U58="
+        },
+        "win32-x64": {
+          "asset": "mise-v2026.9.1-windows-x64.zip",
+          "binary": "mise/bin/mise.exe",
+          "integrity": "sha256-lVYpbbIXd059ro/CQVQta7wjURIrqTyN8qZdO5Ideig="
+        }
+      }
+    },
+    "npm": {
+      "notes": [
+        "npm is platform-agnostic — ONE registry tarball (npm-<version>.tgz, pure JS run through node), so a single top-level integrity rather than a per-platform map. install-npm.mts downloads it via the socket-lib download helper, verifies `integrity` (the stored sha512, captured once at pin time + checked against the registry dist.integrity), then drives the DOWNLOADED `node bin/npm-cli.js install -gf` — never `npm install -g npm`, so there's no self-update path. Models npmjs.com/install.sh + the fleet supply-chain gate.",
+        "Bootstrap order: node first (.node-version), then npm (this entry), then the Socket packages — all downloaded + installed through the socket-lib helpers.",
+        "npm carries the `min-release-age-exclude` .npmrc config — kept in lockstep with pnpm-workspace.yaml minimumReleaseAgeExclude."
+      ],
+      "description": "npm — pinned, SRI-verified registry tarball; installed without self-update",
+      "repository": "npm:npm",
+      "version": "12.0.2",
+      "integrity": "sha512-uIXokLlBj6FpNUTQX1PmT5pz7BlIN9QlixX+zdaSNHsd0qUXsbDLr50xzY6Sw7cJVr0uzHKDOle0swmPW/p5Qw==",
+      "origin": "npm"
+    },
+    "opencode": {
+      "description": "OpenCode CLI; approved native binaries and a pending npm-native update",
+      "repository": "opencode",
+      "version": "1.18.27",
+      "versionDate": "2026-08-28",
+      "binaryName": "opencode",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "opencode-darwin-arm64.zip",
+          "integrity": "sha512-6N3TT1FwdLorKvEJd3x/RpiTwuQuU3n7OrrnLfmBmKrZCufV/J9zK6GVuIKyulW/vwUu+q8X3SFMnXbln6VoEw==",
+          "binary": "opencode",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-darwin-arm64.zip"
+        },
+        "darwin-x64": {
+          "asset": "opencode-darwin-x64-baseline.zip",
+          "integrity": "sha512-FLqn6SwIAGX7UMI289kCKuxaWafzV6/frBOspwcEhi7C8XO7WV70uYKfNhS9ha9y7cd1EUHb3NrNgcV1Po8kNg==",
+          "binary": "opencode",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-darwin-x64-baseline.zip"
+        },
+        "linux-arm64": {
+          "asset": "opencode-linux-arm64.tar.gz",
+          "integrity": "sha512-TDDmlI38N0tgUIZwm/gPxc6WVxx+CsBZg5miXsiiZjLODwxddpfzK0B/wL4pH3ksqEY17FN0npl7G6EJA/AOYw==",
+          "binary": "opencode",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-arm64.tar.gz"
+        },
+        "linux-arm64-musl": {
+          "asset": "opencode-linux-arm64-musl.tar.gz",
+          "integrity": "sha512-9vemviplXBE0CnjabDgO28ma6D0cQSZ/sm0m5DtrdgcjFxm4fWzd/GA92NC6mr8sC43SWb9+VmethgopKY4rEw==",
+          "binary": "opencode",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-arm64-musl.tar.gz"
+        },
+        "linux-x64": {
+          "asset": "opencode-linux-x64-baseline.tar.gz",
+          "integrity": "sha512-JFvBS17pPI7I4yxOvi7tPlpsXK1lbH/GfbQHtfh7p8ft4GQk0ncAOMFBGDLcXqMwR/CY/5fgz67+Yj0xI2uR4A==",
+          "binary": "opencode",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-x64-baseline.tar.gz"
+        },
+        "linux-x64-musl": {
+          "asset": "opencode-linux-x64-baseline-musl.tar.gz",
+          "integrity": "sha512-ena11nKehP4z800R9ENdWYAZmBcVHv70g16GHKEAHiTV9VIGutEQaFtd4VVvEaI66YacJP5y43NvcEW4uuJCqw==",
+          "binary": "opencode",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-x64-baseline-musl.tar.gz"
+        },
+        "win32-arm64": {
+          "asset": "opencode-windows-arm64.zip",
+          "integrity": "sha512-gLpFd4uxuwAKDozYLv4ARWNqpLwXPL3cJLdRpqe96wYpwsElRFm5lBA75J/hZE9RLogK35dRmYDrWigiqSGyvg==",
+          "binary": "opencode.exe",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-windows-arm64.zip"
+        },
+        "win32-x64": {
+          "asset": "opencode-windows-x64-baseline.zip",
+          "integrity": "sha512-ZMybz1FgNdLBttX6ISsho7gv7WCTNCN5LR+jifmtavmKcDTWmK+x/Tz2LbnrQP6OT3RhQcX8c26Jd0D2cqUAAQ==",
+          "binary": "opencode.exe",
+          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-windows-x64-baseline.zip"
+        }
+      },
+      "origin": "native",
+      "notes": [
+        "Active and pending artifacts carry immutable URLs and publisher integrity values; installation verifies downloaded bytes before activation."
+      ],
+      "pending": {
+        "version": "2.0.2",
+        "published": "2026-09-12T07:57:36.257Z",
+        "platforms": {
+          "darwin-arm64": {
+            "asset": "cli-darwin-arm64-2.0.2.tgz",
+            "binary": "package/bin/opencode",
+            "source": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.0.2.tgz",
+            "integrity": "sha512-JgCEsOQ/GxrhXFB5UG3nVw43iuFKiCc3LMDvck6T42e2X1MGP/tH3bdaPYQdtKHdh6kXr82qD0uYVvNYaIxGtw=="
+          },
+          "darwin-x64": {
+            "asset": "cli-darwin-x64-baseline-2.0.2.tgz",
+            "binary": "package/bin/opencode",
+            "source": "https://registry.npmjs.org/@opencode/cli-darwin-x64-baseline/-/cli-darwin-x64-baseline-2.0.2.tgz",
+            "integrity": "sha512-sQmjh9r3Lbkx7adlGcSFsNOQrMMqWpnkYipsUjOj5P40iiN8uetTHl6LrnpaGDEQI+mVChfffRL5DZO5y0amqg=="
+          },
+          "linux-arm64": {
+            "asset": "cli-linux-arm64-2.0.2.tgz",
+            "binary": "package/bin/opencode",
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.2.tgz",
+            "integrity": "sha512-9NUcKcihSNRd4ofy/lRamaOop6A/REQPyGEvfV/1OsyiRR9WGkAiJoyZ0fO0gS9RonQlxDyI9IBxlF7HRQwHNA=="
+          },
+          "linux-arm64-musl": {
+            "asset": "cli-linux-arm64-musl-2.0.2.tgz",
+            "binary": "package/bin/opencode",
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.0.2.tgz",
+            "integrity": "sha512-hwCrSEMQMr/ABkVZb2pzP7oMpFwllhPLQxKprIv/0zd6766LhY1pIw4W2o0Q4G9hBCpKzTk9Hx88ThE1burMGA=="
+          },
+          "linux-x64": {
+            "asset": "cli-linux-x64-baseline-2.0.2.tgz",
+            "binary": "package/bin/opencode",
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline/-/cli-linux-x64-baseline-2.0.2.tgz",
+            "integrity": "sha512-QnxTyLDrIWbKDnHO1q8glguu/neWaPSTBMQNsNN9cspswZ3m4cMy+ZGaR4lbOyaSlBdkQIQB2SJUwqmSAH7vZg=="
+          },
+          "linux-x64-musl": {
+            "asset": "cli-linux-x64-baseline-musl-2.0.2.tgz",
+            "binary": "package/bin/opencode",
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline-musl/-/cli-linux-x64-baseline-musl-2.0.2.tgz",
+            "integrity": "sha512-LjHsVgO5Py/0oDCIYPD3tN6V4Cuv1SGM+oPEt9aoFDMft5/+rCxwf9RN1w053OoF8UpdE70Ed6jtK0AYcqpICQ=="
+          },
+          "win32-arm64": {
+            "asset": "cli-windows-arm64-2.0.2.tgz",
+            "binary": "package/bin/opencode.exe",
+            "source": "https://registry.npmjs.org/@opencode/cli-windows-arm64/-/cli-windows-arm64-2.0.2.tgz",
+            "integrity": "sha512-AzpKajNpEmQu9ziGhpJlmrXTMwHshwE7e/q/YVWHbg1cFmEOPcneBbpBfoa98+ohRNRL7Nn9IecgHsX6+eKRSQ=="
+          },
+          "win32-x64": {
+            "asset": "cli-windows-x64-baseline-2.0.2.tgz",
+            "binary": "package/bin/opencode.exe",
+            "source": "https://registry.npmjs.org/@opencode/cli-windows-x64-baseline/-/cli-windows-x64-baseline-2.0.2.tgz",
+            "integrity": "sha512-ZpmS0Odywn3qoDSYXJEVUX0gjlVgGGICRKttV8tKUwKkyS3OrZcdbPQ7Y0cvXN+tb/YX2qL2QHGwJSBNj1LpNw=="
+          }
+        }
+      }
+    },
+    "perry": {
+      "description": "Native TypeScript compiler and matching static libraries for the Claude statusline",
+      "origin": "git",
+      "repository": "https://github.com/PerryTS/perry.git",
+      "ref": "main",
+      "sha": "9fda98df68d9fac3c08b2385fae007aa9f5278df",
+      "integrity": "sha256:0b5f75fd3471e45ecfaf83fd8627ed9c0e68b4e5e8e23bd575cb0a587389bcf8",
+      "submodule": {
+        "path": "upstream/perry",
+        "shallow": true,
+        "sparse": [
+          "crates",
+          "docs/api",
+          "docs/examples/_fixtures",
+          "npm",
+          "packages",
+          "packaging",
+          "res",
+          "scripts",
+          "src",
+          "third_party/windows-winui",
+          "types"
+        ],
+        "verify": "none"
+      },
+      "version": "0.5.1563",
+      "versionDate": "2026-09-14",
+      "notes": "The wheelhouse producer publishes verified toolchains. Renderer builds consume immutable toolchain artifacts."
+    },
+    "pgbot": {
+      "version": "0.8.1",
+      "tag": "v0.8.1",
+      "versionDate": "2026-09-06",
+      "repository": "github:pgrundev/pgbot",
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "pgbot_0.8.1_darwin_arm64.tar.gz",
+          "integrity": "sha512-d77wlWE+x8Fj0XU0GGrqbcdDle3JQCLeV33dJlMRikqDACDa+Izy0NgOJvYDuZj7+NrTuwMwvj+DF0TCBKeIrg=="
+        },
+        "darwin-x64": {
+          "asset": "pgbot_0.8.1_darwin_amd64.tar.gz",
+          "integrity": "sha512-I5KL1uwBEMPyj99BY2xkWg7J15tSBhuiNtsjpcWglYrQMb4vIXuMx1ieURihQJPx5+0+PNxLFFAErmCkEMA+vw=="
+        },
+        "linux-arm64": {
+          "asset": "pgbot_0.8.1_linux_arm64.tar.gz",
+          "integrity": "sha512-vF4GmtaEYTSsmfkEtEA/Y8tiOZl7K+gk4pj9TQrPjgkxjqv9Q52svc+ppSmJ3uYX2OxxwlT4nvn8JyPCyAzZMw=="
+        },
+        "linux-arm64-musl": {
+          "asset": "pgbot_0.8.1_linux_arm64.tar.gz",
+          "integrity": "sha512-vF4GmtaEYTSsmfkEtEA/Y8tiOZl7K+gk4pj9TQrPjgkxjqv9Q52svc+ppSmJ3uYX2OxxwlT4nvn8JyPCyAzZMw=="
+        },
+        "linux-x64": {
+          "asset": "pgbot_0.8.1_linux_amd64.tar.gz",
+          "integrity": "sha512-TR9Sa1ihHtlEMXHi1NgmDNUc62bdaF4Jp+rf+584kIg63Nn8vka9DEMAEvet21/e5aUJXMSHOzcYWCCfGdmYgQ=="
+        },
+        "linux-x64-musl": {
+          "asset": "pgbot_0.8.1_linux_amd64.tar.gz",
+          "integrity": "sha512-TR9Sa1ihHtlEMXHi1NgmDNUc62bdaF4Jp+rf+584kIg63Nn8vka9DEMAEvet21/e5aUJXMSHOzcYWCCfGdmYgQ=="
+        },
+        "win32-arm64": {
+          "asset": "pgbot_0.8.1_windows_arm64.zip",
+          "integrity": "sha512-eHO3s8pUz/uwU7+hr6Kgs1pLaOt58pEyfCPTWMiex01Lx5PvvspdOry7EHkgXteNDrpjusbiSZaO+6wqIE9O6g=="
+        },
+        "win32-x64": {
+          "asset": "pgbot_0.8.1_windows_amd64.zip",
+          "integrity": "sha512-KqqA+2SX9b5ro5lZBP61P/YjG8jCaBsHDdM1O+Skd/C5I48x7zMBEEpK2/VmR5aNStC+kCZv9c4zOpLokbsQQw=="
+        }
+      },
+      "description": "PostgreSQL diagnostics and opt-in MCP server",
+      "binaryName": "pgbot"
+    },
+    "playwright-seccomp": {
+      "description": "Reviewed seccomp profile for sandboxed Chromium containers",
+      "version": "1.62.1",
+      "versionDate": "2026-07-29T23:14:35Z",
+      "origin": "node-dist",
+      "platforms": {
+        "linux-x64": {
+          "asset": "https://raw.githubusercontent.com/microsoft/playwright/26a9e470a7b3c7822084b09fb7f13902c5f37b51/utils/docker/seccomp_profile.json",
+          "integrity": "sha256-cc3e61cabda6bbc1e53e54d27ba4d55a9d3be829b6dd1a596f4a7b31b1cc7849"
+        }
+      }
+    },
+    "pnpm": {
+      "notes": [
+        "Eight supported platforms use native binaries from the pnpm v12.5.1 GitHub release, including darwin-x64.",
+        "Linux glibc and musl platforms use distinct assets and integrity values.",
+        "Each platform asset has a verified SHA-512 integrity value.",
+        "The dated soak exception expires on 2026-09-25."
+      ],
+      "description": "Fast, disk space efficient package manager",
+      "repository": "github:pnpm/pnpm",
+      "version": "12.5.1",
+      "tag": "v12.5.1",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "pnpm-darwin-arm64.tar.gz",
+          "integrity": "sha512-7GLgWcD/bTcxEZh96R1fPc6W33GGidiZG42WhR6GC28JflnkfFbGIGb89wKcI0H3E7nP6xxlt7wylrBQLN3dzA=="
+        },
+        "darwin-x64": {
+          "asset": "pnpm-darwin-x64.tar.gz",
+          "integrity": "sha512-uz5+05+e72eng0mbmJC3tFkviTkBmUmOjhp2PfxpKtdps9LLCYGrQxUGMo+GqYUd/rVJqAt23gq1OMCiBjRK6Q=="
+        },
+        "linux-arm64": {
+          "asset": "pnpm-linux-arm64.tar.gz",
+          "integrity": "sha512-n2MEcrXdKoi8VdA15dlFa+jAxLzXOHH6nzzAQItf+RWKkBQGtJHs/Z/K/SIXGyvqUnZaYKd16U2BJhNPr99Jlg=="
+        },
+        "linux-arm64-musl": {
+          "asset": "pnpm-linux-arm64-musl.tar.gz",
+          "integrity": "sha512-g0iyen3lOUGKjNcJ1PmWP0+2d7BHDUuy9NcNL4B8lZL4wCrMmcA2toaQVOMMSOtksJASN1w2ClZ2AHsvymPqFA=="
+        },
+        "linux-x64": {
+          "asset": "pnpm-linux-x64.tar.gz",
+          "integrity": "sha512-UgaqiAeUWnm4AYbWfR1qcMxhZ62W8I3Swd5oP3ie2+uPPlfIO1ompyZMni/Jh6EAbpFno/rN9zuNOQ/a5MpY4g=="
+        },
+        "linux-x64-musl": {
+          "asset": "pnpm-linux-x64-musl.tar.gz",
+          "integrity": "sha512-K+9srdwb/gLTFTtniXaiMm3xvpJm3A2vjYTg3gAqptuCP/Ukrw7taP+B5QZQfQHidy9KY7D4oVFtPIpL/GquBg=="
+        },
+        "win32-arm64": {
+          "asset": "pnpm-win32-arm64.zip",
+          "integrity": "sha512-DfA0GHpnk193lG7e3On+8mYF4b+FW7D0nxyo/VFKDEFJ8BPXgEpw3+EetFF+TmxL+cd8PJf+bAcu8UBJN3CcUg=="
+        },
+        "win32-x64": {
+          "asset": "pnpm-win32-x64.zip",
+          "integrity": "sha512-wGfyik7USomKHBjzuYW8L48oTpG8Le9tF6RUBEwSDrR+iTKHtD7NKCDgj8V2yu3WbOJxvPmCBSjUFTd7Y1xExw=="
+        }
+      },
+      "origin": "gh-asset",
+      "soakBypass": {
+        "published": "2026-09-18",
+        "removable": "2026-09-25",
+        "version": "12.5.1"
+      }
+    },
+    "rustup": {
+      "notes": [
+        "rustup-init — the Rust toolchain bootstrap binary, installed by the setup-rust-toolchain composite action when rustup is not already on PATH. Pinned to 1.30.0 (2026-08-18) with per-platform SHA-256 from the rustup dist sidecars at https://static.rust-lang.org/rustup/dist/<target>/rustup-init<.exe>.sha256.",
+        "The static.rust-lang.org dist URL serves the CURRENT rustup build (a floating ref); the pinned SHA-256 here is the integrity gate — if upstream ships a new rustup, the hash mismatch aborts the download loudly rather than executing an unpinned binary. Re-pin the hash (and version) deliberately on a rustup bump.",
+        "integrity is the object form ({ value, src, date }) — value is `sha256-<hex>` (the rustup sidecar shape), src the per-target sidecar URL, date the pin day. install-tool.mjs downloads + SRI-verifies the bare binary, then the action runs it with -y --default-toolchain none --profile minimal."
+      ],
+      "description": "rustup-init — the Rust toolchain bootstrap binary (pinned, SHA-256-verified per platform before execute)",
+      "version": "1.30.0",
+      "versionDate": "2026-08-18",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-apple-darwin/rustup-init",
+          "integrity": {
+            "value": "sha256-aeb4105778ca1bd3c6b0e75768f581c656633cd51368fa61289b6a71696ac7e1",
+            "src": "https://static.rust-lang.org/rustup/dist/aarch64-apple-darwin/rustup-init.sha256",
+            "date": "2026-08-18"
+          }
+        },
+        "darwin-x64": {
+          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-apple-darwin/rustup-init",
+          "integrity": {
+            "value": "sha256-33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7",
+            "src": "https://static.rust-lang.org/rustup/dist/x86_64-apple-darwin/rustup-init.sha256",
+            "date": "2026-08-18"
+          }
+        },
+        "linux-arm64": {
+          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-gnu/rustup-init",
+          "integrity": {
+            "value": "sha256-9732d6c5e2a098d3521fca8145d826ae0aaa067ef2385ead08e6feac88fa5792",
+            "src": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-gnu/rustup-init.sha256",
+            "date": "2026-08-18"
+          }
+        },
+        "linux-arm64-musl": {
+          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-musl/rustup-init",
+          "integrity": {
+            "value": "sha256-88761caacddb92cd79b0b1f939f3990ba1997d701a38b3e8dd6746a562f2a759",
+            "src": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-musl/rustup-init.sha256",
+            "date": "2026-08-18"
+          }
+        },
+        "linux-x64": {
+          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init",
+          "integrity": {
+            "value": "sha256-4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10",
+            "src": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init.sha256",
+            "date": "2026-08-18"
+          }
+        },
+        "linux-x64-musl": {
+          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-musl/rustup-init",
+          "integrity": {
+            "value": "sha256-9cd3fda5fd293890e36ab271af6a786ee22084b5f6c2b83fd8323cec6f0992c1",
+            "src": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-musl/rustup-init.sha256",
+            "date": "2026-08-18"
+          }
+        },
+        "win32-arm64": {
+          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe",
+          "integrity": {
+            "value": "sha256-3af309e6c3062aa11df0e932954f69d13b734d8a431e593812f3ecd9ff9e6ef6",
+            "src": "https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe.sha256",
+            "date": "2026-08-18"
+          }
+        },
+        "win32-x64": {
+          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe",
+          "integrity": {
+            "value": "sha256-86478e53f769379d7f0ebfa7c9aa97cb76ca92233f79aa2cc0dbee2efaac73c7",
+            "src": "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe.sha256",
+            "date": "2026-08-18"
+          }
+        }
+      },
+      "origin": "manager",
+      "manager": "rustup"
+    },
+    "sfw-enterprise": {
+      "notes": [
+        "SFW (Socket Firewall) enterprise flavor (private, SocketDev/firewall-release). Same 7-platform set as sfw-free. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set.",
+        "Installed when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set; otherwise the free flavor (sfw-free) is used. The two flavors share a version and install to the same `sfw` binary name."
+      ],
+      "description": "Socket Firewall (enterprise tier) — package manager command wrapper",
+      "version": "1.15.2",
+      "repository": "github:SocketDev/firewall-release",
+      "tag": "v1.15.2",
+      "binaryName": "sfw",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "sfw-macos-arm64",
+          "integrity": "sha512-dkETkXxmdVqA/NhV2Pp+754e8t65WHx2x+LE+D4dbX11QhNRAV4pfH2NxKCV3J9YXgzg8MwdLTB9pu6gxfX/7g=="
+        },
+        "darwin-x64": {
+          "asset": "sfw-macos-x86_64",
+          "integrity": "sha512-SCDBU28Eq/1plsmUBhzdf1GLtaYlwHvgMe3ytawP0TkZNi1TcaiUQvZR8mOypej6Q10b/yjeUSAyCUUujrK/fg=="
+        },
+        "linux-arm64": {
+          "asset": "sfw-linux-arm64",
+          "integrity": "sha512-voSGk2iyayKn5MtfjJzipZSj2EBIQNaHRj2GyShpTbPtNYb4KCfXU9Xjk3h7ySN8buUNdGWkwbbF6bewuOr+vg=="
+        },
+        "linux-arm64-musl": {
+          "asset": "sfw-musl-linux-arm64",
+          "integrity": "sha512-XwqBwq3VFRLASFWu6gVHZTnI23uPAig9bFVCS7rXQe5ykog8a0aLnQG834P+owIR7T8YgSsTTFZh4d6joyWZJg=="
+        },
+        "linux-x64": {
+          "asset": "sfw-linux-x86_64",
+          "integrity": "sha512-p+hVx3A51RdMjkUsNlE6Hor6fnwBBEczorwL2ee6xGWfu0Q7Ok8POIIhX+kFPGnSDmytpNaTYkioLVFP+Hn9Og=="
+        },
+        "linux-x64-musl": {
+          "asset": "sfw-musl-linux-x86_64",
+          "integrity": "sha512-6Ylukj7jrw6zGxpiqMJRH8Q9n6RDjd84DCXArd9ZahaPoSVvWnJ56nZOzPM3G8uwG5Htn/0s+hj1J6K3FKKNQg=="
+        },
+        "win32-x64": {
+          "asset": "sfw-windows-x86_64.exe",
+          "integrity": "sha512-xXhch+OLtqYjatxThlqOv+HY2ooSoyA0B/hujjjSLyQ7xz8LLcJtc+Db0iBB/2mOKYc4KqQT4ukeTtxz3g0+xQ=="
+        }
+      },
+      "origin": "gh-asset"
+    },
+    "sfw-free": {
+      "notes": [
+        "SFW (Socket Firewall) free flavor (public, SocketDev/sfw-free). Ships a 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. Windows 11 ARM64 setup uses the verified win32-x64 asset through x64 emulation when a native asset is unavailable. SFW remains mandatory and must execute successfully before installation continues.",
+        "Installed when neither SOCKET_API_KEY nor SOCKET_API_TOKEN is set; the enterprise flavor (sfw-enterprise) is selected when one of those is present. The two flavors share a version and install to the same `sfw` binary name."
+      ],
+      "description": "Socket Firewall (free tier) — package manager command wrapper",
+      "version": "1.15.2",
+      "repository": "github:SocketDev/sfw-free",
+      "tag": "v1.15.2",
+      "binaryName": "sfw",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "sfw-free-macos-arm64",
+          "integrity": "sha512-pimnuYldUXHrc4j6ZO501ibgo8oIyEsgHDHeQhih8huJEttEB29HPCO7Lk/+2MAF7Sv37mOkiQjYI3OU91Db6Q=="
+        },
+        "darwin-x64": {
+          "asset": "sfw-free-macos-x86_64",
+          "integrity": "sha512-EjBRxWgrdITmVg5ZLvjjnZ5vDCKSBNqTLPOuDjYeHdjXf+BkYs+SGfH/z6lsMUumiDqj/kTtvbRMXoKDMY4x+w=="
+        },
+        "linux-arm64": {
+          "asset": "sfw-free-linux-arm64",
+          "integrity": "sha512-PttVwERdz6OGIhBKbpKklnZC8/cdfpeFxrcDETS1G38+taDqpWYV8Hg12Gh9LDdHsJfrksrdjnPa/tfHaTE5lw=="
+        },
+        "linux-arm64-musl": {
+          "asset": "sfw-free-musl-linux-arm64",
+          "integrity": "sha512-motTFDIZGBRcTomoeIbpcFsy2DFknnzZxTaHDZrRQcF42UoUjeXiJieH1mALF7H/zCsc0hFajohmLlvxsUO1sQ=="
+        },
+        "linux-x64": {
+          "asset": "sfw-free-linux-x86_64",
+          "integrity": "sha512-oHiRTl9O8kdHINEGWjqocj/gz70fPVzVVeS35PwraK7lzHSO4I3++CtUni0NsRvLhIxSZqD3A/xmKzvkgYXDJQ=="
+        },
+        "linux-x64-musl": {
+          "asset": "sfw-free-musl-linux-x86_64",
+          "integrity": "sha512-CLmE1J6q1BCHu1QKge+zJda3iXkKuFE8+3ITW7++iUJxVTbcMRCxdB2EqYnUpLQG1MM4pbQxgQ7Dq7OozBQjAw=="
+        },
+        "win32-x64": {
+          "asset": "sfw-free-windows-x86_64.exe",
+          "integrity": "sha512-vPOL88R3H75j0rHg6lRv53rwtRxFxDo7rzjXU0rWWPDY1U1e3hQzAmvsloS19uo6noWeCXIBJ8ZAbZxQf7EFxA=="
+        }
+      },
+      "origin": "gh-asset"
+    },
+    "uv": {
+      "notes": [
+        "uv (Astral) — the fleet's Python project tool. Installed in the bootstrap (release-asset, SRI-verified per platform, like janus/codedb) so a hash-locked uv install is available BEFORE the security-tools step that needs it (SkillSpector installs via a uv project + uv.lock, no pipx — the fleet 'uv for projects' rule). external-tools/update.mts re-hashes the GitHub release assets on a bump.",
+        "The GitHub release is a known-publisher binary distribution. The installer uses the version as the release tag."
+      ],
+      "description": "uv — Astral Python package/project manager (pinned, SRI-verified)",
+      "repository": "github:astral-sh/uv",
+      "version": "0.12.15",
+      "tag": "0.12.15",
+      "versionDate": "2026-09-15",
+      "binaryName": "uv",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "uv-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-y7xj4+kxiyA66dzmrddriihGl077SM74Q2/XwlI4Kw8jO7yh0pOe3IR/YyVyCfCEq0ccpwVLMOgo5YY2BVd0lw=="
+        },
+        "darwin-x64": {
+          "asset": "uv-x86_64-apple-darwin.tar.gz",
+          "integrity": "sha512-r59SZFSWLGcmda5b7rq2yO2sI6SsDKdBE+qvC8KHeoRLV7zCCm1m3s5GwTUCP9O8kx4A7D2GUiV0gPdj2Vkraw=="
+        },
+        "linux-arm64": {
+          "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha512-wtjxaDy/A91/eSUbn927LdJEsQy9JRpFfmaXqOxiSafoi+wHEFaNWvjxOpqwoMAky7UrBd0icT6PCttBpagKvA=="
+        },
+        "linux-x64": {
+          "asset": "uv-x86_64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha512-HnyqtvfbH/vq3MTydIYAbCr6hS8kC8kuZpXxrGJ/Nr2dac/wJQA3Z6S9bx95TYCTBdOZ1kPbDjtrzfIgwi4xDw=="
+        },
+        "win32-arm64": {
+          "asset": "uv-aarch64-pc-windows-msvc.zip",
+          "integrity": "sha512-+YD0ZEuCcztbfQcd+rCkRgP4YcUXzZIxyDOcYJzya2Bm16z42RVq5/9sPS8rcNmXf9m7B8ZK08CVLzTXAqGitA=="
+        },
+        "win32-x64": {
+          "asset": "uv-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha512-sSjnNsmzOB+6d6yvegbwumNJhOSsdEM8ZT8qxnDoUpp4CLym3t00OrImSCCW8dyqh6IUPs6uB7NKY+F1A4D3dQ=="
+        }
+      },
+      "origin": "gh-asset"
+    },
+    "zizmor": {
+      "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",
+      "version": "1.30.1",
+      "repository": "github:zizmorcore/zizmor",
+      "tag": "v1.30.1",
+      "notes": [
+        "Required: CI (blocks merges on medium+ findings)",
+        "Installed by the setup-and-install composite; SRI-verified (sha512) per platform"
+      ],
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "zizmor-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha512-0SJEhWNir4QzfGwrT2oX4w/4UJZp8CqDo2RK2bkcfHCilayAZkpvu/fq6rHo+X+gbJICazQBNRE2bo91mmNAKA=="
+        },
+        "darwin-x64": {
+          "asset": "zizmor-x86_64-apple-darwin.tar.gz",
+          "integrity": "sha512-QqPld71wwABqcLyxkJ02nItUczTQrtpAAT6xiDvyyBySuywAFGW4mUU7iO2Kcwg+CDY5ZLvkd/vNm76GqqbwXw=="
+        },
+        "linux-arm64": {
+          "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha512-7AfMKqT+4SoyYRE4Ke7Ar5H+1SoU7QUuifuSKGjJIb7Qep29+oP0IrMsEMwjqAxpiGbEPyxSMgO7ghDlHhNsNQ=="
+        },
+        "linux-x64": {
+          "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha512-sMHocgA1Rg12S12/szGaRumgmlAEjaeU5EIdGTczLNldhGFptlctCFqogoebWvE/PFioGlZ2vcSxoCZW3BegYg=="
+        },
+        "win32-x64": {
+          "asset": "zizmor-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha512-cYagZJ5fG+8UQ/Fr0LshEt7A6CXQgWeeBHlsztvzCepX661rrW9h3h//hedNUu7yM215f+fqDXE0++6MjuLgJg=="
+        }
+      },
+      "origin": "gh-asset"
+    }
+  }
+}

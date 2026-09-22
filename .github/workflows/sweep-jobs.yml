@@ -51,7 +51,7 @@ concurrency:
 jobs:
   prune:
     name: Sweep
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
       # First step can't call the local ./.github/actions/fleet/checkout

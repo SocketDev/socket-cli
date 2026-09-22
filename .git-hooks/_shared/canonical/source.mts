@@ -14,7 +14,7 @@ import {
 } from './git.mts'
 import type { CanonicalGitRead } from './git.mts'
 
-function canonicalMemberSlug(root: string): string | undefined {
+export function canonicalMemberSlug(root: string): string | undefined {
   const remote = canonicalGitText(root, ['remote', 'get-url', 'origin'])?.trim()
   // Accept the three GitHub transports, retaining the organization segment.
   const match =

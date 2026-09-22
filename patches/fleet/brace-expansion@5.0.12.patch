@@ -1,0 +1,20 @@
+diff --git a/dist/commonjs/index.js b/dist/commonjs/index.js
+index 48cf0d3dabc885249c65909c4912712c834786f5..4e54c4051d83a0d37eade3fb3cac7f768b8fca6a 100644
+--- a/dist/commonjs/index.js
++++ b/dist/commonjs/index.js
+@@ -330,4 +330,5 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+     }
+     return acc;
+ }
++exports.default = expand;
+ //# sourceMappingURL=index.js.map
+diff --git a/dist/esm/index.js b/dist/esm/index.js
+index 0e0cc962307eb697dc8139ef4c1f86b82380e5cc..fbbdb3f96917561fa038243dc9992c04ef35b479 100644
+--- a/dist/esm/index.js
++++ b/dist/esm/index.js
+@@ -326,4 +326,5 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+     }
+     return acc;
+ }
++export default expand;
+ //# sourceMappingURL=index.js.map

@@ -1,4 +1,5 @@
 import path from 'node:path'
+import runnerImages from './runner-images.json' with { type: 'json' }
 
 export const CANONICAL_JS_IDENTIFIER = 'javascript-typescript'
 export const ALWAYS_EXPECTED_LANGUAGES = Object.freeze(['actions'])
@@ -95,7 +96,9 @@ export function planCodeqlMatrix(gitPaths) {
         (language === 'java-kotlin' && kotlin)
           ? 'autobuild'
           : 'none',
-      runner: language === 'swift' ? 'macos-latest' : 'ubuntu-latest',
+      runner:
+        runnerImages.roles[language === 'swift' ? 'macos-arm64' : 'linux-x64']
+          .label,
     })),
   }
 }

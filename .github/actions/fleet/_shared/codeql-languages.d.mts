@@ -6,7 +6,7 @@ export declare const CODEQL_LANGUAGE_GLOBS: Readonly<Record<string, readonly str
 export interface CodeqlMatrixEntry {
   language: string
   'build-mode': 'autobuild' | 'none'
-  runner: 'macos-latest' | 'ubuntu-latest'
+  runner: string
 }
 
 export declare function presentCodeqlLanguages(gitPaths: readonly string[]): string[]
