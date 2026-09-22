@@ -17,7 +17,7 @@ export type FetchPurlsShallowScoreOptions = {
 export async function fetchPurlsShallowScore(
   purls: string[],
   options?: FetchPurlsShallowScoreOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'batchPackageFetch'>>> {
+): Promise<CResult<SocketSdkSuccessResult<'batchPackageFetch'>['data']>> {
   const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
@@ -41,7 +41,7 @@ export async function fetchPurlsShallowScore(
     sockSdk.batchPackageFetch(
       { components: purls.map(purl => ({ __proto__: null, purl })) },
       {
-        alerts: 'true',
+        alerts: true,
       },
     ),
     {
@@ -53,10 +53,9 @@ export async function fetchPurlsShallowScore(
     return batchPackageCResult
   }
 
-  // Type assertion needed due to SDK result type mismatch.
   return {
     __proto__: null,
     ok: true,
-    data: batchPackageCResult.data as SocketSdkSuccessResult<'batchPackageFetch'>,
+    data: batchPackageCResult.data,
   }
 }

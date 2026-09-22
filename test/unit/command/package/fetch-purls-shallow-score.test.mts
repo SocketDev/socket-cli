@@ -77,7 +77,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockSdk.batchPackageFetch).toHaveBeenCalledWith(
       { components: purls.map(purl => ({ purl })) },
-      { alerts: 'true' },
+      { alerts: true },
     )
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
       description: 'looking up package',
@@ -132,7 +132,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockSdk.batchPackageFetch).toHaveBeenCalledWith(
       { components: [] },
-      { alerts: 'true' },
+      { alerts: true },
     )
     expect(result.ok).toBe(true)
     expect(result.data).toEqual([])
@@ -152,7 +152,7 @@ describe('fetchPurlsShallowScore', () => {
 
     expect(mockSdk.batchPackageFetch).toHaveBeenCalledWith(
       { components: mixedPurls.map(purl => ({ purl })) },
-      { alerts: 'true' },
+      { alerts: true },
     )
   })
 

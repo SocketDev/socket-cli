@@ -136,6 +136,30 @@ describe('outputDiffScan', () => {
     mockWriteFile.mockResolvedValue(undefined)
   })
 
+  describe('pending diff scans', () => {
+    const result = {
+      ok: true as const,
+      data: { id: 'example-pending-scan', status: 'processing' },
+    }
+
+    it.each(['text', 'markdown'] as const)(
+      'reports processing in %s output',
+      async outputKind => {
+        await outputDiffScan(result, { depth: 1, file: '', outputKind })
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          'Diff scan example-pending-scan: processing.',
+        )
+        expect(mockLogger.fail).not.toHaveBeenCalled()
+      },
+    )
+
+    it('preserves the pending response in JSON output', async () => {
+      await outputDiffScan(result, { depth: 1, file: '', outputKind: 'json' })
+      expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
+      expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
+    })
+  })
+
   describe('error handling', () => {
     it('sets exit code for error result', async () => {
       const result = createErrorResult('Diff scan failed', {
