@@ -19,8 +19,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -112,8 +114,10 @@ public final class SocketFactsRecordsEngine {
       if (SocketSupport.isExcludedPath(ws, excludes)) continue;
       Map<String, Node> nodes = new LinkedHashMap<>();
       Set<String> directIds = new HashSet<>();
-      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, failures);
-      rootIdx = emitModuleRoots(lines, rootIdx, ws, nodes, directIds);
+      // Which direct dependencies are prod-scoped: seeds the prod/dev root split (see emitModuleRoots).
+      Set<String> directProdIds = new HashSet<>();
+      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, directProdIds, failures);
+      rootIdx = emitModuleRoots(lines, rootIdx, ws, nodes, directIds, directProdIds);
     }
 
     for (Failure f : failures) rec(lines, "failure", f.coord, f.detail, f.config);
@@ -132,6 +136,7 @@ public final class SocketFactsRecordsEngine {
       Options opts,
       Map<String, Node> nodes,
       Set<String> directIds,
+      Set<String> directProdIds,
       Set<Failure> failures) {
     String moduleCoord = module.getGroupId() + ":" + module.getArtifactId() + ":" + module.getVersion();
     DependencyResolutionResult result;
@@ -180,7 +185,14 @@ public final class SocketFactsRecordsEngine {
     Set<String> visited = new HashSet<>();
     for (DependencyNode child : root.getChildren()) {
       String id = visit(child, passingScopes, reactorGavs, opts, nodes, visited);
-      if (id != null) directIds.add(id);
+      if (id != null) {
+        directIds.add(id);
+        // A direct dependency's effective scope is its declared scope (Aether's scope selector keeps
+        // a depth-1 item's scope), so it reliably seeds the prod/dev split. The node's own `prod` flag
+        // does NOT: conflict resolution can keep a node under a dev parent while its effective scope
+        // is prod (or vice versa).
+        if (isProd(scopeOf(child.getDependency()))) directProdIds.add(id);
+      }
     }
   }
 
@@ -268,7 +280,6 @@ public final class SocketFactsRecordsEngine {
       String file = SocketSupport.existingAbsolutePath(artifact.getFile());
       if (file != null) node.files.add(file);
     }
-    if (isProd(scope)) node.prod = true;
 
     for (DependencyNode child : dn.getChildren()) {
       String childId = visit(child, passingScopes, reactorGavs, opts, nodes, visited);
@@ -302,12 +313,22 @@ public final class SocketFactsRecordsEngine {
 
   // ---- emission ----
 
-  // Split a module's resolved nodes into a prod root and a dev root (each artifact has one effective
-  // scope, so the subgraphs are disjoint and edges stay intra-root). Empty roots are skipped.
-  private int emitModuleRoots(List<String> lines, int rootIdx, String projectKey, Map<String, Node> nodes, Set<String> directIds) {
+  // Split a module's resolved nodes into a prod root and a dev root. Membership is decided by which
+  // direct dependency a node is REACHABLE from, not by the node's own effective scope: Maven's
+  // conflict resolution can retain a node under a dev parent while its effective scope is prod (the
+  // retained path came from a test/provided dep, but a removed deeper path had a compile scope, so
+  // Aether's scope selector unions them to compile). Partitioning by scope would put that node in the
+  // prod root while its only parent sits in the dev root, and emitRoot drops the cross-root edge —
+  // leaving the node unreachable and non-direct (the "orphaned component" defect). Reachability also
+  // keeps edges intra-root, because a node reached from a prod direct dependency stays prod.
+  // Empty roots are skipped.
+  private int emitModuleRoots(
+      List<String> lines, int rootIdx, String projectKey, Map<String, Node> nodes,
+      Set<String> directIds, Set<String> directProdIds) {
+    Set<String> prodReachable = reachable(nodes, directProdIds);
     Map<String, Node> prod = new LinkedHashMap<>();
     Map<String, Node> dev = new LinkedHashMap<>();
-    for (Node n : nodes.values()) (n.prod ? prod : dev).put(n.id, n);
+    for (Node n : nodes.values()) (prodReachable.contains(n.id) ? prod : dev).put(n.id, n);
     if (!prod.isEmpty()) {
       rootIdx = emitRoot(lines, rootIdx, projectKey, "compile", true, prod, directIds);
     }
@@ -315,6 +336,20 @@ public final class SocketFactsRecordsEngine {
       rootIdx = emitRoot(lines, rootIdx, projectKey, "test", false, dev, directIds);
     }
     return rootIdx;
+  }
+
+  // Every node id reachable from `seeds` by following retained child edges.
+  private static Set<String> reachable(Map<String, Node> nodes, Set<String> seeds) {
+    Set<String> seen = new HashSet<>();
+    Deque<String> stack = new ArrayDeque<>(seeds);
+    while (!stack.isEmpty()) {
+      String id = stack.pop();
+      if (!seen.add(id)) continue;
+      Node node = nodes.get(id);
+      if (node == null) continue;
+      for (String child : node.children) stack.push(child);
+    }
+    return seen;
   }
 
   private int emitRoot(
@@ -481,7 +516,6 @@ public final class SocketFactsRecordsEngine {
     final String version;
     final TreeSet<String> children = new TreeSet<>();
     final TreeSet<String> files = new TreeSet<>();
-    boolean prod = false;
 
     Node(String id, String groupId, String artifactId, String type, String classifier, String version) {
       this.id = id;
