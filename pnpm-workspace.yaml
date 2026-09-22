@@ -731,10 +731,6 @@ enableGlobalVirtualStore: true
 # vector that bypasses npm registry validation. pnpm's current
 # default is `false`; declared explicitly so a future default flip
 # can't silently widen the trust boundary.
-trustPolicyExclude:
-  - '@playwright/mcp@0.0.80'
-  - 'playwright@1.63.0-alpha-2026-08-31'
-  - 'playwright-core@1.63.0-alpha-2026-08-31'
 includeWorkspaceRoot: true
 pipelines:
   fleet-prepare:
