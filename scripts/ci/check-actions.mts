@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { lstatSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -7,9 +7,9 @@ import { parse } from 'yaml'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 
-export function externalActionReferences(document: unknown): string[] {
+export function disallowedActionReferences(document: unknown): string[] {
   if (Array.isArray(document)) {
-    return document.flatMap(externalActionReferences)
+    return document.flatMap(disallowedActionReferences)
   }
   if (document === null || typeof document !== 'object') {
     return []
@@ -19,24 +19,31 @@ export function externalActionReferences(document: unknown): string[] {
     if (
       key === 'uses' &&
       typeof value === 'string' &&
-      !value.startsWith('./')
+      !/^\.\/\.github\/actions\/repo\/[\da-z][\w.-]*(?:\/[\da-z][\w.-]*)*$/i.test(
+        value,
+      )
     ) {
       result.push(value)
     } else {
-      result.push(...externalActionReferences(value))
+      result.push(...disallowedActionReferences(value))
     }
   }
   return result
 }
 
 export function checkWorkflowActions(directory: string): string[] {
+  if (lstatSync(directory).isSymbolicLink()) {
+    return [`${directory}: symbolic links are not permitted`]
+  }
   const findings: string[] = []
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const filename = path.join(directory, entry.name)
-    if (entry.isDirectory()) {
+    if (entry.isSymbolicLink()) {
+      findings.push(`${filename}: symbolic links are not permitted`)
+    } else if (entry.isDirectory()) {
       findings.push(...checkWorkflowActions(filename))
     } else if (/\.ya?ml$/.test(entry.name)) {
-      const references = externalActionReferences(
+      const references = disallowedActionReferences(
         parse(readFileSync(filename, 'utf8')),
       )
       findings.push(...references.map(reference => `${filename}: ${reference}`))
@@ -53,14 +60,14 @@ if (isMainModule(import.meta.url)) {
         process.stdout.write(`${JSON.stringify({ findings })}\n`)
       } else if (findings.length) {
         process.stderr.write(
-          `External actions found in workflow definitions: ${findings.join(', ')}. Use repository-owned steps.\n`,
+          `Disallowed actions or symbolic links found: ${findings.join(', ')}. Use steps under ./.github/actions/repo/ without traversal or symbolic links.\n`,
         )
       }
       return findings.length ? 1 : 0
     },
     {
       describe:
-        'Reject external actions in workflow and local action definitions',
+        'Reject actions outside the repository action directory and symbolic links',
       help: 'Usage: pnpm run check:actions [--json]',
     },
   )
