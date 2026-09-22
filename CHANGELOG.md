@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Updated the Coana CLI to v `15.10.48`.
+
 ### Fixed
 - Fixed Maven manifest generation so a dependency is no longer emitted as an orphaned component when Maven's conflict resolution keeps it under a test or provided parent while its effective scope is compile. These components previously produced spurious "orphaned component not reachable from any direct dependency" alerts.
 
