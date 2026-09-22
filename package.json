@@ -88,7 +88,9 @@
     "test-ci": "run-s test:*",
     "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm test:unit:update --",
     "testuf": "dotenvx -q run -f .env.testu -- pnpm test:unit:update --",
-    "update": "node scripts/update.mts"
+    "update": "node scripts/update.mts",
+    "release:preflight": "node scripts/release/preflight.mts",
+    "check:actions": "node scripts/ci/check-actions.mts"
   },
   "dependencies": {
     "@socketsecurity/socket-patch": "2.0.0",

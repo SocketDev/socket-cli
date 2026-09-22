@@ -2,6 +2,7 @@
   "extends": "./.config/tsconfig.base.json",
   "include": [
     "src/**/*.mts",
+    "scripts/ci/**/*.mts",
     "scripts/lib/**/*.mts",
     "scripts/release/**/*.mts"
   ],

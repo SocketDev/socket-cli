@@ -186,9 +186,31 @@ describe('resolveBumpBase', () => {
       }),
     ).toBe('1.1.156')
   })
+
+  it('ignores another major without a landed tag on this line', () => {
+    expect(
+      resolveBumpBase({
+        manifestVersion: '1.1.153-prerelease',
+        publishedVersion: '2.1.0',
+        tagVersions: ['v2.1.0'],
+      }),
+    ).toBe('1.1.153')
+  })
 })
 
 describe('deriveNextVersion', () => {
+  it('keeps another release line and prereleases out of the reserved floor', () => {
+    expect(
+      deriveNextVersion({
+        commits: [],
+        manifestVersion: '1.1.177-prerelease',
+        publishedVersion: '1.1.176',
+        reservedVersions: ['v2.0.0', 'v1.2.0-prerelease'],
+        tagVersions: ['v1.1.176'],
+      }),
+    ).toMatchObject({ base: '1.1.176', version: '1.1.177' })
+  })
+
   // The state this port was written against: 1.1.154 was tagged and staged but
   // never approved, so npm still serves 1.1.153 while the tag is spent. The tag
   // has to count as consumed or the next release would re-publish a burned
