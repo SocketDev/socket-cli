@@ -2,8 +2,8 @@
 # edit it here. Fleet CI runs check + test through the LOCAL composite
 # actions under .github/actions/, inlined, so there is no cross-repo
 # reusable workflow and no first-party `uses:@sha`.
-name: "ci: gates"
-run-name: "ci: gates"
+name: 'ci: gates'
+run-name: 'ci: gates'
 
 # PUSH, never pull_request. The fleet takes no outside contributions and
 # lands on main directly, so a pull_request trigger adds no coverage a push
@@ -70,8 +70,8 @@ jobs:
         with:
           # Authorizes a thin member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           # Full history: the commit-history checks (AI-attribution,
           # release-boundary) read the default branch's history and refuse a
           # shallow clone rather than false-green.
@@ -123,15 +123,15 @@ jobs:
         with:
           # Authorizes a thin member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
       - name: Mint sdxgen read token
         id: sdxgen-token
         uses: ./.github/actions/fleet/github-payload-app-token
         with:
-          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
-          private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           repositories: sdxgen
       - name: Run checks
         uses: ./.github/actions/fleet/run-script
