@@ -143,6 +143,10 @@ export function renderCheckSummary(results: readonly StepResult[]): string {
 export function buildSteps(forwardedArgs: readonly string[]): CheckStep[] {
   return [
     () =>
+      runStep('workflow-actions', process.execPath, [
+        'scripts/ci/check-actions.mts',
+      ]),
+    () =>
       runStep('lint', process.execPath, ['scripts/lint.mts', ...forwardedArgs]),
     () => runStep('tsc:src', 'tsgo', []),
     () =>

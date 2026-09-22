@@ -4,7 +4,7 @@
  *   since the last release, writes package.json + CHANGELOG.md, and commits the
  *   pair via the release App onto a throwaway `npm-publish-v<version>` branch.
  *
- *   Nothing here is hand-run. The npm-publish workflow calls it between install
+ *   Nothing here is hand-run. The publish-npm workflow calls it between install
  *   and build, so the tarballs it packs carry the derived version and the commit
  *   they claim to be built from. `promote.mts` lands or deletes the branch once
  *   the run is decided.
@@ -27,16 +27,14 @@ import {
   repoBaseUrl,
 } from './changelog.mts'
 import { commitViaGithubApi } from './github-api.mts'
+import { readReleaseCommits, readReleaseHistory } from './history.mts'
+import { readPublishedVersion } from './registry.mts'
 import {
   discardReleaseBranch,
   openReleaseBranch,
   resolveReleaseEnv,
 } from './release-branch.mts'
-import {
-  COMMIT_LOG_FORMAT,
-  deriveNextVersion,
-  parseConventionalCommits,
-} from './version.mts'
+import { deriveNextVersion, parseConventionalCommits } from './version.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 
@@ -50,8 +48,6 @@ const rootPath = path.join(
   '..',
   '..',
 )
-
-const REGISTRY_URL = 'https://registry.npmjs.org'
 
 const VERSION_FIELD_PATTERN = /("version":\s*")[^"]+(")/
 
@@ -71,82 +67,6 @@ async function git(args: readonly string[]): Promise<string> {
     maxBuffer: 64 * 1024 * 1024,
   })
   return stdout
-}
-
-/**
- * The version npm currently serves as `latest`, or undefined when the package
- * has never been published. A registry read rather than `npm view`: this runs
- * inside a Socket Firewall shimmed environment where the package managers are
- * wrapped, and a plain fetch stays out of that path.
- */
-async function fetchPublishedVersion(
-  name: string | undefined,
-): Promise<string | undefined> {
-  if (!name) {
-    return undefined
-  }
-  const response = await fetch(`${REGISTRY_URL}/${name.replace('/', '%2f')}`, {
-    headers: { accept: 'application/vnd.npm.install-v1+json' },
-    signal: AbortSignal.timeout(30_000),
-  })
-  if (response.status === 404) {
-    return undefined
-  }
-  if (!response.ok) {
-    throw new Error(
-      `[bump] could not read ${name} from the npm registry.\n` +
-        `  Where: ${REGISTRY_URL}/${name}, the bump's published-version anchor.\n` +
-        `  Saw: HTTP ${response.status}; wanted the packument so the base version is known.\n` +
-        `  Fix: re-run once the registry is reachable — deriving without it would skip a version.`,
-    )
-  }
-  const packument = (await response.json()) as {
-    'dist-tags'?: { latest?: string | undefined } | undefined
-  }
-  return packument['dist-tags']?.latest
-}
-
-/**
- * The `v<semver>` tags REACHABLE from HEAD, which is what makes this line's
- * history the authority. socket-cli carries the 1.x maintenance line and the 2.x
- * line in one repository, so an unfiltered `git tag --list` on v1.x resolves to
- * a 2.x tag and the release lands on the wrong line.
- *
- * The workflow fetches tags explicitly: a tagless shallow clone would hide a
- * burned version and the bump would re-derive a number that is already spent.
- */
-async function readReleaseTags(): Promise<string[]> {
-  const stdout = await git(['tag', '--merged', 'HEAD', '--list', 'v*'])
-  return stdout
-    .split('\n')
-    .map(line => line.trim())
-    .filter(Boolean)
-}
-
-/**
- * The conventional commits between the last release and HEAD. Anchors on the
- * `v<base>` tag when it is an ancestor, else the nearest ancestor tag; with no
- * tag at all the whole history is the range, which only happens on a first
- * release.
- */
-async function readCommitsSince(base: string): Promise<string> {
-  let anchor = ''
-  const baseTag = `v${base}`
-  try {
-    await git(['merge-base', '--is-ancestor', baseTag, 'HEAD'])
-    anchor = baseTag
-  } catch {
-    try {
-      anchor = (
-        await git(['describe', '--tags', '--abbrev=0', '--match', 'v*'])
-      ).trim()
-    } catch {
-      anchor = ''
-    }
-  }
-  const range = anchor ? `${anchor}..HEAD` : 'HEAD'
-  log(`reading commits over ${range}.`)
-  return await git(['log', range, `--format=${COMMIT_LOG_FORMAT}`])
 }
 
 function readPackageJson(): { parsed: PackageJsonShape; raw: string } {
@@ -203,31 +123,26 @@ async function main(): Promise<void> {
   const { dryRun, releaseAs } = parseArgs(process.argv.slice(2))
   const manifest = readPackageJson()
   const manifestVersion = manifest.parsed.version ?? '0.0.0'
-  const [publishedVersion, tagVersions] = await Promise.all([
-    fetchPublishedVersion(manifest.parsed.name),
-    readReleaseTags(),
+  const [publishedVersion, history] = await Promise.all([
+    manifest.parsed.name
+      ? readPublishedVersion(manifest.parsed.name)
+      : undefined,
+    readReleaseHistory(rootPath, manifestVersion),
   ])
   log(
     `npm latest ${publishedVersion ?? '(none)'}; ` +
-      `${tagVersions.length} release tag(s); manifest ${manifestVersion}.`,
+      `${history.tagVersions.length} landed release tag(s); ` +
+      `${history.reservedVersions.length} reserved tag(s); manifest ${manifestVersion}.`,
   )
-  const commitsRaw = await readCommitsSince(
-    // Resolve the base once with an empty commit set so the log range and the
-    // final derivation anchor on the same version.
-    deriveNextVersion({
-      commits: [],
-      manifestVersion,
-      publishedVersion,
-      tagVersions,
-    }).base,
-  )
+  const commitsRaw = await readReleaseCommits(rootPath, history.anchorTag)
   const commits = parseConventionalCommits(commitsRaw)
   const derived = deriveNextVersion({
     commits,
     manifestVersion,
     publishedVersion,
     releaseAs,
-    tagVersions,
+    reservedVersions: history.reservedVersions,
+    tagVersions: history.tagVersions,
   })
   if (derived.level === 'major' && !releaseAs) {
     throw new Error(
@@ -332,7 +247,7 @@ const SCRIPT_META: ScriptMeta = {
   --release-as major|minor|patch  force the bump level instead of deriving it
                                   from the conventional commits
 
-  The npm-publish workflow runs this between install and build. It is not a
+  The publish-npm workflow runs this between install and build. It is not a
   hand-run script: it needs RELEASE_APP_TOKEN and the GitHub Actions
   environment to reach the release App.`,
 }

@@ -21,9 +21,24 @@ jobs:
         os: [ubuntu-latest]
         # os: [ubuntu-latest, windows-latest] - Windows tests disbaled (see project https://linear.app/socketdev/project/autofixes-windows-support-fc2f2a45f759)
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
+      - name: Checkout source
+        shell: bash
+        env:
+          CHECKOUT_REF: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          AUTH_B64="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
+          git checkout -q --detach FETCH_HEAD
 
       - name: Install pnpm
         shell: bash
@@ -62,9 +77,11 @@ jobs:
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: ${{ matrix.node-version }}
+      - name: Install Node.js
+        shell: bash
+        env:
+          NODE_VERSION: ${{ matrix.node-version }}
+        run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
 
       - name: Download sfw-free
         shell: bash

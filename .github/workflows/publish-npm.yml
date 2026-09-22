@@ -29,12 +29,9 @@ name: Publish to npm registry
 #      and DELETES the throwaway branch when anything failed — so a failed run
 #      leaves the release line exactly as it found it.
 #
-# BURN RULE. A stage rejected after the markers burns the version: the next
-# release is the next patch, and the burned number is never re-published. That
-# is not a convention anyone has to remember — the bump anchors its base on the
-# release tags reachable from this branch, so a burned `v1.1.154` moves the base
-# to 1.1.154 even while npm still serves 1.1.153, and the next run derives
-# 1.1.155.
+# Stable tags from this major version reserve their versions, including tags
+# on unlanded bump commits. Reachable tags anchor the changelog history.
+# The next release must exceed every reserved version on this major line.
 #
 # THE VERSION DECISION IS THE COMMITS'. Patch by default; a `feat:` in range
 # makes it minor. A MAJOR is never derived — a breaking commit stops the bump
@@ -85,17 +82,14 @@ on:
 permissions:
   contents: read
 
-# Serialize publishes per dist-tag. Two concurrent dispatches with the same
-# tag would race on `npm publish` (one wins, the other 409s). Don't cancel an
-# in-flight publish — a half-published release is worse than a queued one.
 concurrency:
-  group: publish-${{ inputs.dist-tag }}
+  group: npm-publish-${{ github.repository }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   # Build, pack, and prove every variant WITHOUT any publish credential: this
   # job binds no environment and mints no OIDC token, so nothing it runs —
-  # install scripts, build tooling, third-party actions — can reach a token.
+  # install scripts and build tooling — can reach a token.
   # It hands the publish job three verified tarballs; those exact bytes are
   # what ship, so what was tested is what publishes.
   verify:
@@ -103,19 +97,21 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      actions: read
       contents: read
 
     outputs:
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
       # Empty on a dry run or a bump=false dispatch, which is what the `land`
       # job keys off: no branch means there is nothing to land or discard.
       release-branch: ${{ steps.bump.outputs.release-branch }}
-      sha: ${{ steps.release-meta.outputs.sha }}
+      sha: ${{ steps.release-meta.outputs.sha || steps.bump.outputs.sha }}
       version: ${{ steps.release-meta.outputs.version }}
 
     steps:
       # npm trusted publishing authorizes on repository + workflow filename +
-      # GitHub environment. It does NOT pin a branch. The `npm-publish`
+      # GitHub environment. It does NOT pin a branch. The `publish-npm`
       # environment's deployment-branch policy (main + v1.x) is the outer
       # gate; this guard is the in-repo half.
       #
@@ -140,16 +136,26 @@ jobs:
           fi
           echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
 
-      # Full history + tags, both load-bearing for the bump. The base version is
-      # the highest release tag REACHABLE from this branch, which is what makes a
-      # burned number move the base forward; a shallow, tagless clone would hide
-      # the burned tag and re-derive a number that is already spent. The history
-      # is what the commit range since that tag is read from.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: false
+      # Full history anchors the changelog. All tags expose reserved versions,
+      # including release tags on bump commits that did not land.
+      - name: Checkout source
+        shell: bash
+        env:
+          CHECKOUT_REF: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          AUTH_B64="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch --tags origin "$CHECKOUT_REF" '+refs/heads/*:refs/remotes/origin/*'
+          git checkout -q --detach FETCH_HEAD
 
       - name: Install pnpm
         shell: bash
@@ -195,12 +201,11 @@ jobs:
           "${RUNNER_TEMP}/pnpm-bin/pnpm" stage --help > /dev/null
           echo "pnpm stage resolves via the pinned binary."
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: 25.9.0
-          cache: pnpm
-          registry-url: https://registry.npmjs.org
-          scope: '@socketsecurity'
+      - name: Install Node.js
+        shell: bash
+        env:
+          NODE_VERSION: 25.9.0
+        run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
 
       - name: Download sfw
         shell: bash
@@ -476,27 +481,62 @@ jobs:
         if: ${{ inputs.dry-run == false }}
         env:
           VERSION: ${{ steps.release-meta.outputs.version }}
-        run: |
-          for pkg in socket @socketsecurity/cli @socketsecurity/cli-with-sentry; do
-            if npm view "$pkg@$VERSION" version > /dev/null 2>&1; then
-              echo "::error::$pkg@$VERSION is already published; a published version is never re-published." >&2
-              echo "::error::Bump to the next patch and dispatch again." >&2
-              exit 1
-            fi
-          done
-          echo "Version $VERSION is unpublished for all three packages."
+        run: pnpm run release:preflight --version "$VERSION"
 
       - name: Upload verified tarballs
         id: upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: ./.github/actions/repo/upload-artifact
         with:
-          name: npm-release-tarballs
-          path: ${{ runner.temp }}/dist/*.tgz
-          if-no-files-found: error
-          retention-days: 30
-          compression-level: 0
+          path: ${{ runner.temp }}/dist
 
-  # Minimal-surface publish. This job binds the npm-publish environment and
+      - name: Verify artifact transfer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          VERSION: ${{ steps.release-meta.outputs.version }}
+          DIST_DIRECTORY: ${{ runner.temp }}/download-check
+        run: &download-verified-tarballs |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARTIFACT_DIGEST" =~ ^[a-f0-9]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" > "$RUNNER_TEMP/artifact.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$RUNNER_TEMP/artifact.zip"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, shutil, stat, zipfile
+          temporary = pathlib.Path(os.environ["RUNNER_TEMP"])
+          metadata = json.loads((temporary / "artifact.json").read_text())
+          if (str(metadata.get("workflow_run", {}).get("id")) != os.environ["GITHUB_RUN_ID"]
+              or metadata.get("name") != "npm-release-tarballs" or metadata.get("expired")):
+              raise SystemExit("Artifact metadata does not match this release run.")
+          archive = temporary / "artifact.zip"
+          digest = hashlib.sha256()
+          with archive.open("rb") as stream:
+              for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                  digest.update(chunk)
+          if digest.hexdigest() != os.environ["ARTIFACT_DIGEST"]:
+              raise SystemExit("Artifact digest does not match the verified upload.")
+          version = os.environ["VERSION"]
+          if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", version):
+              raise SystemExit("Invalid release version.")
+          expected = {f"{name}-{version}.tgz" for name in
+                      ("socket", "socketsecurity-cli", "socketsecurity-cli-with-sentry")}
+          with zipfile.ZipFile(archive) as bundle:
+              entries = bundle.infolist()
+              if len(entries) != 3 or {entry.filename for entry in entries} != expected:
+                  raise SystemExit("Artifact must contain exactly the three release tarballs.")
+              if any(entry.file_size > 512 * 1024 * 1024
+                     or stat.S_ISLNK(entry.external_attr >> 16) for entry in entries):
+                  raise SystemExit("Artifact contains an invalid tarball entry.")
+              destination = pathlib.Path(os.environ["DIST_DIRECTORY"])
+              destination.mkdir(parents=True, exist_ok=True)
+              for entry in entries:
+                  with bundle.open(entry) as source, (destination / entry.filename).open("xb") as target:
+                      shutil.copyfileobj(source, target)
+          PY
+
+  # Minimal-surface publish. This job binds the publish-npm environment and
   # mints the OIDC token, so it runs as little as possible: no repository
   # checkout, no dependency install, no build. It downloads the verified
   # tarballs, cuts the release markers, and stages those bytes.
@@ -507,11 +547,12 @@ jobs:
     runs-on: ubuntu-latest
     # npm's trusted-publisher config pins this GitHub environment name (npm TP
     # is PER-PACKAGE, not per-branch: the socket / @socketsecurity/cli /
-    # @socketsecurity/cli-with-sentry entries point at npm-publish.yml + the
-    # npm-publish environment). The OIDC token exchange 404s outside it.
-    environment: npm-publish
+    # @socketsecurity/cli-with-sentry entries point at publish-npm.yml + the
+    # publish-npm environment). The OIDC token exchange 404s outside it.
+    environment: publish-npm
 
     permissions:
+      actions: read
       # `contents: write` creates the v<version> tag via gh api. The token
       # lives only in the steps that need it, and no checkout ever writes it
       # into a `.git/config`.
@@ -551,12 +592,13 @@ jobs:
       # digest-mismatch: error — the bytes that arrive must be the bytes the
       # verify job uploaded, or the run stops.
       - name: Download verified tarballs
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          artifact-ids: ${{ needs.verify.outputs.artifact-id }}
-          path: ${{ runner.temp }}/dist
-          merge-multiple: true
-          digest-mismatch: error
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.verify.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ needs.verify.outputs.artifact-digest }}
+          DIST_DIRECTORY: ${{ runner.temp }}/dist
+        run: *download-verified-tarballs
 
       # ORDER RULE (markers first): the v<version> tag and the immutable
       # GitHub release are cut BEFORE the staged uploads, so the uploads'
@@ -689,13 +731,30 @@ jobs:
     steps:
       # promote.mts is the only thing needed from the tree, and it is identical
       # on the dispatch ref and the bump commit, so the plain checkout is enough.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
-        with:
-          persist-credentials: false
+      - name: Checkout source
+        shell: bash
+        env:
+          CHECKOUT_REF: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          AUTH_B64="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
+          git checkout -q --detach FETCH_HEAD
 
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: 25.9.0
+      - name: Install Node.js
+        shell: bash
+        env:
+          NODE_VERSION: 25.9.0
+        run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
 
       - name: Mint release App token
         id: release-app

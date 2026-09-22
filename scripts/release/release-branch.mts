@@ -63,7 +63,7 @@ export function resolveReleaseEnv(): ReleaseEnv {
     ]
     throw new Error(
       `[release-branch] the CI bump is missing ${missing.join(', ')}.\n` +
-        `  Where: the npm-publish workflow's step env, read before anything is built.\n` +
+        `  Where: the publish-npm workflow's step env, read before anything is built.\n` +
         `  Wanted: GITHUB_REPOSITORY + GITHUB_REF_NAME, plus a release App token with\n` +
         `  contents:write for the branch, the bump commit, and the fast-forward.\n` +
         `  Fix: mint the token in the workflow step and pass it as RELEASE_APP_TOKEN.`,

@@ -1,0 +1,17 @@
+name: Upload verified release tarballs
+description: Upload the three verified tarballs using the Actions artifact service.
+inputs:
+  name:
+    description: Artifact name
+    default: npm-release-tarballs
+  path:
+    description: Directory containing exactly three verified tarballs
+    required: true
+outputs:
+  artifact-id:
+    description: Immutable artifact identifier
+  artifact-digest:
+    description: SHA-256 digest of the uploaded archive
+runs:
+  using: node24
+  main: index.mjs

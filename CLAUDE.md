@@ -148,7 +148,12 @@ Each command follows a consistent pattern:
 ## Releasing
 
 Never hand-write a version bump on `v1.x`. The `Publish to npm registry`
-workflow derives it:
+workflow in `.github/workflows/publish-npm.yml` derives it:
+
+The workflow filename must exist on the default branch for dispatch to work.
+All three npm trusted publishers bind `publish-npm.yml` and the `publish-npm`
+environment with staging-only permission. The environment permits `v1.x`.
+Validate all three bindings after a workflow or environment rename.
 
 - Write user-facing notes under the changelog's `## [Unreleased]` section as
   the work lands. The release promotes that block verbatim under the new
@@ -163,9 +168,12 @@ workflow derives it:
 - The level is patch by default and minor when a `feat:` is in range. A major
   is never derived — a breaking commit stops the bump until someone passes
   `release-as: major`.
-- A staged release that is never approved BURNS its version. The base is the
-  highest release tag reachable from `v1.x`, so the burned number is skipped
-  automatically; there is nothing to remember and nothing to clean up.
+- A tag reserves its version even when staging or landing fails. Stable tags
+  from this major version set the reservation floor. Reachable tags anchor
+  the changelog history. The next release skips all reserved versions.
+- Run `pnpm run release:preflight --version <version>` to check all three
+  registry entries. Only HTTP 404 means the version is available. A registry
+  error stops the release before it creates a tag.
 
 ## Changelog Management
 

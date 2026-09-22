@@ -6,7 +6,7 @@
  * installation token scoped by the PERMISSIONS env. The token is masked, then
  * handed back via $GITHUB_OUTPUT.
  *
- * The npm-publish workflow runs this to get the contents:write token that
+ * The publish-npm workflow runs this to get the contents:write token that
  * signs the bump commit and lands it — the workflow's own GITHUB_TOKEN stays
  * contents:read. PERMISSIONS is always passed non-blank so the mint is
  * least-privilege; an empty object would mint blanket permissions and is
@@ -42,7 +42,7 @@ function env(name) {
   if (!value) {
     die(
       `required env ${name} is not set. ` +
-        `Where: the npm-publish workflow's "Mint release App token" step env. ` +
+        `Where: the publish-npm workflow's "Mint release App token" step env. ` +
         `Fix: pass ${name} there (CLIENT_ID from vars.SOCKET_RELEASE_CLIENT_ID, ` +
         `APP_PRIVATE_KEY from secrets.SOCKET_RELEASE_APP_PRIVATE_KEY).`,
     )

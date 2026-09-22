@@ -6,16 +6,16 @@
  *   testable.
  *
  *   The base a release bumps FROM is anchored to already-CONSUMED authorities:
- *   the version npm serves as `latest`, and every `v<semver>` git tag in the
- *   repo. The manifest is deliberately NOT an authority — it can sit ahead of
- *   reality (a hand pre-bump) and would silently skip a number.
+ *   the version npm serves as `latest`, and landed release tags on this line.
+ *   The manifest identifies the major line. Its version can exceed the latest
+ *   release, so it provides a base only when no release exists on this line.
  *
  *   BURNED VERSIONS. A run that cuts the tag and stages the tarballs but is
  *   never approved leaves a tag with nothing on npm behind it. That number is
  *   spent and must never be re-published. Because the tag set is an authority
- *   here, a burned number moves the base forward on its own: with npm `latest`
- *   at 1.1.153 and a burned tag `v1.1.154`, the base is 1.1.154 and the next
- *   patch is 1.1.155.
+ *   here, a burned number sets a separate floor: with npm `latest` at 1.1.153
+ *   and a burned tag `v1.1.154`, the next patch is 1.1.155. The landed base
+ *   still controls the commit range and requested bump level.
  */
 
 import semver from 'semver'
@@ -152,13 +152,29 @@ export function maxReleaseVersion(
   return best
 }
 
+export function releaseVersionsForLine(
+  versions: readonly string[],
+  manifestVersion: string,
+): string[] {
+  const line = semver.coerce(manifestVersion)
+  if (!line) {
+    throw new TypeError(
+      '[version] cannot identify the release line.\n' +
+        '  Where: the root package.json version.\n' +
+        '  Saw: an invalid version; wanted a semver with a major version.\n' +
+        '  Fix: restore the release line version in package.json.',
+    )
+  }
+  return versions.filter(version => {
+    const parsed = semver.parse(version)
+    return parsed?.major === line.major && parsed.prerelease.length === 0
+  })
+}
+
 export interface BumpBaseConfig {
   readonly manifestVersion: string
   readonly publishedVersion?: string | undefined
-  // Release tags belonging to THIS line, i.e. reachable from HEAD. Passing the
-  // repo's whole tag set is a bug: socket-cli carries the 1.x and 2.x lines in
-  // one repository, so an unfiltered max on the v1.x branch resolves to a 2.x
-  // tag and the next "patch" lands on the wrong line entirely.
+  // Landed release tags belonging to this major line.
   readonly tagVersions?: readonly string[] | undefined
 }
 
@@ -170,22 +186,22 @@ export interface BumpBaseConfig {
  * authority has anything to say.
  *
  * The registry's `latest` is a repo-wide signal, not a per-line one, so it only
- * counts when it shares a major with this line's newest tag. That keeps a
+ * counts when it shares a major with the manifest. That keeps a
  * maintenance branch anchored to its own line even while a newer major owns the
  * dist-tag, and still lets `latest` cover a release whose tag went missing.
  */
 export function resolveBumpBase(config: BumpBaseConfig): string {
   const cfg = { __proto__: null, ...config } as BumpBaseConfig
-  const tagMax = maxReleaseVersion(cfg.tagVersions ?? [])
-  const published = maxReleaseVersion(
-    cfg.publishedVersion ? [cfg.publishedVersion] : [],
-  )
-  const sameLine =
-    published && (!tagMax || semver.major(published) === semver.major(tagMax))
-      ? [published]
-      : []
   return (
-    maxReleaseVersion([...(tagMax ? [tagMax] : []), ...sameLine]) ??
+    maxReleaseVersion(
+      releaseVersionsForLine(
+        [
+          ...(cfg.tagVersions ?? []),
+          ...(cfg.publishedVersion ? [cfg.publishedVersion] : []),
+        ],
+        cfg.manifestVersion,
+      ),
+    ) ??
     semver.valid(semver.coerce(cfg.manifestVersion) ?? '') ??
     '0.0.0'
   )
@@ -196,6 +212,7 @@ export interface DeriveNextVersionConfig {
   readonly manifestVersion: string
   readonly publishedVersion?: string | undefined
   readonly releaseAs?: string | undefined
+  readonly reservedVersions?: readonly string[] | undefined
   readonly tagVersions?: readonly string[] | undefined
 }
 
@@ -229,26 +246,31 @@ export function deriveNextVersion(
     tagVersions: cfg.tagVersions,
   })
   const forced = cfg.releaseAs?.trim()
+  const derived = bumpLevelFor(cfg.commits)
+  let level: BumpLevel = derived ?? 'patch'
   if (forced) {
     if (forced !== 'major' && forced !== 'minor' && forced !== 'patch') {
       throw new Error(
         `[version] release-as must be major, minor, or patch (got "${forced}").\n` +
-          `  Where: the npm-publish dispatch's release-as input.\n` +
+          `  Where: the publish-npm dispatch's release-as input.\n` +
           `  Saw: "${forced}"; wanted one of major | minor | patch, or empty to derive.\n` +
           `  Fix: re-dispatch with one of the three levels, or leave it empty.`,
       )
     }
-    return {
-      base,
-      level: forced,
-      reason: `forced to ${forced} by the release-as input`,
-      version: semver.inc(base, forced)!,
-    }
+    level = forced
   }
-  const derived = bumpLevelFor(cfg.commits)
-  const level = derived ?? 'patch'
-  const reason = derived
-    ? `derived ${derived} from ${cfg.commits.length} conventional commit(s) since ${base}`
-    : `no user-visible commits since ${base} — patch by default`
-  return { base, level, reason, version: semver.inc(base, level)! }
+  const reason = forced
+    ? `forced to ${forced} by the release-as input`
+    : derived
+      ? `derived ${derived} from ${cfg.commits.length} conventional commit(s) since ${base}`
+      : `no user-visible commits since ${base} — patch by default`
+  const reserved = maxReleaseVersion(
+    releaseVersionsForLine(cfg.reservedVersions ?? [], cfg.manifestVersion),
+  )
+  const candidate = semver.inc(base, level)!
+  const version =
+    reserved && semver.gte(reserved, candidate)
+      ? semver.inc(reserved, 'patch')!
+      : candidate
+  return { base, level, reason, version }
 }
