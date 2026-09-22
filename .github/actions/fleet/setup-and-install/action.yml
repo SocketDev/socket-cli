@@ -198,8 +198,7 @@ runs:
         set -euo pipefail
         if { [ -z "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -n "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; } || \
            { [ -n "${PAYLOAD_TOKEN_CLIENT_ID}" ] && [ -z "${PAYLOAD_TOKEN_PRIVATE_KEY}" ]; }; then
-          echo "::error title=fleet payload credentials are incomplete::The payload client variable and private-key secret are both required for dependency installation."
-          exit 1
+          echo "::warning title=fleet payload credentials incomplete::Ignoring the partial payload credential pair and using anonymous public GHCR hydration."
         fi
 
     - name: Mint fleet payload read token

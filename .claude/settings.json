@@ -9,7 +9,8 @@
     "DISABLE_TELEMETRY": "1",
     "DO_NOT_TRACK": "1",
     "NO_UPDATE_NOTIFIER": "1",
-    "OTEL_SDK_DISABLED": "true"
+    "OTEL_SDK_DISABLED": "true",
+    "SFW_TELEMETRY_DISABLED": "true"
   },
   "hooks": {
     "PostToolUse": [

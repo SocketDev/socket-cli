@@ -108,7 +108,7 @@
     "socket/no-promise-race-in-loop": "error",
     "socket/no-prose-jargon": "error",
     "socket/no-redundant-spread-fallback": "error",
-    "socket/no-required-in-options-bag": ["warn"],
+    "socket/no-required-in-options-bag": ["error"],
     "socket/no-runtime-features-below-engine-floor": "error",
     "socket/no-snapshot-hostile-builtin": "error",
     "socket/no-source-content-tests": "error",

@@ -23,7 +23,7 @@ export { createRunnerSwap, validateRunnerSwap } from './runner-swap-file.mts'
 
 const GIB = 1024 ** 3
 const RESOURCE_TARGET = 12 * GIB
-const DISK_HEADROOM = 8 * GIB
+const DISK_HEADROOM = 7 * GIB
 const CGROUP_CONTROLS = ['memory.max', 'memory.swap.max', 'memory.swap.current']
 
 type ReadResource = (path: string) => Promise<string | undefined>

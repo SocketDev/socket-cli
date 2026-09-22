@@ -136,7 +136,7 @@ const ADAPTERS = [
   },
 ]
 
-var require_runtime$3 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_runtime$5 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   /**
    * @file Runtime environment detection constants. All checks use only
@@ -179,7 +179,7 @@ var require_runtime$3 = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_fs$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const nodeFs = require_runtime$3().IS_NODE
+  const nodeFs = require_runtime$5().IS_NODE
     ? /*@__PURE__*/ __require('fs')
     : void 0
   function getNodeFs() {
@@ -202,7 +202,7 @@ var require_fs$1 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.getNodeFs = getNodeFs
 })
 
-var require_predicates$3 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_predicates$4 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   /**
    * @file Array type-guard predicates. Currently just a re-export of native
@@ -249,7 +249,7 @@ var require_predicates$3 = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_os = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const nodeOs = require_runtime$3().IS_NODE
+  const nodeOs = require_runtime$5().IS_NODE
     ? /*@__PURE__*/ __require('os')
     : void 0
   function getNodeOs() {
@@ -399,7 +399,7 @@ var require_platform = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_module = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_constants_runtime = require_runtime$3()
+  const require_constants_runtime = require_runtime$5()
   let module$1 = __require('module')
   /**
    * @file Accessors for `node:module` that work across runtimes. Ambient
@@ -518,7 +518,7 @@ var require_module = /* @__PURE__ */ __commonJSMin(exports => {
   exports.requireFrom = requireFrom
 })
 
-var require_detect = /* @__PURE__ */ __commonJSMin(exports => {
+var require_detect$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_node_module = require_module()
   /**
@@ -608,7 +608,7 @@ var require_uncurry = /* @__PURE__ */ __commonJSMin(exports => {
    *   destructured exports. See:
    *   https://github.com/SocketDev/socket-packageurl-js/issues/3.
    */
-  const smolUtil = require_detect().getSmolUtil()
+  const smolUtil = require_detect$1().getSmolUtil()
   const { apply, bind, call } = Function.prototype
   const uncurryThis = smolUtil?.uncurryThis ?? bind.bind(call)
   const applyBind = smolUtil?.applyBind ?? bind.bind(apply)
@@ -683,7 +683,7 @@ var require_primordial = /* @__PURE__ */ __commonJSMin(exports => {
   exports.getSmolPrimordial = getSmolPrimordial
 })
 
-var require_string$1 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_string$2 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_uncurry = require_uncurry()
   /**
@@ -871,7 +871,7 @@ var require_string$1 = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_url = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_constants_runtime = require_runtime$3()
+  const require_constants_runtime = require_runtime$5()
   let cachedUrl
   /**
    * @unused No internal or Socket consumers; exercised only by its unit tests.
@@ -947,10 +947,10 @@ var require_encoding = /* @__PURE__ */ __commonJSMin(exports => {
   exports.UTF8 = UTF8
 })
 
-var require_shared$3 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_shared$6 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_constants_platform = require_platform()
-  const require_primordials_string = require_string$1()
+  const require_primordials_string = require_string$2()
   const require_node_url = require_url()
   const require_primordials_buffer = require_buffer()
   const require_constants_encoding = require_encoding()
@@ -1306,7 +1306,7 @@ var require_shared$3 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.slashRegExp = slashRegExp
 })
 
-var require_object = /* @__PURE__ */ __commonJSMin(exports => {
+var require_object$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_uncurry = require_uncurry()
   /**
@@ -1405,10 +1405,10 @@ var require_object = /* @__PURE__ */ __commonJSMin(exports => {
   exports.ObjectValues = ObjectValues
 })
 
-var require_predicates$2 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_predicates$3 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_arrays_predicates = require_predicates$3()
-  const require_primordials_object = require_object()
+  const require_arrays_predicates = require_predicates$4()
+  const require_primordials_object = require_object$1()
   /**
    * @file Object type guards: `hasKeys`, `hasOwn`, `isObject`, `isPlainObject`.
    *   All four narrow `unknown` to a typed shape and tolerate `null` /
@@ -1528,7 +1528,7 @@ var require_predicates$2 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.isPlainObject = isPlainObject
 })
 
-var require_error$1 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_error$2 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   /**
    * @file Safe references to `Error` and its subclass constructors, plus V8's
@@ -1577,8 +1577,8 @@ var require_error$1 = /* @__PURE__ */ __commonJSMin(exports => {
 var require_map_set = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_uncurry = require_uncurry()
-  const require_primordials_object = require_object()
-  const require_primordials_error = require_error$1()
+  const require_primordials_object = require_object$1()
+  const require_primordials_error = require_error$2()
   /**
    * @file Safe references to `Map`, `Set`, `WeakMap`, `WeakSet`, and `WeakRef`.
    *   Constructors plus uncurried prototype methods. `WeakRef` exposes only its
@@ -1854,11 +1854,11 @@ var require_reflect = /* @__PURE__ */ __commonJSMin(exports => {
   exports.ReflectSetPrototypeOf = ReflectSetPrototypeOf
 })
 
-var require_mutate = /* @__PURE__ */ __commonJSMin(exports => {
+var require_mutate$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_arrays_predicates = require_predicates$3()
-  const require_objects_predicates = require_predicates$2()
-  const require_primordials_error = require_error$1()
+  const require_arrays_predicates = require_predicates$4()
+  const require_objects_predicates = require_predicates$3()
+  const require_primordials_error = require_error$2()
   const require_primordials_map_set = require_map_set()
   require_sentinels()
   const require_primordials_reflect = require_reflect()
@@ -1970,7 +1970,7 @@ var require_mutate = /* @__PURE__ */ __commonJSMin(exports => {
   exports.objectFreeze = objectFreeze
 })
 
-var require_array$2 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_array$3 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_uncurry = require_uncurry()
   /**
@@ -2190,11 +2190,11 @@ var require_array$2 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.Uint8ClampedArrayCtor = Uint8ClampedArrayCtor
 })
 
-var require_predicates$1 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_predicates$2 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_object = require_object()
-  const require_primordials_error = require_error$1()
-  const require_primordials_string = require_string$1()
+  const require_primordials_object = require_object$1()
+  const require_primordials_error = require_error$2()
+  const require_primordials_string = require_string$2()
   /**
    * @file Error type-guard predicates — `isError` (with the `isErrorBuiltin` /
    *   `isErrorShim` building blocks) and the libuv errno-code narrower
@@ -2427,9 +2427,9 @@ var require_abort = /* @__PURE__ */ __commonJSMin(exports => {
   exports.getAbortSignal = getAbortSignal
 })
 
-var require_shared$2 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_shared$5 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_constants_runtime = require_runtime$3()
+  const require_constants_runtime = require_runtime$5()
   const require_process_abort = require_abort()
   /**
    * Get the timers/promises module. Uses a lazy `require` rather than a
@@ -2602,7 +2602,7 @@ var require_retry = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   require_sentinels()
   const require_primordials_math = require_math()
-  const require_promises_shared = require_shared$2()
+  const require_promises_shared = require_shared$5()
   const require_promises_options = require_options$1()
   /**
    * @file `pRetry` — exponential-backoff retry with optional jitter,
@@ -2784,9 +2784,9 @@ var require_retry = /* @__PURE__ */ __commonJSMin(exports => {
   exports.pRetry = pRetry
 })
 
-var require_path$1 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_path$2 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const nodePath = require_runtime$3().IS_NODE
+  const nodePath = require_runtime$5().IS_NODE
     ? /*@__PURE__*/ __require('path')
     : void 0
   function getNodePath() {
@@ -2873,7 +2873,7 @@ var require_socket$2 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.SOCKET_WEBSITE_URL = SOCKET_WEBSITE_URL
 })
 
-var require_boolean = /* @__PURE__ */ __commonJSMin(exports => {
+var require_boolean$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   /**
    * Convert an environment variable value to a boolean.
@@ -2916,7 +2916,7 @@ var require_boolean = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_async_hooks = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_constants_runtime = require_runtime$3()
+  const require_constants_runtime = require_runtime$5()
   let asyncHooks
   function getNodeAsyncHooks() {
     if (!require_constants_runtime.IS_NODE) return
@@ -2928,10 +2928,10 @@ var require_async_hooks = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_rewire$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_constants_runtime = require_runtime$3()
-  const require_primordials_object = require_object()
-  const require_objects_predicates = require_predicates$2()
-  const require_env_boolean = require_boolean()
+  const require_constants_runtime = require_runtime$5()
+  const require_primordials_object = require_object$1()
+  const require_objects_predicates = require_predicates$3()
+  const require_env_boolean = require_boolean$1()
   const require_node_async_hooks = require_async_hooks()
   const require_primordials_map_set = require_map_set()
   let isolatedOverridesStorage
@@ -3235,7 +3235,7 @@ var require_home = /* @__PURE__ */ __commonJSMin(exports => {
   exports.getHome = getHome
 })
 
-var require_number$1 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_number$2 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_uncurry = require_uncurry()
   /**
@@ -3306,9 +3306,9 @@ var require_number$1 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.smolNumberParseInt = smolNumberParseInt
 })
 
-var require_number = /* @__PURE__ */ __commonJSMin(exports => {
+var require_number$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_number = require_number$1()
+  const require_primordials_number = require_number$2()
   /**
    * @file `envAsNumber` — coerce an env-var-shaped value into a number. `mode:
    *   'int'` uses `parseInt(_, 10)`; `mode: 'float'` uses `Number()`.
@@ -3366,8 +3366,8 @@ var require_number = /* @__PURE__ */ __commonJSMin(exports => {
 var require_socket_mcp = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_env_rewire = require_rewire$1()
-  const require_primordials_number = require_number$1()
-  const require_env_number = require_number()
+  const require_primordials_number = require_number$2()
+  const require_env_number = require_number$1()
   /**
    * @file Socket MCP HTTP server environment variable getters. Covers the MCP
    *   transport (HTTP mode, port) and the OAuth credentials / proxy-trust
@@ -3525,9 +3525,9 @@ var require_socket_mcp = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_socket$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_env_boolean = require_boolean()
+  const require_env_boolean = require_boolean$1()
   const require_env_rewire = require_rewire$1()
-  const require_env_number = require_number()
+  const require_env_number = require_number$1()
   const require_env_socket_mcp = require_socket_mcp()
   /**
    * @file Socket Security environment variable getters.
@@ -3984,8 +3984,8 @@ var require_socket$1 = /* @__PURE__ */ __commonJSMin(exports => {
 var require_windows = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_env_rewire = require_rewire$1()
-  const require_node_path = require_path$1()
-  const require_paths_shared = require_shared$3()
+  const require_node_path = require_path$2()
+  const require_paths_shared = require_shared$6()
   /**
    * @file Windows environment variable getters. Provides access to
    *   Windows-specific user directory paths.
@@ -4343,8 +4343,8 @@ var require_socket = /* @__PURE__ */ __commonJSMin(exports => {
   const require_constants_socket = require_socket$2()
   const require_env_home = require_home()
   const require_env_socket = require_socket$1()
-  const require_node_path = require_path$1()
-  const require_paths_shared = require_shared$3()
+  const require_node_path = require_path$2()
+  const require_paths_shared = require_shared$6()
   const require_env_windows = require_windows()
   const require_env_xdg = require_xdg()
   const require_paths_dirnames = require_dirnames()
@@ -4736,10 +4736,10 @@ var require_socket = /* @__PURE__ */ __commonJSMin(exports => {
   exports.getUserHomeDir = getUserHomeDir
 })
 
-var require_shared$1 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_shared$4 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_node_fs = require_fs$1()
-  const require_node_path = require_path$1()
+  const require_node_path = require_path$2()
   const require_paths_socket = require_socket()
   /**
    * @file Private state shared between `fs/safe` and `fs/path-cache`. The
@@ -4962,7 +4962,7 @@ var require_process$1 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.processVersion = processVersion
 })
 
-var require_promise = /* @__PURE__ */ __commonJSMin(exports => {
+var require_promise$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_uncurry = require_uncurry()
   /**
@@ -5115,8 +5115,8 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
   node_fs_promises = __toESM(node_fs_promises, 1)
   let node_path$1 = __require('path')
   node_path$1 = __toESM(node_path$1, 1)
-  let node_process$1 = __require('process')
-  node_process$1 = __toESM(node_process$1, 1)
+  let node_process$2 = __require('process')
+  node_process$2 = __toESM(node_process$2, 1)
   let node_stream = __require('stream')
   let node_events = __require('events')
   let node_stream_promises = __require('stream/promises')
@@ -5129,14 +5129,14 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     ArrayPrototypeFlat: _p_ArrayPrototypeFlat,
     ArrayPrototypeFlatMap: _p_ArrayPrototypeFlatMap,
     ArrayPrototypeUnshift: _p_ArrayPrototypeUnshift,
-  } = require_array$2()
+  } = require_array$3()
   const {
     AggregateErrorCtor: _p_AggregateErrorCtor,
     ErrorCtor: _p_ErrorCtor,
     RangeErrorCtor: _p_RangeErrorCtor,
     SyntaxErrorCtor: _p_SyntaxErrorCtor,
     TypeErrorCtor: _p_TypeErrorCtor,
-  } = require_error$1()
+  } = require_error$2()
   const {
     MapCtor: _p_MapCtor,
     SetCtor: _p_SetCtor,
@@ -5153,13 +5153,13 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     NumberIsInteger: _p_NumberIsInteger,
     NumberIsSafeInteger: _p_NumberIsSafeInteger,
     NumberParseInt: _p_NumberParseInt,
-  } = require_number$1()
+  } = require_number$2()
   const {
     ObjectAssign: _p_ObjectAssign,
     ObjectCreate: _p_ObjectCreate,
     ObjectDefineProperty: _p_ObjectDefineProperty,
     ObjectKeys: _p_ObjectKeys,
-  } = require_object()
+  } = require_object$1()
   const { processCwd: _p_processCwd, processNextTick: _p_processNextTick } =
     require_process$1()
   const {
@@ -5167,7 +5167,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     PromiseCtor: _p_PromiseCtor,
     PromiseRace: _p_PromiseRace,
     PromiseResolve: _p_PromiseResolve,
-  } = require_promise()
+  } = require_promise$1()
   const { RegExpCtor: _p_RegExpCtor } = require_regexp()
   const {
     StringFromCharCode: _p_StringFromCharCode,
@@ -5181,10 +5181,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     StringPrototypeStartsWith: _p_StringPrototypeStartsWith,
     StringPrototypeToLowerCase: _p_StringPrototypeToLowerCase,
     StringPrototypeTrim: _p_StringPrototypeTrim,
-  } = require_string$1()
+  } = require_string$2()
   node_os$1 = __toESM(node_os$1, 1)
   var require_constants$2 = /* @__PURE__ */ __commonJSMin(
-    (exports$14, module$13) => {
+    (exports$222, module$17) => {
       const WIN_SLASH = '\\\\/'
       const WIN_NO_SLASH = `[^${WIN_SLASH}]`
       const DEFAULT_MAX_EXTGLOB_RECURSION = 0
@@ -5236,7 +5236,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         END_ANCHOR: `(?:[${WIN_SLASH}]|$)`,
         SEP: '\\',
       }
-      module$13.exports = {
+      module$17.exports = {
         DEFAULT_MAX_EXTGLOB_RECURSION,
         MAX_LENGTH: 65536,
         POSIX_REGEX_SOURCE: {
@@ -5352,22 +5352,22 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
     },
   )
-  var require_utils$3 = /* @__PURE__ */ __commonJSMin(exports$15 => {
+  var require_utils$3 = /* @__PURE__ */ __commonJSMin(exports$223 => {
     const {
       REGEX_BACKSLASH,
       REGEX_REMOVE_BACKSLASH,
       REGEX_SPECIAL_CHARS,
       REGEX_SPECIAL_CHARS_GLOBAL,
     } = require_constants$2()
-    exports$15.isObject = val =>
+    exports$223.isObject = val =>
       val !== null && typeof val === 'object' && !_p_ArrayIsArray(val)
-    exports$15.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str)
-    exports$15.isRegexChar = str =>
-      str.length === 1 && exports$15.hasRegexChars(str)
-    exports$15.escapeRegex = str =>
+    exports$223.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str)
+    exports$223.isRegexChar = str =>
+      str.length === 1 && exports$223.hasRegexChars(str)
+    exports$223.escapeRegex = str =>
       str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1')
-    exports$15.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/')
-    exports$15.isWindows = () => {
+    exports$223.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/')
+    exports$223.isWindows = () => {
       if (typeof navigator !== 'undefined' && navigator.platform) {
         const platform = navigator.platform.toLowerCase()
         return platform === 'win32' || platform === 'windows'
@@ -5376,19 +5376,19 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return process.platform === 'win32'
       return false
     }
-    exports$15.removeBackslashes = str => {
+    exports$223.removeBackslashes = str => {
       return str.replace(REGEX_REMOVE_BACKSLASH, match => {
         return match === '\\' ? '' : match
       })
     }
-    exports$15.escapeLast = (input, char, lastIdx) => {
+    exports$223.escapeLast = (input, char, lastIdx) => {
       const idx = input.lastIndexOf(char, lastIdx)
       if (idx === -1) return input
       if (input[idx - 1] === '\\')
-        return exports$15.escapeLast(input, char, idx - 1)
+        return exports$223.escapeLast(input, char, idx - 1)
       return `${input.slice(0, idx)}\\${input.slice(idx)}`
     }
-    exports$15.removePrefix = (input, state = {}) => {
+    exports$223.removePrefix = (input, state = {}) => {
       let output = input
       if (_p_StringPrototypeStartsWith(output, './')) {
         output = output.slice(2)
@@ -5396,19 +5396,19 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       return output
     }
-    exports$15.wrapOutput = (input, state = {}, options = {}) => {
+    exports$223.wrapOutput = (input, state = {}, options = {}) => {
       let output = `${options.contains ? '' : '^'}(?:${input})${options.contains ? '' : '$'}`
       if (state.negated === true) output = `(?:^(?!${output}).*$)`
       return output
     }
-    exports$15.basename = (path, { windows } = {}) => {
+    exports$223.basename = (path, { windows } = {}) => {
       const segs = path.split(windows ? /[\\/]/ : '/')
       const last = segs[segs.length - 1]
       if (last === '') return segs[segs.length - 2]
       return last
     }
   })
-  var require_scan = /* @__PURE__ */ __commonJSMin((exports$16, module$14) => {
+  var require_scan = /* @__PURE__ */ __commonJSMin((exports$224, module$18) => {
     const utils = require_utils$3()
     const {
       CHAR_ASTERISK,
@@ -5741,10 +5741,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       return state
     }
-    module$14.exports = scan
+    module$18.exports = scan
   })
   var require_parse$1 = /* @__PURE__ */ __commonJSMin(
-    (exports$17, module$15) => {
+    (exports$225, module$19) => {
       const constants = require_constants$2()
       const utils = require_utils$3()
       /**
@@ -7033,11 +7033,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         if (source && opts.strictSlashes !== true) source += `${SLASH_LITERAL}?`
         return source
       }
-      module$15.exports = parse
+      module$19.exports = parse
     },
   )
   var require_picomatch$1 = /* @__PURE__ */ __commonJSMin(
-    (exports$18, module$16) => {
+    (exports$226, module$20) => {
       const scan = require_scan()
       const parse = require_parse$1()
       const utils = require_utils$3()
@@ -7428,11 +7428,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       /**
        * Expose "picomatch"
        */
-      module$16.exports = picomatch
+      module$20.exports = picomatch
     },
   )
-  var require_picomatch = /* @__PURE__ */ __commonJSMin(
-    (exports$19, module$17) => {
+  var require_picomatch$1 = /* @__PURE__ */ __commonJSMin(
+    (exports$227, module$21) => {
       const pico = require_picomatch$1()
       const utils = require_utils$3()
       function picomatch(glob, options, returnState = false) {
@@ -7444,7 +7444,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return pico(glob, options, returnState)
       }
       _p_ObjectAssign(picomatch, pico)
-      module$17.exports = picomatch
+      module$21.exports = picomatch
     },
   )
   function mergeStreams(streams) {
@@ -7695,13 +7695,13 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     PASSTHROUGH_LISTENERS_COUNT = 2
     PASSTHROUGH_LISTENERS_PER_STREAM = 1
   })
-  var require_array$1 = /* @__PURE__ */ __commonJSMin(exports$20 => {
-    _p_ObjectDefineProperty(exports$20, '__esModule', { value: true })
-    exports$20.splitWhen = exports$20.flatten = void 0
+  var require_array$2 = /* @__PURE__ */ __commonJSMin(exports$228 => {
+    _p_ObjectDefineProperty(exports$228, '__esModule', { value: true })
+    exports$228.splitWhen = exports$228.flatten = void 0
     function flatten(items) {
       return items.reduce((collection, item) => [].concat(collection, item), [])
     }
-    exports$20.flatten = flatten
+    exports$228.flatten = flatten
     function splitWhen(items, predicate) {
       const result = [[]]
       let groupIndex = 0
@@ -7712,19 +7712,19 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         } else result[groupIndex].push(item)
       return result
     }
-    exports$20.splitWhen = splitWhen
+    exports$228.splitWhen = splitWhen
   })
-  var require_errno = /* @__PURE__ */ __commonJSMin(exports$21 => {
-    _p_ObjectDefineProperty(exports$21, '__esModule', { value: true })
-    exports$21.isEnoentCodeError = void 0
+  var require_errno = /* @__PURE__ */ __commonJSMin(exports$229 => {
+    _p_ObjectDefineProperty(exports$229, '__esModule', { value: true })
+    exports$229.isEnoentCodeError = void 0
     function isEnoentCodeError(error) {
       return error.code === 'ENOENT'
     }
-    exports$21.isEnoentCodeError = isEnoentCodeError
+    exports$229.isEnoentCodeError = isEnoentCodeError
   })
-  var require_fs$3 = /* @__PURE__ */ __commonJSMin(exports$22 => {
-    _p_ObjectDefineProperty(exports$22, '__esModule', { value: true })
-    exports$22.createDirentFromStats = void 0
+  var require_fs$3 = /* @__PURE__ */ __commonJSMin(exports$230 => {
+    _p_ObjectDefineProperty(exports$230, '__esModule', { value: true })
+    exports$230.createDirentFromStats = void 0
     var DirentFromStats = class {
       constructor(name, stats) {
         this.name = name
@@ -7740,19 +7740,19 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     function createDirentFromStats(name, stats) {
       return new DirentFromStats(name, stats)
     }
-    exports$22.createDirentFromStats = createDirentFromStats
+    exports$230.createDirentFromStats = createDirentFromStats
   })
-  var require_path = /* @__PURE__ */ __commonJSMin(exports$23 => {
-    _p_ObjectDefineProperty(exports$23, '__esModule', { value: true })
-    exports$23.convertPosixPathToPattern =
-      exports$23.convertWindowsPathToPattern =
-      exports$23.convertPathToPattern =
-      exports$23.escapePosixPath =
-      exports$23.escapeWindowsPath =
-      exports$23.escape =
-      exports$23.removeLeadingDotSegment =
-      exports$23.makeAbsolute =
-      exports$23.unixify =
+  var require_path$1 = /* @__PURE__ */ __commonJSMin(exports$231 => {
+    _p_ObjectDefineProperty(exports$231, '__esModule', { value: true })
+    exports$231.convertPosixPathToPattern =
+      exports$231.convertWindowsPathToPattern =
+      exports$231.convertPathToPattern =
+      exports$231.escapePosixPath =
+      exports$231.escapeWindowsPath =
+      exports$231.escape =
+      exports$231.removeLeadingDotSegment =
+      exports$231.makeAbsolute =
+      exports$231.unixify =
         void 0
     const os$2 = __require('os')
     const path$11 = __require('path')
@@ -7783,11 +7783,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     function unixify(filepath) {
       return filepath.replace(/\\/g, '/')
     }
-    exports$23.unixify = unixify
+    exports$231.unixify = unixify
     function makeAbsolute(cwd, filepath) {
       return path$11.resolve(cwd, filepath)
     }
-    exports$23.makeAbsolute = makeAbsolute
+    exports$231.makeAbsolute = makeAbsolute
     function removeLeadingDotSegment(entry) {
       if (_p_StringPrototypeCharAt(entry, 0) === '.') {
         const secondCharactery = _p_StringPrototypeCharAt(entry, 1)
@@ -7796,19 +7796,19 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       return entry
     }
-    exports$23.removeLeadingDotSegment = removeLeadingDotSegment
-    exports$23.escape = IS_WINDOWS_PLATFORM
+    exports$231.removeLeadingDotSegment = removeLeadingDotSegment
+    exports$231.escape = IS_WINDOWS_PLATFORM
       ? escapeWindowsPath
       : escapePosixPath
     function escapeWindowsPath(pattern) {
       return pattern.replace(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2')
     }
-    exports$23.escapeWindowsPath = escapeWindowsPath
+    exports$231.escapeWindowsPath = escapeWindowsPath
     function escapePosixPath(pattern) {
       return pattern.replace(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2')
     }
-    exports$23.escapePosixPath = escapePosixPath
-    exports$23.convertPathToPattern = IS_WINDOWS_PLATFORM
+    exports$231.escapePosixPath = escapePosixPath
+    exports$231.convertPathToPattern = IS_WINDOWS_PLATFORM
       ? convertWindowsPathToPattern
       : convertPosixPathToPattern
     function convertWindowsPathToPattern(filepath) {
@@ -7816,21 +7816,21 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         .replace(DOS_DEVICE_PATH_RE, '//$1')
         .replace(WINDOWS_BACKSLASHES_RE, '/')
     }
-    exports$23.convertWindowsPathToPattern = convertWindowsPathToPattern
+    exports$231.convertWindowsPathToPattern = convertWindowsPathToPattern
     function convertPosixPathToPattern(filepath) {
       return escapePosixPath(filepath)
     }
-    exports$23.convertPosixPathToPattern = convertPosixPathToPattern
+    exports$231.convertPosixPathToPattern = convertPosixPathToPattern
   })
   var require_is_extglob = /* @__PURE__ */ __commonJSMin(
-    (exports$24, module$18) => {
+    (exports$232, module$22) => {
       /*!
        * is-extglob <https://github.com/jonschlinkert/is-extglob>
        *
        * Copyright (c) 2014-2016, Jon Schlinkert.
        * Licensed under the MIT License.
        */
-      module$18.exports = function isExtglob(str) {
+      module$22.exports = function isExtglob(str) {
         if (typeof str !== 'string' || str === '') return false
         var match
         while ((match = /(\\).|([@?!+*]\(.*\))/g.exec(str))) {
@@ -7842,7 +7842,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     },
   )
   var require_is_glob = /* @__PURE__ */ __commonJSMin(
-    (exports$25, module$19) => {
+    (exports$233, module$23) => {
       /*!
        * is-glob <https://github.com/jonschlinkert/is-glob>
        *
@@ -7953,7 +7953,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         }
         return false
       }
-      module$19.exports = function isGlob(str, options) {
+      module$23.exports = function isGlob(str, options) {
         if (typeof str !== 'string' || str === '') return false
         if (isExtglob(str)) return true
         var check = strictCheck
@@ -7963,7 +7963,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     },
   )
   var require_glob_parent = /* @__PURE__ */ __commonJSMin(
-    (exports$26, module$20) => {
+    (exports$234, module$24) => {
       var isGlob = require_is_glob()
       var pathPosixDirname = __require('path').posix.dirname
       var isWin32 = __require('os').platform() === 'win32'
@@ -7979,7 +7979,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
        *
        * @returns {string}
        */
-      module$20.exports = function globParent(str, opts) {
+      module$24.exports = function globParent(str, opts) {
         if (
           _p_ObjectAssign({ flipBackslashes: true }, opts).flipBackslashes &&
           isWin32 &&
@@ -7994,8 +7994,8 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
     },
   )
-  var require_utils$2 = /* @__PURE__ */ __commonJSMin(exports$27 => {
-    exports$27.isInteger = num => {
+  var require_utils$2 = /* @__PURE__ */ __commonJSMin(exports$235 => {
+    exports$235.isInteger = num => {
       if (typeof num === 'number') return _p_NumberIsInteger(num)
       if (typeof num === 'string' && _p_StringPrototypeTrim(num) !== '')
         return _p_NumberIsInteger(Number(num))
@@ -8004,20 +8004,21 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     /**
      * Find a node of the given type.
      */
-    exports$27.find = (node, type) =>
+    exports$235.find = (node, type) =>
       node.nodes.find(node => node.type === type)
     /**
      * Find a node of the given type.
      */
-    exports$27.exceedsLimit = (min, max, step = 1, limit) => {
+    exports$235.exceedsLimit = (min, max, step = 1, limit) => {
       if (limit === false) return false
-      if (!exports$27.isInteger(min) || !exports$27.isInteger(max)) return false
+      if (!exports$235.isInteger(min) || !exports$235.isInteger(max))
+        return false
       return (Number(max) - Number(min)) / Number(step) >= limit
     }
     /**
      * Escape the given node with '' before node.value.
      */
-    exports$27.escapeNode = (block, n = 0, type) => {
+    exports$235.escapeNode = (block, n = 0, type) => {
       const node = block.nodes[n]
       if (!node) return
       if (
@@ -8035,7 +8036,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
      * Returns true if the given brace node should be enclosed in literal
      * braces.
      */
-    exports$27.encloseBrace = node => {
+    exports$235.encloseBrace = node => {
       if (node.type !== 'brace') return false
       if ((node.commas >> (0 + node.ranges)) >> 0 === 0) {
         node.invalid = true
@@ -8046,7 +8047,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     /**
      * Returns true if a brace node is invalid.
      */
-    exports$27.isInvalidBrace = block => {
+    exports$235.isInvalidBrace = block => {
       if (block.type !== 'brace') return false
       if (block.invalid === true || block.dollar) return true
       if ((block.commas >> (0 + block.ranges)) >> 0 === 0) {
@@ -8062,14 +8063,14 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     /**
      * Returns true if a node is an open or close node.
      */
-    exports$27.isOpenOrClose = node => {
+    exports$235.isOpenOrClose = node => {
       if (node.type === 'open' || node.type === 'close') return true
       return node.open === true || node.close === true
     }
     /**
      * Reduce an array of text nodes.
      */
-    exports$27.reduce = nodes =>
+    exports$235.reduce = nodes =>
       nodes.reduce((acc, node) => {
         if (node.type === 'text') acc.push(node.value)
         if (node.type === 'range') node.type = 'text'
@@ -8078,7 +8079,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     /**
      * Flatten an array.
      */
-    exports$27.flatten = (...args) => {
+    exports$235.flatten = (...args) => {
       const result = []
       const flat = arr => {
         for (let i = 0; i < arr.length; i++) {
@@ -8096,9 +8097,9 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     }
   })
   var require_stringify = /* @__PURE__ */ __commonJSMin(
-    (exports$28, module$21) => {
+    (exports$236, module$25) => {
       const utils = require_utils$2()
-      module$21.exports = (ast, options = {}) => {
+      module$25.exports = (ast, options = {}) => {
         const stringify = (node, parent = {}) => {
           const invalidBlock =
             options.escapeInvalid && utils.isInvalidBrace(parent)
@@ -8126,8 +8127,8 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
    * Released under the MIT License.
    */
   var require_is_number = /* @__PURE__ */ __commonJSMin(
-    (exports$29, module$22) => {
-      module$22.exports = function (num) {
+    (exports$237, module$26) => {
+      module$26.exports = function (num) {
         if (typeof num === 'number') return num - num === 0
         if (typeof num === 'string' && _p_StringPrototypeTrim(num) !== '')
           return Number.isFinite ? _p_NumberIsFinite(+num) : isFinite(+num)
@@ -8142,7 +8143,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
    * Released under the MIT License.
    */
   var require_to_regex_range = /* @__PURE__ */ __commonJSMin(
-    (exports$30, module$23) => {
+    (exports$238, module$27) => {
       const isNumber = require_is_number()
       const toRegexRange = (min, max, options) => {
         if (isNumber(min) === false)
@@ -8356,7 +8357,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       /**
        * Expose `toRegexRange`
        */
-      module$23.exports = toRegexRange
+      module$27.exports = toRegexRange
     },
   )
   /*!
@@ -8366,7 +8367,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
    * Licensed under the MIT License.
    */
   var require_fill_range = /* @__PURE__ */ __commonJSMin(
-    (exports$31, module$24) => {
+    (exports$239, module$28) => {
       const util$1 = __require('util')
       const toRegexRange = require_to_regex_range()
       const isObject = val =>
@@ -8564,11 +8565,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
           return fillNumbers(start, end, step, opts)
         return fillLetters(start, end, _p_MathMax(_p_MathAbs(step), 1), opts)
       }
-      module$24.exports = fill
+      module$28.exports = fill
     },
   )
   var require_compile = /* @__PURE__ */ __commonJSMin(
-    (exports$32, module$25) => {
+    (exports$240, module$29) => {
       const fill = require_fill_range()
       const utils = require_utils$2()
       const compile = (ast, options = {}) => {
@@ -8606,11 +8607,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         }
         return walk(ast)
       }
-      module$25.exports = compile
+      module$29.exports = compile
     },
   )
   var require_expand = /* @__PURE__ */ __commonJSMin(
-    (exports$33, module$26) => {
+    (exports$241, module$30) => {
       const fill = require_fill_range()
       const stringify = require_stringify()
       const utils = require_utils$2()
@@ -8700,12 +8701,12 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         }
         return utils.flatten(walk(ast))
       }
-      module$26.exports = expand
+      module$30.exports = expand
     },
   )
   var require_constants$1 = /* @__PURE__ */ __commonJSMin(
-    (exports$34, module$27) => {
-      module$27.exports = {
+    (exports$242, module$31) => {
+      module$31.exports = {
         MAX_LENGTH: 1e4,
         CHAR_0: '0',
         CHAR_9: '9',
@@ -8754,333 +8755,335 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
     },
   )
-  var require_parse = /* @__PURE__ */ __commonJSMin((exports$35, module$28) => {
-    const stringify = require_stringify()
-    /**
-     * Constants.
-     */
-    const {
-      MAX_LENGTH,
-      CHAR_BACKSLASH,
-      CHAR_BACKTICK,
-      CHAR_COMMA,
-      CHAR_DOT,
-      CHAR_LEFT_PARENTHESES,
-      CHAR_RIGHT_PARENTHESES,
-      CHAR_LEFT_CURLY_BRACE,
-      CHAR_RIGHT_CURLY_BRACE,
-      CHAR_LEFT_SQUARE_BRACKET,
-      CHAR_RIGHT_SQUARE_BRACKET,
-      CHAR_DOUBLE_QUOTE,
-      CHAR_SINGLE_QUOTE,
-      CHAR_NO_BREAK_SPACE,
-      CHAR_ZERO_WIDTH_NOBREAK_SPACE,
-    } = require_constants$1()
-    /**
-     * Parse.
-     */
-    const parse = (input, options = {}) => {
-      if (typeof input !== 'string')
-        throw new _p_TypeErrorCtor('Expected a string')
-      const opts = options || {}
-      const max =
-        typeof opts.maxLength === 'number'
-          ? _p_MathMin(MAX_LENGTH, opts.maxLength)
-          : MAX_LENGTH
-      if (input.length > max)
-        throw new _p_SyntaxErrorCtor(
-          `Input length (${input.length}), exceeds max characters (${max})`,
-        )
-      const ast = {
-        type: 'root',
-        input,
-        nodes: [],
-      }
-      const stack = [ast]
-      let block = ast
-      let prev = ast
-      let brackets = 0
-      const length = input.length
-      let index = 0
-      let depth = 0
-      let value
+  var require_parse$2 = /* @__PURE__ */ __commonJSMin(
+    (exports$243, module$32) => {
+      const stringify = require_stringify()
       /**
-       * Helpers.
+       * Constants.
        */
-      const advance = () => input[index++]
-      const push = node => {
-        if (node.type === 'text' && prev.type === 'dot') prev.type = 'text'
-        if (prev && prev.type === 'text' && node.type === 'text') {
-          prev.value += node.value
-          return
+      const {
+        MAX_LENGTH,
+        CHAR_BACKSLASH,
+        CHAR_BACKTICK,
+        CHAR_COMMA,
+        CHAR_DOT,
+        CHAR_LEFT_PARENTHESES,
+        CHAR_RIGHT_PARENTHESES,
+        CHAR_LEFT_CURLY_BRACE,
+        CHAR_RIGHT_CURLY_BRACE,
+        CHAR_LEFT_SQUARE_BRACKET,
+        CHAR_RIGHT_SQUARE_BRACKET,
+        CHAR_DOUBLE_QUOTE,
+        CHAR_SINGLE_QUOTE,
+        CHAR_NO_BREAK_SPACE,
+        CHAR_ZERO_WIDTH_NOBREAK_SPACE,
+      } = require_constants$1()
+      /**
+       * Parse.
+       */
+      const parse = (input, options = {}) => {
+        if (typeof input !== 'string')
+          throw new _p_TypeErrorCtor('Expected a string')
+        const opts = options || {}
+        const max =
+          typeof opts.maxLength === 'number'
+            ? _p_MathMin(MAX_LENGTH, opts.maxLength)
+            : MAX_LENGTH
+        if (input.length > max)
+          throw new _p_SyntaxErrorCtor(
+            `Input length (${input.length}), exceeds max characters (${max})`,
+          )
+        const ast = {
+          type: 'root',
+          input,
+          nodes: [],
         }
-        block.nodes.push(node)
-        node.parent = block
-        node.prev = prev
-        prev = node
-        return node
-      }
-      push({ type: 'bos' })
-      while (index < length) {
-        block = stack[stack.length - 1]
-        value = advance()
+        const stack = [ast]
+        let block = ast
+        let prev = ast
+        let brackets = 0
+        const length = input.length
+        let index = 0
+        let depth = 0
+        let value
         /**
-         * Invalid chars.
+         * Helpers.
          */
-        if (
-          value === CHAR_ZERO_WIDTH_NOBREAK_SPACE ||
-          value === CHAR_NO_BREAK_SPACE
-        )
-          continue
-        /**
-         * Escaped chars.
-         */
-        if (value === CHAR_BACKSLASH) {
-          push({
-            type: 'text',
-            value: (options.keepEscaping ? value : '') + advance(),
-          })
-          continue
-        }
-        /**
-         * Right square bracket (literal): ']'
-         */
-        if (value === CHAR_RIGHT_SQUARE_BRACKET) {
-          push({
-            type: 'text',
-            value: '\\' + value,
-          })
-          continue
-        }
-        /**
-         * Left square bracket: '['
-         */
-        if (value === CHAR_LEFT_SQUARE_BRACKET) {
-          brackets++
-          let next
-          while (index < length && (next = advance())) {
-            value += next
-            if (next === CHAR_LEFT_SQUARE_BRACKET) {
-              brackets++
-              continue
-            }
-            if (next === CHAR_BACKSLASH) {
-              value += advance()
-              continue
-            }
-            if (next === CHAR_RIGHT_SQUARE_BRACKET) {
-              brackets--
-              if (brackets === 0) break
-            }
+        const advance = () => input[index++]
+        const push = node => {
+          if (node.type === 'text' && prev.type === 'dot') prev.type = 'text'
+          if (prev && prev.type === 'text' && node.type === 'text') {
+            prev.value += node.value
+            return
           }
-          push({
-            type: 'text',
-            value,
-          })
-          continue
+          block.nodes.push(node)
+          node.parent = block
+          node.prev = prev
+          prev = node
+          return node
         }
-        /**
-         * Parentheses.
-         */
-        if (value === CHAR_LEFT_PARENTHESES) {
-          block = push({
-            type: 'paren',
-            nodes: [],
-          })
-          stack.push(block)
-          push({
-            type: 'text',
-            value,
-          })
-          continue
-        }
-        if (value === CHAR_RIGHT_PARENTHESES) {
-          if (block.type !== 'paren') {
+        push({ type: 'bos' })
+        while (index < length) {
+          block = stack[stack.length - 1]
+          value = advance()
+          /**
+           * Invalid chars.
+           */
+          if (
+            value === CHAR_ZERO_WIDTH_NOBREAK_SPACE ||
+            value === CHAR_NO_BREAK_SPACE
+          )
+            continue
+          /**
+           * Escaped chars.
+           */
+          if (value === CHAR_BACKSLASH) {
+            push({
+              type: 'text',
+              value: (options.keepEscaping ? value : '') + advance(),
+            })
+            continue
+          }
+          /**
+           * Right square bracket (literal): ']'
+           */
+          if (value === CHAR_RIGHT_SQUARE_BRACKET) {
+            push({
+              type: 'text',
+              value: '\\' + value,
+            })
+            continue
+          }
+          /**
+           * Left square bracket: '['
+           */
+          if (value === CHAR_LEFT_SQUARE_BRACKET) {
+            brackets++
+            let next
+            while (index < length && (next = advance())) {
+              value += next
+              if (next === CHAR_LEFT_SQUARE_BRACKET) {
+                brackets++
+                continue
+              }
+              if (next === CHAR_BACKSLASH) {
+                value += advance()
+                continue
+              }
+              if (next === CHAR_RIGHT_SQUARE_BRACKET) {
+                brackets--
+                if (brackets === 0) break
+              }
+            }
             push({
               type: 'text',
               value,
             })
             continue
           }
-          block = stack.pop()
-          push({
-            type: 'text',
-            value,
-          })
-          block = stack[stack.length - 1]
-          continue
-        }
-        /**
-         * Quotes: '|"|`
-         */
-        if (
-          value === CHAR_DOUBLE_QUOTE ||
-          value === CHAR_SINGLE_QUOTE ||
-          value === CHAR_BACKTICK
-        ) {
-          const open = value
-          let next
-          if (options.keepQuotes !== true) value = ''
-          while (index < length && (next = advance())) {
-            if (next === CHAR_BACKSLASH) {
-              value += next + advance()
-              continue
-            }
-            if (next === open) {
-              if (options.keepQuotes === true) value += next
-              break
-            }
-            value += next
-          }
-          push({
-            type: 'text',
-            value,
-          })
-          continue
-        }
-        /**
-         * Left curly brace: '{'
-         */
-        if (value === CHAR_LEFT_CURLY_BRACE) {
-          depth++
-          block = push({
-            type: 'brace',
-            open: true,
-            close: false,
-            dollar:
-              (prev.value && prev.value.slice(-1) === '$') ||
-              block.dollar === true,
-            depth,
-            commas: 0,
-            ranges: 0,
-            nodes: [],
-          })
-          stack.push(block)
-          push({
-            type: 'open',
-            value,
-          })
-          continue
-        }
-        /**
-         * Right curly brace: '}'
-         */
-        if (value === CHAR_RIGHT_CURLY_BRACE) {
-          if (block.type !== 'brace') {
+          /**
+           * Parentheses.
+           */
+          if (value === CHAR_LEFT_PARENTHESES) {
+            block = push({
+              type: 'paren',
+              nodes: [],
+            })
+            stack.push(block)
             push({
               type: 'text',
               value,
             })
             continue
           }
-          const type = 'close'
-          block = stack.pop()
-          block.close = true
-          push({
-            type,
-            value,
-          })
-          depth--
-          block = stack[stack.length - 1]
-          continue
-        }
-        /**
-         * Comma: ','
-         */
-        if (value === CHAR_COMMA && depth > 0) {
-          if (block.ranges > 0) {
-            block.ranges = 0
-            const open = block.nodes.shift()
-            block.nodes = [
-              open,
-              {
+          if (value === CHAR_RIGHT_PARENTHESES) {
+            if (block.type !== 'paren') {
+              push({
                 type: 'text',
-                value: stringify(block),
-              },
-            ]
+                value,
+              })
+              continue
+            }
+            block = stack.pop()
+            push({
+              type: 'text',
+              value,
+            })
+            block = stack[stack.length - 1]
+            continue
           }
-          push({
-            type: 'comma',
-            value,
-          })
-          block.commas++
-          continue
-        }
-        /**
-         * Dot: '.'
-         */
-        if (value === CHAR_DOT && depth > 0 && block.commas === 0) {
-          const siblings = block.nodes
-          if (depth === 0 || siblings.length === 0) {
+          /**
+           * Quotes: '|"|`
+           */
+          if (
+            value === CHAR_DOUBLE_QUOTE ||
+            value === CHAR_SINGLE_QUOTE ||
+            value === CHAR_BACKTICK
+          ) {
+            const open = value
+            let next
+            if (options.keepQuotes !== true) value = ''
+            while (index < length && (next = advance())) {
+              if (next === CHAR_BACKSLASH) {
+                value += next + advance()
+                continue
+              }
+              if (next === open) {
+                if (options.keepQuotes === true) value += next
+                break
+              }
+              value += next
+            }
             push({
               type: 'text',
               value,
             })
             continue
           }
-          if (prev.type === 'dot') {
-            block.range = []
-            prev.value += value
-            prev.type = 'range'
-            if (block.nodes.length !== 3 && block.nodes.length !== 5) {
-              block.invalid = true
-              block.ranges = 0
-              prev.type = 'text'
+          /**
+           * Left curly brace: '{'
+           */
+          if (value === CHAR_LEFT_CURLY_BRACE) {
+            depth++
+            block = push({
+              type: 'brace',
+              open: true,
+              close: false,
+              dollar:
+                (prev.value && prev.value.slice(-1) === '$') ||
+                block.dollar === true,
+              depth,
+              commas: 0,
+              ranges: 0,
+              nodes: [],
+            })
+            stack.push(block)
+            push({
+              type: 'open',
+              value,
+            })
+            continue
+          }
+          /**
+           * Right curly brace: '}'
+           */
+          if (value === CHAR_RIGHT_CURLY_BRACE) {
+            if (block.type !== 'brace') {
+              push({
+                type: 'text',
+                value,
+              })
               continue
             }
-            block.ranges++
-            block.args = []
+            const type = 'close'
+            block = stack.pop()
+            block.close = true
+            push({
+              type,
+              value,
+            })
+            depth--
+            block = stack[stack.length - 1]
             continue
           }
-          if (prev.type === 'range') {
-            siblings.pop()
-            const before = siblings[siblings.length - 1]
-            before.value += prev.value + value
-            prev = before
-            block.ranges--
+          /**
+           * Comma: ','
+           */
+          if (value === CHAR_COMMA && depth > 0) {
+            if (block.ranges > 0) {
+              block.ranges = 0
+              const open = block.nodes.shift()
+              block.nodes = [
+                open,
+                {
+                  type: 'text',
+                  value: stringify(block),
+                },
+              ]
+            }
+            push({
+              type: 'comma',
+              value,
+            })
+            block.commas++
             continue
           }
+          /**
+           * Dot: '.'
+           */
+          if (value === CHAR_DOT && depth > 0 && block.commas === 0) {
+            const siblings = block.nodes
+            if (depth === 0 || siblings.length === 0) {
+              push({
+                type: 'text',
+                value,
+              })
+              continue
+            }
+            if (prev.type === 'dot') {
+              block.range = []
+              prev.value += value
+              prev.type = 'range'
+              if (block.nodes.length !== 3 && block.nodes.length !== 5) {
+                block.invalid = true
+                block.ranges = 0
+                prev.type = 'text'
+                continue
+              }
+              block.ranges++
+              block.args = []
+              continue
+            }
+            if (prev.type === 'range') {
+              siblings.pop()
+              const before = siblings[siblings.length - 1]
+              before.value += prev.value + value
+              prev = before
+              block.ranges--
+              continue
+            }
+            push({
+              type: 'dot',
+              value,
+            })
+            continue
+          }
+          /**
+           * Text.
+           */
           push({
-            type: 'dot',
+            type: 'text',
             value,
           })
-          continue
         }
-        /**
-         * Text.
-         */
-        push({
-          type: 'text',
-          value,
-        })
+        do {
+          block = stack.pop()
+          if (block.type !== 'root') {
+            block.nodes.forEach(node => {
+              if (!node.nodes) {
+                if (node.type === 'open') node.isOpen = true
+                if (node.type === 'close') node.isClose = true
+                if (!node.nodes) node.type = 'text'
+                node.invalid = true
+              }
+            })
+            const parent = stack[stack.length - 1]
+            const index = parent.nodes.indexOf(block)
+            parent.nodes.splice(index, 1, ...block.nodes)
+          }
+        } while (stack.length > 0)
+        push({ type: 'eos' })
+        return ast
       }
-      do {
-        block = stack.pop()
-        if (block.type !== 'root') {
-          block.nodes.forEach(node => {
-            if (!node.nodes) {
-              if (node.type === 'open') node.isOpen = true
-              if (node.type === 'close') node.isClose = true
-              if (!node.nodes) node.type = 'text'
-              node.invalid = true
-            }
-          })
-          const parent = stack[stack.length - 1]
-          const index = parent.nodes.indexOf(block)
-          parent.nodes.splice(index, 1, ...block.nodes)
-        }
-      } while (stack.length > 0)
-      push({ type: 'eos' })
-      return ast
-    }
-    module$28.exports = parse
-  })
+      module$32.exports = parse
+    },
+  )
   var require_braces = /* @__PURE__ */ __commonJSMin(
-    (exports$36, module$29) => {
+    (exports$244, module$33) => {
       const stringify = require_stringify()
       const compile = require_compile()
       const expand = require_expand()
-      const parse = require_parse()
+      const parse = require_parse$2()
       /**
        * Expand the given pattern or create a regex-compatible string.
        *
@@ -9226,14 +9229,14 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       /**
        * Expose "braces"
        */
-      module$29.exports = braces
+      module$33.exports = braces
     },
   )
   var require_micromatch = /* @__PURE__ */ __commonJSMin(
-    (exports$37, module$30) => {
+    (exports$245, module$34) => {
       const util = __require('util')
       const braces = require_braces()
-      const picomatch = require_picomatch()
+      const picomatch = require_picomatch$1()
       const utils = require_utils$3()
       const isEmptyString = v => v === '' || v === './'
       const hasBraces = v => {
@@ -9724,35 +9727,35 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
        * Expose micromatch.
        */
       micromatch.hasBraces = hasBraces
-      module$30.exports = micromatch
+      module$34.exports = micromatch
     },
   )
-  var require_pattern = /* @__PURE__ */ __commonJSMin(exports$38 => {
-    _p_ObjectDefineProperty(exports$38, '__esModule', { value: true })
-    exports$38.isAbsolute =
-      exports$38.partitionAbsoluteAndRelative =
-      exports$38.removeDuplicateSlashes =
-      exports$38.matchAny =
-      exports$38.convertPatternsToRe =
-      exports$38.makeRe =
-      exports$38.getPatternParts =
-      exports$38.expandBraceExpansion =
-      exports$38.expandPatternsWithBraceExpansion =
-      exports$38.isAffectDepthOfReadingPattern =
-      exports$38.endsWithSlashGlobStar =
-      exports$38.hasGlobStar =
-      exports$38.getBaseDirectory =
-      exports$38.isPatternRelatedToParentDirectory =
-      exports$38.getPatternsOutsideCurrentDirectory =
-      exports$38.getPatternsInsideCurrentDirectory =
-      exports$38.getPositivePatterns =
-      exports$38.getNegativePatterns =
-      exports$38.isPositivePattern =
-      exports$38.isNegativePattern =
-      exports$38.convertToNegativePattern =
-      exports$38.convertToPositivePattern =
-      exports$38.isDynamicPattern =
-      exports$38.isStaticPattern =
+  var require_pattern = /* @__PURE__ */ __commonJSMin(exports$246 => {
+    _p_ObjectDefineProperty(exports$246, '__esModule', { value: true })
+    exports$246.isAbsolute =
+      exports$246.partitionAbsoluteAndRelative =
+      exports$246.removeDuplicateSlashes =
+      exports$246.matchAny =
+      exports$246.convertPatternsToRe =
+      exports$246.makeRe =
+      exports$246.getPatternParts =
+      exports$246.expandBraceExpansion =
+      exports$246.expandPatternsWithBraceExpansion =
+      exports$246.isAffectDepthOfReadingPattern =
+      exports$246.endsWithSlashGlobStar =
+      exports$246.hasGlobStar =
+      exports$246.getBaseDirectory =
+      exports$246.isPatternRelatedToParentDirectory =
+      exports$246.getPatternsOutsideCurrentDirectory =
+      exports$246.getPatternsInsideCurrentDirectory =
+      exports$246.getPositivePatterns =
+      exports$246.getNegativePatterns =
+      exports$246.isPositivePattern =
+      exports$246.isNegativePattern =
+      exports$246.convertToNegativePattern =
+      exports$246.convertToPositivePattern =
+      exports$246.isDynamicPattern =
+      exports$246.isStaticPattern =
         void 0
     const path$10 = __require('path')
     const globParent = require_glob_parent()
@@ -9773,7 +9776,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     function isStaticPattern(pattern, options = {}) {
       return !isDynamicPattern(pattern, options)
     }
-    exports$38.isStaticPattern = isStaticPattern
+    exports$246.isStaticPattern = isStaticPattern
     function isDynamicPattern(pattern, options = {}) {
       /**
        * A special case with an empty string is necessary for matching patterns
@@ -9804,7 +9807,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return true
       return false
     }
-    exports$38.isDynamicPattern = isDynamicPattern
+    exports$246.isDynamicPattern = isDynamicPattern
     function hasBraceExpansion(pattern) {
       const openingBraceIndex = pattern.indexOf('{')
       if (openingBraceIndex === -1) return false
@@ -9816,27 +9819,27 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     function convertToPositivePattern(pattern) {
       return isNegativePattern(pattern) ? pattern.slice(1) : pattern
     }
-    exports$38.convertToPositivePattern = convertToPositivePattern
+    exports$246.convertToPositivePattern = convertToPositivePattern
     function convertToNegativePattern(pattern) {
       return '!' + pattern
     }
-    exports$38.convertToNegativePattern = convertToNegativePattern
+    exports$246.convertToNegativePattern = convertToNegativePattern
     function isNegativePattern(pattern) {
       return _p_StringPrototypeStartsWith(pattern, '!') && pattern[1] !== '('
     }
-    exports$38.isNegativePattern = isNegativePattern
+    exports$246.isNegativePattern = isNegativePattern
     function isPositivePattern(pattern) {
       return !isNegativePattern(pattern)
     }
-    exports$38.isPositivePattern = isPositivePattern
+    exports$246.isPositivePattern = isPositivePattern
     function getNegativePatterns(patterns) {
       return patterns.filter(isNegativePattern)
     }
-    exports$38.getNegativePatterns = getNegativePatterns
+    exports$246.getNegativePatterns = getNegativePatterns
     function getPositivePatterns(patterns) {
       return patterns.filter(isPositivePattern)
     }
-    exports$38.getPositivePatterns = getPositivePatterns
+    exports$246.getPositivePatterns = getPositivePatterns
     /**
      * Returns patterns that can be applied inside the current directory.
      *
@@ -9849,7 +9852,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         pattern => !isPatternRelatedToParentDirectory(pattern),
       )
     }
-    exports$38.getPatternsInsideCurrentDirectory =
+    exports$246.getPatternsInsideCurrentDirectory =
       getPatternsInsideCurrentDirectory
     /**
      * Returns patterns to be expanded relative to (outside) the current
@@ -9862,7 +9865,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     function getPatternsOutsideCurrentDirectory(patterns) {
       return patterns.filter(isPatternRelatedToParentDirectory)
     }
-    exports$38.getPatternsOutsideCurrentDirectory =
+    exports$246.getPatternsOutsideCurrentDirectory =
       getPatternsOutsideCurrentDirectory
     function isPatternRelatedToParentDirectory(pattern) {
       return (
@@ -9870,31 +9873,31 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         _p_StringPrototypeStartsWith(pattern, './..')
       )
     }
-    exports$38.isPatternRelatedToParentDirectory =
+    exports$246.isPatternRelatedToParentDirectory =
       isPatternRelatedToParentDirectory
     function getBaseDirectory(pattern) {
       return globParent(pattern, { flipBackslashes: false })
     }
-    exports$38.getBaseDirectory = getBaseDirectory
+    exports$246.getBaseDirectory = getBaseDirectory
     function hasGlobStar(pattern) {
       return pattern.includes(GLOBSTAR)
     }
-    exports$38.hasGlobStar = hasGlobStar
+    exports$246.hasGlobStar = hasGlobStar
     function endsWithSlashGlobStar(pattern) {
       return _p_StringPrototypeEndsWith(pattern, '/**')
     }
-    exports$38.endsWithSlashGlobStar = endsWithSlashGlobStar
+    exports$246.endsWithSlashGlobStar = endsWithSlashGlobStar
     function isAffectDepthOfReadingPattern(pattern) {
       const basename = path$10.basename(pattern)
       return endsWithSlashGlobStar(pattern) || isStaticPattern(basename)
     }
-    exports$38.isAffectDepthOfReadingPattern = isAffectDepthOfReadingPattern
+    exports$246.isAffectDepthOfReadingPattern = isAffectDepthOfReadingPattern
     function expandPatternsWithBraceExpansion(patterns) {
       return patterns.reduce((collection, pattern) => {
         return collection.concat(expandBraceExpansion(pattern))
       }, [])
     }
-    exports$38.expandPatternsWithBraceExpansion =
+    exports$246.expandPatternsWithBraceExpansion =
       expandPatternsWithBraceExpansion
     function expandBraceExpansion(pattern) {
       const patterns = micromatch.braces(pattern, {
@@ -9914,7 +9917,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
        */
       return patterns.filter(pattern => pattern !== '')
     }
-    exports$38.expandBraceExpansion = expandBraceExpansion
+    exports$246.expandBraceExpansion = expandBraceExpansion
     function getPatternParts(pattern, options) {
       let { parts } = micromatch.scan(
         pattern,
@@ -9935,19 +9938,19 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       return parts
     }
-    exports$38.getPatternParts = getPatternParts
+    exports$246.getPatternParts = getPatternParts
     function makeRe(pattern, options) {
       return micromatch.makeRe(pattern, options)
     }
-    exports$38.makeRe = makeRe
+    exports$246.makeRe = makeRe
     function convertPatternsToRe(patterns, options) {
       return patterns.map(pattern => makeRe(pattern, options))
     }
-    exports$38.convertPatternsToRe = convertPatternsToRe
+    exports$246.convertPatternsToRe = convertPatternsToRe
     function matchAny(entry, patternsRe) {
       return patternsRe.some(patternRe => patternRe.test(entry))
     }
-    exports$38.matchAny = matchAny
+    exports$246.matchAny = matchAny
     /**
      * This package only works with forward slashes as a path separator. Because
      * of this, we cannot use the standard `path.normalize` method, because on
@@ -9956,7 +9959,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     function removeDuplicateSlashes(pattern) {
       return pattern.replace(DOUBLE_SLASH_RE, '/')
     }
-    exports$38.removeDuplicateSlashes = removeDuplicateSlashes
+    exports$246.removeDuplicateSlashes = removeDuplicateSlashes
     function partitionAbsoluteAndRelative(patterns) {
       const absolute = []
       const relative = []
@@ -9965,17 +9968,17 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         else relative.push(pattern)
       return [absolute, relative]
     }
-    exports$38.partitionAbsoluteAndRelative = partitionAbsoluteAndRelative
+    exports$246.partitionAbsoluteAndRelative = partitionAbsoluteAndRelative
     function isAbsolute(pattern) {
       return path$10.isAbsolute(pattern)
     }
-    exports$38.isAbsolute = isAbsolute
+    exports$246.isAbsolute = isAbsolute
   })
   var require_merge2 = /* @__PURE__ */ __commonJSMin(
-    (exports$39, module$31) => {
+    (exports$247, module$35) => {
       const PassThrough = __require('stream').PassThrough
       const slice = Array.prototype.slice
-      module$31.exports = merge2
+      module$35.exports = merge2
       function merge2() {
         const streamsQueue = []
         const args = slice.call(arguments)
@@ -10057,9 +10060,9 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
     },
   )
-  var require_stream$3 = /* @__PURE__ */ __commonJSMin(exports$40 => {
-    _p_ObjectDefineProperty(exports$40, '__esModule', { value: true })
-    exports$40.merge = void 0
+  var require_stream$3 = /* @__PURE__ */ __commonJSMin(exports$248 => {
+    _p_ObjectDefineProperty(exports$248, '__esModule', { value: true })
+    exports$248.merge = void 0
     const merge2 = require_merge2()
     function merge(streams) {
       const mergedStream = merge2(streams)
@@ -10070,50 +10073,50 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       mergedStream.once('end', () => propagateCloseEventToSources(streams))
       return mergedStream
     }
-    exports$40.merge = merge
+    exports$248.merge = merge
     function propagateCloseEventToSources(streams) {
       streams.forEach(stream => stream.emit('close'))
     }
   })
-  var require_string = /* @__PURE__ */ __commonJSMin(exports$41 => {
-    _p_ObjectDefineProperty(exports$41, '__esModule', { value: true })
-    exports$41.isEmpty = exports$41.isString = void 0
+  var require_string$1 = /* @__PURE__ */ __commonJSMin(exports$249 => {
+    _p_ObjectDefineProperty(exports$249, '__esModule', { value: true })
+    exports$249.isEmpty = exports$249.isString = void 0
     function isString(input) {
       return typeof input === 'string'
     }
-    exports$41.isString = isString
+    exports$249.isString = isString
     function isEmpty(input) {
       return input === ''
     }
-    exports$41.isEmpty = isEmpty
+    exports$249.isEmpty = isEmpty
   })
-  var require_utils$1 = /* @__PURE__ */ __commonJSMin(exports$42 => {
-    _p_ObjectDefineProperty(exports$42, '__esModule', { value: true })
-    exports$42.string =
-      exports$42.stream =
-      exports$42.pattern =
-      exports$42.path =
-      exports$42.fs =
-      exports$42.errno =
-      exports$42.array =
+  var require_utils$1 = /* @__PURE__ */ __commonJSMin(exports$250 => {
+    _p_ObjectDefineProperty(exports$250, '__esModule', { value: true })
+    exports$250.string =
+      exports$250.stream =
+      exports$250.pattern =
+      exports$250.path =
+      exports$250.fs =
+      exports$250.errno =
+      exports$250.array =
         void 0
-    exports$42.array = require_array$1()
-    exports$42.errno = require_errno()
-    exports$42.fs = require_fs$3()
-    exports$42.path = require_path()
-    exports$42.pattern = require_pattern()
-    exports$42.stream = require_stream$3()
-    exports$42.string = require_string()
+    exports$250.array = require_array$2()
+    exports$250.errno = require_errno()
+    exports$250.fs = require_fs$3()
+    exports$250.path = require_path$1()
+    exports$250.pattern = require_pattern()
+    exports$250.stream = require_stream$3()
+    exports$250.string = require_string$1()
   })
-  var require_tasks = /* @__PURE__ */ __commonJSMin(exports$43 => {
-    _p_ObjectDefineProperty(exports$43, '__esModule', { value: true })
-    exports$43.convertPatternGroupToTask =
-      exports$43.convertPatternGroupsToTasks =
-      exports$43.groupPatternsByBaseDirectory =
-      exports$43.getNegativePatternsAsPositive =
-      exports$43.getPositivePatterns =
-      exports$43.convertPatternsToTasks =
-      exports$43.generate =
+  var require_tasks = /* @__PURE__ */ __commonJSMin(exports$251 => {
+    _p_ObjectDefineProperty(exports$251, '__esModule', { value: true })
+    exports$251.convertPatternGroupToTask =
+      exports$251.convertPatternGroupsToTasks =
+      exports$251.groupPatternsByBaseDirectory =
+      exports$251.getNegativePatternsAsPositive =
+      exports$251.getPositivePatterns =
+      exports$251.convertPatternsToTasks =
+      exports$251.generate =
         void 0
     const utils = require_utils$1()
     function generate(input, settings) {
@@ -10139,7 +10142,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       )
       return staticTasks.concat(dynamicTasks)
     }
-    exports$43.generate = generate
+    exports$251.generate = generate
     function processPatterns(input, settings) {
       let patterns = input
       /**
@@ -10219,18 +10222,18 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         )
       return tasks
     }
-    exports$43.convertPatternsToTasks = convertPatternsToTasks
+    exports$251.convertPatternsToTasks = convertPatternsToTasks
     function getPositivePatterns(patterns) {
       return utils.pattern.getPositivePatterns(patterns)
     }
-    exports$43.getPositivePatterns = getPositivePatterns
+    exports$251.getPositivePatterns = getPositivePatterns
     function getNegativePatternsAsPositive(patterns, ignore) {
       return utils.pattern
         .getNegativePatterns(patterns)
         .concat(ignore)
         .map(utils.pattern.convertToPositivePattern)
     }
-    exports$43.getNegativePatternsAsPositive = getNegativePatternsAsPositive
+    exports$251.getNegativePatternsAsPositive = getNegativePatternsAsPositive
     function groupPatternsByBaseDirectory(patterns) {
       return patterns.reduce((collection, pattern) => {
         const base = utils.pattern.getBaseDirectory(pattern)
@@ -10239,7 +10242,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return collection
       }, {})
     }
-    exports$43.groupPatternsByBaseDirectory = groupPatternsByBaseDirectory
+    exports$251.groupPatternsByBaseDirectory = groupPatternsByBaseDirectory
     function convertPatternGroupsToTasks(positive, negative, dynamic) {
       return _p_ObjectKeys(positive).map(base => {
         return convertPatternGroupToTask(
@@ -10250,7 +10253,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         )
       })
     }
-    exports$43.convertPatternGroupsToTasks = convertPatternGroupsToTasks
+    exports$251.convertPatternGroupsToTasks = convertPatternGroupsToTasks
     function convertPatternGroupToTask(base, positive, negative, dynamic) {
       return {
         dynamic,
@@ -10263,11 +10266,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         ),
       }
     }
-    exports$43.convertPatternGroupToTask = convertPatternGroupToTask
+    exports$251.convertPatternGroupToTask = convertPatternGroupToTask
   })
-  var require_async$5 = /* @__PURE__ */ __commonJSMin(exports$44 => {
-    _p_ObjectDefineProperty(exports$44, '__esModule', { value: true })
-    exports$44.read = void 0
+  var require_async$5 = /* @__PURE__ */ __commonJSMin(exports$252 => {
+    _p_ObjectDefineProperty(exports$252, '__esModule', { value: true })
+    exports$252.read = void 0
     function read(path, settings, callback) {
       settings.fs.lstat(path, (lstatError, lstat) => {
         if (lstatError !== null) {
@@ -10292,7 +10295,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         })
       })
     }
-    exports$44.read = read
+    exports$252.read = read
     function callFailureCallback(callback, error) {
       callback(error)
     }
@@ -10300,9 +10303,9 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       callback(null, result)
     }
   })
-  var require_sync$5 = /* @__PURE__ */ __commonJSMin(exports$45 => {
-    _p_ObjectDefineProperty(exports$45, '__esModule', { value: true })
-    exports$45.read = void 0
+  var require_sync$5 = /* @__PURE__ */ __commonJSMin(exports$253 => {
+    _p_ObjectDefineProperty(exports$253, '__esModule', { value: true })
+    exports$253.read = void 0
     function read(path, settings) {
       const lstat = settings.fs.lstatSync(path)
       if (!lstat.isSymbolicLink() || !settings.followSymbolicLink) return lstat
@@ -10315,29 +10318,30 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         throw error
       }
     }
-    exports$45.read = read
+    exports$253.read = read
   })
-  var require_fs$2 = /* @__PURE__ */ __commonJSMin(exports$46 => {
-    _p_ObjectDefineProperty(exports$46, '__esModule', { value: true })
-    exports$46.createFileSystemAdapter = exports$46.FILE_SYSTEM_ADAPTER = void 0
+  var require_fs$2 = /* @__PURE__ */ __commonJSMin(exports$254 => {
+    _p_ObjectDefineProperty(exports$254, '__esModule', { value: true })
+    exports$254.createFileSystemAdapter = exports$254.FILE_SYSTEM_ADAPTER =
+      void 0
     const fs$6 = __require('fs')
-    exports$46.FILE_SYSTEM_ADAPTER = {
+    exports$254.FILE_SYSTEM_ADAPTER = {
       lstat: fs$6.lstat,
       stat: fs$6.stat,
       lstatSync: fs$6.lstatSync,
       statSync: fs$6.statSync,
     }
     function createFileSystemAdapter(fsMethods) {
-      if (fsMethods === void 0) return exports$46.FILE_SYSTEM_ADAPTER
+      if (fsMethods === void 0) return exports$254.FILE_SYSTEM_ADAPTER
       return _p_ObjectAssign(
-        _p_ObjectAssign({}, exports$46.FILE_SYSTEM_ADAPTER),
+        _p_ObjectAssign({}, exports$254.FILE_SYSTEM_ADAPTER),
         fsMethods,
       )
     }
-    exports$46.createFileSystemAdapter = createFileSystemAdapter
+    exports$254.createFileSystemAdapter = createFileSystemAdapter
   })
-  var require_settings$3 = /* @__PURE__ */ __commonJSMin(exports$47 => {
-    _p_ObjectDefineProperty(exports$47, '__esModule', { value: true })
+  var require_settings$3 = /* @__PURE__ */ __commonJSMin(exports$255 => {
+    _p_ObjectDefineProperty(exports$255, '__esModule', { value: true })
     const fs = require_fs$2()
     var Settings = class {
       constructor(_options = {}) {
@@ -10360,15 +10364,15 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return option !== null && option !== void 0 ? option : value
       }
     }
-    exports$47.default = Settings
+    exports$255.default = Settings
   })
-  var require_out$3 = /* @__PURE__ */ __commonJSMin(exports$48 => {
-    _p_ObjectDefineProperty(exports$48, '__esModule', { value: true })
-    exports$48.statSync = exports$48.stat = exports$48.Settings = void 0
+  var require_out$3 = /* @__PURE__ */ __commonJSMin(exports$256 => {
+    _p_ObjectDefineProperty(exports$256, '__esModule', { value: true })
+    exports$256.statSync = exports$256.stat = exports$256.Settings = void 0
     const async = require_async$5()
     const sync = require_sync$5()
     const settings_1 = require_settings$3()
-    exports$48.Settings = settings_1.default
+    exports$256.Settings = settings_1.default
     function stat(path, optionsOrSettingsOrCallback, callback) {
       if (typeof optionsOrSettingsOrCallback === 'function') {
         async.read(path, getSettings(), optionsOrSettingsOrCallback)
@@ -10376,12 +10380,12 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       async.read(path, getSettings(optionsOrSettingsOrCallback), callback)
     }
-    exports$48.stat = stat
+    exports$256.stat = stat
     function statSync(path, optionsOrSettings) {
       const settings = getSettings(optionsOrSettings)
       return sync.read(path, settings)
     }
-    exports$48.statSync = statSync
+    exports$256.statSync = statSync
     function getSettings(settingsOrOptions = {}) {
       if (settingsOrOptions instanceof settings_1.default)
         return settingsOrOptions
@@ -10389,10 +10393,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     }
   })
   var require_queue_microtask = /* @__PURE__ */ __commonJSMin(
-    (exports$49, module$32) => {
+    (exports$257, module$36) => {
       /*! queue-microtask. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
       let promise
-      module$32.exports =
+      module$36.exports =
         typeof queueMicrotask === 'function'
           ? queueMicrotask.bind(typeof window !== 'undefined' ? void 0 : global)
           : cb =>
@@ -10404,9 +10408,9 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     },
   )
   var require_run_parallel = /* @__PURE__ */ __commonJSMin(
-    (exports$50, module$33) => {
+    (exports$258, module$37) => {
       /*! run-parallel. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
-      module$33.exports = runParallel
+      module$37.exports = runParallel
       const queueMicrotask = require_queue_microtask()
       function runParallel(tasks, cb) {
         let results
@@ -10450,9 +10454,9 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
     },
   )
-  var require_constants = /* @__PURE__ */ __commonJSMin(exports$51 => {
-    _p_ObjectDefineProperty(exports$51, '__esModule', { value: true })
-    exports$51.IS_SUPPORT_READDIR_WITH_FILE_TYPES = void 0
+  var require_constants = /* @__PURE__ */ __commonJSMin(exports$259 => {
+    _p_ObjectDefineProperty(exports$259, '__esModule', { value: true })
+    exports$259.IS_SUPPORT_READDIR_WITH_FILE_TYPES = void 0
     const NODE_PROCESS_VERSION_PARTS = process.versions.node.split('.')
     if (
       NODE_PROCESS_VERSION_PARTS[0] === void 0 ||
@@ -10467,13 +10471,13 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     /**
      * IS `true` for Node.js 10.10 and greater.
      */
-    exports$51.IS_SUPPORT_READDIR_WITH_FILE_TYPES =
+    exports$259.IS_SUPPORT_READDIR_WITH_FILE_TYPES =
       MAJOR_VERSION > SUPPORTED_MAJOR_VERSION ||
       (MAJOR_VERSION === SUPPORTED_MAJOR_VERSION && MINOR_VERSION >= 10)
   })
-  var require_fs$1 = /* @__PURE__ */ __commonJSMin(exports$52 => {
-    _p_ObjectDefineProperty(exports$52, '__esModule', { value: true })
-    exports$52.createDirentFromStats = void 0
+  var require_fs$1 = /* @__PURE__ */ __commonJSMin(exports$260 => {
+    _p_ObjectDefineProperty(exports$260, '__esModule', { value: true })
+    exports$260.createDirentFromStats = void 0
     var DirentFromStats = class {
       constructor(name, stats) {
         this.name = name
@@ -10489,16 +10493,16 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     function createDirentFromStats(name, stats) {
       return new DirentFromStats(name, stats)
     }
-    exports$52.createDirentFromStats = createDirentFromStats
+    exports$260.createDirentFromStats = createDirentFromStats
   })
-  var require_utils = /* @__PURE__ */ __commonJSMin(exports$53 => {
-    _p_ObjectDefineProperty(exports$53, '__esModule', { value: true })
-    exports$53.fs = void 0
-    exports$53.fs = require_fs$1()
+  var require_utils = /* @__PURE__ */ __commonJSMin(exports$261 => {
+    _p_ObjectDefineProperty(exports$261, '__esModule', { value: true })
+    exports$261.fs = void 0
+    exports$261.fs = require_fs$1()
   })
-  var require_common$1 = /* @__PURE__ */ __commonJSMin(exports$54 => {
-    _p_ObjectDefineProperty(exports$54, '__esModule', { value: true })
-    exports$54.joinPathSegments = void 0
+  var require_common$1 = /* @__PURE__ */ __commonJSMin(exports$262 => {
+    _p_ObjectDefineProperty(exports$262, '__esModule', { value: true })
+    exports$262.joinPathSegments = void 0
     function joinPathSegments(a, b, separator) {
       /**
        * The correct handling of cases when the first segment is a root (`/`,
@@ -10507,13 +10511,13 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       if (_p_StringPrototypeEndsWith(a, separator)) return a + b
       return a + separator + b
     }
-    exports$54.joinPathSegments = joinPathSegments
+    exports$262.joinPathSegments = joinPathSegments
   })
-  var require_async$4 = /* @__PURE__ */ __commonJSMin(exports$55 => {
-    _p_ObjectDefineProperty(exports$55, '__esModule', { value: true })
-    exports$55.readdir =
-      exports$55.readdirWithFileTypes =
-      exports$55.read =
+  var require_async$4 = /* @__PURE__ */ __commonJSMin(exports$263 => {
+    _p_ObjectDefineProperty(exports$263, '__esModule', { value: true })
+    exports$263.readdir =
+      exports$263.readdirWithFileTypes =
+      exports$263.read =
         void 0
     const fsStat = require_out$3()
     const rpl = require_run_parallel()
@@ -10527,7 +10531,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       readdir(directory, settings, callback)
     }
-    exports$55.read = read
+    exports$263.read = read
     function readdirWithFileTypes(directory, settings, callback) {
       settings.fs.readdir(
         directory,
@@ -10561,7 +10565,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         },
       )
     }
-    exports$55.readdirWithFileTypes = readdirWithFileTypes
+    exports$263.readdirWithFileTypes = readdirWithFileTypes
     function makeRplTaskEntry(entry, settings) {
       return done => {
         if (!entry.dirent.isSymbolicLink()) {
@@ -10619,7 +10623,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         })
       })
     }
-    exports$55.readdir = readdir
+    exports$263.readdir = readdir
     function callFailureCallback(callback, error) {
       callback(error)
     }
@@ -10627,11 +10631,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       callback(null, result)
     }
   })
-  var require_sync$4 = /* @__PURE__ */ __commonJSMin(exports$56 => {
-    _p_ObjectDefineProperty(exports$56, '__esModule', { value: true })
-    exports$56.readdir =
-      exports$56.readdirWithFileTypes =
-      exports$56.read =
+  var require_sync$4 = /* @__PURE__ */ __commonJSMin(exports$264 => {
+    _p_ObjectDefineProperty(exports$264, '__esModule', { value: true })
+    exports$264.readdir =
+      exports$264.readdirWithFileTypes =
+      exports$264.read =
         void 0
     const fsStat = require_out$3()
     const constants_1 = require_constants()
@@ -10642,7 +10646,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return readdirWithFileTypes(directory, settings)
       return readdir(directory, settings)
     }
-    exports$56.read = read
+    exports$264.read = read
     function readdirWithFileTypes(directory, settings) {
       return settings.fs
         .readdirSync(directory, { withFileTypes: true })
@@ -10666,7 +10670,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
           return entry
         })
     }
-    exports$56.readdirWithFileTypes = readdirWithFileTypes
+    exports$264.readdirWithFileTypes = readdirWithFileTypes
     function readdir(directory, settings) {
       return settings.fs.readdirSync(directory).map(name => {
         const entryPath = common.joinPathSegments(
@@ -10684,13 +10688,14 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return entry
       })
     }
-    exports$56.readdir = readdir
+    exports$264.readdir = readdir
   })
-  var require_fs = /* @__PURE__ */ __commonJSMin(exports$57 => {
-    _p_ObjectDefineProperty(exports$57, '__esModule', { value: true })
-    exports$57.createFileSystemAdapter = exports$57.FILE_SYSTEM_ADAPTER = void 0
+  var require_fs = /* @__PURE__ */ __commonJSMin(exports$265 => {
+    _p_ObjectDefineProperty(exports$265, '__esModule', { value: true })
+    exports$265.createFileSystemAdapter = exports$265.FILE_SYSTEM_ADAPTER =
+      void 0
     const fs$5 = __require('fs')
-    exports$57.FILE_SYSTEM_ADAPTER = {
+    exports$265.FILE_SYSTEM_ADAPTER = {
       lstat: fs$5.lstat,
       stat: fs$5.stat,
       lstatSync: fs$5.lstatSync,
@@ -10699,16 +10704,16 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       readdirSync: fs$5.readdirSync,
     }
     function createFileSystemAdapter(fsMethods) {
-      if (fsMethods === void 0) return exports$57.FILE_SYSTEM_ADAPTER
+      if (fsMethods === void 0) return exports$265.FILE_SYSTEM_ADAPTER
       return _p_ObjectAssign(
-        _p_ObjectAssign({}, exports$57.FILE_SYSTEM_ADAPTER),
+        _p_ObjectAssign({}, exports$265.FILE_SYSTEM_ADAPTER),
         fsMethods,
       )
     }
-    exports$57.createFileSystemAdapter = createFileSystemAdapter
+    exports$265.createFileSystemAdapter = createFileSystemAdapter
   })
-  var require_settings$2 = /* @__PURE__ */ __commonJSMin(exports$58 => {
-    _p_ObjectDefineProperty(exports$58, '__esModule', { value: true })
+  var require_settings$2 = /* @__PURE__ */ __commonJSMin(exports$266 => {
+    _p_ObjectDefineProperty(exports$266, '__esModule', { value: true })
     const path$9 = __require('path')
     const fsStat = require_out$3()
     const fs = require_fs()
@@ -10739,15 +10744,18 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return option !== null && option !== void 0 ? option : value
       }
     }
-    exports$58.default = Settings
+    exports$266.default = Settings
   })
-  var require_out$2 = /* @__PURE__ */ __commonJSMin(exports$59 => {
-    _p_ObjectDefineProperty(exports$59, '__esModule', { value: true })
-    exports$59.Settings = exports$59.scandirSync = exports$59.scandir = void 0
+  var require_out$2 = /* @__PURE__ */ __commonJSMin(exports$267 => {
+    _p_ObjectDefineProperty(exports$267, '__esModule', { value: true })
+    exports$267.Settings =
+      exports$267.scandirSync =
+      exports$267.scandir =
+        void 0
     const async = require_async$4()
     const sync = require_sync$4()
     const settings_1 = require_settings$2()
-    exports$59.Settings = settings_1.default
+    exports$267.Settings = settings_1.default
     function scandir(path, optionsOrSettingsOrCallback, callback) {
       if (typeof optionsOrSettingsOrCallback === 'function') {
         async.read(path, getSettings(), optionsOrSettingsOrCallback)
@@ -10755,12 +10763,12 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       async.read(path, getSettings(optionsOrSettingsOrCallback), callback)
     }
-    exports$59.scandir = scandir
+    exports$267.scandir = scandir
     function scandirSync(path, optionsOrSettings) {
       const settings = getSettings(optionsOrSettings)
       return sync.read(path, settings)
     }
-    exports$59.scandirSync = scandirSync
+    exports$267.scandirSync = scandirSync
     function getSettings(settingsOrOptions = {}) {
       if (settingsOrOptions instanceof settings_1.default)
         return settingsOrOptions
@@ -10768,7 +10776,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     }
   })
   var require_reusify = /* @__PURE__ */ __commonJSMin(
-    (exports$60, module$34) => {
+    (exports$268, module$38) => {
       function reusify(Constructor) {
         var head = new Constructor()
         var tail = head
@@ -10791,294 +10799,296 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
           release,
         }
       }
-      module$34.exports = reusify
+      module$38.exports = reusify
     },
   )
-  var require_queue = /* @__PURE__ */ __commonJSMin((exports$61, module$35) => {
-    var reusify = require_reusify()
-    function fastqueue(context, worker, _concurrency) {
-      if (typeof context === 'function') {
-        _concurrency = worker
-        worker = context
-        context = null
-      }
-      if (!(_concurrency >= 1))
-        throw new _p_ErrorCtor(
-          'fastqueue concurrency must be equal to or greater than 1',
-        )
-      var cache = reusify(Task)
-      var queueHead = null
-      var queueTail = null
-      var _running = 0
-      var errorHandler = null
-      var self = {
-        push,
-        drain: noop,
-        saturated: noop,
-        pause,
-        paused: false,
-        get concurrency() {
-          return _concurrency
-        },
-        set concurrency(value) {
-          if (!(value >= 1))
-            throw new _p_ErrorCtor(
-              'fastqueue concurrency must be equal to or greater than 1',
-            )
-          _concurrency = value
-          if (self.paused) return
+  var require_queue = /* @__PURE__ */ __commonJSMin(
+    (exports$269, module$39) => {
+      var reusify = require_reusify()
+      function fastqueue(context, worker, _concurrency) {
+        if (typeof context === 'function') {
+          _concurrency = worker
+          worker = context
+          context = null
+        }
+        if (!(_concurrency >= 1))
+          throw new _p_ErrorCtor(
+            'fastqueue concurrency must be equal to or greater than 1',
+          )
+        var cache = reusify(Task)
+        var queueHead = null
+        var queueTail = null
+        var _running = 0
+        var errorHandler = null
+        var self = {
+          push,
+          drain: noop,
+          saturated: noop,
+          pause,
+          paused: false,
+          get concurrency() {
+            return _concurrency
+          },
+          set concurrency(value) {
+            if (!(value >= 1))
+              throw new _p_ErrorCtor(
+                'fastqueue concurrency must be equal to or greater than 1',
+              )
+            _concurrency = value
+            if (self.paused) return
+            for (; queueHead && _running < _concurrency;) {
+              _running++
+              release()
+            }
+          },
+          running,
+          resume,
+          idle,
+          length,
+          getQueue,
+          unshift,
+          empty: noop,
+          kill,
+          killAndDrain,
+          error,
+          abort,
+        }
+        return self
+        function running() {
+          return _running
+        }
+        function pause() {
+          self.paused = true
+        }
+        function length() {
+          var current = queueHead
+          var counter = 0
+          while (current) {
+            current = current.next
+            counter++
+          }
+          return counter
+        }
+        function getQueue() {
+          var current = queueHead
+          var tasks = []
+          while (current) {
+            tasks.push(current.value)
+            current = current.next
+          }
+          return tasks
+        }
+        function resume() {
+          if (!self.paused) return
+          self.paused = false
+          if (queueHead === null) {
+            _running++
+            release()
+            return
+          }
           for (; queueHead && _running < _concurrency;) {
             _running++
             release()
           }
-        },
-        running,
-        resume,
-        idle,
-        length,
-        getQueue,
-        unshift,
-        empty: noop,
-        kill,
-        killAndDrain,
-        error,
-        abort,
-      }
-      return self
-      function running() {
-        return _running
-      }
-      function pause() {
-        self.paused = true
-      }
-      function length() {
-        var current = queueHead
-        var counter = 0
-        while (current) {
-          current = current.next
-          counter++
         }
-        return counter
-      }
-      function getQueue() {
-        var current = queueHead
-        var tasks = []
-        while (current) {
-          tasks.push(current.value)
-          current = current.next
+        function idle() {
+          return _running === 0 && self.length() === 0
         }
-        return tasks
-      }
-      function resume() {
-        if (!self.paused) return
-        self.paused = false
-        if (queueHead === null) {
-          _running++
-          release()
-          return
-        }
-        for (; queueHead && _running < _concurrency;) {
-          _running++
-          release()
-        }
-      }
-      function idle() {
-        return _running === 0 && self.length() === 0
-      }
-      function push(value, done) {
-        var current = cache.get()
-        current.context = context
-        current.release = release
-        current.value = value
-        current.callback = done || noop
-        current.errorHandler = errorHandler
-        if (_running >= _concurrency || self.paused) {
-          if (queueTail) {
-            queueTail.next = current
-            queueTail = current
-          } else {
-            queueHead = current
-            queueTail = current
-            self.saturated()
-          }
-        } else {
-          _running++
-          worker.call(context, current.value, current.worked)
-        }
-      }
-      function unshift(value, done) {
-        var current = cache.get()
-        current.context = context
-        current.release = release
-        current.value = value
-        current.callback = done || noop
-        current.errorHandler = errorHandler
-        if (_running >= _concurrency || self.paused) {
-          if (queueHead) {
-            current.next = queueHead
-            queueHead = current
-          } else {
-            queueHead = current
-            queueTail = current
-            self.saturated()
-          }
-        } else {
-          _running++
-          worker.call(context, current.value, current.worked)
-        }
-      }
-      function release(holder) {
-        if (holder) cache.release(holder)
-        var next = queueHead
-        if (next && _running <= _concurrency) {
-          if (!self.paused) {
-            if (queueTail === queueHead) queueTail = null
-            queueHead = next.next
-            next.next = null
-            worker.call(context, next.value, next.worked)
-            if (queueTail === null) self.empty()
-          } else _running--
-        } else if (--_running === 0) self.drain()
-      }
-      function kill() {
-        queueHead = null
-        queueTail = null
-        self.drain = noop
-      }
-      function killAndDrain() {
-        queueHead = null
-        queueTail = null
-        self.drain()
-        self.drain = noop
-      }
-      function abort() {
-        var current = queueHead
-        queueHead = null
-        queueTail = null
-        while (current) {
-          var next = current.next
-          var callback = current.callback
-          var errorHandler = current.errorHandler
-          var val = current.value
-          var context = current.context
-          current.value = null
-          current.callback = noop
-          current.errorHandler = null
-          if (errorHandler)
-            errorHandler(/* @__PURE__ */ new _p_ErrorCtor('abort'), val)
-          callback.call(context, /* @__PURE__ */ new _p_ErrorCtor('abort'))
-          current.release(current)
-          current = next
-        }
-        self.drain = noop
-      }
-      function error(handler) {
-        errorHandler = handler
-      }
-    }
-    function noop() {}
-    function Task() {
-      this.value = null
-      this.callback = noop
-      this.next = null
-      this.release = noop
-      this.context = null
-      this.errorHandler = null
-      var self = this
-      this.worked = function worked(err, result) {
-        var callback = self.callback
-        var errorHandler = self.errorHandler
-        var val = self.value
-        self.value = null
-        self.callback = noop
-        if (self.errorHandler) errorHandler(err, val)
-        callback.call(self.context, err, result)
-        self.release(self)
-      }
-    }
-    function queueAsPromised(context, worker, _concurrency) {
-      if (typeof context === 'function') {
-        _concurrency = worker
-        worker = context
-        context = null
-      }
-      function asyncWrapper(arg, cb) {
-        worker.call(this, arg).then(function (res) {
-          cb(null, res)
-        }, cb)
-      }
-      var queue = fastqueue(context, asyncWrapper, _concurrency)
-      var pushCb = queue.push
-      var unshiftCb = queue.unshift
-      queue.push = push
-      queue.unshift = unshift
-      queue.drained = drained
-      return queue
-      function push(value) {
-        var p = new _p_PromiseCtor(function (resolve, reject) {
-          pushCb(value, function (err, result) {
-            if (err) {
-              reject(err)
-              return
+        function push(value, done) {
+          var current = cache.get()
+          current.context = context
+          current.release = release
+          current.value = value
+          current.callback = done || noop
+          current.errorHandler = errorHandler
+          if (_running >= _concurrency || self.paused) {
+            if (queueTail) {
+              queueTail.next = current
+              queueTail = current
+            } else {
+              queueHead = current
+              queueTail = current
+              self.saturated()
             }
-            resolve(result)
-          })
-        })
-        p.catch(noop)
-        return p
-      }
-      function unshift(value) {
-        var p = new _p_PromiseCtor(function (resolve, reject) {
-          unshiftCb(value, function (err, result) {
-            if (err) {
-              reject(err)
-              return
+          } else {
+            _running++
+            worker.call(context, current.value, current.worked)
+          }
+        }
+        function unshift(value, done) {
+          var current = cache.get()
+          current.context = context
+          current.release = release
+          current.value = value
+          current.callback = done || noop
+          current.errorHandler = errorHandler
+          if (_running >= _concurrency || self.paused) {
+            if (queueHead) {
+              current.next = queueHead
+              queueHead = current
+            } else {
+              queueHead = current
+              queueTail = current
+              self.saturated()
             }
-            resolve(result)
-          })
-        })
-        p.catch(noop)
-        return p
+          } else {
+            _running++
+            worker.call(context, current.value, current.worked)
+          }
+        }
+        function release(holder) {
+          if (holder) cache.release(holder)
+          var next = queueHead
+          if (next && _running <= _concurrency) {
+            if (!self.paused) {
+              if (queueTail === queueHead) queueTail = null
+              queueHead = next.next
+              next.next = null
+              worker.call(context, next.value, next.worked)
+              if (queueTail === null) self.empty()
+            } else _running--
+          } else if (--_running === 0) self.drain()
+        }
+        function kill() {
+          queueHead = null
+          queueTail = null
+          self.drain = noop
+        }
+        function killAndDrain() {
+          queueHead = null
+          queueTail = null
+          self.drain()
+          self.drain = noop
+        }
+        function abort() {
+          var current = queueHead
+          queueHead = null
+          queueTail = null
+          while (current) {
+            var next = current.next
+            var callback = current.callback
+            var errorHandler = current.errorHandler
+            var val = current.value
+            var context = current.context
+            current.value = null
+            current.callback = noop
+            current.errorHandler = null
+            if (errorHandler)
+              errorHandler(/* @__PURE__ */ new _p_ErrorCtor('abort'), val)
+            callback.call(context, /* @__PURE__ */ new _p_ErrorCtor('abort'))
+            current.release(current)
+            current = next
+          }
+          self.drain = noop
+        }
+        function error(handler) {
+          errorHandler = handler
+        }
       }
-      function drained() {
-        return new _p_PromiseCtor(function (resolve) {
-          _p_processNextTick(function () {
-            if (queue.idle()) resolve()
-            else {
-              var previousDrain = queue.drain
-              queue.drain = function () {
-                if (typeof previousDrain === 'function') previousDrain()
-                resolve()
-                queue.drain = previousDrain
+      function noop() {}
+      function Task() {
+        this.value = null
+        this.callback = noop
+        this.next = null
+        this.release = noop
+        this.context = null
+        this.errorHandler = null
+        var self = this
+        this.worked = function worked(err, result) {
+          var callback = self.callback
+          var errorHandler = self.errorHandler
+          var val = self.value
+          self.value = null
+          self.callback = noop
+          if (self.errorHandler) errorHandler(err, val)
+          callback.call(self.context, err, result)
+          self.release(self)
+        }
+      }
+      function queueAsPromised(context, worker, _concurrency) {
+        if (typeof context === 'function') {
+          _concurrency = worker
+          worker = context
+          context = null
+        }
+        function asyncWrapper(arg, cb) {
+          worker.call(this, arg).then(function (res) {
+            cb(null, res)
+          }, cb)
+        }
+        var queue = fastqueue(context, asyncWrapper, _concurrency)
+        var pushCb = queue.push
+        var unshiftCb = queue.unshift
+        queue.push = push
+        queue.unshift = unshift
+        queue.drained = drained
+        return queue
+        function push(value) {
+          var p = new _p_PromiseCtor(function (resolve, reject) {
+            pushCb(value, function (err, result) {
+              if (err) {
+                reject(err)
+                return
               }
-            }
+              resolve(result)
+            })
           })
-        })
+          p.catch(noop)
+          return p
+        }
+        function unshift(value) {
+          var p = new _p_PromiseCtor(function (resolve, reject) {
+            unshiftCb(value, function (err, result) {
+              if (err) {
+                reject(err)
+                return
+              }
+              resolve(result)
+            })
+          })
+          p.catch(noop)
+          return p
+        }
+        function drained() {
+          return new _p_PromiseCtor(function (resolve) {
+            _p_processNextTick(function () {
+              if (queue.idle()) resolve()
+              else {
+                var previousDrain = queue.drain
+                queue.drain = function () {
+                  if (typeof previousDrain === 'function') previousDrain()
+                  resolve()
+                  queue.drain = previousDrain
+                }
+              }
+            })
+          })
+        }
       }
-    }
-    module$35.exports = fastqueue
-    module$35.exports.promise = queueAsPromised
-  })
-  var require_common = /* @__PURE__ */ __commonJSMin(exports$62 => {
-    _p_ObjectDefineProperty(exports$62, '__esModule', { value: true })
-    exports$62.joinPathSegments =
-      exports$62.replacePathSegmentSeparator =
-      exports$62.isAppliedFilter =
-      exports$62.isFatalError =
+      module$39.exports = fastqueue
+      module$39.exports.promise = queueAsPromised
+    },
+  )
+  var require_common = /* @__PURE__ */ __commonJSMin(exports$270 => {
+    _p_ObjectDefineProperty(exports$270, '__esModule', { value: true })
+    exports$270.joinPathSegments =
+      exports$270.replacePathSegmentSeparator =
+      exports$270.isAppliedFilter =
+      exports$270.isFatalError =
         void 0
     function isFatalError(settings, error) {
       if (settings.errorFilter === null) return true
       return !settings.errorFilter(error)
     }
-    exports$62.isFatalError = isFatalError
+    exports$270.isFatalError = isFatalError
     function isAppliedFilter(filter, value) {
       return filter === null || filter(value)
     }
-    exports$62.isAppliedFilter = isAppliedFilter
+    exports$270.isAppliedFilter = isAppliedFilter
     function replacePathSegmentSeparator(filepath, separator) {
       return filepath.split(/[/\\]/).join(separator)
     }
-    exports$62.replacePathSegmentSeparator = replacePathSegmentSeparator
+    exports$270.replacePathSegmentSeparator = replacePathSegmentSeparator
     function joinPathSegments(a, b, separator) {
       if (a === '') return b
       /**
@@ -11088,10 +11098,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       if (_p_StringPrototypeEndsWith(a, separator)) return a + b
       return a + separator + b
     }
-    exports$62.joinPathSegments = joinPathSegments
+    exports$270.joinPathSegments = joinPathSegments
   })
-  var require_reader$1 = /* @__PURE__ */ __commonJSMin(exports$63 => {
-    _p_ObjectDefineProperty(exports$63, '__esModule', { value: true })
+  var require_reader$1 = /* @__PURE__ */ __commonJSMin(exports$271 => {
+    _p_ObjectDefineProperty(exports$271, '__esModule', { value: true })
     const common = require_common()
     var Reader = class {
       constructor(_root, _settings) {
@@ -11103,10 +11113,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         )
       }
     }
-    exports$63.default = Reader
+    exports$271.default = Reader
   })
-  var require_async$3 = /* @__PURE__ */ __commonJSMin(exports$64 => {
-    _p_ObjectDefineProperty(exports$64, '__esModule', { value: true })
+  var require_async$3 = /* @__PURE__ */ __commonJSMin(exports$272 => {
+    _p_ObjectDefineProperty(exports$272, '__esModule', { value: true })
     const events_1 = __require('events')
     const fsScandir = require_out$2()
     const fastq = require_queue()
@@ -11202,10 +11212,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         this._emitter.emit('entry', entry)
       }
     }
-    exports$64.default = AsyncReader
+    exports$272.default = AsyncReader
   })
-  var require_async$2 = /* @__PURE__ */ __commonJSMin(exports$65 => {
-    _p_ObjectDefineProperty(exports$65, '__esModule', { value: true })
+  var require_async$2 = /* @__PURE__ */ __commonJSMin(exports$273 => {
+    _p_ObjectDefineProperty(exports$273, '__esModule', { value: true })
     const async_1 = require_async$3()
     var AsyncProvider = class {
       constructor(_root, _settings) {
@@ -11227,7 +11237,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         this._reader.read()
       }
     }
-    exports$65.default = AsyncProvider
+    exports$273.default = AsyncProvider
     function callFailureCallback(callback, error) {
       callback(error)
     }
@@ -11235,8 +11245,8 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       callback(null, entries)
     }
   })
-  var require_stream$2 = /* @__PURE__ */ __commonJSMin(exports$66 => {
-    _p_ObjectDefineProperty(exports$66, '__esModule', { value: true })
+  var require_stream$2 = /* @__PURE__ */ __commonJSMin(exports$274 => {
+    _p_ObjectDefineProperty(exports$274, '__esModule', { value: true })
     const stream_1$2 = __require('stream')
     const async_1 = require_async$3()
     var StreamProvider = class {
@@ -11266,10 +11276,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return this._stream
       }
     }
-    exports$66.default = StreamProvider
+    exports$274.default = StreamProvider
   })
-  var require_sync$3 = /* @__PURE__ */ __commonJSMin(exports$67 => {
-    _p_ObjectDefineProperty(exports$67, '__esModule', { value: true })
+  var require_sync$3 = /* @__PURE__ */ __commonJSMin(exports$275 => {
+    _p_ObjectDefineProperty(exports$275, '__esModule', { value: true })
     const fsScandir = require_out$2()
     const common = require_common()
     const reader_1 = require_reader$1()
@@ -11330,10 +11340,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         this._storage.push(entry)
       }
     }
-    exports$67.default = SyncReader
+    exports$275.default = SyncReader
   })
-  var require_sync$2 = /* @__PURE__ */ __commonJSMin(exports$68 => {
-    _p_ObjectDefineProperty(exports$68, '__esModule', { value: true })
+  var require_sync$2 = /* @__PURE__ */ __commonJSMin(exports$276 => {
+    _p_ObjectDefineProperty(exports$276, '__esModule', { value: true })
     const sync_1 = require_sync$3()
     var SyncProvider = class {
       constructor(_root, _settings) {
@@ -11345,10 +11355,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return this._reader.read()
       }
     }
-    exports$68.default = SyncProvider
+    exports$276.default = SyncProvider
   })
-  var require_settings$1 = /* @__PURE__ */ __commonJSMin(exports$69 => {
-    _p_ObjectDefineProperty(exports$69, '__esModule', { value: true })
+  var require_settings$1 = /* @__PURE__ */ __commonJSMin(exports$277 => {
+    _p_ObjectDefineProperty(exports$277, '__esModule', { value: true })
     const path$8 = __require('path')
     const fsScandir = require_out$2()
     var Settings = class {
@@ -11379,20 +11389,20 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return option !== null && option !== void 0 ? option : value
       }
     }
-    exports$69.default = Settings
+    exports$277.default = Settings
   })
-  var require_out$1 = /* @__PURE__ */ __commonJSMin(exports$70 => {
-    _p_ObjectDefineProperty(exports$70, '__esModule', { value: true })
-    exports$70.Settings =
-      exports$70.walkStream =
-      exports$70.walkSync =
-      exports$70.walk =
+  var require_out$1 = /* @__PURE__ */ __commonJSMin(exports$278 => {
+    _p_ObjectDefineProperty(exports$278, '__esModule', { value: true })
+    exports$278.Settings =
+      exports$278.walkStream =
+      exports$278.walkSync =
+      exports$278.walk =
         void 0
     const async_1 = require_async$2()
     const stream_1 = require_stream$2()
     const sync_1 = require_sync$2()
     const settings_1 = require_settings$1()
-    exports$70.Settings = settings_1.default
+    exports$278.Settings = settings_1.default
     function walk(directory, optionsOrSettingsOrCallback, callback) {
       if (typeof optionsOrSettingsOrCallback === 'function') {
         new async_1.default(directory, getSettings()).read(
@@ -11405,25 +11415,25 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         getSettings(optionsOrSettingsOrCallback),
       ).read(callback)
     }
-    exports$70.walk = walk
+    exports$278.walk = walk
     function walkSync(directory, optionsOrSettings) {
       const settings = getSettings(optionsOrSettings)
       return new sync_1.default(directory, settings).read()
     }
-    exports$70.walkSync = walkSync
+    exports$278.walkSync = walkSync
     function walkStream(directory, optionsOrSettings) {
       const settings = getSettings(optionsOrSettings)
       return new stream_1.default(directory, settings).read()
     }
-    exports$70.walkStream = walkStream
+    exports$278.walkStream = walkStream
     function getSettings(settingsOrOptions = {}) {
       if (settingsOrOptions instanceof settings_1.default)
         return settingsOrOptions
       return new settings_1.default(settingsOrOptions)
     }
   })
-  var require_reader = /* @__PURE__ */ __commonJSMin(exports$71 => {
-    _p_ObjectDefineProperty(exports$71, '__esModule', { value: true })
+  var require_reader = /* @__PURE__ */ __commonJSMin(exports$279 => {
+    _p_ObjectDefineProperty(exports$279, '__esModule', { value: true })
     const path$7 = __require('path')
     const fsStat = require_out$3()
     const utils = require_utils$1()
@@ -11455,10 +11465,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         )
       }
     }
-    exports$71.default = Reader
+    exports$279.default = Reader
   })
-  var require_stream$1 = /* @__PURE__ */ __commonJSMin(exports$72 => {
-    _p_ObjectDefineProperty(exports$72, '__esModule', { value: true })
+  var require_stream$1 = /* @__PURE__ */ __commonJSMin(exports$280 => {
+    _p_ObjectDefineProperty(exports$280, '__esModule', { value: true })
     const stream_1$1 = __require('stream')
     const fsStat = require_out$3()
     const fsWalk = require_out$1()
@@ -11504,10 +11514,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         })
       }
     }
-    exports$72.default = ReaderStream
+    exports$280.default = ReaderStream
   })
-  var require_async$1 = /* @__PURE__ */ __commonJSMin(exports$73 => {
-    _p_ObjectDefineProperty(exports$73, '__esModule', { value: true })
+  var require_async$1 = /* @__PURE__ */ __commonJSMin(exports$281 => {
+    _p_ObjectDefineProperty(exports$281, '__esModule', { value: true })
     const fsWalk = require_out$1()
     const reader_1 = require_reader()
     const stream_1 = require_stream$1()
@@ -11535,10 +11545,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         })
       }
     }
-    exports$73.default = ReaderAsync
+    exports$281.default = ReaderAsync
   })
-  var require_matcher = /* @__PURE__ */ __commonJSMin(exports$74 => {
-    _p_ObjectDefineProperty(exports$74, '__esModule', { value: true })
+  var require_matcher$1 = /* @__PURE__ */ __commonJSMin(exports$282 => {
+    _p_ObjectDefineProperty(exports$282, '__esModule', { value: true })
     const utils = require_utils$1()
     var Matcher = class {
       constructor(_patterns, _settings, _micromatchOptions) {
@@ -11584,11 +11594,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         )
       }
     }
-    exports$74.default = Matcher
+    exports$282.default = Matcher
   })
-  var require_partial = /* @__PURE__ */ __commonJSMin(exports$75 => {
-    _p_ObjectDefineProperty(exports$75, '__esModule', { value: true })
-    const matcher_1 = require_matcher()
+  var require_partial = /* @__PURE__ */ __commonJSMin(exports$283 => {
+    _p_ObjectDefineProperty(exports$283, '__esModule', { value: true })
+    const matcher_1 = require_matcher$1()
     var PartialMatcher = class extends matcher_1.default {
       match(filepath) {
         const parts = filepath.split('/')
@@ -11620,10 +11630,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return false
       }
     }
-    exports$75.default = PartialMatcher
+    exports$283.default = PartialMatcher
   })
-  var require_deep = /* @__PURE__ */ __commonJSMin(exports$76 => {
-    _p_ObjectDefineProperty(exports$76, '__esModule', { value: true })
+  var require_deep = /* @__PURE__ */ __commonJSMin(exports$284 => {
+    _p_ObjectDefineProperty(exports$284, '__esModule', { value: true })
     const utils = require_utils$1()
     const partial_1 = require_partial()
     var DeepFilter = class {
@@ -11683,10 +11693,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return !utils.pattern.matchAny(entryPath, patternsRe)
       }
     }
-    exports$76.default = DeepFilter
+    exports$284.default = DeepFilter
   })
-  var require_entry$1 = /* @__PURE__ */ __commonJSMin(exports$77 => {
-    _p_ObjectDefineProperty(exports$77, '__esModule', { value: true })
+  var require_entry$1 = /* @__PURE__ */ __commonJSMin(exports$285 => {
+    _p_ObjectDefineProperty(exports$285, '__esModule', { value: true })
     const utils = require_utils$1()
     var EntryFilter = class {
       constructor(_settings, _micromatchOptions) {
@@ -11784,10 +11794,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return isMatched
       }
     }
-    exports$77.default = EntryFilter
+    exports$285.default = EntryFilter
   })
-  var require_error = /* @__PURE__ */ __commonJSMin(exports$78 => {
-    _p_ObjectDefineProperty(exports$78, '__esModule', { value: true })
+  var require_error$1 = /* @__PURE__ */ __commonJSMin(exports$286 => {
+    _p_ObjectDefineProperty(exports$286, '__esModule', { value: true })
     const utils = require_utils$1()
     var ErrorFilter = class {
       constructor(_settings) {
@@ -11802,10 +11812,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         )
       }
     }
-    exports$78.default = ErrorFilter
+    exports$286.default = ErrorFilter
   })
-  var require_entry = /* @__PURE__ */ __commonJSMin(exports$79 => {
-    _p_ObjectDefineProperty(exports$79, '__esModule', { value: true })
+  var require_entry = /* @__PURE__ */ __commonJSMin(exports$287 => {
+    _p_ObjectDefineProperty(exports$287, '__esModule', { value: true })
     const utils = require_utils$1()
     var EntryTransformer = class {
       constructor(_settings) {
@@ -11826,14 +11836,14 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return _p_ObjectAssign(_p_ObjectAssign({}, entry), { path: filepath })
       }
     }
-    exports$79.default = EntryTransformer
+    exports$287.default = EntryTransformer
   })
-  var require_provider = /* @__PURE__ */ __commonJSMin(exports$80 => {
-    _p_ObjectDefineProperty(exports$80, '__esModule', { value: true })
+  var require_provider = /* @__PURE__ */ __commonJSMin(exports$288 => {
+    _p_ObjectDefineProperty(exports$288, '__esModule', { value: true })
     const path$6 = __require('path')
     const deep_1 = require_deep()
     const entry_1 = require_entry$1()
-    const error_1 = require_error()
+    const error_1 = require_error$1()
     const entry_2 = require_entry()
     var Provider = class {
       constructor(_settings) {
@@ -11886,10 +11896,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         }
       }
     }
-    exports$80.default = Provider
+    exports$288.default = Provider
   })
-  var require_async = /* @__PURE__ */ __commonJSMin(exports$81 => {
-    _p_ObjectDefineProperty(exports$81, '__esModule', { value: true })
+  var require_async = /* @__PURE__ */ __commonJSMin(exports$289 => {
+    _p_ObjectDefineProperty(exports$289, '__esModule', { value: true })
     const async_1 = require_async$1()
     const provider_1 = require_provider()
     var ProviderAsync = class extends provider_1.default {
@@ -11909,10 +11919,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return this._reader.static(task.patterns, options)
       }
     }
-    exports$81.default = ProviderAsync
+    exports$289.default = ProviderAsync
   })
-  var require_stream$3 = /* @__PURE__ */ __commonJSMin(exports$82 => {
-    _p_ObjectDefineProperty(exports$82, '__esModule', { value: true })
+  var require_stream$3 = /* @__PURE__ */ __commonJSMin(exports$290 => {
+    _p_ObjectDefineProperty(exports$290, '__esModule', { value: true })
     const stream_1 = __require('stream')
     const stream_2 = require_stream$1()
     const provider_1 = require_provider()
@@ -11943,10 +11953,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return this._reader.static(task.patterns, options)
       }
     }
-    exports$82.default = ProviderStream
+    exports$290.default = ProviderStream
   })
-  var require_sync$1 = /* @__PURE__ */ __commonJSMin(exports$83 => {
-    _p_ObjectDefineProperty(exports$83, '__esModule', { value: true })
+  var require_sync$1 = /* @__PURE__ */ __commonJSMin(exports$291 => {
+    _p_ObjectDefineProperty(exports$291, '__esModule', { value: true })
     const fsStat = require_out$3()
     const fsWalk = require_out$1()
     const reader_1 = require_reader()
@@ -11982,10 +11992,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return this._statSync(filepath, this._fsStatSettings)
       }
     }
-    exports$83.default = ReaderSync
+    exports$291.default = ReaderSync
   })
-  var require_sync = /* @__PURE__ */ __commonJSMin(exports$84 => {
-    _p_ObjectDefineProperty(exports$84, '__esModule', { value: true })
+  var require_sync = /* @__PURE__ */ __commonJSMin(exports$292 => {
+    _p_ObjectDefineProperty(exports$292, '__esModule', { value: true })
     const sync_1 = require_sync$1()
     const provider_1 = require_provider()
     var ProviderSync = class extends provider_1.default {
@@ -12003,11 +12013,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         return this._reader.static(task.patterns, options)
       }
     }
-    exports$84.default = ProviderSync
+    exports$292.default = ProviderSync
   })
-  var require_settings = /* @__PURE__ */ __commonJSMin(exports$85 => {
-    _p_ObjectDefineProperty(exports$85, '__esModule', { value: true })
-    exports$85.DEFAULT_FILE_SYSTEM_ADAPTER = void 0
+  var require_settings = /* @__PURE__ */ __commonJSMin(exports$293 => {
+    _p_ObjectDefineProperty(exports$293, '__esModule', { value: true })
+    exports$293.DEFAULT_FILE_SYSTEM_ADAPTER = void 0
     const fs$4 = __require('fs')
     const os$1 = __require('os')
     /**
@@ -12016,7 +12026,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
      * https://github.com/nodejs/node/blob/7faeddf23a98c53896f8b574a6e66589e8fb1eb8/lib/os.js#L106-L107.
      */
     const CPU_COUNT = _p_MathMax(os$1.cpus().length, 1)
-    exports$85.DEFAULT_FILE_SYSTEM_ADAPTER = {
+    exports$293.DEFAULT_FILE_SYSTEM_ADAPTER = {
       lstat: fs$4.lstat,
       lstatSync: fs$4.lstatSync,
       stat: fs$4.stat,
@@ -12075,14 +12085,14 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       _getFileSystemMethods(methods = {}) {
         return _p_ObjectAssign(
-          _p_ObjectAssign({}, exports$85.DEFAULT_FILE_SYSTEM_ADAPTER),
+          _p_ObjectAssign({}, exports$293.DEFAULT_FILE_SYSTEM_ADAPTER),
           methods,
         )
       }
     }
-    exports$85.default = Settings
+    exports$293.default = Settings
   })
-  var require_out = /* @__PURE__ */ __commonJSMin((exports$86, module$36) => {
+  var require_out = /* @__PURE__ */ __commonJSMin((exports$294, module$40) => {
     const taskManager = require_tasks()
     const async_1 = require_async()
     const stream_1 = require_stream$3()
@@ -12185,7 +12195,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
           'Patterns must be a string (non empty) or an array of strings',
         )
     }
-    module$36.exports = FastGlob
+    module$40.exports = FastGlob
   })
   var init_default = __esmMin(() => {})
   function toPath(urlOrPath) {
@@ -12198,7 +12208,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     ;(0, node_util$1.promisify)(node_child_process.execFile)
   })
   var require_ignore = /* @__PURE__ */ __commonJSMin(
-    (exports$87, module$37) => {
+    (exports$295, module$41) => {
       function makeArray(subject) {
         return _p_ArrayIsArray(subject) ? subject : [subject]
       }
@@ -12531,10 +12541,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       /* istanbul ignore next */
       if (typeof process !== 'undefined' && process.platform === 'win32')
         setupWindows()
-      module$37.exports = factory
+      module$41.exports = factory
       factory.default = factory
-      module$37.exports.isPathValid = isPathValid
-      define(module$37.exports, Symbol.for('setupWindows'), setupWindows)
+      module$41.exports.isPathValid = isPathValid
+      define(module$41.exports, Symbol.for('setupWindows'), setupWindows)
     },
   )
   function isPathInside(childPath, parentPath) {
@@ -13274,7 +13284,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
           ? options.ignore
           : [options.ignore]
         : []
-      const cwd = toPath(options.cwd) ?? node_process$1.default.cwd()
+      const cwd = toPath(options.cwd) ?? node_process$2.default.cwd()
       const deep =
         typeof options.deep === 'number'
           ? _p_MathMax(0, options.deep) + 1
@@ -13658,11 +13668,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
     }
     getXdgConfigHome = () =>
-      node_process$1.default.env.XDG_CONFIG_HOME ||
+      node_process$2.default.env.XDG_CONFIG_HOME ||
       node_path$1.default.join(node_os$1.default.homedir(), '.config')
     getGitConfigPaths = () => {
-      if ('GIT_CONFIG_GLOBAL' in node_process$1.default.env) {
-        const value = node_process$1.default.env.GIT_CONFIG_GLOBAL
+      if ('GIT_CONFIG_GLOBAL' in node_process$2.default.env) {
+        const value = node_process$2.default.env.GIT_CONFIG_GLOBAL
         return value ? [value] : []
       }
       return [
@@ -13692,7 +13702,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
     }
     getGlobalGitignoreFile = (options = {}) => {
-      const cwd = toPath(options.cwd) ?? node_process$1.default.cwd()
+      const cwd = toPath(options.cwd) ?? node_process$2.default.cwd()
       const readFileSync = getReadFileSyncMethod(options.fs)
       const gitRoot = findGitRootSync(cwd, options.fs)
       const gitDirectory = getGitDirectorySync(gitRoot, readFileSync)
@@ -13716,7 +13726,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
           )
     }
     getGlobalGitignoreFileAsync = async (options = {}) => {
-      const cwd = toPath(options.cwd) ?? node_process$1.default.cwd()
+      const cwd = toPath(options.cwd) ?? node_process$2.default.cwd()
       const readFile = getReadFileMethod(options.fs)
       const gitRoot = await findGitRoot(cwd, options.fs)
       const gitDirectory = await getGitDirectoryAsync(gitRoot, readFile)
@@ -14119,7 +14129,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     directoryToGlob = async (
       directoryPaths,
       {
-        cwd = node_process$1.default.cwd(),
+        cwd = node_process$2.default.cwd(),
         files,
         extensions,
         fs: fsImplementation,
@@ -14155,7 +14165,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     directoryToGlobSync = (
       directoryPaths,
       {
-        cwd = node_process$1.default.cwd(),
+        cwd = node_process$2.default.cwd(),
         files,
         extensions,
         fs: fsImplementation,
@@ -14278,7 +14288,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       ),
     })
     applyIgnoreFilesAndGetFilter = async options => {
-      const cwd = options.cwd ?? node_process$1.default.cwd()
+      const cwd = options.cwd ?? node_process$2.default.cwd()
       const ignoreFilesPatterns = getIgnoreFilesPatterns(options)
       const globalIgnoreFile = options.globalGitignore
         ? await getGlobalGitignoreFileAsync(options)
@@ -14316,7 +14326,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       })
     }
     applyIgnoreFilesAndGetFilterSync = options => {
-      const cwd = options.cwd ?? node_process$1.default.cwd()
+      const cwd = options.cwd ?? node_process$2.default.cwd()
       const ignoreFilesPatterns = getIgnoreFilesPatterns(options)
       const globalIgnoreFile = options.globalGitignore
         ? getGlobalGitignoreFile(options)
@@ -14367,7 +14377,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         throw new _p_ErrorCtor(globalGitignoreAsyncStatErrorMessage)
     }
     createPathResolver = cwd => {
-      const basePath = cwd || node_process$1.default.cwd()
+      const basePath = cwd || node_process$2.default.cwd()
       const pathCache = /* @__PURE__ */ new _p_MapCtor()
       return pathKey => {
         let absolutePath = pathCache.get(pathKey)
@@ -14685,9 +14695,9 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     ;({ convertPathToPattern } = import_out.default)
   })
   function isPathCwd(path_) {
-    let cwd = node_process$1.default.cwd()
+    let cwd = node_process$2.default.cwd()
     path_ = node_path$1.default.resolve(path_)
-    if (node_process$1.default.platform === 'win32') {
+    if (node_process$2.default.platform === 'win32') {
       cwd = _p_StringPrototypeToLowerCase(cwd)
       path_ = _p_StringPrototypeToLowerCase(path_)
     }
@@ -14857,7 +14867,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     patterns = _p_ArrayIsArray(patterns) ? patterns : [patterns]
     patterns = patterns.map(pattern => {
       if (
-        node_process$1.default.platform === 'win32' &&
+        node_process$2.default.platform === 'win32' &&
         (0, import_is_glob.default)(pattern) === false
       )
         return slash(pattern)
@@ -14870,7 +14880,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     {
       force,
       dryRun,
-      cwd = node_process$1.default.cwd(),
+      cwd = node_process$2.default.cwd(),
       onProgress = () => {},
       ...options
     } = {},
@@ -14916,7 +14926,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
   }
   function deleteSync$1(
     patterns,
-    { force, dryRun, cwd = node_process$1.default.cwd(), ...options } = {},
+    { force, dryRun, cwd = node_process$2.default.cwd(), ...options } = {},
   ) {
     options = {
       expandDirectories: false,
@@ -14953,7 +14963,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     __name(deleteAsync$1, 'deleteAsync')
     __name(deleteSync$1, 'deleteSync')
   })
-  const picomatch = require_picomatch()
+  const picomatch = require_picomatch$1()
   const { deleteAsync, deleteSync } = (init_del(), __toCommonJS(del_exports))
   const fastGlob = require_out()
   const del = {
@@ -14982,14 +14992,14 @@ var require_del = /* @__PURE__ */ __commonJSMin((exports, module) => {
 var require_safe = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_node_fs = require_fs$1()
-  const require_arrays_predicates = require_predicates$3()
-  const require_paths_shared = require_shared$3()
-  const require_objects_mutate = require_mutate()
-  const require_primordials_array = require_array$2()
-  const require_errors_predicates = require_predicates$1()
+  const require_arrays_predicates = require_predicates$4()
+  const require_paths_shared = require_shared$6()
+  const require_objects_mutate = require_mutate$1()
+  const require_primordials_array = require_array$3()
+  const require_errors_predicates = require_predicates$2()
   const require_primordials_globals = require_globals()
   const require_promises_retry = require_retry()
-  const require_fs_shared = require_shared$1()
+  const require_fs_shared = require_shared$4()
   /**
    * @file Safe deletion + idempotent directory creation. The delete helpers
    *   gate destructive operations behind an "allowed directories" allow-list
@@ -19994,11 +20004,11 @@ var require_json = /* @__PURE__ */ __commonJSMin(exports => {
   exports.JSONStringify = JSONStringify
 })
 
-var require_array = /* @__PURE__ */ __commonJSMin(exports => {
+var require_array$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_error = require_error$1()
-  const require_primordials_number = require_number$1()
-  const require_primordials_array = require_array$2()
+  const require_primordials_error = require_error$2()
+  const require_primordials_number = require_number$2()
+  const require_primordials_array = require_array$3()
   const require_primordials_math = require_math()
   /**
    * @file Shims for the ES2023 change-array-by-copy methods, both Node 20.
@@ -20079,11 +20089,11 @@ var require_array = /* @__PURE__ */ __commonJSMin(exports => {
   exports.toLength = toLength
 })
 
-var require_format$1 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_format$2 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_object = require_object()
+  const require_primordials_object = require_object$1()
   const require_primordials_json = require_json()
-  const require_polyfills_array = require_array()
+  const require_polyfills_array = require_array$1()
   /**
    * @file Shared utilities for JSON formatting preservation and manipulation.
    *   Provides functions for detecting and preserving indentation, line
@@ -20340,7 +20350,7 @@ var require_format$1 = /* @__PURE__ */ __commonJSMin(exports => {
   exports.stripFormattingSymbols = stripFormattingSymbols
 })
 
-var import_format = require_format$1()
+var import_format = require_format$2()
 /**
  * @file Paths for the Codex setup step.
  */
@@ -20556,8 +20566,8 @@ var require_pony_cause$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
     mod.exports
   )
   var require_error_with_cause = /* @__PURE__ */ __commonJSMin(
-    (exports$11, module$10) => {
-      module$10.exports = {
+    (exports$219, module$14) => {
+      module$14.exports = {
         ErrorWithCause: class ErrorWithCause extends Error {
           /**
            * @param {string} message
@@ -20584,7 +20594,7 @@ var require_pony_cause$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
     },
   )
   var require_helpers = /* @__PURE__ */ __commonJSMin(
-    (exports$12, module$11) => {
+    (exports$220, module$15) => {
       const isError =
         typeof Error.isError === 'function'
           ? Error.isError
@@ -20696,7 +20706,7 @@ var require_pony_cause$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
        */
       const messageWithCauses = err =>
         _messageWithCauses(err, /* @__PURE__ */ new _p_SetCtor())
-      module$11.exports = {
+      module$15.exports = {
         findCauseByReference,
         getErrorCause,
         stackWithCauses,
@@ -20705,7 +20715,7 @@ var require_pony_cause$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
     },
   )
   var require_pony_cause = /* @__PURE__ */ __commonJSMin(
-    (exports$13, module$12) => {
+    (exports$221, module$16) => {
       const { ErrorWithCause } = require_error_with_cause()
       const {
         findCauseByReference,
@@ -20713,7 +20723,7 @@ var require_pony_cause$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
         messageWithCauses,
         stackWithCauses,
       } = require_helpers()
-      module$12.exports = {
+      module$16.exports = {
         ErrorWithCause,
         findCauseByReference,
         getErrorCause,
@@ -20728,7 +20738,7 @@ var require_pony_cause$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
 var require_message = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_constants_sentinels = require_sentinels()
-  const require_errors_predicates = require_predicates$1()
+  const require_errors_predicates = require_predicates$2()
   let src_external_pony_cause_js = require_pony_cause$1()
   /**
    * @file Human-readable error-message extractor. `errorMessage` walks the
@@ -21139,7 +21149,7 @@ var require_context = /* @__PURE__ */ __commonJSMin(exports => {
   exports.withThemeSync = withThemeSync
 })
 
-var require_shared = /* @__PURE__ */ __commonJSMin(exports => {
+var require_shared$3 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_map_set = require_map_set()
   /**
@@ -21256,7 +21266,7 @@ var require_shared = /* @__PURE__ */ __commonJSMin(exports => {
   exports.privateConstructorArgs = privateConstructorArgs
 })
 
-var require_runtime$2 = /* @__PURE__ */ __commonJSMin(exports => {
+var require_runtime$4 = /* @__PURE__ */ __commonJSMin(exports => {
   var __create = Object.create
   var __defProp = Object.defineProperty
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor
@@ -21383,8 +21393,8 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     __hasOwnProp.call(mod, 'module.exports')
       ? mod['module.exports']
       : __copyProps(__defProp({}, '__esModule', { value: true }), mod)
-  let node_process = __require('process')
-  node_process = __toESM(node_process, 1)
+  let node_process$1 = __require('process')
+  node_process$1 = __toESM(node_process$1, 1)
   let node_os = __require('os')
   node_os = __toESM(node_os, 1)
   let node_tty = __require('tty')
@@ -21395,9 +21405,9 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
   node_readline = __toESM(node_readline, 1)
   let node_path = __require('path')
   const { ArrayFrom: _p_ArrayFrom, ArrayIsArray: _p_ArrayIsArray } =
-    require_array$2()
+    require_array$3()
   const { ErrorCtor: _p_ErrorCtor, TypeErrorCtor: _p_TypeErrorCtor } =
-    require_error$1()
+    require_error$2()
   const { SetCtor: _p_SetCtor } = require_map_set()
   const {
     MathAbs: _p_MathAbs,
@@ -21410,7 +21420,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     NumberIsNaN: _p_NumberIsNaN,
     NumberParseFloat: _p_NumberParseFloat,
     NumberParseInt: _p_NumberParseInt,
-  } = require_number$1()
+  } = require_number$2()
   const {
     ObjectAssign: _p_ObjectAssign,
     ObjectDefineProperty: _p_ObjectDefineProperty,
@@ -21418,9 +21428,9 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     ObjectGetPrototypeOf: _p_ObjectGetPrototypeOf,
     ObjectIs: _p_ObjectIs,
     ObjectKeys: _p_ObjectKeys,
-  } = require_object()
+  } = require_object$1()
   const { processCwd: _p_processCwd } = require_process$1()
-  const { PromiseCtor: _p_PromiseCtor } = require_promise()
+  const { PromiseCtor: _p_PromiseCtor } = require_promise$1()
   const { RegExpCtor: _p_RegExpCtor } = require_regexp()
   const {
     StringPrototypeCodePointAt: _p_StringPrototypeCodePointAt,
@@ -21430,11 +21440,11 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     StringPrototypeTrim: _p_StringPrototypeTrim,
     StringPrototypeTrimEnd: _p_StringPrototypeTrimEnd,
     StringPrototypeTrimStart: _p_StringPrototypeTrimStart,
-  } = require_string$1()
+  } = require_string$2()
   node_path = __toESM(node_path, 1)
-  var require_signals = /* @__PURE__ */ __commonJSMin(exports$2 => {
-    _p_ObjectDefineProperty(exports$2, '__esModule', { value: true })
-    exports$2.signals = void 0
+  var require_signals = /* @__PURE__ */ __commonJSMin(exports$210 => {
+    _p_ObjectDefineProperty(exports$210, '__esModule', { value: true })
+    exports$210.signals = void 0
     /**
      * This is not the set of all possible signals.
      *
@@ -21461,10 +21471,10 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
      * state from which it is not safe to try and enter JS
      * listeners.
      */
-    exports$2.signals = []
-    exports$2.signals.push('SIGHUP', 'SIGINT', 'SIGTERM')
+    exports$210.signals = []
+    exports$210.signals.push('SIGHUP', 'SIGINT', 'SIGTERM')
     if (process.platform !== 'win32')
-      exports$2.signals.push(
+      exports$210.signals.push(
         'SIGALRM',
         'SIGABRT',
         'SIGVTALRM',
@@ -21477,18 +21487,18 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         'SIGIOT',
       )
     if (process.platform === 'linux')
-      exports$2.signals.push('SIGIO', 'SIGPOLL', 'SIGPWR', 'SIGSTKFLT')
+      exports$210.signals.push('SIGIO', 'SIGPOLL', 'SIGPWR', 'SIGSTKFLT')
   })
-  var require_cjs = /* @__PURE__ */ __commonJSMin(exports$3 => {
+  var require_cjs = /* @__PURE__ */ __commonJSMin(exports$211 => {
     var _a
-    _p_ObjectDefineProperty(exports$3, '__esModule', { value: true })
-    exports$3.unload =
-      exports$3.load =
-      exports$3.onExit =
-      exports$3.signals =
+    _p_ObjectDefineProperty(exports$211, '__esModule', { value: true })
+    exports$211.unload =
+      exports$211.load =
+      exports$211.onExit =
+      exports$211.signals =
         void 0
     const signals_js_1 = require_signals()
-    _p_ObjectDefineProperty(exports$3, 'signals', {
+    _p_ObjectDefineProperty(exports$211, 'signals', {
       enumerable: true,
       get: function () {
         return signals_js_1.signals
@@ -21685,9 +21695,9 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     ;((_a = signalExitWrap(
       processOk(process) ? new SignalExit(process) : new SignalExitFallback(),
     )),
-      (exports$3.onExit = _a.onExit),
-      (exports$3.load = _a.load),
-      (exports$3.unload = _a.unload))
+      (exports$211.onExit = _a.onExit),
+      (exports$211.load = _a.load),
+      (exports$211.unload = _a.unload))
   })
   var supports_color_exports = /* @__PURE__ */ __exportAll({
     createSupportsColor: () => createSupportsColor,
@@ -21695,7 +21705,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
   })
   function hasFlag$1(
     flag,
-    argv = globalThis.Deno ? globalThis.Deno.args : node_process.default.argv,
+    argv = globalThis.Deno ? globalThis.Deno.args : node_process$1.default.argv,
   ) {
     const prefix = _p_StringPrototypeStartsWith(flag, '-')
       ? ''
@@ -21745,7 +21755,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     if (haveStream && !streamIsTTY && forceColor === void 0) return 0
     const min = forceColor || 0
     if (env.TERM === 'dumb') return min
-    if (node_process.default.platform === 'win32') {
+    if (node_process$1.default.platform === 'win32') {
       const osRelease = node_os.default.release().split('.')
       if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586)
         return Number(osRelease[2]) >= 14931 ? 3 : 2
@@ -21806,7 +21816,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
   var supportsColor$1
   var init_supports_color = __esmMin(() => {
     __name(hasFlag$1, 'hasFlag')
-    ;({ env } = node_process.default)
+    ;({ env } = node_process$1.default)
     if (
       hasFlag$1('no-color') ||
       hasFlag$1('no-colors') ||
@@ -21827,8 +21837,8 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     }
   })
   var require__stub_has_flag = /* @__PURE__ */ __commonJSMin(
-    (exports$4, module$3) => {
-      module$3.exports = function hasFlag(flag, argv = process.argv) {
+    (exports$212, module$7) => {
+      module$7.exports = function hasFlag(flag, argv = process.argv) {
         const prefix = _p_StringPrototypeStartsWith(flag, '-')
           ? ''
           : flag.length === 1
@@ -21844,9 +21854,9 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     },
   )
   var require_ansi_escapes = /* @__PURE__ */ __commonJSMin(
-    (exports$5, module$4) => {
-      const ansiEscapes = module$4.exports
-      module$4.exports.default = ansiEscapes
+    (exports$213, module$8) => {
+      const ansiEscapes = module$8.exports
+      module$8.exports.default = ansiEscapes
       const ESC = '\x1B['
       const OSC = '\x1B]'
       const BEL = '\x07'
@@ -21955,7 +21965,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     },
   )
   var require__stub_supports_hyperlinks = /* @__PURE__ */ __commonJSMin(
-    (exports$6, module$5) => {
+    (exports$214, module$9) => {
       const os = __require('os')
       const process$3 = __require('process')
       function parseVersion(version) {
@@ -22024,22 +22034,22 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         }
         return false
       }
-      module$5.exports = { supportsHyperlink: supported }
-      _p_ObjectDefineProperty(module$5.exports, 'stdout', {
+      module$9.exports = { supportsHyperlink: supported }
+      _p_ObjectDefineProperty(module$9.exports, 'stdout', {
         configurable: true,
         enumerable: true,
         get: () => supported(process$3.stdout),
       })
-      _p_ObjectDefineProperty(module$5.exports, 'stderr', {
+      _p_ObjectDefineProperty(module$9.exports, 'stderr', {
         configurable: true,
         enumerable: true,
         get: () => supported(process$3.stderr),
       })
-      module$5.exports.default = module$5.exports
+      module$9.exports.default = module$9.exports
     },
   )
   var require_terminal_link = /* @__PURE__ */ __commonJSMin(
-    (exports$7, module$6) => {
+    (exports$215, module$10) => {
       const ansiEscapes = require_ansi_escapes()
       const supportsHyperlinks = require__stub_supports_hyperlinks()
       const terminalLink = (
@@ -22055,19 +22065,19 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         }
         return ansiEscapes.link(text, url)
       }
-      module$6.exports = (text, url, options = {}) =>
+      module$10.exports = (text, url, options = {}) =>
         terminalLink(text, url, options)
-      module$6.exports.stderr = (text, url, options = {}) =>
+      module$10.exports.stderr = (text, url, options = {}) =>
         terminalLink(text, url, {
           target: 'stderr',
           ...options,
         })
-      module$6.exports.isSupported = supportsHyperlinks.stdout
-      module$6.exports.stderr.isSupported = supportsHyperlinks.stderr
+      module$10.exports.isSupported = supportsHyperlinks.stdout
+      module$10.exports.stderr.isSupported = supportsHyperlinks.stderr
     },
   )
   var require_yoctocolors_cjs$1 = /* @__PURE__ */ __commonJSMin(
-    (exports$8, module$7) => {
+    (exports$216, module$11) => {
       const hasColors =
         __require('tty')?.WriteStream?.prototype?.hasColors?.() ?? false
       const format = (open, close) => {
@@ -22132,7 +22142,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       colors.bgMagentaBright = format(105, 49)
       colors.bgCyanBright = format(106, 49)
       colors.bgWhiteBright = format(107, 49)
-      module$7.exports = colors
+      module$11.exports = colors
     },
   )
   function isKeybinding(value) {
@@ -22343,18 +22353,18 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     init_hook_engine()
   })
   function isUnicodeSupported() {
-    if (!node_process.default.platform.startsWith('win'))
-      return node_process.default.env['TERM'] !== 'linux'
+    if (!node_process$1.default.platform.startsWith('win'))
+      return node_process$1.default.env['TERM'] !== 'linux'
     return (
       Boolean(false) ||
-      Boolean(node_process.default.env['WT_SESSION']) ||
-      Boolean(node_process.default.env['TERMINUS_SUBLIME']) ||
-      node_process.default.env['ConEmuTask'] === '{cmd::Cmder}' ||
-      node_process.default.env['TERM_PROGRAM'] === 'Terminus-Sublime' ||
-      node_process.default.env['TERM_PROGRAM'] === 'vscode' ||
-      node_process.default.env['TERM'] === 'xterm-256color' ||
-      node_process.default.env['TERM'] === 'alacritty' ||
-      node_process.default.env['TERMINAL_EMULATOR'] === 'JetBrains-JediTerm'
+      Boolean(node_process$1.default.env['WT_SESSION']) ||
+      Boolean(node_process$1.default.env['TERMINUS_SUBLIME']) ||
+      node_process$1.default.env['ConEmuTask'] === '{cmd::Cmder}' ||
+      node_process$1.default.env['TERM_PROGRAM'] === 'Terminus-Sublime' ||
+      node_process$1.default.env['TERM_PROGRAM'] === 'vscode' ||
+      node_process$1.default.env['TERM'] === 'xterm-256color' ||
+      node_process$1.default.env['TERM'] === 'alacritty' ||
+      node_process$1.default.env['TERMINAL_EMULATOR'] === 'JetBrains-JediTerm'
     )
   }
   var common
@@ -22789,8 +22799,8 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     init_hook_engine()
   })
   var require_cli_width = /* @__PURE__ */ __commonJSMin(
-    (exports$9, module$8) => {
-      module$8.exports = cliWidth
+    (exports$217, module$12) => {
+      module$12.exports = cliWidth
       function normalizeOpts(options) {
         const defaultOpts = {
           defaultWidth: 0,
@@ -23395,108 +23405,110 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
     init_use_ref()
     init_utils()
   })
-  var require_lib = /* @__PURE__ */ __commonJSMin((exports$10, module$9) => {
-    const Stream = __require('stream')
-    var MuteStream = class extends Stream {
-      #isTTY = null
-      constructor(opts = {}) {
-        super(opts)
-        this.writable = this.readable = true
-        this.muted = false
-        this.on('pipe', this._onpipe)
-        this.replace = opts.replace
-        this._prompt = opts.prompt || null
-        this._hadControl = false
-      }
-      #destSrc(key, def) {
-        if (this._dest) return this._dest[key]
-        if (this._src) return this._src[key]
-        return def
-      }
-      #proxy(method, ...args) {
-        if (typeof this._dest?.[method] === 'function')
-          this._dest[method](...args)
-        if (typeof this._src?.[method] === 'function')
-          this._src[method](...args)
-      }
-      get isTTY() {
-        if (this.#isTTY !== null) return this.#isTTY
-        return this.#destSrc('isTTY', false)
-      }
-      set isTTY(val) {
-        this.#isTTY = val
-      }
-      get rows() {
-        return this.#destSrc('rows')
-      }
-      get columns() {
-        return this.#destSrc('columns')
-      }
-      mute() {
-        this.muted = true
-      }
-      unmute() {
-        this.muted = false
-      }
-      _onpipe(src) {
-        this._src = src
-      }
-      pipe(dest, options) {
-        this._dest = dest
-        return super.pipe(dest, options)
-      }
-      pause() {
-        if (this._src) return this._src.pause()
-      }
-      resume() {
-        if (this._src) return this._src.resume()
-      }
-      write(c) {
-        if (this.muted) {
-          if (!this.replace) return true
-          if (c.match(/^\u001b/)) {
-            if (c.indexOf(this._prompt) === 0) {
-              c = c.slice(this._prompt.length)
-              c = c.replace(/./g, this.replace)
-              c = this._prompt + c
+  var require_lib$3 = /* @__PURE__ */ __commonJSMin(
+    (exports$218, module$13) => {
+      const Stream = __require('stream')
+      var MuteStream = class extends Stream {
+        #isTTY = null
+        constructor(opts = {}) {
+          super(opts)
+          this.writable = this.readable = true
+          this.muted = false
+          this.on('pipe', this._onpipe)
+          this.replace = opts.replace
+          this._prompt = opts.prompt || null
+          this._hadControl = false
+        }
+        #destSrc(key, def) {
+          if (this._dest) return this._dest[key]
+          if (this._src) return this._src[key]
+          return def
+        }
+        #proxy(method, ...args) {
+          if (typeof this._dest?.[method] === 'function')
+            this._dest[method](...args)
+          if (typeof this._src?.[method] === 'function')
+            this._src[method](...args)
+        }
+        get isTTY() {
+          if (this.#isTTY !== null) return this.#isTTY
+          return this.#destSrc('isTTY', false)
+        }
+        set isTTY(val) {
+          this.#isTTY = val
+        }
+        get rows() {
+          return this.#destSrc('rows')
+        }
+        get columns() {
+          return this.#destSrc('columns')
+        }
+        mute() {
+          this.muted = true
+        }
+        unmute() {
+          this.muted = false
+        }
+        _onpipe(src) {
+          this._src = src
+        }
+        pipe(dest, options) {
+          this._dest = dest
+          return super.pipe(dest, options)
+        }
+        pause() {
+          if (this._src) return this._src.pause()
+        }
+        resume() {
+          if (this._src) return this._src.resume()
+        }
+        write(c) {
+          if (this.muted) {
+            if (!this.replace) return true
+            if (c.match(/^\u001b/)) {
+              if (c.indexOf(this._prompt) === 0) {
+                c = c.slice(this._prompt.length)
+                c = c.replace(/./g, this.replace)
+                c = this._prompt + c
+              }
+              this._hadControl = true
+              return this.emit('data', c)
+            } else {
+              if (
+                this._prompt &&
+                this._hadControl &&
+                c.indexOf(this._prompt) === 0
+              ) {
+                this._hadControl = false
+                this.emit('data', this._prompt)
+                c = c.slice(this._prompt.length)
+              }
+              c = c.toString().replace(/./g, this.replace)
             }
-            this._hadControl = true
-            return this.emit('data', c)
-          } else {
-            if (
-              this._prompt &&
-              this._hadControl &&
-              c.indexOf(this._prompt) === 0
-            ) {
-              this._hadControl = false
-              this.emit('data', this._prompt)
-              c = c.slice(this._prompt.length)
-            }
-            c = c.toString().replace(/./g, this.replace)
           }
+          this.emit('data', c)
         }
-        this.emit('data', c)
-      }
-      end(c) {
-        if (this.muted) {
-          if (c && this.replace) c = c.toString().replace(/./g, this.replace)
-          else c = null
+        end(c) {
+          if (this.muted) {
+            if (c && this.replace) c = c.toString().replace(/./g, this.replace)
+            else c = null
+          }
+          if (c) this.emit('data', c)
+          this.emit('end')
         }
-        if (c) this.emit('data', c)
-        this.emit('end')
+        destroy(...args) {
+          return this.#proxy('destroy', ...args)
+        }
+        destroySoon(...args) {
+          return this.#proxy('destroySoon', ...args)
+        }
+        close(...args) {
+          return this.#proxy('close', ...args)
+        }
       }
-      destroy(...args) {
-        return this.#proxy('destroy', ...args)
-      }
-      destroySoon(...args) {
-        return this.#proxy('destroySoon', ...args)
-      }
-      close(...args) {
-        return this.#proxy('close', ...args)
-      }
-    }
-    module$9.exports = MuteStream
-  })
+      module$13.exports = MuteStream
+    },
+  )
   var signals
   var init_signals = __esmMin(() => {
     signals = []
@@ -23970,7 +23982,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
   var import_lib
   var nativeSetImmediate
   var init_create_prompt = __esmMin(() => {
-    import_lib = /* @__PURE__ */ __toESM(require_lib(), 1)
+    import_lib = /* @__PURE__ */ __toESM(require_lib$3(), 1)
     init_mjs()
     init_screen_manager()
     init_promise_polyfill()
@@ -24902,7 +24914,7 @@ var require_external_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
 var require_supports_color = /* @__PURE__ */ __commonJSMin(
   (exports, module) => {
     const { supportsColor } = require_external_pack()
-    const { ObjectAssign: _p_ObjectAssign } = require_object()
+    const { ObjectAssign: _p_ObjectAssign } = require_object$1()
     const eager = supportsColor.default || supportsColor
     _p_ObjectAssign(module.exports, eager)
     if (typeof supportsColor.createSupportsColor === 'function')
@@ -25099,13 +25111,13 @@ var require_is_unicode_supported$1 = /* @__PURE__ */ __commonJSMin(
       mod.exports
     )
     var require_is_unicode_supported = /* @__PURE__ */ __commonJSMin(
-      (exports$1, module$2) => {
+      (exports$209, module$6) => {
         let _process
         function getProcess() {
           if (_process === void 0) _process = __require('process')
           return _process
         }
-        module$2.exports = function isUnicodeSupported() {
+        module$6.exports = function isUnicodeSupported() {
           const process = getProcess()
           if (process.platform !== 'win32') return process.env.TERM !== 'linux'
           const { env } = process
@@ -25134,13 +25146,13 @@ var require_is_unicode_supported$1 = /* @__PURE__ */ __commonJSMin(
 
 var require_symbols_builder = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_runtime$1 = require_runtime$2()
-  const require_primordials_string = require_string$1()
+  const require_runtime$3 = require_runtime$4()
+  const require_primordials_string = require_string$2()
   const require_logger_colors = require_colors()
   let src_external__socketregistry_is_unicode_supported_js =
     require_is_unicode_supported$1()
   src_external__socketregistry_is_unicode_supported_js =
-    require_runtime$1.__toESM(
+    require_runtime$3.__toESM(
       src_external__socketregistry_is_unicode_supported_js,
       1,
     )
@@ -25220,19 +25232,19 @@ var require_symbols_builder = /* @__PURE__ */ __commonJSMin(exports => {
   exports.stripLoggerSymbols = stripLoggerSymbols
 })
 
-var require_symbols = /* @__PURE__ */ __commonJSMin(exports => {
+var require_symbols$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_runtime = require_runtime$2()
-  const require_primordials_object = require_object()
+  const require_runtime$2 = require_runtime$4()
+  const require_primordials_object = require_object$1()
   const require_primordials_reflect = require_reflect()
   const require_primordials_globals = require_globals()
   const require_term_themes_context = require_context()
-  const require_logger_shared = require_shared()
+  const require_logger_shared = require_shared$3()
   const require_logger_colors = require_colors()
   let src_external__socketregistry_is_unicode_supported_js =
     require_is_unicode_supported$1()
   src_external__socketregistry_is_unicode_supported_js =
-    require_runtime.__toESM(
+    require_runtime$2.__toESM(
       src_external__socketregistry_is_unicode_supported_js,
       1,
     )
@@ -25382,7 +25394,7 @@ var require_symbols = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_process = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const nodeProcess = require_runtime$3().IS_NODE
+  const nodeProcess = require_runtime$5().IS_NODE
     ? /*@__PURE__*/ __require('process')
     : void 0
   function getNodeProcess() {
@@ -25393,12 +25405,12 @@ var require_process = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_console = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_object = require_object()
+  const require_primordials_object = require_object$1()
   const require_primordials_reflect = require_reflect()
   const require_node_process = require_process()
-  const require_logger_shared = require_shared()
-  const require_logger_symbols = require_symbols()
-  const require_logger_node = require_node()
+  const require_logger_shared = require_shared$3()
+  const require_logger_symbols = require_symbols$1()
+  const require_logger_node = require_node$1()
   let cachedConsole
   let prototypeInitialized = false
   /**
@@ -25530,7 +25542,7 @@ var require_console = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_console_methods = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_logger_symbols = require_symbols()
+  const require_logger_symbols = require_symbols$1()
   /**
    * @file Free-function bodies for the `Logger` methods that are thin,
    *   chainable mirrors of the underlying `node:console` API (`assert`,
@@ -25701,8 +25713,8 @@ var require_indentation_methods = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_reflect = require_reflect()
   const require_primordials_math = require_math()
-  const require_logger_shared = require_shared()
-  const require_logger_symbols = require_symbols()
+  const require_logger_shared = require_shared$3()
+  const require_logger_symbols = require_symbols$1()
   /**
    * @file Free-function bodies for the `Logger` indentation-domain methods
    *   (`indent`, `dedent`, `resetIndent`, `group`, `groupCollapsed`,
@@ -25876,7 +25888,7 @@ var require_options = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_strip = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_string = require_string$1()
+  const require_primordials_string = require_string$2()
   const require_primordials_regexp = require_regexp()
   /**
    * @file ANSI escape-code regex factory and stripping helper. Provides
@@ -25928,9 +25940,9 @@ var require_strip = /* @__PURE__ */ __commonJSMin(exports => {
   exports.stripAnsi = stripAnsi
 })
 
-var require_format = /* @__PURE__ */ __commonJSMin(exports => {
+var require_format$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_string = require_string$1()
+  const require_primordials_string = require_string$2()
   const require_term_ansi_strip = require_strip()
   const require_primordials_math = require_math()
   /**
@@ -26078,7 +26090,7 @@ var require_format = /* @__PURE__ */ __commonJSMin(exports => {
   exports.repeatString = repeatString
 })
 
-var require_predicates = /* @__PURE__ */ __commonJSMin(exports => {
+var require_predicates$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   /**
    * Check if a value is a blank string: empty or only whitespace.
@@ -26137,11 +26149,11 @@ var require_predicates = /* @__PURE__ */ __commonJSMin(exports => {
 var require_semantic_methods = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_reflect = require_reflect()
-  const require_primordials_array = require_array$2()
+  const require_primordials_array = require_array$3()
   const require_logger_symbols_builder = require_symbols_builder()
-  const require_logger_symbols = require_symbols()
-  const require_strings_format = require_format()
-  const require_strings_predicates = require_predicates()
+  const require_logger_symbols = require_symbols$1()
+  const require_strings_format = require_format$1()
+  const require_strings_predicates = require_predicates$1()
   /**
    * @file Free-function bodies for the symbol-prefixed semantic `Logger`
    *   methods (`done`, `fail`, `info`, `skip`, `step`, `success`, `warn`). Each
@@ -26299,8 +26311,8 @@ var require_stream = /* @__PURE__ */ __commonJSMin(exports => {
 
 var require_stream_methods = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_primordials_error = require_error$1()
-  const require_logger_symbols = require_symbols()
+  const require_primordials_error = require_error$2()
+  const require_logger_symbols = require_symbols$1()
   const require_logger_stream = require_stream()
   /**
    * @file Free-function bodies for the `Logger` methods that write to or clear
@@ -26401,13 +26413,13 @@ var require_stream_methods = /* @__PURE__ */ __commonJSMin(exports => {
   exports.writeMethod = writeMethod
 })
 
-var require_node = /* @__PURE__ */ __commonJSMin(exports => {
+var require_node$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
   const require_primordials_reflect = require_reflect()
   const require_term_themes_context = require_context()
-  const require_logger_shared = require_shared()
+  const require_logger_shared = require_shared$3()
   const require_logger_symbols_builder = require_symbols_builder()
-  const require_logger_symbols = require_symbols()
+  const require_logger_symbols = require_symbols$1()
   const require_logger_console = require_console()
   const require_logger_console_methods = require_console_methods()
   const require_logger_indentation_methods = require_indentation_methods()
@@ -26762,9 +26774,9 @@ var require_node = /* @__PURE__ */ __commonJSMin(exports => {
   exports.Logger = Logger
 })
 
-var require_default = /* @__PURE__ */ __commonJSMin(exports => {
+var require_default$1 = /* @__PURE__ */ __commonJSMin(exports => {
   Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
-  const require_logger_node = require_node()
+  const require_logger_node = require_node$1()
   /**
    * @file Shared-default `Logger` singleton. One process-wide instance,
    *   constructed lazily on first call so importing the module during early
@@ -27727,6 +27739,17486 @@ var init_active_run_marker = __esmMin(() => {
   init_paths()
 })
 
+var require_path = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_rewire = require_rewire$1()
+  /**
+   * @file PATH environment variable helpers. Exports `getPath()`, returning the
+   *   raw value of the `PATH` environment variable that lists executable search
+   *   directories, plus `findPathEnvKey()` and `replacePathInEnv()` for reading
+   *   and rewriting that variable on an arbitrary environment object — Windows
+   *   exposes it under a case-variant key, so a plain `env['PATH']` read or
+   *   write is not enough.
+   */
+  /**
+   * Find the PATH key in an environment. Windows exposes it as `Path`, and a
+   * merged environment object can carry any casing at all.
+   *
+   * @example
+   *   ;```typescript
+   *   findPathEnvKey({ Path: 'C:\\Windows' }) // 'Path'
+   *   findPathEnvKey({}) // undefined
+   *   ```
+   */
+  function findPathEnvKey(env) {
+    if (env['PATH'] !== void 0) return 'PATH'
+    const keys = Object.keys(env)
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
+      if (key.toLowerCase() === 'path') return key
+    }
+  }
+  /**
+   * Returns the value of the PATH environment variable.
+   *
+   * @example
+   *   ;```typescript
+   *   import { getPath } from '@socketsecurity/lib/env/path'
+   *
+   *   const path = getPath()
+   *   // e.g. '/usr/local/bin:/usr/bin:/bin' or undefined
+   *   ```
+   *
+   * @returns The system executable search paths, or `undefined` if not set
+   */
+  function getPath() {
+    return require_env_rewire.getEnvValue('PATH')
+  }
+  /**
+   * Copy an environment with its PATH replaced. Every case variant of the key
+   * is rewritten so Windows cannot fall back to a stale `Path`.
+   *
+   * @example
+   *   ;```typescript
+   *   replacePathInEnv({ Path: 'C:\\a;C:\\b' }, 'C:\\a', 'Path')
+   *   // { Path: 'C:\\a' }
+   *   ```
+   */
+  function replacePathInEnv(env, searchPath, pathKey) {
+    const next = {
+      __proto__: null,
+      ...env,
+    }
+    const keys = Object.keys(next)
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
+      if (key.toLowerCase() === 'path') delete next[key]
+    }
+    next[pathKey ?? 'PATH'] = searchPath
+    return next
+  }
+  exports.findPathEnvKey = findPathEnvKey
+  exports.getPath = getPath
+  exports.replacePathInEnv = replacePathInEnv
+})
+
+var require_child_process = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_runtime = require_runtime$5()
+  let childProcess
+  function getNodeChildProcess() {
+    if (!require_constants_runtime.IS_NODE) return
+    childProcess ??= /*@__PURE__*/ __require('child_process')
+    return childProcess
+  }
+  exports.getNodeChildProcess = getNodeChildProcess
+})
+
+var require_inspect$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_object = require_object$1()
+  const require_objects_predicates = require_predicates$3()
+  /**
+   * @file Object inspection helpers — `getKeys`, `getOwn`,
+   *   `getOwnPropertyValues`. Safe accessors that return empty / undefined on
+   *   null inputs instead of throwing.
+   */
+  /**
+   * Get the enumerable own property keys of an object.
+   *
+   * This is a safe wrapper around `Object.keys()` that returns an empty array
+   * for non-object values instead of throwing an error.
+   *
+   * @example
+   *   ;```ts
+   *   getKeys({ a: 1, b: 2 }) // ['a', 'b']
+   *   getKeys([10, 20, 30]) // ['0', '1', '2']
+   *   getKeys(null) // []
+   *   getKeys('hello') // []
+   *   ```
+   *
+   * @param obj - The value to get keys from.
+   *
+   * @returns Array of enumerable string keys, or empty array for non-objects
+   */
+  function getKeys(obj) {
+    return require_objects_predicates.isObject(obj)
+      ? require_primordials_object.ObjectKeys(obj)
+      : []
+  }
+  /**
+   * Get an own property value from an object safely.
+   *
+   * Returns `undefined` if the value is null/undefined or if the property
+   * doesn't exist as an own property. Inherited properties don't count. This
+   * avoids prototype chain lookups and prevents errors on null/undefined
+   * values.
+   *
+   * @example
+   *   ;```ts
+   *   const obj = { name: 'Alice', age: 30 }
+   *   getOwn(obj, 'name') // 'Alice'
+   *   getOwn(obj, 'missing') // undefined
+   *   getOwn(obj, 'toString') // undefined (inherited)
+   *   getOwn(null, 'name') // undefined
+   *   ```
+   *
+   * @param obj - The object to get the property from.
+   * @param propKey - The property key to look up.
+   *
+   * @returns The property value, or `undefined` if not found or obj is
+   *   null/undefined.
+   */
+  function getOwn(obj, propKey) {
+    if (obj === null || obj === void 0) return
+    return require_primordials_object.ObjectHasOwn(obj, propKey)
+      ? obj[propKey]
+      : void 0
+  }
+  /**
+   * Get all own property values from an object.
+   *
+   * Returns values for all own properties, both enumerable and non-enumerable,
+   * but not inherited properties. Returns an empty array for null/undefined.
+   *
+   * @example
+   *   ;```ts
+   *   getOwnPropertyValues({ a: 1, b: 2, c: 3 }) // [1, 2, 3]
+   *   getOwnPropertyValues([10, 20, 30]) // [10, 20, 30]
+   *   getOwnPropertyValues(null) // []
+   *   ```
+   *
+   * @param obj - The object to get values from.
+   *
+   * @returns Array of all own property values, or empty array for
+   *   null/undefined.
+   */
+  function getOwnPropertyValues(obj) {
+    if (obj === null || obj === void 0) return []
+    const keys = require_primordials_object.ObjectGetOwnPropertyNames(obj)
+    const { length } = keys
+    const values = Array(length)
+    for (let i = 0; i < length; i += 1) values[i] = obj[keys[i]]
+    return values
+  }
+  exports.getKeys = getKeys
+  exports.getOwn = getOwn
+  exports.getOwnPropertyValues = getOwnPropertyValues
+})
+
+var require_default_state = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  let spinner
+  /**
+   * The default spinner instance if one has already been created, or
+   * `undefined` if `getDefaultSpinner()` has never run. Never constructs one —
+   * safe to call from a module that cannot afford to load the spinner
+   * subsystem.
+   *
+   * @returns The existing default spinner instance, or `undefined`.
+   */
+  function peekDefaultSpinner() {
+    return spinner
+  }
+  /**
+   * Record the default spinner singleton. Called by `getDefaultSpinner()`
+   * after it constructs one.
+   *
+   * @param instance - The spinner instance to store as the default.
+   */
+  function setDefaultSpinner(instance) {
+    spinner = instance
+  }
+  exports.peekDefaultSpinner = peekDefaultSpinner
+  exports.setDefaultSpinner = setDefaultSpinner
+})
+
+var require_predicates = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_platform = require_platform()
+  const require_primordials_string = require_string$2()
+  require_encoding()
+  const require_paths_shared = require_shared$6()
+  const require_primordials_regexp = require_regexp()
+  /**
+   * @file Path predicates — `is*` checks for path shape and kind. Split out of
+   *   `paths/normalize.ts` for file-size hygiene. Pure boolean predicates over
+   *   paths and character codes.
+   *
+   *   - `isAbsolute`, `isRelative` — root-anchoring shape
+   *   - `isPath` — file-path vs package-spec vs URL discriminator
+   *   - `isNodeModules`, `isUnixPath` — content-pattern checks
+   *   - `isPathSeparator`, `isWindowsDeviceRoot` — char-code primitives
+   *   - `isPathWithinRoot` — realpath containment check
+   */
+  /**
+   * Check if a path is absolute.
+   *
+   * Handles both POSIX (`/...`) and Windows (drive-letter, UNC, device)
+   * absolute path shapes.
+   *
+   * @example
+   *   ;```typescript
+   *   isAbsolute('/home/user') // true
+   *   isAbsolute('C:\\Windows') // true on Windows
+   *   isAbsolute('../relative') // false
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The path to check.
+   *
+   * @returns {boolean} `true` if absolute, `false` otherwise
+   */
+  function isAbsolute(pathLike) {
+    const filepath = require_paths_shared.pathLikeToString(pathLike)
+    const { length } = filepath
+    if (length === 0) return false
+    const code = require_primordials_string.StringPrototypeCharCodeAt(
+      filepath,
+      0,
+    )
+    if (code === 47) return true
+    if (code === 92) return true
+    /* c8 ignore start - Windows drive-letter detection. */
+    if (require_constants_platform.isWin32() && length > 2) {
+      if (
+        isWindowsDeviceRoot(code) &&
+        require_primordials_string.StringPrototypeCharCodeAt(filepath, 1) ===
+          58 &&
+        isPathSeparator(
+          require_primordials_string.StringPrototypeCharCodeAt(filepath, 2),
+        )
+      )
+        return true
+    }
+    /* c8 ignore stop */
+    return false
+  }
+  /**
+   * Check if a path contains a `node_modules` directory segment.
+   *
+   * Matches `node_modules` only as a complete path segment.
+   *
+   * @example
+   *   ;```typescript
+   *   isNodeModules('/project/node_modules/package') // true
+   *   isNodeModules('/src/my_node_modules_backup') // false
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The path to check.
+   *
+   * @returns {boolean} `true` if the path contains `node_modules`
+   */
+  function isNodeModules(pathLike) {
+    const filepath = require_paths_shared.pathLikeToString(pathLike)
+    return require_primordials_regexp.RegExpPrototypeTest(
+      require_paths_shared.nodeModulesPathRegExp,
+      filepath,
+    )
+  }
+  /**
+   * Check if a value is a valid absolute or relative file path.
+   *
+   * Distinguishes between file paths and other string formats like package
+   * names, URLs, or bare module specifiers.
+   *
+   * @example
+   *   ;```typescript
+   *   isPath('/absolute/path') // true
+   *   isPath('./relative/path') // true
+   *   isPath('@scope/name/subpath') // true
+   *   isPath('lodash') // false
+   *   isPath('http://example.com') // false
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The value to check.
+   *
+   * @returns {boolean} `true` if the value is a valid file path
+   */
+  function isPath(pathLike) {
+    const filepath = require_paths_shared.pathLikeToString(pathLike)
+    if (typeof filepath !== 'string' || filepath.length === 0) return false
+    if (/^[a-z][a-z0-9+.-]+:/i.test(filepath)) return false
+    if (filepath === '.' || filepath === '..') return true
+    if (isAbsolute(filepath)) return true
+    if (filepath.includes('/') || filepath.includes('\\')) {
+      if (
+        require_primordials_string.StringPrototypeStartsWith(filepath, '@') &&
+        !require_primordials_string.StringPrototypeStartsWith(filepath, '@/')
+      ) {
+        const parts = filepath.split('/')
+        if (parts.length <= 2 && !parts[1]?.includes('\\')) return false
+      }
+      return true
+    }
+    return false
+  }
+  /**
+   * Check if a character code is a path separator (`/` or `\`).
+   *
+   * @example
+   *   ;```typescript
+   *   isPathSeparator(47) // true — '/'
+   *   isPathSeparator(92) // true — '\'
+   *   isPathSeparator(65) // false — 'A'
+   *   ```
+   *
+   * @param {number} code - The character code to check.
+   *
+   * @returns {boolean} `true` if separator
+   */
+  function isPathSeparator(code) {
+    return code === 47 || code === 92
+  }
+  /**
+   * Report whether a path sits at or under a root. Both sides must already be
+   * realpath'd.
+   *
+   * @example
+   *   ;```typescript
+   *   isPathWithinRoot('/repo/bin/git', '/repo') // true
+   *   isPathWithinRoot('/usr/bin/git', '/repo') // false
+   *   ```
+   */
+  function isPathWithinRoot(candidate, root) {
+    const left = require_paths_shared.foldPathForCompare(candidate)
+    const right = require_paths_shared.foldPathForCompare(root)
+    return left === right || left.startsWith(`${right}/`)
+  }
+  /**
+   * Check if a path is relative (i.e., not absolute).
+   *
+   * Empty strings are treated as relative.
+   *
+   * @example
+   *   ;```typescript
+   *   isRelative('./src/index.js') // true
+   *   isRelative('src/file.js') // true
+   *   isRelative('/home/user') // false
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The path to check.
+   *
+   * @returns {boolean} `true` if the path is relative
+   */
+  function isRelative(pathLike) {
+    const filepath = require_paths_shared.pathLikeToString(pathLike)
+    /* c8 ignore start */
+    if (typeof filepath !== 'string') return false
+    /* c8 ignore stop */
+    if (filepath.length === 0) return true
+    return !isAbsolute(filepath)
+  }
+  /**
+   * Check if a value is wrapped in path separators on BOTH ends — the
+   * `/wrapped/` sigil some list formats use to mark a substring (not exact)
+   * entry. Either separator direction counts on either end, so a stray
+   * backslash-wrapped entry is still read as the sigil rather than silently
+   * treated as an exact path.
+   *
+   * @example
+   *   ;```typescript
+   *   isSeparatorWrapped('/rendering-chromium-to-png/') // true
+   *   isSeparatorWrapped('\\rendering-chromium-to-png\\') // true
+   *   isSeparatorWrapped('scripts/fleet/acquire.mts') // false
+   *   isSeparatorWrapped('//') // false
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The value to check.
+   *
+   * @returns {boolean} `true` if both ends are path separators with content
+   *   between.
+   */
+  function isSeparatorWrapped(pathLike) {
+    const filepath = require_paths_shared.pathLikeToString(pathLike)
+    const { length } = filepath
+    if (length < 3) return false
+    return (
+      isPathSeparator(
+        require_primordials_string.StringPrototypeCharCodeAt(filepath, 0),
+      ) &&
+      isPathSeparator(
+        require_primordials_string.StringPrototypeCharCodeAt(
+          filepath,
+          length - 1,
+        ),
+      )
+    )
+  }
+  /**
+   * Check if a path uses MSYS/Git Bash Unix-style drive letter notation.
+   *
+   * Detects paths in the format `/c/...` where a single letter after the
+   * leading slash represents a Windows drive letter.
+   *
+   * @example
+   *   ;```typescript
+   *   isUnixPath('/c/tools/bin') // true
+   *   isUnixPath('/tmp/build') // false
+   *   isUnixPath('C:/Windows') // false
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The path to check.
+   *
+   * @returns {boolean} `true` if the path uses MSYS drive letter notation
+   */
+  function isUnixPath(pathLike) {
+    const filepath = require_paths_shared.pathLikeToString(pathLike)
+    return (
+      typeof filepath === 'string' &&
+      require_primordials_regexp.RegExpPrototypeTest(
+        require_paths_shared.msysDriveRegExp,
+        filepath,
+      )
+    )
+  }
+  /**
+   * Check if a character code is a Windows device root letter (A-Z / a-z).
+   *
+   * @example
+   *   ;```typescript
+   *   isWindowsDeviceRoot(67) // true  — 'C'
+   *   isWindowsDeviceRoot(99) // true  — 'c'
+   *   isWindowsDeviceRoot(58) // false — ':'
+   *   ```
+   *
+   * @param {number} code - The character code to check.
+   *
+   * @returns {boolean} `true` if valid drive-letter code
+   */
+  /* c8 ignore start - Only called from Windows-only branches. */
+  function isWindowsDeviceRoot(code) {
+    return (code >= 65 && code <= 90) || (code >= 97 && code <= 122)
+  }
+  /* c8 ignore stop */
+  /**
+   * The forward-slash substring form of a separator-wrapped entry, or
+   * undefined when the value is not wrapped. The inner segment's backslashes
+   * become forward slashes so the needle matches against normalized paths.
+   *
+   * @example
+   *   ;```typescript
+   *   separatorWrappedSubstring('/rendering-chromium-to-png/') // '/rendering-chromium-to-png/'
+   *   separatorWrappedSubstring('\\rendering-chromium-to-png\\') // '/rendering-chromium-to-png/'
+   *   separatorWrappedSubstring('scripts/fleet/acquire.mts') // undefined
+   *   ```
+   *
+   * @param {string | Buffer | URL} pathLike - The value to convert.
+   *
+   * @returns {string | undefined} The `/inner/` substring form, or undefined
+   */
+  function separatorWrappedSubstring(pathLike) {
+    if (!isSeparatorWrapped(pathLike)) return
+    const filepath = require_paths_shared.pathLikeToString(pathLike)
+    return `/${require_primordials_string.StringPrototypeSlice(filepath, 1, -1).replaceAll('\\', '/')}/`
+  }
+  exports.isAbsolute = isAbsolute
+  exports.isNodeModules = isNodeModules
+  exports.isPath = isPath
+  exports.isPathSeparator = isPathSeparator
+  exports.isPathWithinRoot = isPathWithinRoot
+  exports.isRelative = isRelative
+  exports.isSeparatorWrapped = isSeparatorWrapped
+  exports.isUnixPath = isUnixPath
+  exports.isWindowsDeviceRoot = isWindowsDeviceRoot
+  exports.separatorWrappedSubstring = separatorWrappedSubstring
+})
+
+var require_defaults = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file The npm-packlist-derived `defaultIgnore` list. Public starting point
+   *   for caller-customized ignore arrays — also consumed internally by
+   *   `shared` (matcher / stream callers fall back to this list when no
+   *   `ignore` option is supplied).
+   */
+  const defaultIgnore = require_mutate$1().objectFreeze([
+    '**/.git',
+    '**/.npmrc',
+    '**/node_modules',
+    '**/.DS_Store',
+    '**/.gitignore',
+    '**/.hg',
+    '**/.lock-wscript',
+    '**/.npmignore',
+    '**/.svn',
+    '**/.wafpickle-*',
+    '**/.*.swp',
+    '**/._*/**',
+    '**/archived-packages/**',
+    '**/build/config.gypi',
+    '**/CVS',
+    '**/npm-debug.log',
+    '**/*.orig',
+    '**/.env',
+    '**/.eslintcache',
+    '**/.nvm',
+    '**/.tap',
+    '**/.vscode',
+    '**/*.tsbuildinfo',
+    '**/Thumbs.db',
+    '**/bower_components',
+  ])
+  exports.defaultIgnore = defaultIgnore
+})
+
+var require_fast_glob = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  const { glob } = require_pico_pack()
+  module.exports = glob
+})
+
+var require_picomatch = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  const { picomatch } = require_pico_pack()
+  module.exports = picomatch
+})
+
+var require_shared$2 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_map_set = require_map_set()
+  const require_primordials_string = require_string$2()
+  const require_paths_shared = require_shared$6()
+  const require_globs_defaults = require_defaults()
+  const require_primordials_array = require_array$3()
+  /**
+   * @file Private internals for `globs/*` modules — lazy module accessors,
+   *   normalization helpers, and the matcher LRU cache. The `defaultIgnore`
+   *   list lives in the public `defaults.ts` file; this file re-exports it so
+   *   co-located helpers can import everything through one path.
+   */
+  const MATCHER_CACHE_MAX_SIZE = 100
+  const matcherCache = new require_primordials_map_set.MapCtor()
+  let cachedFastGlob
+  let cachedPicomatch
+  function getFastGlob() {
+    if (cachedFastGlob === void 0) cachedFastGlob = require_fast_glob()
+    return cachedFastGlob
+  }
+  function getPicomatch() {
+    if (cachedPicomatch === void 0) cachedPicomatch = require_picomatch()
+    return cachedPicomatch
+  }
+  /**
+   * Glob results are normalized to forward slashes regardless of the backend
+   * (node:fs.glob returns native-OS separators on Windows; fast-glob already
+   * returns forward slashes). Single contract: callers don't have to think
+   * about separators per platform. Routes through
+   * `paths/normalize.normalizePath` so this stays consistent with every other
+   * path-shaped string in the lib.
+   */
+  function normalizeGlobResults(out) {
+    for (let i = 0; i < out.length; i += 1)
+      out[i] = require_paths_shared.normalizePath(out[i])
+    return out
+  }
+  /**
+   * Normalize a user-provided ignore array by running every entry through
+   * stripTrailingSlash. Returns undefined when `ignore` is not an array so
+   * callers can skip merging the option entirely.
+   *
+   * Uses a pre-sized for-loop instead of `.map`: socket-lib uses primordials
+   * (the prototype `Array.prototype.map` can be intercepted or replaced by user
+   * code at module load), and a hand-rolled loop is also marginally faster — no
+   * callback indirection, no growth of the result array.
+   */
+  function normalizeIgnorePatterns(ignore) {
+    if (!require_primordials_array.ArrayIsArray(ignore)) return
+    const source = ignore
+    const { length } = source
+    const normalized = new require_primordials_array.ArrayCtor(length)
+    for (let i = 0; i < length; i++)
+      normalized[i] = stripTrailingSlash(source[i])
+    return normalized
+  }
+  /**
+   * Strip a trailing `/` from a glob pattern so fast-glob's deep filter matches
+   * it. See header comment in `glob.ts` for the full rationale — shortest
+   * summary: a `dist/` ignore pattern lets fast-glob walk the whole subtree
+   * before filtering, while a slashless `dist` skips the walk entirely.
+   *
+   * CharCode 47 is `/`. Comparing the char code keeps the check on a primordial
+   * so a monkey-patched `String.prototype.endsWith` cannot change the answer.
+   * The result matches `pattern.endsWith('/')`.
+   */
+  function stripTrailingSlash(pattern) {
+    if (
+      pattern.length > 1 &&
+      require_primordials_string.StringPrototypeCharCodeAt(
+        pattern,
+        pattern.length - 1,
+      ) === 47
+    )
+      return pattern.slice(0, -1)
+    return pattern
+  }
+  exports.MATCHER_CACHE_MAX_SIZE = MATCHER_CACHE_MAX_SIZE
+  exports.defaultIgnore = require_globs_defaults.defaultIgnore
+  exports.getFastGlob = getFastGlob
+  exports.getPicomatch = getPicomatch
+  exports.matcherCache = matcherCache
+  exports.normalizeGlobResults = normalizeGlobResults
+  exports.normalizeIgnorePatterns = normalizeIgnorePatterns
+  exports.stripTrailingSlash = stripTrailingSlash
+})
+
+var require_matcher = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_object = require_object$1()
+  const require_primordials_string = require_string$2()
+  const require_primordials_array = require_array$3()
+  const require_primordials_json = require_json()
+  const require_polyfills_array = require_array$1()
+  const require_globs_shared = require_shared$2()
+  /**
+   * @file `getGlobMatcher` — picomatch-backed sync predicate with an LRU-memoized
+   *   matcher cache. `getMatchesGlob` exposes Node 22+'s native
+   *   `path.matchesGlob` for the rare case where the caller wants strict
+   *   (`nocase: false`, `dot: false`) matching.
+   */
+  let matchesGlobCache
+  let matchesGlobProbed = false
+  /**
+   * Return a glob-matcher function, memoized by pattern + options.
+   *
+   * The returned function is a fast synchronous predicate built on picomatch.
+   * Results are memoized — calling `getGlobMatcher(['*.ts'])` a thousand times
+   * in a loop returns the same compiled matcher each time, so callers do not
+   * need to hoist it themselves.
+   *
+   * The cache is LRU with a cap of 100 entries. Cache keys fold together the
+   * (sorted) pattern list and (sorted) option set, so arguments that differ
+   * only in ordering share a matcher.
+   *
+   * Default options: `dot: true`, `nocase: true`. Patterns starting with `!`
+   * become ignore patterns.
+   *
+   * @example
+   *   ;```typescript
+   *   const isMatch = getGlobMatcher('*.ts')
+   *   isMatch('index.ts') // true
+   *   isMatch('index.js') // false
+   *
+   *   const isSource = getGlobMatcher(['src/**', '!**\/*.test.ts'])
+   *   ```
+   */
+  function getGlobMatcher(glob, options) {
+    options = {
+      __proto__: null,
+      ...options,
+    }
+    const patterns = require_primordials_array.ArrayIsArray(glob)
+      ? glob
+      : [glob]
+    const sortedPatterns = require_polyfills_array.arrayToSorted([...patterns])
+    const sortedOptions = options
+      ? require_polyfills_array
+          .arrayToSorted(require_primordials_object.ObjectKeys(options))
+          .map(k => {
+            const value = options[k]
+            const normalized = require_primordials_array.ArrayIsArray(value)
+              ? require_polyfills_array.arrayToSorted([...value])
+              : value
+            return `${k}:${require_primordials_json.JSONStringify(normalized)}`
+          })
+          .join(',')
+      : ''
+    const key = `${sortedPatterns.join('|')}:${sortedOptions}`
+    const existing = require_globs_shared.matcherCache.get(key)
+    if (existing) {
+      require_globs_shared.matcherCache.delete(key)
+      require_globs_shared.matcherCache.set(key, existing)
+      return existing
+    }
+    evictOldestMatcher()
+    function evictOldestMatcher() {
+      /* c8 ignore start */
+      if (require_globs_shared.matcherCache.size >= 100) {
+        const oldest = require_globs_shared.matcherCache.keys().next().value
+        if (oldest !== void 0) require_globs_shared.matcherCache.delete(oldest)
+      }
+      /* c8 ignore stop */
+    }
+    let matcher
+    /* c8 ignore start */
+    if (
+      patterns.length === 1 &&
+      !require_primordials_string.StringPrototypeStartsWith(patterns[0], '!') &&
+      options !== void 0 &&
+      options.nocase === false &&
+      options.dot === false &&
+      (options.ignore === void 0 || options.ignore.length === 0)
+    ) {
+      const matchesGlob = getMatchesGlob()
+      if (matchesGlob !== void 0) {
+        const pattern = patterns[0]
+        matcher = p => matchesGlob(p, pattern)
+      }
+    }
+    /* c8 ignore stop */
+    if (matcher === void 0) {
+      const positivePatterns = patterns.filter(
+        p => !require_primordials_string.StringPrototypeStartsWith(p, '!'),
+      )
+      const negativePatterns = patterns
+        .filter(p =>
+          require_primordials_string.StringPrototypeStartsWith(p, '!'),
+        )
+        .map(p => p.slice(1))
+      const matchOptions = {
+        dot: true,
+        nocase: true,
+        ...options,
+        ...(negativePatterns.length > 0 ? { ignore: negativePatterns } : {}),
+      }
+      matcher = require_globs_shared.getPicomatch()(
+        positivePatterns.length > 0 ? positivePatterns : patterns,
+        matchOptions,
+      )
+    }
+    require_globs_shared.matcherCache.set(key, matcher)
+    return matcher
+  }
+  /**
+   * Resolve `path.matchesGlob` (or `undefined` if the runtime predates it).
+   * Probes once and caches the result for every subsequent call.
+   *
+   * Used by `getGlobMatcher`'s narrow fast-path — see the conditions spelled
+   * out at the call site. Exported for unit tests.
+   *
+   * @internal
+   */
+  function getMatchesGlob() {
+    if (!matchesGlobProbed) {
+      const fn = /* @__PURE__ */ __require('node:path').matchesGlob
+      /* c8 ignore start */
+      if (typeof fn === 'function') matchesGlobCache = fn
+      /* c8 ignore stop */
+      matchesGlobProbed = true
+    }
+    return matchesGlobCache
+  }
+  exports.getGlobMatcher = getGlobMatcher
+  exports.getMatchesGlob = getMatchesGlob
+})
+
+var require_inspect = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_paths_shared = require_shared$6()
+  const require_globs_defaults = require_defaults()
+  const require_globs_matcher = require_matcher()
+  /**
+   * @file Filesystem inspection helpers — `stat` / `lstat` wrappers that return
+   *   `undefined` instead of throwing, and the directory / symlink / emptiness
+   *   predicates layered on top. Every entry point catches errors and reduces
+   *   them to a falsy result; callers that need the underlying error code
+   *   should use `node:fs` directly.
+   */
+  /**
+   * Check if a path is a directory asynchronously. Returns `true` for
+   * directories, `false` for files or non-existent paths.
+   *
+   * @example
+   *   ;```ts
+   *   if (await isDir('./src')) {
+   *     console.log('src is a directory')
+   *   }
+   *   ```
+   *
+   * @param filepath - Path to check.
+   *
+   * @returns `true` if path is a directory, `false` otherwise
+   */
+  async function isDir(filepath) {
+    return !!(await safeStat(filepath))?.isDirectory()
+  }
+  /**
+   * Check if a directory is empty synchronously. A directory is considered
+   * empty if it contains no files after applying ignore patterns. Uses glob
+   * patterns to filter ignored files.
+   *
+   * @example
+   *   ;```ts
+   *   // Check if directory is completely empty
+   *   isDirEmptySync('./build')
+   *
+   *   // Check if directory is empty, ignoring .DS_Store files
+   *   isDirEmptySync('./cache', { ignore: ['.DS_Store'] })
+   *   ```
+   *
+   * @param dirname - Directory path to check.
+   * @param options - Options including ignore patterns.
+   *
+   * @returns `true` if the directory is empty or doesn't exist, `false`
+   *   otherwise.
+   */
+  function isDirEmptySync(dirname, options) {
+    const { ignore = require_globs_defaults.defaultIgnore } = {
+      __proto__: null,
+      ...options,
+    }
+    const fs = require_node_fs.getNodeFs()
+    try {
+      const files = fs.readdirSync(dirname)
+      const { length } = files
+      if (length === 0) return true
+      const matcher = require_globs_matcher.getGlobMatcher(ignore, {
+        cwd: require_paths_shared.pathLikeToString(dirname),
+      })
+      let ignoredCount = 0
+      for (let i = 0; i < length; i += 1) {
+        const file = files[i]
+        if (file && matcher(file)) ignoredCount += 1
+      }
+      return ignoredCount === length
+    } catch {
+      return false
+    }
+  }
+  /**
+   * Check if a path is a directory synchronously. Returns `true` for
+   * directories, `false` for files or non-existent paths.
+   *
+   * @example
+   *   ;```ts
+   *   if (isDirSync('./src')) {
+   *     console.log('src is a directory')
+   *   }
+   *   ```
+   *
+   * @param filepath - Path to check.
+   *
+   * @returns `true` if path is a directory, `false` otherwise
+   */
+  function isDirSync(filepath) {
+    return !!safeStatSync(filepath)?.isDirectory()
+  }
+  /**
+   * Check if a path is a symbolic link synchronously. Uses `lstat` to check the
+   * link itself, not the target.
+   *
+   * @example
+   *   ;```ts
+   *   if (isSymlinkSync('./my-link')) {
+   *     console.log('Path is a symbolic link')
+   *   }
+   *   ```
+   *
+   * @param filepath - Path to check.
+   *
+   * @returns `true` if path is a symbolic link, `false` otherwise
+   */
+  function isSymlinkSync(filepath) {
+    const fs = require_node_fs.getNodeFs()
+    try {
+      return fs.lstatSync(filepath).isSymbolicLink()
+    } catch {}
+    return false
+  }
+  /**
+   * Realpath a location, returning `undefined` when it does not resolve.
+   *
+   * @example
+   *   ;```typescript
+   *   readRealPath('/tmp') // '/private/tmp' on macOS
+   *   readRealPath('/nope') // undefined
+   *   ```
+   */
+  function readRealPath(pathname) {
+    const fs = require_node_fs.getNodeFs()
+    try {
+      return fs.realpathSync(pathname)
+    } catch {
+      return
+    }
+  }
+  /**
+   * Safely get file stats asynchronously, returning undefined on error. Useful
+   * for checking file existence and properties without error handling. Returns
+   * undefined for any error (file not found, permission denied, etc.).
+   *
+   * @example
+   *   ;```ts
+   *   // Check if file exists and get its stats
+   *   const stats = await safeStat('./file.txt')
+   *   if (stats) {
+   *     console.log('File size:', stats.size)
+   *     console.log('Modified:', stats.mtime)
+   *   }
+   *   ```
+   *
+   * @param filepath - Path to check.
+   *
+   * @returns Promise resolving to Stats object, or undefined on error
+   */
+  async function safeStat(filepath) {
+    const fs = require_node_fs.getNodeFs()
+    try {
+      return await fs.promises.stat(filepath)
+    } catch {}
+  }
+  /**
+   * Safely get file stats synchronously, returning undefined on error. Useful
+   * for checking file existence and properties without error handling. Returns
+   * undefined for any error (file not found, permission denied, etc.).
+   *
+   * @example
+   *   ;```ts
+   *   // Check if file exists and get its size
+   *   const stats = safeStatSync('./file.txt')
+   *   if (stats) {
+   *     console.log('File size:', stats.size)
+   *     console.log('Is directory:', stats.isDirectory())
+   *   }
+   *   ```
+   *
+   * @param filepath - Path to check.
+   *
+   * @returns Stats object, or undefined on error
+   */
+  function safeStatSync(filepath) {
+    const fs = require_node_fs.getNodeFs()
+    try {
+      return fs.statSync(filepath, {
+        __proto__: null,
+        throwIfNoEntry: false,
+      })
+    } catch {}
+  }
+  exports.isDir = isDir
+  exports.isDirEmptySync = isDirEmptySync
+  exports.isDirSync = isDirSync
+  exports.isSymlinkSync = isSymlinkSync
+  exports.readRealPath = readRealPath
+  exports.safeStat = safeStat
+  exports.safeStatSync = safeStatSync
+})
+
+var require_repo = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_primordials_map_set = require_map_set()
+  const require_node_path = require_path$2()
+  const require_paths_shared = require_shared$6()
+  const require_primordials_process = require_process$1()
+  /**
+   * @file Git repository discovery + foundational lazy fs/path/cwd helpers shared
+   *   across `git/*` leaves. Owns `findGitRoot`, `findOutermostGitRoot`, the
+   *   realpath cache, the cwd resolver, and the lazy `node:fs` / `node:path`
+   *   loaders — pulling these together keeps the dependency direction one-way:
+   *   `shared.ts` and the public-surface leaves all import from here.
+   */
+  const realpathCache = new require_primordials_map_set.MapCtor()
+  const gitRootCache = new require_primordials_map_set.MapCtor()
+  /**
+   * Find git repository root by walking up from the given directory.
+   *
+   * Searches for a `.git` directory or file by traversing parent directories
+   * upward until found or filesystem root is reached. Returns the original path
+   * if no git repository is found.
+   *
+   * This function is exported primarily for testing purposes.
+   *
+   * @example
+   *   ;```typescript
+   *   const root = findGitRoot('/path/to/repo/src/subdir')
+   *   // => '/path/to/repo'
+   *
+   *   const notFound = findGitRoot('/not/a/repo')
+   *   // => '/not/a/repo'
+   *   ```
+   *
+   * @param startPath - Directory path to start searching from.
+   *
+   * @returns Git repository root path, or `startPath` if not found.
+   */
+  function findGitRoot(startPath) {
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    /* c8 ignore start */
+    const cached = gitRootCache.get(startPath)
+    if (cached) {
+      if (fs.existsSync(path.join(cached, '.git'))) return cached
+      gitRootCache.delete(startPath)
+    }
+    /* c8 ignore stop */
+    let currentPath = startPath
+    while (true) {
+      try {
+        const gitPath = path.join(currentPath, '.git')
+        if (fs.existsSync(gitPath)) {
+          gitRootCache.set(startPath, currentPath)
+          return currentPath
+        }
+      } catch {}
+      const parentPath = path.dirname(currentPath)
+      if (parentPath === currentPath) return startPath
+      currentPath = parentPath
+    }
+  }
+  /**
+   * Walk up from a directory to the OUTERMOST ancestor that holds a `.git`
+   * marker. Returns the input when no ancestor has one.
+   *
+   * @example
+   *   ;```typescript
+   *   findOutermostGitRoot('/repo/vendor/nested/src') // '/repo'
+   *   ```
+   */
+  function findOutermostGitRoot(dirPath) {
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    let outermost = dirPath
+    let current = dirPath
+    while (true) {
+      if (fs.existsSync(path.join(current, '.git'))) outermost = current
+      const parent = path.dirname(current)
+      if (parent === current) return outermost
+      current = parent
+    }
+  }
+  /**
+   * Get the real path with caching to avoid repeated filesystem calls.
+   * Validates cache with existsSync() which is cheaper than realpathSync().
+   *
+   * ENOENT/ENOTDIR are re-thrown because the caller explicitly passed a path
+   * they expect to exist — swallowing these would turn "file not found" into a
+   * silent no-op. Other errors (EACCES, EPERM, EIO) fall back to the input path
+   * since they can happen on container/overlay filesystems where the path
+   * exists but realpath resolution is restricted.
+   */
+  function getCachedRealpath(pathname) {
+    const fs = require_node_fs.getNodeFs()
+    const cached = realpathCache.get(pathname)
+    /* c8 ignore start */
+    if (cached) {
+      if (fs.existsSync(cached)) return cached
+      realpathCache.delete(pathname)
+    }
+    /* c8 ignore stop */
+    let resolved
+    try {
+      resolved = fs.realpathSync(pathname)
+    } catch (e) {
+      const code = e.code
+      if (code === 'ENOENT' || code === 'ENOTDIR') throw e
+      resolved = pathname
+    }
+    /* c8 ignore stop */
+    realpathCache.set(pathname, resolved)
+    return resolved
+  }
+  /**
+   * Get the current working directory for git operations.
+   *
+   * Returns the real path to handle symlinks correctly. This is important
+   * because symlinked directories like `/tmp -> /private/tmp` can cause path
+   * mismatches when comparing git output.
+   *
+   * @example
+   *   ;```typescript
+   *   const cwd = getCwd()
+   *   // In /tmp (symlink to /private/tmp):
+   *   // => '/private/tmp'
+   *   ```
+   *
+   * @returns The resolved real path of `process.cwd()`.
+   */
+  function getCwd() {
+    return getCachedRealpath(require_primordials_process.processCwd())
+  }
+  function resolveGitRelativePath(pathname, options) {
+    const { cwd } = {
+      __proto__: null,
+      ...options,
+    }
+    const path = require_node_path.getNodePath()
+    const baseCwd = cwd ? getCachedRealpath(cwd) : getCwd()
+    const resolvedPathname = getCachedRealpath(path.resolve(baseCwd, pathname))
+    return require_paths_shared.normalizePath(
+      path.relative(baseCwd, resolvedPathname),
+    )
+  }
+  exports.findGitRoot = findGitRoot
+  exports.findOutermostGitRoot = findOutermostGitRoot
+  exports.getCachedRealpath = getCachedRealpath
+  exports.getCwd = getCwd
+  exports.gitRootCache = gitRootCache
+  exports.realpathCache = realpathCache
+  exports.resolveGitRelativePath = resolveGitRelativePath
+})
+
+var require_transform$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_string = require_string$2()
+  /**
+   * @file String transformations: `stripBom`, `stripPaddedSuffix`,
+   *   `stripSurroundingQuotes`, `toKebabCase`, `trimCharsFromEnds`,
+   *   `trimNewlines`. All are pure functions with no side effects.
+   */
+  const quotedEntryRegExp = /^".*"$/
+  function isTrimmableSpace(code) {
+    return (
+      code === 32 || (code >= 9 && code <= 13) || code === 160 || code === 65279
+    )
+  }
+  /**
+   * Strip the Byte Order Mark (BOM) from the beginning of a string.
+   *
+   * The BOM (U+FEFF) is a Unicode character that can appear at the start of a
+   * text file to indicate byte order and encoding. In UTF-16 (JavaScript's
+   * internal string representation), it appears as 0xFEFF. This function
+   * removes it if present, leaving the rest of the string unchanged.
+   *
+   * Most text processing doesn't need to handle the BOM explicitly, but it can
+   * cause issues when parsing JSON, CSV, or other structured data formats that
+   * don't expect a leading invisible character.
+   *
+   * @example
+   *   ;```ts
+   *   stripBom('\ufeffhello world') // 'hello world'
+   *   stripBom('hello world') // 'hello world'
+   *   stripBom('') // ''
+   *   ```
+   *
+   * @param str - The string to strip BOM from.
+   *
+   * @returns The string without BOM
+   */
+  function stripBom(str) {
+    return str.length > 0 &&
+      require_primordials_string.StringPrototypeCharCodeAt(str, 0) === 65279
+      ? require_primordials_string.StringPrototypeSlice(str, 1)
+      : str
+  }
+  /**
+   * Remove a trailing `suffix` together with any whitespace around it.
+   *
+   * Returns the input unchanged when the suffix is absent, so a caller can
+   * compare identity to learn whether anything was removed.
+   *
+   * The regex form - `/\s*<suffix>\s*$/` - is polynomial: the leading `\s*` and
+   * the anchored trailing `\s*` make the engine re-scan the whitespace run from
+   * each start position. This walks the end of the string once instead.
+   *
+   * @example
+   *   ;```ts
+   *   stripPaddedSuffix('# END x env (managed)', '(managed)') // '# END x env'
+   *   stripPaddedSuffix('# END x env', '(managed)') // '# END x env' (unchanged)
+   *   ```
+   *
+   * @param str - The string to strip.
+   * @param suffix - The literal suffix to remove.
+   *
+   * @returns The string without the suffix and its padding, or `str` unchanged.
+   */
+  function stripPaddedSuffix(str, suffix) {
+    if (suffix.length === 0) return str
+    let end = str.length
+    while (end > 0 && isTrimmableSpace(str.charCodeAt(end - 1))) end -= 1
+    const suffixStart = end - suffix.length
+    if (
+      suffixStart < 0 ||
+      require_primordials_string.StringPrototypeSlice(str, suffixStart, end) !==
+        suffix
+    )
+      return str
+    let start = suffixStart
+    while (start > 0 && isTrimmableSpace(str.charCodeAt(start - 1))) start -= 1
+    return require_primordials_string.StringPrototypeSlice(str, 0, start)
+  }
+  /**
+   * Strip the surrounding double quotes a PATH entry may carry.
+   *
+   * @example
+   *   ;```typescript
+   *   stripSurroundingQuotes('"C:\\Program Files"') // 'C:\\Program Files'
+   *   ```
+   */
+  function stripSurroundingQuotes(entry) {
+    return quotedEntryRegExp.test(entry) ? entry.slice(1, -1) : entry
+  }
+  /**
+   * Convert a string to kebab-case (handles camelCase and snake_case).
+   *
+   * Transforms strings from camelCase or snake_case to kebab-case by:
+   *
+   * - Converting uppercase letters to lowercase
+   * - Inserting hyphens before uppercase letters (for camelCase)
+   * - Replacing underscores with hyphens (for snake_case)
+   *
+   * Handles mixed formats (camelCase, snake_case, acronyms) in one pass.
+   * Returns empty string for empty input.
+   *
+   * @example
+   *   ;```ts
+   *   toKebabCase('helloWorld') // 'hello-world'
+   *   toKebabCase('hello_world') // 'hello-world'
+   *   toKebabCase('XMLHttpRequest') // 'xmlhttp-request'
+   *   toKebabCase('iOS_Version') // 'i-os-version'
+   *   toKebabCase('') // ''
+   *   ```
+   *
+   * @param str - The string to convert.
+   *
+   * @returns The kebab-case string
+   */
+  function toKebabCase(str) {
+    if (!str.length) return str
+    return require_primordials_string
+      .StringPrototypeReplace(str, /([a-z]+[0-9]*)([A-Z])/g, '$1-$2')
+      .replace(/_/g, '-')
+      .toLowerCase()
+  }
+  /**
+   * Trim every leading and trailing character that appears in `chars`.
+   *
+   * A single index scan from each end, so cost is linear in the run actually
+   * trimmed. The regex form of this - `/^[-.]+|[-.]+$/g` - is what CodeQL flags
+   * as polynomial-redos: the engine retries the trailing alternative from every
+   * position, so a long string of the trimmed character costs quadratic time.
+   *
+   * @example
+   *   ;```ts
+   *   trimCharsFromEnds('--a.b--', '-.') // 'a.b'
+   *   trimCharsFromEnds('...', '-.') // ''
+   *   trimCharsFromEnds('abc', '-.') // 'abc'
+   *   ```
+   *
+   * @param str - The string to trim.
+   * @param chars - Characters to strip from both ends.
+   *
+   * @returns The trimmed string.
+   */
+  function trimCharsFromEnds(str, chars) {
+    const { length } = str
+    if (length === 0 || chars.length === 0) return str
+    let start = 0
+    while (start < length && chars.includes(str[start])) start += 1
+    if (start === length) return ''
+    let end = length
+    while (end > start && chars.includes(str[end - 1])) end -= 1
+    return require_primordials_string.StringPrototypeSlice(str, start, end)
+  }
+  /**
+   * Trim newlines from the beginning and end of a string.
+   *
+   * Removes all leading and trailing newline characters (both `\n` and `\r`)
+   * from a string, while preserving any newlines in the middle. This is similar
+   * to `String.prototype.trim()` but specifically targets newlines instead of
+   * all whitespace.
+   *
+   * Optimized for performance by checking the first and last characters before
+   * doing any string manipulation. Returns the original string unchanged if no
+   * newlines are found at the edges.
+   *
+   * @example
+   *   ;```ts
+   *   trimNewlines('\n\nhello\n\n') // 'hello'
+   *   trimNewlines('\r\nworld\r\n') // 'world'
+   *   trimNewlines('hello\nworld') // 'hello\nworld' (middle preserved)
+   *   trimNewlines('  hello  ') // '  hello  ' (spaces not trimmed)
+   *   trimNewlines('hello') // 'hello'
+   *   ```
+   *
+   * @param str - The string to trim.
+   *
+   * @returns The string with leading and trailing newlines removed
+   */
+  function trimNewlines(str) {
+    const { length } = str
+    if (length === 0) return str
+    const first = require_primordials_string.StringPrototypeCharCodeAt(str, 0)
+    const noFirstNewline = first !== 13 && first !== 10
+    if (length === 1) return noFirstNewline ? str : ''
+    const last = require_primordials_string.StringPrototypeCharCodeAt(
+      str,
+      length - 1,
+    )
+    if (noFirstNewline && last !== 13 && last !== 10) return str
+    let start = 0
+    let end = length
+    while (start < end) {
+      const code = require_primordials_string.StringPrototypeCharCodeAt(
+        str,
+        start,
+      )
+      if (code !== 13 && code !== 10) break
+      start += 1
+    }
+    while (end > start) {
+      const code = require_primordials_string.StringPrototypeCharCodeAt(
+        str,
+        end - 1,
+      )
+      if (code !== 13 && code !== 10) break
+      end -= 1
+    }
+    return require_primordials_string.StringPrototypeSlice(str, start, end)
+  }
+  exports.isTrimmableSpace = isTrimmableSpace
+  exports.stripBom = stripBom
+  exports.stripPaddedSuffix = stripPaddedSuffix
+  exports.stripSurroundingQuotes = stripSurroundingQuotes
+  exports.toKebabCase = toKebabCase
+  exports.trimCharsFromEnds = trimCharsFromEnds
+  exports.trimNewlines = trimNewlines
+})
+
+var require_detect = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_paths_shared = require_shared$6()
+  /**
+   * @file Shadow-bin detection. A "shadow bin" is a binary exposed by a
+   *   transitively-installed `node_modules/.bin` directory rather than the
+   *   system installation. Callers (`findRealBin`) deliberately walk past these
+   *   to find the real interpreter.
+   */
+  /**
+   * Check if a directory path contains any shadow bin patterns.
+   *
+   * @example
+   *   ;```typescript
+   *   isShadowBinPath('/tmp/project/node_modules/.bin') // true
+   *   isShadowBinPath('/usr/local/bin') // false
+   *   ```
+   */
+  function isShadowBinPath(dirPath) {
+    if (!dirPath) return false
+    return require_paths_shared
+      .normalizePath(dirPath)
+      .includes('node_modules/.bin')
+  }
+  exports.isShadowBinPath = isShadowBinPath
+})
+
+var require_shared$1 = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_primordials_map_set = require_map_set()
+  const require_node_path = require_path$2()
+  /**
+   * @file Private internals for `exe/*` modules — lazy `fs` / `path` accessors
+   *   and the binary-resolution caches. Underscore prefix keeps this file out
+   *   of the public exports map (see the `dist/<dir>/_<file>` ignore in
+   *   scripts/fleet/gen/package-exports.mts). Two caches:
+   *
+   *   1. `binPathCache` — maps a binary name to its first resolved path. Validated
+   *      with `existsSync` before reuse so a stale cache doesn't survive a tool
+   *      reinstall mid-session.
+   *   2. `binPathAllCache` — same shape but stores all-match arrays for callers
+   *      that pass `{ all: true }`. Separate cache because the two return
+   *      shapes can't be reconciled without losing type info.
+   *   3. `voltaBinCache` — maps a `${voltaPath}:${basename}` composite key to the
+   *      resolved Volta-managed binary path. Volta resolves npm / pnpm / yarn
+   *      through a layered tools/image directory and the lookup is expensive
+   *      enough that caching is worth the memory.
+   */
+  const binPathCache = new require_primordials_map_set.MapCtor()
+  const binPathAllCache = new require_primordials_map_set.MapCtor()
+  const voltaBinCache = new require_primordials_map_set.MapCtor()
+  exports.binPathAllCache = binPathAllCache
+  exports.binPathCache = binPathCache
+  exports.getFs = require_node_fs.getNodeFs
+  exports.getPath = require_node_path.getNodePath
+  exports.voltaBinCache = voltaBinCache
+})
+
+var require_bin_kinds = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Which wrapper format a binary's shim uses, and the extension/name
+   *   predicates the resolvers share.
+   *   A binary on PATH is usually a generated wrapper rather than the real
+   *   script, and there are three formats in circulation. Dispatching on the
+   *   FORMAT rather than on a list of tool names is what keeps this table open:
+   *   a new package manager is one row, not a renamed predicate and not another
+   *   `||` branch threaded through every call site.
+   */
+  /**
+   * The wrapper formats the shim parsers understand.
+   *
+   * - `npmCli` — emitted by the npm CLI's own build, which assigns the target to
+   *   an `NPM_CLI_JS` / `NPX_CLI_JS` shell variable.
+   * - `installer` — emitted by a manager's own installer or setup action, in
+   *   `"$basedir/..."` / `"%~dp0\..."` form. Bodies vary by install method, so
+   *   several patterns are tried in order.
+   * - `cmdShim` — the npm ecosystem's standard `cmd-shim` output, used for every
+   *   package binary that does not ship a bespoke wrapper.
+   */
+  const BIN_SHIM_FORMAT = {
+    cmdShim: 'cmd-shim',
+    installer: 'installer',
+    npmCli: 'npm-cli',
+  }
+  /**
+   * Basenames whose wrapper is NOT standard `cmd-shim` output.
+   *
+   * Only entries whose emitted wrapper body has actually been observed belong
+   * here. Guessing a manager's format is worse than omitting it: an entry sends
+   * the shim down a parser built for a different body, which returns a
+   * plausible but wrong path instead of failing. Omission is safe — an absent
+   * name falls to `cmdShim`, which is what the ecosystem's installers emit by
+   * default.
+   *
+   * `yarn` is one basename covering three unrelated managers — classic, berry
+   * and zpm. It sits here because all three are installer-emitted, not because
+   * they share anything else.
+   */
+  const BIN_SHIM_FORMAT_BY_BIN = /* @__PURE__ */ new Map([
+    ['npm', BIN_SHIM_FORMAT.npmCli],
+    ['npx', BIN_SHIM_FORMAT.npmCli],
+    ['pnpm', BIN_SHIM_FORMAT.installer],
+    ['yarn', BIN_SHIM_FORMAT.installer],
+  ])
+  /**
+   * The wrapper format for a binary's basename.
+   *
+   * An unrecognized name answers `BIN_SHIM_FORMAT.cmdShim`, the ecosystem
+   * default. That is why a manager this table has never heard of still resolves
+   * correctly, so long as its installer emits a standard shim.
+   */
+  function binShimFormat(basename) {
+    return BIN_SHIM_FORMAT_BY_BIN.get(basename) ?? BIN_SHIM_FORMAT.cmdShim
+  }
+  /**
+   * Whether a lowered extension is one the wrapper-script parsers understand:
+   * extensionless shell scripts, `.cmd` batch files, `.exe` binaries, and
+   * `.ps1` PowerShell scripts. Anything else is left untouched.
+   */
+  function isKnownShimExtension(extLowered) {
+    return (
+      extLowered === '' ||
+      extLowered === '.cmd' ||
+      extLowered === '.exe' ||
+      extLowered === '.ps1'
+    )
+  }
+  /**
+   * Whether a basename names the Node binary itself.
+   *
+   * Lowercased because Windows paths are case-insensitive, so `NODE.EXE` names
+   * the same binary as `node.exe`. The extension is stripped by the caller's
+   * `path.basename(p, ext)`, so only the case needs handling here.
+   */
+  function isNodeBinName(basename) {
+    return basename.toLowerCase() === 'node'
+  }
+  exports.BIN_SHIM_FORMAT = BIN_SHIM_FORMAT
+  exports.binShimFormat = binShimFormat
+  exports.isKnownShimExtension = isKnownShimExtension
+  exports.isNodeBinName = isNodeBinName
+})
+
+var require_units = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Self-describing multipliers for durations and byte sizes. `300_000`
+   *   at a call site says nothing; `5 * MIN` says five minutes. The
+   *   numeric-separator form reads a little better than a bare literal, but it
+   *   still leaves the reader to divide, and a wrong divisor is invisible in
+   *   review - a timeout meant to be 5 minutes shipped as 5 seconds that way.
+   *   Durations are milliseconds, matching every timer API in Node. Sizes are
+   *   BINARY (1024-based), matching what `fs.statSync().size` is compared
+   *   against in practice; the decimal spellings a registry reports are a
+   *   presentation concern, not this file's. MONTH and YEAR are the
+   *   calendar-average approximations, and are wrong for any specific month or
+   *   year. They exist for coarse budgets and cache TTLs - "expire this after a
+   *   month" - never for date arithmetic. Reach for a real date library the
+   *   moment a boundary matters.
+   */
+  /**
+   * One second, in milliseconds.
+   */
+  const SEC = 1e3
+  /**
+   * One minute, in milliseconds.
+   */
+  const MIN = 60 * SEC
+  /**
+   * One hour, in milliseconds.
+   */
+  const HR = 60 * MIN
+  /**
+   * One day, in milliseconds.
+   */
+  const DAY = 24 * HR
+  /**
+   * One week, in milliseconds.
+   */
+  const WEEK = 7 * DAY
+  /**
+   * An AVERAGE calendar month (30.44 days), in milliseconds. Approximate by
+   * construction - never use it to land on a date.
+   */
+  const MONTH = Math.round(30.436875 * DAY)
+  /**
+   * An AVERAGE calendar year (365.25 days), in milliseconds. Approximate by
+   * construction - never use it to land on a date.
+   */
+  const YEAR = Math.round(365.25 * DAY)
+  /**
+   * One kibibyte (1024 bytes).
+   */
+  const KB = 1024
+  /**
+   * One mebibyte.
+   */
+  const MB = 1024 * KB
+  /**
+   * One gibibyte.
+   */
+  const GB = 1024 * MB
+  /**
+   * One tebibyte. Included so a size cap on a cache or an artifact store does
+   * not have to spell `1024 * GB` inline.
+   */
+  const TB = 1024 * GB
+  exports.DAY = DAY
+  exports.GB = GB
+  exports.HR = HR
+  exports.KB = KB
+  exports.MB = MB
+  exports.MIN = MIN
+  exports.MONTH = MONTH
+  exports.SEC = SEC
+  exports.TB = TB
+  exports.WEEK = WEEK
+  exports.YEAR = YEAR
+})
+
+var require_resolve_shims = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_string = require_string$2()
+  const require_exe_path_bin_kinds = require_bin_kinds()
+  /**
+   * @file Wrapper-script parsers: given a shim's source text, extract the
+   *   relative path to the real script it executes.
+   *   A binary like `npm` is rarely an executable. It is a generated wrapper —
+   *   `npm.cmd` / `npm.ps1` / an extensionless shell script — whose format is
+   *   fixed by the npm CLI build, by a manager's own installer, or by
+   *   `cmd-shim`. Each parser here pattern-matches one of those formats and
+   *   returns the captured relative path, or `''` when the source does not
+   *   match. Dispatch is by `binShimFormat`, so a new manager is a table row
+   *   rather than another branch here.
+   *   Every function is pure over its source string: no filesystem, no platform
+   *   check. That is what lets the Windows-only formats be unit-tested on any
+   *   host, and it keeps the branchy regex work out of the resolver that owns
+   *   the I/O.
+   */
+  const SHIM_SOURCE_MAX_LENGTH = 64 * require_units().KB
+  /**
+   * The generic `cmd-shim` formats, used for every package binary that does not
+   * ship a bespoke wrapper.
+   *
+   * Verbatim shim bodies: docs/references/repo/cmd-shim-formats.md. The parsers
+   * match that exact generated text, so an upstream wording change yields an
+   * empty path rather than a loud failure.
+   */
+  function cmdShimRelPath(config) {
+    const { extLowered, source } = config
+    if (extLowered === '.cmd')
+      return extractShimLinePath(source, '"%dp0%\\', '"', '" %*')
+    if (extLowered === '')
+      return extractShimLinePath(source, '"$basedir/', '"', '" "$@"')
+    if (extLowered === '.ps1')
+      return extractShimLinePath(source, '"$basedir/', '"', '" $args')
+    return ''
+  }
+  function extractShimLinePath(source, prefix, pathTerminator, tail) {
+    if (source.length > SHIM_SOURCE_MAX_LENGTH) return ''
+    let lineStart = 0
+    while (lineStart < source.length) {
+      const newlineIndex = require_primordials_string.StringPrototypeIndexOf(
+        source,
+        '\n',
+        lineStart,
+      )
+      const lineEnd = newlineIndex === -1 ? source.length : newlineIndex
+      let cursor = lineStart
+      while (cursor < lineEnd) {
+        const prefixIndex = require_primordials_string.StringPrototypeIndexOf(
+          source,
+          prefix,
+          cursor,
+        )
+        if (prefixIndex === -1 || prefixIndex >= lineEnd) break
+        const pathStart = prefixIndex + prefix.length
+        const pathEnd = require_primordials_string.StringPrototypeIndexOf(
+          source,
+          pathTerminator,
+          pathStart,
+        )
+        if (pathEnd === -1 || pathEnd >= lineEnd) break
+        if (
+          pathEnd > pathStart &&
+          require_primordials_string.StringPrototypeStartsWith(
+            source,
+            tail,
+            pathEnd,
+          )
+        )
+          return require_primordials_string.StringPrototypeSlice(
+            source,
+            pathStart,
+            pathEnd,
+          )
+        cursor = pathEnd + pathTerminator.length
+      }
+      if (newlineIndex === -1) break
+      lineStart = newlineIndex + 1
+    }
+    return ''
+  }
+  /**
+   * The installer-emitted Unix shell formats, tried in order: a standalone
+   * installer's `.tools/...` layout, the generic cmd-shim body, then the bare
+   * `exec node "$basedir/..."` spelling a setup action emits.
+   *
+   * The setup-pnpm action emits a target of `pnpm/bin/pnpm.cjs` where the real
+   * layout is one directory up, so that one spelling is repaired here.
+   */
+  function installerPosixShimRelPath(config) {
+    const { basename, source } = config
+    const relPath =
+      extractShimLinePath(source, '"$basedir/', '"', '" "$@"') ||
+      extractShimLinePath(source, 'exec node $basedir/', ' ', ' "$@"') ||
+      ''
+    if (
+      relPath &&
+      basename === 'pnpm' &&
+      require_primordials_string.StringPrototypeStartsWith(relPath, 'pnpm/')
+    )
+      return `../${relPath}`
+    return relPath
+  }
+  /**
+   * The installer-emitted `.cmd` formats, tried in order: a setup action's
+   * `node "%~dp0\..."`, the bundled-node variant that spells `node.exe` first,
+   * then the generic cmd-shim body.
+   */
+  function installerWindowsCmdRelPath(source) {
+    return (
+      extractShimLinePath(source, 'node "%~dp0\\', '"', '" %*') ||
+      extractShimLinePath(source, 'node.exe" "%~dp0\\', '"', '" %*') ||
+      extractShimLinePath(source, '"%dp0%\\', '"', '" %*') ||
+      ''
+    )
+  }
+  /**
+   * The extensionless installer-emitted shell formats, tried in order: a
+   * standalone installer's `.tools/pnpm/<version>` layout under either
+   * `"$basedir/node"` or a bare `exec node`, then the generic cmd-shim body.
+   */
+  function installerWindowsShellRelPath(source) {
+    return extractShimLinePath(source, '"$basedir/', '"', '" "$@"')
+  }
+  /**
+   * The installer-emitted wrapper formats, which vary by install method — a
+   * setup action, a global install, and a standalone installer each generate a
+   * different body.
+   */
+  function installerWindowsShimRelPath(config) {
+    const { extLowered, source } = config
+    if (extLowered === '.cmd') return installerWindowsCmdRelPath(source)
+    if (extLowered === '') return installerWindowsShellRelPath(source)
+    if (extLowered === '.ps1')
+      return extractShimLinePath(source, '"$basedir/', '"', '" $args')
+    return ''
+  }
+  /**
+   * The npm CLI's Unix shell format, which assigns the target to `NPM_CLI_JS`.
+   */
+  function npmPosixShimRelPath(config) {
+    const { basename, source } = config
+    return extractShimLinePath(
+      source,
+      `${basename === 'npm' ? 'NPM_CLI_JS' : 'NPX_CLI_JS'}="$CLI_BASEDIR/`,
+      '"',
+      '"',
+    )
+  }
+  /**
+   * The npm CLI's wrapper formats. Each variant assigns the target to a shell
+   * variable, so the parser reads the path from that assignment.
+   *
+   * Sources: npm/cli v11.4.2 `bin/npm{,.cmd,.ps1}` and `bin/npx{,.cmd,.ps1}`.
+   */
+  function npmWindowsShimRelPath(config) {
+    const { basename, extLowered, source } = config
+    const variable = basename === 'npm' ? 'NPM_CLI_JS' : 'NPX_CLI_JS'
+    if (extLowered === '.cmd')
+      return extractShimLinePath(source, `"${variable}=%~dp0\\`, '"', '"')
+    if (extLowered === '')
+      return extractShimLinePath(source, `${variable}="$CLI_BASEDIR/`, '"', '"')
+    if (extLowered === '.ps1')
+      return extractShimLinePath(
+        source,
+        `$${variable}="$PSScriptRoot/`,
+        '"',
+        '"',
+      )
+    return ''
+  }
+  /**
+   * The Unix wrapper's relative target, dispatched by shim format. A `cmd-shim`
+   * binary on Unix is already the real script, so it answers `''`.
+   */
+  function posixShimRelPath(config) {
+    const format = require_exe_path_bin_kinds.binShimFormat(config.basename)
+    if (format === require_exe_path_bin_kinds.BIN_SHIM_FORMAT.installer)
+      return installerPosixShimRelPath(config)
+    if (format === require_exe_path_bin_kinds.BIN_SHIM_FORMAT.npmCli)
+      return npmPosixShimRelPath(config)
+    return ''
+  }
+  /**
+   * The Windows wrapper's relative target, dispatched by shim format.
+   */
+  function windowsShimRelPath(config) {
+    const format = require_exe_path_bin_kinds.binShimFormat(config.basename)
+    if (format === require_exe_path_bin_kinds.BIN_SHIM_FORMAT.npmCli)
+      return npmWindowsShimRelPath(config)
+    if (format === require_exe_path_bin_kinds.BIN_SHIM_FORMAT.installer)
+      return installerWindowsShimRelPath(config)
+    return cmdShimRelPath(config)
+  }
+  exports.SHIM_SOURCE_MAX_LENGTH = SHIM_SOURCE_MAX_LENGTH
+  exports.cmdShimRelPath = cmdShimRelPath
+  exports.extractShimLinePath = extractShimLinePath
+  exports.installerPosixShimRelPath = installerPosixShimRelPath
+  exports.installerWindowsCmdRelPath = installerWindowsCmdRelPath
+  exports.installerWindowsShellRelPath = installerWindowsShellRelPath
+  exports.installerWindowsShimRelPath = installerWindowsShimRelPath
+  exports.npmPosixShimRelPath = npmPosixShimRelPath
+  exports.npmWindowsShimRelPath = npmWindowsShimRelPath
+  exports.posixShimRelPath = posixShimRelPath
+  exports.windowsShimRelPath = windowsShimRelPath
+})
+
+var require_date = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_uncurry = require_uncurry()
+  /**
+   * @file Safe references to `Date`. `DateNow` prefers the smol Fast API binding
+   *   when available: a single-byte wallclock read inlined into JIT'd callers.
+   *   Stock Node falls back to `Date.now`.
+   */
+  const smolPrimordial = require_primordial().getSmolPrimordial()
+  const DateCtor = Date
+  const DateNow = smolPrimordial?.dateNow ?? Date.now
+  const DateParse = Date.parse
+  const DateUTC = Date.UTC
+  const DatePrototypeGetTime = require_primordials_uncurry.uncurryThis(
+    Date.prototype.getTime,
+  )
+  const DatePrototypeToISOString = require_primordials_uncurry.uncurryThis(
+    Date.prototype.toISOString,
+  )
+  const DatePrototypeToLocaleString = require_primordials_uncurry.uncurryThis(
+    Date.prototype.toLocaleString,
+  )
+  const DatePrototypeValueOf = require_primordials_uncurry.uncurryThis(
+    Date.prototype.valueOf,
+  )
+  exports.DateCtor = DateCtor
+  exports.DateNow = DateNow
+  exports.DateParse = DateParse
+  exports.DatePrototypeGetTime = DatePrototypeGetTime
+  exports.DatePrototypeToISOString = DatePrototypeToISOString
+  exports.DatePrototypeToLocaleString = DatePrototypeToLocaleString
+  exports.DatePrototypeValueOf = DatePrototypeValueOf
+  exports.DateUTC = DateUTC
+})
+
+var require_read_json_cache = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_error = require_error$2()
+  const require_primordials_map_set = require_map_set()
+  const require_primordials_number = require_number$2()
+  const require_primordials_json = require_json()
+  const require_primordials_date = require_date()
+  const require_node_process = require_process()
+  /**
+   * @file Process-scoped LRU cache for `readJson` / `readJsonSync` results,
+   *   keyed by absolute path + stat (`ino + size + mtimeMs`). Why default-on
+   *   caching is safe:
+   *
+   *   - Stat-validated keys: a `stat()` call before serving a cache hit ensures
+   *     the file hasn't changed (mtime + size mismatch ⇒ cache miss, re-read).
+   *   - Defensive clone on hit: every hit returns a JSON round-trip clone
+   *     (`JSON.parse(JSON.stringify(parsed))`) so callers can mutate the
+   *     returned object without poisoning the cache for the next reader. The
+   *     clone cost is far less than re-read + re-parse for anything bigger than
+   *     a trivial JSON document, and the round-trip is faster than
+   *     `structuredClone` over the JSON subset these values always belong to.
+   *   - Reviver opt-out: when the caller passes a `reviver` function, we skip the
+   *     cache. Function identity isn't safely hashable across boundaries, and
+   *     the reviver can produce a different shape from the same bytes.
+   *   - Per-call escape hatch: `cache: false` in the options bypasses the cache
+   *     for cases where staleness must be observed (file-watcher tooling,
+   *     etc.).
+   *   - Bounded growth: an LRU cap (default 256 entries) protects long-running
+   *     daemons. Tunable via `SOCKET_LIB_READ_JSON_CACHE_MAX` env or
+   *     `setReadJsonCacheMax()`.
+   *   - Test escape hatch: `clearReadJsonCache()` resets the whole cache between
+   *     test cases that rely on fresh reads. Not cached:
+   *   - Read failures (ENOENT under `throws: false` returns `undefined`). Caching
+   *     undefined would silently miss a file that gets created later.
+   *   - Reads with a `reviver`, per the reviver opt-out above.
+   *   - Reads with explicit `cache: false`.
+   *   - Relative paths whose `resolvePath` would change CWD-sensitively. We key
+   *     on the literal input path, so callers passing relative paths from
+   *     different CWDs would get separate cache entries — correct but
+   *     pessimistic.
+   */
+  const DEFAULT_MAX_ENTRIES = 256
+  const DEFAULT_TTL_MS = 3e5
+  const cache = new require_primordials_map_set.MapCtor()
+  let cacheMax = readMaxFromEnv()
+  let cacheTtlMs = readTtlFromEnv()
+  let hits = 0
+  let misses = 0
+  /**
+   * Drop all cached entries. Tests call this between cases that depend on a
+   * fresh read; long-running daemons can call it on file-watcher invalidation
+   * events for paths the daemon knows are about to change in bulk.
+   */
+  function clearReadJsonCache() {
+    cache.clear()
+    hits = 0
+    misses = 0
+  }
+  /**
+   * Look up a cached parse result. Returns a fresh structured clone on hit (so
+   * callers can mutate freely), or `undefined` on miss.
+   *
+   * @param key Cache key — absolute file path. Caller resolves any relative
+   *   inputs to absolute so two different CWDs don't share an entry.
+   * @param ino Inode (or `0` on platforms without one — Windows reports 0 from
+   *   the Node `fs.Stats` shim, in which case size + mtimeMs carry the
+   *   invalidation signal).
+   * @param size File size in bytes.
+   * @param mtimeMs Modification time in milliseconds.
+   */
+  function getCachedJson(key, ino, size, mtimeMs) {
+    const entry = cache.get(key)
+    if (!entry) {
+      misses += 1
+      return
+    }
+    if (
+      cacheTtlMs > 0 &&
+      require_primordials_date.DateNow() - entry.insertedAt > cacheTtlMs
+    ) {
+      cache.delete(key)
+      misses += 1
+      return
+    }
+    if (entry.ino !== ino || entry.size !== size || entry.mtimeMs !== mtimeMs) {
+      cache.delete(key)
+      misses += 1
+      return
+    }
+    hits += 1
+    return require_primordials_json.JSONParse(
+      require_primordials_json.JSONStringify(entry.parsed),
+    )
+  }
+  /**
+   * Snapshot diagnostics. Useful for tests and for tooling that wants to log
+   * cache effectiveness at end of run.
+   */
+  function getReadJsonCacheStats() {
+    return {
+      size: cache.size,
+      max: cacheMax,
+      ttlMs: cacheTtlMs,
+      hits,
+      misses,
+    }
+  }
+  function readMaxFromEnv() {
+    const env =
+      require_node_process.getNodeProcess().env[
+        'SOCKET_LIB_READ_JSON_CACHE_MAX'
+      ]
+    if (env) {
+      const n = require_primordials_number.NumberParseInt(env, 10)
+      if (n > 0 && require_primordials_number.NumberIsFinite(n)) return n
+    }
+    return DEFAULT_MAX_ENTRIES
+  }
+  function readTtlFromEnv() {
+    const env =
+      require_node_process.getNodeProcess().env[
+        'SOCKET_LIB_READ_JSON_CACHE_TTL_MS'
+      ]
+    if (env) {
+      const n = require_primordials_number.NumberParseInt(env, 10)
+      if (n >= 0 && require_primordials_number.NumberIsFinite(n)) return n
+    }
+    return DEFAULT_TTL_MS
+  }
+  /**
+   * Store a parsed value. Evicts the oldest entry when the cache is full.
+   *
+   * Never stores `undefined` — callers must guard for the "file not found,
+   * throws: false" case before invoking this.
+   */
+  function setCachedJson(key, ino, size, mtimeMs, parsed) {
+    if (cache.size >= cacheMax) {
+      const oldest = cache.keys().next().value
+      if (oldest !== void 0) cache.delete(oldest)
+    }
+    cache.set(key, {
+      ino,
+      size,
+      mtimeMs,
+      parsed: require_primordials_json.JSONParse(
+        require_primordials_json.JSONStringify(parsed),
+      ),
+      insertedAt: require_primordials_date.DateNow(),
+    })
+  }
+  /**
+   * Adjust the cache size cap at runtime. Useful for tooling that knows it'll
+   * walk many manifests in one pass and wants a larger cap, or for tests that
+   * want to bound the cap small so eviction is observable.
+   *
+   * Trims excess entries on shrink.
+   */
+  function setReadJsonCacheMax(max) {
+    if (max <= 0 || !require_primordials_number.NumberIsFinite(max))
+      throw new require_primordials_error.ErrorCtor(
+        `setReadJsonCacheMax: max must be a positive finite number, got ${max}`,
+      )
+    cacheMax = max
+    while (cache.size > cacheMax) {
+      const oldest = cache.keys().next().value
+      if (oldest === void 0) break
+      cache.delete(oldest)
+    }
+  }
+  /**
+   * Adjust the time-based ejection window at runtime. Default is 5 minutes;
+   * pass `0` to disable time-based ejection entirely (entries then live until
+   * LRU eviction or `clearReadJsonCache`).
+   */
+  function setReadJsonCacheTtlMs(ttlMs) {
+    if (ttlMs < 0 || !require_primordials_number.NumberIsFinite(ttlMs))
+      throw new require_primordials_error.ErrorCtor(
+        `setReadJsonCacheTtlMs: ttlMs must be a non-negative finite number, got ${ttlMs}`,
+      )
+    cacheTtlMs = ttlMs
+  }
+  exports.clearReadJsonCache = clearReadJsonCache
+  exports.getCachedJson = getCachedJson
+  exports.getReadJsonCacheStats = getReadJsonCacheStats
+  exports.readMaxFromEnv = readMaxFromEnv
+  exports.readTtlFromEnv = readTtlFromEnv
+  exports.setCachedJson = setCachedJson
+  exports.setReadJsonCacheMax = setReadJsonCacheMax
+  exports.setReadJsonCacheTtlMs = setReadJsonCacheTtlMs
+})
+
+/**
+ * Bundled from @sinclair/typebox/value
+ * This is a zero-dependency bundle created by rolldown.
+ */
+var require_value$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  var __commonJSMin = (cb, mod) => () => (
+    mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+    mod.exports
+  )
+  var require_evaluate = /* @__PURE__ */ __commonJSMin(exports$56 => {
+    Object.defineProperty(exports$56, '__esModule', { value: true })
+    exports$56.Evaluate = Evaluate
+    /**
+     * Evaluates code in the current environment. This function matches
+     * centralized evaluation as implemented in TypeBox 1.x.
+     */
+    function Evaluate(...args) {
+      return new globalThis.Function(...args)
+    }
+  })
+  var require_guard$2 = /* @__PURE__ */ __commonJSMin(exports$57 => {
+    Object.defineProperty(exports$57, '__esModule', { value: true })
+    exports$57.IsAsyncIterator = IsAsyncIterator
+    exports$57.IsIterator = IsIterator
+    exports$57.IsStandardObject = IsStandardObject
+    exports$57.IsInstanceObject = IsInstanceObject
+    exports$57.IsPromise = IsPromise
+    exports$57.IsDate = IsDate
+    exports$57.IsMap = IsMap
+    exports$57.IsSet = IsSet
+    exports$57.IsRegExp = IsRegExp
+    exports$57.IsTypedArray = IsTypedArray
+    exports$57.IsInt8Array = IsInt8Array
+    exports$57.IsUint8Array = IsUint8Array
+    exports$57.IsUint8ClampedArray = IsUint8ClampedArray
+    exports$57.IsInt16Array = IsInt16Array
+    exports$57.IsUint16Array = IsUint16Array
+    exports$57.IsInt32Array = IsInt32Array
+    exports$57.IsUint32Array = IsUint32Array
+    exports$57.IsFloat32Array = IsFloat32Array
+    exports$57.IsFloat64Array = IsFloat64Array
+    exports$57.IsBigInt64Array = IsBigInt64Array
+    exports$57.IsBigUint64Array = IsBigUint64Array
+    exports$57.HasPropertyKey = HasPropertyKey
+    exports$57.IsObject = IsObject
+    exports$57.IsArray = IsArray
+    exports$57.IsUndefined = IsUndefined
+    exports$57.IsNull = IsNull
+    exports$57.IsBoolean = IsBoolean
+    exports$57.IsNumber = IsNumber
+    exports$57.IsInteger = IsInteger
+    exports$57.IsBigInt = IsBigInt
+    exports$57.IsString = IsString
+    exports$57.IsFunction = IsFunction
+    exports$57.IsSymbol = IsSymbol
+    exports$57.IsValueType = IsValueType
+    /**
+     * Returns true if this value is an async iterator.
+     */
+    function IsAsyncIterator(value) {
+      return IsObject(value) && globalThis.Symbol.asyncIterator in value
+    }
+    /**
+     * Returns true if this value is an iterator.
+     */
+    function IsIterator(value) {
+      return IsObject(value) && globalThis.Symbol.iterator in value
+    }
+    /**
+     * Returns true if this value is not an instance of a class.
+     */
+    function IsStandardObject(value) {
+      return (
+        IsObject(value) &&
+        (globalThis.Object.getPrototypeOf(value) === Object.prototype ||
+          globalThis.Object.getPrototypeOf(value) === null)
+      )
+    }
+    /**
+     * Returns true if this value is an instance of a class.
+     */
+    function IsInstanceObject(value) {
+      return (
+        IsObject(value) &&
+        !IsArray(value) &&
+        IsFunction(value.constructor) &&
+        value.constructor.name !== 'Object'
+      )
+    }
+    /**
+     * Returns true if this value is a Promise.
+     */
+    function IsPromise(value) {
+      return value instanceof globalThis.Promise
+    }
+    /**
+     * Returns true if this value is a Date.
+     */
+    function IsDate(value) {
+      return (
+        value instanceof Date && globalThis.Number.isFinite(value.getTime())
+      )
+    }
+    /**
+     * Returns true if this value is an instance of Map<K, T>
+     */
+    function IsMap(value) {
+      return value instanceof globalThis.Map
+    }
+    /**
+     * Returns true if this value is an instance of Set<T>
+     */
+    function IsSet(value) {
+      return value instanceof globalThis.Set
+    }
+    /**
+     * Returns true if this value is RegExp.
+     */
+    function IsRegExp(value) {
+      return value instanceof globalThis.RegExp
+    }
+    /**
+     * Returns true if this value is a typed array.
+     */
+    function IsTypedArray(value) {
+      return globalThis.ArrayBuffer.isView(value)
+    }
+    /**
+     * Returns true if the value is a Int8Array.
+     */
+    function IsInt8Array(value) {
+      return value instanceof globalThis.Int8Array
+    }
+    /**
+     * Returns true if the value is a Uint8Array.
+     */
+    function IsUint8Array(value) {
+      return value instanceof globalThis.Uint8Array
+    }
+    /**
+     * Returns true if the value is a Uint8ClampedArray.
+     */
+    function IsUint8ClampedArray(value) {
+      return value instanceof globalThis.Uint8ClampedArray
+    }
+    /**
+     * Returns true if the value is a Int16Array.
+     */
+    function IsInt16Array(value) {
+      return value instanceof globalThis.Int16Array
+    }
+    /**
+     * Returns true if the value is a Uint16Array.
+     */
+    function IsUint16Array(value) {
+      return value instanceof globalThis.Uint16Array
+    }
+    /**
+     * Returns true if the value is a Int32Array.
+     */
+    function IsInt32Array(value) {
+      return value instanceof globalThis.Int32Array
+    }
+    /**
+     * Returns true if the value is a Uint32Array.
+     */
+    function IsUint32Array(value) {
+      return value instanceof globalThis.Uint32Array
+    }
+    /**
+     * Returns true if the value is a Float32Array.
+     */
+    function IsFloat32Array(value) {
+      return value instanceof globalThis.Float32Array
+    }
+    /**
+     * Returns true if the value is a Float64Array.
+     */
+    function IsFloat64Array(value) {
+      return value instanceof globalThis.Float64Array
+    }
+    /**
+     * Returns true if the value is a BigInt64Array.
+     */
+    function IsBigInt64Array(value) {
+      return value instanceof globalThis.BigInt64Array
+    }
+    /**
+     * Returns true if the value is a BigUint64Array.
+     */
+    function IsBigUint64Array(value) {
+      return value instanceof globalThis.BigUint64Array
+    }
+    /**
+     * Returns true if this value has this property key.
+     */
+    function HasPropertyKey(value, key) {
+      return key in value
+    }
+    /**
+     * Returns true of this value is an object type.
+     */
+    function IsObject(value) {
+      return value !== null && typeof value === 'object'
+    }
+    /**
+     * Returns true if this value is an array, but not a typed array.
+     */
+    function IsArray(value) {
+      return (
+        globalThis.Array.isArray(value) && !globalThis.ArrayBuffer.isView(value)
+      )
+    }
+    /**
+     * Returns true if this value is an undefined.
+     */
+    function IsUndefined(value) {
+      return value === void 0
+    }
+    /**
+     * Returns true if this value is an null.
+     */
+    function IsNull(value) {
+      return value === null
+    }
+    /**
+     * Returns true if this value is an boolean.
+     */
+    function IsBoolean(value) {
+      return typeof value === 'boolean'
+    }
+    /**
+     * Returns true if this value is an number.
+     */
+    function IsNumber(value) {
+      return typeof value === 'number'
+    }
+    /**
+     * Returns true if this value is an integer.
+     */
+    function IsInteger(value) {
+      return globalThis.Number.isInteger(value)
+    }
+    /**
+     * Returns true if this value is bigint.
+     */
+    function IsBigInt(value) {
+      return typeof value === 'bigint'
+    }
+    /**
+     * Returns true if this value is string.
+     */
+    function IsString(value) {
+      return typeof value === 'string'
+    }
+    /**
+     * Returns true if this value is a function.
+     */
+    function IsFunction(value) {
+      return typeof value === 'function'
+    }
+    /**
+     * Returns true if this value is a symbol.
+     */
+    function IsSymbol(value) {
+      return typeof value === 'symbol'
+    }
+    /**
+     * Returns true if this value is a value type such as number, string,
+     * boolean.
+     */
+    function IsValueType(value) {
+      return (
+        IsBigInt(value) ||
+        IsBoolean(value) ||
+        IsNull(value) ||
+        IsNumber(value) ||
+        IsString(value) ||
+        IsSymbol(value) ||
+        IsUndefined(value)
+      )
+    }
+  })
+  var require_guard$1 = /* @__PURE__ */ __commonJSMin(exports$58 => {
+    var __createBinding =
+      (exports$58 && exports$58.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$58 && exports$58.__exportStar) ||
+      function (m, exports$55) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$55, p)
+          )
+            __createBinding(exports$55, m, p)
+      }
+    Object.defineProperty(exports$58, '__esModule', { value: true })
+    __exportStar(require_guard$2(), exports$58)
+  })
+  var require_policy$1 = /* @__PURE__ */ __commonJSMin(exports$59 => {
+    Object.defineProperty(exports$59, '__esModule', { value: true })
+    exports$59.TypeSystemPolicy = void 0
+    const index_1 = require_guard$1()
+    var TypeSystemPolicy
+    ;(function (TypeSystemPolicy) {
+      /**
+       * Configures the instantiation behavior of TypeBox types. The `default`
+       * option assigns raw JavaScript references for embedded types, which may
+       * cause side effects if type properties are explicitly updated outside
+       * the TypeBox type builder. The `clone` option creates copies of any
+       * shared types upon creation, preventing unintended side effects. The
+       * `freeze` option applies `Object.freeze()` to the type, making it fully
+       * readonly and immutable. Implementations should use `default` whenever
+       * possible, as it is the fastest way to instantiate types. The default
+       * setting is `default`.
+       */
+      TypeSystemPolicy.InstanceMode = 'default'
+      /**
+       * Sets whether TypeBox should assert optional properties using the
+       * TypeScript `exactOptionalPropertyTypes` assertion policy. The default
+       * is `false`
+       */
+      TypeSystemPolicy.ExactOptionalPropertyTypes = false
+      /**
+       * Sets whether arrays should be treated as a kind of objects. The default
+       * is `false`
+       */
+      TypeSystemPolicy.AllowArrayObject = false
+      /**
+       * Sets whether `NaN` or `Infinity` should be treated as valid numeric
+       * values. The default is `false`
+       */
+      TypeSystemPolicy.AllowNaN = false
+      /**
+       * Sets whether `null` should validate for void types. The default is
+       * `false`
+       */
+      TypeSystemPolicy.AllowNullVoid = false
+      /**
+       * Checks this value using the ExactOptionalPropertyTypes policy.
+       */
+      function IsExactOptionalProperty(value, key) {
+        return TypeSystemPolicy.ExactOptionalPropertyTypes
+          ? key in value
+          : value[key] !== void 0
+      }
+      TypeSystemPolicy.IsExactOptionalProperty = IsExactOptionalProperty
+      /**
+       * Checks this value using the AllowArrayObjects policy.
+       */
+      function IsObjectLike(value) {
+        const isObject = (0, index_1.IsObject)(value)
+        return TypeSystemPolicy.AllowArrayObject
+          ? isObject
+          : isObject && !(0, index_1.IsArray)(value)
+      }
+      TypeSystemPolicy.IsObjectLike = IsObjectLike
+      /**
+       * Checks this value as a record using the AllowArrayObjects policy.
+       */
+      function IsRecordLike(value) {
+        return (
+          IsObjectLike(value) &&
+          !(value instanceof Date) &&
+          !(value instanceof Uint8Array)
+        )
+      }
+      TypeSystemPolicy.IsRecordLike = IsRecordLike
+      /**
+       * Checks this value using the AllowNaN policy.
+       */
+      function IsNumberLike(value) {
+        return TypeSystemPolicy.AllowNaN
+          ? (0, index_1.IsNumber)(value)
+          : Number.isFinite(value)
+      }
+      TypeSystemPolicy.IsNumberLike = IsNumberLike
+      /**
+       * Checks this value using the AllowVoidNull policy.
+       */
+      function IsVoidLike(value) {
+        const isUndefined = (0, index_1.IsUndefined)(value)
+        return TypeSystemPolicy.AllowNullVoid
+          ? isUndefined || value === null
+          : isUndefined
+      }
+      TypeSystemPolicy.IsVoidLike = IsVoidLike
+    })(
+      TypeSystemPolicy || (exports$59.TypeSystemPolicy = TypeSystemPolicy = {}),
+    )
+  })
+  var require_format = /* @__PURE__ */ __commonJSMin(exports$60 => {
+    Object.defineProperty(exports$60, '__esModule', { value: true })
+    exports$60.Entries = Entries
+    exports$60.Clear = Clear
+    exports$60.Delete = Delete
+    exports$60.Has = Has
+    exports$60.Set = Set
+    exports$60.Get = Get
+    /**
+     * A registry for user defined string formats.
+     */
+    const map = /* @__PURE__ */ new Map()
+    /**
+     * Returns the entries in this registry.
+     */
+    function Entries() {
+      return new Map(map)
+    }
+    /**
+     * Clears all user defined string formats.
+     */
+    function Clear() {
+      return map.clear()
+    }
+    /**
+     * Deletes a registered format.
+     */
+    function Delete(format) {
+      return map.delete(format)
+    }
+    /**
+     * Returns true if the user defined string format exists.
+     */
+    function Has(format) {
+      return map.has(format)
+    }
+    /**
+     * Sets a validation function for a user defined string format.
+     */
+    function Set(format, func) {
+      map.set(format, func)
+    }
+    /**
+     * Gets a validation function for a user defined string format.
+     */
+    function Get(format) {
+      return map.get(format)
+    }
+  })
+  var require_type$2 = /* @__PURE__ */ __commonJSMin(exports$61 => {
+    Object.defineProperty(exports$61, '__esModule', { value: true })
+    exports$61.Entries = Entries
+    exports$61.Clear = Clear
+    exports$61.Delete = Delete
+    exports$61.Has = Has
+    exports$61.Set = Set
+    exports$61.Get = Get
+    /**
+     * A registry for user defined types.
+     */
+    const map = /* @__PURE__ */ new Map()
+    /**
+     * Returns the entries in this registry.
+     */
+    function Entries() {
+      return new Map(map)
+    }
+    /**
+     * Clears all user defined types.
+     */
+    function Clear() {
+      return map.clear()
+    }
+    /**
+     * Deletes a registered type.
+     */
+    function Delete(kind) {
+      return map.delete(kind)
+    }
+    /**
+     * Returns true if this registry contains this kind.
+     */
+    function Has(kind) {
+      return map.has(kind)
+    }
+    /**
+     * Sets a validation function for a user defined type.
+     */
+    function Set(kind, func) {
+      map.set(kind, func)
+    }
+    /**
+     * Gets a custom validation function for a user defined type.
+     */
+    function Get(kind) {
+      return map.get(kind)
+    }
+  })
+  var require_registry = /* @__PURE__ */ __commonJSMin(exports$62 => {
+    var __createBinding =
+      (exports$62 && exports$62.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$62 && exports$62.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$62 && exports$62.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$62, '__esModule', { value: true })
+    exports$62.TypeRegistry = exports$62.FormatRegistry = void 0
+    exports$62.FormatRegistry = __importStar(require_format())
+    exports$62.TypeRegistry = __importStar(require_type$2())
+  })
+  var require_value$4 = /* @__PURE__ */ __commonJSMin(exports$63 => {
+    Object.defineProperty(exports$63, '__esModule', { value: true })
+    exports$63.HasPropertyKey = HasPropertyKey
+    exports$63.IsAsyncIterator = IsAsyncIterator
+    exports$63.IsArray = IsArray
+    exports$63.IsBigInt = IsBigInt
+    exports$63.IsBoolean = IsBoolean
+    exports$63.IsDate = IsDate
+    exports$63.IsFunction = IsFunction
+    exports$63.IsIterator = IsIterator
+    exports$63.IsNull = IsNull
+    exports$63.IsNumber = IsNumber
+    exports$63.IsObject = IsObject
+    exports$63.IsRegExp = IsRegExp
+    exports$63.IsString = IsString
+    exports$63.IsSymbol = IsSymbol
+    exports$63.IsUint8Array = IsUint8Array
+    exports$63.IsUndefined = IsUndefined
+    /**
+     * Returns true if this value has this property key.
+     */
+    function HasPropertyKey(value, key) {
+      return key in value
+    }
+    /**
+     * Returns true if this value is an async iterator.
+     */
+    function IsAsyncIterator(value) {
+      return (
+        IsObject(value) &&
+        !IsArray(value) &&
+        !IsUint8Array(value) &&
+        Symbol.asyncIterator in value
+      )
+    }
+    /**
+     * Returns true if this value is an array.
+     */
+    function IsArray(value) {
+      return Array.isArray(value)
+    }
+    /**
+     * Returns true if this value is bigint.
+     */
+    function IsBigInt(value) {
+      return typeof value === 'bigint'
+    }
+    /**
+     * Returns true if this value is a boolean.
+     */
+    function IsBoolean(value) {
+      return typeof value === 'boolean'
+    }
+    /**
+     * Returns true if this value is a Date object.
+     */
+    function IsDate(value) {
+      return value instanceof globalThis.Date
+    }
+    /**
+     * Returns true if this value is a function.
+     */
+    function IsFunction(value) {
+      return typeof value === 'function'
+    }
+    /**
+     * Returns true if this value is an iterator.
+     */
+    function IsIterator(value) {
+      return (
+        IsObject(value) &&
+        !IsArray(value) &&
+        !IsUint8Array(value) &&
+        Symbol.iterator in value
+      )
+    }
+    /**
+     * Returns true if this value is null.
+     */
+    function IsNull(value) {
+      return value === null
+    }
+    /**
+     * Returns true if this value is number.
+     */
+    function IsNumber(value) {
+      return typeof value === 'number'
+    }
+    /**
+     * Returns true if this value is an object.
+     */
+    function IsObject(value) {
+      return typeof value === 'object' && value !== null
+    }
+    /**
+     * Returns true if this value is RegExp.
+     */
+    function IsRegExp(value) {
+      return value instanceof globalThis.RegExp
+    }
+    /**
+     * Returns true if this value is string.
+     */
+    function IsString(value) {
+      return typeof value === 'string'
+    }
+    /**
+     * Returns true if this value is symbol.
+     */
+    function IsSymbol(value) {
+      return typeof value === 'symbol'
+    }
+    /**
+     * Returns true if this value is a Uint8Array.
+     */
+    function IsUint8Array(value) {
+      return value instanceof globalThis.Uint8Array
+    }
+    /**
+     * Returns true if this value is undefined.
+     */
+    function IsUndefined(value) {
+      return value === void 0
+    }
+  })
+  var require_immutable = /* @__PURE__ */ __commonJSMin(exports$64 => {
+    var __createBinding =
+      (exports$64 && exports$64.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$64 && exports$64.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$64 && exports$64.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$64, '__esModule', { value: true })
+    exports$64.Immutable = Immutable
+    const ValueGuard = __importStar(require_value$4())
+    function ImmutableArray(value) {
+      return globalThis.Object.freeze(value).map(value => Immutable(value))
+    }
+    function ImmutableDate(value) {
+      return value
+    }
+    function ImmutableUint8Array(value) {
+      return value
+    }
+    function ImmutableRegExp(value) {
+      return value
+    }
+    function ImmutableObject(value) {
+      const result = {}
+      for (const key of Object.getOwnPropertyNames(value))
+        result[key] = Immutable(value[key])
+      for (const key of Object.getOwnPropertySymbols(value))
+        result[key] = Immutable(value[key])
+      return globalThis.Object.freeze(result)
+    }
+    /**
+     * Specialized deep immutable value. Applies freeze recursively to the given
+     * value.
+     */
+    function Immutable(value) {
+      return ValueGuard.IsArray(value)
+        ? ImmutableArray(value)
+        : ValueGuard.IsDate(value)
+          ? ImmutableDate(value)
+          : ValueGuard.IsUint8Array(value)
+            ? ImmutableUint8Array(value)
+            : ValueGuard.IsRegExp(value)
+              ? ImmutableRegExp(value)
+              : ValueGuard.IsObject(value)
+                ? ImmutableObject(value)
+                : value
+    }
+  })
+  var require_value$3 = /* @__PURE__ */ __commonJSMin(exports$65 => {
+    var __createBinding =
+      (exports$65 && exports$65.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$65 && exports$65.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$65 && exports$65.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$65, '__esModule', { value: true })
+    exports$65.Clone = Clone
+    const ValueGuard = __importStar(require_value$4())
+    function ArrayType(value) {
+      return value.map(value => Visit(value))
+    }
+    function DateType(value) {
+      return new Date(value.getTime())
+    }
+    function Uint8ArrayType(value) {
+      return new Uint8Array(value)
+    }
+    function RegExpType(value) {
+      return new RegExp(value.source, value.flags)
+    }
+    function ObjectType(value) {
+      const result = {}
+      for (const key of Object.getOwnPropertyNames(value))
+        result[key] = Visit(value[key])
+      for (const key of Object.getOwnPropertySymbols(value))
+        result[key] = Visit(value[key])
+      return result
+    }
+    function Visit(value) {
+      return ValueGuard.IsArray(value)
+        ? ArrayType(value)
+        : ValueGuard.IsDate(value)
+          ? DateType(value)
+          : ValueGuard.IsUint8Array(value)
+            ? Uint8ArrayType(value)
+            : ValueGuard.IsRegExp(value)
+              ? RegExpType(value)
+              : ValueGuard.IsObject(value)
+                ? ObjectType(value)
+                : value
+    }
+    /**
+     * Clones a value.
+     */
+    function Clone(value) {
+      return Visit(value)
+    }
+  })
+  var require_type$1 = /* @__PURE__ */ __commonJSMin(exports$66 => {
+    Object.defineProperty(exports$66, '__esModule', { value: true })
+    exports$66.CreateType = CreateType
+    const policy_1 = require_policy$1()
+    const immutable_1 = require_immutable()
+    const value_1 = require_value$3()
+    /**
+     * Creates TypeBox schematics using the configured InstanceMode.
+     */
+    function CreateType(schema, options) {
+      const result =
+        options !== void 0
+          ? {
+              ...options,
+              ...schema,
+            }
+          : schema
+      switch (policy_1.TypeSystemPolicy.InstanceMode) {
+        case 'freeze':
+          return (0, immutable_1.Immutable)(result)
+        case 'clone':
+          return (0, value_1.Clone)(result)
+        default:
+          return result
+      }
+    }
+  })
+  var require_symbols$1 = /* @__PURE__ */ __commonJSMin(exports$67 => {
+    Object.defineProperty(exports$67, '__esModule', { value: true })
+    exports$67.Kind =
+      exports$67.Hint =
+      exports$67.OptionalKind =
+      exports$67.ReadonlyKind =
+      exports$67.TransformKind =
+        void 0
+    /**
+     * Symbol key applied to transform types.
+     */
+    exports$67.TransformKind = Symbol.for('TypeBox.Transform')
+    /**
+     * Symbol key applied to readonly types.
+     */
+    exports$67.ReadonlyKind = Symbol.for('TypeBox.Readonly')
+    /**
+     * Symbol key applied to optional types.
+     */
+    exports$67.OptionalKind = Symbol.for('TypeBox.Optional')
+    /**
+     * Symbol key applied to types.
+     */
+    exports$67.Hint = Symbol.for('TypeBox.Hint')
+    /**
+     * Symbol key applied to types.
+     */
+    exports$67.Kind = Symbol.for('TypeBox.Kind')
+  })
+  var require_symbols = /* @__PURE__ */ __commonJSMin(exports$68 => {
+    var __createBinding =
+      (exports$68 && exports$68.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$68 && exports$68.__exportStar) ||
+      function (m, exports$54) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$54, p)
+          )
+            __createBinding(exports$54, m, p)
+      }
+    Object.defineProperty(exports$68, '__esModule', { value: true })
+    __exportStar(require_symbols$1(), exports$68)
+  })
+  var require_unsafe$1 = /* @__PURE__ */ __commonJSMin(exports$69 => {
+    Object.defineProperty(exports$69, '__esModule', { value: true })
+    exports$69.Unsafe = Unsafe
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates a Unsafe type that will infers as the generic argument
+     * T.
+     */
+    function Unsafe(options = {}) {
+      return (0, type_1.CreateType)(
+        { [index_1.Kind]: options[index_1.Kind] ?? 'Unsafe' },
+        options,
+      )
+    }
+  })
+  var require_unsafe = /* @__PURE__ */ __commonJSMin(exports$70 => {
+    var __createBinding =
+      (exports$70 && exports$70.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$70 && exports$70.__exportStar) ||
+      function (m, exports$53) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$53, p)
+          )
+            __createBinding(exports$53, m, p)
+      }
+    Object.defineProperty(exports$70, '__esModule', { value: true })
+    __exportStar(require_unsafe$1(), exports$70)
+  })
+  var require_error$1 = /* @__PURE__ */ __commonJSMin(exports$71 => {
+    Object.defineProperty(exports$71, '__esModule', { value: true })
+    exports$71.TypeBoxError = void 0
+    /**
+     * The base Error type thrown for all TypeBox exceptions.
+     */
+    var TypeBoxError = class extends Error {
+      constructor(message) {
+        super(message)
+      }
+    }
+    exports$71.TypeBoxError = TypeBoxError
+  })
+  var require_error = /* @__PURE__ */ __commonJSMin(exports$72 => {
+    var __createBinding =
+      (exports$72 && exports$72.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$72 && exports$72.__exportStar) ||
+      function (m, exports$52) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$52, p)
+          )
+            __createBinding(exports$52, m, p)
+      }
+    Object.defineProperty(exports$72, '__esModule', { value: true })
+    __exportStar(require_error$1(), exports$72)
+  })
+  var require_system$1 = /* @__PURE__ */ __commonJSMin(exports$73 => {
+    Object.defineProperty(exports$73, '__esModule', { value: true })
+    exports$73.TypeSystem =
+      exports$73.TypeSystemDuplicateFormat =
+      exports$73.TypeSystemDuplicateTypeKind =
+        void 0
+    const index_1 = require_registry()
+    const index_2 = require_unsafe()
+    const index_3 = require_symbols()
+    const index_4 = require_error()
+    var TypeSystemDuplicateTypeKind = class extends index_4.TypeBoxError {
+      constructor(kind) {
+        super(`Duplicate type kind '${kind}' detected`)
+      }
+    }
+    exports$73.TypeSystemDuplicateTypeKind = TypeSystemDuplicateTypeKind
+    var TypeSystemDuplicateFormat = class extends index_4.TypeBoxError {
+      constructor(kind) {
+        super(`Duplicate string format '${kind}' detected`)
+      }
+    }
+    exports$73.TypeSystemDuplicateFormat = TypeSystemDuplicateFormat
+    /**
+     * Creates user defined types and formats and provides overrides for value
+     * checking behaviours.
+     */
+    var TypeSystem
+    ;(function (TypeSystem) {
+      /**
+       * Creates a new type.
+       */
+      function Type(kind, check) {
+        if (index_1.TypeRegistry.Has(kind))
+          throw new TypeSystemDuplicateTypeKind(kind)
+        index_1.TypeRegistry.Set(kind, check)
+        return (options = {}) =>
+          (0, index_2.Unsafe)({
+            ...options,
+            [index_3.Kind]: kind,
+          })
+      }
+      TypeSystem.Type = Type
+      /**
+       * Creates a new string format.
+       */
+      function Format(format, check) {
+        if (index_1.FormatRegistry.Has(format))
+          throw new TypeSystemDuplicateFormat(format)
+        index_1.FormatRegistry.Set(format, check)
+        return format
+      }
+      TypeSystem.Format = Format
+    })(TypeSystem || (exports$73.TypeSystem = TypeSystem = {}))
+  })
+  var require_system = /* @__PURE__ */ __commonJSMin(exports$74 => {
+    var __createBinding =
+      (exports$74 && exports$74.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$74 && exports$74.__exportStar) ||
+      function (m, exports$51) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$51, p)
+          )
+            __createBinding(exports$51, m, p)
+      }
+    Object.defineProperty(exports$74, '__esModule', { value: true })
+    __exportStar(require_evaluate(), exports$74)
+    __exportStar(require_policy$1(), exports$74)
+    __exportStar(require_system$1(), exports$74)
+  })
+  var require_mapped_key = /* @__PURE__ */ __commonJSMin(exports$75 => {
+    Object.defineProperty(exports$75, '__esModule', { value: true })
+    exports$75.MappedKey = MappedKey
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    function MappedKey(T) {
+      return (0, type_1.CreateType)({
+        [index_1.Kind]: 'MappedKey',
+        keys: T,
+      })
+    }
+  })
+  var require_mapped_result = /* @__PURE__ */ __commonJSMin(exports$76 => {
+    Object.defineProperty(exports$76, '__esModule', { value: true })
+    exports$76.MappedResult = MappedResult
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    function MappedResult(properties) {
+      return (0, type_1.CreateType)({
+        [index_1.Kind]: 'MappedResult',
+        properties,
+      })
+    }
+  })
+  var require_discard$1 = /* @__PURE__ */ __commonJSMin(exports$77 => {
+    Object.defineProperty(exports$77, '__esModule', { value: true })
+    exports$77.Discard = Discard
+    function DiscardKey(value, key) {
+      const { [key]: _, ...rest } = value
+      return rest
+    }
+    /**
+     * Discards property keys from the given value. This function returns a
+     * shallow Clone.
+     */
+    function Discard(value, keys) {
+      return keys.reduce((acc, key) => DiscardKey(acc, key), value)
+    }
+  })
+  var require_discard = /* @__PURE__ */ __commonJSMin(exports$78 => {
+    var __createBinding =
+      (exports$78 && exports$78.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$78 && exports$78.__exportStar) ||
+      function (m, exports$50) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$50, p)
+          )
+            __createBinding(exports$50, m, p)
+      }
+    Object.defineProperty(exports$78, '__esModule', { value: true })
+    __exportStar(require_discard$1(), exports$78)
+  })
+  var require_array$1 = /* @__PURE__ */ __commonJSMin(exports$79 => {
+    Object.defineProperty(exports$79, '__esModule', { value: true })
+    exports$79.Array = Array
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates an Array type.
+     */
+    function Array(items, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Array',
+          type: 'array',
+          items,
+        },
+        options,
+      )
+    }
+  })
+  var require_array = /* @__PURE__ */ __commonJSMin(exports$80 => {
+    var __createBinding =
+      (exports$80 && exports$80.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$80 && exports$80.__exportStar) ||
+      function (m, exports$49) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$49, p)
+          )
+            __createBinding(exports$49, m, p)
+      }
+    Object.defineProperty(exports$80, '__esModule', { value: true })
+    __exportStar(require_array$1(), exports$80)
+  })
+  var require_async_iterator$1 = /* @__PURE__ */ __commonJSMin(exports$81 => {
+    Object.defineProperty(exports$81, '__esModule', { value: true })
+    exports$81.AsyncIterator = AsyncIterator
+    const index_1 = require_symbols()
+    const type_1 = require_type$1()
+    /**
+     * `[JavaScript]` Creates a AsyncIterator type.
+     */
+    function AsyncIterator(items, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'AsyncIterator',
+          type: 'AsyncIterator',
+          items,
+        },
+        options,
+      )
+    }
+  })
+  var require_async_iterator = /* @__PURE__ */ __commonJSMin(exports$82 => {
+    var __createBinding =
+      (exports$82 && exports$82.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$82 && exports$82.__exportStar) ||
+      function (m, exports$48) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$48, p)
+          )
+            __createBinding(exports$48, m, p)
+      }
+    Object.defineProperty(exports$82, '__esModule', { value: true })
+    __exportStar(require_async_iterator$1(), exports$82)
+  })
+  var require_constructor$1 = /* @__PURE__ */ __commonJSMin(exports$83 => {
+    Object.defineProperty(exports$83, '__esModule', { value: true })
+    exports$83.Constructor = Constructor
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[JavaScript]` Creates a Constructor type.
+     */
+    function Constructor(parameters, returns, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Constructor',
+          type: 'Constructor',
+          parameters,
+          returns,
+        },
+        options,
+      )
+    }
+  })
+  var require_constructor = /* @__PURE__ */ __commonJSMin(exports$84 => {
+    var __createBinding =
+      (exports$84 && exports$84.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$84 && exports$84.__exportStar) ||
+      function (m, exports$47) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$47, p)
+          )
+            __createBinding(exports$47, m, p)
+      }
+    Object.defineProperty(exports$84, '__esModule', { value: true })
+    __exportStar(require_constructor$1(), exports$84)
+  })
+  var require_function$2 = /* @__PURE__ */ __commonJSMin(exports$85 => {
+    Object.defineProperty(exports$85, '__esModule', { value: true })
+    exports$85.Function = Function
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[JavaScript]` Creates a Function type.
+     */
+    function Function(parameters, returns, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Function',
+          type: 'Function',
+          parameters,
+          returns,
+        },
+        options,
+      )
+    }
+  })
+  var require_function$1 = /* @__PURE__ */ __commonJSMin(exports$86 => {
+    var __createBinding =
+      (exports$86 && exports$86.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$86 && exports$86.__exportStar) ||
+      function (m, exports$46) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$46, p)
+          )
+            __createBinding(exports$46, m, p)
+      }
+    Object.defineProperty(exports$86, '__esModule', { value: true })
+    __exportStar(require_function$2(), exports$86)
+  })
+  var require_create$2 = /* @__PURE__ */ __commonJSMin(exports$87 => {
+    var __createBinding =
+      (exports$87 && exports$87.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$87 && exports$87.__exportStar) ||
+      function (m, exports$45) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$45, p)
+          )
+            __createBinding(exports$45, m, p)
+      }
+    Object.defineProperty(exports$87, '__esModule', { value: true })
+    __exportStar(require_type$1(), exports$87)
+  })
+  var require_computed$1 = /* @__PURE__ */ __commonJSMin(exports$88 => {
+    Object.defineProperty(exports$88, '__esModule', { value: true })
+    exports$88.Computed = Computed
+    const index_1 = require_create$2()
+    const symbols_1 = require_symbols$1()
+    /**
+     * `[Internal]` Creates a deferred computed type. This type is used
+     * exclusively in modules to defer resolution of computable types that
+     * contain interior references.
+     */
+    function Computed(target, parameters, options) {
+      return (0, index_1.CreateType)(
+        {
+          [symbols_1.Kind]: 'Computed',
+          target,
+          parameters,
+        },
+        options,
+      )
+    }
+  })
+  var require_computed = /* @__PURE__ */ __commonJSMin(exports$89 => {
+    var __createBinding =
+      (exports$89 && exports$89.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$89 && exports$89.__exportStar) ||
+      function (m, exports$44) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$44, p)
+          )
+            __createBinding(exports$44, m, p)
+      }
+    Object.defineProperty(exports$89, '__esModule', { value: true })
+    __exportStar(require_computed$1(), exports$89)
+  })
+  var require_never$1 = /* @__PURE__ */ __commonJSMin(exports$90 => {
+    Object.defineProperty(exports$90, '__esModule', { value: true })
+    exports$90.Never = Never
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates a Never type.
+     */
+    function Never(options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Never',
+          not: {},
+        },
+        options,
+      )
+    }
+  })
+  var require_never = /* @__PURE__ */ __commonJSMin(exports$91 => {
+    var __createBinding =
+      (exports$91 && exports$91.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$91 && exports$91.__exportStar) ||
+      function (m, exports$43) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$43, p)
+          )
+            __createBinding(exports$43, m, p)
+      }
+    Object.defineProperty(exports$91, '__esModule', { value: true })
+    __exportStar(require_never$1(), exports$91)
+  })
+  var require_kind = /* @__PURE__ */ __commonJSMin(exports$92 => {
+    var __createBinding =
+      (exports$92 && exports$92.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$92 && exports$92.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$92 && exports$92.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$92, '__esModule', { value: true })
+    exports$92.IsReadonly = IsReadonly
+    exports$92.IsOptional = IsOptional
+    exports$92.IsAny = IsAny
+    exports$92.IsArgument = IsArgument
+    exports$92.IsArray = IsArray
+    exports$92.IsAsyncIterator = IsAsyncIterator
+    exports$92.IsBigInt = IsBigInt
+    exports$92.IsBoolean = IsBoolean
+    exports$92.IsComputed = IsComputed
+    exports$92.IsConstructor = IsConstructor
+    exports$92.IsDate = IsDate
+    exports$92.IsFunction = IsFunction
+    exports$92.IsImport = IsImport
+    exports$92.IsInteger = IsInteger
+    exports$92.IsProperties = IsProperties
+    exports$92.IsIntersect = IsIntersect
+    exports$92.IsIterator = IsIterator
+    exports$92.IsKindOf = IsKindOf
+    exports$92.IsLiteralString = IsLiteralString
+    exports$92.IsLiteralNumber = IsLiteralNumber
+    exports$92.IsLiteralBoolean = IsLiteralBoolean
+    exports$92.IsLiteralValue = IsLiteralValue
+    exports$92.IsLiteral = IsLiteral
+    exports$92.IsMappedKey = IsMappedKey
+    exports$92.IsMappedResult = IsMappedResult
+    exports$92.IsNever = IsNever
+    exports$92.IsNot = IsNot
+    exports$92.IsNull = IsNull
+    exports$92.IsNumber = IsNumber
+    exports$92.IsObject = IsObject
+    exports$92.IsPromise = IsPromise
+    exports$92.IsRecord = IsRecord
+    exports$92.IsRecursive = IsRecursive
+    exports$92.IsRef = IsRef
+    exports$92.IsRegExp = IsRegExp
+    exports$92.IsString = IsString
+    exports$92.IsSymbol = IsSymbol
+    exports$92.IsTemplateLiteral = IsTemplateLiteral
+    exports$92.IsThis = IsThis
+    exports$92.IsTransform = IsTransform
+    exports$92.IsTuple = IsTuple
+    exports$92.IsUndefined = IsUndefined
+    exports$92.IsUnion = IsUnion
+    exports$92.IsUint8Array = IsUint8Array
+    exports$92.IsUnknown = IsUnknown
+    exports$92.IsUnsafe = IsUnsafe
+    exports$92.IsVoid = IsVoid
+    exports$92.IsKind = IsKind
+    exports$92.IsSchema = IsSchema
+    const ValueGuard = __importStar(require_value$4())
+    const index_1 = require_symbols()
+    /**
+     * `[Kind-Only]` Returns true if this value has a Readonly symbol.
+     */
+    function IsReadonly(value) {
+      return (
+        ValueGuard.IsObject(value) && value[index_1.ReadonlyKind] === 'Readonly'
+      )
+    }
+    /**
+     * `[Kind-Only]` Returns true if this value has a Optional symbol.
+     */
+    function IsOptional(value) {
+      return (
+        ValueGuard.IsObject(value) && value[index_1.OptionalKind] === 'Optional'
+      )
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TAny.
+     */
+    function IsAny(value) {
+      return IsKindOf(value, 'Any')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TArgument.
+     */
+    function IsArgument(value) {
+      return IsKindOf(value, 'Argument')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TArray.
+     */
+    function IsArray(value) {
+      return IsKindOf(value, 'Array')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TAsyncIterator.
+     */
+    function IsAsyncIterator(value) {
+      return IsKindOf(value, 'AsyncIterator')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TBigInt.
+     */
+    function IsBigInt(value) {
+      return IsKindOf(value, 'BigInt')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TBoolean.
+     */
+    function IsBoolean(value) {
+      return IsKindOf(value, 'Boolean')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TComputed.
+     */
+    function IsComputed(value) {
+      return IsKindOf(value, 'Computed')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TConstructor.
+     */
+    function IsConstructor(value) {
+      return IsKindOf(value, 'Constructor')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TDate.
+     */
+    function IsDate(value) {
+      return IsKindOf(value, 'Date')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TFunction.
+     */
+    function IsFunction(value) {
+      return IsKindOf(value, 'Function')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TInteger.
+     */
+    function IsImport(value) {
+      return IsKindOf(value, 'Import')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TInteger.
+     */
+    function IsInteger(value) {
+      return IsKindOf(value, 'Integer')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given schema is TProperties.
+     */
+    function IsProperties(value) {
+      return ValueGuard.IsObject(value)
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TIntersect.
+     */
+    function IsIntersect(value) {
+      return IsKindOf(value, 'Intersect')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TIterator.
+     */
+    function IsIterator(value) {
+      return IsKindOf(value, 'Iterator')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is a TKind with the given
+     * name.
+     */
+    function IsKindOf(value, kind) {
+      return (
+        ValueGuard.IsObject(value) &&
+        index_1.Kind in value &&
+        value[index_1.Kind] === kind
+      )
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TLiteral<string>
+     */
+    function IsLiteralString(value) {
+      return IsLiteral(value) && ValueGuard.IsString(value.const)
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TLiteral<number>
+     */
+    function IsLiteralNumber(value) {
+      return IsLiteral(value) && ValueGuard.IsNumber(value.const)
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TLiteral<boolean>
+     */
+    function IsLiteralBoolean(value) {
+      return IsLiteral(value) && ValueGuard.IsBoolean(value.const)
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TLiteralValue.
+     */
+    function IsLiteralValue(value) {
+      return (
+        ValueGuard.IsBoolean(value) ||
+        ValueGuard.IsNumber(value) ||
+        ValueGuard.IsString(value)
+      )
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TLiteral.
+     */
+    function IsLiteral(value) {
+      return IsKindOf(value, 'Literal')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is a TMappedKey.
+     */
+    function IsMappedKey(value) {
+      return IsKindOf(value, 'MappedKey')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TMappedResult.
+     */
+    function IsMappedResult(value) {
+      return IsKindOf(value, 'MappedResult')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TNever.
+     */
+    function IsNever(value) {
+      return IsKindOf(value, 'Never')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TNot.
+     */
+    function IsNot(value) {
+      return IsKindOf(value, 'Not')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TNull.
+     */
+    function IsNull(value) {
+      return IsKindOf(value, 'Null')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TNumber.
+     */
+    function IsNumber(value) {
+      return IsKindOf(value, 'Number')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TObject.
+     */
+    function IsObject(value) {
+      return IsKindOf(value, 'Object')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TPromise.
+     */
+    function IsPromise(value) {
+      return IsKindOf(value, 'Promise')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TRecord.
+     */
+    function IsRecord(value) {
+      return IsKindOf(value, 'Record')
+    }
+    /**
+     * `[Kind-Only]` Returns true if this value is TRecursive.
+     */
+    function IsRecursive(value) {
+      return (
+        ValueGuard.IsObject(value) &&
+        index_1.Hint in value &&
+        value[index_1.Hint] === 'Recursive'
+      )
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TRef.
+     */
+    function IsRef(value) {
+      return IsKindOf(value, 'Ref')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TRegExp.
+     */
+    function IsRegExp(value) {
+      return IsKindOf(value, 'RegExp')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TString.
+     */
+    function IsString(value) {
+      return IsKindOf(value, 'String')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TSymbol.
+     */
+    function IsSymbol(value) {
+      return IsKindOf(value, 'Symbol')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TTemplateLiteral.
+     */
+    function IsTemplateLiteral(value) {
+      return IsKindOf(value, 'TemplateLiteral')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TThis.
+     */
+    function IsThis(value) {
+      return IsKindOf(value, 'This')
+    }
+    /**
+     * `[Kind-Only]` Returns true of this value is TTransform.
+     */
+    function IsTransform(value) {
+      return ValueGuard.IsObject(value) && index_1.TransformKind in value
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TTuple.
+     */
+    function IsTuple(value) {
+      return IsKindOf(value, 'Tuple')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TUndefined.
+     */
+    function IsUndefined(value) {
+      return IsKindOf(value, 'Undefined')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TUnion.
+     */
+    function IsUnion(value) {
+      return IsKindOf(value, 'Union')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TUint8Array.
+     */
+    function IsUint8Array(value) {
+      return IsKindOf(value, 'Uint8Array')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TUnknown.
+     */
+    function IsUnknown(value) {
+      return IsKindOf(value, 'Unknown')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is a raw TUnsafe.
+     */
+    function IsUnsafe(value) {
+      return IsKindOf(value, 'Unsafe')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TVoid.
+     */
+    function IsVoid(value) {
+      return IsKindOf(value, 'Void')
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TKind.
+     */
+    function IsKind(value) {
+      return (
+        ValueGuard.IsObject(value) &&
+        index_1.Kind in value &&
+        ValueGuard.IsString(value[index_1.Kind])
+      )
+    }
+    /**
+     * `[Kind-Only]` Returns true if the given value is TSchema.
+     */
+    function IsSchema(value) {
+      return (
+        IsAny(value) ||
+        IsArgument(value) ||
+        IsArray(value) ||
+        IsBoolean(value) ||
+        IsBigInt(value) ||
+        IsAsyncIterator(value) ||
+        IsComputed(value) ||
+        IsConstructor(value) ||
+        IsDate(value) ||
+        IsFunction(value) ||
+        IsInteger(value) ||
+        IsIntersect(value) ||
+        IsIterator(value) ||
+        IsLiteral(value) ||
+        IsMappedKey(value) ||
+        IsMappedResult(value) ||
+        IsNever(value) ||
+        IsNot(value) ||
+        IsNull(value) ||
+        IsNumber(value) ||
+        IsObject(value) ||
+        IsPromise(value) ||
+        IsRecord(value) ||
+        IsRef(value) ||
+        IsRegExp(value) ||
+        IsString(value) ||
+        IsSymbol(value) ||
+        IsTemplateLiteral(value) ||
+        IsThis(value) ||
+        IsTuple(value) ||
+        IsUndefined(value) ||
+        IsUnion(value) ||
+        IsUint8Array(value) ||
+        IsUnknown(value) ||
+        IsUnsafe(value) ||
+        IsVoid(value) ||
+        IsKind(value)
+      )
+    }
+  })
+  var require_optional$1 = /* @__PURE__ */ __commonJSMin(exports$93 => {
+    Object.defineProperty(exports$93, '__esModule', { value: true })
+    exports$93.Optional = Optional
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    const index_2 = require_discard()
+    const optional_from_mapped_result_1 = require_optional_from_mapped_result()
+    const kind_1 = require_kind()
+    function RemoveOptional(schema) {
+      return (0, type_1.CreateType)(
+        (0, index_2.Discard)(schema, [index_1.OptionalKind]),
+      )
+    }
+    function AddOptional(schema) {
+      return (0, type_1.CreateType)({
+        ...schema,
+        [index_1.OptionalKind]: 'Optional',
+      })
+    }
+    function OptionalWithFlag(schema, F) {
+      return F === false ? RemoveOptional(schema) : AddOptional(schema)
+    }
+    /**
+     * `[Json]` Creates a Optional property.
+     */
+    function Optional(schema, enable) {
+      const F = enable ?? true
+      return (0, kind_1.IsMappedResult)(schema)
+        ? (0, optional_from_mapped_result_1.OptionalFromMappedResult)(schema, F)
+        : OptionalWithFlag(schema, F)
+    }
+  })
+  var require_optional_from_mapped_result = /* @__PURE__ */ __commonJSMin(
+    exports$94 => {
+      Object.defineProperty(exports$94, '__esModule', { value: true })
+      exports$94.OptionalFromMappedResult = OptionalFromMappedResult
+      const index_1 = require_mapped()
+      const optional_1 = require_optional$1()
+      function FromProperties(P, F) {
+        const Acc = {}
+        for (const K2 of globalThis.Object.getOwnPropertyNames(P))
+          Acc[K2] = (0, optional_1.Optional)(P[K2], F)
+        return Acc
+      }
+      function FromMappedResult(R, F) {
+        return FromProperties(R.properties, F)
+      }
+      function OptionalFromMappedResult(R, F) {
+        const P = FromMappedResult(R, F)
+        return (0, index_1.MappedResult)(P)
+      }
+    },
+  )
+  var require_optional = /* @__PURE__ */ __commonJSMin(exports$95 => {
+    var __createBinding =
+      (exports$95 && exports$95.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$95 && exports$95.__exportStar) ||
+      function (m, exports$42) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$42, p)
+          )
+            __createBinding(exports$42, m, p)
+      }
+    Object.defineProperty(exports$95, '__esModule', { value: true })
+    __exportStar(require_optional_from_mapped_result(), exports$95)
+    __exportStar(require_optional$1(), exports$95)
+  })
+  var require_intersect_create = /* @__PURE__ */ __commonJSMin(exports$96 => {
+    Object.defineProperty(exports$96, '__esModule', { value: true })
+    exports$96.IntersectCreate = IntersectCreate
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    const kind_1 = require_kind()
+    function IntersectCreate(T, options = {}) {
+      const allObjects = T.every(schema => (0, kind_1.IsObject)(schema))
+      const clonedUnevaluatedProperties = (0, kind_1.IsSchema)(
+        options.unevaluatedProperties,
+      )
+        ? { unevaluatedProperties: options.unevaluatedProperties }
+        : {}
+      return (0, type_1.CreateType)(
+        options.unevaluatedProperties === false ||
+          (0, kind_1.IsSchema)(options.unevaluatedProperties) ||
+          allObjects
+          ? {
+              ...clonedUnevaluatedProperties,
+              [index_1.Kind]: 'Intersect',
+              type: 'object',
+              allOf: T,
+            }
+          : {
+              ...clonedUnevaluatedProperties,
+              [index_1.Kind]: 'Intersect',
+              allOf: T,
+            },
+        options,
+      )
+    }
+  })
+  var require_intersect_evaluated = /* @__PURE__ */ __commonJSMin(
+    exports$97 => {
+      Object.defineProperty(exports$97, '__esModule', { value: true })
+      exports$97.IntersectEvaluated = IntersectEvaluated
+      const index_1 = require_symbols()
+      const type_1 = require_type$1()
+      const index_2 = require_discard()
+      const index_3 = require_never()
+      const index_4 = require_optional()
+      const intersect_create_1 = require_intersect_create()
+      const kind_1 = require_kind()
+      function IsIntersectOptional(types) {
+        return types.every(left => (0, kind_1.IsOptional)(left))
+      }
+      function RemoveOptionalFromType(type) {
+        return (0, index_2.Discard)(type, [index_1.OptionalKind])
+      }
+      function RemoveOptionalFromRest(types) {
+        return types.map(left =>
+          (0, kind_1.IsOptional)(left) ? RemoveOptionalFromType(left) : left,
+        )
+      }
+      function ResolveIntersect(types, options) {
+        return IsIntersectOptional(types)
+          ? (0, index_4.Optional)(
+              (0, intersect_create_1.IntersectCreate)(
+                RemoveOptionalFromRest(types),
+                options,
+              ),
+            )
+          : (0, intersect_create_1.IntersectCreate)(
+              RemoveOptionalFromRest(types),
+              options,
+            )
+      }
+      /**
+       * `[Json]` Creates an evaluated Intersect type.
+       */
+      function IntersectEvaluated(types, options = {}) {
+        if (types.length === 1) return (0, type_1.CreateType)(types[0], options)
+        if (types.length === 0) return (0, index_3.Never)(options)
+        if (types.some(schema => (0, kind_1.IsTransform)(schema)))
+          throw new Error('Cannot intersect transform types')
+        return ResolveIntersect(types, options)
+      }
+    },
+  )
+  var require_intersect_type = /* @__PURE__ */ __commonJSMin(exports$98 => {
+    Object.defineProperty(exports$98, '__esModule', { value: true })
+    require_symbols()
+  })
+  var require_intersect$1 = /* @__PURE__ */ __commonJSMin(exports$99 => {
+    Object.defineProperty(exports$99, '__esModule', { value: true })
+    exports$99.Intersect = Intersect
+    const type_1 = require_type$1()
+    const index_1 = require_never()
+    const intersect_create_1 = require_intersect_create()
+    const kind_1 = require_kind()
+    /**
+     * `[Json]` Creates an evaluated Intersect type.
+     */
+    function Intersect(types, options) {
+      if (types.length === 1) return (0, type_1.CreateType)(types[0], options)
+      if (types.length === 0) return (0, index_1.Never)(options)
+      if (types.some(schema => (0, kind_1.IsTransform)(schema)))
+        throw new Error('Cannot intersect transform types')
+      return (0, intersect_create_1.IntersectCreate)(types, options)
+    }
+  })
+  var require_intersect = /* @__PURE__ */ __commonJSMin(exports$100 => {
+    var __createBinding =
+      (exports$100 && exports$100.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$100 && exports$100.__exportStar) ||
+      function (m, exports$41) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$41, p)
+          )
+            __createBinding(exports$41, m, p)
+      }
+    Object.defineProperty(exports$100, '__esModule', { value: true })
+    __exportStar(require_intersect_evaluated(), exports$100)
+    __exportStar(require_intersect_type(), exports$100)
+    __exportStar(require_intersect$1(), exports$100)
+  })
+  var require_union_create = /* @__PURE__ */ __commonJSMin(exports$101 => {
+    Object.defineProperty(exports$101, '__esModule', { value: true })
+    exports$101.UnionCreate = UnionCreate
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    function UnionCreate(T, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Union',
+          anyOf: T,
+        },
+        options,
+      )
+    }
+  })
+  var require_union_evaluated = /* @__PURE__ */ __commonJSMin(exports$102 => {
+    Object.defineProperty(exports$102, '__esModule', { value: true })
+    exports$102.UnionEvaluated = UnionEvaluated
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    const index_2 = require_discard()
+    const index_3 = require_never()
+    const index_4 = require_optional()
+    const union_create_1 = require_union_create()
+    const kind_1 = require_kind()
+    function IsUnionOptional(types) {
+      return types.some(type => (0, kind_1.IsOptional)(type))
+    }
+    function RemoveOptionalFromRest(types) {
+      return types.map(left =>
+        (0, kind_1.IsOptional)(left) ? RemoveOptionalFromType(left) : left,
+      )
+    }
+    function RemoveOptionalFromType(T) {
+      return (0, index_2.Discard)(T, [index_1.OptionalKind])
+    }
+    function ResolveUnion(types, options) {
+      return IsUnionOptional(types)
+        ? (0, index_4.Optional)(
+            (0, union_create_1.UnionCreate)(
+              RemoveOptionalFromRest(types),
+              options,
+            ),
+          )
+        : (0, union_create_1.UnionCreate)(
+            RemoveOptionalFromRest(types),
+            options,
+          )
+    }
+    /**
+     * `[Json]` Creates an evaluated Union type.
+     */
+    function UnionEvaluated(T, options) {
+      return T.length === 1
+        ? (0, type_1.CreateType)(T[0], options)
+        : T.length === 0
+          ? (0, index_3.Never)(options)
+          : ResolveUnion(T, options)
+    }
+  })
+  var require_union_type = /* @__PURE__ */ __commonJSMin(exports$103 => {
+    Object.defineProperty(exports$103, '__esModule', { value: true })
+    require_symbols()
+  })
+  var require_union$2 = /* @__PURE__ */ __commonJSMin(exports$104 => {
+    Object.defineProperty(exports$104, '__esModule', { value: true })
+    exports$104.Union = Union
+    const index_1 = require_never()
+    const type_1 = require_type$1()
+    const union_create_1 = require_union_create()
+    /**
+     * `[Json]` Creates a Union type.
+     */
+    function Union(types, options) {
+      return types.length === 0
+        ? (0, index_1.Never)(options)
+        : types.length === 1
+          ? (0, type_1.CreateType)(types[0], options)
+          : (0, union_create_1.UnionCreate)(types, options)
+    }
+  })
+  var require_union$1 = /* @__PURE__ */ __commonJSMin(exports$105 => {
+    var __createBinding =
+      (exports$105 && exports$105.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$105 && exports$105.__exportStar) ||
+      function (m, exports$40) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$40, p)
+          )
+            __createBinding(exports$40, m, p)
+      }
+    Object.defineProperty(exports$105, '__esModule', { value: true })
+    __exportStar(require_union_evaluated(), exports$105)
+    __exportStar(require_union_type(), exports$105)
+    __exportStar(require_union$2(), exports$105)
+  })
+  var require_parse$2 = /* @__PURE__ */ __commonJSMin(exports$106 => {
+    Object.defineProperty(exports$106, '__esModule', { value: true })
+    exports$106.TemplateLiteralParserError = void 0
+    exports$106.TemplateLiteralParse = TemplateLiteralParse
+    exports$106.TemplateLiteralParseExact = TemplateLiteralParseExact
+    const index_1 = require_error()
+    var TemplateLiteralParserError = class extends index_1.TypeBoxError {}
+    exports$106.TemplateLiteralParserError = TemplateLiteralParserError
+    function Unescape(pattern) {
+      return pattern
+        .replace(/\\\$/g, '$')
+        .replace(/\\\*/g, '*')
+        .replace(/\\\^/g, '^')
+        .replace(/\\\|/g, '|')
+        .replace(/\\\(/g, '(')
+        .replace(/\\\)/g, ')')
+    }
+    function IsNonEscaped(pattern, index, char) {
+      return pattern[index] === char && pattern.charCodeAt(index - 1) !== 92
+    }
+    function IsOpenParen(pattern, index) {
+      return IsNonEscaped(pattern, index, '(')
+    }
+    function IsCloseParen(pattern, index) {
+      return IsNonEscaped(pattern, index, ')')
+    }
+    function IsSeparator(pattern, index) {
+      return IsNonEscaped(pattern, index, '|')
+    }
+    function IsGroup(pattern) {
+      if (
+        !(IsOpenParen(pattern, 0) && IsCloseParen(pattern, pattern.length - 1))
+      )
+        return false
+      let count = 0
+      for (let index = 0; index < pattern.length; index++) {
+        if (IsOpenParen(pattern, index)) count += 1
+        if (IsCloseParen(pattern, index)) count -= 1
+        if (count === 0 && index !== pattern.length - 1) return false
+      }
+      return true
+    }
+    function InGroup(pattern) {
+      return pattern.slice(1, pattern.length - 1)
+    }
+    function IsPrecedenceOr(pattern) {
+      let count = 0
+      for (let index = 0; index < pattern.length; index++) {
+        if (IsOpenParen(pattern, index)) count += 1
+        if (IsCloseParen(pattern, index)) count -= 1
+        if (IsSeparator(pattern, index) && count === 0) return true
+      }
+      return false
+    }
+    function IsPrecedenceAnd(pattern) {
+      for (let index = 0; index < pattern.length; index++)
+        if (IsOpenParen(pattern, index)) return true
+      return false
+    }
+    function Or(pattern) {
+      let [count, start] = [0, 0]
+      const expressions = []
+      for (let index = 0; index < pattern.length; index++) {
+        if (IsOpenParen(pattern, index)) count += 1
+        if (IsCloseParen(pattern, index)) count -= 1
+        if (IsSeparator(pattern, index) && count === 0) {
+          const range = pattern.slice(start, index)
+          if (range.length > 0) expressions.push(TemplateLiteralParse(range))
+          start = index + 1
+        }
+      }
+      const range = pattern.slice(start)
+      if (range.length > 0) expressions.push(TemplateLiteralParse(range))
+      if (expressions.length === 0)
+        return {
+          type: 'const',
+          const: '',
+        }
+      if (expressions.length === 1) return expressions[0]
+      return {
+        type: 'or',
+        expr: expressions,
+      }
+    }
+    function And(pattern) {
+      function Group(value, index) {
+        if (!IsOpenParen(value, index))
+          throw new TemplateLiteralParserError(
+            `TemplateLiteralParser: Index must point to open parens`,
+          )
+        let count = 0
+        for (let scan = index; scan < value.length; scan++) {
+          if (IsOpenParen(value, scan)) count += 1
+          if (IsCloseParen(value, scan)) count -= 1
+          if (count === 0) return [index, scan]
+        }
+        throw new TemplateLiteralParserError(
+          `TemplateLiteralParser: Unclosed group parens in expression`,
+        )
+      }
+      function Range(pattern, index) {
+        for (let scan = index; scan < pattern.length; scan++)
+          if (IsOpenParen(pattern, scan)) return [index, scan]
+        return [index, pattern.length]
+      }
+      const expressions = []
+      for (let index = 0; index < pattern.length; index++)
+        if (IsOpenParen(pattern, index)) {
+          const [start, end] = Group(pattern, index)
+          const range = pattern.slice(start, end + 1)
+          expressions.push(TemplateLiteralParse(range))
+          index = end
+        } else {
+          const [start, end] = Range(pattern, index)
+          const range = pattern.slice(start, end)
+          if (range.length > 0) expressions.push(TemplateLiteralParse(range))
+          index = end - 1
+        }
+      return expressions.length === 0
+        ? {
+            type: 'const',
+            const: '',
+          }
+        : expressions.length === 1
+          ? expressions[0]
+          : {
+              type: 'and',
+              expr: expressions,
+            }
+    }
+    /**
+     * Parses a pattern and returns an expression tree.
+     */
+    function TemplateLiteralParse(pattern) {
+      return IsGroup(pattern)
+        ? TemplateLiteralParse(InGroup(pattern))
+        : IsPrecedenceOr(pattern)
+          ? Or(pattern)
+          : IsPrecedenceAnd(pattern)
+            ? And(pattern)
+            : {
+                type: 'const',
+                const: Unescape(pattern),
+              }
+    }
+    /**
+     * Parses a pattern and strips forward and trailing ^ and $
+     */
+    function TemplateLiteralParseExact(pattern) {
+      return TemplateLiteralParse(pattern.slice(1, pattern.length - 1))
+    }
+  })
+  var require_finite = /* @__PURE__ */ __commonJSMin(exports$107 => {
+    Object.defineProperty(exports$107, '__esModule', { value: true })
+    exports$107.TemplateLiteralFiniteError = void 0
+    exports$107.IsTemplateLiteralExpressionFinite =
+      IsTemplateLiteralExpressionFinite
+    exports$107.IsTemplateLiteralFinite = IsTemplateLiteralFinite
+    const parse_1 = require_parse$2()
+    const index_1 = require_error()
+    var TemplateLiteralFiniteError = class extends index_1.TypeBoxError {}
+    exports$107.TemplateLiteralFiniteError = TemplateLiteralFiniteError
+    function IsNumberExpression(expression) {
+      return (
+        expression.type === 'or' &&
+        expression.expr.length === 2 &&
+        expression.expr[0].type === 'const' &&
+        expression.expr[0].const === '0' &&
+        expression.expr[1].type === 'const' &&
+        expression.expr[1].const === '[1-9][0-9]*'
+      )
+    }
+    function IsBooleanExpression(expression) {
+      return (
+        expression.type === 'or' &&
+        expression.expr.length === 2 &&
+        expression.expr[0].type === 'const' &&
+        expression.expr[0].const === 'true' &&
+        expression.expr[1].type === 'const' &&
+        expression.expr[1].const === 'false'
+      )
+    }
+    function IsStringExpression(expression) {
+      return expression.type === 'const' && expression.const === '.*'
+    }
+    function IsTemplateLiteralExpressionFinite(expression) {
+      return IsNumberExpression(expression) || IsStringExpression(expression)
+        ? false
+        : IsBooleanExpression(expression)
+          ? true
+          : expression.type === 'and'
+            ? expression.expr.every(expr =>
+                IsTemplateLiteralExpressionFinite(expr),
+              )
+            : expression.type === 'or'
+              ? expression.expr.every(expr =>
+                  IsTemplateLiteralExpressionFinite(expr),
+                )
+              : expression.type === 'const'
+                ? true
+                : (() => {
+                    throw new TemplateLiteralFiniteError(
+                      `Unknown expression type`,
+                    )
+                  })()
+    }
+    /**
+     * Returns true if this TemplateLiteral resolves to a finite set of values.
+     */
+    function IsTemplateLiteralFinite(schema) {
+      return IsTemplateLiteralExpressionFinite(
+        (0, parse_1.TemplateLiteralParseExact)(schema.pattern),
+      )
+    }
+  })
+  var require_generate = /* @__PURE__ */ __commonJSMin(exports$108 => {
+    Object.defineProperty(exports$108, '__esModule', { value: true })
+    exports$108.TemplateLiteralGenerateError = void 0
+    exports$108.TemplateLiteralExpressionGenerate =
+      TemplateLiteralExpressionGenerate
+    exports$108.TemplateLiteralGenerate = TemplateLiteralGenerate
+    const finite_1 = require_finite()
+    const parse_1 = require_parse$2()
+    const index_1 = require_error()
+    var TemplateLiteralGenerateError = class extends index_1.TypeBoxError {}
+    exports$108.TemplateLiteralGenerateError = TemplateLiteralGenerateError
+    function* GenerateReduce(buffer) {
+      if (buffer.length === 1) return yield* buffer[0]
+      for (const left of buffer[0])
+        for (const right of GenerateReduce(buffer.slice(1)))
+          yield `${left}${right}`
+    }
+    function* GenerateAnd(expression) {
+      return yield* GenerateReduce(
+        expression.expr.map(expr => [
+          ...TemplateLiteralExpressionGenerate(expr),
+        ]),
+      )
+    }
+    function* GenerateOr(expression) {
+      for (const expr of expression.expr)
+        yield* TemplateLiteralExpressionGenerate(expr)
+    }
+    function* GenerateConst(expression) {
+      return yield expression.const
+    }
+    function* TemplateLiteralExpressionGenerate(expression) {
+      return expression.type === 'and'
+        ? yield* GenerateAnd(expression)
+        : expression.type === 'or'
+          ? yield* GenerateOr(expression)
+          : expression.type === 'const'
+            ? yield* GenerateConst(expression)
+            : (() => {
+                throw new TemplateLiteralGenerateError('Unknown expression')
+              })()
+    }
+    /**
+     * Generates a tuple of strings from the given TemplateLiteral. Returns an
+     * empty tuple if infinite.
+     */
+    function TemplateLiteralGenerate(schema) {
+      const expression = (0, parse_1.TemplateLiteralParseExact)(schema.pattern)
+      return (0, finite_1.IsTemplateLiteralExpressionFinite)(expression)
+        ? [...TemplateLiteralExpressionGenerate(expression)]
+        : []
+    }
+  })
+  var require_literal$1 = /* @__PURE__ */ __commonJSMin(exports$109 => {
+    Object.defineProperty(exports$109, '__esModule', { value: true })
+    exports$109.Literal = Literal
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates a Literal type.
+     */
+    function Literal(value, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Literal',
+          const: value,
+          type: typeof value,
+        },
+        options,
+      )
+    }
+  })
+  var require_literal = /* @__PURE__ */ __commonJSMin(exports$110 => {
+    var __createBinding =
+      (exports$110 && exports$110.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$110 && exports$110.__exportStar) ||
+      function (m, exports$39) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$39, p)
+          )
+            __createBinding(exports$39, m, p)
+      }
+    Object.defineProperty(exports$110, '__esModule', { value: true })
+    __exportStar(require_literal$1(), exports$110)
+  })
+  var require_boolean$1 = /* @__PURE__ */ __commonJSMin(exports$111 => {
+    Object.defineProperty(exports$111, '__esModule', { value: true })
+    exports$111.Boolean = Boolean
+    const index_1 = require_symbols()
+    const index_2 = require_create$2()
+    /**
+     * `[Json]` Creates a Boolean type.
+     */
+    function Boolean(options) {
+      return (0, index_2.CreateType)(
+        {
+          [index_1.Kind]: 'Boolean',
+          type: 'boolean',
+        },
+        options,
+      )
+    }
+  })
+  var require_boolean = /* @__PURE__ */ __commonJSMin(exports$112 => {
+    var __createBinding =
+      (exports$112 && exports$112.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$112 && exports$112.__exportStar) ||
+      function (m, exports$38) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$38, p)
+          )
+            __createBinding(exports$38, m, p)
+      }
+    Object.defineProperty(exports$112, '__esModule', { value: true })
+    __exportStar(require_boolean$1(), exports$112)
+  })
+  var require_bigint$1 = /* @__PURE__ */ __commonJSMin(exports$113 => {
+    Object.defineProperty(exports$113, '__esModule', { value: true })
+    exports$113.BigInt = BigInt
+    const index_1 = require_symbols()
+    const index_2 = require_create$2()
+    /**
+     * `[JavaScript]` Creates a BigInt type.
+     */
+    function BigInt(options) {
+      return (0, index_2.CreateType)(
+        {
+          [index_1.Kind]: 'BigInt',
+          type: 'bigint',
+        },
+        options,
+      )
+    }
+  })
+  var require_bigint = /* @__PURE__ */ __commonJSMin(exports$114 => {
+    var __createBinding =
+      (exports$114 && exports$114.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$114 && exports$114.__exportStar) ||
+      function (m, exports$37) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$37, p)
+          )
+            __createBinding(exports$37, m, p)
+      }
+    Object.defineProperty(exports$114, '__esModule', { value: true })
+    __exportStar(require_bigint$1(), exports$114)
+  })
+  var require_number$1 = /* @__PURE__ */ __commonJSMin(exports$115 => {
+    Object.defineProperty(exports$115, '__esModule', { value: true })
+    exports$115.Number = Number
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates a Number type.
+     */
+    function Number(options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Number',
+          type: 'number',
+        },
+        options,
+      )
+    }
+  })
+  var require_number = /* @__PURE__ */ __commonJSMin(exports$116 => {
+    var __createBinding =
+      (exports$116 && exports$116.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$116 && exports$116.__exportStar) ||
+      function (m, exports$36) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$36, p)
+          )
+            __createBinding(exports$36, m, p)
+      }
+    Object.defineProperty(exports$116, '__esModule', { value: true })
+    __exportStar(require_number$1(), exports$116)
+  })
+  var require_string$1 = /* @__PURE__ */ __commonJSMin(exports$117 => {
+    Object.defineProperty(exports$117, '__esModule', { value: true })
+    exports$117.String = String
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates a String type.
+     */
+    function String(options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'String',
+          type: 'string',
+        },
+        options,
+      )
+    }
+  })
+  var require_string = /* @__PURE__ */ __commonJSMin(exports$118 => {
+    var __createBinding =
+      (exports$118 && exports$118.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$118 && exports$118.__exportStar) ||
+      function (m, exports$35) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$35, p)
+          )
+            __createBinding(exports$35, m, p)
+      }
+    Object.defineProperty(exports$118, '__esModule', { value: true })
+    __exportStar(require_string$1(), exports$118)
+  })
+  var require_syntax = /* @__PURE__ */ __commonJSMin(exports$119 => {
+    Object.defineProperty(exports$119, '__esModule', { value: true })
+    exports$119.TemplateLiteralSyntax = TemplateLiteralSyntax
+    const index_1 = require_literal()
+    const index_2 = require_boolean()
+    const index_3 = require_bigint()
+    const index_4 = require_number()
+    const index_5 = require_string()
+    const index_6 = require_union$1()
+    const index_7 = require_never()
+    function* FromUnion(syntax) {
+      const trim = syntax.trim().replace(/"|'/g, '')
+      return trim === 'boolean'
+        ? yield (0, index_2.Boolean)()
+        : trim === 'number'
+          ? yield (0, index_4.Number)()
+          : trim === 'bigint'
+            ? yield (0, index_3.BigInt)()
+            : trim === 'string'
+              ? yield (0, index_5.String)()
+              : yield (() => {
+                  const literals = trim
+                    .split('|')
+                    .map(literal => (0, index_1.Literal)(literal.trim()))
+                  return literals.length === 0
+                    ? (0, index_7.Never)()
+                    : literals.length === 1
+                      ? literals[0]
+                      : (0, index_6.UnionEvaluated)(literals)
+                })()
+    }
+    function* FromTerminal(syntax) {
+      if (syntax[1] !== '{')
+        return yield* [
+          (0, index_1.Literal)('$'),
+          ...FromSyntax(syntax.slice(1)),
+        ]
+      for (let i = 2; i < syntax.length; i++)
+        if (syntax[i] === '}') {
+          const L = FromUnion(syntax.slice(2, i))
+          const R = FromSyntax(syntax.slice(i + 1))
+          return yield* [...L, ...R]
+        }
+      yield (0, index_1.Literal)(syntax)
+    }
+    function* FromSyntax(syntax) {
+      for (let i = 0; i < syntax.length; i++)
+        if (syntax[i] === '$')
+          return yield* [
+            (0, index_1.Literal)(syntax.slice(0, i)),
+            ...FromTerminal(syntax.slice(i)),
+          ]
+      yield (0, index_1.Literal)(syntax)
+    }
+    /**
+     * Parses TemplateLiteralSyntax and returns a tuple of TemplateLiteralKinds.
+     */
+    function TemplateLiteralSyntax(syntax) {
+      return [...FromSyntax(syntax)]
+    }
+  })
+  var require_patterns$1 = /* @__PURE__ */ __commonJSMin(exports$120 => {
+    Object.defineProperty(exports$120, '__esModule', { value: true })
+    exports$120.PatternNeverExact =
+      exports$120.PatternStringExact =
+      exports$120.PatternNumberExact =
+      exports$120.PatternBooleanExact =
+      exports$120.PatternNever =
+      exports$120.PatternString =
+      exports$120.PatternNumber =
+      exports$120.PatternBoolean =
+        void 0
+    exports$120.PatternBoolean = '(true|false)'
+    exports$120.PatternNumber = '(0|[1-9][0-9]*)'
+    exports$120.PatternString = '(.*)'
+    exports$120.PatternNever = '(?!.*)'
+    exports$120.PatternBooleanExact = `^${exports$120.PatternBoolean}$`
+    exports$120.PatternNumberExact = `^${exports$120.PatternNumber}$`
+    exports$120.PatternStringExact = `^${exports$120.PatternString}$`
+    exports$120.PatternNeverExact = `^${exports$120.PatternNever}$`
+  })
+  var require_patterns = /* @__PURE__ */ __commonJSMin(exports$121 => {
+    var __createBinding =
+      (exports$121 && exports$121.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$121 && exports$121.__exportStar) ||
+      function (m, exports$34) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$34, p)
+          )
+            __createBinding(exports$34, m, p)
+      }
+    Object.defineProperty(exports$121, '__esModule', { value: true })
+    __exportStar(require_patterns$1(), exports$121)
+  })
+  var require_pattern = /* @__PURE__ */ __commonJSMin(exports$122 => {
+    Object.defineProperty(exports$122, '__esModule', { value: true })
+    exports$122.TemplateLiteralPatternError = void 0
+    exports$122.TemplateLiteralPattern = TemplateLiteralPattern
+    const index_1 = require_patterns()
+    const index_2 = require_symbols()
+    const index_3 = require_error()
+    const kind_1 = require_kind()
+    var TemplateLiteralPatternError = class extends index_3.TypeBoxError {}
+    exports$122.TemplateLiteralPatternError = TemplateLiteralPatternError
+    function Escape(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+    function Visit(schema, acc) {
+      return (0, kind_1.IsTemplateLiteral)(schema)
+        ? schema.pattern.slice(1, schema.pattern.length - 1)
+        : (0, kind_1.IsUnion)(schema)
+          ? `(${schema.anyOf.map(schema => Visit(schema, acc)).join('|')})`
+          : (0, kind_1.IsNumber)(schema)
+            ? `${acc}${index_1.PatternNumber}`
+            : (0, kind_1.IsInteger)(schema)
+              ? `${acc}${index_1.PatternNumber}`
+              : (0, kind_1.IsBigInt)(schema)
+                ? `${acc}${index_1.PatternNumber}`
+                : (0, kind_1.IsString)(schema)
+                  ? `${acc}${index_1.PatternString}`
+                  : (0, kind_1.IsLiteral)(schema)
+                    ? `${acc}${Escape(schema.const.toString())}`
+                    : (0, kind_1.IsBoolean)(schema)
+                      ? `${acc}${index_1.PatternBoolean}`
+                      : (() => {
+                          throw new TemplateLiteralPatternError(
+                            `Unexpected Kind '${schema[index_2.Kind]}'`,
+                          )
+                        })()
+    }
+    function TemplateLiteralPattern(kinds) {
+      return `^${kinds.map(schema => Visit(schema, '')).join('')}\$`
+    }
+  })
+  var require_union = /* @__PURE__ */ __commonJSMin(exports$123 => {
+    Object.defineProperty(exports$123, '__esModule', { value: true })
+    exports$123.TemplateLiteralToUnion = TemplateLiteralToUnion
+    const index_1 = require_union$1()
+    const index_2 = require_literal()
+    const generate_1 = require_generate()
+    /**
+     * Returns a Union from the given TemplateLiteral.
+     */
+    function TemplateLiteralToUnion(schema) {
+      const L = (0, generate_1.TemplateLiteralGenerate)(schema).map(S =>
+        (0, index_2.Literal)(S),
+      )
+      return (0, index_1.UnionEvaluated)(L)
+    }
+  })
+  var require_template_literal$1 = /* @__PURE__ */ __commonJSMin(
+    exports$124 => {
+      Object.defineProperty(exports$124, '__esModule', { value: true })
+      exports$124.TemplateLiteral = TemplateLiteral
+      const type_1 = require_type$1()
+      const syntax_1 = require_syntax()
+      const pattern_1 = require_pattern()
+      const value_1 = require_value$4()
+      const index_1 = require_symbols()
+      /**
+       * `[Json]` Creates a TemplateLiteral type.
+       */
+      function TemplateLiteral(unresolved, options) {
+        const pattern = (0, value_1.IsString)(unresolved)
+          ? (0, pattern_1.TemplateLiteralPattern)(
+              (0, syntax_1.TemplateLiteralSyntax)(unresolved),
+            )
+          : (0, pattern_1.TemplateLiteralPattern)(unresolved)
+        return (0, type_1.CreateType)(
+          {
+            [index_1.Kind]: 'TemplateLiteral',
+            type: 'string',
+            pattern,
+          },
+          options,
+        )
+      }
+    },
+  )
+  var require_template_literal = /* @__PURE__ */ __commonJSMin(exports$125 => {
+    var __createBinding =
+      (exports$125 && exports$125.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$125 && exports$125.__exportStar) ||
+      function (m, exports$33) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$33, p)
+          )
+            __createBinding(exports$33, m, p)
+      }
+    Object.defineProperty(exports$125, '__esModule', { value: true })
+    __exportStar(require_finite(), exports$125)
+    __exportStar(require_generate(), exports$125)
+    __exportStar(require_syntax(), exports$125)
+    __exportStar(require_parse$2(), exports$125)
+    __exportStar(require_pattern(), exports$125)
+    __exportStar(require_union(), exports$125)
+    __exportStar(require_template_literal$1(), exports$125)
+  })
+  var require_indexed_property_keys = /* @__PURE__ */ __commonJSMin(
+    exports$126 => {
+      Object.defineProperty(exports$126, '__esModule', { value: true })
+      exports$126.IndexPropertyKeys = IndexPropertyKeys
+      const index_1 = require_template_literal()
+      const kind_1 = require_kind()
+      function FromTemplateLiteral(templateLiteral) {
+        return (0, index_1.TemplateLiteralGenerate)(templateLiteral).map(key =>
+          key.toString(),
+        )
+      }
+      function FromUnion(types) {
+        const result = []
+        for (const type of types) result.push(...IndexPropertyKeys(type))
+        return result
+      }
+      function FromLiteral(literalValue) {
+        return [literalValue.toString()]
+      }
+      /**
+       * Returns a tuple of PropertyKeys derived from the given TSchema.
+       */
+      function IndexPropertyKeys(type) {
+        return [
+          ...new Set(
+            (0, kind_1.IsTemplateLiteral)(type)
+              ? FromTemplateLiteral(type)
+              : (0, kind_1.IsUnion)(type)
+                ? FromUnion(type.anyOf)
+                : (0, kind_1.IsLiteral)(type)
+                  ? FromLiteral(type.const)
+                  : (0, kind_1.IsNumber)(type)
+                    ? ['[number]']
+                    : (0, kind_1.IsInteger)(type)
+                      ? ['[number]']
+                      : [],
+          ),
+        ]
+      }
+    },
+  )
+  var require_indexed_from_mapped_result = /* @__PURE__ */ __commonJSMin(
+    exports$127 => {
+      Object.defineProperty(exports$127, '__esModule', { value: true })
+      exports$127.IndexFromMappedResult = IndexFromMappedResult
+      const index_1 = require_mapped()
+      const indexed_property_keys_1 = require_indexed_property_keys()
+      const index_2 = require_indexed()
+      function FromProperties(type, properties, options) {
+        const result = {}
+        for (const K2 of Object.getOwnPropertyNames(properties))
+          result[K2] = (0, index_2.Index)(
+            type,
+            (0, indexed_property_keys_1.IndexPropertyKeys)(properties[K2]),
+            options,
+          )
+        return result
+      }
+      function FromMappedResult(type, mappedResult, options) {
+        return FromProperties(type, mappedResult.properties, options)
+      }
+      function IndexFromMappedResult(type, mappedResult, options) {
+        const properties = FromMappedResult(type, mappedResult, options)
+        return (0, index_1.MappedResult)(properties)
+      }
+    },
+  )
+  var require_indexed$1 = /* @__PURE__ */ __commonJSMin(exports$128 => {
+    Object.defineProperty(exports$128, '__esModule', { value: true })
+    exports$128.IndexFromPropertyKey = IndexFromPropertyKey
+    exports$128.IndexFromPropertyKeys = IndexFromPropertyKeys
+    exports$128.IndexFromComputed = IndexFromComputed
+    exports$128.Index = Index
+    const type_1 = require_type$1()
+    const index_1 = require_error()
+    const index_2 = require_computed()
+    const index_3 = require_never()
+    const index_4 = require_intersect()
+    const index_5 = require_union$1()
+    const indexed_property_keys_1 = require_indexed_property_keys()
+    const indexed_from_mapped_key_1 = require_indexed_from_mapped_key()
+    const indexed_from_mapped_result_1 = require_indexed_from_mapped_result()
+    const kind_1 = require_kind()
+    function FromRest(types, key) {
+      return types.map(type => IndexFromPropertyKey(type, key))
+    }
+    function FromIntersectRest(types) {
+      return types.filter(type => !(0, kind_1.IsNever)(type))
+    }
+    function FromIntersect(types, key) {
+      return (0, index_4.IntersectEvaluated)(
+        FromIntersectRest(FromRest(types, key)),
+      )
+    }
+    function FromUnionRest(types) {
+      return types.some(L => (0, kind_1.IsNever)(L)) ? [] : types
+    }
+    function FromUnion(types, key) {
+      return (0, index_5.UnionEvaluated)(FromUnionRest(FromRest(types, key)))
+    }
+    function FromTuple(types, key) {
+      return key in types
+        ? types[key]
+        : key === '[number]'
+          ? (0, index_5.UnionEvaluated)(types)
+          : (0, index_3.Never)()
+    }
+    function FromArray(type, key) {
+      return key === '[number]' ? type : (0, index_3.Never)()
+    }
+    function FromProperty(properties, propertyKey) {
+      return propertyKey in properties
+        ? properties[propertyKey]
+        : (0, index_3.Never)()
+    }
+    function IndexFromPropertyKey(type, propertyKey) {
+      return (0, kind_1.IsIntersect)(type)
+        ? FromIntersect(type.allOf, propertyKey)
+        : (0, kind_1.IsUnion)(type)
+          ? FromUnion(type.anyOf, propertyKey)
+          : (0, kind_1.IsTuple)(type)
+            ? FromTuple(type.items ?? [], propertyKey)
+            : (0, kind_1.IsArray)(type)
+              ? FromArray(type.items, propertyKey)
+              : (0, kind_1.IsObject)(type)
+                ? FromProperty(type.properties, propertyKey)
+                : (0, index_3.Never)()
+    }
+    function IndexFromPropertyKeys(type, propertyKeys) {
+      return propertyKeys.map(propertyKey =>
+        IndexFromPropertyKey(type, propertyKey),
+      )
+    }
+    function FromSchema(type, propertyKeys) {
+      return (0, index_5.UnionEvaluated)(
+        IndexFromPropertyKeys(type, propertyKeys),
+      )
+    }
+    function IndexFromComputed(type, key) {
+      return (0, index_2.Computed)('Index', [type, key])
+    }
+    /**
+     * `[Json]` Returns an Indexed property type for the given keys.
+     */
+    function Index(type, key, options) {
+      if ((0, kind_1.IsRef)(type) || (0, kind_1.IsRef)(key)) {
+        const error = `Index types using Ref parameters require both Type and Key to be of TSchema`
+        if (!(0, kind_1.IsSchema)(type) || !(0, kind_1.IsSchema)(key))
+          throw new index_1.TypeBoxError(error)
+        return (0, index_2.Computed)('Index', [type, key])
+      }
+      if ((0, kind_1.IsMappedResult)(key))
+        return (0, indexed_from_mapped_result_1.IndexFromMappedResult)(
+          type,
+          key,
+          options,
+        )
+      if ((0, kind_1.IsMappedKey)(key))
+        return (0, indexed_from_mapped_key_1.IndexFromMappedKey)(
+          type,
+          key,
+          options,
+        )
+      return (0, type_1.CreateType)(
+        (0, kind_1.IsSchema)(key)
+          ? FromSchema(
+              type,
+              (0, indexed_property_keys_1.IndexPropertyKeys)(key),
+            )
+          : FromSchema(type, key),
+        options,
+      )
+    }
+  })
+  var require_indexed_from_mapped_key = /* @__PURE__ */ __commonJSMin(
+    exports$129 => {
+      Object.defineProperty(exports$129, '__esModule', { value: true })
+      exports$129.IndexFromMappedKey = IndexFromMappedKey
+      const indexed_1 = require_indexed$1()
+      const index_1 = require_mapped()
+      const value_1 = require_value$3()
+      function MappedIndexPropertyKey(type, key, options) {
+        return {
+          [key]: (0, indexed_1.Index)(type, [key], (0, value_1.Clone)(options)),
+        }
+      }
+      function MappedIndexPropertyKeys(type, propertyKeys, options) {
+        return propertyKeys.reduce((result, left) => {
+          return {
+            ...result,
+            ...MappedIndexPropertyKey(type, left, options),
+          }
+        }, {})
+      }
+      function MappedIndexProperties(type, mappedKey, options) {
+        return MappedIndexPropertyKeys(type, mappedKey.keys, options)
+      }
+      function IndexFromMappedKey(type, mappedKey, options) {
+        const properties = MappedIndexProperties(type, mappedKey, options)
+        return (0, index_1.MappedResult)(properties)
+      }
+    },
+  )
+  var require_indexed = /* @__PURE__ */ __commonJSMin(exports$130 => {
+    var __createBinding =
+      (exports$130 && exports$130.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$130 && exports$130.__exportStar) ||
+      function (m, exports$32) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$32, p)
+          )
+            __createBinding(exports$32, m, p)
+      }
+    Object.defineProperty(exports$130, '__esModule', { value: true })
+    __exportStar(require_indexed_from_mapped_key(), exports$130)
+    __exportStar(require_indexed_from_mapped_result(), exports$130)
+    __exportStar(require_indexed_property_keys(), exports$130)
+    __exportStar(require_indexed$1(), exports$130)
+  })
+  var require_iterator$1 = /* @__PURE__ */ __commonJSMin(exports$131 => {
+    Object.defineProperty(exports$131, '__esModule', { value: true })
+    exports$131.Iterator = Iterator
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[JavaScript]` Creates an Iterator type.
+     */
+    function Iterator(items, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Iterator',
+          type: 'Iterator',
+          items,
+        },
+        options,
+      )
+    }
+  })
+  var require_iterator = /* @__PURE__ */ __commonJSMin(exports$132 => {
+    var __createBinding =
+      (exports$132 && exports$132.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$132 && exports$132.__exportStar) ||
+      function (m, exports$31) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$31, p)
+          )
+            __createBinding(exports$31, m, p)
+      }
+    Object.defineProperty(exports$132, '__esModule', { value: true })
+    __exportStar(require_iterator$1(), exports$132)
+  })
+  var require_object$1 = /* @__PURE__ */ __commonJSMin(exports$133 => {
+    Object.defineProperty(exports$133, '__esModule', { value: true })
+    exports$133.Object = void 0
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    const kind_1 = require_kind()
+    /**
+     * Creates a RequiredArray derived from the given TProperties value.
+     */
+    function RequiredArray(properties) {
+      return globalThis.Object.keys(properties).filter(
+        key => !(0, kind_1.IsOptional)(properties[key]),
+      )
+    }
+    /**
+     * `[Json]` Creates an Object type.
+     */
+    function _Object_(properties, options) {
+      const required = RequiredArray(properties)
+      const schema =
+        required.length > 0
+          ? {
+              [index_1.Kind]: 'Object',
+              type: 'object',
+              required,
+              properties,
+            }
+          : {
+              [index_1.Kind]: 'Object',
+              type: 'object',
+              properties,
+            }
+      return (0, type_1.CreateType)(schema, options)
+    }
+    /**
+     * `[Json]` Creates an Object type.
+     */
+    exports$133.Object = _Object_
+  })
+  var require_object = /* @__PURE__ */ __commonJSMin(exports$134 => {
+    var __createBinding =
+      (exports$134 && exports$134.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$134 && exports$134.__exportStar) ||
+      function (m, exports$30) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$30, p)
+          )
+            __createBinding(exports$30, m, p)
+      }
+    Object.defineProperty(exports$134, '__esModule', { value: true })
+    __exportStar(require_object$1(), exports$134)
+  })
+  var require_promise$1 = /* @__PURE__ */ __commonJSMin(exports$135 => {
+    Object.defineProperty(exports$135, '__esModule', { value: true })
+    exports$135.Promise = Promise
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[JavaScript]` Creates a Promise type.
+     */
+    function Promise(item, options) {
+      return (0, type_1.CreateType)(
+        {
+          [index_1.Kind]: 'Promise',
+          type: 'Promise',
+          item,
+        },
+        options,
+      )
+    }
+  })
+  var require_promise = /* @__PURE__ */ __commonJSMin(exports$136 => {
+    var __createBinding =
+      (exports$136 && exports$136.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$136 && exports$136.__exportStar) ||
+      function (m, exports$29) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$29, p)
+          )
+            __createBinding(exports$29, m, p)
+      }
+    Object.defineProperty(exports$136, '__esModule', { value: true })
+    __exportStar(require_promise$1(), exports$136)
+  })
+  var require_readonly$1 = /* @__PURE__ */ __commonJSMin(exports$137 => {
+    Object.defineProperty(exports$137, '__esModule', { value: true })
+    exports$137.Readonly = Readonly
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    const index_2 = require_discard()
+    const readonly_from_mapped_result_1 = require_readonly_from_mapped_result()
+    const kind_1 = require_kind()
+    function RemoveReadonly(schema) {
+      return (0, type_1.CreateType)(
+        (0, index_2.Discard)(schema, [index_1.ReadonlyKind]),
+      )
+    }
+    function AddReadonly(schema) {
+      return (0, type_1.CreateType)({
+        ...schema,
+        [index_1.ReadonlyKind]: 'Readonly',
+      })
+    }
+    function ReadonlyWithFlag(schema, F) {
+      return F === false ? RemoveReadonly(schema) : AddReadonly(schema)
+    }
+    /**
+     * `[Json]` Creates a Readonly property.
+     */
+    function Readonly(schema, enable) {
+      const F = enable ?? true
+      return (0, kind_1.IsMappedResult)(schema)
+        ? (0, readonly_from_mapped_result_1.ReadonlyFromMappedResult)(schema, F)
+        : ReadonlyWithFlag(schema, F)
+    }
+  })
+  var require_readonly_from_mapped_result = /* @__PURE__ */ __commonJSMin(
+    exports$138 => {
+      Object.defineProperty(exports$138, '__esModule', { value: true })
+      exports$138.ReadonlyFromMappedResult = ReadonlyFromMappedResult
+      const index_1 = require_mapped()
+      const readonly_1 = require_readonly$1()
+      function FromProperties(K, F) {
+        const Acc = {}
+        for (const K2 of globalThis.Object.getOwnPropertyNames(K))
+          Acc[K2] = (0, readonly_1.Readonly)(K[K2], F)
+        return Acc
+      }
+      function FromMappedResult(R, F) {
+        return FromProperties(R.properties, F)
+      }
+      function ReadonlyFromMappedResult(R, F) {
+        const P = FromMappedResult(R, F)
+        return (0, index_1.MappedResult)(P)
+      }
+    },
+  )
+  var require_readonly = /* @__PURE__ */ __commonJSMin(exports$139 => {
+    var __createBinding =
+      (exports$139 && exports$139.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$139 && exports$139.__exportStar) ||
+      function (m, exports$28) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$28, p)
+          )
+            __createBinding(exports$28, m, p)
+      }
+    Object.defineProperty(exports$139, '__esModule', { value: true })
+    __exportStar(require_readonly_from_mapped_result(), exports$139)
+    __exportStar(require_readonly$1(), exports$139)
+  })
+  var require_tuple$1 = /* @__PURE__ */ __commonJSMin(exports$140 => {
+    Object.defineProperty(exports$140, '__esModule', { value: true })
+    exports$140.Tuple = Tuple
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates a Tuple type.
+     */
+    function Tuple(types, options) {
+      return (0, type_1.CreateType)(
+        types.length > 0
+          ? {
+              [index_1.Kind]: 'Tuple',
+              type: 'array',
+              items: types,
+              additionalItems: false,
+              minItems: types.length,
+              maxItems: types.length,
+            }
+          : {
+              [index_1.Kind]: 'Tuple',
+              type: 'array',
+              minItems: types.length,
+              maxItems: types.length,
+            },
+        options,
+      )
+    }
+  })
+  var require_tuple = /* @__PURE__ */ __commonJSMin(exports$141 => {
+    var __createBinding =
+      (exports$141 && exports$141.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$141 && exports$141.__exportStar) ||
+      function (m, exports$27) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$27, p)
+          )
+            __createBinding(exports$27, m, p)
+      }
+    Object.defineProperty(exports$141, '__esModule', { value: true })
+    __exportStar(require_tuple$1(), exports$141)
+  })
+  var require_set = /* @__PURE__ */ __commonJSMin(exports$142 => {
+    Object.defineProperty(exports$142, '__esModule', { value: true })
+    exports$142.SetIncludes = SetIncludes
+    exports$142.SetIsSubset = SetIsSubset
+    exports$142.SetDistinct = SetDistinct
+    exports$142.SetIntersect = SetIntersect
+    exports$142.SetUnion = SetUnion
+    exports$142.SetComplement = SetComplement
+    exports$142.SetIntersectMany = SetIntersectMany
+    exports$142.SetUnionMany = SetUnionMany
+    /**
+     * Returns true if element right is in the set of left.
+     */
+    function SetIncludes(T, S) {
+      return T.includes(S)
+    }
+    /**
+     * Returns true if left is a subset of right.
+     */
+    function SetIsSubset(T, S) {
+      return T.every(L => SetIncludes(S, L))
+    }
+    /**
+     * Returns a distinct set of elements.
+     */
+    function SetDistinct(T) {
+      return [...new Set(T)]
+    }
+    /**
+     * Returns the Intersect of the given sets.
+     */
+    function SetIntersect(T, S) {
+      return T.filter(L => S.includes(L))
+    }
+    /**
+     * Returns the Union of the given sets.
+     */
+    function SetUnion(T, S) {
+      return [...T, ...S]
+    }
+    /**
+     * Returns the Complement by omitting elements in T that are in S.
+     */
+    function SetComplement(T, S) {
+      return T.filter(L => !S.includes(L))
+    }
+    function SetIntersectManyResolve(T, Init) {
+      return T.reduce((Acc, L) => {
+        return SetIntersect(Acc, L)
+      }, Init)
+    }
+    function SetIntersectMany(T) {
+      return T.length === 1
+        ? T[0]
+        : T.length > 1
+          ? SetIntersectManyResolve(T.slice(1), T[0])
+          : []
+    }
+    /**
+     * Returns the Union of multiple sets.
+     */
+    function SetUnionMany(T) {
+      const Acc = []
+      for (const L of T) Acc.push(...L)
+      return Acc
+    }
+  })
+  var require_sets = /* @__PURE__ */ __commonJSMin(exports$143 => {
+    var __createBinding =
+      (exports$143 && exports$143.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$143 && exports$143.__exportStar) ||
+      function (m, exports$26) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$26, p)
+          )
+            __createBinding(exports$26, m, p)
+      }
+    Object.defineProperty(exports$143, '__esModule', { value: true })
+    __exportStar(require_set(), exports$143)
+  })
+  var require_mapped$1 = /* @__PURE__ */ __commonJSMin(exports$144 => {
+    Object.defineProperty(exports$144, '__esModule', { value: true })
+    exports$144.MappedFunctionReturnType = MappedFunctionReturnType
+    exports$144.Mapped = Mapped
+    const index_1 = require_symbols()
+    const index_2 = require_discard()
+    const index_3 = require_array()
+    const index_4 = require_async_iterator()
+    const index_5 = require_constructor()
+    const index_6 = require_function$1()
+    const index_7 = require_indexed()
+    const index_8 = require_intersect()
+    const index_9 = require_iterator()
+    const index_10 = require_literal()
+    const index_11 = require_object()
+    const index_12 = require_optional()
+    const index_13 = require_promise()
+    const index_14 = require_readonly()
+    const index_15 = require_tuple()
+    const index_16 = require_union$1()
+    const index_17 = require_sets()
+    const mapped_result_1 = require_mapped_result()
+    const kind_1 = require_kind()
+    function FromMappedResult(K, P) {
+      return K in P
+        ? FromSchemaType(K, P[K])
+        : (0, mapped_result_1.MappedResult)(P)
+    }
+    function MappedKeyToKnownMappedResultProperties(K) {
+      return { [K]: (0, index_10.Literal)(K) }
+    }
+    function MappedKeyToUnknownMappedResultProperties(P) {
+      const Acc = {}
+      for (const L of P) Acc[L] = (0, index_10.Literal)(L)
+      return Acc
+    }
+    function MappedKeyToMappedResultProperties(K, P) {
+      return (0, index_17.SetIncludes)(P, K)
+        ? MappedKeyToKnownMappedResultProperties(K)
+        : MappedKeyToUnknownMappedResultProperties(P)
+    }
+    function FromMappedKey(K, P) {
+      return FromMappedResult(K, MappedKeyToMappedResultProperties(K, P))
+    }
+    function FromRest(K, T) {
+      return T.map(L => FromSchemaType(K, L))
+    }
+    function FromProperties(K, T) {
+      const Acc = {}
+      for (const K2 of globalThis.Object.getOwnPropertyNames(T))
+        Acc[K2] = FromSchemaType(K, T[K2])
+      return Acc
+    }
+    function FromSchemaType(K, T) {
+      const options = { ...T }
+      return (0, kind_1.IsOptional)(T)
+        ? (0, index_12.Optional)(
+            FromSchemaType(K, (0, index_2.Discard)(T, [index_1.OptionalKind])),
+          )
+        : (0, kind_1.IsReadonly)(T)
+          ? (0, index_14.Readonly)(
+              FromSchemaType(
+                K,
+                (0, index_2.Discard)(T, [index_1.ReadonlyKind]),
+              ),
+            )
+          : (0, kind_1.IsMappedResult)(T)
+            ? FromMappedResult(K, T.properties)
+            : (0, kind_1.IsMappedKey)(T)
+              ? FromMappedKey(K, T.keys)
+              : (0, kind_1.IsConstructor)(T)
+                ? (0, index_5.Constructor)(
+                    FromRest(K, T.parameters),
+                    FromSchemaType(K, T.returns),
+                    options,
+                  )
+                : (0, kind_1.IsFunction)(T)
+                  ? (0, index_6.Function)(
+                      FromRest(K, T.parameters),
+                      FromSchemaType(K, T.returns),
+                      options,
+                    )
+                  : (0, kind_1.IsAsyncIterator)(T)
+                    ? (0, index_4.AsyncIterator)(
+                        FromSchemaType(K, T.items),
+                        options,
+                      )
+                    : (0, kind_1.IsIterator)(T)
+                      ? (0, index_9.Iterator)(
+                          FromSchemaType(K, T.items),
+                          options,
+                        )
+                      : (0, kind_1.IsIntersect)(T)
+                        ? (0, index_8.Intersect)(FromRest(K, T.allOf), options)
+                        : (0, kind_1.IsUnion)(T)
+                          ? (0, index_16.Union)(FromRest(K, T.anyOf), options)
+                          : (0, kind_1.IsTuple)(T)
+                            ? (0, index_15.Tuple)(
+                                FromRest(K, T.items ?? []),
+                                options,
+                              )
+                            : (0, kind_1.IsObject)(T)
+                              ? (0, index_11.Object)(
+                                  FromProperties(K, T.properties),
+                                  options,
+                                )
+                              : (0, kind_1.IsArray)(T)
+                                ? (0, index_3.Array)(
+                                    FromSchemaType(K, T.items),
+                                    options,
+                                  )
+                                : (0, kind_1.IsPromise)(T)
+                                  ? (0, index_13.Promise)(
+                                      FromSchemaType(K, T.item),
+                                      options,
+                                    )
+                                  : T
+    }
+    function MappedFunctionReturnType(K, T) {
+      const Acc = {}
+      for (const L of K) Acc[L] = FromSchemaType(L, T)
+      return Acc
+    }
+    /**
+     * `[Json]` Creates a Mapped object type.
+     */
+    function Mapped(key, map, options) {
+      const K = (0, kind_1.IsSchema)(key)
+        ? (0, index_7.IndexPropertyKeys)(key)
+        : key
+      const R = MappedFunctionReturnType(
+        K,
+        map({
+          [index_1.Kind]: 'MappedKey',
+          keys: K,
+        }),
+      )
+      return (0, index_11.Object)(R, options)
+    }
+  })
+  var require_mapped = /* @__PURE__ */ __commonJSMin(exports$145 => {
+    var __createBinding =
+      (exports$145 && exports$145.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$145 && exports$145.__exportStar) ||
+      function (m, exports$25) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$25, p)
+          )
+            __createBinding(exports$25, m, p)
+      }
+    Object.defineProperty(exports$145, '__esModule', { value: true })
+    __exportStar(require_mapped_key(), exports$145)
+    __exportStar(require_mapped_result(), exports$145)
+    __exportStar(require_mapped$1(), exports$145)
+  })
+  var require_ref$1 = /* @__PURE__ */ __commonJSMin(exports$146 => {
+    Object.defineProperty(exports$146, '__esModule', { value: true })
+    exports$146.Ref = Ref
+    const index_1 = require_error()
+    const type_1 = require_type$1()
+    const index_2 = require_symbols()
+    /**
+     * `[Json]` Creates a Ref type. The referenced type must contain a $id.
+     */
+    function Ref(...args) {
+      const [$ref, options] =
+        typeof args[0] === 'string'
+          ? [args[0], args[1]]
+          : [args[0].$id, args[1]]
+      if (typeof $ref !== 'string')
+        throw new index_1.TypeBoxError('Ref: $ref must be a string')
+      return (0, type_1.CreateType)(
+        {
+          [index_2.Kind]: 'Ref',
+          $ref,
+        },
+        options,
+      )
+    }
+  })
+  var require_ref = /* @__PURE__ */ __commonJSMin(exports$147 => {
+    var __createBinding =
+      (exports$147 && exports$147.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$147 && exports$147.__exportStar) ||
+      function (m, exports$24) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$24, p)
+          )
+            __createBinding(exports$24, m, p)
+      }
+    Object.defineProperty(exports$147, '__esModule', { value: true })
+    __exportStar(require_ref$1(), exports$147)
+  })
+  var require_keyof_property_keys = /* @__PURE__ */ __commonJSMin(
+    exports$148 => {
+      Object.defineProperty(exports$148, '__esModule', { value: true })
+      exports$148.KeyOfPropertyKeys = KeyOfPropertyKeys
+      exports$148.KeyOfPattern = KeyOfPattern
+      const index_1 = require_sets()
+      const kind_1 = require_kind()
+      function FromRest(types) {
+        const result = []
+        for (const L of types) result.push(KeyOfPropertyKeys(L))
+        return result
+      }
+      function FromIntersect(types) {
+        const propertyKeysArray = FromRest(types)
+        return (0, index_1.SetUnionMany)(propertyKeysArray)
+      }
+      function FromUnion(types) {
+        const propertyKeysArray = FromRest(types)
+        return (0, index_1.SetIntersectMany)(propertyKeysArray)
+      }
+      function FromTuple(types) {
+        return types.map((_, indexer) => indexer.toString())
+      }
+      function FromArray(_) {
+        return ['[number]']
+      }
+      function FromProperties(T) {
+        return globalThis.Object.getOwnPropertyNames(T)
+      }
+      function FromPatternProperties(patternProperties) {
+        if (!includePatternProperties) return []
+        return globalThis.Object.getOwnPropertyNames(patternProperties).map(
+          key => {
+            return key[0] === '^' && key[key.length - 1] === '$'
+              ? key.slice(1, key.length - 1)
+              : key
+          },
+        )
+      }
+      /**
+       * Returns a tuple of PropertyKeys derived from the given TSchema.
+       */
+      function KeyOfPropertyKeys(type) {
+        return (0, kind_1.IsIntersect)(type)
+          ? FromIntersect(type.allOf)
+          : (0, kind_1.IsUnion)(type)
+            ? FromUnion(type.anyOf)
+            : (0, kind_1.IsTuple)(type)
+              ? FromTuple(type.items ?? [])
+              : (0, kind_1.IsArray)(type)
+                ? FromArray(type.items)
+                : (0, kind_1.IsObject)(type)
+                  ? FromProperties(type.properties)
+                  : (0, kind_1.IsRecord)(type)
+                    ? FromPatternProperties(type.patternProperties)
+                    : []
+      }
+      let includePatternProperties = false
+      /**
+       * Returns a regular expression pattern derived from the given TSchema.
+       */
+      function KeyOfPattern(schema) {
+        includePatternProperties = true
+        const keys = KeyOfPropertyKeys(schema)
+        includePatternProperties = false
+        return `^(${keys.map(key => `(${key})`).join('|')})$`
+      }
+    },
+  )
+  var require_keyof$1 = /* @__PURE__ */ __commonJSMin(exports$149 => {
+    Object.defineProperty(exports$149, '__esModule', { value: true })
+    exports$149.KeyOfPropertyKeysToRest = KeyOfPropertyKeysToRest
+    exports$149.KeyOf = KeyOf
+    const type_1 = require_type$1()
+    const index_1 = require_literal()
+    const index_2 = require_number()
+    const index_3 = require_computed()
+    const index_4 = require_ref()
+    const keyof_property_keys_1 = require_keyof_property_keys()
+    const index_5 = require_union$1()
+    const keyof_from_mapped_result_1 = require_keyof_from_mapped_result()
+    const kind_1 = require_kind()
+    function FromComputed(target, parameters) {
+      return (0, index_3.Computed)('KeyOf', [
+        (0, index_3.Computed)(target, parameters),
+      ])
+    }
+    function FromRef($ref) {
+      return (0, index_3.Computed)('KeyOf', [(0, index_4.Ref)($ref)])
+    }
+    function KeyOfFromType(type, options) {
+      const propertyKeyTypes = KeyOfPropertyKeysToRest(
+        (0, keyof_property_keys_1.KeyOfPropertyKeys)(type),
+      )
+      const result = (0, index_5.UnionEvaluated)(propertyKeyTypes)
+      return (0, type_1.CreateType)(result, options)
+    }
+    function KeyOfPropertyKeysToRest(propertyKeys) {
+      return propertyKeys.map(L =>
+        L === '[number]' ? (0, index_2.Number)() : (0, index_1.Literal)(L),
+      )
+    }
+    /**
+     * `[Json]` Creates a KeyOf type.
+     */
+    function KeyOf(type, options) {
+      return (0, kind_1.IsComputed)(type)
+        ? FromComputed(type.target, type.parameters)
+        : (0, kind_1.IsRef)(type)
+          ? FromRef(type.$ref)
+          : (0, kind_1.IsMappedResult)(type)
+            ? (0, keyof_from_mapped_result_1.KeyOfFromMappedResult)(
+                type,
+                options,
+              )
+            : KeyOfFromType(type, options)
+    }
+  })
+  var require_keyof_from_mapped_result = /* @__PURE__ */ __commonJSMin(
+    exports$150 => {
+      Object.defineProperty(exports$150, '__esModule', { value: true })
+      exports$150.KeyOfFromMappedResult = KeyOfFromMappedResult
+      const index_1 = require_mapped()
+      const keyof_1 = require_keyof$1()
+      const value_1 = require_value$3()
+      function FromProperties(properties, options) {
+        const result = {}
+        for (const K2 of globalThis.Object.getOwnPropertyNames(properties))
+          result[K2] = (0, keyof_1.KeyOf)(
+            properties[K2],
+            (0, value_1.Clone)(options),
+          )
+        return result
+      }
+      function FromMappedResult(mappedResult, options) {
+        return FromProperties(mappedResult.properties, options)
+      }
+      function KeyOfFromMappedResult(mappedResult, options) {
+        const properties = FromMappedResult(mappedResult, options)
+        return (0, index_1.MappedResult)(properties)
+      }
+    },
+  )
+  var require_keyof_property_entries = /* @__PURE__ */ __commonJSMin(
+    exports$151 => {
+      Object.defineProperty(exports$151, '__esModule', { value: true })
+      exports$151.KeyOfPropertyEntries = KeyOfPropertyEntries
+      const indexed_1 = require_indexed$1()
+      const keyof_property_keys_1 = require_keyof_property_keys()
+      /**
+       * `[Utility]` Resolves an array of keys and schemas from the given
+       * schema. This method is faster than obtaining the keys and resolving
+       * each individually via indexing. This method was written accellerate
+       * Intersect and Union encoding.
+       */
+      function KeyOfPropertyEntries(schema) {
+        const keys = (0, keyof_property_keys_1.KeyOfPropertyKeys)(schema)
+        const schemas = (0, indexed_1.IndexFromPropertyKeys)(schema, keys)
+        return keys.map((_, index) => [keys[index], schemas[index]])
+      }
+    },
+  )
+  var require_keyof = /* @__PURE__ */ __commonJSMin(exports$152 => {
+    var __createBinding =
+      (exports$152 && exports$152.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$152 && exports$152.__exportStar) ||
+      function (m, exports$23) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$23, p)
+          )
+            __createBinding(exports$23, m, p)
+      }
+    Object.defineProperty(exports$152, '__esModule', { value: true })
+    __exportStar(require_keyof_from_mapped_result(), exports$152)
+    __exportStar(require_keyof_property_entries(), exports$152)
+    __exportStar(require_keyof_property_keys(), exports$152)
+    __exportStar(require_keyof$1(), exports$152)
+  })
+  var require_extends_undefined = /* @__PURE__ */ __commonJSMin(exports$153 => {
+    Object.defineProperty(exports$153, '__esModule', { value: true })
+    exports$153.ExtendsUndefinedCheck = ExtendsUndefinedCheck
+    const index_1 = require_symbols()
+    /**
+     * Fast undefined check used for properties of type undefined.
+     */
+    function Intersect(schema) {
+      return schema.allOf.every(schema => ExtendsUndefinedCheck(schema))
+    }
+    function Union(schema) {
+      return schema.anyOf.some(schema => ExtendsUndefinedCheck(schema))
+    }
+    function Not(schema) {
+      return !ExtendsUndefinedCheck(schema.not)
+    }
+    /**
+     * Fast undefined check used for properties of type undefined.
+     */
+    function ExtendsUndefinedCheck(schema) {
+      return schema[index_1.Kind] === 'Intersect'
+        ? Intersect(schema)
+        : schema[index_1.Kind] === 'Union'
+          ? Union(schema)
+          : schema[index_1.Kind] === 'Not'
+            ? Not(schema)
+            : schema[index_1.Kind] === 'Undefined'
+              ? true
+              : false
+    }
+  })
+  var require_function = /* @__PURE__ */ __commonJSMin(exports$154 => {
+    Object.defineProperty(exports$154, '__esModule', { value: true })
+    exports$154.DefaultErrorFunction = DefaultErrorFunction
+    exports$154.SetErrorFunction = SetErrorFunction
+    exports$154.GetErrorFunction = GetErrorFunction
+    const index_1 = require_symbols()
+    const errors_1 = require_errors$1()
+    /**
+     * Creates an error message using en-US as the default locale.
+     */
+    function DefaultErrorFunction(error) {
+      switch (error.errorType) {
+        case errors_1.ValueErrorType.ArrayContains:
+          return 'Expected array to contain at least one matching value'
+        case errors_1.ValueErrorType.ArrayMaxContains:
+          return `Expected array to contain no more than ${error.schema.maxContains} matching values`
+        case errors_1.ValueErrorType.ArrayMinContains:
+          return `Expected array to contain at least ${error.schema.minContains} matching values`
+        case errors_1.ValueErrorType.ArrayMaxItems:
+          return `Expected array length to be less or equal to ${error.schema.maxItems}`
+        case errors_1.ValueErrorType.ArrayMinItems:
+          return `Expected array length to be greater or equal to ${error.schema.minItems}`
+        case errors_1.ValueErrorType.ArrayUniqueItems:
+          return 'Expected array elements to be unique'
+        case errors_1.ValueErrorType.Array:
+          return 'Expected array'
+        case errors_1.ValueErrorType.AsyncIterator:
+          return 'Expected AsyncIterator'
+        case errors_1.ValueErrorType.BigIntExclusiveMaximum:
+          return `Expected bigint to be less than ${error.schema.exclusiveMaximum}`
+        case errors_1.ValueErrorType.BigIntExclusiveMinimum:
+          return `Expected bigint to be greater than ${error.schema.exclusiveMinimum}`
+        case errors_1.ValueErrorType.BigIntMaximum:
+          return `Expected bigint to be less or equal to ${error.schema.maximum}`
+        case errors_1.ValueErrorType.BigIntMinimum:
+          return `Expected bigint to be greater or equal to ${error.schema.minimum}`
+        case errors_1.ValueErrorType.BigIntMultipleOf:
+          return `Expected bigint to be a multiple of ${error.schema.multipleOf}`
+        case errors_1.ValueErrorType.BigInt:
+          return 'Expected bigint'
+        case errors_1.ValueErrorType.Boolean:
+          return 'Expected boolean'
+        case errors_1.ValueErrorType.DateExclusiveMinimumTimestamp:
+          return `Expected Date timestamp to be greater than ${error.schema.exclusiveMinimumTimestamp}`
+        case errors_1.ValueErrorType.DateExclusiveMaximumTimestamp:
+          return `Expected Date timestamp to be less than ${error.schema.exclusiveMaximumTimestamp}`
+        case errors_1.ValueErrorType.DateMinimumTimestamp:
+          return `Expected Date timestamp to be greater or equal to ${error.schema.minimumTimestamp}`
+        case errors_1.ValueErrorType.DateMaximumTimestamp:
+          return `Expected Date timestamp to be less or equal to ${error.schema.maximumTimestamp}`
+        case errors_1.ValueErrorType.DateMultipleOfTimestamp:
+          return `Expected Date timestamp to be a multiple of ${error.schema.multipleOfTimestamp}`
+        case errors_1.ValueErrorType.Date:
+          return 'Expected Date'
+        case errors_1.ValueErrorType.Function:
+          return 'Expected function'
+        case errors_1.ValueErrorType.IntegerExclusiveMaximum:
+          return `Expected integer to be less than ${error.schema.exclusiveMaximum}`
+        case errors_1.ValueErrorType.IntegerExclusiveMinimum:
+          return `Expected integer to be greater than ${error.schema.exclusiveMinimum}`
+        case errors_1.ValueErrorType.IntegerMaximum:
+          return `Expected integer to be less or equal to ${error.schema.maximum}`
+        case errors_1.ValueErrorType.IntegerMinimum:
+          return `Expected integer to be greater or equal to ${error.schema.minimum}`
+        case errors_1.ValueErrorType.IntegerMultipleOf:
+          return `Expected integer to be a multiple of ${error.schema.multipleOf}`
+        case errors_1.ValueErrorType.Integer:
+          return 'Expected integer'
+        case errors_1.ValueErrorType.IntersectUnevaluatedProperties:
+          return 'Unexpected property'
+        case errors_1.ValueErrorType.Intersect:
+          return 'Expected all values to match'
+        case errors_1.ValueErrorType.Iterator:
+          return 'Expected Iterator'
+        case errors_1.ValueErrorType.Literal:
+          return `Expected ${typeof error.schema.const === 'string' ? `'${error.schema.const}'` : error.schema.const}`
+        case errors_1.ValueErrorType.Never:
+          return 'Never'
+        case errors_1.ValueErrorType.Not:
+          return 'Value should not match'
+        case errors_1.ValueErrorType.Null:
+          return 'Expected null'
+        case errors_1.ValueErrorType.NumberExclusiveMaximum:
+          return `Expected number to be less than ${error.schema.exclusiveMaximum}`
+        case errors_1.ValueErrorType.NumberExclusiveMinimum:
+          return `Expected number to be greater than ${error.schema.exclusiveMinimum}`
+        case errors_1.ValueErrorType.NumberMaximum:
+          return `Expected number to be less or equal to ${error.schema.maximum}`
+        case errors_1.ValueErrorType.NumberMinimum:
+          return `Expected number to be greater or equal to ${error.schema.minimum}`
+        case errors_1.ValueErrorType.NumberMultipleOf:
+          return `Expected number to be a multiple of ${error.schema.multipleOf}`
+        case errors_1.ValueErrorType.Number:
+          return 'Expected number'
+        case errors_1.ValueErrorType.Object:
+          return 'Expected object'
+        case errors_1.ValueErrorType.ObjectAdditionalProperties:
+          return 'Unexpected property'
+        case errors_1.ValueErrorType.ObjectMaxProperties:
+          return `Expected object to have no more than ${error.schema.maxProperties} properties`
+        case errors_1.ValueErrorType.ObjectMinProperties:
+          return `Expected object to have at least ${error.schema.minProperties} properties`
+        case errors_1.ValueErrorType.ObjectRequiredProperty:
+          return 'Expected required property'
+        case errors_1.ValueErrorType.Promise:
+          return 'Expected Promise'
+        case errors_1.ValueErrorType.RegExp:
+          return 'Expected string to match regular expression'
+        case errors_1.ValueErrorType.StringFormatUnknown:
+          return `Unknown format '${error.schema.format}'`
+        case errors_1.ValueErrorType.StringFormat:
+          return `Expected string to match '${error.schema.format}' format`
+        case errors_1.ValueErrorType.StringMaxLength:
+          return `Expected string length less or equal to ${error.schema.maxLength}`
+        case errors_1.ValueErrorType.StringMinLength:
+          return `Expected string length greater or equal to ${error.schema.minLength}`
+        case errors_1.ValueErrorType.StringPattern:
+          return `Expected string to match '${error.schema.pattern}'`
+        case errors_1.ValueErrorType.String:
+          return 'Expected string'
+        case errors_1.ValueErrorType.Symbol:
+          return 'Expected symbol'
+        case errors_1.ValueErrorType.TupleLength:
+          return `Expected tuple to have ${error.schema.maxItems || 0} elements`
+        case errors_1.ValueErrorType.Tuple:
+          return 'Expected tuple'
+        case errors_1.ValueErrorType.Uint8ArrayMaxByteLength:
+          return `Expected byte length less or equal to ${error.schema.maxByteLength}`
+        case errors_1.ValueErrorType.Uint8ArrayMinByteLength:
+          return `Expected byte length greater or equal to ${error.schema.minByteLength}`
+        case errors_1.ValueErrorType.Uint8Array:
+          return 'Expected Uint8Array'
+        case errors_1.ValueErrorType.Undefined:
+          return 'Expected undefined'
+        case errors_1.ValueErrorType.Union:
+          return 'Expected union value'
+        case errors_1.ValueErrorType.Void:
+          return 'Expected void'
+        case errors_1.ValueErrorType.Kind:
+          return `Expected kind '${error.schema[index_1.Kind]}'`
+        default:
+          return 'Unknown error type'
+      }
+    }
+    /**
+     * Manages error message providers.
+     */
+    let errorFunction = DefaultErrorFunction
+    /**
+     * Sets the error function used to generate error messages.
+     */
+    function SetErrorFunction(callback) {
+      errorFunction = callback
+    }
+    /**
+     * Gets the error function used to generate error messages.
+     */
+    function GetErrorFunction() {
+      return errorFunction
+    }
+  })
+  var require_deref$1 = /* @__PURE__ */ __commonJSMin(exports$155 => {
+    Object.defineProperty(exports$155, '__esModule', { value: true })
+    exports$155.TypeDereferenceError = void 0
+    exports$155.Pushref = Pushref
+    exports$155.Deref = Deref
+    const index_1 = require_error()
+    const index_2 = require_symbols()
+    const guard_1 = require_guard$2()
+    var TypeDereferenceError = class extends index_1.TypeBoxError {
+      constructor(schema) {
+        super(`Unable to dereference schema with $id '${schema.$ref}'`)
+        this.schema = schema
+      }
+    }
+    exports$155.TypeDereferenceError = TypeDereferenceError
+    function Resolve(schema, references) {
+      const target = references.find(target => target.$id === schema.$ref)
+      if (target === void 0) throw new TypeDereferenceError(schema)
+      return Deref(target, references)
+    }
+    /**
+     * `[Internal]` Pushes a schema onto references if the schema has an $id and
+     * does not exist on references.
+     */
+    function Pushref(schema, references) {
+      if (
+        !(0, guard_1.IsString)(schema.$id) ||
+        references.some(target => target.$id === schema.$id)
+      )
+        return references
+      references.push(schema)
+      return references
+    }
+    /**
+     * `[Internal]` Dereferences a schema from the references array or throws if
+     * not found.
+     */
+    function Deref(schema, references) {
+      return schema[index_2.Kind] === 'This' || schema[index_2.Kind] === 'Ref'
+        ? Resolve(schema, references)
+        : schema
+    }
+  })
+  var require_deref = /* @__PURE__ */ __commonJSMin(exports$156 => {
+    var __createBinding =
+      (exports$156 && exports$156.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$156 && exports$156.__exportStar) ||
+      function (m, exports$22) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$22, p)
+          )
+            __createBinding(exports$22, m, p)
+      }
+    Object.defineProperty(exports$156, '__esModule', { value: true })
+    __exportStar(require_deref$1(), exports$156)
+  })
+  var require_hash$1 = /* @__PURE__ */ __commonJSMin(exports$157 => {
+    Object.defineProperty(exports$157, '__esModule', { value: true })
+    exports$157.ValueHashError = void 0
+    exports$157.Hash = Hash
+    const index_1 = require_guard$1()
+    const index_2 = require_error()
+    var ValueHashError = class extends index_2.TypeBoxError {
+      constructor(value) {
+        super(`Unable to hash value`)
+        this.value = value
+      }
+    }
+    exports$157.ValueHashError = ValueHashError
+    var ByteMarker
+    ;(function (ByteMarker) {
+      ByteMarker[(ByteMarker['Undefined'] = 0)] = 'Undefined'
+      ByteMarker[(ByteMarker['Null'] = 1)] = 'Null'
+      ByteMarker[(ByteMarker['Boolean'] = 2)] = 'Boolean'
+      ByteMarker[(ByteMarker['Number'] = 3)] = 'Number'
+      ByteMarker[(ByteMarker['String'] = 4)] = 'String'
+      ByteMarker[(ByteMarker['Object'] = 5)] = 'Object'
+      ByteMarker[(ByteMarker['Array'] = 6)] = 'Array'
+      ByteMarker[(ByteMarker['Date'] = 7)] = 'Date'
+      ByteMarker[(ByteMarker['Uint8Array'] = 8)] = 'Uint8Array'
+      ByteMarker[(ByteMarker['Symbol'] = 9)] = 'Symbol'
+      ByteMarker[(ByteMarker['BigInt'] = 10)] = 'BigInt'
+    })(ByteMarker || (ByteMarker = {}))
+    let Accumulator = BigInt('14695981039346656037')
+    const [Prime, Size] = [
+      BigInt('1099511628211'),
+      BigInt('18446744073709551616'),
+    ]
+    const Bytes = Array.from({ length: 256 }).map((_, i) => BigInt(i))
+    const F64 = /* @__PURE__ */ new Float64Array(1)
+    const F64In = new DataView(F64.buffer)
+    const F64Out = new Uint8Array(F64.buffer)
+    function* NumberToBytes(value) {
+      const byteCount =
+        value === 0 ? 1 : Math.ceil(Math.floor(Math.log2(value) + 1) / 8)
+      for (let i = 0; i < byteCount; i++)
+        yield (value >> (8 * (byteCount - 1 - i))) & 255
+    }
+    function ArrayType(value) {
+      FNV1A64(ByteMarker.Array)
+      for (const item of value) Visit(item)
+    }
+    function BooleanType(value) {
+      FNV1A64(ByteMarker.Boolean)
+      FNV1A64(value ? 1 : 0)
+    }
+    function BigIntType(value) {
+      FNV1A64(ByteMarker.BigInt)
+      F64In.setBigInt64(0, value)
+      for (const byte of F64Out) FNV1A64(byte)
+    }
+    function DateType(value) {
+      FNV1A64(ByteMarker.Date)
+      Visit(value.getTime())
+    }
+    function NullType(value) {
+      FNV1A64(ByteMarker.Null)
+    }
+    function NumberType(value) {
+      FNV1A64(ByteMarker.Number)
+      F64In.setFloat64(0, value)
+      for (const byte of F64Out) FNV1A64(byte)
+    }
+    function ObjectType(value) {
+      FNV1A64(ByteMarker.Object)
+      for (const key of globalThis.Object.getOwnPropertyNames(value).sort()) {
+        Visit(key)
+        Visit(value[key])
+      }
+    }
+    function StringType(value) {
+      FNV1A64(ByteMarker.String)
+      for (let i = 0; i < value.length; i++)
+        for (const byte of NumberToBytes(value.charCodeAt(i))) FNV1A64(byte)
+    }
+    function SymbolType(value) {
+      FNV1A64(ByteMarker.Symbol)
+      Visit(value.description)
+    }
+    function Uint8ArrayType(value) {
+      FNV1A64(ByteMarker.Uint8Array)
+      for (let i = 0; i < value.length; i++) FNV1A64(value[i])
+    }
+    function UndefinedType(value) {
+      return FNV1A64(ByteMarker.Undefined)
+    }
+    function Visit(value) {
+      if ((0, index_1.IsArray)(value)) return ArrayType(value)
+      if ((0, index_1.IsBoolean)(value)) return BooleanType(value)
+      if ((0, index_1.IsBigInt)(value)) return BigIntType(value)
+      if ((0, index_1.IsDate)(value)) return DateType(value)
+      if ((0, index_1.IsNull)(value)) return NullType(value)
+      if ((0, index_1.IsNumber)(value)) return NumberType(value)
+      if ((0, index_1.IsObject)(value)) return ObjectType(value)
+      if ((0, index_1.IsString)(value)) return StringType(value)
+      if ((0, index_1.IsSymbol)(value)) return SymbolType(value)
+      if ((0, index_1.IsUint8Array)(value)) return Uint8ArrayType(value)
+      if ((0, index_1.IsUndefined)(value)) return UndefinedType(value)
+      throw new ValueHashError(value)
+    }
+    function FNV1A64(byte) {
+      Accumulator = Accumulator ^ Bytes[byte]
+      Accumulator = (Accumulator * Prime) % Size
+    }
+    /**
+     * Creates a FNV1A-64 non cryptographic hash of the given value.
+     */
+    function Hash(value) {
+      Accumulator = BigInt('14695981039346656037')
+      Visit(value)
+      return Accumulator
+    }
+  })
+  var require_hash = /* @__PURE__ */ __commonJSMin(exports$158 => {
+    var __createBinding =
+      (exports$158 && exports$158.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$158 && exports$158.__exportStar) ||
+      function (m, exports$21) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$21, p)
+          )
+            __createBinding(exports$21, m, p)
+      }
+    Object.defineProperty(exports$158, '__esModule', { value: true })
+    __exportStar(require_hash$1(), exports$158)
+  })
+  var require_any$1 = /* @__PURE__ */ __commonJSMin(exports$159 => {
+    Object.defineProperty(exports$159, '__esModule', { value: true })
+    exports$159.Any = Any
+    const index_1 = require_create$2()
+    const index_2 = require_symbols()
+    /**
+     * `[Json]` Creates an Any type.
+     */
+    function Any(options) {
+      return (0, index_1.CreateType)({ [index_2.Kind]: 'Any' }, options)
+    }
+  })
+  var require_any = /* @__PURE__ */ __commonJSMin(exports$160 => {
+    var __createBinding =
+      (exports$160 && exports$160.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$160 && exports$160.__exportStar) ||
+      function (m, exports$20) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$20, p)
+          )
+            __createBinding(exports$20, m, p)
+      }
+    Object.defineProperty(exports$160, '__esModule', { value: true })
+    __exportStar(require_any$1(), exports$160)
+  })
+  var require_unknown$1 = /* @__PURE__ */ __commonJSMin(exports$161 => {
+    Object.defineProperty(exports$161, '__esModule', { value: true })
+    exports$161.Unknown = Unknown
+    const type_1 = require_type$1()
+    const index_1 = require_symbols()
+    /**
+     * `[Json]` Creates an Unknown type.
+     */
+    function Unknown(options) {
+      return (0, type_1.CreateType)({ [index_1.Kind]: 'Unknown' }, options)
+    }
+  })
+  var require_unknown = /* @__PURE__ */ __commonJSMin(exports$162 => {
+    var __createBinding =
+      (exports$162 && exports$162.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$162 && exports$162.__exportStar) ||
+      function (m, exports$19) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$19, p)
+          )
+            __createBinding(exports$19, m, p)
+      }
+    Object.defineProperty(exports$162, '__esModule', { value: true })
+    __exportStar(require_unknown$1(), exports$162)
+  })
+  var require_type = /* @__PURE__ */ __commonJSMin(exports$163 => {
+    var __createBinding =
+      (exports$163 && exports$163.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$163 && exports$163.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$163 && exports$163.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$163, '__esModule', { value: true })
+    exports$163.TypeGuardUnknownTypeError = void 0
+    exports$163.IsReadonly = IsReadonly
+    exports$163.IsOptional = IsOptional
+    exports$163.IsAny = IsAny
+    exports$163.IsArgument = IsArgument
+    exports$163.IsArray = IsArray
+    exports$163.IsAsyncIterator = IsAsyncIterator
+    exports$163.IsBigInt = IsBigInt
+    exports$163.IsBoolean = IsBoolean
+    exports$163.IsComputed = IsComputed
+    exports$163.IsConstructor = IsConstructor
+    exports$163.IsDate = IsDate
+    exports$163.IsFunction = IsFunction
+    exports$163.IsImport = IsImport
+    exports$163.IsInteger = IsInteger
+    exports$163.IsProperties = IsProperties
+    exports$163.IsIntersect = IsIntersect
+    exports$163.IsIterator = IsIterator
+    exports$163.IsKindOf = IsKindOf
+    exports$163.IsLiteralString = IsLiteralString
+    exports$163.IsLiteralNumber = IsLiteralNumber
+    exports$163.IsLiteralBoolean = IsLiteralBoolean
+    exports$163.IsLiteral = IsLiteral
+    exports$163.IsLiteralValue = IsLiteralValue
+    exports$163.IsMappedKey = IsMappedKey
+    exports$163.IsMappedResult = IsMappedResult
+    exports$163.IsNever = IsNever
+    exports$163.IsNot = IsNot
+    exports$163.IsNull = IsNull
+    exports$163.IsNumber = IsNumber
+    exports$163.IsObject = IsObject
+    exports$163.IsPromise = IsPromise
+    exports$163.IsRecord = IsRecord
+    exports$163.IsRecursive = IsRecursive
+    exports$163.IsRef = IsRef
+    exports$163.IsRegExp = IsRegExp
+    exports$163.IsString = IsString
+    exports$163.IsSymbol = IsSymbol
+    exports$163.IsTemplateLiteral = IsTemplateLiteral
+    exports$163.IsThis = IsThis
+    exports$163.IsTransform = IsTransform
+    exports$163.IsTuple = IsTuple
+    exports$163.IsUndefined = IsUndefined
+    exports$163.IsUnionLiteral = IsUnionLiteral
+    exports$163.IsUnion = IsUnion
+    exports$163.IsUint8Array = IsUint8Array
+    exports$163.IsUnknown = IsUnknown
+    exports$163.IsUnsafe = IsUnsafe
+    exports$163.IsVoid = IsVoid
+    exports$163.IsKind = IsKind
+    exports$163.IsSchema = IsSchema
+    const ValueGuard = __importStar(require_value$4())
+    const index_1 = require_symbols()
+    const index_2 = require_error()
+    var TypeGuardUnknownTypeError = class extends index_2.TypeBoxError {}
+    exports$163.TypeGuardUnknownTypeError = TypeGuardUnknownTypeError
+    const KnownTypes = [
+      'Argument',
+      'Any',
+      'Array',
+      'AsyncIterator',
+      'BigInt',
+      'Boolean',
+      'Computed',
+      'Constructor',
+      'Date',
+      'Enum',
+      'Function',
+      'Integer',
+      'Intersect',
+      'Iterator',
+      'Literal',
+      'MappedKey',
+      'MappedResult',
+      'Not',
+      'Null',
+      'Number',
+      'Object',
+      'Promise',
+      'Record',
+      'Ref',
+      'RegExp',
+      'String',
+      'Symbol',
+      'TemplateLiteral',
+      'This',
+      'Tuple',
+      'Undefined',
+      'Union',
+      'Uint8Array',
+      'Unknown',
+      'Void',
+    ]
+    function IsPattern(value) {
+      try {
+        new RegExp(value)
+        return true
+      } catch {
+        return false
+      }
+    }
+    function IsControlCharacterFree(value) {
+      if (!ValueGuard.IsString(value)) return false
+      for (let i = 0; i < value.length; i++) {
+        const code = value.charCodeAt(i)
+        if ((code >= 7 && code <= 13) || code === 27 || code === 127)
+          return false
+      }
+      return true
+    }
+    function IsAdditionalProperties(value) {
+      return IsOptionalBoolean(value) || IsSchema(value)
+    }
+    function IsOptionalBigInt(value) {
+      return ValueGuard.IsUndefined(value) || ValueGuard.IsBigInt(value)
+    }
+    function IsOptionalNumber(value) {
+      return ValueGuard.IsUndefined(value) || ValueGuard.IsNumber(value)
+    }
+    function IsOptionalBoolean(value) {
+      return ValueGuard.IsUndefined(value) || ValueGuard.IsBoolean(value)
+    }
+    function IsOptionalString(value) {
+      return ValueGuard.IsUndefined(value) || ValueGuard.IsString(value)
+    }
+    function IsOptionalPattern(value) {
+      return (
+        ValueGuard.IsUndefined(value) ||
+        (ValueGuard.IsString(value) &&
+          IsControlCharacterFree(value) &&
+          IsPattern(value))
+      )
+    }
+    function IsOptionalFormat(value) {
+      return (
+        ValueGuard.IsUndefined(value) ||
+        (ValueGuard.IsString(value) && IsControlCharacterFree(value))
+      )
+    }
+    function IsOptionalSchema(value) {
+      return ValueGuard.IsUndefined(value) || IsSchema(value)
+    }
+    /**
+     * Returns true if this value has a Readonly symbol.
+     */
+    function IsReadonly(value) {
+      return (
+        ValueGuard.IsObject(value) && value[index_1.ReadonlyKind] === 'Readonly'
+      )
+    }
+    /**
+     * Returns true if this value has a Optional symbol.
+     */
+    function IsOptional(value) {
+      return (
+        ValueGuard.IsObject(value) && value[index_1.OptionalKind] === 'Optional'
+      )
+    }
+    /**
+     * Returns true if the given value is TAny.
+     */
+    function IsAny(value) {
+      return IsKindOf(value, 'Any') && IsOptionalString(value.$id)
+    }
+    /**
+     * Returns true if the given value is TArgument.
+     */
+    function IsArgument(value) {
+      return IsKindOf(value, 'Argument') && ValueGuard.IsNumber(value.index)
+    }
+    /**
+     * Returns true if the given value is TArray.
+     */
+    function IsArray(value) {
+      return (
+        IsKindOf(value, 'Array') &&
+        value.type === 'array' &&
+        IsOptionalString(value.$id) &&
+        IsSchema(value.items) &&
+        IsOptionalNumber(value.minItems) &&
+        IsOptionalNumber(value.maxItems) &&
+        IsOptionalBoolean(value.uniqueItems) &&
+        IsOptionalSchema(value.contains) &&
+        IsOptionalNumber(value.minContains) &&
+        IsOptionalNumber(value.maxContains)
+      )
+    }
+    /**
+     * Returns true if the given value is TAsyncIterator.
+     */
+    function IsAsyncIterator(value) {
+      return (
+        IsKindOf(value, 'AsyncIterator') &&
+        value.type === 'AsyncIterator' &&
+        IsOptionalString(value.$id) &&
+        IsSchema(value.items)
+      )
+    }
+    /**
+     * Returns true if the given value is TBigInt.
+     */
+    function IsBigInt(value) {
+      return (
+        IsKindOf(value, 'BigInt') &&
+        value.type === 'bigint' &&
+        IsOptionalString(value.$id) &&
+        IsOptionalBigInt(value.exclusiveMaximum) &&
+        IsOptionalBigInt(value.exclusiveMinimum) &&
+        IsOptionalBigInt(value.maximum) &&
+        IsOptionalBigInt(value.minimum) &&
+        IsOptionalBigInt(value.multipleOf)
+      )
+    }
+    /**
+     * Returns true if the given value is TBoolean.
+     */
+    function IsBoolean(value) {
+      return (
+        IsKindOf(value, 'Boolean') &&
+        value.type === 'boolean' &&
+        IsOptionalString(value.$id)
+      )
+    }
+    /**
+     * Returns true if the given value is TComputed.
+     */
+    function IsComputed(value) {
+      return (
+        IsKindOf(value, 'Computed') &&
+        ValueGuard.IsString(value.target) &&
+        ValueGuard.IsArray(value.parameters) &&
+        value.parameters.every(schema => IsSchema(schema))
+      )
+    }
+    /**
+     * Returns true if the given value is TConstructor.
+     */
+    function IsConstructor(value) {
+      return (
+        IsKindOf(value, 'Constructor') &&
+        value.type === 'Constructor' &&
+        IsOptionalString(value.$id) &&
+        ValueGuard.IsArray(value.parameters) &&
+        value.parameters.every(schema => IsSchema(schema)) &&
+        IsSchema(value.returns)
+      )
+    }
+    /**
+     * Returns true if the given value is TDate.
+     */
+    function IsDate(value) {
+      return (
+        IsKindOf(value, 'Date') &&
+        value.type === 'Date' &&
+        IsOptionalString(value.$id) &&
+        IsOptionalNumber(value.exclusiveMaximumTimestamp) &&
+        IsOptionalNumber(value.exclusiveMinimumTimestamp) &&
+        IsOptionalNumber(value.maximumTimestamp) &&
+        IsOptionalNumber(value.minimumTimestamp) &&
+        IsOptionalNumber(value.multipleOfTimestamp)
+      )
+    }
+    /**
+     * Returns true if the given value is TFunction.
+     */
+    function IsFunction(value) {
+      return (
+        IsKindOf(value, 'Function') &&
+        value.type === 'Function' &&
+        IsOptionalString(value.$id) &&
+        ValueGuard.IsArray(value.parameters) &&
+        value.parameters.every(schema => IsSchema(schema)) &&
+        IsSchema(value.returns)
+      )
+    }
+    /**
+     * Returns true if the given value is TImport.
+     */
+    function IsImport(value) {
+      return (
+        IsKindOf(value, 'Import') &&
+        ValueGuard.HasPropertyKey(value, '$defs') &&
+        ValueGuard.IsObject(value.$defs) &&
+        IsProperties(value.$defs) &&
+        ValueGuard.HasPropertyKey(value, '$ref') &&
+        ValueGuard.IsString(value.$ref) &&
+        value.$ref in value.$defs
+      )
+    }
+    /**
+     * Returns true if the given value is TInteger.
+     */
+    function IsInteger(value) {
+      return (
+        IsKindOf(value, 'Integer') &&
+        value.type === 'integer' &&
+        IsOptionalString(value.$id) &&
+        IsOptionalNumber(value.exclusiveMaximum) &&
+        IsOptionalNumber(value.exclusiveMinimum) &&
+        IsOptionalNumber(value.maximum) &&
+        IsOptionalNumber(value.minimum) &&
+        IsOptionalNumber(value.multipleOf)
+      )
+    }
+    /**
+     * Returns true if the given schema is TProperties.
+     */
+    function IsProperties(value) {
+      return (
+        ValueGuard.IsObject(value) &&
+        Object.entries(value).every(
+          ([key, schema]) => IsControlCharacterFree(key) && IsSchema(schema),
+        )
+      )
+    }
+    /**
+     * Returns true if the given value is TIntersect.
+     */
+    function IsIntersect(value) {
+      return (
+        IsKindOf(value, 'Intersect') &&
+        (ValueGuard.IsString(value.type) && value.type !== 'object'
+          ? false
+          : true) &&
+        ValueGuard.IsArray(value.allOf) &&
+        value.allOf.every(schema => IsSchema(schema) && !IsTransform(schema)) &&
+        IsOptionalString(value.type) &&
+        (IsOptionalBoolean(value.unevaluatedProperties) ||
+          IsOptionalSchema(value.unevaluatedProperties)) &&
+        IsOptionalString(value.$id)
+      )
+    }
+    /**
+     * Returns true if the given value is TIterator.
+     */
+    function IsIterator(value) {
+      return (
+        IsKindOf(value, 'Iterator') &&
+        value.type === 'Iterator' &&
+        IsOptionalString(value.$id) &&
+        IsSchema(value.items)
+      )
+    }
+    /**
+     * Returns true if the given value is a TKind with the given name.
+     */
+    function IsKindOf(value, kind) {
+      return (
+        ValueGuard.IsObject(value) &&
+        index_1.Kind in value &&
+        value[index_1.Kind] === kind
+      )
+    }
+    /**
+     * Returns true if the given value is TLiteral<string>
+     */
+    function IsLiteralString(value) {
+      return IsLiteral(value) && ValueGuard.IsString(value.const)
+    }
+    /**
+     * Returns true if the given value is TLiteral<number>
+     */
+    function IsLiteralNumber(value) {
+      return IsLiteral(value) && ValueGuard.IsNumber(value.const)
+    }
+    /**
+     * Returns true if the given value is TLiteral<boolean>
+     */
+    function IsLiteralBoolean(value) {
+      return IsLiteral(value) && ValueGuard.IsBoolean(value.const)
+    }
+    /**
+     * Returns true if the given value is TLiteral.
+     */
+    function IsLiteral(value) {
+      return (
+        IsKindOf(value, 'Literal') &&
+        IsOptionalString(value.$id) &&
+        IsLiteralValue(value.const)
+      )
+    }
+    /**
+     * Returns true if the given value is a TLiteralValue.
+     */
+    function IsLiteralValue(value) {
+      return (
+        ValueGuard.IsBoolean(value) ||
+        ValueGuard.IsNumber(value) ||
+        ValueGuard.IsString(value)
+      )
+    }
+    /**
+     * Returns true if the given value is a TMappedKey.
+     */
+    function IsMappedKey(value) {
+      return (
+        IsKindOf(value, 'MappedKey') &&
+        ValueGuard.IsArray(value.keys) &&
+        value.keys.every(
+          key => ValueGuard.IsNumber(key) || ValueGuard.IsString(key),
+        )
+      )
+    }
+    /**
+     * Returns true if the given value is TMappedResult.
+     */
+    function IsMappedResult(value) {
+      return IsKindOf(value, 'MappedResult') && IsProperties(value.properties)
+    }
+    /**
+     * Returns true if the given value is TNever.
+     */
+    function IsNever(value) {
+      return (
+        IsKindOf(value, 'Never') &&
+        ValueGuard.IsObject(value.not) &&
+        Object.getOwnPropertyNames(value.not).length === 0
+      )
+    }
+    /**
+     * Returns true if the given value is TNot.
+     */
+    function IsNot(value) {
+      return IsKindOf(value, 'Not') && IsSchema(value.not)
+    }
+    /**
+     * Returns true if the given value is TNull.
+     */
+    function IsNull(value) {
+      return (
+        IsKindOf(value, 'Null') &&
+        value.type === 'null' &&
+        IsOptionalString(value.$id)
+      )
+    }
+    /**
+     * Returns true if the given value is TNumber.
+     */
+    function IsNumber(value) {
+      return (
+        IsKindOf(value, 'Number') &&
+        value.type === 'number' &&
+        IsOptionalString(value.$id) &&
+        IsOptionalNumber(value.exclusiveMaximum) &&
+        IsOptionalNumber(value.exclusiveMinimum) &&
+        IsOptionalNumber(value.maximum) &&
+        IsOptionalNumber(value.minimum) &&
+        IsOptionalNumber(value.multipleOf)
+      )
+    }
+    /**
+     * Returns true if the given value is TObject.
+     */
+    function IsObject(value) {
+      return (
+        IsKindOf(value, 'Object') &&
+        value.type === 'object' &&
+        IsOptionalString(value.$id) &&
+        IsProperties(value.properties) &&
+        IsAdditionalProperties(value.additionalProperties) &&
+        IsOptionalNumber(value.minProperties) &&
+        IsOptionalNumber(value.maxProperties)
+      )
+    }
+    /**
+     * Returns true if the given value is TPromise.
+     */
+    function IsPromise(value) {
+      return (
+        IsKindOf(value, 'Promise') &&
+        value.type === 'Promise' &&
+        IsOptionalString(value.$id) &&
+        IsSchema(value.item)
+      )
+    }
+    /**
+     * Returns true if the given value is TRecord.
+     */
+    function IsRecord(value) {
+      return (
+        IsKindOf(value, 'Record') &&
+        value.type === 'object' &&
+        IsOptionalString(value.$id) &&
+        IsAdditionalProperties(value.additionalProperties) &&
+        ValueGuard.IsObject(value.patternProperties) &&
+        (schema => {
+          const keys = Object.getOwnPropertyNames(schema.patternProperties)
+          return (
+            keys.length === 1 &&
+            IsPattern(keys[0]) &&
+            ValueGuard.IsObject(schema.patternProperties) &&
+            IsSchema(schema.patternProperties[keys[0]])
+          )
+        })(value)
+      )
+    }
+    /**
+     * Returns true if this value is TRecursive.
+     */
+    function IsRecursive(value) {
+      return (
+        ValueGuard.IsObject(value) &&
+        index_1.Hint in value &&
+        value[index_1.Hint] === 'Recursive'
+      )
+    }
+    /**
+     * Returns true if the given value is TRef.
+     */
+    function IsRef(value) {
+      return (
+        IsKindOf(value, 'Ref') &&
+        IsOptionalString(value.$id) &&
+        ValueGuard.IsString(value.$ref)
+      )
+    }
+    /**
+     * Returns true if the given value is TRegExp.
+     */
+    function IsRegExp(value) {
+      return (
+        IsKindOf(value, 'RegExp') &&
+        IsOptionalString(value.$id) &&
+        ValueGuard.IsString(value.source) &&
+        ValueGuard.IsString(value.flags) &&
+        IsOptionalNumber(value.maxLength) &&
+        IsOptionalNumber(value.minLength)
+      )
+    }
+    /**
+     * Returns true if the given value is TString.
+     */
+    function IsString(value) {
+      return (
+        IsKindOf(value, 'String') &&
+        value.type === 'string' &&
+        IsOptionalString(value.$id) &&
+        IsOptionalNumber(value.minLength) &&
+        IsOptionalNumber(value.maxLength) &&
+        IsOptionalPattern(value.pattern) &&
+        IsOptionalFormat(value.format)
+      )
+    }
+    /**
+     * Returns true if the given value is TSymbol.
+     */
+    function IsSymbol(value) {
+      return (
+        IsKindOf(value, 'Symbol') &&
+        value.type === 'symbol' &&
+        IsOptionalString(value.$id)
+      )
+    }
+    /**
+     * Returns true if the given value is TTemplateLiteral.
+     */
+    function IsTemplateLiteral(value) {
+      return (
+        IsKindOf(value, 'TemplateLiteral') &&
+        value.type === 'string' &&
+        ValueGuard.IsString(value.pattern) &&
+        value.pattern[0] === '^' &&
+        value.pattern[value.pattern.length - 1] === '$'
+      )
+    }
+    /**
+     * Returns true if the given value is TThis.
+     */
+    function IsThis(value) {
+      return (
+        IsKindOf(value, 'This') &&
+        IsOptionalString(value.$id) &&
+        ValueGuard.IsString(value.$ref)
+      )
+    }
+    /**
+     * Returns true of this value is TTransform.
+     */
+    function IsTransform(value) {
+      return ValueGuard.IsObject(value) && index_1.TransformKind in value
+    }
+    /**
+     * Returns true if the given value is TTuple.
+     */
+    function IsTuple(value) {
+      return (
+        IsKindOf(value, 'Tuple') &&
+        value.type === 'array' &&
+        IsOptionalString(value.$id) &&
+        ValueGuard.IsNumber(value.minItems) &&
+        ValueGuard.IsNumber(value.maxItems) &&
+        value.minItems === value.maxItems &&
+        ((ValueGuard.IsUndefined(value.items) &&
+          ValueGuard.IsUndefined(value.additionalItems) &&
+          value.minItems === 0) ||
+          (ValueGuard.IsArray(value.items) &&
+            value.items.every(schema => IsSchema(schema))))
+      )
+    }
+    /**
+     * Returns true if the given value is TUndefined.
+     */
+    function IsUndefined(value) {
+      return (
+        IsKindOf(value, 'Undefined') &&
+        value.type === 'undefined' &&
+        IsOptionalString(value.$id)
+      )
+    }
+    /**
+     * Returns true if the given value is TUnion<Literal<string | number>[]>
+     */
+    function IsUnionLiteral(value) {
+      return (
+        IsUnion(value) &&
+        value.anyOf.every(
+          schema => IsLiteralString(schema) || IsLiteralNumber(schema),
+        )
+      )
+    }
+    /**
+     * Returns true if the given value is TUnion.
+     */
+    function IsUnion(value) {
+      return (
+        IsKindOf(value, 'Union') &&
+        IsOptionalString(value.$id) &&
+        ValueGuard.IsObject(value) &&
+        ValueGuard.IsArray(value.anyOf) &&
+        value.anyOf.every(schema => IsSchema(schema))
+      )
+    }
+    /**
+     * Returns true if the given value is TUint8Array.
+     */
+    function IsUint8Array(value) {
+      return (
+        IsKindOf(value, 'Uint8Array') &&
+        value.type === 'Uint8Array' &&
+        IsOptionalString(value.$id) &&
+        IsOptionalNumber(value.minByteLength) &&
+        IsOptionalNumber(value.maxByteLength)
+      )
+    }
+    /**
+     * Returns true if the given value is TUnknown.
+     */
+    function IsUnknown(value) {
+      return IsKindOf(value, 'Unknown') && IsOptionalString(value.$id)
+    }
+    /**
+     * Returns true if the given value is a raw TUnsafe.
+     */
+    function IsUnsafe(value) {
+      return IsKindOf(value, 'Unsafe')
+    }
+    /**
+     * Returns true if the given value is TVoid.
+     */
+    function IsVoid(value) {
+      return (
+        IsKindOf(value, 'Void') &&
+        value.type === 'void' &&
+        IsOptionalString(value.$id)
+      )
+    }
+    /**
+     * Returns true if the given value is TKind.
+     */
+    function IsKind(value) {
+      return (
+        ValueGuard.IsObject(value) &&
+        index_1.Kind in value &&
+        ValueGuard.IsString(value[index_1.Kind]) &&
+        !KnownTypes.includes(value[index_1.Kind])
+      )
+    }
+    /**
+     * Returns true if the given value is TSchema.
+     */
+    function IsSchema(value) {
+      return (
+        ValueGuard.IsObject(value) &&
+        (IsAny(value) ||
+          IsArgument(value) ||
+          IsArray(value) ||
+          IsBoolean(value) ||
+          IsBigInt(value) ||
+          IsAsyncIterator(value) ||
+          IsComputed(value) ||
+          IsConstructor(value) ||
+          IsDate(value) ||
+          IsFunction(value) ||
+          IsInteger(value) ||
+          IsIntersect(value) ||
+          IsIterator(value) ||
+          IsLiteral(value) ||
+          IsMappedKey(value) ||
+          IsMappedResult(value) ||
+          IsNever(value) ||
+          IsNot(value) ||
+          IsNull(value) ||
+          IsNumber(value) ||
+          IsObject(value) ||
+          IsPromise(value) ||
+          IsRecord(value) ||
+          IsRef(value) ||
+          IsRegExp(value) ||
+          IsString(value) ||
+          IsSymbol(value) ||
+          IsTemplateLiteral(value) ||
+          IsThis(value) ||
+          IsTuple(value) ||
+          IsUndefined(value) ||
+          IsUnion(value) ||
+          IsUint8Array(value) ||
+          IsUnknown(value) ||
+          IsUnsafe(value) ||
+          IsVoid(value) ||
+          IsKind(value))
+      )
+    }
+  })
+  var require_guard = /* @__PURE__ */ __commonJSMin(exports$164 => {
+    var __createBinding =
+      (exports$164 && exports$164.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$164 && exports$164.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$164 && exports$164.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$164, '__esModule', { value: true })
+    exports$164.ValueGuard =
+      exports$164.TypeGuard =
+      exports$164.KindGuard =
+        void 0
+    exports$164.KindGuard = __importStar(require_kind())
+    exports$164.TypeGuard = __importStar(require_type())
+    exports$164.ValueGuard = __importStar(require_value$4())
+  })
+  var require_extends_check = /* @__PURE__ */ __commonJSMin(exports$165 => {
+    Object.defineProperty(exports$165, '__esModule', { value: true })
+    exports$165.ExtendsResult = exports$165.ExtendsResolverError = void 0
+    exports$165.ExtendsCheck = ExtendsCheck
+    const index_1 = require_any()
+    const index_2 = require_function$1()
+    const index_3 = require_number()
+    const index_4 = require_string()
+    const index_5 = require_unknown()
+    const index_6 = require_template_literal()
+    const index_7 = require_patterns()
+    const index_8 = require_symbols()
+    const index_9 = require_error()
+    const index_10 = require_guard()
+    var ExtendsResolverError = class extends index_9.TypeBoxError {}
+    exports$165.ExtendsResolverError = ExtendsResolverError
+    var ExtendsResult
+    ;(function (ExtendsResult) {
+      ExtendsResult[(ExtendsResult['Union'] = 0)] = 'Union'
+      ExtendsResult[(ExtendsResult['True'] = 1)] = 'True'
+      ExtendsResult[(ExtendsResult['False'] = 2)] = 'False'
+    })(ExtendsResult || (exports$165.ExtendsResult = ExtendsResult = {}))
+    function IntoBooleanResult(result) {
+      return result === ExtendsResult.False ? result : ExtendsResult.True
+    }
+    function Throw(message) {
+      throw new ExtendsResolverError(message)
+    }
+    function IsStructuralRight(right) {
+      return (
+        index_10.TypeGuard.IsNever(right) ||
+        index_10.TypeGuard.IsIntersect(right) ||
+        index_10.TypeGuard.IsUnion(right) ||
+        index_10.TypeGuard.IsUnknown(right) ||
+        index_10.TypeGuard.IsAny(right)
+      )
+    }
+    function StructuralRight(left, right) {
+      return index_10.TypeGuard.IsNever(right)
+        ? FromNeverRight(left, right)
+        : index_10.TypeGuard.IsIntersect(right)
+          ? FromIntersectRight(left, right)
+          : index_10.TypeGuard.IsUnion(right)
+            ? FromUnionRight(left, right)
+            : index_10.TypeGuard.IsUnknown(right)
+              ? FromUnknownRight(left, right)
+              : index_10.TypeGuard.IsAny(right)
+                ? FromAnyRight(left, right)
+                : Throw('StructuralRight')
+    }
+    function FromAnyRight(left, right) {
+      return ExtendsResult.True
+    }
+    function FromAny(left, right) {
+      return index_10.TypeGuard.IsIntersect(right)
+        ? FromIntersectRight(left, right)
+        : index_10.TypeGuard.IsUnion(right) &&
+            right.anyOf.some(
+              schema =>
+                index_10.TypeGuard.IsAny(schema) ||
+                index_10.TypeGuard.IsUnknown(schema),
+            )
+          ? ExtendsResult.True
+          : index_10.TypeGuard.IsUnion(right)
+            ? ExtendsResult.Union
+            : index_10.TypeGuard.IsUnknown(right)
+              ? ExtendsResult.True
+              : index_10.TypeGuard.IsAny(right)
+                ? ExtendsResult.True
+                : ExtendsResult.Union
+    }
+    function FromArrayRight(left, right) {
+      return index_10.TypeGuard.IsUnknown(left)
+        ? ExtendsResult.False
+        : index_10.TypeGuard.IsAny(left)
+          ? ExtendsResult.Union
+          : index_10.TypeGuard.IsNever(left)
+            ? ExtendsResult.True
+            : ExtendsResult.False
+    }
+    function FromArray(left, right) {
+      return index_10.TypeGuard.IsObject(right) && IsObjectArrayLike(right)
+        ? ExtendsResult.True
+        : IsStructuralRight(right)
+          ? StructuralRight(left, right)
+          : !index_10.TypeGuard.IsArray(right)
+            ? ExtendsResult.False
+            : IntoBooleanResult(Visit(left.items, right.items))
+    }
+    function FromAsyncIterator(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : !index_10.TypeGuard.IsAsyncIterator(right)
+          ? ExtendsResult.False
+          : IntoBooleanResult(Visit(left.items, right.items))
+    }
+    function FromBigInt(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsBigInt(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function FromBooleanRight(left, right) {
+      return index_10.TypeGuard.IsLiteralBoolean(left)
+        ? ExtendsResult.True
+        : index_10.TypeGuard.IsBoolean(left)
+          ? ExtendsResult.True
+          : ExtendsResult.False
+    }
+    function FromBoolean(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsBoolean(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function FromConstructor(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : !index_10.TypeGuard.IsConstructor(right)
+            ? ExtendsResult.False
+            : left.parameters.length > right.parameters.length
+              ? ExtendsResult.False
+              : !left.parameters.every(
+                    (schema, index) =>
+                      IntoBooleanResult(
+                        Visit(right.parameters[index], schema),
+                      ) === ExtendsResult.True,
+                  )
+                ? ExtendsResult.False
+                : IntoBooleanResult(Visit(left.returns, right.returns))
+    }
+    function FromDate(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsDate(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function FromFunction(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : !index_10.TypeGuard.IsFunction(right)
+            ? ExtendsResult.False
+            : left.parameters.length > right.parameters.length
+              ? ExtendsResult.False
+              : !left.parameters.every(
+                    (schema, index) =>
+                      IntoBooleanResult(
+                        Visit(right.parameters[index], schema),
+                      ) === ExtendsResult.True,
+                  )
+                ? ExtendsResult.False
+                : IntoBooleanResult(Visit(left.returns, right.returns))
+    }
+    function FromIntegerRight(left, right) {
+      return index_10.TypeGuard.IsLiteral(left) &&
+        index_10.ValueGuard.IsNumber(left.const)
+        ? ExtendsResult.True
+        : index_10.TypeGuard.IsNumber(left) ||
+            index_10.TypeGuard.IsInteger(left)
+          ? ExtendsResult.True
+          : ExtendsResult.False
+    }
+    function FromInteger(left, right) {
+      return index_10.TypeGuard.IsInteger(right) ||
+        index_10.TypeGuard.IsNumber(right)
+        ? ExtendsResult.True
+        : IsStructuralRight(right)
+          ? StructuralRight(left, right)
+          : index_10.TypeGuard.IsObject(right)
+            ? FromObjectRight(left, right)
+            : index_10.TypeGuard.IsRecord(right)
+              ? FromRecordRight(left, right)
+              : ExtendsResult.False
+    }
+    function FromIntersectRight(left, right) {
+      return right.allOf.every(
+        schema => Visit(left, schema) === ExtendsResult.True,
+      )
+        ? ExtendsResult.True
+        : ExtendsResult.False
+    }
+    function FromIntersect(left, right) {
+      return left.allOf.some(
+        schema => Visit(schema, right) === ExtendsResult.True,
+      )
+        ? ExtendsResult.True
+        : ExtendsResult.False
+    }
+    function FromIterator(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : !index_10.TypeGuard.IsIterator(right)
+          ? ExtendsResult.False
+          : IntoBooleanResult(Visit(left.items, right.items))
+    }
+    function FromLiteral(left, right) {
+      return index_10.TypeGuard.IsLiteral(right) && right.const === left.const
+        ? ExtendsResult.True
+        : IsStructuralRight(right)
+          ? StructuralRight(left, right)
+          : index_10.TypeGuard.IsObject(right)
+            ? FromObjectRight(left, right)
+            : index_10.TypeGuard.IsRecord(right)
+              ? FromRecordRight(left, right)
+              : index_10.TypeGuard.IsString(right)
+                ? FromStringRight(left, right)
+                : index_10.TypeGuard.IsNumber(right)
+                  ? FromNumberRight(left, right)
+                  : index_10.TypeGuard.IsInteger(right)
+                    ? FromIntegerRight(left, right)
+                    : index_10.TypeGuard.IsBoolean(right)
+                      ? FromBooleanRight(left, right)
+                      : ExtendsResult.False
+    }
+    function FromNeverRight(left, right) {
+      return ExtendsResult.False
+    }
+    function FromNever(left, right) {
+      return ExtendsResult.True
+    }
+    function UnwrapTNot(schema) {
+      let [current, depth] = [schema, 0]
+      while (true) {
+        if (!index_10.TypeGuard.IsNot(current)) break
+        current = current.not
+        depth += 1
+      }
+      return depth % 2 === 0 ? current : (0, index_5.Unknown)()
+    }
+    function FromNot(left, right) {
+      return index_10.TypeGuard.IsNot(left)
+        ? Visit(UnwrapTNot(left), right)
+        : index_10.TypeGuard.IsNot(right)
+          ? Visit(left, UnwrapTNot(right))
+          : Throw('Invalid fallthrough for Not')
+    }
+    function FromNull(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsNull(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function FromNumberRight(left, right) {
+      return index_10.TypeGuard.IsLiteralNumber(left)
+        ? ExtendsResult.True
+        : index_10.TypeGuard.IsNumber(left) ||
+            index_10.TypeGuard.IsInteger(left)
+          ? ExtendsResult.True
+          : ExtendsResult.False
+    }
+    function FromNumber(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsInteger(right) ||
+                index_10.TypeGuard.IsNumber(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function IsObjectPropertyCount(schema, count) {
+      return Object.getOwnPropertyNames(schema.properties).length === count
+    }
+    function IsObjectStringLike(schema) {
+      return IsObjectArrayLike(schema)
+    }
+    function IsObjectSymbolLike(schema) {
+      return (
+        IsObjectPropertyCount(schema, 0) ||
+        (IsObjectPropertyCount(schema, 1) &&
+          'description' in schema.properties &&
+          index_10.TypeGuard.IsUnion(schema.properties.description) &&
+          schema.properties.description.anyOf.length === 2 &&
+          ((index_10.TypeGuard.IsString(
+            schema.properties.description.anyOf[0],
+          ) &&
+            index_10.TypeGuard.IsUndefined(
+              schema.properties.description.anyOf[1],
+            )) ||
+            (index_10.TypeGuard.IsString(
+              schema.properties.description.anyOf[1],
+            ) &&
+              index_10.TypeGuard.IsUndefined(
+                schema.properties.description.anyOf[0],
+              ))))
+      )
+    }
+    function IsObjectNumberLike(schema) {
+      return IsObjectPropertyCount(schema, 0)
+    }
+    function IsObjectBooleanLike(schema) {
+      return IsObjectPropertyCount(schema, 0)
+    }
+    function IsObjectBigIntLike(schema) {
+      return IsObjectPropertyCount(schema, 0)
+    }
+    function IsObjectDateLike(schema) {
+      return IsObjectPropertyCount(schema, 0)
+    }
+    function IsObjectUint8ArrayLike(schema) {
+      return IsObjectArrayLike(schema)
+    }
+    function IsObjectFunctionLike(schema) {
+      const length = (0, index_3.Number)()
+      return (
+        IsObjectPropertyCount(schema, 0) ||
+        (IsObjectPropertyCount(schema, 1) &&
+          'length' in schema.properties &&
+          IntoBooleanResult(Visit(schema.properties['length'], length)) ===
+            ExtendsResult.True)
+      )
+    }
+    function IsObjectConstructorLike(schema) {
+      return IsObjectPropertyCount(schema, 0)
+    }
+    function IsObjectArrayLike(schema) {
+      const length = (0, index_3.Number)()
+      return (
+        IsObjectPropertyCount(schema, 0) ||
+        (IsObjectPropertyCount(schema, 1) &&
+          'length' in schema.properties &&
+          IntoBooleanResult(Visit(schema.properties['length'], length)) ===
+            ExtendsResult.True)
+      )
+    }
+    function IsObjectPromiseLike(schema) {
+      const then = (0, index_2.Function)(
+        [(0, index_1.Any)()],
+        (0, index_1.Any)(),
+      )
+      return (
+        IsObjectPropertyCount(schema, 0) ||
+        (IsObjectPropertyCount(schema, 1) &&
+          'then' in schema.properties &&
+          IntoBooleanResult(Visit(schema.properties['then'], then)) ===
+            ExtendsResult.True)
+      )
+    }
+    function Property(left, right) {
+      return Visit(left, right) === ExtendsResult.False
+        ? ExtendsResult.False
+        : index_10.TypeGuard.IsOptional(left) &&
+            !index_10.TypeGuard.IsOptional(right)
+          ? ExtendsResult.False
+          : ExtendsResult.True
+    }
+    function FromObjectRight(left, right) {
+      return index_10.TypeGuard.IsUnknown(left)
+        ? ExtendsResult.False
+        : index_10.TypeGuard.IsAny(left)
+          ? ExtendsResult.Union
+          : index_10.TypeGuard.IsNever(left) ||
+              (index_10.TypeGuard.IsLiteralString(left) &&
+                IsObjectStringLike(right)) ||
+              (index_10.TypeGuard.IsLiteralNumber(left) &&
+                IsObjectNumberLike(right)) ||
+              (index_10.TypeGuard.IsLiteralBoolean(left) &&
+                IsObjectBooleanLike(right)) ||
+              (index_10.TypeGuard.IsSymbol(left) &&
+                IsObjectSymbolLike(right)) ||
+              (index_10.TypeGuard.IsBigInt(left) &&
+                IsObjectBigIntLike(right)) ||
+              (index_10.TypeGuard.IsString(left) &&
+                IsObjectStringLike(right)) ||
+              (index_10.TypeGuard.IsSymbol(left) &&
+                IsObjectSymbolLike(right)) ||
+              (index_10.TypeGuard.IsNumber(left) &&
+                IsObjectNumberLike(right)) ||
+              (index_10.TypeGuard.IsInteger(left) &&
+                IsObjectNumberLike(right)) ||
+              (index_10.TypeGuard.IsBoolean(left) &&
+                IsObjectBooleanLike(right)) ||
+              (index_10.TypeGuard.IsUint8Array(left) &&
+                IsObjectUint8ArrayLike(right)) ||
+              (index_10.TypeGuard.IsDate(left) && IsObjectDateLike(right)) ||
+              (index_10.TypeGuard.IsConstructor(left) &&
+                IsObjectConstructorLike(right)) ||
+              (index_10.TypeGuard.IsFunction(left) &&
+                IsObjectFunctionLike(right))
+            ? ExtendsResult.True
+            : index_10.TypeGuard.IsRecord(left) &&
+                index_10.TypeGuard.IsString(RecordKey(left))
+              ? (() => {
+                  return right[index_8.Hint] === 'Record'
+                    ? ExtendsResult.True
+                    : ExtendsResult.False
+                })()
+              : index_10.TypeGuard.IsRecord(left) &&
+                  index_10.TypeGuard.IsNumber(RecordKey(left))
+                ? (() => {
+                    return IsObjectPropertyCount(right, 0)
+                      ? ExtendsResult.True
+                      : ExtendsResult.False
+                  })()
+                : ExtendsResult.False
+    }
+    function FromObject(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsRecord(right)
+          ? FromRecordRight(left, right)
+          : !index_10.TypeGuard.IsObject(right)
+            ? ExtendsResult.False
+            : (() => {
+                for (const key of Object.getOwnPropertyNames(
+                  right.properties,
+                )) {
+                  if (
+                    !(key in left.properties) &&
+                    !index_10.TypeGuard.IsOptional(right.properties[key])
+                  )
+                    return ExtendsResult.False
+                  if (index_10.TypeGuard.IsOptional(right.properties[key]))
+                    return ExtendsResult.True
+                  if (
+                    Property(left.properties[key], right.properties[key]) ===
+                    ExtendsResult.False
+                  )
+                    return ExtendsResult.False
+                }
+                return ExtendsResult.True
+              })()
+    }
+    function FromPromise(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right) && IsObjectPromiseLike(right)
+          ? ExtendsResult.True
+          : !index_10.TypeGuard.IsPromise(right)
+            ? ExtendsResult.False
+            : IntoBooleanResult(Visit(left.item, right.item))
+    }
+    function RecordKey(schema) {
+      return index_7.PatternNumberExact in schema.patternProperties
+        ? (0, index_3.Number)()
+        : index_7.PatternStringExact in schema.patternProperties
+          ? (0, index_4.String)()
+          : Throw('Unknown record key pattern')
+    }
+    function RecordValue(schema) {
+      return index_7.PatternNumberExact in schema.patternProperties
+        ? schema.patternProperties[index_7.PatternNumberExact]
+        : index_7.PatternStringExact in schema.patternProperties
+          ? schema.patternProperties[index_7.PatternStringExact]
+          : Throw('Unable to get record value schema')
+    }
+    function FromRecordRight(left, right) {
+      const [Key, Value] = [RecordKey(right), RecordValue(right)]
+      return index_10.TypeGuard.IsLiteralString(left) &&
+        index_10.TypeGuard.IsNumber(Key) &&
+        IntoBooleanResult(Visit(left, Value)) === ExtendsResult.True
+        ? ExtendsResult.True
+        : index_10.TypeGuard.IsUint8Array(left) &&
+            index_10.TypeGuard.IsNumber(Key)
+          ? Visit(left, Value)
+          : index_10.TypeGuard.IsString(left) &&
+              index_10.TypeGuard.IsNumber(Key)
+            ? Visit(left, Value)
+            : index_10.TypeGuard.IsArray(left) &&
+                index_10.TypeGuard.IsNumber(Key)
+              ? Visit(left, Value)
+              : index_10.TypeGuard.IsObject(left)
+                ? (() => {
+                    for (const key of Object.getOwnPropertyNames(
+                      left.properties,
+                    ))
+                      if (
+                        Property(Value, left.properties[key]) ===
+                        ExtendsResult.False
+                      )
+                        return ExtendsResult.False
+                    return ExtendsResult.True
+                  })()
+                : ExtendsResult.False
+    }
+    function FromRecord(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : !index_10.TypeGuard.IsRecord(right)
+            ? ExtendsResult.False
+            : Visit(RecordValue(left), RecordValue(right))
+    }
+    function FromRegExp(left, right) {
+      return Visit(
+        index_10.TypeGuard.IsRegExp(left) ? (0, index_4.String)() : left,
+        index_10.TypeGuard.IsRegExp(right) ? (0, index_4.String)() : right,
+      )
+    }
+    function FromStringRight(left, right) {
+      return index_10.TypeGuard.IsLiteral(left) &&
+        index_10.ValueGuard.IsString(left.const)
+        ? ExtendsResult.True
+        : index_10.TypeGuard.IsString(left)
+          ? ExtendsResult.True
+          : ExtendsResult.False
+    }
+    function FromString(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsString(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function FromSymbol(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsSymbol(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function FromTemplateLiteral(left, right) {
+      return index_10.TypeGuard.IsTemplateLiteral(left)
+        ? Visit((0, index_6.TemplateLiteralToUnion)(left), right)
+        : index_10.TypeGuard.IsTemplateLiteral(right)
+          ? Visit(left, (0, index_6.TemplateLiteralToUnion)(right))
+          : Throw('Invalid fallthrough for TemplateLiteral')
+    }
+    function IsArrayOfTuple(left, right) {
+      return (
+        index_10.TypeGuard.IsArray(right) &&
+        left.items !== void 0 &&
+        left.items.every(
+          schema => Visit(schema, right.items) === ExtendsResult.True,
+        )
+      )
+    }
+    function FromTupleRight(left, right) {
+      return index_10.TypeGuard.IsNever(left)
+        ? ExtendsResult.True
+        : index_10.TypeGuard.IsUnknown(left)
+          ? ExtendsResult.False
+          : index_10.TypeGuard.IsAny(left)
+            ? ExtendsResult.Union
+            : ExtendsResult.False
+    }
+    function FromTuple(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right) && IsObjectArrayLike(right)
+          ? ExtendsResult.True
+          : index_10.TypeGuard.IsArray(right) && IsArrayOfTuple(left, right)
+            ? ExtendsResult.True
+            : !index_10.TypeGuard.IsTuple(right)
+              ? ExtendsResult.False
+              : (index_10.ValueGuard.IsUndefined(left.items) &&
+                    !index_10.ValueGuard.IsUndefined(right.items)) ||
+                  (!index_10.ValueGuard.IsUndefined(left.items) &&
+                    index_10.ValueGuard.IsUndefined(right.items))
+                ? ExtendsResult.False
+                : index_10.ValueGuard.IsUndefined(left.items) &&
+                    !index_10.ValueGuard.IsUndefined(right.items)
+                  ? ExtendsResult.True
+                  : left.items.every(
+                        (schema, index) =>
+                          Visit(schema, right.items[index]) ===
+                          ExtendsResult.True,
+                      )
+                    ? ExtendsResult.True
+                    : ExtendsResult.False
+    }
+    function FromUint8Array(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsUint8Array(right)
+              ? ExtendsResult.True
+              : ExtendsResult.False
+    }
+    function FromUndefined(left, right) {
+      return IsStructuralRight(right)
+        ? StructuralRight(left, right)
+        : index_10.TypeGuard.IsObject(right)
+          ? FromObjectRight(left, right)
+          : index_10.TypeGuard.IsRecord(right)
+            ? FromRecordRight(left, right)
+            : index_10.TypeGuard.IsVoid(right)
+              ? FromVoidRight(left, right)
+              : index_10.TypeGuard.IsUndefined(right)
+                ? ExtendsResult.True
+                : ExtendsResult.False
+    }
+    function FromUnionRight(left, right) {
+      return right.anyOf.some(
+        schema => Visit(left, schema) === ExtendsResult.True,
+      )
+        ? ExtendsResult.True
+        : ExtendsResult.False
+    }
+    function FromUnion(left, right) {
+      return left.anyOf.every(
+        schema => Visit(schema, right) === ExtendsResult.True,
+      )
+        ? ExtendsResult.True
+        : ExtendsResult.False
+    }
+    function FromUnknownRight(left, right) {
+      return ExtendsResult.True
+    }
+    function FromUnknown(left, right) {
+      return index_10.TypeGuard.IsNever(right)
+        ? FromNeverRight(left, right)
+        : index_10.TypeGuard.IsIntersect(right)
+          ? FromIntersectRight(left, right)
+          : index_10.TypeGuard.IsUnion(right)
+            ? FromUnionRight(left, right)
+            : index_10.TypeGuard.IsAny(right)
+              ? FromAnyRight(left, right)
+              : index_10.TypeGuard.IsString(right)
+                ? FromStringRight(left, right)
+                : index_10.TypeGuard.IsNumber(right)
+                  ? FromNumberRight(left, right)
+                  : index_10.TypeGuard.IsInteger(right)
+                    ? FromIntegerRight(left, right)
+                    : index_10.TypeGuard.IsBoolean(right)
+                      ? FromBooleanRight(left, right)
+                      : index_10.TypeGuard.IsArray(right)
+                        ? FromArrayRight(left, right)
+                        : index_10.TypeGuard.IsTuple(right)
+                          ? FromTupleRight(left, right)
+                          : index_10.TypeGuard.IsObject(right)
+                            ? FromObjectRight(left, right)
+                            : index_10.TypeGuard.IsUnknown(right)
+                              ? ExtendsResult.True
+                              : ExtendsResult.False
+    }
+    function FromVoidRight(left, right) {
+      return index_10.TypeGuard.IsUndefined(left)
+        ? ExtendsResult.True
+        : index_10.TypeGuard.IsUndefined(left)
+          ? ExtendsResult.True
+          : ExtendsResult.False
+    }
+    function FromVoid(left, right) {
+      return index_10.TypeGuard.IsIntersect(right)
+        ? FromIntersectRight(left, right)
+        : index_10.TypeGuard.IsUnion(right)
+          ? FromUnionRight(left, right)
+          : index_10.TypeGuard.IsUnknown(right)
+            ? FromUnknownRight(left, right)
+            : index_10.TypeGuard.IsAny(right)
+              ? FromAnyRight(left, right)
+              : index_10.TypeGuard.IsObject(right)
+                ? FromObjectRight(left, right)
+                : index_10.TypeGuard.IsVoid(right)
+                  ? ExtendsResult.True
+                  : ExtendsResult.False
+    }
+    function Visit(left, right) {
+      return index_10.TypeGuard.IsTemplateLiteral(left) ||
+        index_10.TypeGuard.IsTemplateLiteral(right)
+        ? FromTemplateLiteral(left, right)
+        : index_10.TypeGuard.IsRegExp(left) ||
+            index_10.TypeGuard.IsRegExp(right)
+          ? FromRegExp(left, right)
+          : index_10.TypeGuard.IsNot(left) || index_10.TypeGuard.IsNot(right)
+            ? FromNot(left, right)
+            : index_10.TypeGuard.IsAny(left)
+              ? FromAny(left, right)
+              : index_10.TypeGuard.IsArray(left)
+                ? FromArray(left, right)
+                : index_10.TypeGuard.IsBigInt(left)
+                  ? FromBigInt(left, right)
+                  : index_10.TypeGuard.IsBoolean(left)
+                    ? FromBoolean(left, right)
+                    : index_10.TypeGuard.IsAsyncIterator(left)
+                      ? FromAsyncIterator(left, right)
+                      : index_10.TypeGuard.IsConstructor(left)
+                        ? FromConstructor(left, right)
+                        : index_10.TypeGuard.IsDate(left)
+                          ? FromDate(left, right)
+                          : index_10.TypeGuard.IsFunction(left)
+                            ? FromFunction(left, right)
+                            : index_10.TypeGuard.IsInteger(left)
+                              ? FromInteger(left, right)
+                              : index_10.TypeGuard.IsIntersect(left)
+                                ? FromIntersect(left, right)
+                                : index_10.TypeGuard.IsIterator(left)
+                                  ? FromIterator(left, right)
+                                  : index_10.TypeGuard.IsLiteral(left)
+                                    ? FromLiteral(left, right)
+                                    : index_10.TypeGuard.IsNever(left)
+                                      ? FromNever(left, right)
+                                      : index_10.TypeGuard.IsNull(left)
+                                        ? FromNull(left, right)
+                                        : index_10.TypeGuard.IsNumber(left)
+                                          ? FromNumber(left, right)
+                                          : index_10.TypeGuard.IsObject(left)
+                                            ? FromObject(left, right)
+                                            : index_10.TypeGuard.IsRecord(left)
+                                              ? FromRecord(left, right)
+                                              : index_10.TypeGuard.IsString(
+                                                    left,
+                                                  )
+                                                ? FromString(left, right)
+                                                : index_10.TypeGuard.IsSymbol(
+                                                      left,
+                                                    )
+                                                  ? FromSymbol(left, right)
+                                                  : index_10.TypeGuard.IsTuple(
+                                                        left,
+                                                      )
+                                                    ? FromTuple(left, right)
+                                                    : index_10.TypeGuard.IsPromise(
+                                                          left,
+                                                        )
+                                                      ? FromPromise(left, right)
+                                                      : index_10.TypeGuard.IsUint8Array(
+                                                            left,
+                                                          )
+                                                        ? FromUint8Array(
+                                                            left,
+                                                            right,
+                                                          )
+                                                        : index_10.TypeGuard.IsUndefined(
+                                                              left,
+                                                            )
+                                                          ? FromUndefined(
+                                                              left,
+                                                              right,
+                                                            )
+                                                          : index_10.TypeGuard.IsUnion(
+                                                                left,
+                                                              )
+                                                            ? FromUnion(
+                                                                left,
+                                                                right,
+                                                              )
+                                                            : index_10.TypeGuard.IsUnknown(
+                                                                  left,
+                                                                )
+                                                              ? FromUnknown(
+                                                                  left,
+                                                                  right,
+                                                                )
+                                                              : index_10.TypeGuard.IsVoid(
+                                                                    left,
+                                                                  )
+                                                                ? FromVoid(
+                                                                    left,
+                                                                    right,
+                                                                  )
+                                                                : Throw(
+                                                                    `Unknown left type operand '${left[index_8.Kind]}'`,
+                                                                  )
+    }
+    function ExtendsCheck(left, right) {
+      return Visit(left, right)
+    }
+  })
+  var require_extends_from_mapped_result = /* @__PURE__ */ __commonJSMin(
+    exports$166 => {
+      Object.defineProperty(exports$166, '__esModule', { value: true })
+      exports$166.ExtendsFromMappedResult = ExtendsFromMappedResult
+      const index_1 = require_mapped()
+      const extends_1 = require_extends$1()
+      const value_1 = require_value$3()
+      function FromProperties(P, Right, True, False, options) {
+        const Acc = {}
+        for (const K2 of globalThis.Object.getOwnPropertyNames(P))
+          Acc[K2] = (0, extends_1.Extends)(
+            P[K2],
+            Right,
+            True,
+            False,
+            (0, value_1.Clone)(options),
+          )
+        return Acc
+      }
+      function FromMappedResult(Left, Right, True, False, options) {
+        return FromProperties(Left.properties, Right, True, False, options)
+      }
+      function ExtendsFromMappedResult(Left, Right, True, False, options) {
+        const P = FromMappedResult(Left, Right, True, False, options)
+        return (0, index_1.MappedResult)(P)
+      }
+    },
+  )
+  var require_extends$1 = /* @__PURE__ */ __commonJSMin(exports$167 => {
+    Object.defineProperty(exports$167, '__esModule', { value: true })
+    exports$167.Extends = Extends
+    const type_1 = require_type$1()
+    const index_1 = require_union$1()
+    const extends_check_1 = require_extends_check()
+    const extends_from_mapped_key_1 = require_extends_from_mapped_key()
+    const extends_from_mapped_result_1 = require_extends_from_mapped_result()
+    const kind_1 = require_kind()
+    function ExtendsResolve(left, right, trueType, falseType) {
+      const R = (0, extends_check_1.ExtendsCheck)(left, right)
+      return R === extends_check_1.ExtendsResult.Union
+        ? (0, index_1.Union)([trueType, falseType])
+        : R === extends_check_1.ExtendsResult.True
+          ? trueType
+          : falseType
+    }
+    /**
+     * `[Json]` Creates a Conditional type.
+     */
+    function Extends(L, R, T, F, options) {
+      return (0, kind_1.IsMappedResult)(L)
+        ? (0, extends_from_mapped_result_1.ExtendsFromMappedResult)(
+            L,
+            R,
+            T,
+            F,
+            options,
+          )
+        : (0, kind_1.IsMappedKey)(L)
+          ? (0, type_1.CreateType)(
+              (0, extends_from_mapped_key_1.ExtendsFromMappedKey)(
+                L,
+                R,
+                T,
+                F,
+                options,
+              ),
+            )
+          : (0, type_1.CreateType)(ExtendsResolve(L, R, T, F), options)
+    }
+  })
+  var require_extends_from_mapped_key = /* @__PURE__ */ __commonJSMin(
+    exports$168 => {
+      Object.defineProperty(exports$168, '__esModule', { value: true })
+      exports$168.ExtendsFromMappedKey = ExtendsFromMappedKey
+      const index_1 = require_mapped()
+      const index_2 = require_literal()
+      const extends_1 = require_extends$1()
+      const value_1 = require_value$3()
+      function FromPropertyKey(K, U, L, R, options) {
+        return {
+          [K]: (0, extends_1.Extends)(
+            (0, index_2.Literal)(K),
+            U,
+            L,
+            R,
+            (0, value_1.Clone)(options),
+          ),
+        }
+      }
+      function FromPropertyKeys(K, U, L, R, options) {
+        return K.reduce((Acc, LK) => {
+          return {
+            ...Acc,
+            ...FromPropertyKey(LK, U, L, R, options),
+          }
+        }, {})
+      }
+      function FromMappedKey(K, U, L, R, options) {
+        return FromPropertyKeys(K.keys, U, L, R, options)
+      }
+      function ExtendsFromMappedKey(T, U, L, R, options) {
+        const P = FromMappedKey(T, U, L, R, options)
+        return (0, index_1.MappedResult)(P)
+      }
+    },
+  )
+  var require_extends = /* @__PURE__ */ __commonJSMin(exports$169 => {
+    var __createBinding =
+      (exports$169 && exports$169.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$169 && exports$169.__exportStar) ||
+      function (m, exports$18) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$18, p)
+          )
+            __createBinding(exports$18, m, p)
+      }
+    Object.defineProperty(exports$169, '__esModule', { value: true })
+    __exportStar(require_extends_check(), exports$169)
+    __exportStar(require_extends_from_mapped_key(), exports$169)
+    __exportStar(require_extends_from_mapped_result(), exports$169)
+    __exportStar(require_extends_undefined(), exports$169)
+    __exportStar(require_extends$1(), exports$169)
+  })
+  var require_check$1 = /* @__PURE__ */ __commonJSMin(exports$170 => {
+    Object.defineProperty(exports$170, '__esModule', { value: true })
+    exports$170.ValueCheckUnknownTypeError = void 0
+    exports$170.Check = Check
+    const index_1 = require_system()
+    const index_2 = require_deref()
+    const index_3 = require_hash()
+    const index_4 = require_symbols()
+    const index_5 = require_keyof()
+    const index_6 = require_extends()
+    const index_7 = require_registry()
+    const index_8 = require_error()
+    const index_9 = require_never()
+    const index_10 = require_guard$1()
+    const kind_1 = require_kind()
+    var ValueCheckUnknownTypeError = class extends index_8.TypeBoxError {
+      constructor(schema) {
+        super(`Unknown type`)
+        this.schema = schema
+      }
+    }
+    exports$170.ValueCheckUnknownTypeError = ValueCheckUnknownTypeError
+    function IsAnyOrUnknown(schema) {
+      return (
+        schema[index_4.Kind] === 'Any' || schema[index_4.Kind] === 'Unknown'
+      )
+    }
+    function IsDefined(value) {
+      return value !== void 0
+    }
+    function FromAny(schema, references, value) {
+      return true
+    }
+    function FromArgument(schema, references, value) {
+      return true
+    }
+    function FromArray(schema, references, value) {
+      if (!(0, index_10.IsArray)(value)) return false
+      if (IsDefined(schema.minItems) && !(value.length >= schema.minItems))
+        return false
+      if (IsDefined(schema.maxItems) && !(value.length <= schema.maxItems))
+        return false
+      for (const element of value)
+        if (!Visit(schema.items, references, element)) return false
+      if (
+        schema.uniqueItems === true &&
+        !(function () {
+          const set = /* @__PURE__ */ new Set()
+          for (const element of value) {
+            const hashed = (0, index_3.Hash)(element)
+            if (set.has(hashed)) return false
+            else set.add(hashed)
+          }
+          return true
+        })()
+      )
+        return false
+      if (
+        !(
+          IsDefined(schema.contains) ||
+          (0, index_10.IsNumber)(schema.minContains) ||
+          (0, index_10.IsNumber)(schema.maxContains)
+        )
+      )
+        return true
+      const containsSchema = IsDefined(schema.contains)
+        ? schema.contains
+        : (0, index_9.Never)()
+      const containsCount = value.reduce(
+        (acc, value) =>
+          Visit(containsSchema, references, value) ? acc + 1 : acc,
+        0,
+      )
+      if (containsCount === 0) return false
+      if (
+        (0, index_10.IsNumber)(schema.minContains) &&
+        containsCount < schema.minContains
+      )
+        return false
+      if (
+        (0, index_10.IsNumber)(schema.maxContains) &&
+        containsCount > schema.maxContains
+      )
+        return false
+      return true
+    }
+    function FromAsyncIterator(schema, references, value) {
+      return (0, index_10.IsAsyncIterator)(value)
+    }
+    function FromBigInt(schema, references, value) {
+      if (!(0, index_10.IsBigInt)(value)) return false
+      if (
+        IsDefined(schema.exclusiveMaximum) &&
+        !(value < schema.exclusiveMaximum)
+      )
+        return false
+      if (
+        IsDefined(schema.exclusiveMinimum) &&
+        !(value > schema.exclusiveMinimum)
+      )
+        return false
+      if (IsDefined(schema.maximum) && !(value <= schema.maximum)) return false
+      if (IsDefined(schema.minimum) && !(value >= schema.minimum)) return false
+      if (
+        IsDefined(schema.multipleOf) &&
+        !(value % schema.multipleOf === BigInt(0))
+      )
+        return false
+      return true
+    }
+    function FromBoolean(schema, references, value) {
+      return (0, index_10.IsBoolean)(value)
+    }
+    function FromConstructor(schema, references, value) {
+      return Visit(schema.returns, references, value.prototype)
+    }
+    function FromDate(schema, references, value) {
+      if (!(0, index_10.IsDate)(value)) return false
+      if (
+        IsDefined(schema.exclusiveMaximumTimestamp) &&
+        !(value.getTime() < schema.exclusiveMaximumTimestamp)
+      )
+        return false
+      if (
+        IsDefined(schema.exclusiveMinimumTimestamp) &&
+        !(value.getTime() > schema.exclusiveMinimumTimestamp)
+      )
+        return false
+      if (
+        IsDefined(schema.maximumTimestamp) &&
+        !(value.getTime() <= schema.maximumTimestamp)
+      )
+        return false
+      if (
+        IsDefined(schema.minimumTimestamp) &&
+        !(value.getTime() >= schema.minimumTimestamp)
+      )
+        return false
+      if (
+        IsDefined(schema.multipleOfTimestamp) &&
+        !(value.getTime() % schema.multipleOfTimestamp === 0)
+      )
+        return false
+      return true
+    }
+    function FromFunction(schema, references, value) {
+      return (0, index_10.IsFunction)(value)
+    }
+    function FromImport(schema, references, value) {
+      const definitions = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      return Visit(target, [...references, ...definitions], value)
+    }
+    function FromInteger(schema, references, value) {
+      if (!(0, index_10.IsInteger)(value)) return false
+      if (
+        IsDefined(schema.exclusiveMaximum) &&
+        !(value < schema.exclusiveMaximum)
+      )
+        return false
+      if (
+        IsDefined(schema.exclusiveMinimum) &&
+        !(value > schema.exclusiveMinimum)
+      )
+        return false
+      if (IsDefined(schema.maximum) && !(value <= schema.maximum)) return false
+      if (IsDefined(schema.minimum) && !(value >= schema.minimum)) return false
+      if (IsDefined(schema.multipleOf) && !(value % schema.multipleOf === 0))
+        return false
+      return true
+    }
+    function FromIntersect(schema, references, value) {
+      const check1 = schema.allOf.every(schema =>
+        Visit(schema, references, value),
+      )
+      if (schema.unevaluatedProperties === false) {
+        const keyPattern = new RegExp((0, index_5.KeyOfPattern)(schema))
+        const check2 = Object.getOwnPropertyNames(value).every(key =>
+          keyPattern.test(key),
+        )
+        return check1 && check2
+      } else if ((0, kind_1.IsSchema)(schema.unevaluatedProperties)) {
+        const keyCheck = new RegExp((0, index_5.KeyOfPattern)(schema))
+        const check2 = Object.getOwnPropertyNames(value).every(
+          key =>
+            keyCheck.test(key) ||
+            Visit(schema.unevaluatedProperties, references, value[key]),
+        )
+        return check1 && check2
+      } else return check1
+    }
+    function FromIterator(schema, references, value) {
+      return (0, index_10.IsIterator)(value)
+    }
+    function FromLiteral(schema, references, value) {
+      return value === schema.const
+    }
+    function FromNever(schema, references, value) {
+      return false
+    }
+    function FromNot(schema, references, value) {
+      return !Visit(schema.not, references, value)
+    }
+    function FromNull(schema, references, value) {
+      return (0, index_10.IsNull)(value)
+    }
+    function FromNumber(schema, references, value) {
+      if (!index_1.TypeSystemPolicy.IsNumberLike(value)) return false
+      if (
+        IsDefined(schema.exclusiveMaximum) &&
+        !(value < schema.exclusiveMaximum)
+      )
+        return false
+      if (
+        IsDefined(schema.exclusiveMinimum) &&
+        !(value > schema.exclusiveMinimum)
+      )
+        return false
+      if (IsDefined(schema.minimum) && !(value >= schema.minimum)) return false
+      if (IsDefined(schema.maximum) && !(value <= schema.maximum)) return false
+      if (IsDefined(schema.multipleOf) && !(value % schema.multipleOf === 0))
+        return false
+      return true
+    }
+    function FromObject(schema, references, value) {
+      if (!index_1.TypeSystemPolicy.IsObjectLike(value)) return false
+      if (
+        IsDefined(schema.minProperties) &&
+        !(Object.getOwnPropertyNames(value).length >= schema.minProperties)
+      )
+        return false
+      if (
+        IsDefined(schema.maxProperties) &&
+        !(Object.getOwnPropertyNames(value).length <= schema.maxProperties)
+      )
+        return false
+      const knownKeys = Object.getOwnPropertyNames(schema.properties)
+      for (const knownKey of knownKeys) {
+        const property = schema.properties[knownKey]
+        if (schema.required && schema.required.includes(knownKey)) {
+          if (!Visit(property, references, value[knownKey])) return false
+          if (
+            ((0, index_6.ExtendsUndefinedCheck)(property) ||
+              IsAnyOrUnknown(property)) &&
+            !(knownKey in value)
+          )
+            return false
+        } else if (
+          index_1.TypeSystemPolicy.IsExactOptionalProperty(value, knownKey) &&
+          !Visit(property, references, value[knownKey])
+        )
+          return false
+      }
+      if (schema.additionalProperties === false) {
+        const valueKeys = Object.getOwnPropertyNames(value)
+        if (
+          schema.required &&
+          schema.required.length === knownKeys.length &&
+          valueKeys.length === knownKeys.length
+        )
+          return true
+        else return valueKeys.every(valueKey => knownKeys.includes(valueKey))
+      } else if (typeof schema.additionalProperties === 'object')
+        return Object.getOwnPropertyNames(value).every(
+          key =>
+            knownKeys.includes(key) ||
+            Visit(schema.additionalProperties, references, value[key]),
+        )
+      else return true
+    }
+    function FromPromise(schema, references, value) {
+      return (0, index_10.IsPromise)(value)
+    }
+    function FromRecord(schema, references, value) {
+      if (!index_1.TypeSystemPolicy.IsRecordLike(value)) return false
+      if (
+        IsDefined(schema.minProperties) &&
+        !(Object.getOwnPropertyNames(value).length >= schema.minProperties)
+      )
+        return false
+      if (
+        IsDefined(schema.maxProperties) &&
+        !(Object.getOwnPropertyNames(value).length <= schema.maxProperties)
+      )
+        return false
+      const [patternKey, patternSchema] = Object.entries(
+        schema.patternProperties,
+      )[0]
+      const regex = new RegExp(patternKey)
+      const check1 = Object.entries(value).every(([key, value]) => {
+        return regex.test(key) ? Visit(patternSchema, references, value) : true
+      })
+      const check2 =
+        typeof schema.additionalProperties === 'object'
+          ? Object.entries(value).every(([key, value]) => {
+              return !regex.test(key)
+                ? Visit(schema.additionalProperties, references, value)
+                : true
+            })
+          : true
+      const check3 =
+        schema.additionalProperties === false
+          ? Object.getOwnPropertyNames(value).every(key => {
+              return regex.test(key)
+            })
+          : true
+      return check1 && check2 && check3
+    }
+    function FromRef(schema, references, value) {
+      return Visit((0, index_2.Deref)(schema, references), references, value)
+    }
+    function FromRegExp(schema, references, value) {
+      const regex = new RegExp(schema.source, schema.flags)
+      if (IsDefined(schema.minLength)) {
+        if (!(value.length >= schema.minLength)) return false
+      }
+      if (IsDefined(schema.maxLength)) {
+        if (!(value.length <= schema.maxLength)) return false
+      }
+      return regex.test(value)
+    }
+    function FromString(schema, references, value) {
+      if (!(0, index_10.IsString)(value)) return false
+      if (IsDefined(schema.minLength)) {
+        if (!(value.length >= schema.minLength)) return false
+      }
+      if (IsDefined(schema.maxLength)) {
+        if (!(value.length <= schema.maxLength)) return false
+      }
+      if (IsDefined(schema.pattern)) {
+        if (!new RegExp(schema.pattern).test(value)) return false
+      }
+      if (IsDefined(schema.format)) {
+        if (!index_7.FormatRegistry.Has(schema.format)) return false
+        return index_7.FormatRegistry.Get(schema.format)(value)
+      }
+      return true
+    }
+    function FromSymbol(schema, references, value) {
+      return (0, index_10.IsSymbol)(value)
+    }
+    function FromTemplateLiteral(schema, references, value) {
+      return (
+        (0, index_10.IsString)(value) && new RegExp(schema.pattern).test(value)
+      )
+    }
+    function FromThis(schema, references, value) {
+      return Visit((0, index_2.Deref)(schema, references), references, value)
+    }
+    function FromTuple(schema, references, value) {
+      if (!(0, index_10.IsArray)(value)) return false
+      if (schema.items === void 0 && !(value.length === 0)) return false
+      if (!(value.length === schema.maxItems)) return false
+      if (!schema.items) return true
+      for (let i = 0; i < schema.items.length; i++)
+        if (!Visit(schema.items[i], references, value[i])) return false
+      return true
+    }
+    function FromUndefined(schema, references, value) {
+      return (0, index_10.IsUndefined)(value)
+    }
+    function FromUnion(schema, references, value) {
+      return schema.anyOf.some(inner => Visit(inner, references, value))
+    }
+    function FromUint8Array(schema, references, value) {
+      if (!(0, index_10.IsUint8Array)(value)) return false
+      if (
+        IsDefined(schema.maxByteLength) &&
+        !(value.length <= schema.maxByteLength)
+      )
+        return false
+      if (
+        IsDefined(schema.minByteLength) &&
+        !(value.length >= schema.minByteLength)
+      )
+        return false
+      return true
+    }
+    function FromUnknown(schema, references, value) {
+      return true
+    }
+    function FromVoid(schema, references, value) {
+      return index_1.TypeSystemPolicy.IsVoidLike(value)
+    }
+    function FromKind(schema, references, value) {
+      if (!index_7.TypeRegistry.Has(schema[index_4.Kind])) return false
+      return index_7.TypeRegistry.Get(schema[index_4.Kind])(schema, value)
+    }
+    function Visit(schema, references, value) {
+      const references_ = IsDefined(schema.$id)
+        ? (0, index_2.Pushref)(schema, references)
+        : references
+      const schema_ = schema
+      switch (schema_[index_4.Kind]) {
+        case 'Any':
+          return FromAny(schema_, references_, value)
+        case 'Argument':
+          return FromArgument(schema_, references_, value)
+        case 'Array':
+          return FromArray(schema_, references_, value)
+        case 'AsyncIterator':
+          return FromAsyncIterator(schema_, references_, value)
+        case 'BigInt':
+          return FromBigInt(schema_, references_, value)
+        case 'Boolean':
+          return FromBoolean(schema_, references_, value)
+        case 'Constructor':
+          return FromConstructor(schema_, references_, value)
+        case 'Date':
+          return FromDate(schema_, references_, value)
+        case 'Function':
+          return FromFunction(schema_, references_, value)
+        case 'Import':
+          return FromImport(schema_, references_, value)
+        case 'Integer':
+          return FromInteger(schema_, references_, value)
+        case 'Intersect':
+          return FromIntersect(schema_, references_, value)
+        case 'Iterator':
+          return FromIterator(schema_, references_, value)
+        case 'Literal':
+          return FromLiteral(schema_, references_, value)
+        case 'Never':
+          return FromNever(schema_, references_, value)
+        case 'Not':
+          return FromNot(schema_, references_, value)
+        case 'Null':
+          return FromNull(schema_, references_, value)
+        case 'Number':
+          return FromNumber(schema_, references_, value)
+        case 'Object':
+          return FromObject(schema_, references_, value)
+        case 'Promise':
+          return FromPromise(schema_, references_, value)
+        case 'Record':
+          return FromRecord(schema_, references_, value)
+        case 'Ref':
+          return FromRef(schema_, references_, value)
+        case 'RegExp':
+          return FromRegExp(schema_, references_, value)
+        case 'String':
+          return FromString(schema_, references_, value)
+        case 'Symbol':
+          return FromSymbol(schema_, references_, value)
+        case 'TemplateLiteral':
+          return FromTemplateLiteral(schema_, references_, value)
+        case 'This':
+          return FromThis(schema_, references_, value)
+        case 'Tuple':
+          return FromTuple(schema_, references_, value)
+        case 'Undefined':
+          return FromUndefined(schema_, references_, value)
+        case 'Union':
+          return FromUnion(schema_, references_, value)
+        case 'Uint8Array':
+          return FromUint8Array(schema_, references_, value)
+        case 'Unknown':
+          return FromUnknown(schema_, references_, value)
+        case 'Void':
+          return FromVoid(schema_, references_, value)
+        default:
+          if (!index_7.TypeRegistry.Has(schema_[index_4.Kind]))
+            throw new ValueCheckUnknownTypeError(schema_)
+          return FromKind(schema_, references_, value)
+      }
+    }
+    /**
+     * Returns true if the value matches the given type.
+     */
+    function Check(...args) {
+      return args.length === 3
+        ? Visit(args[0], args[1], args[2])
+        : Visit(args[0], [], args[1])
+    }
+  })
+  var require_check = /* @__PURE__ */ __commonJSMin(exports$171 => {
+    var __createBinding =
+      (exports$171 && exports$171.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$171 && exports$171.__exportStar) ||
+      function (m, exports$17) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$17, p)
+          )
+            __createBinding(exports$17, m, p)
+      }
+    Object.defineProperty(exports$171, '__esModule', { value: true })
+    __exportStar(require_check$1(), exports$171)
+  })
+  var require_errors$1 = /* @__PURE__ */ __commonJSMin(exports$172 => {
+    Object.defineProperty(exports$172, '__esModule', { value: true })
+    exports$172.ValueErrorIterator =
+      exports$172.ValueErrorsUnknownTypeError =
+      exports$172.ValueErrorType =
+        void 0
+    exports$172.Errors = Errors
+    const index_1 = require_system()
+    const index_2 = require_keyof()
+    const index_3 = require_registry()
+    const extends_undefined_1 = require_extends_undefined()
+    const function_1 = require_function()
+    const index_4 = require_error()
+    const index_5 = require_deref()
+    const index_6 = require_hash()
+    const index_7 = require_check()
+    const index_8 = require_symbols()
+    const index_9 = require_never()
+    const index_10 = require_guard$1()
+    var ValueErrorType
+    ;(function (ValueErrorType) {
+      ValueErrorType[(ValueErrorType['ArrayContains'] = 0)] = 'ArrayContains'
+      ValueErrorType[(ValueErrorType['ArrayMaxContains'] = 1)] =
+        'ArrayMaxContains'
+      ValueErrorType[(ValueErrorType['ArrayMaxItems'] = 2)] = 'ArrayMaxItems'
+      ValueErrorType[(ValueErrorType['ArrayMinContains'] = 3)] =
+        'ArrayMinContains'
+      ValueErrorType[(ValueErrorType['ArrayMinItems'] = 4)] = 'ArrayMinItems'
+      ValueErrorType[(ValueErrorType['ArrayUniqueItems'] = 5)] =
+        'ArrayUniqueItems'
+      ValueErrorType[(ValueErrorType['Array'] = 6)] = 'Array'
+      ValueErrorType[(ValueErrorType['AsyncIterator'] = 7)] = 'AsyncIterator'
+      ValueErrorType[(ValueErrorType['BigIntExclusiveMaximum'] = 8)] =
+        'BigIntExclusiveMaximum'
+      ValueErrorType[(ValueErrorType['BigIntExclusiveMinimum'] = 9)] =
+        'BigIntExclusiveMinimum'
+      ValueErrorType[(ValueErrorType['BigIntMaximum'] = 10)] = 'BigIntMaximum'
+      ValueErrorType[(ValueErrorType['BigIntMinimum'] = 11)] = 'BigIntMinimum'
+      ValueErrorType[(ValueErrorType['BigIntMultipleOf'] = 12)] =
+        'BigIntMultipleOf'
+      ValueErrorType[(ValueErrorType['BigInt'] = 13)] = 'BigInt'
+      ValueErrorType[(ValueErrorType['Boolean'] = 14)] = 'Boolean'
+      ValueErrorType[(ValueErrorType['DateExclusiveMaximumTimestamp'] = 15)] =
+        'DateExclusiveMaximumTimestamp'
+      ValueErrorType[(ValueErrorType['DateExclusiveMinimumTimestamp'] = 16)] =
+        'DateExclusiveMinimumTimestamp'
+      ValueErrorType[(ValueErrorType['DateMaximumTimestamp'] = 17)] =
+        'DateMaximumTimestamp'
+      ValueErrorType[(ValueErrorType['DateMinimumTimestamp'] = 18)] =
+        'DateMinimumTimestamp'
+      ValueErrorType[(ValueErrorType['DateMultipleOfTimestamp'] = 19)] =
+        'DateMultipleOfTimestamp'
+      ValueErrorType[(ValueErrorType['Date'] = 20)] = 'Date'
+      ValueErrorType[(ValueErrorType['Function'] = 21)] = 'Function'
+      ValueErrorType[(ValueErrorType['IntegerExclusiveMaximum'] = 22)] =
+        'IntegerExclusiveMaximum'
+      ValueErrorType[(ValueErrorType['IntegerExclusiveMinimum'] = 23)] =
+        'IntegerExclusiveMinimum'
+      ValueErrorType[(ValueErrorType['IntegerMaximum'] = 24)] = 'IntegerMaximum'
+      ValueErrorType[(ValueErrorType['IntegerMinimum'] = 25)] = 'IntegerMinimum'
+      ValueErrorType[(ValueErrorType['IntegerMultipleOf'] = 26)] =
+        'IntegerMultipleOf'
+      ValueErrorType[(ValueErrorType['Integer'] = 27)] = 'Integer'
+      ValueErrorType[(ValueErrorType['IntersectUnevaluatedProperties'] = 28)] =
+        'IntersectUnevaluatedProperties'
+      ValueErrorType[(ValueErrorType['Intersect'] = 29)] = 'Intersect'
+      ValueErrorType[(ValueErrorType['Iterator'] = 30)] = 'Iterator'
+      ValueErrorType[(ValueErrorType['Kind'] = 31)] = 'Kind'
+      ValueErrorType[(ValueErrorType['Literal'] = 32)] = 'Literal'
+      ValueErrorType[(ValueErrorType['Never'] = 33)] = 'Never'
+      ValueErrorType[(ValueErrorType['Not'] = 34)] = 'Not'
+      ValueErrorType[(ValueErrorType['Null'] = 35)] = 'Null'
+      ValueErrorType[(ValueErrorType['NumberExclusiveMaximum'] = 36)] =
+        'NumberExclusiveMaximum'
+      ValueErrorType[(ValueErrorType['NumberExclusiveMinimum'] = 37)] =
+        'NumberExclusiveMinimum'
+      ValueErrorType[(ValueErrorType['NumberMaximum'] = 38)] = 'NumberMaximum'
+      ValueErrorType[(ValueErrorType['NumberMinimum'] = 39)] = 'NumberMinimum'
+      ValueErrorType[(ValueErrorType['NumberMultipleOf'] = 40)] =
+        'NumberMultipleOf'
+      ValueErrorType[(ValueErrorType['Number'] = 41)] = 'Number'
+      ValueErrorType[(ValueErrorType['ObjectAdditionalProperties'] = 42)] =
+        'ObjectAdditionalProperties'
+      ValueErrorType[(ValueErrorType['ObjectMaxProperties'] = 43)] =
+        'ObjectMaxProperties'
+      ValueErrorType[(ValueErrorType['ObjectMinProperties'] = 44)] =
+        'ObjectMinProperties'
+      ValueErrorType[(ValueErrorType['ObjectRequiredProperty'] = 45)] =
+        'ObjectRequiredProperty'
+      ValueErrorType[(ValueErrorType['Object'] = 46)] = 'Object'
+      ValueErrorType[(ValueErrorType['Promise'] = 47)] = 'Promise'
+      ValueErrorType[(ValueErrorType['RegExp'] = 48)] = 'RegExp'
+      ValueErrorType[(ValueErrorType['StringFormatUnknown'] = 49)] =
+        'StringFormatUnknown'
+      ValueErrorType[(ValueErrorType['StringFormat'] = 50)] = 'StringFormat'
+      ValueErrorType[(ValueErrorType['StringMaxLength'] = 51)] =
+        'StringMaxLength'
+      ValueErrorType[(ValueErrorType['StringMinLength'] = 52)] =
+        'StringMinLength'
+      ValueErrorType[(ValueErrorType['StringPattern'] = 53)] = 'StringPattern'
+      ValueErrorType[(ValueErrorType['String'] = 54)] = 'String'
+      ValueErrorType[(ValueErrorType['Symbol'] = 55)] = 'Symbol'
+      ValueErrorType[(ValueErrorType['TupleLength'] = 56)] = 'TupleLength'
+      ValueErrorType[(ValueErrorType['Tuple'] = 57)] = 'Tuple'
+      ValueErrorType[(ValueErrorType['Uint8ArrayMaxByteLength'] = 58)] =
+        'Uint8ArrayMaxByteLength'
+      ValueErrorType[(ValueErrorType['Uint8ArrayMinByteLength'] = 59)] =
+        'Uint8ArrayMinByteLength'
+      ValueErrorType[(ValueErrorType['Uint8Array'] = 60)] = 'Uint8Array'
+      ValueErrorType[(ValueErrorType['Undefined'] = 61)] = 'Undefined'
+      ValueErrorType[(ValueErrorType['Union'] = 62)] = 'Union'
+      ValueErrorType[(ValueErrorType['Void'] = 63)] = 'Void'
+    })(ValueErrorType || (exports$172.ValueErrorType = ValueErrorType = {}))
+    var ValueErrorsUnknownTypeError = class extends index_4.TypeBoxError {
+      constructor(schema) {
+        super('Unknown type')
+        this.schema = schema
+      }
+    }
+    exports$172.ValueErrorsUnknownTypeError = ValueErrorsUnknownTypeError
+    function EscapeKey(key) {
+      return key.replace(/~/g, '~0').replace(/\//g, '~1')
+    }
+    function IsDefined(value) {
+      return value !== void 0
+    }
+    var ValueErrorIterator = class {
+      constructor(iterator) {
+        this.iterator = iterator
+      }
+      [Symbol.iterator]() {
+        return this.iterator
+      }
+      /**
+       * Returns the first value error or undefined if no errors.
+       */
+      First() {
+        const next = this.iterator.next()
+        return next.done ? void 0 : next.value
+      }
+    }
+    exports$172.ValueErrorIterator = ValueErrorIterator
+    function Create(errorType, schema, path, value, errors = []) {
+      return {
+        type: errorType,
+        schema,
+        path,
+        value,
+        message: (0, function_1.GetErrorFunction)()({
+          errorType,
+          path,
+          schema,
+          value,
+          errors,
+        }),
+        errors,
+      }
+    }
+    function* FromAny(schema, references, path, value) {}
+    function* FromArgument(schema, references, path, value) {}
+    function* FromArray(schema, references, path, value) {
+      if (!(0, index_10.IsArray)(value))
+        return yield Create(ValueErrorType.Array, schema, path, value)
+      if (IsDefined(schema.minItems) && !(value.length >= schema.minItems))
+        yield Create(ValueErrorType.ArrayMinItems, schema, path, value)
+      if (IsDefined(schema.maxItems) && !(value.length <= schema.maxItems))
+        yield Create(ValueErrorType.ArrayMaxItems, schema, path, value)
+      for (let i = 0; i < value.length; i++)
+        yield* Visit(schema.items, references, `${path}/${i}`, value[i])
+      if (
+        schema.uniqueItems === true &&
+        !(function () {
+          const set = /* @__PURE__ */ new Set()
+          for (const element of value) {
+            const hashed = (0, index_6.Hash)(element)
+            if (set.has(hashed)) return false
+            else set.add(hashed)
+          }
+          return true
+        })()
+      )
+        yield Create(ValueErrorType.ArrayUniqueItems, schema, path, value)
+      if (
+        !(
+          IsDefined(schema.contains) ||
+          IsDefined(schema.minContains) ||
+          IsDefined(schema.maxContains)
+        )
+      )
+        return
+      const containsSchema = IsDefined(schema.contains)
+        ? schema.contains
+        : (0, index_9.Never)()
+      const containsCount = value.reduce(
+        (acc, value, index) =>
+          Visit(containsSchema, references, `${path}${index}`, value).next()
+            .done === true
+            ? acc + 1
+            : acc,
+        0,
+      )
+      if (containsCount === 0)
+        yield Create(ValueErrorType.ArrayContains, schema, path, value)
+      if (
+        (0, index_10.IsNumber)(schema.minContains) &&
+        containsCount < schema.minContains
+      )
+        yield Create(ValueErrorType.ArrayMinContains, schema, path, value)
+      if (
+        (0, index_10.IsNumber)(schema.maxContains) &&
+        containsCount > schema.maxContains
+      )
+        yield Create(ValueErrorType.ArrayMaxContains, schema, path, value)
+    }
+    function* FromAsyncIterator(schema, references, path, value) {
+      if (!(0, index_10.IsAsyncIterator)(value))
+        yield Create(ValueErrorType.AsyncIterator, schema, path, value)
+    }
+    function* FromBigInt(schema, references, path, value) {
+      if (!(0, index_10.IsBigInt)(value))
+        return yield Create(ValueErrorType.BigInt, schema, path, value)
+      if (
+        IsDefined(schema.exclusiveMaximum) &&
+        !(value < schema.exclusiveMaximum)
+      )
+        yield Create(ValueErrorType.BigIntExclusiveMaximum, schema, path, value)
+      if (
+        IsDefined(schema.exclusiveMinimum) &&
+        !(value > schema.exclusiveMinimum)
+      )
+        yield Create(ValueErrorType.BigIntExclusiveMinimum, schema, path, value)
+      if (IsDefined(schema.maximum) && !(value <= schema.maximum))
+        yield Create(ValueErrorType.BigIntMaximum, schema, path, value)
+      if (IsDefined(schema.minimum) && !(value >= schema.minimum))
+        yield Create(ValueErrorType.BigIntMinimum, schema, path, value)
+      if (
+        IsDefined(schema.multipleOf) &&
+        !(value % schema.multipleOf === BigInt(0))
+      )
+        yield Create(ValueErrorType.BigIntMultipleOf, schema, path, value)
+    }
+    function* FromBoolean(schema, references, path, value) {
+      if (!(0, index_10.IsBoolean)(value))
+        yield Create(ValueErrorType.Boolean, schema, path, value)
+    }
+    function* FromConstructor(schema, references, path, value) {
+      yield* Visit(schema.returns, references, path, value.prototype)
+    }
+    function* FromDate(schema, references, path, value) {
+      if (!(0, index_10.IsDate)(value))
+        return yield Create(ValueErrorType.Date, schema, path, value)
+      if (
+        IsDefined(schema.exclusiveMaximumTimestamp) &&
+        !(value.getTime() < schema.exclusiveMaximumTimestamp)
+      )
+        yield Create(
+          ValueErrorType.DateExclusiveMaximumTimestamp,
+          schema,
+          path,
+          value,
+        )
+      if (
+        IsDefined(schema.exclusiveMinimumTimestamp) &&
+        !(value.getTime() > schema.exclusiveMinimumTimestamp)
+      )
+        yield Create(
+          ValueErrorType.DateExclusiveMinimumTimestamp,
+          schema,
+          path,
+          value,
+        )
+      if (
+        IsDefined(schema.maximumTimestamp) &&
+        !(value.getTime() <= schema.maximumTimestamp)
+      )
+        yield Create(ValueErrorType.DateMaximumTimestamp, schema, path, value)
+      if (
+        IsDefined(schema.minimumTimestamp) &&
+        !(value.getTime() >= schema.minimumTimestamp)
+      )
+        yield Create(ValueErrorType.DateMinimumTimestamp, schema, path, value)
+      if (
+        IsDefined(schema.multipleOfTimestamp) &&
+        !(value.getTime() % schema.multipleOfTimestamp === 0)
+      )
+        yield Create(
+          ValueErrorType.DateMultipleOfTimestamp,
+          schema,
+          path,
+          value,
+        )
+    }
+    function* FromFunction(schema, references, path, value) {
+      if (!(0, index_10.IsFunction)(value))
+        yield Create(ValueErrorType.Function, schema, path, value)
+    }
+    function* FromImport(schema, references, path, value) {
+      const definitions = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      yield* Visit(target, [...references, ...definitions], path, value)
+    }
+    function* FromInteger(schema, references, path, value) {
+      if (!(0, index_10.IsInteger)(value))
+        return yield Create(ValueErrorType.Integer, schema, path, value)
+      if (
+        IsDefined(schema.exclusiveMaximum) &&
+        !(value < schema.exclusiveMaximum)
+      )
+        yield Create(
+          ValueErrorType.IntegerExclusiveMaximum,
+          schema,
+          path,
+          value,
+        )
+      if (
+        IsDefined(schema.exclusiveMinimum) &&
+        !(value > schema.exclusiveMinimum)
+      )
+        yield Create(
+          ValueErrorType.IntegerExclusiveMinimum,
+          schema,
+          path,
+          value,
+        )
+      if (IsDefined(schema.maximum) && !(value <= schema.maximum))
+        yield Create(ValueErrorType.IntegerMaximum, schema, path, value)
+      if (IsDefined(schema.minimum) && !(value >= schema.minimum))
+        yield Create(ValueErrorType.IntegerMinimum, schema, path, value)
+      if (IsDefined(schema.multipleOf) && !(value % schema.multipleOf === 0))
+        yield Create(ValueErrorType.IntegerMultipleOf, schema, path, value)
+    }
+    function* FromIntersect(schema, references, path, value) {
+      let hasError = false
+      for (const inner of schema.allOf)
+        for (const error of Visit(inner, references, path, value)) {
+          hasError = true
+          yield error
+        }
+      if (hasError)
+        return yield Create(ValueErrorType.Intersect, schema, path, value)
+      if (schema.unevaluatedProperties === false) {
+        const keyCheck = new RegExp((0, index_2.KeyOfPattern)(schema))
+        for (const valueKey of Object.getOwnPropertyNames(value))
+          if (!keyCheck.test(valueKey))
+            yield Create(
+              ValueErrorType.IntersectUnevaluatedProperties,
+              schema,
+              `${path}/${valueKey}`,
+              value,
+            )
+      }
+      if (typeof schema.unevaluatedProperties === 'object') {
+        const keyCheck = new RegExp((0, index_2.KeyOfPattern)(schema))
+        for (const valueKey of Object.getOwnPropertyNames(value))
+          if (!keyCheck.test(valueKey)) {
+            const next = Visit(
+              schema.unevaluatedProperties,
+              references,
+              `${path}/${valueKey}`,
+              value[valueKey],
+            ).next()
+            if (!next.done) yield next.value
+          }
+      }
+    }
+    function* FromIterator(schema, references, path, value) {
+      if (!(0, index_10.IsIterator)(value))
+        yield Create(ValueErrorType.Iterator, schema, path, value)
+    }
+    function* FromLiteral(schema, references, path, value) {
+      if (!(value === schema.const))
+        yield Create(ValueErrorType.Literal, schema, path, value)
+    }
+    function* FromNever(schema, references, path, value) {
+      yield Create(ValueErrorType.Never, schema, path, value)
+    }
+    function* FromNot(schema, references, path, value) {
+      if (Visit(schema.not, references, path, value).next().done === true)
+        yield Create(ValueErrorType.Not, schema, path, value)
+    }
+    function* FromNull(schema, references, path, value) {
+      if (!(0, index_10.IsNull)(value))
+        yield Create(ValueErrorType.Null, schema, path, value)
+    }
+    function* FromNumber(schema, references, path, value) {
+      if (!index_1.TypeSystemPolicy.IsNumberLike(value))
+        return yield Create(ValueErrorType.Number, schema, path, value)
+      if (
+        IsDefined(schema.exclusiveMaximum) &&
+        !(value < schema.exclusiveMaximum)
+      )
+        yield Create(ValueErrorType.NumberExclusiveMaximum, schema, path, value)
+      if (
+        IsDefined(schema.exclusiveMinimum) &&
+        !(value > schema.exclusiveMinimum)
+      )
+        yield Create(ValueErrorType.NumberExclusiveMinimum, schema, path, value)
+      if (IsDefined(schema.maximum) && !(value <= schema.maximum))
+        yield Create(ValueErrorType.NumberMaximum, schema, path, value)
+      if (IsDefined(schema.minimum) && !(value >= schema.minimum))
+        yield Create(ValueErrorType.NumberMinimum, schema, path, value)
+      if (IsDefined(schema.multipleOf) && !(value % schema.multipleOf === 0))
+        yield Create(ValueErrorType.NumberMultipleOf, schema, path, value)
+    }
+    function* FromObject(schema, references, path, value) {
+      if (!index_1.TypeSystemPolicy.IsObjectLike(value))
+        return yield Create(ValueErrorType.Object, schema, path, value)
+      if (
+        IsDefined(schema.minProperties) &&
+        !(Object.getOwnPropertyNames(value).length >= schema.minProperties)
+      )
+        yield Create(ValueErrorType.ObjectMinProperties, schema, path, value)
+      if (
+        IsDefined(schema.maxProperties) &&
+        !(Object.getOwnPropertyNames(value).length <= schema.maxProperties)
+      )
+        yield Create(ValueErrorType.ObjectMaxProperties, schema, path, value)
+      const requiredKeys = Array.isArray(schema.required) ? schema.required : []
+      const knownKeys = Object.getOwnPropertyNames(schema.properties)
+      const unknownKeys = Object.getOwnPropertyNames(value)
+      for (const requiredKey of requiredKeys) {
+        if (unknownKeys.includes(requiredKey)) continue
+        yield Create(
+          ValueErrorType.ObjectRequiredProperty,
+          schema.properties[requiredKey],
+          `${path}/${EscapeKey(requiredKey)}`,
+          void 0,
+        )
+      }
+      if (schema.additionalProperties === false) {
+        for (const valueKey of unknownKeys)
+          if (!knownKeys.includes(valueKey))
+            yield Create(
+              ValueErrorType.ObjectAdditionalProperties,
+              schema,
+              `${path}/${EscapeKey(valueKey)}`,
+              value[valueKey],
+            )
+      }
+      if (typeof schema.additionalProperties === 'object')
+        for (const valueKey of unknownKeys) {
+          if (knownKeys.includes(valueKey)) continue
+          yield* Visit(
+            schema.additionalProperties,
+            references,
+            `${path}/${EscapeKey(valueKey)}`,
+            value[valueKey],
+          )
+        }
+      for (const knownKey of knownKeys) {
+        const property = schema.properties[knownKey]
+        if (schema.required && schema.required.includes(knownKey)) {
+          yield* Visit(
+            property,
+            references,
+            `${path}/${EscapeKey(knownKey)}`,
+            value[knownKey],
+          )
+          if (
+            (0, extends_undefined_1.ExtendsUndefinedCheck)(schema) &&
+            !(knownKey in value)
+          )
+            yield Create(
+              ValueErrorType.ObjectRequiredProperty,
+              property,
+              `${path}/${EscapeKey(knownKey)}`,
+              void 0,
+            )
+        } else if (
+          index_1.TypeSystemPolicy.IsExactOptionalProperty(value, knownKey)
+        )
+          yield* Visit(
+            property,
+            references,
+            `${path}/${EscapeKey(knownKey)}`,
+            value[knownKey],
+          )
+      }
+    }
+    function* FromPromise(schema, references, path, value) {
+      if (!(0, index_10.IsPromise)(value))
+        yield Create(ValueErrorType.Promise, schema, path, value)
+    }
+    function* FromRecord(schema, references, path, value) {
+      if (!index_1.TypeSystemPolicy.IsRecordLike(value))
+        return yield Create(ValueErrorType.Object, schema, path, value)
+      if (
+        IsDefined(schema.minProperties) &&
+        !(Object.getOwnPropertyNames(value).length >= schema.minProperties)
+      )
+        yield Create(ValueErrorType.ObjectMinProperties, schema, path, value)
+      if (
+        IsDefined(schema.maxProperties) &&
+        !(Object.getOwnPropertyNames(value).length <= schema.maxProperties)
+      )
+        yield Create(ValueErrorType.ObjectMaxProperties, schema, path, value)
+      const [patternKey, patternSchema] = Object.entries(
+        schema.patternProperties,
+      )[0]
+      const regex = new RegExp(patternKey)
+      for (const [propertyKey, propertyValue] of Object.entries(value))
+        if (regex.test(propertyKey))
+          yield* Visit(
+            patternSchema,
+            references,
+            `${path}/${EscapeKey(propertyKey)}`,
+            propertyValue,
+          )
+      if (typeof schema.additionalProperties === 'object') {
+        for (const [propertyKey, propertyValue] of Object.entries(value))
+          if (!regex.test(propertyKey))
+            yield* Visit(
+              schema.additionalProperties,
+              references,
+              `${path}/${EscapeKey(propertyKey)}`,
+              propertyValue,
+            )
+      }
+      if (schema.additionalProperties === false)
+        for (const [propertyKey, propertyValue] of Object.entries(value)) {
+          if (regex.test(propertyKey)) continue
+          return yield Create(
+            ValueErrorType.ObjectAdditionalProperties,
+            schema,
+            `${path}/${EscapeKey(propertyKey)}`,
+            propertyValue,
+          )
+        }
+    }
+    function* FromRef(schema, references, path, value) {
+      yield* Visit(
+        (0, index_5.Deref)(schema, references),
+        references,
+        path,
+        value,
+      )
+    }
+    function* FromRegExp(schema, references, path, value) {
+      if (!(0, index_10.IsString)(value))
+        return yield Create(ValueErrorType.String, schema, path, value)
+      if (IsDefined(schema.minLength) && !(value.length >= schema.minLength))
+        yield Create(ValueErrorType.StringMinLength, schema, path, value)
+      if (IsDefined(schema.maxLength) && !(value.length <= schema.maxLength))
+        yield Create(ValueErrorType.StringMaxLength, schema, path, value)
+      if (!new RegExp(schema.source, schema.flags).test(value))
+        return yield Create(ValueErrorType.RegExp, schema, path, value)
+    }
+    function* FromString(schema, references, path, value) {
+      if (!(0, index_10.IsString)(value))
+        return yield Create(ValueErrorType.String, schema, path, value)
+      if (IsDefined(schema.minLength) && !(value.length >= schema.minLength))
+        yield Create(ValueErrorType.StringMinLength, schema, path, value)
+      if (IsDefined(schema.maxLength) && !(value.length <= schema.maxLength))
+        yield Create(ValueErrorType.StringMaxLength, schema, path, value)
+      if ((0, index_10.IsString)(schema.pattern)) {
+        if (!new RegExp(schema.pattern).test(value))
+          yield Create(ValueErrorType.StringPattern, schema, path, value)
+      }
+      if ((0, index_10.IsString)(schema.format)) {
+        if (!index_3.FormatRegistry.Has(schema.format))
+          yield Create(ValueErrorType.StringFormatUnknown, schema, path, value)
+        else if (!index_3.FormatRegistry.Get(schema.format)(value))
+          yield Create(ValueErrorType.StringFormat, schema, path, value)
+      }
+    }
+    function* FromSymbol(schema, references, path, value) {
+      if (!(0, index_10.IsSymbol)(value))
+        yield Create(ValueErrorType.Symbol, schema, path, value)
+    }
+    function* FromTemplateLiteral(schema, references, path, value) {
+      if (!(0, index_10.IsString)(value))
+        return yield Create(ValueErrorType.String, schema, path, value)
+      if (!new RegExp(schema.pattern).test(value))
+        yield Create(ValueErrorType.StringPattern, schema, path, value)
+    }
+    function* FromThis(schema, references, path, value) {
+      yield* Visit(
+        (0, index_5.Deref)(schema, references),
+        references,
+        path,
+        value,
+      )
+    }
+    function* FromTuple(schema, references, path, value) {
+      if (!(0, index_10.IsArray)(value))
+        return yield Create(ValueErrorType.Tuple, schema, path, value)
+      if (schema.items === void 0 && !(value.length === 0))
+        return yield Create(ValueErrorType.TupleLength, schema, path, value)
+      if (!(value.length === schema.maxItems))
+        return yield Create(ValueErrorType.TupleLength, schema, path, value)
+      if (!schema.items) return
+      for (let i = 0; i < schema.items.length; i++)
+        yield* Visit(schema.items[i], references, `${path}/${i}`, value[i])
+    }
+    function* FromUndefined(schema, references, path, value) {
+      if (!(0, index_10.IsUndefined)(value))
+        yield Create(ValueErrorType.Undefined, schema, path, value)
+    }
+    function* FromUnion(schema, references, path, value) {
+      if ((0, index_7.Check)(schema, references, value)) return
+      const errors = schema.anyOf.map(
+        variant =>
+          new ValueErrorIterator(Visit(variant, references, path, value)),
+      )
+      yield Create(ValueErrorType.Union, schema, path, value, errors)
+    }
+    function* FromUint8Array(schema, references, path, value) {
+      if (!(0, index_10.IsUint8Array)(value))
+        return yield Create(ValueErrorType.Uint8Array, schema, path, value)
+      if (
+        IsDefined(schema.maxByteLength) &&
+        !(value.length <= schema.maxByteLength)
+      )
+        yield Create(
+          ValueErrorType.Uint8ArrayMaxByteLength,
+          schema,
+          path,
+          value,
+        )
+      if (
+        IsDefined(schema.minByteLength) &&
+        !(value.length >= schema.minByteLength)
+      )
+        yield Create(
+          ValueErrorType.Uint8ArrayMinByteLength,
+          schema,
+          path,
+          value,
+        )
+    }
+    function* FromUnknown(schema, references, path, value) {}
+    function* FromVoid(schema, references, path, value) {
+      if (!index_1.TypeSystemPolicy.IsVoidLike(value))
+        yield Create(ValueErrorType.Void, schema, path, value)
+    }
+    function* FromKind(schema, references, path, value) {
+      if (!index_3.TypeRegistry.Get(schema[index_8.Kind])(schema, value))
+        yield Create(ValueErrorType.Kind, schema, path, value)
+    }
+    function* Visit(schema, references, path, value) {
+      const references_ = IsDefined(schema.$id)
+        ? [...references, schema]
+        : references
+      const schema_ = schema
+      switch (schema_[index_8.Kind]) {
+        case 'Any':
+          return yield* FromAny(schema_, references_, path, value)
+        case 'Argument':
+          return yield* FromArgument(schema_, references_, path, value)
+        case 'Array':
+          return yield* FromArray(schema_, references_, path, value)
+        case 'AsyncIterator':
+          return yield* FromAsyncIterator(schema_, references_, path, value)
+        case 'BigInt':
+          return yield* FromBigInt(schema_, references_, path, value)
+        case 'Boolean':
+          return yield* FromBoolean(schema_, references_, path, value)
+        case 'Constructor':
+          return yield* FromConstructor(schema_, references_, path, value)
+        case 'Date':
+          return yield* FromDate(schema_, references_, path, value)
+        case 'Function':
+          return yield* FromFunction(schema_, references_, path, value)
+        case 'Import':
+          return yield* FromImport(schema_, references_, path, value)
+        case 'Integer':
+          return yield* FromInteger(schema_, references_, path, value)
+        case 'Intersect':
+          return yield* FromIntersect(schema_, references_, path, value)
+        case 'Iterator':
+          return yield* FromIterator(schema_, references_, path, value)
+        case 'Literal':
+          return yield* FromLiteral(schema_, references_, path, value)
+        case 'Never':
+          return yield* FromNever(schema_, references_, path, value)
+        case 'Not':
+          return yield* FromNot(schema_, references_, path, value)
+        case 'Null':
+          return yield* FromNull(schema_, references_, path, value)
+        case 'Number':
+          return yield* FromNumber(schema_, references_, path, value)
+        case 'Object':
+          return yield* FromObject(schema_, references_, path, value)
+        case 'Promise':
+          return yield* FromPromise(schema_, references_, path, value)
+        case 'Record':
+          return yield* FromRecord(schema_, references_, path, value)
+        case 'Ref':
+          return yield* FromRef(schema_, references_, path, value)
+        case 'RegExp':
+          return yield* FromRegExp(schema_, references_, path, value)
+        case 'String':
+          return yield* FromString(schema_, references_, path, value)
+        case 'Symbol':
+          return yield* FromSymbol(schema_, references_, path, value)
+        case 'TemplateLiteral':
+          return yield* FromTemplateLiteral(schema_, references_, path, value)
+        case 'This':
+          return yield* FromThis(schema_, references_, path, value)
+        case 'Tuple':
+          return yield* FromTuple(schema_, references_, path, value)
+        case 'Undefined':
+          return yield* FromUndefined(schema_, references_, path, value)
+        case 'Union':
+          return yield* FromUnion(schema_, references_, path, value)
+        case 'Uint8Array':
+          return yield* FromUint8Array(schema_, references_, path, value)
+        case 'Unknown':
+          return yield* FromUnknown(schema_, references_, path, value)
+        case 'Void':
+          return yield* FromVoid(schema_, references_, path, value)
+        default:
+          if (!index_3.TypeRegistry.Has(schema_[index_8.Kind]))
+            throw new ValueErrorsUnknownTypeError(schema)
+          return yield* FromKind(schema_, references_, path, value)
+      }
+    }
+    /**
+     * Returns an iterator for each error in this value.
+     */
+    function Errors(...args) {
+      return new ValueErrorIterator(
+        args.length === 3
+          ? Visit(args[0], args[1], '', args[2])
+          : Visit(args[0], [], '', args[1]),
+      )
+    }
+  })
+  var require_errors$1 = /* @__PURE__ */ __commonJSMin(exports$173 => {
+    var __createBinding =
+      (exports$173 && exports$173.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$173 && exports$173.__exportStar) ||
+      function (m, exports$16) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$16, p)
+          )
+            __createBinding(exports$16, m, p)
+      }
+    Object.defineProperty(exports$173, '__esModule', { value: true })
+    __exportStar(require_errors$1(), exports$173)
+    __exportStar(require_function(), exports$173)
+  })
+  var require_assert$1 = /* @__PURE__ */ __commonJSMin(exports$174 => {
+    var __classPrivateFieldSet =
+      (exports$174 && exports$174.__classPrivateFieldSet) ||
+      function (receiver, state, value, kind, f) {
+        if (kind === 'm') throw new TypeError('Private method is not writable')
+        if (kind === 'a' && !f)
+          throw new TypeError('Private accessor was defined without a setter')
+        if (
+          typeof state === 'function'
+            ? receiver !== state || !f
+            : !state.has(receiver)
+        )
+          throw new TypeError(
+            'Cannot write private member to an object whose class did not declare it',
+          )
+        return (
+          kind === 'a'
+            ? f.call(receiver, value)
+            : f
+              ? (f.value = value)
+              : state.set(receiver, value),
+          value
+        )
+      }
+    var __classPrivateFieldGet =
+      (exports$174 && exports$174.__classPrivateFieldGet) ||
+      function (receiver, state, kind, f) {
+        if (kind === 'a' && !f)
+          throw new TypeError('Private accessor was defined without a getter')
+        if (
+          typeof state === 'function'
+            ? receiver !== state || !f
+            : !state.has(receiver)
+        )
+          throw new TypeError(
+            'Cannot read private member from an object whose class did not declare it',
+          )
+        return kind === 'm'
+          ? f
+          : kind === 'a'
+            ? f.call(receiver)
+            : f
+              ? f.value
+              : state.get(receiver)
+      }
+    var _AssertError_instances
+    var _AssertError_iterator
+    var _AssertError_Iterator
+    Object.defineProperty(exports$174, '__esModule', { value: true })
+    exports$174.AssertError = void 0
+    exports$174.Assert = Assert
+    const index_1 = require_errors$1()
+    const error_1 = require_error$1()
+    const check_1 = require_check$1()
+    var AssertError = class extends error_1.TypeBoxError {
+      constructor(iterator) {
+        const error = iterator.First()
+        super(error === void 0 ? 'Invalid Value' : error.message)
+        _AssertError_instances.add(this)
+        _AssertError_iterator.set(this, void 0)
+        __classPrivateFieldSet(this, _AssertError_iterator, iterator, 'f')
+        this.error = error
+      }
+      /**
+       * Returns an iterator for each error in this value.
+       */
+      Errors() {
+        return new index_1.ValueErrorIterator(
+          __classPrivateFieldGet(
+            this,
+            _AssertError_instances,
+            'm',
+            _AssertError_Iterator,
+          ).call(this),
+        )
+      }
+    }
+    exports$174.AssertError = AssertError
+    ;((_AssertError_iterator = /* @__PURE__ */ new WeakMap()),
+      (_AssertError_instances = /* @__PURE__ */ new WeakSet()),
+      (_AssertError_Iterator = function* _AssertError_Iterator() {
+        if (this.error) yield this.error
+        yield* __classPrivateFieldGet(this, _AssertError_iterator, 'f')
+      }))
+    function AssertValue(schema, references, value) {
+      if ((0, check_1.Check)(schema, references, value)) return
+      throw new AssertError((0, index_1.Errors)(schema, references, value))
+    }
+    /**
+     * Asserts a value matches the given type or throws an `AssertError` if
+     * invalid.
+     */
+    function Assert(...args) {
+      return args.length === 3
+        ? AssertValue(args[0], args[1], args[2])
+        : AssertValue(args[0], [], args[1])
+    }
+  })
+  var require_assert = /* @__PURE__ */ __commonJSMin(exports$175 => {
+    var __createBinding =
+      (exports$175 && exports$175.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$175 && exports$175.__exportStar) ||
+      function (m, exports$15) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$15, p)
+          )
+            __createBinding(exports$15, m, p)
+      }
+    Object.defineProperty(exports$175, '__esModule', { value: true })
+    __exportStar(require_assert$1(), exports$175)
+  })
+  var require_clone$1 = /* @__PURE__ */ __commonJSMin(exports$176 => {
+    Object.defineProperty(exports$176, '__esModule', { value: true })
+    exports$176.Clone = Clone
+    const index_1 = require_guard$1()
+    function FromObject(value) {
+      const Acc = {}
+      for (const key of Object.getOwnPropertyNames(value))
+        Acc[key] = Clone(value[key])
+      for (const key of Object.getOwnPropertySymbols(value))
+        Acc[key] = Clone(value[key])
+      return Acc
+    }
+    function FromArray(value) {
+      return value.map(element => Clone(element))
+    }
+    function FromTypedArray(value) {
+      return value.slice()
+    }
+    function FromMap(value) {
+      return new Map(Clone([...value.entries()]))
+    }
+    function FromSet(value) {
+      return new Set(Clone([...value.entries()]))
+    }
+    function FromDate(value) {
+      return new Date(value.toISOString())
+    }
+    function FromValue(value) {
+      return value
+    }
+    /**
+     * Returns a clone of the given value.
+     */
+    function Clone(value) {
+      if ((0, index_1.IsArray)(value)) return FromArray(value)
+      if ((0, index_1.IsDate)(value)) return FromDate(value)
+      if ((0, index_1.IsTypedArray)(value)) return FromTypedArray(value)
+      if ((0, index_1.IsMap)(value)) return FromMap(value)
+      if ((0, index_1.IsSet)(value)) return FromSet(value)
+      if ((0, index_1.IsObject)(value)) return FromObject(value)
+      if ((0, index_1.IsValueType)(value)) return FromValue(value)
+      throw new Error('ValueClone: Unable to clone value')
+    }
+  })
+  var require_clone = /* @__PURE__ */ __commonJSMin(exports$177 => {
+    var __createBinding =
+      (exports$177 && exports$177.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$177 && exports$177.__exportStar) ||
+      function (m, exports$14) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$14, p)
+          )
+            __createBinding(exports$14, m, p)
+      }
+    Object.defineProperty(exports$177, '__esModule', { value: true })
+    __exportStar(require_clone$1(), exports$177)
+  })
+  var require_create$1 = /* @__PURE__ */ __commonJSMin(exports$178 => {
+    Object.defineProperty(exports$178, '__esModule', { value: true })
+    exports$178.ValueCreateError = void 0
+    exports$178.Create = Create
+    const index_1 = require_guard$1()
+    const index_2 = require_check()
+    const index_3 = require_clone()
+    const index_4 = require_deref()
+    const index_5 = require_template_literal()
+    const index_6 = require_registry()
+    const index_7 = require_symbols()
+    const index_8 = require_error()
+    const guard_1 = require_guard$2()
+    var ValueCreateError = class extends index_8.TypeBoxError {
+      constructor(schema, message) {
+        super(message)
+        this.schema = schema
+      }
+    }
+    exports$178.ValueCreateError = ValueCreateError
+    function FromDefault(value) {
+      return (0, guard_1.IsFunction)(value)
+        ? value()
+        : (0, index_3.Clone)(value)
+    }
+    function FromAny(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return {}
+    }
+    function FromArgument(schema, references) {
+      return {}
+    }
+    function FromArray(schema, references) {
+      if (
+        schema.uniqueItems === true &&
+        !(0, index_1.HasPropertyKey)(schema, 'default')
+      )
+        throw new ValueCreateError(
+          schema,
+          'Array with the uniqueItems constraint requires a default value',
+        )
+      else if (
+        'contains' in schema &&
+        !(0, index_1.HasPropertyKey)(schema, 'default')
+      )
+        throw new ValueCreateError(
+          schema,
+          'Array with the contains constraint requires a default value',
+        )
+      else if ('default' in schema) return FromDefault(schema.default)
+      else if (schema.minItems !== void 0)
+        return Array.from({ length: schema.minItems }).map(item => {
+          return Visit(schema.items, references)
+        })
+      else return []
+    }
+    function FromAsyncIterator(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return (async function* () {})()
+    }
+    function FromBigInt(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return BigInt(0)
+    }
+    function FromBoolean(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return false
+    }
+    function FromConstructor(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else {
+        const value = Visit(schema.returns, references)
+        if (typeof value === 'object' && !Array.isArray(value))
+          return class {
+            constructor() {
+              for (const [key, val] of Object.entries(value)) {
+                const self = this
+                self[key] = val
+              }
+            }
+          }
+        else return class {}
+      }
+    }
+    function FromDate(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else if (schema.minimumTimestamp !== void 0)
+        return new Date(schema.minimumTimestamp)
+      else return /* @__PURE__ */ new Date()
+    }
+    function FromFunction(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return () => Visit(schema.returns, references)
+    }
+    function FromImport(schema, references) {
+      const definitions = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      return Visit(target, [...references, ...definitions])
+    }
+    function FromInteger(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else if (schema.minimum !== void 0) return schema.minimum
+      else return 0
+    }
+    function FromIntersect(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else {
+        const value = schema.allOf.reduce((acc, schema) => {
+          const next = Visit(schema, references)
+          return typeof next === 'object'
+            ? {
+                ...acc,
+                ...next,
+              }
+            : next
+        }, {})
+        if (!(0, index_2.Check)(schema, references, value))
+          throw new ValueCreateError(
+            schema,
+            'Intersect produced invalid value. Consider using a default value.',
+          )
+        return value
+      }
+    }
+    function FromIterator(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return (function* () {})()
+    }
+    function FromLiteral(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return schema.const
+    }
+    function FromNever(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else
+        throw new ValueCreateError(
+          schema,
+          'Never types cannot be created. Consider using a default value.',
+        )
+    }
+    function FromNot(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else
+        throw new ValueCreateError(
+          schema,
+          'Not types must have a default value',
+        )
+    }
+    function FromNull(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return null
+    }
+    function FromNumber(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else if (schema.minimum !== void 0) return schema.minimum
+      else return 0
+    }
+    function FromObject(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else {
+        const required = new Set(schema.required)
+        const Acc = {}
+        for (const [key, subschema] of Object.entries(schema.properties)) {
+          if (!required.has(key)) continue
+          Acc[key] = Visit(subschema, references)
+        }
+        return Acc
+      }
+    }
+    function FromPromise(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return Promise.resolve(Visit(schema.item, references))
+    }
+    function FromRecord(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return {}
+    }
+    function FromRef(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return Visit((0, index_4.Deref)(schema, references), references)
+    }
+    function FromRegExp(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else
+        throw new ValueCreateError(
+          schema,
+          'RegExp types cannot be created. Consider using a default value.',
+        )
+    }
+    function FromString(schema, references) {
+      if (schema.pattern !== void 0) {
+        if (!(0, index_1.HasPropertyKey)(schema, 'default'))
+          throw new ValueCreateError(
+            schema,
+            'String types with patterns must specify a default value',
+          )
+        else return FromDefault(schema.default)
+      } else if (schema.format !== void 0) {
+        if (!(0, index_1.HasPropertyKey)(schema, 'default'))
+          throw new ValueCreateError(
+            schema,
+            'String types with formats must specify a default value',
+          )
+        else return FromDefault(schema.default)
+      } else if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else if (schema.minLength !== void 0)
+        return Array.from({ length: schema.minLength })
+          .map(() => ' ')
+          .join('')
+      else return ''
+    }
+    function FromSymbol(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else if ('value' in schema) return Symbol.for(schema.value)
+      else return Symbol()
+    }
+    function FromTemplateLiteral(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      if (!(0, index_5.IsTemplateLiteralFinite)(schema))
+        throw new ValueCreateError(
+          schema,
+          'Can only create template literals that produce a finite variants. Consider using a default value.',
+        )
+      return (0, index_5.TemplateLiteralGenerate)(schema)[0]
+    }
+    function FromThis(schema, references) {
+      if (recursiveDepth++ > recursiveMaxDepth)
+        throw new ValueCreateError(
+          schema,
+          'Cannot create recursive type as it appears possibly infinite. Consider using a default.',
+        )
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return Visit((0, index_4.Deref)(schema, references), references)
+    }
+    function FromTuple(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      if (schema.items === void 0) return []
+      else
+        return Array.from({ length: schema.minItems }).map((_, index) =>
+          Visit(schema.items[index], references),
+        )
+    }
+    function FromUndefined(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return
+    }
+    function FromUnion(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else if (schema.anyOf.length === 0)
+        throw new Error(
+          'ValueCreate.Union: Cannot create Union with zero variants',
+        )
+      else return Visit(schema.anyOf[0], references)
+    }
+    function FromUint8Array(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else if (schema.minByteLength !== void 0)
+        return new Uint8Array(schema.minByteLength)
+      else return /* @__PURE__ */ new Uint8Array(0)
+    }
+    function FromUnknown(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return {}
+    }
+    function FromVoid(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else return
+    }
+    function FromKind(schema, references) {
+      if ((0, index_1.HasPropertyKey)(schema, 'default'))
+        return FromDefault(schema.default)
+      else throw new Error('User defined types must specify a default value')
+    }
+    function Visit(schema, references) {
+      const references_ = (0, index_4.Pushref)(schema, references)
+      const schema_ = schema
+      switch (schema_[index_7.Kind]) {
+        case 'Any':
+          return FromAny(schema_, references_)
+        case 'Argument':
+          return FromArgument(schema_, references_)
+        case 'Array':
+          return FromArray(schema_, references_)
+        case 'AsyncIterator':
+          return FromAsyncIterator(schema_, references_)
+        case 'BigInt':
+          return FromBigInt(schema_, references_)
+        case 'Boolean':
+          return FromBoolean(schema_, references_)
+        case 'Constructor':
+          return FromConstructor(schema_, references_)
+        case 'Date':
+          return FromDate(schema_, references_)
+        case 'Function':
+          return FromFunction(schema_, references_)
+        case 'Import':
+          return FromImport(schema_, references_)
+        case 'Integer':
+          return FromInteger(schema_, references_)
+        case 'Intersect':
+          return FromIntersect(schema_, references_)
+        case 'Iterator':
+          return FromIterator(schema_, references_)
+        case 'Literal':
+          return FromLiteral(schema_, references_)
+        case 'Never':
+          return FromNever(schema_, references_)
+        case 'Not':
+          return FromNot(schema_, references_)
+        case 'Null':
+          return FromNull(schema_, references_)
+        case 'Number':
+          return FromNumber(schema_, references_)
+        case 'Object':
+          return FromObject(schema_, references_)
+        case 'Promise':
+          return FromPromise(schema_, references_)
+        case 'Record':
+          return FromRecord(schema_, references_)
+        case 'Ref':
+          return FromRef(schema_, references_)
+        case 'RegExp':
+          return FromRegExp(schema_, references_)
+        case 'String':
+          return FromString(schema_, references_)
+        case 'Symbol':
+          return FromSymbol(schema_, references_)
+        case 'TemplateLiteral':
+          return FromTemplateLiteral(schema_, references_)
+        case 'This':
+          return FromThis(schema_, references_)
+        case 'Tuple':
+          return FromTuple(schema_, references_)
+        case 'Undefined':
+          return FromUndefined(schema_, references_)
+        case 'Union':
+          return FromUnion(schema_, references_)
+        case 'Uint8Array':
+          return FromUint8Array(schema_, references_)
+        case 'Unknown':
+          return FromUnknown(schema_, references_)
+        case 'Void':
+          return FromVoid(schema_, references_)
+        default:
+          if (!index_6.TypeRegistry.Has(schema_[index_7.Kind]))
+            throw new ValueCreateError(schema_, 'Unknown type')
+          return FromKind(schema_, references_)
+      }
+    }
+    const recursiveMaxDepth = 512
+    let recursiveDepth = 0
+    /**
+     * Creates a value from the given schema.
+     */
+    function Create(...args) {
+      recursiveDepth = 0
+      return args.length === 2 ? Visit(args[0], args[1]) : Visit(args[0], [])
+    }
+  })
+  var require_create = /* @__PURE__ */ __commonJSMin(exports$179 => {
+    var __createBinding =
+      (exports$179 && exports$179.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$179 && exports$179.__exportStar) ||
+      function (m, exports$13) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$13, p)
+          )
+            __createBinding(exports$13, m, p)
+      }
+    Object.defineProperty(exports$179, '__esModule', { value: true })
+    __exportStar(require_create$1(), exports$179)
+  })
+  var require_cast$1 = /* @__PURE__ */ __commonJSMin(exports$180 => {
+    Object.defineProperty(exports$180, '__esModule', { value: true })
+    exports$180.ValueCastError = void 0
+    exports$180.Cast = Cast
+    const index_1 = require_guard$1()
+    const index_2 = require_error()
+    const index_3 = require_symbols()
+    const index_4 = require_create()
+    const index_5 = require_check()
+    const index_6 = require_clone()
+    const index_7 = require_deref()
+    var ValueCastError = class extends index_2.TypeBoxError {
+      constructor(schema, message) {
+        super(message)
+        this.schema = schema
+      }
+    }
+    exports$180.ValueCastError = ValueCastError
+    function ScoreUnion(schema, references, value) {
+      if (
+        schema[index_3.Kind] === 'Object' &&
+        typeof value === 'object' &&
+        !(0, index_1.IsNull)(value)
+      ) {
+        const object = schema
+        const keys = Object.getOwnPropertyNames(value)
+        return Object.entries(object.properties).reduce(
+          (acc, [key, schema]) => {
+            const literal =
+              schema[index_3.Kind] === 'Literal' && schema.const === value[key]
+                ? 100
+                : 0
+            const checks = (0, index_5.Check)(schema, references, value[key])
+              ? 10
+              : 0
+            const exists = keys.includes(key) ? 1 : 0
+            return acc + (literal + checks + exists)
+          },
+          0,
+        )
+      } else if (schema[index_3.Kind] === 'Union') {
+        const scores = schema.anyOf
+          .map(schema => (0, index_7.Deref)(schema, references))
+          .map(schema => ScoreUnion(schema, references, value))
+        return Math.max(...scores)
+      } else return (0, index_5.Check)(schema, references, value) ? 1 : 0
+    }
+    function SelectUnion(union, references, value) {
+      const schemas = union.anyOf.map(schema =>
+        (0, index_7.Deref)(schema, references),
+      )
+      let [select, best] = [schemas[0], 0]
+      for (const schema of schemas) {
+        const score = ScoreUnion(schema, references, value)
+        if (score > best) {
+          select = schema
+          best = score
+        }
+      }
+      return select
+    }
+    function CastUnion(union, references, value) {
+      if ('default' in union)
+        return typeof value === 'function'
+          ? union.default
+          : (0, index_6.Clone)(union.default)
+      else return Cast(SelectUnion(union, references, value), references, value)
+    }
+    function DefaultClone(schema, references, value) {
+      return (0, index_5.Check)(schema, references, value)
+        ? (0, index_6.Clone)(value)
+        : (0, index_4.Create)(schema, references)
+    }
+    function Default(schema, references, value) {
+      return (0, index_5.Check)(schema, references, value)
+        ? value
+        : (0, index_4.Create)(schema, references)
+    }
+    function FromArray(schema, references, value) {
+      if ((0, index_5.Check)(schema, references, value))
+        return (0, index_6.Clone)(value)
+      const created = (0, index_1.IsArray)(value)
+        ? (0, index_6.Clone)(value)
+        : (0, index_4.Create)(schema, references)
+      const minimum =
+        (0, index_1.IsNumber)(schema.minItems) &&
+        created.length < schema.minItems
+          ? [
+              ...created,
+              ...Array.from(
+                { length: schema.minItems - created.length },
+                () => null,
+              ),
+            ]
+          : created
+      const casted = (
+        (0, index_1.IsNumber)(schema.maxItems) &&
+        minimum.length > schema.maxItems
+          ? minimum.slice(0, schema.maxItems)
+          : minimum
+      ).map(value => Visit(schema.items, references, value))
+      if (schema.uniqueItems !== true) return casted
+      const unique = [...new Set(casted)]
+      if (!(0, index_5.Check)(schema, references, unique))
+        throw new ValueCastError(
+          schema,
+          'Array cast produced invalid data due to uniqueItems constraint',
+        )
+      return unique
+    }
+    function FromConstructor(schema, references, value) {
+      if ((0, index_5.Check)(schema, references, value))
+        return (0, index_4.Create)(schema, references)
+      const required = new Set(schema.returns.required || [])
+      const result = function () {}
+      for (const [key, property] of Object.entries(schema.returns.properties)) {
+        if (!required.has(key) && value.prototype[key] === void 0) continue
+        result.prototype[key] = Visit(
+          property,
+          references,
+          value.prototype[key],
+        )
+      }
+      return result
+    }
+    function FromImport(schema, references, value) {
+      const definitions = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      return Visit(target, [...references, ...definitions], value)
+    }
+    function IntersectAssign(correct, value) {
+      if (
+        ((0, index_1.IsObject)(correct) && !(0, index_1.IsObject)(value)) ||
+        (!(0, index_1.IsObject)(correct) && (0, index_1.IsObject)(value))
+      )
+        return correct
+      if (!(0, index_1.IsObject)(correct) || !(0, index_1.IsObject)(value))
+        return value
+      return globalThis.Object.getOwnPropertyNames(correct).reduce(
+        (result, key) => {
+          const property =
+            key in value
+              ? IntersectAssign(correct[key], value[key])
+              : correct[key]
+          return {
+            ...result,
+            [key]: property,
+          }
+        },
+        {},
+      )
+    }
+    function FromIntersect(schema, references, value) {
+      if ((0, index_5.Check)(schema, references, value)) return value
+      const correct = (0, index_4.Create)(schema, references)
+      const assigned = IntersectAssign(correct, value)
+      return (0, index_5.Check)(schema, references, assigned)
+        ? assigned
+        : correct
+    }
+    function FromNever(schema, references, value) {
+      throw new ValueCastError(schema, 'Never types cannot be cast')
+    }
+    function FromObject(schema, references, value) {
+      if ((0, index_5.Check)(schema, references, value)) return value
+      if (value === null || typeof value !== 'object')
+        return (0, index_4.Create)(schema, references)
+      const required = new Set(schema.required || [])
+      const result = {}
+      for (const [key, property] of Object.entries(schema.properties)) {
+        if (!required.has(key) && value[key] === void 0) continue
+        result[key] = Visit(property, references, value[key])
+      }
+      if (typeof schema.additionalProperties === 'object') {
+        const propertyNames = Object.getOwnPropertyNames(schema.properties)
+        for (const propertyName of Object.getOwnPropertyNames(value)) {
+          if (propertyNames.includes(propertyName)) continue
+          result[propertyName] = Visit(
+            schema.additionalProperties,
+            references,
+            value[propertyName],
+          )
+        }
+      }
+      return result
+    }
+    function FromRecord(schema, references, value) {
+      if ((0, index_5.Check)(schema, references, value))
+        return (0, index_6.Clone)(value)
+      if (
+        value === null ||
+        typeof value !== 'object' ||
+        Array.isArray(value) ||
+        value instanceof Date
+      )
+        return (0, index_4.Create)(schema, references)
+      const subschemaPropertyName = Object.getOwnPropertyNames(
+        schema.patternProperties,
+      )[0]
+      const subschema = schema.patternProperties[subschemaPropertyName]
+      const result = {}
+      for (const [propKey, propValue] of Object.entries(value))
+        result[propKey] = Visit(subschema, references, propValue)
+      return result
+    }
+    function FromRef(schema, references, value) {
+      return Visit((0, index_7.Deref)(schema, references), references, value)
+    }
+    function FromThis(schema, references, value) {
+      return Visit((0, index_7.Deref)(schema, references), references, value)
+    }
+    function FromTuple(schema, references, value) {
+      if ((0, index_5.Check)(schema, references, value))
+        return (0, index_6.Clone)(value)
+      if (!(0, index_1.IsArray)(value))
+        return (0, index_4.Create)(schema, references)
+      if (schema.items === void 0) return []
+      return schema.items.map((schema, index) =>
+        Visit(schema, references, value[index]),
+      )
+    }
+    function FromUnion(schema, references, value) {
+      return (0, index_5.Check)(schema, references, value)
+        ? (0, index_6.Clone)(value)
+        : CastUnion(schema, references, value)
+    }
+    function Visit(schema, references, value) {
+      const references_ = (0, index_1.IsString)(schema.$id)
+        ? (0, index_7.Pushref)(schema, references)
+        : references
+      const schema_ = schema
+      switch (schema[index_3.Kind]) {
+        case 'Array':
+          return FromArray(schema_, references_, value)
+        case 'Constructor':
+          return FromConstructor(schema_, references_, value)
+        case 'Import':
+          return FromImport(schema_, references_, value)
+        case 'Intersect':
+          return FromIntersect(schema_, references_, value)
+        case 'Never':
+          return FromNever(schema_, references_, value)
+        case 'Object':
+          return FromObject(schema_, references_, value)
+        case 'Record':
+          return FromRecord(schema_, references_, value)
+        case 'Ref':
+          return FromRef(schema_, references_, value)
+        case 'This':
+          return FromThis(schema_, references_, value)
+        case 'Tuple':
+          return FromTuple(schema_, references_, value)
+        case 'Union':
+          return FromUnion(schema_, references_, value)
+        case 'Date':
+        case 'Symbol':
+        case 'Uint8Array':
+          return DefaultClone(schema, references, value)
+        default:
+          return Default(schema_, references_, value)
+      }
+    }
+    /**
+     * Casts a value into a given type. The return value will retain as much
+     * information of the original value as possible.
+     */
+    function Cast(...args) {
+      return args.length === 3
+        ? Visit(args[0], args[1], args[2])
+        : Visit(args[0], [], args[1])
+    }
+  })
+  var require_cast = /* @__PURE__ */ __commonJSMin(exports$181 => {
+    var __createBinding =
+      (exports$181 && exports$181.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$181 && exports$181.__exportStar) ||
+      function (m, exports$12) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$12, p)
+          )
+            __createBinding(exports$12, m, p)
+      }
+    Object.defineProperty(exports$181, '__esModule', { value: true })
+    __exportStar(require_cast$1(), exports$181)
+  })
+  var require_clean$1 = /* @__PURE__ */ __commonJSMin(exports$182 => {
+    Object.defineProperty(exports$182, '__esModule', { value: true })
+    exports$182.Clean = Clean
+    const index_1 = require_keyof()
+    const index_2 = require_check()
+    const index_3 = require_clone()
+    const index_4 = require_deref()
+    const index_5 = require_symbols()
+    const index_6 = require_guard$1()
+    const kind_1 = require_kind()
+    function IsCheckable(schema) {
+      return (0, kind_1.IsKind)(schema) && schema[index_5.Kind] !== 'Unsafe'
+    }
+    function FromArray(schema, references, value) {
+      if (!(0, index_6.IsArray)(value)) return value
+      return value.map(value => Visit(schema.items, references, value))
+    }
+    function FromImport(schema, references, value) {
+      const definitions = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      return Visit(target, [...references, ...definitions], value)
+    }
+    function FromIntersect(schema, references, value) {
+      const unevaluatedProperties = schema.unevaluatedProperties
+      const composite = schema.allOf
+        .map(schema => Visit(schema, references, (0, index_3.Clone)(value)))
+        .reduce(
+          (acc, value) =>
+            (0, index_6.IsObject)(value)
+              ? {
+                  ...acc,
+                  ...value,
+                }
+              : value,
+          {},
+        )
+      if (
+        !(0, index_6.IsObject)(value) ||
+        !(0, index_6.IsObject)(composite) ||
+        !(0, kind_1.IsKind)(unevaluatedProperties)
+      )
+        return composite
+      const knownkeys = (0, index_1.KeyOfPropertyKeys)(schema)
+      for (const key of Object.getOwnPropertyNames(value)) {
+        if (knownkeys.includes(key)) continue
+        if ((0, index_2.Check)(unevaluatedProperties, references, value[key]))
+          composite[key] = Visit(unevaluatedProperties, references, value[key])
+      }
+      return composite
+    }
+    function FromObject(schema, references, value) {
+      if (!(0, index_6.IsObject)(value) || (0, index_6.IsArray)(value))
+        return value
+      const additionalProperties = schema.additionalProperties
+      for (const key of Object.getOwnPropertyNames(value)) {
+        if ((0, index_6.HasPropertyKey)(schema.properties, key)) {
+          value[key] = Visit(schema.properties[key], references, value[key])
+          continue
+        }
+        if (
+          (0, kind_1.IsKind)(additionalProperties) &&
+          (0, index_2.Check)(additionalProperties, references, value[key])
+        ) {
+          value[key] = Visit(additionalProperties, references, value[key])
+          continue
+        }
+        delete value[key]
+      }
+      return value
+    }
+    function FromRecord(schema, references, value) {
+      if (!(0, index_6.IsObject)(value)) return value
+      const additionalProperties = schema.additionalProperties
+      const propertyKeys = Object.getOwnPropertyNames(value)
+      const [propertyKey, propertySchema] = Object.entries(
+        schema.patternProperties,
+      )[0]
+      const propertyKeyTest = new RegExp(propertyKey)
+      for (const key of propertyKeys) {
+        if (propertyKeyTest.test(key)) {
+          value[key] = Visit(propertySchema, references, value[key])
+          continue
+        }
+        if (
+          (0, kind_1.IsKind)(additionalProperties) &&
+          (0, index_2.Check)(additionalProperties, references, value[key])
+        ) {
+          value[key] = Visit(additionalProperties, references, value[key])
+          continue
+        }
+        delete value[key]
+      }
+      return value
+    }
+    function FromRef(schema, references, value) {
+      return Visit((0, index_4.Deref)(schema, references), references, value)
+    }
+    function FromThis(schema, references, value) {
+      return Visit((0, index_4.Deref)(schema, references), references, value)
+    }
+    function FromTuple(schema, references, value) {
+      if (!(0, index_6.IsArray)(value)) return value
+      if ((0, index_6.IsUndefined)(schema.items)) return []
+      const length = Math.min(value.length, schema.items.length)
+      for (let i = 0; i < length; i++)
+        value[i] = Visit(schema.items[i], references, value[i])
+      return value.length > length ? value.slice(0, length) : value
+    }
+    function FromUnion(schema, references, value) {
+      for (const inner of schema.anyOf)
+        if (IsCheckable(inner) && (0, index_2.Check)(inner, references, value))
+          return Visit(inner, references, value)
+      return value
+    }
+    function Visit(schema, references, value) {
+      const references_ = (0, index_6.IsString)(schema.$id)
+        ? (0, index_4.Pushref)(schema, references)
+        : references
+      const schema_ = schema
+      switch (schema_[index_5.Kind]) {
+        case 'Array':
+          return FromArray(schema_, references_, value)
+        case 'Import':
+          return FromImport(schema_, references_, value)
+        case 'Intersect':
+          return FromIntersect(schema_, references_, value)
+        case 'Object':
+          return FromObject(schema_, references_, value)
+        case 'Record':
+          return FromRecord(schema_, references_, value)
+        case 'Ref':
+          return FromRef(schema_, references_, value)
+        case 'This':
+          return FromThis(schema_, references_, value)
+        case 'Tuple':
+          return FromTuple(schema_, references_, value)
+        case 'Union':
+          return FromUnion(schema_, references_, value)
+        default:
+          return value
+      }
+    }
+    /**
+     * `[Mutable]` Removes excess properties from a value and returns the
+     * result. This function does not check the value and returns an unknown
+     * type. You should Check the result before use. Clean is a mutable
+     * operation. To avoid mutation, Clone the value first.
+     */
+    function Clean(...args) {
+      return args.length === 3
+        ? Visit(args[0], args[1], args[2])
+        : Visit(args[0], [], args[1])
+    }
+  })
+  var require_clean = /* @__PURE__ */ __commonJSMin(exports$183 => {
+    var __createBinding =
+      (exports$183 && exports$183.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$183 && exports$183.__exportStar) ||
+      function (m, exports$11) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$11, p)
+          )
+            __createBinding(exports$11, m, p)
+      }
+    Object.defineProperty(exports$183, '__esModule', { value: true })
+    __exportStar(require_clean$1(), exports$183)
+  })
+  var require_convert$1 = /* @__PURE__ */ __commonJSMin(exports$184 => {
+    Object.defineProperty(exports$184, '__esModule', { value: true })
+    exports$184.Convert = Convert
+    const index_1 = require_clone()
+    const index_2 = require_check()
+    const index_3 = require_deref()
+    const index_4 = require_symbols()
+    const index_5 = require_guard$1()
+    function IsStringNumeric(value) {
+      return (
+        (0, index_5.IsString)(value) &&
+        !isNaN(value) &&
+        !isNaN(parseFloat(value))
+      )
+    }
+    function IsValueToString(value) {
+      return (
+        (0, index_5.IsBigInt)(value) ||
+        (0, index_5.IsBoolean)(value) ||
+        (0, index_5.IsNumber)(value)
+      )
+    }
+    function IsValueTrue(value) {
+      return (
+        value === true ||
+        ((0, index_5.IsNumber)(value) && value === 1) ||
+        ((0, index_5.IsBigInt)(value) && value === BigInt('1')) ||
+        ((0, index_5.IsString)(value) &&
+          (value.toLowerCase() === 'true' || value === '1'))
+      )
+    }
+    function IsValueFalse(value) {
+      return (
+        value === false ||
+        ((0, index_5.IsNumber)(value) &&
+          (value === 0 || Object.is(value, -0))) ||
+        ((0, index_5.IsBigInt)(value) && value === BigInt('0')) ||
+        ((0, index_5.IsString)(value) &&
+          (value.toLowerCase() === 'false' || value === '0' || value === '-0'))
+      )
+    }
+    function IsTimeStringWithTimeZone(value) {
+      return (
+        (0, index_5.IsString)(value) &&
+        /^(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)$/i.test(
+          value,
+        )
+      )
+    }
+    function IsTimeStringWithoutTimeZone(value) {
+      return (
+        (0, index_5.IsString)(value) &&
+        /^(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)?$/i.test(value)
+      )
+    }
+    function IsDateTimeStringWithTimeZone(value) {
+      return (
+        (0, index_5.IsString)(value) &&
+        /^\d\d\d\d-[0-1]\d-[0-3]\dt(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)$/i.test(
+          value,
+        )
+      )
+    }
+    function IsDateTimeStringWithoutTimeZone(value) {
+      return (
+        (0, index_5.IsString)(value) &&
+        /^\d\d\d\d-[0-1]\d-[0-3]\dt(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)?$/i.test(
+          value,
+        )
+      )
+    }
+    function IsDateString(value) {
+      return (
+        (0, index_5.IsString)(value) &&
+        /^\d\d\d\d-[0-1]\d-[0-3]\d$/i.test(value)
+      )
+    }
+    function TryConvertLiteralString(value, target) {
+      const conversion = TryConvertString(value)
+      return conversion === target ? conversion : value
+    }
+    function TryConvertLiteralNumber(value, target) {
+      const conversion = TryConvertNumber(value)
+      return conversion === target ? conversion : value
+    }
+    function TryConvertLiteralBoolean(value, target) {
+      const conversion = TryConvertBoolean(value)
+      return conversion === target ? conversion : value
+    }
+    function TryConvertLiteral(schema, value) {
+      return (0, index_5.IsString)(schema.const)
+        ? TryConvertLiteralString(value, schema.const)
+        : (0, index_5.IsNumber)(schema.const)
+          ? TryConvertLiteralNumber(value, schema.const)
+          : (0, index_5.IsBoolean)(schema.const)
+            ? TryConvertLiteralBoolean(value, schema.const)
+            : value
+    }
+    function TryConvertBoolean(value) {
+      return IsValueTrue(value) ? true : IsValueFalse(value) ? false : value
+    }
+    function TryConvertBigInt(value) {
+      const truncateInteger = value => value.split('.')[0]
+      return IsStringNumeric(value)
+        ? BigInt(truncateInteger(value))
+        : (0, index_5.IsNumber)(value)
+          ? BigInt(Math.trunc(value))
+          : IsValueFalse(value)
+            ? BigInt(0)
+            : IsValueTrue(value)
+              ? BigInt(1)
+              : value
+    }
+    function TryConvertString(value) {
+      return (0, index_5.IsSymbol)(value) && value.description !== void 0
+        ? value.description.toString()
+        : IsValueToString(value)
+          ? value.toString()
+          : value
+    }
+    function TryConvertNumber(value) {
+      return IsStringNumeric(value)
+        ? parseFloat(value)
+        : IsValueTrue(value)
+          ? 1
+          : IsValueFalse(value)
+            ? 0
+            : value
+    }
+    function TryConvertInteger(value) {
+      return IsStringNumeric(value)
+        ? parseInt(value)
+        : (0, index_5.IsNumber)(value)
+          ? Math.trunc(value)
+          : IsValueTrue(value)
+            ? 1
+            : IsValueFalse(value)
+              ? 0
+              : value
+    }
+    function TryConvertNull(value) {
+      return (0, index_5.IsString)(value) && value.toLowerCase() === 'null'
+        ? null
+        : value
+    }
+    function TryConvertUndefined(value) {
+      return (0, index_5.IsString)(value) && value === 'undefined'
+        ? void 0
+        : value
+    }
+    function TryConvertDate(value) {
+      return (0, index_5.IsDate)(value)
+        ? value
+        : (0, index_5.IsNumber)(value)
+          ? new Date(value)
+          : IsValueTrue(value)
+            ? /* @__PURE__ */ new Date(1)
+            : IsValueFalse(value)
+              ? /* @__PURE__ */ new Date(0)
+              : IsStringNumeric(value)
+                ? new Date(parseInt(value))
+                : IsTimeStringWithoutTimeZone(value)
+                  ? /* @__PURE__ */ new Date(`1970-01-01T${value}.000Z`)
+                  : IsTimeStringWithTimeZone(value)
+                    ? /* @__PURE__ */ new Date(`1970-01-01T${value}`)
+                    : IsDateTimeStringWithoutTimeZone(value)
+                      ? /* @__PURE__ */ new Date(`${value}.000Z`)
+                      : IsDateTimeStringWithTimeZone(value)
+                        ? new Date(value)
+                        : IsDateString(value)
+                          ? /* @__PURE__ */ new Date(`${value}T00:00:00.000Z`)
+                          : value
+    }
+    function Default(value) {
+      return value
+    }
+    function FromArray(schema, references, value) {
+      return ((0, index_5.IsArray)(value) ? value : [value]).map(element =>
+        Visit(schema.items, references, element),
+      )
+    }
+    function FromBigInt(schema, references, value) {
+      return TryConvertBigInt(value)
+    }
+    function FromBoolean(schema, references, value) {
+      return TryConvertBoolean(value)
+    }
+    function FromDate(schema, references, value) {
+      return TryConvertDate(value)
+    }
+    function FromImport(schema, references, value) {
+      const definitions = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      return Visit(target, [...references, ...definitions], value)
+    }
+    function FromInteger(schema, references, value) {
+      return TryConvertInteger(value)
+    }
+    function FromIntersect(schema, references, value) {
+      return schema.allOf.reduce(
+        (value, schema) => Visit(schema, references, value),
+        value,
+      )
+    }
+    function FromLiteral(schema, references, value) {
+      return TryConvertLiteral(schema, value)
+    }
+    function FromNull(schema, references, value) {
+      return TryConvertNull(value)
+    }
+    function FromNumber(schema, references, value) {
+      return TryConvertNumber(value)
+    }
+    function FromObject(schema, references, value) {
+      if (!(0, index_5.IsObject)(value) || (0, index_5.IsArray)(value))
+        return value
+      for (const propertyKey of Object.getOwnPropertyNames(schema.properties)) {
+        if (!(0, index_5.HasPropertyKey)(value, propertyKey)) continue
+        value[propertyKey] = Visit(
+          schema.properties[propertyKey],
+          references,
+          value[propertyKey],
+        )
+      }
+      return value
+    }
+    function FromRecord(schema, references, value) {
+      if (!((0, index_5.IsObject)(value) && !(0, index_5.IsArray)(value)))
+        return value
+      const propertyKey = Object.getOwnPropertyNames(
+        schema.patternProperties,
+      )[0]
+      const property = schema.patternProperties[propertyKey]
+      for (const [propKey, propValue] of Object.entries(value))
+        value[propKey] = Visit(property, references, propValue)
+      return value
+    }
+    function FromRef(schema, references, value) {
+      return Visit((0, index_3.Deref)(schema, references), references, value)
+    }
+    function FromString(schema, references, value) {
+      return TryConvertString(value)
+    }
+    function FromSymbol(schema, references, value) {
+      return (0, index_5.IsString)(value) || (0, index_5.IsNumber)(value)
+        ? Symbol(value)
+        : value
+    }
+    function FromThis(schema, references, value) {
+      return Visit((0, index_3.Deref)(schema, references), references, value)
+    }
+    function FromTuple(schema, references, value) {
+      if (
+        !(
+          (0, index_5.IsArray)(value) && !(0, index_5.IsUndefined)(schema.items)
+        )
+      )
+        return value
+      return value.map((value, index) => {
+        return index < schema.items.length
+          ? Visit(schema.items[index], references, value)
+          : value
+      })
+    }
+    function FromUndefined(schema, references, value) {
+      return TryConvertUndefined(value)
+    }
+    function FromUnion(schema, references, value) {
+      for (const subschema of schema.anyOf)
+        if ((0, index_2.Check)(subschema, references, value)) return value
+      for (const subschema of schema.anyOf) {
+        const converted = Visit(
+          subschema,
+          references,
+          (0, index_1.Clone)(value),
+        )
+        if (!(0, index_2.Check)(subschema, references, converted)) continue
+        return converted
+      }
+      return value
+    }
+    function Visit(schema, references, value) {
+      const references_ = (0, index_3.Pushref)(schema, references)
+      const schema_ = schema
+      switch (schema[index_4.Kind]) {
+        case 'Array':
+          return FromArray(schema_, references_, value)
+        case 'BigInt':
+          return FromBigInt(schema_, references_, value)
+        case 'Boolean':
+          return FromBoolean(schema_, references_, value)
+        case 'Date':
+          return FromDate(schema_, references_, value)
+        case 'Import':
+          return FromImport(schema_, references_, value)
+        case 'Integer':
+          return FromInteger(schema_, references_, value)
+        case 'Intersect':
+          return FromIntersect(schema_, references_, value)
+        case 'Literal':
+          return FromLiteral(schema_, references_, value)
+        case 'Null':
+          return FromNull(schema_, references_, value)
+        case 'Number':
+          return FromNumber(schema_, references_, value)
+        case 'Object':
+          return FromObject(schema_, references_, value)
+        case 'Record':
+          return FromRecord(schema_, references_, value)
+        case 'Ref':
+          return FromRef(schema_, references_, value)
+        case 'String':
+          return FromString(schema_, references_, value)
+        case 'Symbol':
+          return FromSymbol(schema_, references_, value)
+        case 'This':
+          return FromThis(schema_, references_, value)
+        case 'Tuple':
+          return FromTuple(schema_, references_, value)
+        case 'Undefined':
+          return FromUndefined(schema_, references_, value)
+        case 'Union':
+          return FromUnion(schema_, references_, value)
+        default:
+          return Default(value)
+      }
+    }
+    /**
+     * `[Mutable]` Converts any type mismatched values to their target type if a
+     * reasonable conversion is possible.
+     */
+    function Convert(...args) {
+      return args.length === 3
+        ? Visit(args[0], args[1], args[2])
+        : Visit(args[0], [], args[1])
+    }
+  })
+  var require_convert = /* @__PURE__ */ __commonJSMin(exports$185 => {
+    var __createBinding =
+      (exports$185 && exports$185.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$185 && exports$185.__exportStar) ||
+      function (m, exports$10) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$10, p)
+          )
+            __createBinding(exports$10, m, p)
+      }
+    Object.defineProperty(exports$185, '__esModule', { value: true })
+    __exportStar(require_convert$1(), exports$185)
+  })
+  var require_decode$2 = /* @__PURE__ */ __commonJSMin(exports$186 => {
+    Object.defineProperty(exports$186, '__esModule', { value: true })
+    exports$186.TransformDecodeError = exports$186.TransformDecodeCheckError =
+      void 0
+    exports$186.TransformDecode = TransformDecode
+    const policy_1 = require_policy$1()
+    const index_1 = require_symbols()
+    const index_2 = require_error()
+    const index_3 = require_keyof()
+    const index_4 = require_deref()
+    const index_5 = require_check()
+    const index_6 = require_guard$1()
+    const kind_1 = require_kind()
+    var TransformDecodeCheckError = class extends index_2.TypeBoxError {
+      constructor(schema, value, error) {
+        super(`Unable to decode value as it does not match the expected schema`)
+        this.schema = schema
+        this.value = value
+        this.error = error
+      }
+    }
+    exports$186.TransformDecodeCheckError = TransformDecodeCheckError
+    var TransformDecodeError = class extends index_2.TypeBoxError {
+      constructor(schema, path, value, error) {
+        super(error instanceof Error ? error.message : 'Unknown error')
+        this.schema = schema
+        this.path = path
+        this.value = value
+        this.error = error
+      }
+    }
+    exports$186.TransformDecodeError = TransformDecodeError
+    function Default(schema, path, value) {
+      try {
+        return (0, kind_1.IsTransform)(schema)
+          ? schema[index_1.TransformKind].Decode(value)
+          : value
+      } catch (error) {
+        throw new TransformDecodeError(schema, path, value, error)
+      }
+    }
+    function FromArray(schema, references, path, value) {
+      return (0, index_6.IsArray)(value)
+        ? Default(
+            schema,
+            path,
+            value.map((value, index) =>
+              Visit(schema.items, references, `${path}/${index}`, value),
+            ),
+          )
+        : Default(schema, path, value)
+    }
+    function FromIntersect(schema, references, path, value) {
+      if (!(0, index_6.IsObject)(value) || (0, index_6.IsValueType)(value))
+        return Default(schema, path, value)
+      const knownEntries = (0, index_3.KeyOfPropertyEntries)(schema)
+      const knownKeys = knownEntries.map(entry => entry[0])
+      const knownProperties = { ...value }
+      for (const [knownKey, knownSchema] of knownEntries)
+        if (knownKey in knownProperties)
+          knownProperties[knownKey] = Visit(
+            knownSchema,
+            references,
+            `${path}/${knownKey}`,
+            knownProperties[knownKey],
+          )
+      if (!(0, kind_1.IsTransform)(schema.unevaluatedProperties))
+        return Default(schema, path, knownProperties)
+      const unknownKeys = Object.getOwnPropertyNames(knownProperties)
+      const unevaluatedProperties = schema.unevaluatedProperties
+      const unknownProperties = { ...knownProperties }
+      for (const key of unknownKeys)
+        if (!knownKeys.includes(key))
+          unknownProperties[key] = Default(
+            unevaluatedProperties,
+            `${path}/${key}`,
+            unknownProperties[key],
+          )
+      return Default(schema, path, unknownProperties)
+    }
+    function FromImport(schema, references, path, value) {
+      const additional = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      return Default(
+        schema,
+        path,
+        Visit(target, [...references, ...additional], path, value),
+      )
+    }
+    function FromNot(schema, references, path, value) {
+      return Default(schema, path, Visit(schema.not, references, path, value))
+    }
+    function FromObject(schema, references, path, value) {
+      if (!(0, index_6.IsObject)(value)) return Default(schema, path, value)
+      const knownKeys = (0, index_3.KeyOfPropertyKeys)(schema)
+      const knownProperties = { ...value }
+      for (const key of knownKeys) {
+        if (!(0, index_6.HasPropertyKey)(knownProperties, key)) continue
+        if (
+          (0, index_6.IsUndefined)(knownProperties[key]) &&
+          (!(0, kind_1.IsUndefined)(schema.properties[key]) ||
+            policy_1.TypeSystemPolicy.IsExactOptionalProperty(
+              knownProperties,
+              key,
+            ))
+        )
+          continue
+        knownProperties[key] = Visit(
+          schema.properties[key],
+          references,
+          `${path}/${key}`,
+          knownProperties[key],
+        )
+      }
+      if (!(0, kind_1.IsSchema)(schema.additionalProperties))
+        return Default(schema, path, knownProperties)
+      const unknownKeys = Object.getOwnPropertyNames(knownProperties)
+      const additionalProperties = schema.additionalProperties
+      const unknownProperties = { ...knownProperties }
+      for (const key of unknownKeys)
+        if (!knownKeys.includes(key))
+          unknownProperties[key] = Default(
+            additionalProperties,
+            `${path}/${key}`,
+            unknownProperties[key],
+          )
+      return Default(schema, path, unknownProperties)
+    }
+    function FromRecord(schema, references, path, value) {
+      if (!(0, index_6.IsObject)(value)) return Default(schema, path, value)
+      const pattern = Object.getOwnPropertyNames(schema.patternProperties)[0]
+      const knownKeys = new RegExp(pattern)
+      const knownProperties = { ...value }
+      for (const key of Object.getOwnPropertyNames(value))
+        if (knownKeys.test(key))
+          knownProperties[key] = Visit(
+            schema.patternProperties[pattern],
+            references,
+            `${path}/${key}`,
+            knownProperties[key],
+          )
+      if (!(0, kind_1.IsSchema)(schema.additionalProperties))
+        return Default(schema, path, knownProperties)
+      const unknownKeys = Object.getOwnPropertyNames(knownProperties)
+      const additionalProperties = schema.additionalProperties
+      const unknownProperties = { ...knownProperties }
+      for (const key of unknownKeys)
+        if (!knownKeys.test(key))
+          unknownProperties[key] = Default(
+            additionalProperties,
+            `${path}/${key}`,
+            unknownProperties[key],
+          )
+      return Default(schema, path, unknownProperties)
+    }
+    function FromRef(schema, references, path, value) {
+      return Default(
+        schema,
+        path,
+        Visit((0, index_4.Deref)(schema, references), references, path, value),
+      )
+    }
+    function FromThis(schema, references, path, value) {
+      return Default(
+        schema,
+        path,
+        Visit((0, index_4.Deref)(schema, references), references, path, value),
+      )
+    }
+    function FromTuple(schema, references, path, value) {
+      return (0, index_6.IsArray)(value) && (0, index_6.IsArray)(schema.items)
+        ? Default(
+            schema,
+            path,
+            schema.items.map((schema, index) =>
+              Visit(schema, references, `${path}/${index}`, value[index]),
+            ),
+          )
+        : Default(schema, path, value)
+    }
+    function FromUnion(schema, references, path, value) {
+      for (const subschema of schema.anyOf) {
+        if (!(0, index_5.Check)(subschema, references, value)) continue
+        return Default(schema, path, Visit(subschema, references, path, value))
+      }
+      return Default(schema, path, value)
+    }
+    function Visit(schema, references, path, value) {
+      const references_ = (0, index_4.Pushref)(schema, references)
+      const schema_ = schema
+      switch (schema[index_1.Kind]) {
+        case 'Array':
+          return FromArray(schema_, references_, path, value)
+        case 'Import':
+          return FromImport(schema_, references_, path, value)
+        case 'Intersect':
+          return FromIntersect(schema_, references_, path, value)
+        case 'Not':
+          return FromNot(schema_, references_, path, value)
+        case 'Object':
+          return FromObject(schema_, references_, path, value)
+        case 'Record':
+          return FromRecord(schema_, references_, path, value)
+        case 'Ref':
+          return FromRef(schema_, references_, path, value)
+        case 'Symbol':
+          return Default(schema_, path, value)
+        case 'This':
+          return FromThis(schema_, references_, path, value)
+        case 'Tuple':
+          return FromTuple(schema_, references_, path, value)
+        case 'Union':
+          return FromUnion(schema_, references_, path, value)
+        default:
+          return Default(schema_, path, value)
+      }
+    }
+    /**
+     * `[Internal]` Decodes the value and returns the result. This function
+     * requires that the caller `Check` the value before use. Passing unchecked
+     * values may result in undefined behavior. Refer to the `Value.Decode()`
+     * for implementation details.
+     */
+    function TransformDecode(schema, references, value) {
+      return Visit(schema, references, '', value)
+    }
+  })
+  var require_encode$2 = /* @__PURE__ */ __commonJSMin(exports$187 => {
+    Object.defineProperty(exports$187, '__esModule', { value: true })
+    exports$187.TransformEncodeError = exports$187.TransformEncodeCheckError =
+      void 0
+    exports$187.TransformEncode = TransformEncode
+    const policy_1 = require_policy$1()
+    const index_1 = require_symbols()
+    const index_2 = require_error()
+    const index_3 = require_keyof()
+    const index_4 = require_deref()
+    const index_5 = require_check()
+    const index_6 = require_guard$1()
+    const kind_1 = require_kind()
+    var TransformEncodeCheckError = class extends index_2.TypeBoxError {
+      constructor(schema, value, error) {
+        super(`The encoded value does not match the expected schema`)
+        this.schema = schema
+        this.value = value
+        this.error = error
+      }
+    }
+    exports$187.TransformEncodeCheckError = TransformEncodeCheckError
+    var TransformEncodeError = class extends index_2.TypeBoxError {
+      constructor(schema, path, value, error) {
+        super(`${error instanceof Error ? error.message : 'Unknown error'}`)
+        this.schema = schema
+        this.path = path
+        this.value = value
+        this.error = error
+      }
+    }
+    exports$187.TransformEncodeError = TransformEncodeError
+    function Default(schema, path, value) {
+      try {
+        return (0, kind_1.IsTransform)(schema)
+          ? schema[index_1.TransformKind].Encode(value)
+          : value
+      } catch (error) {
+        throw new TransformEncodeError(schema, path, value, error)
+      }
+    }
+    function FromArray(schema, references, path, value) {
+      const defaulted = Default(schema, path, value)
+      return (0, index_6.IsArray)(defaulted)
+        ? defaulted.map((value, index) =>
+            Visit(schema.items, references, `${path}/${index}`, value),
+          )
+        : defaulted
+    }
+    function FromImport(schema, references, path, value) {
+      const additional = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      const result = Default(schema, path, value)
+      return Visit(target, [...references, ...additional], path, result)
+    }
+    function FromIntersect(schema, references, path, value) {
+      const defaulted = Default(schema, path, value)
+      if (!(0, index_6.IsObject)(value) || (0, index_6.IsValueType)(value))
+        return defaulted
+      const knownEntries = (0, index_3.KeyOfPropertyEntries)(schema)
+      const knownKeys = knownEntries.map(entry => entry[0])
+      const knownProperties = { ...defaulted }
+      for (const [knownKey, knownSchema] of knownEntries)
+        if (knownKey in knownProperties)
+          knownProperties[knownKey] = Visit(
+            knownSchema,
+            references,
+            `${path}/${knownKey}`,
+            knownProperties[knownKey],
+          )
+      if (!(0, kind_1.IsTransform)(schema.unevaluatedProperties))
+        return knownProperties
+      const unknownKeys = Object.getOwnPropertyNames(knownProperties)
+      const unevaluatedProperties = schema.unevaluatedProperties
+      const properties = { ...knownProperties }
+      for (const key of unknownKeys)
+        if (!knownKeys.includes(key))
+          properties[key] = Default(
+            unevaluatedProperties,
+            `${path}/${key}`,
+            properties[key],
+          )
+      return properties
+    }
+    function FromNot(schema, references, path, value) {
+      return Default(schema.not, path, Default(schema, path, value))
+    }
+    function FromObject(schema, references, path, value) {
+      const defaulted = Default(schema, path, value)
+      if (!(0, index_6.IsObject)(defaulted)) return defaulted
+      const knownKeys = (0, index_3.KeyOfPropertyKeys)(schema)
+      const knownProperties = { ...defaulted }
+      for (const key of knownKeys) {
+        if (!(0, index_6.HasPropertyKey)(knownProperties, key)) continue
+        if (
+          (0, index_6.IsUndefined)(knownProperties[key]) &&
+          (!(0, kind_1.IsUndefined)(schema.properties[key]) ||
+            policy_1.TypeSystemPolicy.IsExactOptionalProperty(
+              knownProperties,
+              key,
+            ))
+        )
+          continue
+        knownProperties[key] = Visit(
+          schema.properties[key],
+          references,
+          `${path}/${key}`,
+          knownProperties[key],
+        )
+      }
+      if (!(0, kind_1.IsSchema)(schema.additionalProperties))
+        return knownProperties
+      const unknownKeys = Object.getOwnPropertyNames(knownProperties)
+      const additionalProperties = schema.additionalProperties
+      const properties = { ...knownProperties }
+      for (const key of unknownKeys)
+        if (!knownKeys.includes(key))
+          properties[key] = Default(
+            additionalProperties,
+            `${path}/${key}`,
+            properties[key],
+          )
+      return properties
+    }
+    function FromRecord(schema, references, path, value) {
+      const defaulted = Default(schema, path, value)
+      if (!(0, index_6.IsObject)(value)) return defaulted
+      const pattern = Object.getOwnPropertyNames(schema.patternProperties)[0]
+      const knownKeys = new RegExp(pattern)
+      const knownProperties = { ...defaulted }
+      for (const key of Object.getOwnPropertyNames(value))
+        if (knownKeys.test(key))
+          knownProperties[key] = Visit(
+            schema.patternProperties[pattern],
+            references,
+            `${path}/${key}`,
+            knownProperties[key],
+          )
+      if (!(0, kind_1.IsSchema)(schema.additionalProperties))
+        return knownProperties
+      const unknownKeys = Object.getOwnPropertyNames(knownProperties)
+      const additionalProperties = schema.additionalProperties
+      const properties = { ...knownProperties }
+      for (const key of unknownKeys)
+        if (!knownKeys.test(key))
+          properties[key] = Default(
+            additionalProperties,
+            `${path}/${key}`,
+            properties[key],
+          )
+      return properties
+    }
+    function FromRef(schema, references, path, value) {
+      return Default(
+        schema,
+        path,
+        Visit((0, index_4.Deref)(schema, references), references, path, value),
+      )
+    }
+    function FromThis(schema, references, path, value) {
+      return Default(
+        schema,
+        path,
+        Visit((0, index_4.Deref)(schema, references), references, path, value),
+      )
+    }
+    function FromTuple(schema, references, path, value) {
+      const value1 = Default(schema, path, value)
+      return (0, index_6.IsArray)(schema.items)
+        ? schema.items.map((schema, index) =>
+            Visit(schema, references, `${path}/${index}`, value1[index]),
+          )
+        : []
+    }
+    function FromUnion(schema, references, path, value) {
+      for (const subschema of schema.anyOf) {
+        if (!(0, index_5.Check)(subschema, references, value)) continue
+        return Default(schema, path, Visit(subschema, references, path, value))
+      }
+      for (const subschema of schema.anyOf) {
+        const value1 = Visit(subschema, references, path, value)
+        if (!(0, index_5.Check)(schema, references, value1)) continue
+        return Default(schema, path, value1)
+      }
+      return Default(schema, path, value)
+    }
+    function Visit(schema, references, path, value) {
+      const references_ = (0, index_4.Pushref)(schema, references)
+      const schema_ = schema
+      switch (schema[index_1.Kind]) {
+        case 'Array':
+          return FromArray(schema_, references_, path, value)
+        case 'Import':
+          return FromImport(schema_, references_, path, value)
+        case 'Intersect':
+          return FromIntersect(schema_, references_, path, value)
+        case 'Not':
+          return FromNot(schema_, references_, path, value)
+        case 'Object':
+          return FromObject(schema_, references_, path, value)
+        case 'Record':
+          return FromRecord(schema_, references_, path, value)
+        case 'Ref':
+          return FromRef(schema_, references_, path, value)
+        case 'This':
+          return FromThis(schema_, references_, path, value)
+        case 'Tuple':
+          return FromTuple(schema_, references_, path, value)
+        case 'Union':
+          return FromUnion(schema_, references_, path, value)
+        default:
+          return Default(schema_, path, value)
+      }
+    }
+    /**
+     * `[Internal]` Encodes the value and returns the result. This function
+     * expects the caller to pass a statically checked value. This function does
+     * not check the encoded result, meaning the result should be passed to
+     * `Check` before use. Refer to the `Value.Encode()` function for
+     * implementation details.
+     */
+    function TransformEncode(schema, references, value) {
+      return Visit(schema, references, '', value)
+    }
+  })
+  var require_has = /* @__PURE__ */ __commonJSMin(exports$188 => {
+    Object.defineProperty(exports$188, '__esModule', { value: true })
+    exports$188.HasTransform = HasTransform
+    const index_1 = require_deref()
+    const index_2 = require_symbols()
+    const kind_1 = require_kind()
+    const index_3 = require_guard$1()
+    function FromArray(schema, references) {
+      return (0, kind_1.IsTransform)(schema) || Visit(schema.items, references)
+    }
+    function FromAsyncIterator(schema, references) {
+      return (0, kind_1.IsTransform)(schema) || Visit(schema.items, references)
+    }
+    function FromConstructor(schema, references) {
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        Visit(schema.returns, references) ||
+        schema.parameters.some(schema => Visit(schema, references))
+      )
+    }
+    function FromFunction(schema, references) {
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        Visit(schema.returns, references) ||
+        schema.parameters.some(schema => Visit(schema, references))
+      )
+    }
+    function FromIntersect(schema, references) {
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        (0, kind_1.IsTransform)(schema.unevaluatedProperties) ||
+        schema.allOf.some(schema => Visit(schema, references))
+      )
+    }
+    function FromImport(schema, references) {
+      const additional = globalThis.Object.getOwnPropertyNames(
+        schema.$defs,
+      ).reduce((result, key) => [...result, schema.$defs[key]], [])
+      const target = schema.$defs[schema.$ref]
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        Visit(target, [...additional, ...references])
+      )
+    }
+    function FromIterator(schema, references) {
+      return (0, kind_1.IsTransform)(schema) || Visit(schema.items, references)
+    }
+    function FromNot(schema, references) {
+      return (0, kind_1.IsTransform)(schema) || Visit(schema.not, references)
+    }
+    function FromObject(schema, references) {
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        Object.values(schema.properties).some(schema =>
+          Visit(schema, references),
+        ) ||
+        ((0, kind_1.IsSchema)(schema.additionalProperties) &&
+          Visit(schema.additionalProperties, references))
+      )
+    }
+    function FromPromise(schema, references) {
+      return (0, kind_1.IsTransform)(schema) || Visit(schema.item, references)
+    }
+    function FromRecord(schema, references) {
+      const pattern = Object.getOwnPropertyNames(schema.patternProperties)[0]
+      const property = schema.patternProperties[pattern]
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        Visit(property, references) ||
+        ((0, kind_1.IsSchema)(schema.additionalProperties) &&
+          (0, kind_1.IsTransform)(schema.additionalProperties))
+      )
+    }
+    function FromRef(schema, references) {
+      if ((0, kind_1.IsTransform)(schema)) return true
+      return Visit((0, index_1.Deref)(schema, references), references)
+    }
+    function FromThis(schema, references) {
+      if ((0, kind_1.IsTransform)(schema)) return true
+      return Visit((0, index_1.Deref)(schema, references), references)
+    }
+    function FromTuple(schema, references) {
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        (!(0, index_3.IsUndefined)(schema.items) &&
+          schema.items.some(schema => Visit(schema, references)))
+      )
+    }
+    function FromUnion(schema, references) {
+      return (
+        (0, kind_1.IsTransform)(schema) ||
+        schema.anyOf.some(schema => Visit(schema, references))
+      )
+    }
+    function Visit(schema, references) {
+      const references_ = (0, index_1.Pushref)(schema, references)
+      const schema_ = schema
+      if (schema.$id && visited.has(schema.$id)) return false
+      if (schema.$id) visited.add(schema.$id)
+      switch (schema[index_2.Kind]) {
+        case 'Array':
+          return FromArray(schema_, references_)
+        case 'AsyncIterator':
+          return FromAsyncIterator(schema_, references_)
+        case 'Constructor':
+          return FromConstructor(schema_, references_)
+        case 'Function':
+          return FromFunction(schema_, references_)
+        case 'Import':
+          return FromImport(schema_, references_)
+        case 'Intersect':
+          return FromIntersect(schema_, references_)
+        case 'Iterator':
+          return FromIterator(schema_, references_)
+        case 'Not':
+          return FromNot(schema_, references_)
+        case 'Object':
+          return FromObject(schema_, references_)
+        case 'Promise':
+          return FromPromise(schema_, references_)
+        case 'Record':
+          return FromRecord(schema_, references_)
+        case 'Ref':
+          return FromRef(schema_, references_)
+        case 'This':
+          return FromThis(schema_, references_)
+        case 'Tuple':
+          return FromTuple(schema_, references_)
+        case 'Union':
+          return FromUnion(schema_, references_)
+        default:
+          return (0, kind_1.IsTransform)(schema)
+      }
+    }
+    const visited = /* @__PURE__ */ new Set()
+    /**
+     * Returns true if this schema contains a transform codec.
+     */
+    function HasTransform(schema, references) {
+      visited.clear()
+      return Visit(schema, references)
+    }
+  })
+  var require_transform = /* @__PURE__ */ __commonJSMin(exports$189 => {
+    var __createBinding =
+      (exports$189 && exports$189.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$189 && exports$189.__exportStar) ||
+      function (m, exports$9) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$9, p)
+          )
+            __createBinding(exports$9, m, p)
+      }
+    Object.defineProperty(exports$189, '__esModule', { value: true })
+    __exportStar(require_decode$2(), exports$189)
+    __exportStar(require_encode$2(), exports$189)
+    __exportStar(require_has(), exports$189)
+  })
+  var require_decode$1 = /* @__PURE__ */ __commonJSMin(exports$190 => {
+    Object.defineProperty(exports$190, '__esModule', { value: true })
+    exports$190.Decode = Decode
+    const index_1 = require_transform()
+    const index_2 = require_check()
+    const index_3 = require_errors$1()
+    /**
+     * Decodes a value or throws if error.
+     */
+    function Decode(...args) {
+      const [schema, references, value] =
+        args.length === 3 ? [args[0], args[1], args[2]] : [args[0], [], args[1]]
+      if (!(0, index_2.Check)(schema, references, value))
+        throw new index_1.TransformDecodeCheckError(
+          schema,
+          value,
+          (0, index_3.Errors)(schema, references, value).First(),
+        )
+      return (0, index_1.HasTransform)(schema, references)
+        ? (0, index_1.TransformDecode)(schema, references, value)
+        : value
+    }
+  })
+  var require_decode = /* @__PURE__ */ __commonJSMin(exports$191 => {
+    var __createBinding =
+      (exports$191 && exports$191.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$191 && exports$191.__exportStar) ||
+      function (m, exports$8) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$8, p)
+          )
+            __createBinding(exports$8, m, p)
+      }
+    Object.defineProperty(exports$191, '__esModule', { value: true })
+    __exportStar(require_decode$1(), exports$191)
+  })
+  var require_default$1 = /* @__PURE__ */ __commonJSMin(exports$192 => {
+    Object.defineProperty(exports$192, '__esModule', { value: true })
+    exports$192.Default = Default
+    const index_1 = require_check()
+    const index_2 = require_clone()
+    const index_3 = require_deref()
+    const index_4 = require_symbols()
+    const index_5 = require_guard$1()
+    const kind_1 = require_kind()
+    function ValueOrDefault(schema, value) {
+      const defaultValue = (0, index_5.HasPropertyKey)(schema, 'default')
+        ? schema.default
+        : void 0
+      const clone = (0, index_5.IsFunction)(defaultValue)
+        ? defaultValue()
+        : (0, index_2.Clone)(defaultValue)
+      return (0, index_5.IsUndefined)(value)
+        ? clone
+        : (0, index_5.IsObject)(value) && (0, index_5.IsObject)(clone)
+          ? Object.assign(clone, value)
+          : value
+    }
+    function HasDefaultProperty(schema) {
+      return (0, kind_1.IsKind)(schema) && 'default' in schema
+    }
+    function FromArray(schema, references, value) {
+      if ((0, index_5.IsArray)(value)) {
+        for (let i = 0; i < value.length; i++)
+          value[i] = Visit(schema.items, references, value[i])
+        return value
+      }
+      const defaulted = ValueOrDefault(schema, value)
+      if (!(0, index_5.IsArray)(defaulted)) return defaulted
+      for (let i = 0; i < defaulted.length; i++)
+        defaulted[i] = Visit(schema.items, references, defaulted[i])
+      return defaulted
+    }
+    function FromDate(schema, references, value) {
+      return (0, index_5.IsDate)(value) ? value : ValueOrDefault(schema, value)
+    }
+    function FromImport(schema, references, value) {
+      const definitions = globalThis.Object.values(schema.$defs)
+      const target = schema.$defs[schema.$ref]
+      return Visit(target, [...references, ...definitions], value)
+    }
+    function FromIntersect(schema, references, value) {
+      const defaulted = ValueOrDefault(schema, value)
+      return schema.allOf.reduce((acc, schema) => {
+        const next = Visit(schema, references, defaulted)
+        return (0, index_5.IsObject)(next)
+          ? {
+              ...acc,
+              ...next,
+            }
+          : next
+      }, {})
+    }
+    function FromObject(schema, references, value) {
+      const defaulted = ValueOrDefault(schema, value)
+      if (!(0, index_5.IsObject)(defaulted)) return defaulted
+      const knownPropertyKeys = Object.getOwnPropertyNames(schema.properties)
+      for (const key of knownPropertyKeys) {
+        const propertyValue = Visit(
+          schema.properties[key],
+          references,
+          defaulted[key],
+        )
+        if ((0, index_5.IsUndefined)(propertyValue)) continue
+        defaulted[key] = Visit(
+          schema.properties[key],
+          references,
+          defaulted[key],
+        )
+      }
+      if (!HasDefaultProperty(schema.additionalProperties)) return defaulted
+      for (const key of Object.getOwnPropertyNames(defaulted)) {
+        if (knownPropertyKeys.includes(key)) continue
+        defaulted[key] = Visit(
+          schema.additionalProperties,
+          references,
+          defaulted[key],
+        )
+      }
+      return defaulted
+    }
+    function FromRecord(schema, references, value) {
+      const defaulted = ValueOrDefault(schema, value)
+      if (!(0, index_5.IsObject)(defaulted)) return defaulted
+      const additionalPropertiesSchema = schema.additionalProperties
+      const [propertyKeyPattern, propertySchema] = Object.entries(
+        schema.patternProperties,
+      )[0]
+      const knownPropertyKey = new RegExp(propertyKeyPattern)
+      for (const key of Object.getOwnPropertyNames(defaulted)) {
+        if (!(knownPropertyKey.test(key) && HasDefaultProperty(propertySchema)))
+          continue
+        defaulted[key] = Visit(propertySchema, references, defaulted[key])
+      }
+      if (!HasDefaultProperty(additionalPropertiesSchema)) return defaulted
+      for (const key of Object.getOwnPropertyNames(defaulted)) {
+        if (knownPropertyKey.test(key)) continue
+        defaulted[key] = Visit(
+          additionalPropertiesSchema,
+          references,
+          defaulted[key],
+        )
+      }
+      return defaulted
+    }
+    function FromRef(schema, references, value) {
+      return Visit(
+        (0, index_3.Deref)(schema, references),
+        references,
+        ValueOrDefault(schema, value),
+      )
+    }
+    function FromThis(schema, references, value) {
+      return Visit((0, index_3.Deref)(schema, references), references, value)
+    }
+    function FromTuple(schema, references, value) {
+      const defaulted = ValueOrDefault(schema, value)
+      if (
+        !(0, index_5.IsArray)(defaulted) ||
+        (0, index_5.IsUndefined)(schema.items)
+      )
+        return defaulted
+      const [items, max] = [
+        schema.items,
+        Math.max(schema.items.length, defaulted.length),
+      ]
+      for (let i = 0; i < max; i++)
+        if (i < items.length)
+          defaulted[i] = Visit(items[i], references, defaulted[i])
+      return defaulted
+    }
+    function FromUnion(schema, references, value) {
+      const defaulted = ValueOrDefault(schema, value)
+      for (const inner of schema.anyOf) {
+        const result = Visit(inner, references, (0, index_2.Clone)(defaulted))
+        if ((0, index_1.Check)(inner, references, result)) return result
+      }
+      return defaulted
+    }
+    function Visit(schema, references, value) {
+      const references_ = (0, index_3.Pushref)(schema, references)
+      const schema_ = schema
+      switch (schema_[index_4.Kind]) {
+        case 'Array':
+          return FromArray(schema_, references_, value)
+        case 'Date':
+          return FromDate(schema_, references_, value)
+        case 'Import':
+          return FromImport(schema_, references_, value)
+        case 'Intersect':
+          return FromIntersect(schema_, references_, value)
+        case 'Object':
+          return FromObject(schema_, references_, value)
+        case 'Record':
+          return FromRecord(schema_, references_, value)
+        case 'Ref':
+          return FromRef(schema_, references_, value)
+        case 'This':
+          return FromThis(schema_, references_, value)
+        case 'Tuple':
+          return FromTuple(schema_, references_, value)
+        case 'Union':
+          return FromUnion(schema_, references_, value)
+        default:
+          return ValueOrDefault(schema_, value)
+      }
+    }
+    /**
+     * `[Mutable]` Generates missing properties on a value using default schema
+     * annotations if available. This function does not check the value and
+     * returns an unknown type. You should Check the result before use. Default
+     * is a mutable operation. To avoid mutation, Clone the value first.
+     */
+    function Default(...args) {
+      return args.length === 3
+        ? Visit(args[0], args[1], args[2])
+        : Visit(args[0], [], args[1])
+    }
+  })
+  var require_default = /* @__PURE__ */ __commonJSMin(exports$193 => {
+    var __createBinding =
+      (exports$193 && exports$193.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$193 && exports$193.__exportStar) ||
+      function (m, exports$7) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$7, p)
+          )
+            __createBinding(exports$7, m, p)
+      }
+    Object.defineProperty(exports$193, '__esModule', { value: true })
+    __exportStar(require_default$1(), exports$193)
+  })
+  var require_pointer$1 = /* @__PURE__ */ __commonJSMin(exports$194 => {
+    Object.defineProperty(exports$194, '__esModule', { value: true })
+    exports$194.ValuePointerRootDeleteError =
+      exports$194.ValuePointerRootSetError = void 0
+    exports$194.Format = Format
+    exports$194.Set = Set
+    exports$194.Delete = Delete
+    exports$194.Has = Has
+    exports$194.Get = Get
+    const index_1 = require_error()
+    var ValuePointerRootSetError = class extends index_1.TypeBoxError {
+      constructor(value, path, update) {
+        super('Cannot set root value')
+        this.value = value
+        this.path = path
+        this.update = update
+      }
+    }
+    exports$194.ValuePointerRootSetError = ValuePointerRootSetError
+    var ValuePointerRootDeleteError = class extends index_1.TypeBoxError {
+      constructor(value, path) {
+        super('Cannot delete root value')
+        this.value = value
+        this.path = path
+      }
+    }
+    exports$194.ValuePointerRootDeleteError = ValuePointerRootDeleteError
+    /**
+     * Provides functionality to update values through RFC6901 string pointers.
+     */
+    function Escape(component) {
+      return component.indexOf('~') === -1
+        ? component
+        : component.replace(/~1/g, '/').replace(/~0/g, '~')
+    }
+    /**
+     * Formats the given pointer into navigable key components.
+     */
+    function* Format(pointer) {
+      if (pointer === '') return
+      let [start, end] = [0, 0]
+      for (let i = 0; i < pointer.length; i++)
+        if (pointer.charAt(i) === '/') {
+          if (i === 0) start = i + 1
+          else {
+            end = i
+            yield Escape(pointer.slice(start, end))
+            start = i + 1
+          }
+        } else end = i
+      yield Escape(pointer.slice(start))
+    }
+    /**
+     * Sets the value at the given pointer. If the value at the pointer does not
+     * exist it is created.
+     */
+    function Set(value, pointer, update) {
+      if (pointer === '')
+        throw new ValuePointerRootSetError(value, pointer, update)
+      let [owner, next, key] = [null, value, '']
+      for (const component of Format(pointer)) {
+        if (next[component] === void 0) next[component] = {}
+        owner = next
+        next = next[component]
+        key = component
+      }
+      owner[key] = update
+    }
+    /**
+     * Deletes a value at the given pointer.
+     */
+    function Delete(value, pointer) {
+      if (pointer === '') throw new ValuePointerRootDeleteError(value, pointer)
+      let [owner, next, key] = [null, value, '']
+      for (const component of Format(pointer)) {
+        if (next[component] === void 0 || next[component] === null) return
+        owner = next
+        next = next[component]
+        key = component
+      }
+      if (Array.isArray(owner)) {
+        const index = parseInt(key)
+        owner.splice(index, 1)
+      } else delete owner[key]
+    }
+    /**
+     * Returns true if a value exists at the given pointer.
+     */
+    function Has(value, pointer) {
+      if (pointer === '') return true
+      let [owner, next, key] = [null, value, '']
+      for (const component of Format(pointer)) {
+        if (next[component] === void 0) return false
+        owner = next
+        next = next[component]
+        key = component
+      }
+      return Object.getOwnPropertyNames(owner).includes(key)
+    }
+    /**
+     * Gets the value at the given pointer.
+     */
+    function Get(value, pointer) {
+      if (pointer === '') return value
+      let current = value
+      for (const component of Format(pointer)) {
+        if (current[component] === void 0) return void 0
+        current = current[component]
+      }
+      return current
+    }
+  })
+  var require_pointer = /* @__PURE__ */ __commonJSMin(exports$195 => {
+    var __createBinding =
+      (exports$195 && exports$195.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$195 && exports$195.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$195 && exports$195.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$195, '__esModule', { value: true })
+    exports$195.ValuePointer = void 0
+    exports$195.ValuePointer = __importStar(require_pointer$1())
+  })
+  var require_equal$1 = /* @__PURE__ */ __commonJSMin(exports$196 => {
+    Object.defineProperty(exports$196, '__esModule', { value: true })
+    exports$196.Equal = Equal
+    const index_1 = require_guard$1()
+    function ObjectType(left, right) {
+      if (!(0, index_1.IsObject)(right)) return false
+      const leftKeys = [
+        ...Object.keys(left),
+        ...Object.getOwnPropertySymbols(left),
+      ]
+      const rightKeys = [
+        ...Object.keys(right),
+        ...Object.getOwnPropertySymbols(right),
+      ]
+      if (leftKeys.length !== rightKeys.length) return false
+      return leftKeys.every(key => Equal(left[key], right[key]))
+    }
+    function DateType(left, right) {
+      return (0, index_1.IsDate)(right) && left.getTime() === right.getTime()
+    }
+    function ArrayType(left, right) {
+      if (!(0, index_1.IsArray)(right) || left.length !== right.length)
+        return false
+      return left.every((value, index) => Equal(value, right[index]))
+    }
+    function TypedArrayType(left, right) {
+      if (
+        !(0, index_1.IsTypedArray)(right) ||
+        left.length !== right.length ||
+        Object.getPrototypeOf(left).constructor.name !==
+          Object.getPrototypeOf(right).constructor.name
+      )
+        return false
+      return left.every((value, index) => Equal(value, right[index]))
+    }
+    function ValueType(left, right) {
+      return left === right
+    }
+    /**
+     * Returns true if the left value deep-equals the right.
+     */
+    function Equal(left, right) {
+      if ((0, index_1.IsDate)(left)) return DateType(left, right)
+      if ((0, index_1.IsTypedArray)(left)) return TypedArrayType(left, right)
+      if ((0, index_1.IsArray)(left)) return ArrayType(left, right)
+      if ((0, index_1.IsObject)(left)) return ObjectType(left, right)
+      if ((0, index_1.IsValueType)(left)) return ValueType(left, right)
+      throw new Error('ValueEquals: Unable to compare value')
+    }
+  })
+  var require_delta$1 = /* @__PURE__ */ __commonJSMin(exports$197 => {
+    Object.defineProperty(exports$197, '__esModule', { value: true })
+    exports$197.ValueDiffError =
+      exports$197.Edit =
+      exports$197.Delete =
+      exports$197.Update =
+      exports$197.Insert =
+        void 0
+    exports$197.Diff = Diff
+    exports$197.Patch = Patch
+    const index_1 = require_guard$1()
+    const index_2 = require_pointer()
+    const index_3 = require_clone()
+    const equal_1 = require_equal$1()
+    const index_4 = require_error()
+    const index_5 = require_literal()
+    const index_6 = require_object()
+    const index_7 = require_string()
+    const index_8 = require_unknown()
+    const index_9 = require_union$1()
+    exports$197.Insert = (0, index_6.Object)({
+      type: (0, index_5.Literal)('insert'),
+      path: (0, index_7.String)(),
+      value: (0, index_8.Unknown)(),
+    })
+    exports$197.Update = (0, index_6.Object)({
+      type: (0, index_5.Literal)('update'),
+      path: (0, index_7.String)(),
+      value: (0, index_8.Unknown)(),
+    })
+    exports$197.Delete = (0, index_6.Object)({
+      type: (0, index_5.Literal)('delete'),
+      path: (0, index_7.String)(),
+    })
+    exports$197.Edit = (0, index_9.Union)([
+      exports$197.Insert,
+      exports$197.Update,
+      exports$197.Delete,
+    ])
+    var ValueDiffError = class extends index_4.TypeBoxError {
+      constructor(value, message) {
+        super(message)
+        this.value = value
+      }
+    }
+    exports$197.ValueDiffError = ValueDiffError
+    function CreateUpdate(path, value) {
+      return {
+        type: 'update',
+        path,
+        value,
+      }
+    }
+    function CreateInsert(path, value) {
+      return {
+        type: 'insert',
+        path,
+        value,
+      }
+    }
+    function CreateDelete(path) {
+      return {
+        type: 'delete',
+        path,
+      }
+    }
+    function AssertDiffable(value) {
+      if (globalThis.Object.getOwnPropertySymbols(value).length > 0)
+        throw new ValueDiffError(value, 'Cannot diff objects with symbols')
+    }
+    function* ObjectType(path, current, next) {
+      AssertDiffable(current)
+      AssertDiffable(next)
+      if (!(0, index_1.IsStandardObject)(next))
+        return yield CreateUpdate(path, next)
+      const currentKeys = globalThis.Object.getOwnPropertyNames(current)
+      const nextKeys = globalThis.Object.getOwnPropertyNames(next)
+      for (const key of nextKeys) {
+        if ((0, index_1.HasPropertyKey)(current, key)) continue
+        yield CreateInsert(`${path}/${key}`, next[key])
+      }
+      for (const key of currentKeys) {
+        if (!(0, index_1.HasPropertyKey)(next, key)) continue
+        if ((0, equal_1.Equal)(current, next)) continue
+        yield* Visit(`${path}/${key}`, current[key], next[key])
+      }
+      for (const key of currentKeys) {
+        if ((0, index_1.HasPropertyKey)(next, key)) continue
+        yield CreateDelete(`${path}/${key}`)
+      }
+    }
+    function* ArrayType(path, current, next) {
+      if (!(0, index_1.IsArray)(next)) return yield CreateUpdate(path, next)
+      for (let i = 0; i < Math.min(current.length, next.length); i++)
+        yield* Visit(`${path}/${i}`, current[i], next[i])
+      for (let i = 0; i < next.length; i++) {
+        if (i < current.length) continue
+        yield CreateInsert(`${path}/${i}`, next[i])
+      }
+      for (let i = current.length - 1; i >= 0; i--) {
+        if (i < next.length) continue
+        yield CreateDelete(`${path}/${i}`)
+      }
+    }
+    function* TypedArrayType(path, current, next) {
+      if (
+        !(0, index_1.IsTypedArray)(next) ||
+        current.length !== next.length ||
+        globalThis.Object.getPrototypeOf(current).constructor.name !==
+          globalThis.Object.getPrototypeOf(next).constructor.name
+      )
+        return yield CreateUpdate(path, next)
+      for (let i = 0; i < Math.min(current.length, next.length); i++)
+        yield* Visit(`${path}/${i}`, current[i], next[i])
+    }
+    function* ValueType(path, current, next) {
+      if (current === next) return
+      yield CreateUpdate(path, next)
+    }
+    function* Visit(path, current, next) {
+      if ((0, index_1.IsStandardObject)(current))
+        return yield* ObjectType(path, current, next)
+      if ((0, index_1.IsArray)(current))
+        return yield* ArrayType(path, current, next)
+      if ((0, index_1.IsTypedArray)(current))
+        return yield* TypedArrayType(path, current, next)
+      if ((0, index_1.IsValueType)(current))
+        return yield* ValueType(path, current, next)
+      throw new ValueDiffError(current, 'Unable to diff value')
+    }
+    function Diff(current, next) {
+      return [...Visit('', current, next)]
+    }
+    function IsRootUpdate(edits) {
+      return (
+        edits.length > 0 && edits[0].path === '' && edits[0].type === 'update'
+      )
+    }
+    function IsIdentity(edits) {
+      return edits.length === 0
+    }
+    function Patch(current, edits) {
+      if (IsRootUpdate(edits)) return (0, index_3.Clone)(edits[0].value)
+      if (IsIdentity(edits)) return (0, index_3.Clone)(current)
+      const clone = (0, index_3.Clone)(current)
+      for (const edit of edits)
+        switch (edit.type) {
+          case 'insert':
+            index_2.ValuePointer.Set(clone, edit.path, edit.value)
+            break
+          case 'update':
+            index_2.ValuePointer.Set(clone, edit.path, edit.value)
+            break
+          case 'delete':
+            index_2.ValuePointer.Delete(clone, edit.path)
+        }
+      return clone
+    }
+  })
+  var require_delta = /* @__PURE__ */ __commonJSMin(exports$198 => {
+    var __createBinding =
+      (exports$198 && exports$198.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$198 && exports$198.__exportStar) ||
+      function (m, exports$6) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$6, p)
+          )
+            __createBinding(exports$6, m, p)
+      }
+    Object.defineProperty(exports$198, '__esModule', { value: true })
+    __exportStar(require_delta$1(), exports$198)
+  })
+  var require_encode$1 = /* @__PURE__ */ __commonJSMin(exports$199 => {
+    Object.defineProperty(exports$199, '__esModule', { value: true })
+    exports$199.Encode = Encode
+    const index_1 = require_transform()
+    const index_2 = require_check()
+    const index_3 = require_errors$1()
+    /**
+     * Encodes a value or throws if error.
+     */
+    function Encode(...args) {
+      const [schema, references, value] =
+        args.length === 3 ? [args[0], args[1], args[2]] : [args[0], [], args[1]]
+      const encoded = (0, index_1.HasTransform)(schema, references)
+        ? (0, index_1.TransformEncode)(schema, references, value)
+        : value
+      if (!(0, index_2.Check)(schema, references, encoded))
+        throw new index_1.TransformEncodeCheckError(
+          schema,
+          encoded,
+          (0, index_3.Errors)(schema, references, encoded).First(),
+        )
+      return encoded
+    }
+  })
+  var require_encode = /* @__PURE__ */ __commonJSMin(exports$200 => {
+    var __createBinding =
+      (exports$200 && exports$200.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$200 && exports$200.__exportStar) ||
+      function (m, exports$5) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$5, p)
+          )
+            __createBinding(exports$5, m, p)
+      }
+    Object.defineProperty(exports$200, '__esModule', { value: true })
+    __exportStar(require_encode$1(), exports$200)
+  })
+  var require_equal = /* @__PURE__ */ __commonJSMin(exports$201 => {
+    var __createBinding =
+      (exports$201 && exports$201.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$201 && exports$201.__exportStar) ||
+      function (m, exports$4) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$4, p)
+          )
+            __createBinding(exports$4, m, p)
+      }
+    Object.defineProperty(exports$201, '__esModule', { value: true })
+    __exportStar(require_equal$1(), exports$201)
+  })
+  var require_mutate$1 = /* @__PURE__ */ __commonJSMin(exports$202 => {
+    Object.defineProperty(exports$202, '__esModule', { value: true })
+    exports$202.ValueMutateError = void 0
+    exports$202.Mutate = Mutate
+    const index_1 = require_guard$1()
+    const index_2 = require_pointer()
+    const index_3 = require_clone()
+    const index_4 = require_error()
+    function IsStandardObject(value) {
+      return (0, index_1.IsObject)(value) && !(0, index_1.IsArray)(value)
+    }
+    var ValueMutateError = class extends index_4.TypeBoxError {
+      constructor(message) {
+        super(message)
+      }
+    }
+    exports$202.ValueMutateError = ValueMutateError
+    function ObjectType(root, path, current, next) {
+      if (!IsStandardObject(current))
+        index_2.ValuePointer.Set(root, path, (0, index_3.Clone)(next))
+      else {
+        const currentKeys = Object.getOwnPropertyNames(current)
+        const nextKeys = Object.getOwnPropertyNames(next)
+        for (const currentKey of currentKeys)
+          if (!nextKeys.includes(currentKey)) delete current[currentKey]
+        for (const nextKey of nextKeys)
+          if (!currentKeys.includes(nextKey)) current[nextKey] = null
+        for (const nextKey of nextKeys)
+          Visit(root, `${path}/${nextKey}`, current[nextKey], next[nextKey])
+      }
+    }
+    function ArrayType(root, path, current, next) {
+      if (!(0, index_1.IsArray)(current))
+        index_2.ValuePointer.Set(root, path, (0, index_3.Clone)(next))
+      else {
+        for (let index = 0; index < next.length; index++)
+          Visit(root, `${path}/${index}`, current[index], next[index])
+        current.splice(next.length)
+      }
+    }
+    function TypedArrayType(root, path, current, next) {
+      if ((0, index_1.IsTypedArray)(current) && current.length === next.length)
+        for (let i = 0; i < current.length; i++) current[i] = next[i]
+      else index_2.ValuePointer.Set(root, path, (0, index_3.Clone)(next))
+    }
+    function ValueType(root, path, current, next) {
+      if (current === next) return
+      index_2.ValuePointer.Set(root, path, next)
+    }
+    function Visit(root, path, current, next) {
+      if ((0, index_1.IsArray)(next))
+        return ArrayType(root, path, current, next)
+      if ((0, index_1.IsTypedArray)(next))
+        return TypedArrayType(root, path, current, next)
+      if (IsStandardObject(next)) return ObjectType(root, path, current, next)
+      if ((0, index_1.IsValueType)(next))
+        return ValueType(root, path, current, next)
+    }
+    function IsNonMutableValue(value) {
+      return (0, index_1.IsTypedArray)(value) || (0, index_1.IsValueType)(value)
+    }
+    function IsMismatchedValue(current, next) {
+      return (
+        (IsStandardObject(current) && (0, index_1.IsArray)(next)) ||
+        ((0, index_1.IsArray)(current) && IsStandardObject(next))
+      )
+    }
+    /**
+     * `[Mutable]` Performs a deep mutable value assignment while retaining
+     * internal references.
+     */
+    function Mutate(current, next) {
+      if (IsNonMutableValue(current) || IsNonMutableValue(next))
+        throw new ValueMutateError(
+          'Only object and array types can be mutated at the root level',
+        )
+      if (IsMismatchedValue(current, next))
+        throw new ValueMutateError(
+          'Cannot assign due type mismatch of assignable values',
+        )
+      Visit(current, '', current, next)
+    }
+  })
+  var require_mutate = /* @__PURE__ */ __commonJSMin(exports$203 => {
+    var __createBinding =
+      (exports$203 && exports$203.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$203 && exports$203.__exportStar) ||
+      function (m, exports$3) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$3, p)
+          )
+            __createBinding(exports$3, m, p)
+      }
+    Object.defineProperty(exports$203, '__esModule', { value: true })
+    __exportStar(require_mutate$1(), exports$203)
+  })
+  var require_parse$1 = /* @__PURE__ */ __commonJSMin(exports$204 => {
+    Object.defineProperty(exports$204, '__esModule', { value: true })
+    exports$204.ParseDefault =
+      exports$204.ParseRegistry =
+      exports$204.ParseError =
+        void 0
+    exports$204.Parse = Parse
+    const index_1 = require_error()
+    const index_2 = require_transform()
+    const index_3 = require_assert()
+    const index_4 = require_cast()
+    const index_5 = require_clean()
+    const index_6 = require_clone()
+    const index_7 = require_convert()
+    const index_8 = require_default()
+    const index_9 = require_guard$1()
+    var ParseError = class extends index_1.TypeBoxError {
+      constructor(message) {
+        super(message)
+      }
+    }
+    exports$204.ParseError = ParseError
+    var ParseRegistry
+    ;(function (ParseRegistry) {
+      const registry = /* @__PURE__ */ new Map([
+        [
+          'Assert',
+          (type, references, value) => {
+            ;(0, index_3.Assert)(type, references, value)
+            return value
+          },
+        ],
+        [
+          'Cast',
+          (type, references, value) =>
+            (0, index_4.Cast)(type, references, value),
+        ],
+        [
+          'Clean',
+          (type, references, value) =>
+            (0, index_5.Clean)(type, references, value),
+        ],
+        ['Clone', (_type, _references, value) => (0, index_6.Clone)(value)],
+        [
+          'Convert',
+          (type, references, value) =>
+            (0, index_7.Convert)(type, references, value),
+        ],
+        [
+          'Decode',
+          (type, references, value) =>
+            (0, index_2.HasTransform)(type, references)
+              ? (0, index_2.TransformDecode)(type, references, value)
+              : value,
+        ],
+        [
+          'Default',
+          (type, references, value) =>
+            (0, index_8.Default)(type, references, value),
+        ],
+        [
+          'Encode',
+          (type, references, value) =>
+            (0, index_2.HasTransform)(type, references)
+              ? (0, index_2.TransformEncode)(type, references, value)
+              : value,
+        ],
+      ])
+      function Delete(key) {
+        registry.delete(key)
+      }
+      ParseRegistry.Delete = Delete
+      function Set(key, callback) {
+        registry.set(key, callback)
+      }
+      ParseRegistry.Set = Set
+      function Get(key) {
+        return registry.get(key)
+      }
+      ParseRegistry.Get = Get
+    })(ParseRegistry || (exports$204.ParseRegistry = ParseRegistry = {}))
+    exports$204.ParseDefault = [
+      'Clone',
+      'Clean',
+      'Default',
+      'Convert',
+      'Assert',
+      'Decode',
+    ]
+    function ParseValue(operations, type, references, value) {
+      return operations.reduce((value, operationKey) => {
+        const operation = ParseRegistry.Get(operationKey)
+        if ((0, index_9.IsUndefined)(operation))
+          throw new ParseError(
+            `Unable to find Parse operation '${operationKey}'`,
+          )
+        return operation(type, references, value)
+      }, value)
+    }
+    /**
+     * Parses a value.
+     */
+    function Parse(...args) {
+      const [operations, schema, references, value] =
+        args.length === 4
+          ? [args[0], args[1], args[2], args[3]]
+          : args.length === 3
+            ? (0, index_9.IsArray)(args[0])
+              ? [args[0], args[1], [], args[2]]
+              : [exports$204.ParseDefault, args[0], args[1], args[2]]
+            : args.length === 2
+              ? [exports$204.ParseDefault, args[0], [], args[1]]
+              : (() => {
+                  throw new ParseError('Invalid Arguments')
+                })()
+      return ParseValue(operations, schema, references, value)
+    }
+  })
+  var require_parse$1 = /* @__PURE__ */ __commonJSMin(exports$205 => {
+    var __createBinding =
+      (exports$205 && exports$205.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$205 && exports$205.__exportStar) ||
+      function (m, exports$2) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$2, p)
+          )
+            __createBinding(exports$2, m, p)
+      }
+    Object.defineProperty(exports$205, '__esModule', { value: true })
+    __exportStar(require_parse$1(), exports$205)
+  })
+  var require_value$2 = /* @__PURE__ */ __commonJSMin(exports$206 => {
+    Object.defineProperty(exports$206, '__esModule', { value: true })
+    exports$206.Parse =
+      exports$206.Mutate =
+      exports$206.Hash =
+      exports$206.Equal =
+      exports$206.Encode =
+      exports$206.Edit =
+      exports$206.Patch =
+      exports$206.Diff =
+      exports$206.Default =
+      exports$206.Decode =
+      exports$206.Create =
+      exports$206.Convert =
+      exports$206.Clone =
+      exports$206.Clean =
+      exports$206.Check =
+      exports$206.Cast =
+      exports$206.Assert =
+      exports$206.ValueErrorIterator =
+      exports$206.Errors =
+        void 0
+    var index_1 = require_errors$1()
+    Object.defineProperty(exports$206, 'Errors', {
+      enumerable: true,
+      get: function () {
+        return index_1.Errors
+      },
+    })
+    Object.defineProperty(exports$206, 'ValueErrorIterator', {
+      enumerable: true,
+      get: function () {
+        return index_1.ValueErrorIterator
+      },
+    })
+    var index_2 = require_assert()
+    Object.defineProperty(exports$206, 'Assert', {
+      enumerable: true,
+      get: function () {
+        return index_2.Assert
+      },
+    })
+    var index_3 = require_cast()
+    Object.defineProperty(exports$206, 'Cast', {
+      enumerable: true,
+      get: function () {
+        return index_3.Cast
+      },
+    })
+    var index_4 = require_check()
+    Object.defineProperty(exports$206, 'Check', {
+      enumerable: true,
+      get: function () {
+        return index_4.Check
+      },
+    })
+    var index_5 = require_clean()
+    Object.defineProperty(exports$206, 'Clean', {
+      enumerable: true,
+      get: function () {
+        return index_5.Clean
+      },
+    })
+    var index_6 = require_clone()
+    Object.defineProperty(exports$206, 'Clone', {
+      enumerable: true,
+      get: function () {
+        return index_6.Clone
+      },
+    })
+    var index_7 = require_convert()
+    Object.defineProperty(exports$206, 'Convert', {
+      enumerable: true,
+      get: function () {
+        return index_7.Convert
+      },
+    })
+    var index_8 = require_create()
+    Object.defineProperty(exports$206, 'Create', {
+      enumerable: true,
+      get: function () {
+        return index_8.Create
+      },
+    })
+    var index_9 = require_decode()
+    Object.defineProperty(exports$206, 'Decode', {
+      enumerable: true,
+      get: function () {
+        return index_9.Decode
+      },
+    })
+    var index_10 = require_default()
+    Object.defineProperty(exports$206, 'Default', {
+      enumerable: true,
+      get: function () {
+        return index_10.Default
+      },
+    })
+    var index_11 = require_delta()
+    Object.defineProperty(exports$206, 'Diff', {
+      enumerable: true,
+      get: function () {
+        return index_11.Diff
+      },
+    })
+    Object.defineProperty(exports$206, 'Patch', {
+      enumerable: true,
+      get: function () {
+        return index_11.Patch
+      },
+    })
+    Object.defineProperty(exports$206, 'Edit', {
+      enumerable: true,
+      get: function () {
+        return index_11.Edit
+      },
+    })
+    var index_12 = require_encode()
+    Object.defineProperty(exports$206, 'Encode', {
+      enumerable: true,
+      get: function () {
+        return index_12.Encode
+      },
+    })
+    var index_13 = require_equal()
+    Object.defineProperty(exports$206, 'Equal', {
+      enumerable: true,
+      get: function () {
+        return index_13.Equal
+      },
+    })
+    var index_14 = require_hash()
+    Object.defineProperty(exports$206, 'Hash', {
+      enumerable: true,
+      get: function () {
+        return index_14.Hash
+      },
+    })
+    var index_15 = require_mutate()
+    Object.defineProperty(exports$206, 'Mutate', {
+      enumerable: true,
+      get: function () {
+        return index_15.Mutate
+      },
+    })
+    var index_16 = require_parse$1()
+    Object.defineProperty(exports$206, 'Parse', {
+      enumerable: true,
+      get: function () {
+        return index_16.Parse
+      },
+    })
+  })
+  var require_value$1 = /* @__PURE__ */ __commonJSMin(exports$207 => {
+    var __createBinding =
+      (exports$207 && exports$207.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __setModuleDefault =
+      (exports$207 && exports$207.__setModuleDefault) ||
+      (Object.create
+        ? function (o, v) {
+            Object.defineProperty(o, 'default', {
+              enumerable: true,
+              value: v,
+            })
+          }
+        : function (o, v) {
+            o['default'] = v
+          })
+    var __importStar =
+      (exports$207 && exports$207.__importStar) ||
+      (function () {
+        var ownKeys = function (o) {
+          ownKeys =
+            Object.getOwnPropertyNames ||
+            function (o) {
+              var ar = []
+              for (var k in o)
+                if (Object.prototype.hasOwnProperty.call(o, k))
+                  ar[ar.length] = k
+              return ar
+            }
+          return ownKeys(o)
+        }
+        return function (mod) {
+          if (mod && mod.__esModule) return mod
+          var result = {}
+          if (mod != null) {
+            for (var k = ownKeys(mod), i = 0; i < k.length; i++)
+              if (k[i] !== 'default') __createBinding(result, mod, k[i])
+          }
+          __setModuleDefault(result, mod)
+          return result
+        }
+      })()
+    Object.defineProperty(exports$207, '__esModule', { value: true })
+    exports$207.Value = void 0
+    exports$207.Value = __importStar(require_value$2())
+  })
+  var require_value = /* @__PURE__ */ __commonJSMin(exports$208 => {
+    var __createBinding =
+      (exports$208 && exports$208.__createBinding) ||
+      (Object.create
+        ? function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            var desc = Object.getOwnPropertyDescriptor(m, k)
+            if (
+              !desc ||
+              ('get' in desc
+                ? !m.__esModule
+                : desc.writable || desc.configurable)
+            )
+              desc = {
+                enumerable: true,
+                get: function () {
+                  return m[k]
+                },
+              }
+            Object.defineProperty(o, k2, desc)
+          }
+        : function (o, m, k, k2) {
+            if (k2 === void 0) k2 = k
+            o[k2] = m[k]
+          })
+    var __exportStar =
+      (exports$208 && exports$208.__exportStar) ||
+      function (m, exports$1) {
+        for (var p in m)
+          if (
+            p !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(exports$1, p)
+          )
+            __createBinding(exports$1, m, p)
+      }
+    Object.defineProperty(exports$208, '__esModule', { value: true })
+    exports$208.Value =
+      exports$208.ValueErrorIterator =
+      exports$208.ValueErrorType =
+        void 0
+    var index_1 = require_errors$1()
+    Object.defineProperty(exports$208, 'ValueErrorType', {
+      enumerable: true,
+      get: function () {
+        return index_1.ValueErrorType
+      },
+    })
+    Object.defineProperty(exports$208, 'ValueErrorIterator', {
+      enumerable: true,
+      get: function () {
+        return index_1.ValueErrorIterator
+      },
+    })
+    __exportStar(require_guard$1(), exports$208)
+    __exportStar(require_assert(), exports$208)
+    __exportStar(require_cast(), exports$208)
+    __exportStar(require_check(), exports$208)
+    __exportStar(require_clean(), exports$208)
+    __exportStar(require_clone(), exports$208)
+    __exportStar(require_convert(), exports$208)
+    __exportStar(require_create(), exports$208)
+    __exportStar(require_decode(), exports$208)
+    __exportStar(require_default(), exports$208)
+    __exportStar(require_delta(), exports$208)
+    __exportStar(require_encode(), exports$208)
+    __exportStar(require_equal(), exports$208)
+    __exportStar(require_hash(), exports$208)
+    __exportStar(require_mutate(), exports$208)
+    __exportStar(require_parse$1(), exports$208)
+    __exportStar(require_pointer(), exports$208)
+    __exportStar(require_transform(), exports$208)
+    var index_2 = require_value$1()
+    Object.defineProperty(exports$208, 'Value', {
+      enumerable: true,
+      get: function () {
+        return index_2.Value
+      },
+    })
+  })
+  module.exports = require_value()
+})
+
+var require_validate = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_object = require_object$1()
+  const require_primordials_error = require_error$2()
+  const require_primordials_number = require_number$2()
+  const require_primordials_array = require_array$3()
+  /**
+   * @file Universal schema validator — non-throwing. Accepts any Zod-shaped
+   *   schema (`.safeParse`-exposing) and returns a tagged result `{ ok: true,
+   *   value } | { ok: false, errors }` with normalized `{ path, message }`
+   *   issues. No runtime dependency on `zod` — detection is purely structural.
+   *
+   * @example
+   *   ;```ts
+   *   import { z } from 'zod'
+   *   import { validateSchema } from '@socketsecurity/lib/schema/validate'
+   *
+   *   const User = z.object({ name: z.string() })
+   *   const r = validateSchema(User, data)
+   *   if (r.ok)
+   *     r.value.name // string
+   *   else r.errors // ValidationIssue[]
+   *   ```
+   *
+   * @internal
+   * socket-lib additionally recognizes TypeBox schemas for its own internal
+   * use (e.g. `src/ipc.ts`'s stub-file validation). That path is not a
+   * supported consumer API.
+   */
+  /**
+   * Detect a TypeBox schema structurally: object with a symbol key whose
+   * description is `'TypeBox.Kind'`, holding a string value.
+   *
+   * @internal
+   */
+  function isTypeBoxSchema(schema) {
+    if (schema === null || typeof schema !== 'object') return false
+    for (const sym of require_primordials_object.ObjectGetOwnPropertySymbols(
+      schema,
+    ))
+      if (sym.description === 'TypeBox.Kind')
+        return typeof schema[sym] === 'string'
+    return false
+  }
+  /**
+   * Normalize a TypeBox `ValueError` iterator into plain issues. TypeBox paths
+   * are JSON Pointers (`/user/0/name`); convert to arrays.
+   *
+   * @internal
+   */
+  function normalizeTypeBoxErrors(errors) {
+    const out = []
+    for (const err of errors) {
+      const segs = err.path.split('/').filter(Boolean)
+      out.push({
+        path: segs.map(s => {
+          const n = Number(s)
+          return require_primordials_number.NumberIsInteger(n) &&
+            String(n) === s
+            ? n
+            : s
+        }),
+        message: err.message,
+      })
+    }
+    return out
+  }
+  /**
+   * Normalize a Zod error object (v3 or v4) into plain issues. Both versions
+   * expose `.issues: Array<{ path, message }>`.
+   *
+   * @internal
+   */
+  function normalizeZodError(err) {
+    if (err === null || typeof err !== 'object')
+      return [
+        {
+          path: [],
+          message: String(err),
+        },
+      ]
+    const issues = err.issues
+    if (!require_primordials_array.ArrayIsArray(issues))
+      return [
+        {
+          path: [],
+          message: 'Unknown validation error',
+        },
+      ]
+    return issues.map(issue => {
+      const i = issue
+      return {
+        __proto__: null,
+        path: require_primordials_array.ArrayIsArray(i.path) ? i.path : [],
+        message: typeof i.message === 'string' ? i.message : 'Invalid value',
+      }
+    })
+  }
+  /**
+   * Validate `data` against a Zod-style `schema`. Non-throwing.
+   *
+   * The return type narrows `value` to `Infer<S>`, so callers get
+   * `z.infer<typeof S>` with no casts. Errors are normalized to `{ path,
+   * message }` regardless of the underlying validator.
+   *
+   * @throws {TypeError} When `schema` is not a recognized validator kind.
+   */
+  function validateSchema(schema, data) {
+    if (isTypeBoxSchema(schema)) {
+      const { Value } = require_value$1()
+      if (Value.Check(schema, data))
+        return {
+          ok: true,
+          value: data,
+        }
+      return {
+        ok: false,
+        errors: normalizeTypeBoxErrors(Value.Errors(schema, data)),
+      }
+    }
+    if (
+      schema !== null &&
+      typeof schema === 'object' &&
+      typeof schema.safeParse === 'function'
+    ) {
+      const result = schema.safeParse(data)
+      if (result.success === true)
+        return {
+          ok: true,
+          value: result.data,
+        }
+      return {
+        ok: false,
+        errors: normalizeZodError(result.error),
+      }
+    }
+    throw new require_primordials_error.TypeErrorCtor(
+      'validateSchema: unsupported schema kind. Expected a Zod schema or an object with a safeParse method.',
+    )
+  }
+  exports.isTypeBoxSchema = isTypeBoxSchema
+  exports.normalizeTypeBoxErrors = normalizeTypeBoxErrors
+  exports.normalizeZodError = normalizeZodError
+  exports.validateSchema = validateSchema
+})
+
+var require_parse = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_error = require_error$2()
+  const require_primordials_map_set = require_map_set()
+  const require_primordials_buffer = require_buffer()
+  const require_primordials_json = require_json()
+  const require_strings_transform = require_transform$1()
+  const require_schema_validate = require_validate()
+  /**
+   * @file JSON parsing utilities with Buffer detection and BOM stripping.
+   *   Provides safe JSON parsing with automatic encoding handling, plus
+   *   `parseJsonStrict` for untrusted input (prototype-pollution protection +
+   *   size limits + optional schema validation).
+   */
+  /**
+   * Check if a value is a Buffer instance. Uses duck-typing to detect Buffer
+   * without requiring Node.js Buffer in type system.
+   *
+   * @example
+   *   ;```ts
+   *   isBuffer(Buffer.from('hello')) // => true
+   *   isBuffer('hello') // => false
+   *   isBuffer({ length: 5 }) // => false
+   *   ```
+   *
+   * @param x - Value to check.
+   *
+   * @returns `true` if value is a Buffer, `false` otherwise
+   */
+  function isBuffer(x) {
+    if (!x || typeof x !== 'object') return false
+    const obj = x
+    if (typeof obj['length'] !== 'number') return false
+    if (typeof obj['copy'] !== 'function' || typeof obj['slice'] !== 'function')
+      return false
+    if (
+      typeof obj['length'] === 'number' &&
+      obj['length'] > 0 &&
+      typeof obj[0] !== 'number'
+    )
+      return false
+    const Ctor = x.constructor
+    return !!(typeof Ctor?.isBuffer === 'function' && Ctor.isBuffer(x))
+  }
+  /**
+   * Check if a value is a JSON primitive type. JSON primitives are: `null`,
+   * `boolean`, `number`, or `string`.
+   *
+   * @example
+   *   ;```ts
+   *   isJsonPrimitive(null) // => true
+   *   isJsonPrimitive(true) // => true
+   *   isJsonPrimitive(42) // => true
+   *   isJsonPrimitive('hello') // => true
+   *   isJsonPrimitive({}) // => false
+   *   isJsonPrimitive([]) // => false
+   *   isJsonPrimitive(undefined) // => false
+   *   ```
+   *
+   * @param value - Value to check.
+   *
+   * @returns `true` if value is a JSON primitive, `false` otherwise
+   */
+  function isJsonPrimitive(value) {
+    return (
+      value === null ||
+      typeof value === 'boolean' ||
+      typeof value === 'number' ||
+      typeof value === 'string'
+    )
+  }
+  /**
+   * Parse JSON content with automatic Buffer handling and BOM stripping.
+   * Provides safer JSON parsing with helpful error messages and optional error
+   * suppression.
+   *
+   * Features: - Automatic UTF-8 Buffer conversion - Byte Order Mark stripping
+   * for cross-platform compatibility - Enhanced error messages with filepath
+   * context - Optional error suppression (returns `undefined` instead of
+   * throwing) - Optional reviver for transforming parsed values.
+   *
+   * @example
+   *   ;```ts
+   *   // Basic usage
+   *   const data = parseJson('{"name":"example"}')
+   *   console.log(data.name) // => 'example'
+   *
+   *   // Parse Buffer with UTF-8 BOM
+   *   const buffer = Buffer.from('\uFEFF{"value":42}')
+   *   const data = parseJson(buffer)
+   *   console.log(data.value) // => 42
+   *
+   *   // Enhanced error messages with filepath
+   *   try {
+   *     parseJson('invalid', { filepath: 'config.json' })
+   *   } catch (e) {
+   *     console.error(e.message)
+   *     // => "config.json: Unexpected token i in JSON at position 0"
+   *   }
+   *
+   *   // Suppress errors
+   *   const result = parseJson('invalid', { throws: false })
+   *   console.log(result) // => undefined
+   *
+   *   // Transform values with reviver
+   *   const json = '{"created":"2024-01-15T10:30:00Z"}'
+   *   const data = parseJson(json, {
+   *     reviver: (key, value) => {
+   *       if (key === 'created' && typeof value === 'string') {
+   *         return new Date(value)
+   *       }
+   *       return value
+   *     },
+   *   })
+   *   console.log(data.created instanceof Date) // => true
+   *   ```
+   *
+   * @param content - JSON string or Buffer to parse.
+   * @param options - Optional parsing configuration.
+   *
+   * @returns Parsed JSON value, or `undefined` if parsing fails and `throws` is
+   *   `false`
+   *
+   * @throws {SyntaxError} When JSON is invalid and `throws` is `true` (default)
+   */
+  function parseJson(content, options) {
+    const { filepath, reviver, throws } = {
+      __proto__: null,
+      ...options,
+    }
+    const shouldThrow = throws === void 0 || !!throws
+    const jsonStr = isBuffer(content) ? content.toString('utf8') : content
+    try {
+      return require_primordials_json.JSONParse(
+        require_strings_transform.stripBom(jsonStr),
+        reviver,
+      )
+    } catch (e) {
+      if (shouldThrow) {
+        const error = e
+        if (error && typeof filepath === 'string')
+          error.message = `${filepath}: ${error.message}`
+        throw error
+      }
+    }
+  }
+  const DANGEROUS_KEYS = new require_primordials_map_set.SetCtor([
+    '__proto__',
+    'constructor',
+    'prototype',
+  ])
+  const DEFAULT_MAX_SIZE = 10485760
+  /**
+   * Safely parse JSON with optional schema validation and security controls.
+   * Throws on parse failure, validation failure, or security violation.
+   *
+   * Untrusted input only: size cap, prototype-pollution reviver, optional
+   * schema. Trusted reads (package.json, local config) want `parseJson()`
+   * instead.
+   *
+   * @throws {Error} On oversize input, parse failure, prototype-pollution keys,
+   *   or schema validation failure.
+   *
+   * @unused No internal or Socket consumers; downstream repos call the plain
+   *   `parseJson`. Exercised only by its unit tests.
+   */
+  function parseJsonStrict(jsonString, options) {
+    const {
+      allowPrototype = false,
+      maxSize = DEFAULT_MAX_SIZE,
+      schema,
+    } = {
+      __proto__: null,
+      ...options,
+    }
+    if (
+      require_primordials_buffer.BufferByteLength(jsonString, 'utf8') > maxSize
+    )
+      throw new require_primordials_error.ErrorCtor(
+        `JSON string exceeds maximum size limit${maxSize !== DEFAULT_MAX_SIZE ? ` of ${maxSize} bytes` : ''}`,
+      )
+    let parsed
+    try {
+      parsed = allowPrototype
+        ? require_primordials_json.JSONParse(jsonString)
+        : require_primordials_json.JSONParse(
+            jsonString,
+            prototypePollutionReviver,
+          )
+    } catch (e) {
+      throw new require_primordials_error.ErrorCtor(
+        `Failed to parse JSON: ${e}`,
+      )
+    }
+    if (schema) {
+      const result = require_schema_validate.validateSchema(schema, parsed)
+      if (!result.ok) {
+        const summary = result.errors
+          .map(e => `${e.path.join('.') || '(root)'}: ${e.message}`)
+          .join(', ')
+        throw new require_primordials_error.ErrorCtor(
+          `Validation failed: ${summary}`,
+        )
+      }
+      return result.value
+    }
+    return parsed
+  }
+  /**
+   * JSON.parse reviver that rejects prototype pollution keys at any depth.
+   *
+   * @internal
+   */
+  function prototypePollutionReviver(key, value) {
+    if (DANGEROUS_KEYS.has(key))
+      throw new require_primordials_error.ErrorCtor(
+        'JSON contains potentially malicious prototype pollution keys',
+      )
+    return value
+  }
+  exports.isBuffer = isBuffer
+  exports.isJsonPrimitive = isJsonPrimitive
+  exports.parseJson = parseJson
+  exports.parseJsonStrict = parseJsonStrict
+  exports.prototypePollutionReviver = prototypePollutionReviver
+})
+
+var require_read_json = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_primordials_error = require_error$2()
+  const require_primordials_number = require_number$2()
+  const require_fs_read_json_cache = require_read_json_cache()
+  const require_json_parse = require_parse()
+  /**
+   * @file Read-and-parse helpers for JSON files. Wraps fs reads in actionable
+   *   error messages keyed off `ENOENT` / `EACCES` / `EPERM` so callers see
+   *   "JSON file not found" / "Permission denied" rather than the bare errno.
+   *   Both variants honor `throws: false` to fall back to `undefined` on parse
+   *   or read failure. Both variants cache parse results by default — keyed on
+   *   `path + ino + size \+ mtimeMs`, with a defensive `structuredClone` on
+   *   every hit so callers can mutate the returned object freely. See
+   *   `_read-json-cache.ts` for the safety rationale + opt-out controls.
+   */
+  /**
+   * Read and parse a JSON file asynchronously. Reads the file as UTF-8 text and
+   * parses it as JSON. Optionally accepts a reviver function to transform
+   * parsed values.
+   *
+   * @example
+   *   ;```ts
+   *   // Read and parse package.json
+   *   const pkg = await readJson('./package.json')
+   *
+   *   // Read JSON with custom reviver
+   *   const data = await readJson('./data.json', {
+   *     reviver: (key, value) => {
+   *       if (key === 'date') return new Date(value)
+   *       return value
+   *     },
+   *   })
+   *
+   *   // Don't throw on parse errors
+   *   const config = await readJson('./config.json', { throws: false })
+   *   if (config === undefined) {
+   *     console.log('Failed to parse config')
+   *   }
+   *   ```
+   *
+   * @param filepath - Path to JSON file.
+   * @param options - Read and parse options.
+   *
+   * @returns Promise resolving to parsed JSON value, or undefined if throws is
+   *   false and an error occurs.
+   */
+  async function readJson(filepath, options) {
+    const { cache, reviver, throws, ...fsOptions } = {
+      __proto__: null,
+      ...(typeof options === 'string' ? { encoding: options } : options),
+    }
+    const shouldThrow = throws === void 0 || !!throws
+    const cacheEnabled = cache !== false && reviver === void 0
+    const fs = require_node_fs.getNodeFs()
+    const pathStr = String(filepath)
+    let preReadStat
+    if (cacheEnabled)
+      try {
+        const stat = await fs.promises.stat(filepath)
+        preReadStat = stat
+        const cached = require_fs_read_json_cache.getCachedJson(
+          pathStr,
+          require_primordials_number.NumberCtor(stat.ino),
+          require_primordials_number.NumberCtor(stat.size),
+          require_primordials_number.NumberCtor(stat.mtimeMs),
+        )
+        if (cached !== void 0) return cached
+      } catch {}
+    let content = ''
+    try {
+      content = await fs.promises.readFile(filepath, {
+        __proto__: null,
+        ...fsOptions,
+        encoding: 'utf8',
+      })
+    } catch (e) {
+      return handleReadError(e)
+    }
+    function handleReadError(e) {
+      if (shouldThrow) throwReadJsonError(filepath, e)
+    }
+    const parsed = require_json_parse.parseJson(content, {
+      filepath: pathStr,
+      reviver,
+      throws: shouldThrow,
+    })
+    if (cacheEnabled && parsed !== void 0 && preReadStat !== void 0)
+      try {
+        const statAfter = await fs.promises.stat(filepath)
+        if (readJsonStatsMatch(preReadStat, statAfter))
+          require_fs_read_json_cache.setCachedJson(
+            pathStr,
+            require_primordials_number.NumberCtor(preReadStat.ino),
+            require_primordials_number.NumberCtor(preReadStat.size),
+            require_primordials_number.NumberCtor(preReadStat.mtimeMs),
+            parsed,
+          )
+      } catch {}
+    return parsed
+  }
+  function readJsonStatsMatch(before, after) {
+    return (
+      require_primordials_number.NumberCtor(after.ino) ===
+        require_primordials_number.NumberCtor(before.ino) &&
+      require_primordials_number.NumberCtor(after.size) ===
+        require_primordials_number.NumberCtor(before.size) &&
+      require_primordials_number.NumberCtor(after.mtimeMs) ===
+        require_primordials_number.NumberCtor(before.mtimeMs)
+    )
+  }
+  /**
+   * Read and parse a JSON file synchronously. Reads the file as UTF-8 text and
+   * parses it as JSON. Optionally accepts a reviver function to transform
+   * parsed values.
+   *
+   * @example
+   *   ;```ts
+   *   // Read and parse tsconfig.json
+   *   const tsconfig = readJsonSync('./tsconfig.json')
+   *
+   *   // Read JSON with custom reviver
+   *   const data = readJsonSync('./data.json', {
+   *     reviver: (key, value) => {
+   *       if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+   *         return new Date(value)
+   *       }
+   *       return value
+   *     },
+   *   })
+   *
+   *   // Don't throw on parse errors
+   *   const config = readJsonSync('./config.json', { throws: false })
+   *   ```
+   *
+   * @param filepath - Path to JSON file.
+   * @param options - Read and parse options.
+   *
+   * @returns Parsed JSON value, or undefined if throws is false and an error
+   *   occurs.
+   */
+  function readJsonSync(filepath, options) {
+    const { cache, reviver, throws, ...fsOptions } = {
+      __proto__: null,
+      ...(typeof options === 'string' ? { encoding: options } : options),
+    }
+    const shouldThrow = throws === void 0 || !!throws
+    const cacheEnabled = cache !== false && reviver === void 0
+    const fs = require_node_fs.getNodeFs()
+    const pathStr = String(filepath)
+    let preReadStat
+    if (cacheEnabled)
+      try {
+        const stat = fs.statSync(filepath)
+        preReadStat = stat
+        const cached = require_fs_read_json_cache.getCachedJson(
+          pathStr,
+          require_primordials_number.NumberCtor(stat.ino),
+          require_primordials_number.NumberCtor(stat.size),
+          require_primordials_number.NumberCtor(stat.mtimeMs),
+        )
+        if (cached !== void 0) return cached
+      } catch {}
+    let content = ''
+    try {
+      content = fs.readFileSync(filepath, {
+        __proto__: null,
+        ...fsOptions,
+        encoding: 'utf8',
+      })
+    } catch (e) {
+      return handleReadError(e)
+    }
+    function handleReadError(e) {
+      if (shouldThrow) throwReadJsonError(filepath, e)
+    }
+    const parsed = require_json_parse.parseJson(content, {
+      filepath: pathStr,
+      reviver,
+      throws: shouldThrow,
+    })
+    if (cacheEnabled && parsed !== void 0 && preReadStat !== void 0)
+      try {
+        const statAfter = fs.statSync(filepath)
+        if (readJsonStatsMatch(preReadStat, statAfter))
+          require_fs_read_json_cache.setCachedJson(
+            pathStr,
+            require_primordials_number.NumberCtor(preReadStat.ino),
+            require_primordials_number.NumberCtor(preReadStat.size),
+            require_primordials_number.NumberCtor(preReadStat.mtimeMs),
+            parsed,
+          )
+      } catch {}
+    return parsed
+  }
+  function throwReadJsonError(filepath, error) {
+    const code = error.code
+    if (code === 'ENOENT')
+      throw new require_primordials_error.ErrorCtor(
+        `JSON file not found: ${filepath}\nEnsure the file exists or create it with the expected structure.`,
+        { cause: error },
+      )
+    /* c8 ignore start - EACCES/EPERM branch is platform-dependent */
+    if (code === 'EACCES' || code === 'EPERM')
+      throw new require_primordials_error.ErrorCtor(
+        `Permission denied reading JSON file: ${filepath}\nCheck file permissions or run with appropriate access.`,
+        { cause: error },
+      )
+    /* c8 ignore stop */
+    throw error
+  }
+  exports.clearReadJsonCache = require_fs_read_json_cache.clearReadJsonCache
+  exports.getReadJsonCacheStats =
+    require_fs_read_json_cache.getReadJsonCacheStats
+  exports.readJson = readJson
+  exports.readJsonStatsMatch = readJsonStatsMatch
+  exports.readJsonSync = readJsonSync
+  exports.setReadJsonCacheMax = require_fs_read_json_cache.setReadJsonCacheMax
+  exports.setReadJsonCacheTtlMs =
+    require_fs_read_json_cache.setReadJsonCacheTtlMs
+  exports.throwReadJsonError = throwReadJsonError
+})
+
+var require_resolve_volta = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_node_path = require_path$2()
+  const require_paths_shared = require_shared$6()
+  const require_exe_shared = require_shared$1()
+  const require_exe_path_bin_kinds = require_bin_kinds()
+  const require_fs_read_json = require_read_json()
+  /**
+   * @file Volta-managed binary resolution. Volta layers binaries through
+   *   `~/.volta/tools/{image,user}/...` with version-pinned subdirectories, so
+   *   the path on PATH is a shim rather than the real CLI. Given the `.volta/`
+   *   segment's offset in a bin path, the functions here walk into the image
+   *   directory and return the real script. Results are memoized in
+   *   `voltaBinCache`, which lives in `../shared.mjs` so `which.mts` can flush
+   *   it alongside its own cache.
+   */
+  /**
+   * Volta's pinned tool versions, or null when the file is absent or malformed.
+   */
+  function readVoltaPlatform(userPath) {
+    const path = require_node_path.getNodePath()
+    return require_fs_read_json.readJsonSync(
+      path.join(userPath, 'platform.json'),
+      { throws: false },
+    )
+  }
+  /**
+   * The real script behind a Volta shim, or `''` when Volta does not manage it.
+   *
+   * `voltaIndex` is the offset of the `.volta/` segment inside `binPath`, which
+   * the caller already located.
+   */
+  function resolveVoltaBinSync(config) {
+    const { basename, binPath, voltaIndex } = config
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    const voltaPath = binPath.slice(0, voltaIndex)
+    const voltaCacheKey = `${voltaPath}:${basename}`
+    const cachedVolta = require_exe_shared.voltaBinCache.get(voltaCacheKey)
+    /* c8 ignore start */
+    if (cachedVolta) {
+      if (fs.existsSync(cachedVolta)) return cachedVolta
+      require_exe_shared.voltaBinCache.delete(voltaCacheKey)
+    }
+    /* c8 ignore stop */
+    const voltaToolsPath = path.join(voltaPath, 'tools')
+    const imagePath = path.join(voltaToolsPath, 'image')
+    const userPath = path.join(voltaToolsPath, 'user')
+    /* c8 ignore start */
+    const voltaBinPath =
+      require_exe_path_bin_kinds.binShimFormat(basename) ===
+      require_exe_path_bin_kinds.BIN_SHIM_FORMAT.npmCli
+        ? voltaNpmCliPath({
+            basename,
+            imagePath,
+            platform: readVoltaPlatform(userPath),
+          })
+        : voltaPackageBinPath({
+            basename,
+            imagePath,
+            userPath,
+          })
+    /* c8 ignore stop */
+    if (!voltaBinPath) return ''
+    let resolvedVoltaPath = voltaBinPath
+    try {
+      resolvedVoltaPath = require_paths_shared.normalizePath(
+        fs.realpathSync.native(voltaBinPath),
+      )
+    } catch {}
+    require_exe_shared.voltaBinCache.set(voltaCacheKey, resolvedVoltaPath)
+    return resolvedVoltaPath
+  }
+  /**
+   * The npm or npx CLI script inside a Volta image.
+   *
+   * Volta stores npm two ways depending on whether it was pinned separately:
+   * under `image/npm/<version>/`, or bundled inside the Node image at
+   * `image/node/<version>/lib/node_modules/npm/`. The first is tried first.
+   */
+  function voltaNpmCliPath(config) {
+    const { basename, imagePath, platform } = config
+    const npmVersion = platform?.node?.npm
+    if (!npmVersion) return ''
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    const relCliPath = `bin/${basename}-cli.js`
+    const imageNpmPath = path.join(imagePath, `npm/${npmVersion}/${relCliPath}`)
+    const nodeVersion = platform?.node?.runtime
+    if (!nodeVersion || fs.existsSync(imageNpmPath)) return imageNpmPath
+    const bundledNpmPath = path.join(
+      imagePath,
+      `node/${nodeVersion}/lib/node_modules/npm/${relCliPath}`,
+    )
+    return fs.existsSync(bundledNpmPath) ? bundledNpmPath : ''
+  }
+  /**
+   * A non-npm package binary inside a Volta image.
+   *
+   * Volta records the owning package in `user/bin/<name>.json`, then stores the
+   * binary at `image/packages/<package>/bin/<name>`, with a `.cmd` sibling on
+   * Windows.
+   */
+  function voltaPackageBinPath(config) {
+    const { basename, imagePath, userPath } = config
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    const binPackage = require_fs_read_json.readJsonSync(
+      path.join(userPath, 'bin', `${basename}.json`),
+      { throws: false },
+    )?.package
+    if (!binPackage) return ''
+    const packageBinPath = path.join(
+      imagePath,
+      `packages/${binPackage}/bin/${basename}`,
+    )
+    if (fs.existsSync(packageBinPath)) return packageBinPath
+    const cmdBinPath = `${packageBinPath}.cmd`
+    return fs.existsSync(cmdBinPath) ? cmdBinPath : ''
+  }
+  exports.readVoltaPlatform = readVoltaPlatform
+  exports.resolveVoltaBinSync = resolveVoltaBinSync
+  exports.voltaNpmCliPath = voltaNpmCliPath
+  exports.voltaPackageBinPath = voltaPackageBinPath
+})
+
+var require_resolve = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_fs = require_fs$1()
+  const require_constants_platform = require_platform()
+  const require_node_path = require_path$2()
+  const require_paths_shared = require_shared$6()
+  const require_exe_path_bin_kinds = require_bin_kinds()
+  const require_exe_path_resolve_shims = require_resolve_shims()
+  const require_exe_path_resolve_volta = require_resolve_volta()
+  const require_exe_path_which = require_which()
+  /**
+   * @file Resolve a binary path to the underlying script file. Wrapper-script
+   *   unwrapping: a binary like `npm` is rarely an executable — on Windows it
+   *   is `npm.cmd` / `npm.ps1` / an extensionless shell script. Each wrapper
+   *   variant has a fixed format generated by either the npm CLI build (npm/npx
+   *   specific) or by `cmd-shim` for arbitrary package binaries. The parsers in
+   *   `resolve-shims.mts` extract the relative path to the underlying `.js` so
+   *   callers can spawn Node with that path directly, which is cheaper than
+   *   re-launching a shell wrapper. Volta managed installs are handled in
+   *   `resolve-volta.mts`, which walks `~/.volta/tools/{image,user}/...` to the
+   *   real CLI script and memoizes the result. That cache lives in
+   *   `../shared.mjs` so `which.mts` can flush it when its own cache eviction
+   *   fires. Cycles with `which.mts`: `normalizedBinPath` calls `whichRealSync`
+   *   to handle relative input paths. ESM tolerates the cycle since both sides
+   *   expose only functions, so no eager top-level evaluation needs the other
+   *   module's bindings.
+   */
+  /**
+   * An absolute, normalized form of a bin path. A relative input is looked up
+   * on PATH first, since every later step pattern-matches an absolute layout.
+   */
+  function normalizedBinPath(binPath) {
+    if (require_node_path.getNodePath().isAbsolute(binPath))
+      return require_paths_shared.normalizePath(binPath)
+    try {
+      const resolved = require_exe_path_which.whichRealSync(binPath)
+      if (resolved) return require_paths_shared.normalizePath(resolved)
+    } catch {}
+    return require_paths_shared.normalizePath(binPath)
+  }
+  /**
+   * The npm/npx CLI script reachable directly from a bin directory, as
+   * installed by the official Node.js Windows installer: `C:\Program
+   * Files\nodejs\npm.cmd` sits beside `node_modules/npm/bin/npm-cli.js`.
+   * Returns `''` when that layout does not apply, in which case the wrapper's
+   * body has to be parsed.
+   */
+  function npmWindowsQuickCliPath(config) {
+    const { basename, binPath, extLowered } = config
+    if (
+      !require_exe_path_bin_kinds.isKnownShimExtension(extLowered) ||
+      require_exe_path_bin_kinds.binShimFormat(basename) !==
+        require_exe_path_bin_kinds.BIN_SHIM_FORMAT.npmCli
+    )
+      return ''
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    const quickPath = path.join(
+      path.dirname(binPath),
+      `node_modules/npm/bin/${basename}-cli.js`,
+    )
+    if (!fs.existsSync(quickPath)) return ''
+    try {
+      return fs.realpathSync.native(quickPath)
+    } catch {}
+    return quickPath
+  }
+  /**
+   * A path with symlinks followed, falling back to the normalized input when
+   * the target does not exist.
+   */
+  function realOrNormalizedPath(binPath) {
+    const fs = require_node_fs.getNodeFs()
+    try {
+      return require_paths_shared.normalizePath(fs.realpathSync.native(binPath))
+    } catch {}
+    return require_paths_shared.normalizePath(binPath)
+  }
+  /**
+   * The setup-pnpm GitHub Action can leave a bin path with extra segments, like
+   * `<dir>/.bin/pnpm/bin/pnpm.cjs`, when the shell script's relative path
+   * resolves into an invalid nested structure. Truncating at `/.bin/pnpm` names
+   * the real shell script.
+   *
+   * The check below needs `statSync`, not `existsSync`: the discriminator is
+   * `isFile()`, because the malformed path can also resolve to a directory.
+   */
+  function repairMalformedPnpmBinPath(binPath) {
+    const fs = require_node_fs.getNodeFs()
+    const binMarker = '/.bin/pnpm'
+    if (!binPath.includes(`${binMarker}/bin/`)) return binPath
+    const binIndex = binPath.indexOf(binMarker)
+    if (binIndex === -1) return binPath
+    const baseBinPath = binPath.slice(0, binIndex + 10)
+    try {
+      if (fs.statSync(baseBinPath).isFile())
+        return require_paths_shared.normalizePath(baseBinPath)
+    } catch {}
+    return binPath
+  }
+  /**
+   * A Unix shell wrapper resolved to the script it executes, or the input path
+   * when it carries an extension or does not match a known wrapper format.
+   */
+  function resolvePosixWrapperPath(config) {
+    const { basename, extLowered } = config
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    const isWrapperBin =
+      require_exe_path_bin_kinds.binShimFormat(basename) !==
+      require_exe_path_bin_kinds.BIN_SHIM_FORMAT.cmdShim
+    const binPath = repairMalformedPnpmBinPath(config.binPath)
+    if (!!path.extname(binPath) || !isWrapperBin || !fs.existsSync(binPath))
+      return binPath
+    const relPath = require_exe_path_resolve_shims.posixShimRelPath({
+      basename,
+      extLowered,
+      source: fs.readFileSync(binPath, 'utf8'),
+    })
+    if (!relPath) return binPath
+    return require_paths_shared.normalizePath(
+      path.resolve(path.dirname(binPath), relPath),
+    )
+  }
+  /**
+   * Resolve a binary path to the real underlying script file. Handles Windows
+   * .cmd wrappers and Unix shell scripts, resolving them to the actual .js
+   * files they execute.
+   *
+   * @example
+   *   ;```typescript
+   *   const realPath = resolveRealBinSync('/usr/local/bin/npm')
+   *   // e.g. '/usr/local/lib/node_modules/npm/bin/npm-cli.js'
+   *   ```
+   */
+  function resolveRealBinSync(binPath) {
+    const path = require_node_path.getNodePath()
+    binPath = normalizedBinPath(binPath)
+    if (binPath === '.') return binPath
+    const ext = path.extname(binPath)
+    const extLowered = ext.toLowerCase()
+    const basename = path.basename(binPath, ext)
+    const voltaIndex = voltaSegmentIndex({
+      basename,
+      binPath,
+    })
+    if (voltaIndex !== -1) {
+      const voltaBinPath = require_exe_path_resolve_volta.resolveVoltaBinSync({
+        basename,
+        binPath,
+        voltaIndex,
+      })
+      if (voltaBinPath) return voltaBinPath
+    }
+    const facts = {
+      basename,
+      binPath,
+      extLowered,
+    }
+    /* c8 ignore start - Windows-only wrapper resolution; tested on Windows runners. */
+    if (require_constants_platform.isWin32()) {
+      const quickPath = npmWindowsQuickCliPath(facts)
+      if (quickPath) return quickPath
+      return realOrNormalizedPath(resolveWindowsWrapperPath(facts))
+    }
+    /* c8 ignore stop */
+    return realOrNormalizedPath(resolvePosixWrapperPath(facts))
+  }
+  /**
+   * A Windows wrapper resolved to the script it executes, or the input path
+   * when it is already an executable or does not match a known wrapper format.
+   */
+  function resolveWindowsWrapperPath(config) {
+    const { basename, binPath, extLowered } = config
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    if (
+      !require_exe_path_bin_kinds.isKnownShimExtension(extLowered) ||
+      extLowered === '.exe' ||
+      !fs.existsSync(binPath)
+    )
+      return binPath
+    const relPath = require_exe_path_resolve_shims.windowsShimRelPath({
+      basename,
+      extLowered,
+      source: fs.readFileSync(binPath, 'utf8'),
+    })
+    if (!relPath) return binPath
+    return require_paths_shared.normalizePath(
+      path.resolve(path.dirname(binPath), relPath),
+    )
+  }
+  /**
+   * The offset of the `.volta/` segment in a bin path, or -1 when Volta does
+   * not manage it.
+   *
+   * The Node binary itself is excluded: Volta's `node` entry is a shim that
+   * must be spawned as-is, so walking into the image directory would break it.
+   */
+  function voltaSegmentIndex(config) {
+    const { basename, binPath } = config
+    if (require_exe_path_bin_kinds.isNodeBinName(basename)) return -1
+    return (
+      /(?<=\/)\.volta\//i.exec(require_paths_shared.normalizePath(binPath))
+        ?.index ?? -1
+    )
+  }
+  exports.normalizedBinPath = normalizedBinPath
+  exports.npmWindowsQuickCliPath = npmWindowsQuickCliPath
+  exports.realOrNormalizedPath = realOrNormalizedPath
+  exports.repairMalformedPnpmBinPath = repairMalformedPnpmBinPath
+  exports.resolvePosixWrapperPath = resolvePosixWrapperPath
+  exports.resolveRealBinSync = resolveRealBinSync
+  exports.resolveWindowsWrapperPath = resolveWindowsWrapperPath
+  exports.voltaSegmentIndex = voltaSegmentIndex
+})
+
+var require_which$1 = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  const { ArrayPrototypeUnshift: _p_ArrayPrototypeUnshift } = require_array$3()
+  const { ErrorCtor: _p_ErrorCtor } = require_error$2()
+  const { SetCtor: _p_SetCtor } = require_map_set()
+  const {
+    ObjectAssign: _p_ObjectAssign,
+    ObjectDefineProperty: _p_ObjectDefineProperty,
+    ObjectGetOwnPropertyDescriptor: _p_ObjectGetOwnPropertyDescriptor,
+  } = require_object$1()
+  const { processCwd: _p_processCwd } = require_process$1()
+  const { RegExpCtor: _p_RegExpCtor } = require_regexp()
+  const {
+    StringPrototypeSubstring: _p_StringPrototypeSubstring,
+    StringPrototypeToLowerCase: _p_StringPrototypeToLowerCase,
+  } = require_string$2()
+  var __commonJSMin = (cb, mod) => () => (
+    mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+    mod.exports
+  )
+  var require_index_min$1 = /* @__PURE__ */ __commonJSMin(exports$5 => {
+    var a = (t, e) => () => (
+      e || t((e = { exports: {} }).exports, e),
+      e.exports
+    )
+    var _ = a(i => {
+      'use strict'
+      _p_ObjectDefineProperty(i, '__esModule', { value: !0 })
+      i.sync = i.isexe = void 0
+      var M = __require('fs')
+      var x = __require('fs/promises')
+      var q = async (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return d(await (0, x.stat)(t), e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      i.isexe = q
+      var m = (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return d((0, M.statSync)(t), e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      i.sync = m
+      var d = (t, e) => t.isFile() && A(t, e)
+      var A = (t, e) => {
+        let r = e.uid ?? process.getuid?.()
+        let s = e.groups ?? process.getgroups?.() ?? []
+        let n = e.gid ?? process.getgid?.() ?? s[0]
+        if (r === void 0 || n === void 0)
+          throw new _p_ErrorCtor('cannot get uid or gid')
+        let u = /* @__PURE__ */ new _p_SetCtor([n, ...s])
+        let c = t.mode
+        let S = t.uid
+        let P = t.gid
+        let f = parseInt('100', 8)
+        let l = parseInt('010', 8)
+        return !!(
+          c & parseInt('001', 8) ||
+          (c & l && u.has(P)) ||
+          (c & f && S === r) ||
+          (c & 72 && r === 0)
+        )
+      }
+    })
+    var g = a(o => {
+      'use strict'
+      _p_ObjectDefineProperty(o, '__esModule', { value: !0 })
+      o.sync = o.isexe = void 0
+      var T = __require('fs')
+      var I = __require('fs/promises')
+      var D = __require('path')
+      var F = async (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return y(await (0, I.stat)(t), t, e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      o.isexe = F
+      var L = (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return y((0, T.statSync)(t), t, e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      o.sync = L
+      var B = (t, e) => {
+        let { pathExt: r = process.env.PATHEXT || '' } = e,
+          s = r.split(D.delimiter)
+        if (s.indexOf('') !== -1) return !0
+        for (let n of s) {
+          let u = _p_StringPrototypeToLowerCase(n)
+          let c = _p_StringPrototypeSubstring(
+            t,
+            t.length - u.length,
+          ).toLowerCase()
+          if (u && c === u) return !0
+        }
+        return !1
+      }
+      var y = (t, e, r) => t.isFile() && B(e, r)
+    })
+    var p = a(h => {
+      'use strict'
+      _p_ObjectDefineProperty(h, '__esModule', { value: !0 })
+    })
+    var v =
+      (exports$5 && exports$5.__createBinding) ||
+      (Object.create
+        ? function (t, e, r, s) {
+            s === void 0 && (s = r)
+            var n = _p_ObjectGetOwnPropertyDescriptor(e, r)
+            ;((!n ||
+              ('get' in n ? !e.__esModule : n.writable || n.configurable)) &&
+              (n = {
+                enumerable: !0,
+                get: function () {
+                  return e[r]
+                },
+              }),
+              _p_ObjectDefineProperty(t, s, n))
+          }
+        : function (t, e, r, s) {
+            ;(s === void 0 && (s = r), (t[s] = e[r]))
+          })
+    var G =
+      (exports$5 && exports$5.__setModuleDefault) ||
+      (Object.create
+        ? function (t, e) {
+            _p_ObjectDefineProperty(t, 'default', {
+              enumerable: !0,
+              value: e,
+            })
+          }
+        : function (t, e) {
+            t.default = e
+          })
+    var w =
+      (exports$5 && exports$5.__importStar) ||
+      (function () {
+        var t = function (e) {
+          return (
+            (t =
+              Object.getOwnPropertyNames ||
+              function (r) {
+                var s = []
+                for (var n in r)
+                  Object.prototype.hasOwnProperty.call(r, n) &&
+                    (s[s.length] = n)
+                return s
+              }),
+            t(e)
+          )
+        }
+        return function (e) {
+          if (e && e.__esModule) return e
+          var r = {}
+          if (e != null)
+            for (var s = t(e), n = 0; n < s.length; n++)
+              s[n] !== 'default' && v(r, e, s[n])
+          return (G(r, e), r)
+        }
+      })()
+    var X =
+      (exports$5 && exports$5.__exportStar) ||
+      function (t, e) {
+        for (var r in t)
+          r !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(e, r) &&
+            v(e, t, r)
+      }
+    _p_ObjectDefineProperty(exports$5, '__esModule', { value: !0 })
+    exports$5.sync =
+      exports$5.isexe =
+      exports$5.posix =
+      exports$5.win32 =
+        void 0
+    var E = w(_())
+    exports$5.posix = E
+    var O = w(g())
+    exports$5.win32 = O
+    X(p(), exports$5)
+    var b =
+      (process.env._ISEXE_TEST_PLATFORM_ || process.platform) === 'win32'
+        ? O
+        : E
+    exports$5.isexe = b.isexe
+    exports$5.sync = b.sync
+  })
+  var require_lib$2 = /* @__PURE__ */ __commonJSMin((exports$6, module$5) => {
+    const { isexe, sync: isexeSync } = require_index_min$1()
+    const { join, delimiter, sep, posix } = __require('path')
+    const isWindows = process.platform === 'win32'
+    /* istanbul ignore next */
+    const rSlash = new _p_RegExpCtor(
+      `[${posix.sep}${sep === posix.sep ? '' : sep}]`.replace(/(\\)/g, '\\$1'),
+    )
+    const rRel = new _p_RegExpCtor(`^\\.${rSlash.source}`)
+    const getNotFoundError = cmd =>
+      _p_ObjectAssign(/* @__PURE__ */ new _p_ErrorCtor(`not found: ${cmd}`), {
+        code: 'ENOENT',
+      })
+    const getPathInfo = (
+      cmd,
+      {
+        path: optPath = process.env.PATH,
+        pathExt: optPathExt = process.env.PATHEXT,
+        delimiter: optDelimiter = delimiter,
+      },
+    ) => {
+      const pathEnv = cmd.match(rSlash)
+        ? ['']
+        : [
+            ...(isWindows ? [_p_processCwd()] : []),
+            ...(optPath || /* istanbul ignore next: very unusual */ '').split(
+              optDelimiter,
+            ),
+          ]
+      if (isWindows) {
+        const pathExtExe =
+          optPathExt || ['.EXE', '.CMD', '.BAT', '.COM'].join(optDelimiter)
+        const pathExt = pathExtExe
+          .split(optDelimiter)
+          .flatMap(item => [item, _p_StringPrototypeToLowerCase(item)])
+        if (cmd.includes('.') && pathExt[0] !== '')
+          _p_ArrayPrototypeUnshift(pathExt, '')
+        return {
+          pathEnv,
+          pathExt,
+          pathExtExe,
+        }
+      }
+      return {
+        pathEnv,
+        pathExt: [''],
+      }
+    }
+    const getPathPart = (raw, cmd) => {
+      const pathPart = /^".*"$/.test(raw) ? raw.slice(1, -1) : raw
+      return (
+        (!pathPart && rRel.test(cmd) ? cmd.slice(0, 2) : '') +
+        join(pathPart, cmd)
+      )
+    }
+    const which = async (cmd, opt = {}) => {
+      const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+      const found = []
+      for (const envPart of pathEnv) {
+        const p = getPathPart(envPart, cmd)
+        for (const ext of pathExt) {
+          const withExt = p + ext
+          if (
+            await isexe(withExt, {
+              pathExt: pathExtExe,
+              ignoreErrors: true,
+            })
+          ) {
+            if (!opt.all) return withExt
+            found.push(withExt)
+          }
+        }
+      }
+      if (opt.all && found.length) return found
+      if (opt.nothrow) return null
+      throw getNotFoundError(cmd)
+    }
+    const whichSync = (cmd, opt = {}) => {
+      const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+      const found = []
+      for (const pathEnvPart of pathEnv) {
+        const p = getPathPart(pathEnvPart, cmd)
+        for (const ext of pathExt) {
+          const withExt = p + ext
+          if (
+            isexeSync(withExt, {
+              pathExt: pathExtExe,
+              ignoreErrors: true,
+            })
+          ) {
+            if (!opt.all) return withExt
+            found.push(withExt)
+          }
+        }
+      }
+      if (opt.all && found.length) return found
+      if (opt.nothrow) return null
+      throw getNotFoundError(cmd)
+    }
+    module$5.exports = which
+    which.sync = whichSync
+  })
+  module.exports = require_lib$2()
+})
+
+var require_which = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_runtime$1 = require_runtime$4()
+  const require_node_fs = require_fs$1()
+  const require_node_path = require_path$2()
+  const require_paths_predicates = require_predicates()
+  const require_primordials_array = require_array$3()
+  const require_primordials_json = require_json()
+  const require_exe_shared = require_shared$1()
+  const require_node_process = require_process()
+  const require_exe_path_resolve = require_resolve()
+  let src_external_which_js = require_which$1()
+  src_external_which_js = require_runtime$1.__toESM(src_external_which_js, 1)
+  /**
+   * @file Look up binaries on PATH. Two pairs of public functions: `which` /
+   *   `whichSync` — wrap the upstream `which` package, returning the first
+   *   matching path (or array with `{ all: true }`). Path-like inputs (absolute
+   *   paths, `./relative`, `../relative`) bypass PATH resolution and pass
+   *   through unchanged. Both are tolerant — they return `null` for not-found
+   *   instead of throwing. `whichReal` / `whichRealSync` — same but resolve the
+   *   result through `resolveRealBinSync` so the caller gets the underlying
+   *   script path (e.g., `npm-cli.js`) rather than the wrapper. Default
+   *   `nothrow: true` so a missing binary returns `undefined` instead of
+   *   bubbling a `which` package error. `whichLocalBin` resolves a tool from
+   *   the project-local `node_modules/.bin` (the inverse of `findRealBin`,
+   *   which skips it). Caching matches `shared.binPathCache` and
+   *   `binPathAllCache`. Both caches validate hits with `existsSync` so a tool
+   *   reinstall mid-session doesn't return a stale path.
+   */
+  /**
+   * Build the binPathCache / binPathAllCache key for a whichReal /
+   * whichRealSync lookup. Resolution depends on binName plus every option
+   * that changes what upstream which actually searches - path and pathExt -
+   * so two callers resolving the same binName under different search roots
+   * (e.g. different options.path) must not collide on the same cache entry
+   * and hand each other a stale or mismatched answer.
+   */
+  function binCacheKey(binName, options) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    return require_primordials_json.JSONStringify([
+      binName,
+      opts.path ?? '',
+      opts.pathExt ?? '',
+    ])
+  }
+  /**
+   * Find an executable in the system PATH asynchronously.
+   *
+   * This function resolves binary names to their full paths by searching the
+   * system PATH. It should only be used for binary names, never paths. An input
+   * that is already an absolute or relative path is returned as-is without PATH
+   * resolution.
+   *
+   * Binary name vs. path detection:
+   *
+   * - Binary names: 'npm', 'git', 'node' - will be resolved via PATH
+   * - Absolute paths: '/usr/bin/node', 'C:\Program Files\nodejs\node.exe' -
+   *   returned as-is
+   * - Relative paths: './node', '../bin/npm' - returned as-is
+   *
+   * @example
+   *   ;```typescript
+   *   // Resolve binary names
+   *   await which('node') // '/usr/local/bin/node'
+   *   await which('npm') // '/usr/local/bin/npm'
+   *   await which('nonexistent') // null
+   *
+   *   // Paths are returned as-is
+   *   await which('/usr/bin/node') // '/usr/bin/node'
+   *   await which('./local-script') // './local-script'
+   *   ```
+   *
+   * @param {string} binName - The binary name to resolve (e.g., 'npm', 'git')
+   * @param {WhichOptions | undefined} options - Options for resolution.
+   *
+   * @returns {Promise<string | string[] | null>} Promise resolving to the full
+   *   path, the original path, or null if not found.
+   */
+  async function which(binName, options) {
+    if (require_paths_predicates.isPath(binName)) return binName
+    try {
+      return await (0, src_external_which_js.default)(binName, options)
+    } catch {
+      return null
+    }
+  }
+  /**
+   * Resolve a tool installed in the project-local `node_modules/.bin` to its
+   * ABSOLUTE path. This is the inverse of findRealBin: that helper skips the
+   * shadow bins in node_modules/.bin to find the real package manager behind a
+   * tool's shim, whereas whichLocalBin WANTS the local bin — it is for spawning
+   * a dev dependency's own CLI such as oxlint, vitest, or tsc directly instead
+   * of through `pnpm exec`. Returns the platform-correct absolute path (the
+   * .cmd / .exe shim on Windows, the symlink on POSIX), falling back to a plain
+   * PATH lookup, or undefined when the tool resolves nowhere. `options.cwd`
+   * overrides the project root whose node_modules/.bin is searched (default
+   * getNodeProcess().cwd()); an explicit `options.path` replaces that local bin
+   * dir entirely.
+   *
+   * In npm's terminology this is "local" (vs "global" with `-g`): a locally
+   * installed package's executables are linked into node_modules/.bin. See
+   * https://docs.npmjs.com/cli/v11/configuring-npm/folders#executables.
+   *
+   * @example
+   *   ;```typescript
+   *   whichLocalBin('oxlint') // '/repo/node_modules/.bin/oxlint'
+   *   whichLocalBin('missing') // undefined
+   *   ```
+   */
+  function whichLocalBin(binName, options) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const path = require_node_path.getNodePath()
+    const nodeProcess = require_node_process.getNodeProcess()
+    const local = whichSync(binName, {
+      nothrow: true,
+      path:
+        opts.path ??
+        path.join(opts.cwd ?? nodeProcess.cwd(), 'node_modules', '.bin'),
+    })
+    if (typeof local === 'string') return local
+    const found = whichSync(binName, { nothrow: true })
+    return typeof found === 'string' ? found : void 0
+  }
+  /**
+   * Find a binary in the system PATH and resolve to the real underlying script
+   * asynchronously. Resolves wrapper scripts (.cmd, .ps1, shell scripts) to the
+   * actual .js files they execute.
+   *
+   * @example
+   *   ;```typescript
+   *   const npmPath = await whichReal('npm')
+   *   // e.g. '/usr/local/lib/node_modules/npm/bin/npm-cli.js'
+   *   ```
+   *
+   * @throws {Error} If the binary is not found and nothrow is false.
+   */
+  async function whichReal(binName, options) {
+    const fs = require_node_fs.getNodeFs()
+    const opts = {
+      __proto__: null,
+      nothrow: true,
+      ...options,
+    }
+    const cacheKey = binCacheKey(binName, opts)
+    /* c8 ignore start - cache branches need a primed cache + a removed binary to hit */
+    if (opts.all) {
+      const cachedAll = require_exe_shared.binPathAllCache.get(cacheKey)
+      if (cachedAll && cachedAll.length > 0) {
+        if (fs.existsSync(cachedAll[0])) return cachedAll
+        require_exe_shared.binPathAllCache.delete(cacheKey)
+      }
+    } else {
+      const cached = require_exe_shared.binPathCache.get(cacheKey)
+      if (cached) {
+        if (fs.existsSync(cached)) return cached
+        require_exe_shared.binPathCache.delete(cacheKey)
+      }
+    }
+    /* c8 ignore stop */
+    /* c8 ignore next - External which call */
+    const result = await (0, src_external_which_js.default)(binName, opts)
+    /* c8 ignore start - opts.all arm needs a dedicated which-all test path */
+    if (opts?.all) {
+      const paths = require_primordials_array.ArrayIsArray(result)
+        ? result
+        : typeof result === 'string'
+          ? [result]
+          : void 0
+      if (paths?.length) {
+        const resolved = require_primordials_array.ArrayPrototypeMap(paths, p =>
+          require_exe_path_resolve.resolveRealBinSync(p),
+        )
+        require_exe_shared.binPathAllCache.set(cacheKey, resolved)
+        return resolved
+      }
+      return paths
+    }
+    if (!result) return
+    /* c8 ignore stop */
+    const resolved = require_exe_path_resolve.resolveRealBinSync(result)
+    require_exe_shared.binPathCache.set(cacheKey, resolved)
+    return resolved
+  }
+  /**
+   * Find a binary in the system PATH and resolve to the real underlying script
+   * synchronously. Resolves wrapper scripts (.cmd, .ps1, shell scripts) to the
+   * actual .js files they execute.
+   *
+   * @example
+   *   ;```typescript
+   *   const npmPath = whichRealSync('npm')
+   *   // e.g. '/usr/local/lib/node_modules/npm/bin/npm-cli.js'
+   *   ```
+   *
+   * @throws {Error} If the binary is not found and nothrow is false.
+   */
+  function whichRealSync(binName, options) {
+    const fs = require_node_fs.getNodeFs()
+    const opts = {
+      __proto__: null,
+      nothrow: true,
+      ...options,
+    }
+    const cacheKey = binCacheKey(binName, opts)
+    /* c8 ignore start - cache branches need a primed cache + a removed binary to hit */
+    if (opts.all) {
+      const cachedAll = require_exe_shared.binPathAllCache.get(cacheKey)
+      if (cachedAll && cachedAll.length > 0) {
+        if (fs.existsSync(cachedAll[0])) return cachedAll
+        require_exe_shared.binPathAllCache.delete(cacheKey)
+      }
+    } else {
+      const cached = require_exe_shared.binPathCache.get(cacheKey)
+      if (cached) {
+        if (fs.existsSync(cached)) return cached
+        require_exe_shared.binPathCache.delete(cacheKey)
+      }
+    }
+    /* c8 ignore stop */
+    const result = whichSync(binName, opts)
+    /* c8 ignore start - opts.all arm needs a dedicated which-all test path */
+    if (opts.all) {
+      const paths = require_primordials_array.ArrayIsArray(result)
+        ? result
+        : typeof result === 'string'
+          ? [result]
+          : void 0
+      if (paths?.length) {
+        const resolved = require_primordials_array.ArrayPrototypeMap(paths, p =>
+          require_exe_path_resolve.resolveRealBinSync(p),
+        )
+        require_exe_shared.binPathAllCache.set(cacheKey, resolved)
+        return resolved
+      }
+      return paths
+    }
+    if (!result) return
+    /* c8 ignore stop */
+    const resolved = require_exe_path_resolve.resolveRealBinSync(result)
+    require_exe_shared.binPathCache.set(cacheKey, resolved)
+    return resolved
+  }
+  /**
+   * Find an executable in the system PATH synchronously.
+   *
+   * This function resolves binary names to their full paths by searching the
+   * system PATH. It should only be used for binary names, never paths. An input
+   * that is already an absolute or relative path is returned as-is without PATH
+   * resolution.
+   *
+   * Binary name vs. path detection:
+   *
+   * - Binary names: 'npm', 'git', 'node' - will be resolved via PATH
+   * - Absolute paths: '/usr/bin/node', 'C:\Program Files\nodejs\node.exe' -
+   *   returned as-is
+   * - Relative paths: './node', '../bin/npm' - returned as-is
+   *
+   * @example
+   *   ;```typescript
+   *   // Resolve binary names
+   *   whichSync('node') // '/usr/local/bin/node'
+   *   whichSync('npm') // '/usr/local/bin/npm'
+   *   whichSync('nonexistent') // null
+   *
+   *   // Paths are returned as-is
+   *   whichSync('/usr/bin/node') // '/usr/bin/node'
+   *   whichSync('./local-script') // './local-script'
+   *   ```
+   *
+   * @param {string} binName - The binary name to resolve (e.g., 'npm', 'git')
+   * @param {WhichOptions | undefined} options - Options for resolution.
+   *
+   * @returns {string | string[] | null} The full path to the binary, the original
+   *   path if input is a path, or null if not found.
+   */
+  function whichSync(binName, options) {
+    if (require_paths_predicates.isPath(binName)) return binName
+    try {
+      return src_external_which_js.default.sync(binName, options)
+    } catch {
+      return null
+    }
+  }
+  exports.binCacheKey = binCacheKey
+  exports.which = which
+  exports.whichLocalBin = whichLocalBin
+  exports.whichReal = whichReal
+  exports.whichRealSync = whichRealSync
+  exports.whichSync = whichSync
+})
+
+var require_sanitize = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_path = require_path$2()
+  const require_paths_shared = require_shared$6()
+  const require_paths_predicates = require_predicates()
+  const require_env_path = require_path()
+  const require_primordials_array = require_array$3()
+  const require_fs_inspect = require_inspect()
+  const require_git_repo = require_repo()
+  const require_strings_transform = require_transform$1()
+  const require_exe_shadow_detect = require_detect()
+  const require_node_process = require_process()
+  const require_exe_path_which = require_which()
+  /**
+   * @file Sanitize the executable search path, then resolve against it. A tool
+   *   running inside a checkout it did not author must never execute a `git` /
+   *   `npm` / `node` that checkout supplied, so `resolveSanitizedExecutable`
+   *   drops every PATH entry inside one directory tree — the "untrusted root",
+   *   by default the current working directory — before searching, and hands
+   *   back the cleaned `searchPath` + `env` alongside the resolved `binPath`
+   *   and the `unsafeEntries` it removed. Implements the fleet's
+   *   `untrusted-cwd` doctrine; the sibling leaves (`which`, `find`, `resolve`)
+   *   are the unhardened lookups.
+   *   Three separate ways a bare name reaches a checkout-supplied binary, all
+   *   handled here:
+   *
+   *   1. The checkout's own directories sit on PATH — via `.envrc`, a wrapper
+   *      script, or the `node_modules/.bin` a package-manager run script
+   *      prepends. Every PATH entry whose realpath lands inside the untrusted
+   *      root is dropped before the search starts.
+   *   2. The upstream `which` package prepends `process.cwd()` to the search list
+   *      on Windows, ahead of every real PATH entry, and resolves an empty PATH
+   *      entry relative to the cwd on every platform. Passing an explicit
+   *      `path` disables neither, so a hit counts only when its own directory
+   *      is the PATH entry that was probed for it.
+   *   3. A symlink in an otherwise trusted directory can point back into the
+   *      checkout. The winning candidate is realpath'd and re-checked, and a
+   *      trusted PATH entry that yields such a hit is treated as poisoned — it
+   *      is dropped from the sanitized environment rather than merely skipped,
+   *      because one attacker-planted entry proves write access to the
+   *      directory. The return value carries a sanitized environment whose PATH
+   *      holds only the surviving entries. Pass it to the child so a shell, a
+   *      `PATHEXT` re-search, or the child's own sub-spawns cannot reach a
+   *      dropped directory either.
+   */
+  /**
+   * Report whether an explicitly-named target sits outside the untrusted root.
+   *
+   * @example
+   *   ;```typescript
+   *   isTrustedTarget('/usr/bin/git', '/repo') // true
+   *   ```
+   */
+  function isTrustedTarget(target, untrustedRoot) {
+    if (!untrustedRoot) return true
+    const real = require_fs_inspect.readRealPath(target)
+    return (
+      !real || !require_paths_predicates.isPathWithinRoot(real, untrustedRoot)
+    )
+  }
+  /**
+   * Search PATH entries one at a time so every hit can be attributed to the
+   * entry that produced it. Entries whose hit realpaths into `untrustedRoot`
+   * are added to `poisoned` and skipped.
+   *
+   * @example
+   *   ;```typescript
+   *   probePathEntries('git', ['/usr/bin'], '/repo', new Set(), undefined)
+   *   // '/usr/bin/git'
+   *   ```
+   */
+  function probePathEntries(
+    command,
+    entries,
+    untrustedRoot,
+    poisoned,
+    pathExt,
+  ) {
+    const path = require_node_path.getNodePath()
+    for (const entry of entries) {
+      const found = require_exe_path_which.whichSync(command, {
+        all: true,
+        nothrow: true,
+        path: entry,
+        ...(pathExt ? { pathExt } : {}),
+      })
+      const hits = require_primordials_array.ArrayIsArray(found)
+        ? found
+        : typeof found === 'string'
+          ? [found]
+          : []
+      let entryPoisoned = false
+      for (const hit of hits) {
+        if (
+          require_paths_shared.foldPathForCompare(path.dirname(hit)) !==
+          require_paths_shared.foldPathForCompare(entry)
+        )
+          continue
+        const real = require_fs_inspect.readRealPath(hit)
+        if (!real) continue
+        if (
+          untrustedRoot &&
+          require_paths_predicates.isPathWithinRoot(real, untrustedRoot)
+        ) {
+          entryPoisoned = true
+          break
+        }
+        return hit
+      }
+      if (entryPoisoned) poisoned.add(entry)
+    }
+  }
+  /**
+   * Resolve a bare command name to an executable the untrusted root could not
+   * have supplied.
+   *
+   * `binPath` is `undefined` when the command exists nowhere the resolver is
+   * willing to look; the sanitized environment is returned either way, and a
+   * caller that falls back to spawning the bare name must hand that environment
+   * to the child or the operating system's own search reopens the hole.
+   *
+   * @example
+   *   ;```typescript
+   *   const resolved = resolveSanitizedExecutable('git', {
+   *     untrustedRoot: '/scan/target',
+   *   })
+   *   // resolved.binPath  → '/usr/bin/git'
+   *   // resolved.env.PATH → PATH minus every entry under /scan/target
+   *   ```
+   */
+  function resolveSanitizedExecutable(command, options) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const {
+      excludeShadowBins = true,
+      pathExt,
+      untrustedFallback = 'none',
+      useOutermostGitRoot = false,
+    } = opts
+    const path = require_node_path.getNodePath()
+    const nodeProcess = require_node_process.getNodeProcess()
+    const env = opts.env ?? nodeProcess.env
+    const pathKey = require_env_path.findPathEnvKey(env)
+    const rawPath = (pathKey ? env[pathKey] : void 0) ?? ''
+    const untrustedRoot = resolveUntrustedRoot(
+      opts.untrustedRoot ?? nodeProcess.cwd(),
+      { useOutermostGitRoot },
+    )
+    const searchableEntries = []
+    const trustedEntries = []
+    const unsafeEntries = []
+    classifyPathEntries()
+    function classifyPathEntries() {
+      const rawEntries = rawPath.split(path.delimiter)
+      for (let i = 0, { length } = rawEntries; i < length; i += 1) {
+        const rawEntry = rawEntries[i]
+        const entry = require_strings_transform.stripSurroundingQuotes(rawEntry)
+        if (!entry || entry === '.' || !path.isAbsolute(entry)) {
+          unsafeEntries.push(rawEntry)
+          continue
+        }
+        searchableEntries.push(entry)
+        const real = require_fs_inspect.readRealPath(entry)
+        if (
+          !real ||
+          (untrustedRoot &&
+            require_paths_predicates.isPathWithinRoot(real, untrustedRoot)) ||
+          (excludeShadowBins &&
+            (require_exe_shadow_detect.isShadowBinPath(entry) ||
+              require_exe_shadow_detect.isShadowBinPath(real)))
+        ) {
+          unsafeEntries.push(rawEntry)
+          continue
+        }
+        trustedEntries.push(entry)
+      }
+    }
+    const poisoned = /* @__PURE__ */ new Set()
+    let binPath
+    let trusted = true
+    if (require_paths_predicates.isPath(command)) {
+      binPath = path.resolve(command)
+      trusted = isTrustedTarget(binPath, untrustedRoot)
+    } else {
+      binPath = probePathEntries(
+        command,
+        trustedEntries,
+        untrustedRoot,
+        poisoned,
+        pathExt,
+      )
+      if (!binPath && untrustedFallback !== 'none') {
+        binPath = probePathEntries(
+          command,
+          searchableEntries.filter(
+            entry =>
+              !poisoned.has(entry) &&
+              (untrustedFallback === 'all' ||
+                require_exe_shadow_detect.isShadowBinPath(entry) ||
+                require_exe_shadow_detect.isShadowBinPath(
+                  require_fs_inspect.readRealPath(entry),
+                )),
+          ),
+          void 0,
+          /* @__PURE__ */ new Set(),
+          pathExt,
+        )
+        trusted = false
+      }
+      if (!binPath) trusted = false
+    }
+    const searchPath = trustedEntries
+      .filter(entry => !poisoned.has(entry))
+      .join(path.delimiter)
+    return {
+      binPath,
+      env: require_env_path.replacePathInEnv(env, searchPath, pathKey),
+      searchPath,
+      trusted,
+      unsafeEntries: [...unsafeEntries, ...poisoned],
+    }
+  }
+  /**
+   * Resolve the untrusted root to a realpath, widening to the outermost `.git`
+   * ancestor when asked. Returns `undefined` for a filesystem root, which would
+   * otherwise drop every PATH entry.
+   *
+   * @example
+   *   ;```typescript
+   *   resolveUntrustedRoot('/repo/src') // '/repo/src'
+   *   resolveUntrustedRoot('/') // undefined
+   *   ```
+   */
+  function resolveUntrustedRoot(root, options) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const path = require_node_path.getNodePath()
+    const real = require_fs_inspect.readRealPath(root)
+    if (!real) return
+    const widened = opts.useOutermostGitRoot
+      ? (require_fs_inspect.readRealPath(
+          require_git_repo.findOutermostGitRoot(real),
+        ) ?? real)
+      : real
+    return path.dirname(widened) === widened ? void 0 : widened
+  }
+  exports.isTrustedTarget = isTrustedTarget
+  exports.probePathEntries = probePathEntries
+  exports.resolveSanitizedExecutable = resolveSanitizedExecutable
+  exports.resolveUntrustedRoot = resolveUntrustedRoot
+})
+
+var require_promise_spawn = /* @__PURE__ */ __commonJSMin((exports, module) => {
+  const {
+    ArrayIsArray: _p_ArrayIsArray,
+    ArrayPrototypeUnshift: _p_ArrayPrototypeUnshift,
+  } = require_array$3()
+  const { BufferConcat: _p_BufferConcat } = require_buffer()
+  const { ErrorCtor: _p_ErrorCtor } = require_error$2()
+  const { SetCtor: _p_SetCtor } = require_map_set()
+  const {
+    ObjectAssign: _p_ObjectAssign,
+    ObjectDefineProperty: _p_ObjectDefineProperty,
+    ObjectGetOwnPropertyDescriptor: _p_ObjectGetOwnPropertyDescriptor,
+    ObjectKeys: _p_ObjectKeys,
+  } = require_object$1()
+  const { processCwd: _p_processCwd } = require_process$1()
+  const { PromiseCtor: _p_PromiseCtor, PromiseReject: _p_PromiseReject } =
+    require_promise$1()
+  const { RegExpCtor: _p_RegExpCtor } = require_regexp()
+  const {
+    StringPrototypeCharAt: _p_StringPrototypeCharAt,
+    StringPrototypeEndsWith: _p_StringPrototypeEndsWith,
+    StringPrototypeSubstring: _p_StringPrototypeSubstring,
+    StringPrototypeToLowerCase: _p_StringPrototypeToLowerCase,
+  } = require_string$2()
+  var __commonJSMin = (cb, mod) => () => (
+    mod || (cb((mod = { exports: {} }).exports, mod), (cb = null)),
+    mod.exports
+  )
+  var require_index_min = /* @__PURE__ */ __commonJSMin(exports$1 => {
+    var a = (t, e) => () => (
+      e || t((e = { exports: {} }).exports, e),
+      e.exports
+    )
+    var _ = a(i => {
+      'use strict'
+      _p_ObjectDefineProperty(i, '__esModule', { value: !0 })
+      i.sync = i.isexe = void 0
+      var M = __require('fs')
+      var x = __require('fs/promises')
+      var q = async (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return d(await (0, x.stat)(t), e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      i.isexe = q
+      var m = (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return d((0, M.statSync)(t), e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      i.sync = m
+      var d = (t, e) => t.isFile() && A(t, e)
+      var A = (t, e) => {
+        let r = e.uid ?? process.getuid?.()
+        let s = e.groups ?? process.getgroups?.() ?? []
+        let n = e.gid ?? process.getgid?.() ?? s[0]
+        if (r === void 0 || n === void 0)
+          throw new _p_ErrorCtor('cannot get uid or gid')
+        let u = /* @__PURE__ */ new _p_SetCtor([n, ...s])
+        let c = t.mode
+        let S = t.uid
+        let P = t.gid
+        let f = parseInt('100', 8)
+        let l = parseInt('010', 8)
+        return !!(
+          c & parseInt('001', 8) ||
+          (c & l && u.has(P)) ||
+          (c & f && S === r) ||
+          (c & 72 && r === 0)
+        )
+      }
+    })
+    var g = a(o => {
+      'use strict'
+      _p_ObjectDefineProperty(o, '__esModule', { value: !0 })
+      o.sync = o.isexe = void 0
+      var T = __require('fs')
+      var I = __require('fs/promises')
+      var D = __require('path')
+      var F = async (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return y(await (0, I.stat)(t), t, e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      o.isexe = F
+      var L = (t, e = {}) => {
+        let { ignoreErrors: r = !1 } = e
+        try {
+          return y((0, T.statSync)(t), t, e)
+        } catch (s) {
+          let n = s
+          if (r || n.code === 'EACCES') return !1
+          throw n
+        }
+      }
+      o.sync = L
+      var B = (t, e) => {
+        let { pathExt: r = process.env.PATHEXT || '' } = e,
+          s = r.split(D.delimiter)
+        if (s.indexOf('') !== -1) return !0
+        for (let n of s) {
+          let u = _p_StringPrototypeToLowerCase(n)
+          let c = _p_StringPrototypeSubstring(
+            t,
+            t.length - u.length,
+          ).toLowerCase()
+          if (u && c === u) return !0
+        }
+        return !1
+      }
+      var y = (t, e, r) => t.isFile() && B(e, r)
+    })
+    var p = a(h => {
+      'use strict'
+      _p_ObjectDefineProperty(h, '__esModule', { value: !0 })
+    })
+    var v =
+      (exports$1 && exports$1.__createBinding) ||
+      (Object.create
+        ? function (t, e, r, s) {
+            s === void 0 && (s = r)
+            var n = _p_ObjectGetOwnPropertyDescriptor(e, r)
+            ;((!n ||
+              ('get' in n ? !e.__esModule : n.writable || n.configurable)) &&
+              (n = {
+                enumerable: !0,
+                get: function () {
+                  return e[r]
+                },
+              }),
+              _p_ObjectDefineProperty(t, s, n))
+          }
+        : function (t, e, r, s) {
+            ;(s === void 0 && (s = r), (t[s] = e[r]))
+          })
+    var G =
+      (exports$1 && exports$1.__setModuleDefault) ||
+      (Object.create
+        ? function (t, e) {
+            _p_ObjectDefineProperty(t, 'default', {
+              enumerable: !0,
+              value: e,
+            })
+          }
+        : function (t, e) {
+            t.default = e
+          })
+    var w =
+      (exports$1 && exports$1.__importStar) ||
+      (function () {
+        var t = function (e) {
+          return (
+            (t =
+              Object.getOwnPropertyNames ||
+              function (r) {
+                var s = []
+                for (var n in r)
+                  Object.prototype.hasOwnProperty.call(r, n) &&
+                    (s[s.length] = n)
+                return s
+              }),
+            t(e)
+          )
+        }
+        return function (e) {
+          if (e && e.__esModule) return e
+          var r = {}
+          if (e != null)
+            for (var s = t(e), n = 0; n < s.length; n++)
+              s[n] !== 'default' && v(r, e, s[n])
+          return (G(r, e), r)
+        }
+      })()
+    var X =
+      (exports$1 && exports$1.__exportStar) ||
+      function (t, e) {
+        for (var r in t)
+          r !== 'default' &&
+            !Object.prototype.hasOwnProperty.call(e, r) &&
+            v(e, t, r)
+      }
+    _p_ObjectDefineProperty(exports$1, '__esModule', { value: !0 })
+    exports$1.sync =
+      exports$1.isexe =
+      exports$1.posix =
+      exports$1.win32 =
+        void 0
+    var E = w(_())
+    exports$1.posix = E
+    var O = w(g())
+    exports$1.win32 = O
+    X(p(), exports$1)
+    var b =
+      (process.env._ISEXE_TEST_PLATFORM_ || process.platform) === 'win32'
+        ? O
+        : E
+    exports$1.isexe = b.isexe
+    exports$1.sync = b.sync
+  })
+  var require_lib$1 = /* @__PURE__ */ __commonJSMin((exports$2, module$2) => {
+    const { isexe, sync: isexeSync } = require_index_min()
+    const { join, delimiter, sep, posix } = __require('path')
+    const isWindows = process.platform === 'win32'
+    /* istanbul ignore next */
+    const rSlash = new _p_RegExpCtor(
+      `[${posix.sep}${sep === posix.sep ? '' : sep}]`.replace(/(\\)/g, '\\$1'),
+    )
+    const rRel = new _p_RegExpCtor(`^\\.${rSlash.source}`)
+    const getNotFoundError = cmd =>
+      _p_ObjectAssign(/* @__PURE__ */ new _p_ErrorCtor(`not found: ${cmd}`), {
+        code: 'ENOENT',
+      })
+    const getPathInfo = (
+      cmd,
+      {
+        path: optPath = process.env.PATH,
+        pathExt: optPathExt = process.env.PATHEXT,
+        delimiter: optDelimiter = delimiter,
+      },
+    ) => {
+      const pathEnv = cmd.match(rSlash)
+        ? ['']
+        : [
+            ...(isWindows ? [_p_processCwd()] : []),
+            ...(optPath || /* istanbul ignore next: very unusual */ '').split(
+              optDelimiter,
+            ),
+          ]
+      if (isWindows) {
+        const pathExtExe =
+          optPathExt || ['.EXE', '.CMD', '.BAT', '.COM'].join(optDelimiter)
+        const pathExt = pathExtExe
+          .split(optDelimiter)
+          .flatMap(item => [item, _p_StringPrototypeToLowerCase(item)])
+        if (cmd.includes('.') && pathExt[0] !== '')
+          _p_ArrayPrototypeUnshift(pathExt, '')
+        return {
+          pathEnv,
+          pathExt,
+          pathExtExe,
+        }
+      }
+      return {
+        pathEnv,
+        pathExt: [''],
+      }
+    }
+    const getPathPart = (raw, cmd) => {
+      const pathPart = /^".*"$/.test(raw) ? raw.slice(1, -1) : raw
+      return (
+        (!pathPart && rRel.test(cmd) ? cmd.slice(0, 2) : '') +
+        join(pathPart, cmd)
+      )
+    }
+    const which = async (cmd, opt = {}) => {
+      const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+      const found = []
+      for (const envPart of pathEnv) {
+        const p = getPathPart(envPart, cmd)
+        for (const ext of pathExt) {
+          const withExt = p + ext
+          if (
+            await isexe(withExt, {
+              pathExt: pathExtExe,
+              ignoreErrors: true,
+            })
+          ) {
+            if (!opt.all) return withExt
+            found.push(withExt)
+          }
+        }
+      }
+      if (opt.all && found.length) return found
+      if (opt.nothrow) return null
+      throw getNotFoundError(cmd)
+    }
+    const whichSync = (cmd, opt = {}) => {
+      const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+      const found = []
+      for (const pathEnvPart of pathEnv) {
+        const p = getPathPart(pathEnvPart, cmd)
+        for (const ext of pathExt) {
+          const withExt = p + ext
+          if (
+            isexeSync(withExt, {
+              pathExt: pathExtExe,
+              ignoreErrors: true,
+            })
+          ) {
+            if (!opt.all) return withExt
+            found.push(withExt)
+          }
+        }
+      }
+      if (opt.all && found.length) return found
+      if (opt.nothrow) return null
+      throw getNotFoundError(cmd)
+    }
+    module$2.exports = which
+    which.sync = whichSync
+  })
+  var require_escape = /* @__PURE__ */ __commonJSMin((exports$3, module$3) => {
+    const cmd = (input, doubleEscape) => {
+      if (!input.length) return '""'
+      let result
+      if (!/[ \t\n\v"]/.test(input)) result = input
+      else {
+        result = '"'
+        for (let i = 0; i <= input.length; ++i) {
+          let slashCount = 0
+          while (input[i] === '\\') {
+            ++i
+            ++slashCount
+          }
+          if (i === input.length) {
+            result += '\\'.repeat(slashCount * 2)
+            break
+          }
+          if (input[i] === '"') {
+            result += '\\'.repeat(slashCount * 2 + 1)
+            result += input[i]
+          } else {
+            result += '\\'.repeat(slashCount)
+            result += input[i]
+          }
+        }
+        result += '"'
+      }
+      result = result.replace(/[ !%^&()<>|"]/g, '^$&')
+      if (doubleEscape) result = result.replace(/[ !%^&()<>|"]/g, '^$&')
+      return result
+    }
+    const sh = input => {
+      if (!input.length) return `''`
+      if (!/[\t\n\r "#$&'()*;<>?\\`|~]/.test(input)) return input
+      return `'${input.replace(/'/g, `'\\''`)}'`
+        .replace(/^(?:'')+(?!$)/, '')
+        .replace(/\\'''/g, `\\'`)
+    }
+    module$3.exports = {
+      cmd,
+      sh,
+    }
+  })
+  var require_lib = /* @__PURE__ */ __commonJSMin((exports$4, module$4) => {
+    const { spawn } = __require('child_process')
+    const os = __require('os')
+    const which = require_lib$1()
+    const escape = require_escape()
+    const promiseSpawn = (cmd, args, opts = {}, extra = {}) => {
+      if (opts.shell) return spawnWithShell(cmd, args, opts, extra)
+      let resolve
+      let reject
+      const promise = new _p_PromiseCtor((_resolve, _reject) => {
+        resolve = _resolve
+        reject = _reject
+      })
+      const closeError = /* @__PURE__ */ new _p_ErrorCtor('command failed')
+      const stdout = []
+      const stderr = []
+      const getResult = result => ({
+        cmd,
+        args,
+        ...result,
+        ...stdioResult(stdout, stderr, opts),
+        ...extra,
+      })
+      const rejectWithOpts = (er, erOpts) => {
+        const resultError = getResult(erOpts)
+        reject(_p_ObjectAssign(er, resultError))
+      }
+      const proc = spawn(cmd, args, opts)
+      promise.stdin = proc.stdin
+      promise.process = proc
+      proc.on('error', rejectWithOpts)
+      if (proc.stdout) {
+        proc.stdout.on('data', c => stdout.push(c))
+        proc.stdout.on('error', rejectWithOpts)
+      }
+      if (proc.stderr) {
+        proc.stderr.on('data', c => stderr.push(c))
+        proc.stderr.on('error', rejectWithOpts)
+      }
+      proc.on('close', (code, signal) => {
+        if (code || signal)
+          rejectWithOpts(closeError, {
+            code,
+            signal,
+          })
+        else
+          resolve(
+            getResult({
+              code,
+              signal,
+            }),
+          )
+      })
+      return promise
+    }
+    const spawnWithShell = (cmd, args, opts, extra) => {
+      let command = opts.shell
+      if (command === true)
+        // istanbul ignore next
+        command =
+          process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : 'sh'
+      const options = {
+        ...opts,
+        shell: false,
+      }
+      const realArgs = []
+      let script = cmd
+      if (/(?:^|\\)cmd(?:\.exe)?$/i.test(command)) {
+        let doubleEscape = false
+        let initialCmd = ''
+        let insideQuotes = false
+        for (let i = 0; i < cmd.length; ++i) {
+          const char = _p_StringPrototypeCharAt(cmd, i)
+          if (char === ' ' && !insideQuotes) break
+          initialCmd += char
+          if (char === '"' || char === "'") insideQuotes = !insideQuotes
+        }
+        let pathToInitial
+        try {
+          pathToInitial = which
+            .sync(initialCmd, {
+              path:
+                (options.env && findInObject(options.env, 'PATH')) ||
+                process.env.PATH,
+              pathext:
+                (options.env && findInObject(options.env, 'PATHEXT')) ||
+                process.env.PATHEXT,
+            })
+            .toLowerCase()
+        } catch (err) {
+          pathToInitial = _p_StringPrototypeToLowerCase(initialCmd)
+        }
+        doubleEscape =
+          _p_StringPrototypeEndsWith(pathToInitial, '.cmd') ||
+          _p_StringPrototypeEndsWith(pathToInitial, '.bat')
+        for (const arg of args) script += ` ${escape.cmd(arg, doubleEscape)}`
+        realArgs.push('/d', '/s', '/c', script)
+        options.windowsVerbatimArguments = true
+      } else {
+        for (const arg of args) script += ` ${escape.sh(arg)}`
+        realArgs.push('-c', script)
+      }
+      return promiseSpawn(command, realArgs, options, extra)
+    }
+    const open = (_args, opts = {}, extra = {}) => {
+      const options = {
+        ...opts,
+        shell: true,
+      }
+      const args = [].concat(_args)
+      let platform = process.platform
+      if (
+        platform === 'linux' &&
+        os.release().toLowerCase().includes('microsoft')
+      ) {
+        platform = 'wsl'
+        if (!process.env.BROWSER)
+          return _p_PromiseReject(
+            /* @__PURE__ */ new _p_ErrorCtor(
+              'Set the BROWSER environment variable to your desired browser.',
+            ),
+          )
+      }
+      let command = options.command
+      if (!command) {
+        if (platform === 'win32') {
+          options.shell = process.env.ComSpec
+          command = 'start ""'
+        } else if (platform === 'wsl') command = 'sensible-browser'
+        else if (platform === 'darwin') command = 'open'
+        else command = 'xdg-open'
+      }
+      return spawnWithShell(command, args, options, extra)
+    }
+    promiseSpawn.open = open
+    const isPipe = (stdio = 'pipe', fd) => {
+      if (stdio === 'pipe' || stdio === null) return true
+      if (_p_ArrayIsArray(stdio)) return isPipe(stdio[fd], fd)
+      return false
+    }
+    const stdioResult = (stdout, stderr, { stdioString = true, stdio }) => {
+      const result = {
+        stdout: null,
+        stderr: null,
+      }
+      if (isPipe(stdio, 1)) {
+        result.stdout = _p_BufferConcat(stdout)
+        if (stdioString) result.stdout = result.stdout.toString().trim()
+      }
+      if (isPipe(stdio, 2)) {
+        result.stderr = _p_BufferConcat(stderr)
+        if (stdioString) result.stderr = result.stderr.toString().trim()
+      }
+      return result
+    }
+    const findInObject = (obj, key) => {
+      key = _p_StringPrototypeToLowerCase(key)
+      for (const objKey of _p_ObjectKeys(obj).sort())
+        if (_p_StringPrototypeToLowerCase(objKey) === key) return obj[objKey]
+    }
+    module$4.exports = promiseSpawn
+  })
+  module.exports = require_lib()
+})
+
+var require_shared = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_runtime = require_runtime$4()
+  const require_node_fs = require_fs$1()
+  const require_constants_platform = require_platform()
+  const require_primordials_map_set = require_map_set()
+  const require_node_path = require_path$2()
+  const require_primordials_regexp = require_regexp()
+  const require_paths_predicates = require_predicates()
+  const require_env_path = require_path()
+  const require_term_ansi_strip = require_strip()
+  const require_exe_path_sanitize = require_sanitize()
+  let node_process = __require('node:process')
+  node_process = require_runtime.__toESM(node_process, 1)
+  /**
+   * @file Private internals for `spawn/*` modules — the `@npmcli/promise-spawn`
+   *   lazy loader, the per-spawn ANSI-stripping helper, the WeakMap stack
+   *   cache, the binary-path cache shared between `spawn` and `spawnSync`, and
+   *   the sanitized-resolution glue both entry points run a bare command name
+   *   through. Underscore prefix excludes this file from the public exports
+   *   map.
+   */
+  const stackCache = new require_primordials_map_set.WeakMapCtor()
+  const spawnBinPathCache = new require_primordials_map_set.MapCtor()
+  const windowsScriptExtRegExp = /\.(?:bat|cmd|ps1)$/i
+  const defaultPathExt = '.COM;.EXE;.BAT;.CMD'
+  /**
+   * Apply the Windows `shell: true` script-extension handling, and decide
+   * whether the child needs the sanitized PATH.
+   *
+   * Cmd.exe struggles to launch a full path to a `.cmd` / `.bat` / `.ps1` file,
+   * so the historical fix hands it the bare stem and lets PATHEXT re-resolve —
+   * the same trick npm's promise-spawn, cross-spawn, and execa use. cmd.exe
+   * searches the current directory FIRST, so the stem is only handed over when
+   * the resolution was trusted AND the child's working directory holds no
+   * same-named script; the child then also gets the sanitized PATH so the
+   * re-search can only reach trusted directories.
+   *
+   * An absolute command needs no PATH override — nothing re-searches for it.
+   *
+   * @example
+   *   ;```typescript
+   *   applyCmdExeStem(
+   *     { command: 'C:\\tools\\gh.cmd', searchPath: 'C:\\tools', trusted: true },
+   *     { shell: true },
+   *   )
+   *   // { command: 'gh', searchPath: 'C:\\tools', trusted: true }
+   *   ```
+   */
+  function applyCmdExeStem(resolution, config) {
+    const { command, searchPath, trusted } = resolution
+    const passthrough = {
+      command,
+      searchPath: require_paths_predicates.isPath(command)
+        ? void 0
+        : searchPath,
+      trusted,
+    }
+    /* c8 ignore start - Windows-only cmd.exe extension stripping for
+		.cmd/.bat/.ps1 shell-true execution. Tested on Windows runners. */
+    if (
+      !require_constants_platform.isWin32() ||
+      !config.shell ||
+      !require_primordials_regexp.RegExpPrototypeTest(
+        windowsScriptExtRegExp,
+        command,
+      )
+    )
+      return passthrough
+    if (!trusted) return passthrough
+    const path = require_node_path.getNodePath()
+    const stem = path.basename(command, path.extname(command))
+    const pathExt =
+      (config.env ?? node_process.default.env)['PATHEXT'] ?? defaultPathExt
+    if (
+      hasCmdExeShadowInDir(
+        stem,
+        config.cwd ?? node_process.default.cwd(),
+        pathExt,
+      )
+    )
+      return passthrough
+    return {
+      command: stem,
+      searchPath,
+      trusted,
+    }
+    /* c8 ignore stop */
+  }
+  let npmCliPromiseSpawnCache
+  /**
+   * Lazily load the `@npmcli/promise-spawn` module to avoid Webpack bundling
+   * issues. Required because the upstream module uses CJS dynamic-require
+   * patterns that Webpack flags.
+   */
+  function getNpmCliPromiseSpawn() {
+    if (npmCliPromiseSpawnCache === void 0)
+      npmCliPromiseSpawnCache = require_promise_spawn()
+    return npmCliPromiseSpawnCache
+  }
+  /**
+   * Report whether the child's working directory holds a script cmd.exe would
+   * find before it consults PATH. cmd.exe always searches the current directory
+   * first, so stripping a resolved path back to a bare stem is only safe when
+   * no such collision exists.
+   *
+   * @example
+   *   ;```typescript
+   *   hasCmdExeShadowInDir('npm', 'C:\\repo', '.COM;.EXE;.CMD') // true when C:\repo\npm.cmd exists
+   *   ```
+   */
+  function hasCmdExeShadowInDir(stem, dirPath, pathExt) {
+    if (!stem) return false
+    const fs = require_node_fs.getNodeFs()
+    const path = require_node_path.getNodePath()
+    const declared = pathExt.split(';')
+    const exts = ['', ...declared, ...declared.map(ext => ext.toLowerCase())]
+    for (let i = 0, { length } = exts; i < length; i += 1)
+      if (fs.existsSync(path.join(dirPath, `${stem}${exts[i]}`))) return true
+    return false
+  }
+  /**
+   * Resolve the command a spawn entry point should actually launch.
+   *
+   * A path-like input passes through untouched. A bare name goes through
+   * {@link resolveSanitizedExecutable} against the child's own environment, with
+   * the child's working directory as the untrusted root, and falls back to a
+   * dropped PATH entry only when no trusted directory supplies the command.
+   *
+   * @example
+   *   ;```typescript
+   *   resolveSpawnBin('git', { cwd: '/scan/target' })
+   *   // { command: '/usr/bin/git', searchPath: undefined, trusted: true }
+   *   ```
+   */
+  function resolveSpawnBin(cmd, config) {
+    const cfg = {
+      __proto__: null,
+      ...config,
+    }
+    if (require_paths_predicates.isPath(cmd))
+      return {
+        command: cmd,
+        searchPath: void 0,
+        trusted: true,
+      }
+    const env = cfg.env ?? node_process.default.env
+    const untrustedRoot = cfg.cwd ?? node_process.default.cwd()
+    const pathKey = require_env_path.findPathEnvKey(env)
+    const cacheKey = `${cmd}\0${untrustedRoot}\0${(pathKey ? env[pathKey] : void 0) ?? ''}`
+    const cached = spawnBinPathCache.get(cacheKey)
+    if (cached) {
+      if (require_node_fs.getNodeFs().existsSync(cached.command))
+        return applyCmdExeStem(cached, cfg)
+      spawnBinPathCache.delete(cacheKey)
+    }
+    const resolved = require_exe_path_sanitize.resolveSanitizedExecutable(cmd, {
+      env,
+      untrustedFallback: 'shadowBins',
+      untrustedRoot,
+    })
+    const resolution = resolved.binPath
+      ? {
+          command: resolved.binPath,
+          searchPath: resolved.searchPath,
+          trusted: resolved.trusted,
+        }
+      : {
+          command: cmd,
+          searchPath: resolved.searchPath,
+          trusted: false,
+        }
+    if (resolved.binPath) spawnBinPathCache.set(cacheKey, resolution)
+    return applyCmdExeStem(resolution, cfg)
+  }
+  /**
+   * Strip ANSI escape codes from spawn result stdout and stderr. Modifies the
+   * result object in place to remove color codes and formatting.
+   *
+   * @param {unknown} result - Spawn result object with stdout/stderr
+   *   properties.
+   *
+   * @returns {unknown} The modified result object
+   */
+  function stripAnsiFromSpawnResult(result) {
+    const res = result
+    const { stderr, stdout } = res
+    if (typeof stdout === 'string')
+      res.stdout = require_term_ansi_strip.stripAnsi(stdout)
+    if (typeof stderr === 'string')
+      res.stderr = require_term_ansi_strip.stripAnsi(stderr)
+    return res
+  }
+  exports.applyCmdExeStem = applyCmdExeStem
+  exports.getNpmCliPromiseSpawn = getNpmCliPromiseSpawn
+  exports.hasCmdExeShadowInDir = hasCmdExeShadowInDir
+  exports.resolveSpawnBin = resolveSpawnBin
+  exports.spawnBinPathCache = spawnBinPathCache
+  exports.stackCache = stackCache
+  exports.stripAnsiFromSpawnResult = stripAnsiFromSpawnResult
+  exports.windowsScriptExtRegExp = windowsScriptExtRegExp
+})
+
+var require_errors = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_object = require_object$1()
+  const require_objects_predicates = require_predicates$3()
+  const require_primordials_error = require_error$2()
+  const require_primordials_reflect = require_reflect()
+  const require_process_spawn_shared = require_shared()
+  const require_errors_predicates = require_predicates$2()
+  let src_external_pony_cause_js = require_pony_cause$1()
+  /**
+   * @file Spawn error classification and enhancement. `isSpawnError` is a
+   *   type-guard for shaping unknown errors that crossed an `await spawn(...)`.
+   *   It checks for the `code` / `errno` / `syscall` properties that Node's
+   *   child_process tags onto `ENOENT` / `EACCES` / process-exit failures.
+   *   `isSpawnExitError` narrows further, to the failures whose process
+   *   actually ran and exited — the ones whose `.code` is the NUMERIC exit
+   *   status. That distinction is load-bearing: a spawn fails in two shapes,
+   *   and a launch failure carries a string `.code` (`'ENOENT'`) while a
+   *   non-zero exit carries a number. Both satisfy `isSpawnError`, so code
+   *   reading `.code` as a number after that guard alone is wrong for half its
+   *   inputs. `enhanceSpawnError` rewrites the upstream `@npmcli/promise-spawn`
+   *   "command failed" placeholder message into something the operator can
+   *   actually act on: command + args (truncated at 100 chars), exit code or
+   *   signal, and the first stderr line (truncated at 200 chars). The stack is
+   *   computed lazily on first access via a per-error WeakMap so non-error
+   *   paths don't pay the `stackWithCauses` cost.
+   */
+  /**
+   * Enhances spawn error with better context. Converts generic "command failed"
+   * to detailed error with command, exit code, and stderr.
+   *
+   * @example
+   *   ;```typescript
+   *   try {
+   *     await spawn('git', ['status'])
+   *   } catch (e) {
+   *     throw enhanceSpawnError(e)
+   *   }
+   *   ```
+   */
+  function enhanceSpawnError(error) {
+    if (error === null || typeof error !== 'object') return error
+    if (!isSpawnError(error)) return error
+    const err = error
+    const { args, cmd, code, signal, stderr } = err
+    const stderrText =
+      typeof stderr === 'string' ? stderr : (stderr?.toString() ?? '')
+    let enhancedMessage = `Command failed: ${cmd}`
+    appendCommandArguments()
+    function appendCommandArguments() {
+      if (args && args.length > 0) {
+        const argsStr = args.join(' ')
+        if (argsStr.length < 100) enhancedMessage += ` ${argsStr}`
+        else enhancedMessage += ` ${argsStr.slice(0, 97)}...`
+      }
+    }
+    /* c8 ignore start */
+    if (signal) enhancedMessage += ` (terminated by ${signal})`
+    else if (code !== void 0) enhancedMessage += ` (exit code ${code})`
+    const trimmedStderr = stderrText.trim()
+    if (trimmedStderr) {
+      const firstLine = trimmedStderr.split(/\r?\n/)[0] ?? ''
+      if (firstLine.length < 200) enhancedMessage += `\n${firstLine}`
+      else enhancedMessage += `\n${firstLine.slice(0, 197)}...`
+    }
+    if (err.message === 'command failed') {
+      require_primordials_object.ObjectDefineProperty(err, 'message', {
+        __proto__: null,
+        value: enhancedMessage,
+        writable: true,
+        enumerable: false,
+        configurable: true,
+      })
+      return err
+    }
+    const enhancedError = new require_primordials_error.ErrorCtor(
+      enhancedMessage,
+      { cause: err },
+    )
+    const descriptors =
+      require_primordials_object.ObjectGetOwnPropertyDescriptors(err)
+    require_primordials_reflect.ReflectDeleteProperty(descriptors, 'message')
+    require_primordials_reflect.ReflectDeleteProperty(descriptors, 'stack')
+    require_primordials_object.ObjectDefineProperties(
+      enhancedError,
+      descriptors,
+    )
+    require_primordials_object.ObjectDefineProperty(enhancedError, 'stack', {
+      __proto__: null,
+      configurable: true,
+      enumerable: false,
+      get() {
+        let stack = require_process_spawn_shared.stackCache.get(enhancedError)
+        /* c8 ignore next - Lazy-init second-call branch on the per-error cache. */
+        if (stack === void 0) {
+          try {
+            stack = (0, src_external_pony_cause_js.stackWithCauses)(err)
+          } catch {
+            stack =
+              err.stack ?? new require_primordials_error.ErrorCtor().stack ?? ''
+          }
+          /* c8 ignore stop */
+          require_process_spawn_shared.stackCache.set(enhancedError, stack)
+        }
+        return stack
+      },
+    })
+    return enhancedError
+  }
+  function formatSpawnErrorArgs(args) {
+    if (!args || args.length === 0) return ''
+    const text = args.join(' ')
+    return ` ${text.length < 100 ? text : `${text.slice(0, 97)}...`}`
+  }
+  /**
+   * Check if a value is a spawn error with expected error properties. Tests for
+   * common error properties from child process failures.
+   *
+   * @example
+   *   try {
+   *     await spawn('nonexistent-command')
+   *   } catch (e) {
+   *     if (isSpawnError(e)) {
+   *       console.error(`Spawn failed: ${e.code}`)
+   *     }
+   *   }
+   *
+   * @param {unknown} value - Value to check.
+   *
+   * @returns {boolean} `true` if the value has spawn error properties
+   */
+  function isSpawnError(value) {
+    if (!require_errors_predicates.isError(value)) return false
+    const err = value
+    return (
+      (require_objects_predicates.hasOwn(err, 'code') &&
+        typeof err['code'] !== 'undefined') ||
+      (require_objects_predicates.hasOwn(err, 'errno') &&
+        typeof err['errno'] !== 'undefined') ||
+      (require_objects_predicates.hasOwn(err, 'syscall') &&
+        typeof err['syscall'] === 'string')
+    )
+  }
+  /**
+   * Narrow a caught value to a spawn failure whose process actually RAN and
+   * then exited non-zero — the case where `.code` is the numeric exit status.
+   *
+   * `isSpawnError` alone is not enough for that. A spawn fails in two shapes
+   * and they carry different `code` types:
+   *
+   * | failure                | `.code`    | type     |
+   * | ---------------------- | ---------- | -------- |
+   * | process exits non-zero | `3`        | `number` |
+   * | command not found      | `'ENOENT'` | `string` |
+   *
+   * Both satisfy `isSpawnError`, so reading `.code` as a number after that
+   * guard is wrong for the launch-failure case. Use this predicate when the
+   * exit status is what you want, and {@link isErrnoException} when the launch
+   * failure is.
+   *
+   * @example
+   *   try {
+   *     await spawn('git', ['grep', '-q', needle])
+   *   } catch (e) {
+   *     // `git grep` exits 1 for "no match", which is an answer, not a failure.
+   *     if (isSpawnExitError(e) && e.code === 1) {
+   *       return false
+   *     }
+   *     throw e
+   *   }
+   */
+  function isSpawnExitError(value) {
+    return isSpawnError(value) && typeof value.code === 'number'
+  }
+  exports.enhanceSpawnError = enhanceSpawnError
+  exports.formatSpawnErrorArgs = formatSpawnErrorArgs
+  exports.isSpawnError = isSpawnError
+  exports.isSpawnExitError = isSpawnExitError
+})
+
+var require_stdio = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_arrays_predicates = require_predicates$4()
+  /**
+   * @file Stdio configuration helpers for `spawn` callers. `isStdioType` is
+   *   dual-purpose:
+   *
+   *   - One arg: validate that a value is a known stdio mode (`'pipe'` /
+   *     `'ignore'` / `'inherit'` / `'overlapped'`).
+   *   - Two args: check whether the caller's stdio config matches a specific
+   *     mode. Useful in spinner-pause logic — the spinner only stops when the
+   *     child writes to a non-piped stream that would otherwise interleave with
+   *     spinner redraws. Two-arg behavior special-cases `null` / `undefined` ↔
+   *     `'pipe'` because Node.js defaults unspecified entries to `'pipe'`. The
+   *     three-element-array branch handles the common `[in, out, err]` tuple
+   *     where all three streams use the same mode.
+   */
+  /**
+   * Check if stdio configuration matches a specific type. When called with one
+   * argument, validates if it's a valid stdio type. When called with two
+   * arguments, checks if the stdio config matches the specified type.
+   *
+   * @example
+   *   // Check if valid stdio type
+   *   isStdioType('pipe') // true
+   *   isStdioType('invalid') // false
+   *
+   * @example
+   *   // Check if stdio matches specific type
+   *   isStdioType('pipe', 'pipe') // true
+   *   isStdioType(['pipe', 'pipe', 'pipe'], 'pipe') // true
+   *   isStdioType('ignore', 'pipe') // false
+   *
+   * @param {string | string[]} stdio - Stdio configuration to check.
+   * @param {StdioType | undefined} type - Expected stdio type (optional)
+   *
+   * @returns {boolean} `true` if stdio matches the type or is valid
+   */
+  function isStdioType(stdio, type) {
+    if (arguments.length === 1)
+      return (
+        typeof stdio === 'string' &&
+        ['pipe', 'ignore', 'inherit', 'overlapped'].includes(stdio)
+      )
+    return (
+      stdio === type ||
+      ((stdio === null || stdio === void 0) && type === 'pipe') ||
+      (require_arrays_predicates.isArray(stdio) &&
+        stdio.length > 2 &&
+        stdio[0] === type &&
+        stdio[1] === type &&
+        stdio[2] === type)
+    )
+  }
+  exports.isStdioType = isStdioType
+})
+
+var require_policy = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const DEFAULT_RETRY_DELAY_MS = 1e3
+  const DEFAULT_RETRY_FACTOR = 2
+  const DEFAULT_RETRY_MAX_DELAY_MS = 3e4
+  /**
+   * The first wait, in milliseconds.
+   */
+  function firstRetryDelayMs(options) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    return Math.min(opts.retryDelayMs ?? 1e3, opts.retryMaxDelayMs ?? 3e4)
+  }
+  /**
+   * Whether a failure looks like the command never reached a verdict.
+   *
+   * True for a failed launch and for a death by signal, which is how Node's own
+   * `timeout` kill arrives. False for a clean non-zero exit, because that is an
+   * answer rather than a transport problem.
+   */
+  function isTransientSpawnFailure(failure) {
+    if (failure.error !== void 0 && failure.error !== null) return true
+    return failure.signal !== void 0 && failure.signal !== null
+  }
+  /**
+   * The wait before the next attempt, given the wait before this one.
+   */
+  function nextRetryDelayMs(currentMs, options) {
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const factor = opts.retryFactor ?? 2
+    const maxMs = opts.retryMaxDelayMs ?? 3e4
+    return Math.min(currentMs * factor, maxMs)
+  }
+  /**
+   * The async twin of {@link runWithSpawnRetryUsing}, for callers that can await
+   * a real timer instead of blocking a thread.
+   *
+   * Same three ordering rules: a success never retries, a clean non-zero exit
+   * never retries, and a wait always precedes a retry.
+   */
+  async function runWithSpawnRetryAsync(sleeper, attempt, options) {
+    const attempts = totalSpawnAttempts(options)
+    let waitMs = firstRetryDelayMs(options)
+    for (let n = 1; ; n += 1) {
+      const result = await attempt()
+      if (
+        attempts === 1 ||
+        spawnSucceeded(result) ||
+        !shouldRetrySpawn(result, n, options)
+      )
+        return result
+      await sleeper(waitMs)
+      waitMs = nextRetryDelayMs(waitMs, options)
+    }
+  }
+  /**
+   * Run `attempt` until it succeeds, the budget runs out, or the failure is one
+   * the policy will not retry. Returns the last result either way.
+   *
+   * The loop lives here rather than at the call site so the ordering rules stay
+   * in one place: a success never retries, a clean non-zero exit never retries,
+   * and a retry never happens without a wait before it.
+   */
+  function runWithSpawnRetryUsing(sleeper, attempt, options) {
+    const attempts = totalSpawnAttempts(options)
+    let waitMs = firstRetryDelayMs(options)
+    for (let n = 1; ; n += 1) {
+      const result = attempt()
+      if (
+        attempts === 1 ||
+        spawnSucceeded(result) ||
+        !shouldRetrySpawn(result, n, options)
+      )
+        return result
+      if (!sleeper(waitMs)) return result
+      waitMs = nextRetryDelayMs(waitMs, options)
+    }
+  }
+  /**
+   * Whether another attempt should run after `failure` on `attempt`.
+   *
+   * `attempt` is 1-based, so the first call passes 1.
+   */
+  function shouldRetrySpawn(failure, attempt, options) {
+    if (attempt >= totalSpawnAttempts(options)) return false
+    return (
+      {
+        __proto__: null,
+        ...options,
+      }.isRetryable ?? isTransientSpawnFailure
+    )(failure)
+  }
+  /**
+   * Whether the command ran and exited cleanly.
+   *
+   * A success ends the retry loop before any predicate is consulted. The
+   * predicate's job is to sort FAILURES into transient and final; asking it
+   * about a clean exit lets a permissive one re-run work that already happened.
+   */
+  function spawnSucceeded(result) {
+    if (result.error !== void 0 && result.error !== null) return false
+    if (result.signal !== void 0 && result.signal !== null) return false
+    return result.status === 0
+  }
+  /**
+   * The number of attempts a call makes in total, first one included.
+   *
+   * A negative or fractional `retries` collapses to a single attempt rather
+   * than looping strangely.
+   */
+  function totalSpawnAttempts(options) {
+    const retries =
+      {
+        __proto__: null,
+        ...options,
+      }.retries ?? 0
+    if (!Number.isFinite(retries) || retries < 1) return 1
+    return Math.floor(retries) + 1
+  }
+  exports.DEFAULT_RETRY_DELAY_MS = DEFAULT_RETRY_DELAY_MS
+  exports.DEFAULT_RETRY_FACTOR = DEFAULT_RETRY_FACTOR
+  exports.DEFAULT_RETRY_MAX_DELAY_MS = DEFAULT_RETRY_MAX_DELAY_MS
+  exports.firstRetryDelayMs = firstRetryDelayMs
+  exports.isTransientSpawnFailure = isTransientSpawnFailure
+  exports.nextRetryDelayMs = nextRetryDelayMs
+  exports.runWithSpawnRetryAsync = runWithSpawnRetryAsync
+  exports.runWithSpawnRetryUsing = runWithSpawnRetryUsing
+  exports.shouldRetrySpawn = shouldRetrySpawn
+  exports.spawnSucceeded = spawnSucceeded
+  exports.totalSpawnAttempts = totalSpawnAttempts
+})
+
+var require_node = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_primordials_array = require_array$3()
+  const require_primordials_globals = require_globals()
+  const require_process_spawn_retry_policy = require_policy()
+  /**
+   * @file The Node retry variant: a real blocking wait between attempts.
+   *   `Atomics.wait` blocks the calling thread without spinning the CPU, and
+   *   Node permits it on the main thread. Browsers do not, which is what
+   *   `./browser` exists for.
+   */
+  /**
+   * Whether a blocking wait is available here.
+   *
+   * Node always defines `SharedArrayBuffer`, so this is true for every runtime
+   * that can reach `spawnSync`. It is false in V8's `--build-snapshot` builder,
+   * where the global is absent.
+   */
+  function canSleepSync() {
+    return require_primordials_globals.SharedArrayBufferCtor !== void 0
+  }
+  /**
+   * Run `attempt` under the retry policy, waiting between tries.
+   */
+  function runWithSpawnRetry(attempt, options) {
+    return require_process_spawn_retry_policy.runWithSpawnRetryUsing(
+      sleepSync,
+      attempt,
+      options,
+    )
+  }
+  /**
+   * Block the calling thread for `ms`. Returns whether the wait happened.
+   *
+   * The `try` is not defensive padding. `Atomics.wait` throws a `TypeError` on
+   * a thread that may not block, and a cross-origin-isolated browser main
+   * thread DEFINES `SharedArrayBuffer` while still forbidding the wait. Testing
+   * the global alone therefore passes and then throws. Reporting false there
+   * keeps the contract: no wait means the caller makes one attempt.
+   */
+  function sleepSync(ms) {
+    if (require_primordials_globals.SharedArrayBufferCtor === void 0)
+      return false
+    if (ms <= 0) return true
+    try {
+      require_primordials_array.AtomicsWait(
+        new require_primordials_array.Int32ArrayCtor(
+          new require_primordials_globals.SharedArrayBufferCtor(4),
+        ),
+        0,
+        0,
+        ms,
+      )
+    } catch {
+      return false
+    }
+    return true
+  }
+  exports.DEFAULT_RETRY_DELAY_MS =
+    require_process_spawn_retry_policy.DEFAULT_RETRY_DELAY_MS
+  exports.DEFAULT_RETRY_FACTOR =
+    require_process_spawn_retry_policy.DEFAULT_RETRY_FACTOR
+  exports.DEFAULT_RETRY_MAX_DELAY_MS =
+    require_process_spawn_retry_policy.DEFAULT_RETRY_MAX_DELAY_MS
+  exports.canSleepSync = canSleepSync
+  exports.firstRetryDelayMs =
+    require_process_spawn_retry_policy.firstRetryDelayMs
+  exports.isTransientSpawnFailure =
+    require_process_spawn_retry_policy.isTransientSpawnFailure
+  exports.nextRetryDelayMs = require_process_spawn_retry_policy.nextRetryDelayMs
+  exports.runWithSpawnRetry = runWithSpawnRetry
+  exports.runWithSpawnRetryAsync =
+    require_process_spawn_retry_policy.runWithSpawnRetryAsync
+  exports.runWithSpawnRetryUsing =
+    require_process_spawn_retry_policy.runWithSpawnRetryUsing
+  exports.shouldRetrySpawn = require_process_spawn_retry_policy.shouldRetrySpawn
+  exports.sleepSync = sleepSync
+  exports.spawnSucceeded = require_process_spawn_retry_policy.spawnSucceeded
+  exports.totalSpawnAttempts =
+    require_process_spawn_retry_policy.totalSpawnAttempts
+})
+
+var require_timeout = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  /**
+   * @file Platform-aware spawn-timeout scaling. Windows process creation is
+   *   much slower than POSIX — a `.cmd`/`.bat` shim launches through cmd.exe
+   *   and there is no cheap fork — and parallel CI load amplifies it, so a
+   *   timeout that is fine on POSIX can kill a slow-but-alive LOCAL process.
+   *   `spawnTimeoutMs` scales a LOCAL timeout up on win32; POSIX keeps the
+   *   base. It is NOT for a NETWORK timeout: that must stay bounded so a
+   *   blackout can't hang the caller, and scaling a network budget by platform
+   *   is wrong — a network spawn keeps a fixed `timeout`. The spawn API
+   *   surfaces this as the `localTimeout` option (platform-scaled) vs `timeout`
+   *   (fixed); `resolveSpawnTimeout` picks between them.
+   */
+  const DEFAULT_WIN32_SPAWN_TIMEOUT_MULTIPLIER = 6
+  /**
+   * The win32 spawn-timeout multiplier. Reads `SOCKET_SPAWN_TIMEOUT_MULTIPLIER`
+   * when it parses to a positive finite number, else the default (6). This is
+   * the config-adaptive knob: a known-slow runner tunes it via env, no code
+   * change.
+   */
+  function getWin32SpawnTimeoutMultiplier() {
+    const raw = process.env['SOCKET_SPAWN_TIMEOUT_MULTIPLIER']
+    const parsed = raw === void 0 ? NaN : Number(raw)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 6
+  }
+  /**
+   * Resolve the effective process-kill timeout from a spawn options bag.
+   * `localTimeout` (platform-scaled) takes the place of `timeout` (fixed);
+   * passing BOTH is a caller error and throws. Returns `undefined` when neither
+   * is set (Node's default: no timeout).
+   */
+  function resolveSpawnTimeout(options) {
+    const { localTimeout, timeout } = {
+      __proto__: null,
+      ...options,
+    }
+    if (localTimeout !== void 0) {
+      if (timeout !== void 0)
+        throw new TypeError(
+          'spawn: pass either `timeout` (fixed) or `localTimeout` (platform-scaled), not both',
+        )
+      return spawnTimeoutMs(localTimeout)
+    }
+    return timeout
+  }
+  /**
+   * Scale a LOCAL process-spawn timeout for the current platform. Returns
+   * `baseMs` unchanged off Windows; on Windows multiplies by the win32
+   * multiplier (default 6, env-overridable) to absorb slower process-creation
+   * latency. An absent binary still fails fast (ENOENT), so the wider ceiling
+   * only extends patience for a present-but-slow process — never the
+   * missing-binary case.
+   */
+  function spawnTimeoutMs(baseMs) {
+    return process.platform === 'win32'
+      ? baseMs * getWin32SpawnTimeoutMultiplier()
+      : baseMs
+  }
+  exports.DEFAULT_WIN32_SPAWN_TIMEOUT_MULTIPLIER =
+    DEFAULT_WIN32_SPAWN_TIMEOUT_MULTIPLIER
+  exports.getWin32SpawnTimeoutMultiplier = getWin32SpawnTimeoutMultiplier
+  exports.resolveSpawnTimeout = resolveSpawnTimeout
+  exports.spawnTimeoutMs = spawnTimeoutMs
+})
+
+var require_tree = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_node_child_process = require_child_process()
+  /**
+   * @file Reading the process table as labelled rows, and spotting a wrapper
+   *   that has recursed into itself.
+   *   A shim that resolves its target through the same PATH it was found on can
+   *   exec a binary that IS the shim. Each generation spawns the next, so the
+   *   chain grows without bound until memory runs out. Every link has a live
+   *   parent, which is why the usual orphan and idle heuristics never see it:
+   *   nothing in the chain is orphaned, nothing is idle, and no single process
+   *   is large.
+   *   The signature is structural. Three consecutive processes carrying the
+   *   same label cannot be legitimate, because real nesting always puts a
+   *   different program in between (a shim spawns a package manager, which
+   *   spawns the shim again). Two levels stay legitimate on purpose: a shim
+   *   spawning the real binary behind it is an ordinary pair.
+   */
+  /**
+   * The number of consecutive same-label processes that marks a recursion.
+   * Two is an ordinary shim-and-binary pair; three cannot be.
+   */
+  const SELF_NEST_DEPTH = 3
+  /**
+   * Every row that sits at the bottom of a same-label run of `depth`. The
+   * deepest links come first, so a caller signalling them in order never
+   * reparents a survivor onto init mid-sweep.
+   */
+  function findSelfNestedProcesses(rows, labelOf, depth = 3) {
+    const nested = rows.filter(row =>
+      isSelfNestedProcess(rows, row, labelOf, depth),
+    )
+    const parentOf = /* @__PURE__ */ new Map()
+    for (let i = 0, { length } = rows; i < length; i += 1) {
+      const row = rows[i]
+      parentOf.set(row.pid, row.ppid)
+    }
+    const depthOf = /* @__PURE__ */ new Map()
+    for (let i = 0, { length } = nested; i < length; i += 1) {
+      const { pid } = nested[i]
+      let hops = 0
+      let current = pid
+      const seen = /* @__PURE__ */ new Set()
+      while (current !== void 0 && !seen.has(current)) {
+        seen.add(current)
+        current = parentOf.get(current)
+        hops += 1
+      }
+      depthOf.set(pid, hops)
+    }
+    return nested.toSorted((a, b) => depthOf.get(b.pid) - depthOf.get(a.pid))
+  }
+  /**
+   * Whether `row` sits at the bottom of a run of `depth` consecutive processes
+   * that all carry the same label.
+   *
+   * `labelOf` names the family a row belongs to and returns `undefined` for a
+   * row that belongs to none. Rows with no label are never self-nested, so a
+   * caller can pass a classifier that recognizes only the wrappers it cares
+   * about and ignore everything else.
+   */
+  function isSelfNestedProcess(rows, row, labelOf, depth = 3) {
+    const label = labelOf(row)
+    if (label === void 0) return false
+    const rowByPid = /* @__PURE__ */ new Map()
+    for (let i = 0, { length } = rows; i < length; i += 1) {
+      const candidate = rows[i]
+      rowByPid.set(candidate.pid, candidate)
+    }
+    let current = row
+    for (let level = 1; level < depth; level += 1) {
+      const parent = rowByPid.get(current.ppid)
+      if (parent === void 0 || parent.pid === current.pid) return false
+      if (labelOf(parent) !== label) return false
+      current = parent
+    }
+    return true
+  }
+  /**
+   * Snapshot the POSIX process table as rows of `pid`, `ppid`, and the full
+   * command. One `ps` call, parsed once: walking the tree needs the whole table
+   * anyway, and re-reading it per-level would let processes move between reads.
+   *
+   * Returns an empty array when `ps` is unavailable or fails, so a caller sees
+   * "nothing to act on" rather than a partial table it might act on wrongly.
+   */
+  function readProcessTree() {
+    const rows = []
+    const res = require_node_child_process
+      .getNodeChildProcess()
+      .spawnSync('ps', ['-Ao', 'pid,ppid,command'], {
+        encoding: 'utf8',
+        maxBuffer: 16777216,
+      })
+    if (res.status !== 0 || typeof res.stdout !== 'string') return rows
+    const lines = res.stdout.split(/\r?\n/)
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const match = /^\s*(\d+)\s+(\d+)\s+(.+)$/.exec(lines[i])
+      if (match)
+        rows.push({
+          command: match[3],
+          pid: Number(match[1]),
+          ppid: Number(match[2]),
+        })
+    }
+    return rows
+  }
+  exports.SELF_NEST_DEPTH = SELF_NEST_DEPTH
+  exports.findSelfNestedProcesses = findSelfNestedProcesses
+  exports.isSelfNestedProcess = isSelfNestedProcess
+  exports.readProcessTree = readProcessTree
+})
+
+var require_kill_tree = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_constants_platform = require_platform()
+  const require_node_child_process = require_child_process()
+  const require_process_tree = require_tree()
+  /**
+   * @file Cross-platform process-tree termination. A spawned package manager,
+   *   proxy, or build tool spawns its own children; killing only the direct
+   *   child orphans them (they reparent to init on POSIX and run forever).
+   *   These helpers kill the whole tree:
+   *
+   *   - POSIX, `detached: true` (default): the child leads its own process group,
+   *     so `process.kill(-pid, signal)` signals every member at once.
+   *   - POSIX, `detached: false`: there is no group to signal, so the process
+   *     table is snapshotted once and every descendant is signalled
+   *     individually. A non-detached child is the common case — Node's own
+   *     `timeout` option signals only the direct child — so without this walk a
+   *     timed-out spawn leaves its whole subtree alive and reparented to init.
+   *   - Windows: there are no POSIX process groups, so we shell out to `taskkill
+   *     /T /F /pid <pid>`, which walks and terminates the descendant tree. The
+   *     `signal` argument is ignored on Windows (taskkill is always a forceful
+   *     terminate). Both helpers are best-effort and never throw: a process
+   *     that already exited (ESRCH) or that we lack permission to signal
+   *     (EPERM) is treated as "nothing to do", because a cleanup kill must not
+   *     mask the caller's original control flow. `killProcessTree` returns
+   *     `true` if a kill was attempted, `false` if the pid was invalid or
+   *     already gone.
+   */
+  /**
+   * Every descendant of `pid`, deepest-last, from a `pid -> ppid` snapshot.
+   *
+   * Why a snapshot rather than repeated `pgrep -P`: a process that exits during
+   * the walk reparents its children to init, and they would vanish from a
+   * later query while still holding memory. Reading the table once fixes the
+   * shape of the tree before anything is signalled.
+   *
+   * The visited set doubles as a cycle guard: a corrupt table must not hang a
+   * cleanup path.
+   */
+  function collectDescendantPids(pid, parents) {
+    const childrenByParent = /* @__PURE__ */ new Map()
+    for (const [child, parent] of parents) {
+      const siblings = childrenByParent.get(parent)
+      if (siblings) siblings.push(child)
+      else childrenByParent.set(parent, [child])
+    }
+    const descendants = []
+    const seen = /* @__PURE__ */ new Set([pid])
+    const queue = [pid]
+    while (queue.length > 0) {
+      const next = queue.shift()
+      const children = childrenByParent.get(next) ?? []
+      for (let i = 0, { length } = children; i < length; i += 1) {
+        const child = children[i]
+        if (!seen.has(child)) {
+          seen.add(child)
+          descendants.push(child)
+          queue.push(child)
+        }
+      }
+    }
+    return descendants
+  }
+  /**
+   * Probe whether a pid is still alive. Uses signal 0, which performs the
+   * permission/existence check without delivering a signal. Returns `false` for
+   * pid <= 1 (kernel/init) so callers don't mistake those for a live child.
+   */
+  function isProcessAlive(pid) {
+    if (!Number.isInteger(pid) || pid <= 1) return false
+    try {
+      process.kill(pid, 0)
+      return true
+    } catch {
+      return false
+    }
+  }
+  /**
+   * Kill a process and its descendants. See the file header for the
+   * POSIX-process-group vs. Windows-taskkill strategy. Best-effort: never
+   * throws. Returns `true` if a kill was attempted, `false` if the pid was
+   * invalid or the process had already exited.
+   */
+  function killProcessTree(target, options) {
+    const pid = resolvePid(target)
+    if (pid === void 0) return false
+    const opts = {
+      __proto__: null,
+      ...options,
+    }
+    const detached = opts.detached !== false
+    const signal = opts.signal ?? 'SIGTERM'
+    try {
+      if (require_constants_platform.isWin32())
+        return (
+          require_node_child_process
+            .getNodeChildProcess()
+            .spawnSync('taskkill', ['/T', '/F', '/pid', String(pid)], {
+              stdio: 'ignore',
+            }).status === 0
+        )
+      if (detached) {
+        process.kill(-pid, signal)
+        return true
+      }
+      const descendants = collectDescendantPids(pid, readParentMap())
+      for (let i = 0, { length } = descendants; i < length; i += 1)
+        try {
+          process.kill(descendants[i], signal)
+        } catch {}
+      process.kill(pid, signal)
+      return true
+    } catch {
+      return false
+    }
+  }
+  /**
+   * Snapshot the POSIX process table as `pid -> ppid`.
+   *
+   * Delegates to {@link readProcessTree}, the package's one process-table
+   * reader, rather than running its own `ps`. Two readers in one package drift:
+   * this one shipped without the `maxBuffer` bump that a full table on a busy
+   * host needs, and would have silently truncated where the other does not.
+   *
+   * Returns an empty map when `ps` is unavailable, which makes the caller fall
+   * back to signalling the single pid — never to signalling nothing it did not
+   * mean to.
+   */
+  function readParentMap() {
+    const parents = /* @__PURE__ */ new Map()
+    const rows = require_process_tree.readProcessTree()
+    for (let i = 0, { length } = rows; i < length; i += 1)
+      parents.set(rows[i].pid, rows[i].ppid)
+    return parents
+  }
+  /**
+   * Resolve a pid from either a raw number or a spawned ChildProcess. Returns
+   * `undefined` for a missing/invalid pid or a process that already exited.
+   * Exported for direct testing.
+   */
+  function resolvePid(target) {
+    if (typeof target === 'number')
+      return Number.isInteger(target) && target > 1 ? target : void 0
+    if (target.exitCode !== null || target.signalCode !== null) return
+    const { pid } = target
+    return typeof pid === 'number' && pid > 1 ? pid : void 0
+  }
+  exports.collectDescendantPids = collectDescendantPids
+  exports.isProcessAlive = isProcessAlive
+  exports.killProcessTree = killProcessTree
+  exports.readParentMap = readParentMap
+  exports.resolvePid = resolvePid
+})
+
+var require_tree_kill_timer = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_process_spawn_timeout = require_timeout()
+  const require_process_spawn_kill_tree = require_kill_tree()
+  /**
+   * @file The `killTreeOnTimeout` timer for {@link spawn}. Node's `timeout`
+   *   option signals ONLY the direct child. A spawned tool that spawned its own
+   *   children therefore leaks the whole subtree on every timeout: the middle
+   *   process takes SIGTERM, the grandchildren reparent to init, and nothing
+   *   reports it, because the spawn failed exactly the way the caller expected
+   *   it to. Measured on a three-level tree — the grandchild was still alive at
+   *   `ppid 1` after the timeout fired. There is a second, quieter cost. A
+   *   leaked grandchild inherits the child's stdout pipe and holds it open, so
+   *   the spawn promise does not settle when the timeout fires — it settles
+   *   when the orphan eventually exits. A 400 ms timeout was observed taking 30
+   *   s to resolve for that reason. Lives in its own module rather than in
+   *   `child.mts` because the timer is a distinct phase with its own ordering
+   *   constraint (see {@link TREE_KILL_LEAD_MS}), and folding it in pushed
+   *   `child.mts` past the 500-line soft cap.
+   */
+  /**
+   * How far ahead of Node's own `timeout` the tree-kill fires, in ms.
+   *
+   * Ordering is the whole point. The instant Node's timeout kills the direct
+   * child, its descendants reparent to init, and a process-table read after
+   * that moment can no longer tell they were ever part of this tree. So the
+   * walk has to happen while the tree is still shaped like a tree. Firing
+   * marginally early guarantees that, and the lead is small enough that a
+   * process which would have finished in time still does.
+   */
+  const TREE_KILL_LEAD_MS = 25
+  /**
+   * Arm a process-tree kill for a spawn that opted into `killTreeOnTimeout`.
+   *
+   * Node's `timeout` option is deliberately left in place: it still produces
+   * the error the caller expects. This only adds the descendant cleanup Node
+   * does not do, so opting in changes what gets cleaned up, never what gets
+   * thrown.
+   *
+   * No-op without the opt-in, without a positive timeout, or before a process
+   * exists. The timer is unref'd so it can never hold the event loop open, and
+   * it is cleared on settle either way so a rejecting spawn neither leaves it
+   * armed nor raises an unhandled rejection from this bookkeeping.
+   */
+  function maybeArmTreeKill(spawnPromise, spawnOptions) {
+    if (spawnOptions['killTreeOnTimeout'] !== true) return
+    const timeoutMs =
+      require_process_spawn_timeout.resolveSpawnTimeout(spawnOptions)
+    if (typeof timeoutMs !== 'number' || timeoutMs <= 0) return
+    const child = spawnPromise.process
+    if (!child) return
+    const timer = setTimeout(
+      () => {
+        require_process_spawn_kill_tree.killProcessTree(child, {
+          detached: false,
+        })
+      },
+      Math.max(1, timeoutMs - 25),
+    )
+    timer.unref?.()
+    spawnPromise.then(
+      () => clearTimeout(timer),
+      () => clearTimeout(timer),
+    )
+  }
+  exports.TREE_KILL_LEAD_MS = TREE_KILL_LEAD_MS
+  exports.maybeArmTreeKill = maybeArmTreeKill
+})
+
+var require_child = /* @__PURE__ */ __commonJSMin(exports => {
+  Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' })
+  const require_env_path = require_path()
+  const require_process_abort = require_abort()
+  const require_node_child_process = require_child_process()
+  const require_objects_inspect = require_inspect$1()
+  const require_spinner_default_state = require_default_state()
+  const require_process_spawn_shared = require_shared()
+  const require_process_spawn_errors = require_errors()
+  const require_process_spawn_stdio = require_stdio()
+  const require_process_spawn_retry_node = require_node()
+  const require_process_spawn_timeout = require_timeout()
+  const require_process_spawn_tree_kill_timer = require_tree_kill_timer()
+  /**
+   * @file Child process spawning utilities with cross-platform support.
+   *   Provides enhanced spawn functionality with stdio handling and error
+   *   management. SECURITY: Array-Based Arguments Prevent Command Injection
+   *   This module uses array-based arguments for all command execution, which
+   *   is the PRIMARY DEFENSE against command injection attacks. When you pass
+   *   arguments as an array to spawn(): spawn('npx', ['sfw', tool, ...args], {
+   *   shell: true }) Node.js handles escaping automatically. Each argument is
+   *   passed directly to the OS without shell interpretation. Shell
+   *   metacharacters like ; | & $ ( ) ` are treated as LITERAL STRINGS, not as
+   *   commands. This approach is secure even when shell: true is used on
+   *   Windows for .cmd/.bat file resolution. UNSAFE ALTERNATIVE (not used in
+   *   this codebase): spawn(`npx sfw ${tool} ${args.join(' ')}`, { shell: true
+   *   }) // ✖ VULNERABLE String concatenation allows injection. For example, if
+   *   tool = "foo; rm -rf /", the shell would execute both commands.
+   *   Array-based arguments prevent this. References:
+   *
+   *   - https://nodejs.org/api/child_process.html#child_processspawncommand-args-options
+   *   - https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html
+   */
+  function spawn(cmd, args, options, extra) {
+    const {
+      spinner: optionsSpinner,
+      stripAnsi: shouldStripAnsi = true,
+      throws = true,
+      ...rawSpawnOptions
+    } = {
+      __proto__: null,
+      ...options,
+    }
+    const spinnerInstance =
+      optionsSpinner ?? require_spinner_default_state.peekDefaultSpinner()
+    const spawnOptions = {
+      __proto__: null,
+      ...rawSpawnOptions,
+    }
+    const { env, shell, stdio, stdioString = true } = spawnOptions
+    const cwd = spawnOptions.cwd ? String(spawnOptions.cwd) : void 0
+    const baseEnv = env
+      ? {
+          __proto__: null,
+          ...process.env,
+          ...env,
+        }
+      : process.env
+    const { command: actualCmd, searchPath } =
+      require_process_spawn_shared.resolveSpawnBin(cmd, {
+        cwd,
+        env: baseEnv,
+        shell,
+      })
+    const envToUse =
+      searchPath === void 0
+        ? baseEnv
+        : require_env_path.replacePathInEnv(
+            baseEnv,
+            searchPath,
+            require_env_path.findPathEnvKey(baseEnv),
+          )
+    const shouldStopSpinner = shouldStopForOutput()
+    function shouldStopForOutput() {
+      return (
+        !!spinnerInstance?.isSpinning &&
+        !require_process_spawn_stdio.isStdioType(stdio, 'ignore') &&
+        !require_process_spawn_stdio.isStdioType(stdio, 'pipe')
+      )
+    }
+    const shouldRestartSpinner = shouldStopSpinner
+    if (shouldStopSpinner) spinnerInstance.stop()
+    const promiseSpawnOpts = {
+      __proto__: null,
+      cwd: typeof spawnOptions.cwd === 'string' ? spawnOptions.cwd : void 0,
+      env: envToUse,
+      signal: require_process_abort.getAbortSignal(),
+      stdio: spawnOptions.stdio,
+      stdioString,
+      shell: spawnOptions.shell,
+      windowsVerbatimArguments: spawnOptions.windowsVerbatimArguments,
+      timeout: require_process_spawn_timeout.resolveSpawnTimeout(spawnOptions),
+      uid: spawnOptions.uid,
+      gid: spawnOptions.gid,
+    }
+    const spawnPromise = require_process_spawn_shared.getNpmCliPromiseSpawn()(
+      actualCmd,
+      args ? [...args] : [],
+      promiseSpawnOpts,
+      extra,
+    )
+    /* c8 ignore stop */
+    const oldSpawnPromise = spawnPromise
+    require_process_spawn_tree_kill_timer.maybeArmTreeKill(
+      oldSpawnPromise,
+      spawnOptions,
+    )
+    /* c8 ignore start */
+    let newSpawnPromise
+    if (shouldStripAnsi && stdioString)
+      newSpawnPromise = (async () => {
+        try {
+          const result = await spawnPromise
+          const strippedResult =
+            require_process_spawn_shared.stripAnsiFromSpawnResult(result)
+          if ('code' in strippedResult)
+            strippedResult.exitCode = strippedResult.code
+          return strippedResult
+        } catch (error) {
+          const strippedError =
+            require_process_spawn_shared.stripAnsiFromSpawnResult(error)
+          if (!throws) {
+            const exitResult = spawnExitResult(strippedError)
+            if (exitResult) return exitResult
+          }
+          throw require_process_spawn_errors.enhanceSpawnError(strippedError)
+        }
+      })()
+    else
+      newSpawnPromise = (async () => {
+        try {
+          const result = await spawnPromise
+          if (
+            result !== null &&
+            typeof result === 'object' &&
+            'code' in result
+          ) {
+            const res = result
+            res.exitCode = res.code
+            return res
+          }
+          return result
+        } catch (error) {
+          if (!throws) {
+            const exitResult = spawnExitResult(error)
+            if (exitResult) return exitResult
+          }
+          throw require_process_spawn_errors.enhanceSpawnError(error)
+        }
+      })()
+    /* c8 ignore stop */
+    if (shouldRestartSpinner) {
+      const prevPromise = newSpawnPromise
+      newSpawnPromise = (async () => {
+        try {
+          return await prevPromise
+        } finally {
+          spinnerInstance.start()
+        }
+      })()
+    }
+    newSpawnPromise.process = oldSpawnPromise.process
+    newSpawnPromise.stdin = oldSpawnPromise.stdin
+    return newSpawnPromise
+  }
+  /**
+   * The resolved-result shape for a spawn rejection whose child actually RAN
+   * and exited — a numeric exit code, or a terminating signal. This is what
+   * `throws: false` resolves with instead of rejecting: the same
+   * `cmd`/`args`/`code`/`signal`/`stdout`/`stderr` fields the success path
+   * carries, plus the `exitCode` alias the success path also sets. A LAUNCH
+   * failure — the command was never found or never started, so `.code` is a
+   * string like `'ENOENT'` and no signal terminated it — returns undefined,
+   * because there is no exit code to report and the rejection must stand.
+   */
+  function spawnExitResult(error) {
+    if (!require_process_spawn_errors.isSpawnError(error)) return
+    const { args, cmd, code, signal, stderr, stdout } = error
+    if (typeof code !== 'number' && typeof signal !== 'string') return
+    return {
+      args,
+      cmd,
+      code,
+      exitCode: code,
+      signal,
+      stderr,
+      stdout,
+    }
+  }
+  function spawnSync(cmd, args, options) {
+    const baseEnv =
+      require_objects_inspect.getOwn(options, 'env') ?? process.env
+    const { command: actualCmd, searchPath } =
+      require_process_spawn_shared.resolveSpawnBin(cmd, {
+        cwd: require_objects_inspect.getOwn(options, 'cwd'),
+        env: baseEnv,
+        shell: require_objects_inspect.getOwn(options, 'shell'),
+      })
+    const {
+      isRetryable,
+      retries,
+      retryDelayMs,
+      retryFactor,
+      retryMaxDelayMs,
+      stripAnsi: shouldStripAnsi = true,
+      trim = true,
+      ...rawSpawnOptions
+    } = {
+      __proto__: null,
+      ...options,
+    }
+    const { stdioString: rawStdioString = true } = rawSpawnOptions
+    const spawnOptions = {
+      encoding: rawStdioString ? 'utf8' : 'buffer',
+      ...rawSpawnOptions,
+      ...(searchPath === void 0
+        ? {}
+        : {
+            env: require_env_path.replacePathInEnv(
+              baseEnv,
+              searchPath,
+              require_env_path.findPathEnvKey(baseEnv),
+            ),
+          }),
+      timeout:
+        require_process_spawn_timeout.resolveSpawnTimeout(rawSpawnOptions),
+    }
+    const stdioString = spawnOptions.encoding !== 'buffer'
+    const childProcess = require_node_child_process.getNodeChildProcess()
+    const result = require_process_spawn_retry_node.runWithSpawnRetry(
+      () => childProcess.spawnSync(actualCmd, args, spawnOptions),
+      {
+        isRetryable,
+        retries,
+        retryDelayMs,
+        retryFactor,
+        retryMaxDelayMs,
+      },
+    )
+    if (stdioString) {
+      const { stderr, stdout } = result
+      if (stdout) {
+        const text = stdout.toString()
+        result.stdout = trim ? text.trim() : text
+      }
+      if (stderr) {
+        const text = stderr.toString()
+        result.stderr = trim ? text.trim() : text
+      }
+    }
+    return shouldStripAnsi && stdioString
+      ? require_process_spawn_shared.stripAnsiFromSpawnResult(result)
+      : result
+  }
+  exports.spawn = spawn
+  exports.spawnExitResult = spawnExitResult
+  exports.spawnSync = spawnSync
+})
+
+function spawnTimeoutMs(baseMs) {
+  return (0, import_platform.isWin32)()
+    ? baseMs * WIN32_SPAWN_TIMEOUT_MULTIPLIER
+    : baseMs
+}
+var import_platform, WIN32_SPAWN_TIMEOUT_MULTIPLIER
+var init_spawn_timeout = __esmMin(() => {
+  import_platform = require_platform()
+  WIN32_SPAWN_TIMEOUT_MULTIPLIER = 6
+})
+
+function commandText(command, args, timeoutMs) {
+  try {
+    const result = (0, import_child.spawnSync)(command, args, {
+      encoding: 'utf8',
+      timeout: spawnTimeoutMs(timeoutMs),
+    })
+    return result.status === 0 && typeof result.stdout === 'string'
+      ? result.stdout
+      : void 0
+  } catch {
+    return
+  }
+}
+function parseByteCount(value) {
+  const match = /^(\d+(?:\.\d+)?)([KMG])?$/u.exec(value.trim())
+  if (!match) return
+  const scale =
+    {
+      G: GIB,
+      K: 1024,
+      M: 1024 ** 2,
+    }[match[2] ?? ''] ?? 1
+  return Number(match[1]) * scale
+}
+function parseDarwinPressure(value) {
+  if (value === void 0) return 'unknown'
+  const level = Number(value.trim())
+  if (level === 1) return 'normal'
+  if (level === 2) return 'warning'
+  if (level >= 4) return 'critical'
+  return 'unknown'
+}
+function parseDarwinReportedFree(value) {
+  if (value === void 0) return
+  const match = /System-wide memory free percentage:\s*([\d.]+)%/u.exec(value)
+  if (!match) return
+  return Math.floor((Number(match[1]) / 100) * os.totalmem())
+}
+function parseSwapUsage(value) {
+  if (value === void 0) return
+  const match = /used\s*=\s*([\d.]+)([KMG])/u.exec(value)
+  return match ? parseByteCount(`${match[1]}${match[2]}`) : void 0
+}
+function meminfo() {
+  try {
+    const values = /* @__PURE__ */ new Map()
+    const lines = readFileSync('/proc/meminfo', 'utf8').split(/\r?\n/)
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const line = lines[i]
+      const match = /^(\w+):\s*(\d+)\s*kB$/u.exec(line)
+      if (match) values.set(match[1], Number(match[2]) * 1024)
+    }
+    return values
+  } catch {
+    return
+  }
+}
+function linuxPressure() {
+  try {
+    const value = readFileSync('/proc/pressure/memory', 'utf8')
+    const full = /^full\s+avg10=([\d.]+)/mu.exec(value)
+    if (!full) return 'unknown'
+    return Number(full[1]) > 0 ? 'warning' : 'normal'
+  } catch {
+    return 'unknown'
+  }
+}
+function darwinSnapshot(timeoutMs) {
+  const pressureText = commandText(
+    'sysctl',
+    ['-n', 'kern.memorystatus_vm_pressure_level'],
+    timeoutMs,
+  )
+  const reportedFree = parseDarwinReportedFree(
+    commandText('memory_pressure', ['-Q'], timeoutMs),
+  )
+  const pressure = parseDarwinPressure(pressureText)
+  const sensors = [
+    {
+      name: 'kern.memorystatus_vm_pressure_level',
+      status: pressure === 'unknown' ? 'unavailable' : 'ok',
+    },
+    {
+      detail:
+        'memory_pressure reports current free percentage; it is an estimate, not free-plus-inactive accounting.',
+      name: 'memory_pressure -Q',
+      status: reportedFree === void 0 ? 'unavailable' : 'ok',
+    },
+  ]
+  const swap = parseSwapUsage(
+    commandText('sysctl', ['vm.swapusage'], timeoutMs),
+  )
+  if (swap === void 0)
+    sensors.push({
+      name: 'vm.swapusage',
+      status: 'unavailable',
+    })
+  return {
+    ...(swap === void 0 ? {} : { occupiedSwapBytes: swap }),
+    ...(reportedFree === void 0
+      ? {}
+      : { headroomSource: 'reported-free-estimate' }),
+    physicalMemoryBytes: os.totalmem(),
+    platform: process$1.platform,
+    pressure,
+    sampledAt: Date.now(),
+    sensors,
+    ...(reportedFree === void 0 ? {} : { usableHeadroomBytes: reportedFree }),
+  }
+}
+function linuxSnapshot() {
+  const values = meminfo()
+  const headroom = values?.get('MemAvailable')
+  const swapTotal = values?.get('SwapTotal')
+  const swapFree = values?.get('SwapFree')
+  const swap =
+    swapTotal === void 0 || swapFree === void 0 ? void 0 : swapTotal - swapFree
+  const pressure = linuxPressure()
+  return {
+    ...(swap === void 0 ? {} : { occupiedSwapBytes: swap }),
+    ...(headroom === void 0 ? {} : { headroomSource: 'available' }),
+    physicalMemoryBytes: values?.get('MemTotal') ?? os.totalmem(),
+    platform: process$1.platform,
+    pressure,
+    sampledAt: Date.now(),
+    sensors: [
+      {
+        name: '/proc/meminfo MemAvailable',
+        status: headroom === void 0 ? 'unavailable' : 'ok',
+      },
+      {
+        name: '/proc/pressure/memory',
+        status: pressure === 'unknown' ? 'unavailable' : 'ok',
+      },
+    ],
+    ...(headroom === void 0 ? {} : { usableHeadroomBytes: headroom }),
+  }
+}
+function sampleHostMemory(options = {}) {
+  const timeoutMs = hostProbeTimeoutMs(options.timeoutMs)
+  if (process$1.platform === 'darwin') return darwinSnapshot(timeoutMs)
+  if (process$1.platform === 'linux') return linuxSnapshot()
+  const headroom = os.freemem()
+  return {
+    ...(headroom > 0 ? { headroomSource: 'os-free' } : {}),
+    physicalMemoryBytes: os.totalmem(),
+    platform: process$1.platform,
+    pressure: 'unknown',
+    sampledAt: Date.now(),
+    sensors: [
+      {
+        name: 'node:os freemem',
+        status: headroom > 0 ? 'ok' : 'unavailable',
+      },
+    ],
+    ...(headroom > 0 ? { usableHeadroomBytes: headroom } : {}),
+  }
+}
+function hostProbeTimeoutMs(requested) {
+  if (requested === void 0 || !Number.isFinite(requested)) return 5e3
+  return Math.max(1, Math.min(5e3, Math.floor(requested)))
+}
+function evaluateHostMemory(snapshot, options = {}) {
+  const minimumHeadroomBytes =
+    options.minimumHeadroomBytes ?? MINIMUM_HOST_HEADROOM_BYTES
+  if (
+    !isFinitePositive(minimumHeadroomBytes) ||
+    !isValidPressure(snapshot.pressure) ||
+    !isFiniteOptional(snapshot.physicalMemoryBytes) ||
+    !isFiniteOptional(snapshot.occupiedSwapBytes)
+  )
+    return {
+      metric: 'telemetry',
+      state: 'unknown',
+    }
+  if (snapshot.pressure === 'critical' || snapshot.pressure === 'warning')
+    return {
+      metric: 'pressure',
+      state: 'blocked',
+    }
+  if (!isFiniteNonnegative(snapshot.usableHeadroomBytes))
+    return {
+      metric: 'telemetry',
+      state: 'unknown',
+    }
+  if (snapshot.pressure === 'unknown')
+    return {
+      metric: 'telemetry',
+      state: 'unknown',
+    }
+  if (snapshot.usableHeadroomBytes < minimumHeadroomBytes)
+    return {
+      metric: 'headroom',
+      state: 'blocked',
+    }
+  return {
+    metric: 'headroom',
+    state: 'safe',
+  }
+}
+function hostMemoryStatus(snapshot) {
+  const headroom = snapshot.usableHeadroomBytes
+  const swap = snapshot.occupiedSwapBytes
+  const sensorStatus = snapshot.sensors
+    .map(sensor => `${sensor.name}:${sensor.status}`)
+    .join(', ')
+  return [
+    `host pressure=${snapshot.pressure}`,
+    `headroom=${formatHeadroom(headroom, snapshot.headroomSource)}`,
+    `swap context=${formatMemoryMetric(swap)}`,
+    `sensors=${sensorStatus || 'unknown'}`,
+  ].join('; ')
+}
+function formatGigabytes(bytes) {
+  return `${(bytes / GIB).toFixed(1)} GB`
+}
+function formatHeadroom(bytes, source) {
+  if (!isFiniteNonnegative(bytes))
+    return bytes === void 0 ? 'unknown' : 'invalid'
+  return `${formatGigabytes(bytes)} ${source ?? 'unspecified'}`
+}
+function formatMemoryMetric(bytes) {
+  if (!isFiniteNonnegative(bytes))
+    return bytes === void 0 ? 'unknown' : 'invalid'
+  return formatGigabytes(bytes)
+}
+function isFiniteNonnegative(value) {
+  return value !== void 0 && Number.isFinite(value) && value >= 0
+}
+function isFiniteOptional(value) {
+  return value === void 0 || (Number.isFinite(value) && value >= 0)
+}
+function isFinitePositive(value) {
+  return Number.isFinite(value) && value > 0
+}
+function isValidPressure(value) {
+  return (
+    value === 'critical' ||
+    value === 'normal' ||
+    value === 'unknown' ||
+    value === 'warning'
+  )
+}
+var import_child, GIB, MINIMUM_HOST_HEADROOM_BYTES
+var init_host_memory = __esmMin(() => {
+  import_child = require_child()
+  init_spawn_timeout()
+  GIB = 1024 ** 3
+  MINIMUM_HOST_HEADROOM_BYTES = 4 * GIB
+})
+
 function parseHeavyJobOwner(value) {
   if (typeof value !== 'object' || value === null) return
   const owner = value
@@ -27813,6 +45305,7 @@ var admission_exports = /* @__PURE__ */ __exportAll({
   HEAVY_JOB_BUSY_EXIT_CODE: () => 75,
   HEAVY_JOB_OWNER_ENV: () => HEAVY_JOB_OWNER_ENV,
   HeavyJobBusy: () => HeavyJobBusy,
+  HeavyJobHostMemory: () => HeavyJobHostMemory,
   acquireHeavyJob: () => acquireHeavyJob,
   hasHeavyJobAdmission: () => hasHeavyJobAdmission,
   heavyJobDirectory: () => heavyJobDirectory,
@@ -28071,6 +45564,7 @@ async function runAdmittedJob(config, lease) {
   process.on('SIGINT', interrupt)
   process.on('SIGTERM', terminate)
   try {
+    assertHostMemory(config)
     ;(config.register ?? registerActiveRun)()
     heavyJobContext ??= new AsyncLocalStorage()
     const scope = { pending: /* @__PURE__ */ new Set() }
@@ -28091,6 +45585,17 @@ async function runAdmittedJob(config, lease) {
     }
   }
 }
+function assertHostMemory(config) {
+  const snapshot = (config.hostSample ?? sampleHostMemory)()
+  const evaluation = evaluateHostMemory(snapshot)
+  if (evaluation.state !== 'safe')
+    throw new HeavyJobHostMemory(evaluation, snapshot)
+}
+function hostMemoryReason(evaluation) {
+  if (evaluation.metric === 'pressure') return 'during host pressure'
+  if (evaluation.metric === 'headroom') return 'with insufficient host headroom'
+  return 'without valid host telemetry'
+}
 var import_ci,
   import_abort,
   HEAVY_JOB_OWNER_ENV,
@@ -28100,11 +45605,13 @@ var import_ci,
   heavyJobContext,
   activeScope,
   runtimeActive,
-  HeavyJobBusy
+  HeavyJobBusy,
+  HeavyJobHostMemory
 var init_admission = __esmMin(() => {
   import_ci = require_ci()
   import_abort = require_abort()
   init_active_run_marker()
+  init_host_memory()
   init_script_result()
   init_strict()
   init_paths()
@@ -28118,6 +45625,12 @@ var init_admission = __esmMin(() => {
     constructor(owner) {
       super(75)
       this.message = `Heavy job admission is occupied by ${owner.job} (pid ${owner.pid}) at ${owner.root}. Wanted an available host. Retry when that job finishes.`
+    }
+  }
+  HeavyJobHostMemory = class extends ScriptExit {
+    constructor(evaluation, snapshot) {
+      super(75)
+      this.message = `Heavy job admission cannot start ${hostMemoryReason(evaluation)}. Saw: ${hostMemoryStatus(snapshot)}. Fix: run pnpm run sweep --resources --json.`
     }
   }
 })
@@ -28145,7 +45658,7 @@ var init_admission = __esmMin(() => {
  *   script answers --describe and --help without running its side effect).
  */
 var import_message = require_message()
-var import_default = require_default()
+var import_default = require_default$1()
 init_script_result()
 const logger$2 = (0, import_default.getDefaultLogger)()
 /**
@@ -28299,7 +45812,7 @@ function canonicalMcpConfigPath(repoRoot) {
     : mcpConfigFilePath(repoRoot, MCP_CONFIG_REL)
 }
 
-var import_predicates = require_predicates$2()
+var import_predicates = require_predicates$3()
 const MCP_PROVIDERS = {
   readme: {
     connectOrder: 1,

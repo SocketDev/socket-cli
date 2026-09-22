@@ -240,8 +240,6 @@ jobs:
           payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           checkout-ref: ${{ inputs.checkout-ref || github.sha }}
-      - name: Build
-        run: pnpm run build
       - name: Restore reserved coverage tooling
         if: ${{ inputs.resume-reserved == true }}
         shell: bash
@@ -397,8 +395,6 @@ jobs:
           }
           fs.appendFileSync(process.env.GITHUB_PATH, `${path.dirname(result.binPath)}\n`)
           NODE
-      - name: Build
-        run: pnpm run build
       - name: 'Download coverage artifacts'
         if: ${{ needs.coverage-plan.outputs.runner == 'vitest' }}
         uses: ./.github/actions/fleet/download-artifact
