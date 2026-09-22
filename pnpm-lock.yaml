@@ -1340,6 +1340,16 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
+  .claude/hooks/fleet/browser-extension-build-current-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.3
+        version: '@socketsecurity/lib@7.0.3(typescript@7.1.0-dev.20260904.1)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
   .claude/hooks/fleet/bump-defers-to-release-guard:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -1432,6 +1442,16 @@ importers:
       '@socketsecurity/sdk-stable':
         specifier: npm:@socketsecurity/sdk@4.1.4
         version: '@socketsecurity/sdk@4.1.4'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
+  .claude/hooks/fleet/ci-poll-throttle-nudge:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.3
+        version: '@socketsecurity/lib@7.0.3(typescript@7.1.0-dev.20260904.1)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -3072,6 +3092,16 @@ importers:
         specifier: 'catalog:'
         version: 26.5.1
 
+  .claude/hooks/fleet/peer-claim-nudge:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.3
+        version: '@socketsecurity/lib@7.0.3(typescript@7.1.0-dev.20260904.1)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
   .claude/hooks/fleet/peer-resource-lease-guard:
     devDependencies:
       '@types/node':
@@ -3501,6 +3531,12 @@ importers:
         version: 26.5.1
 
   .claude/hooks/fleet/reply-ref-link-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
+  .claude/hooks/fleet/reply-tone-nudge:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -3952,6 +3988,22 @@ importers:
       shell-quote:
         specifier: 1.10.0
         version: 1.10.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
+  .claude/hooks/fleet/unbacked-claim-guard:
+    dependencies:
+      shell-quote:
+        specifier: 1.10.0
+        version: 1.10.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.5.1
+
+  .claude/hooks/fleet/unbacked-claim-nudge:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
