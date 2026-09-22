@@ -39,15 +39,13 @@ export async function main(): Promise<void> {
   await mkdir(SEA_OUTPUT_DIR, { recursive: true })
   const payload = await readFile(SEA_PAYLOAD_PATH, 'utf8')
   await writeFile(SEA_ENTRY_PATH, createSeaEntry(payload))
-  const host = resolveSeaTarget(
-    process.platform,
-    process.arch,
-    (
+  const host = resolveSeaTarget(process.platform, process.arch, {
+    glibc: (
       process.report.getReport() as {
         header: { glibcVersionRuntime?: string | undefined }
       }
     ).header.glibcVersionRuntime,
-  )
+  })
   const arg = process.argv
     .find(value => value.startsWith('--target='))
     ?.slice(9)
@@ -183,11 +181,13 @@ async function buildSeaTarget(
     .digest('hex')
 }
 
+const SCRIPT_META = {
+  describe: 'build the socket package SEA platform matrix',
+  heavyJob: 'build' as const,
+  help: 'Usage: pnpm run build:sea [--target=host|TARGET]',
+  json: 'native' as const,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe: 'build the socket package SEA platform matrix',
-    help: 'Usage: pnpm run build:sea [--target=host|TARGET]',
-    json: 'native',
-    heavyJob: 'build',
-  })
+  runMain(main, SCRIPT_META)
 }

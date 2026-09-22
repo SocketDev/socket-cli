@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { PACKAGE_ROOT } from '../paths.mts'
 
+export * from '../paths.mts'
+
 export const SEA_OUTPUT_DIR = path.join(PACKAGE_ROOT, 'dist', 'sea')
 export const SEA_BUILD_DIR = path.join(PACKAGE_ROOT, 'build', 'sea')
 export const SEA_ENTRY_PATH = path.join(SEA_BUILD_DIR, 'entry.generated.cjs')

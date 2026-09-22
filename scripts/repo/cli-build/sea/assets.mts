@@ -2,7 +2,11 @@ import crypto from 'node:crypto'
 import { chmod, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
-import { BASE_ASSET_SHA256 } from '../constants/sea-assets.mts'
+import {
+  BASE_ASSET_SHA256,
+  BASE_ASSETS_MIRROR_OWNER,
+  BASE_ASSETS_MIRROR_REPO,
+} from '../constants/sea-assets.mts'
 import { SEA_BUILD_DIR } from './paths.mts'
 
 export function verifySeaAsset(bytes: Uint8Array, expected: string): boolean {
@@ -32,7 +36,7 @@ export async function fetchSeaAsset(
   }
   if (!bytes || !verifySeaAsset(bytes, expected)) {
     const response = await httpRequest(
-      `https://github.com/SocketDev/socket-cli/releases/download/base-assets-${tag}/${name}`,
+      `https://github.com/${BASE_ASSETS_MIRROR_OWNER}/${BASE_ASSETS_MIRROR_REPO}/releases/download/base-assets-${tag}/${name}`,
     )
     if (!response.ok) {
       throw new Error(

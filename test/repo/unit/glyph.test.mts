@@ -7,7 +7,7 @@ import {
   repoLogomarkSvg,
   repoLogomarkInverseSvg,
 } from '../../../scripts/fleet/gen/glyph-render.mts'
-import { optimiseSvg } from '../../../scripts/fleet/gen/svg-optimize.mts'
+import { optimiseSvg } from '../../../scripts/fleet/gen/svg/optimize.mts'
 
 describe('repository glyph', () => {
   test('reproduces both committed SVG variants', () => {

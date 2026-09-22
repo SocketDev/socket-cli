@@ -119,9 +119,12 @@ export async function main(): Promise<void> {
   writeFileSync(PACKAGE_JSON, replaceVersion(original, source.version))
 }
 
+const SCRIPT_META = {
+  describe: 'generates a source-bound Socket CLI prerelease',
+  help: 'Usage: pnpm run bump --dry-run | --write-only',
+  json: 'result' as const,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe: 'generates a source-bound Socket CLI prerelease',
-    help: 'Usage: pnpm run bump --dry-run | --write-only',
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -42,15 +42,13 @@ export async function main(): Promise<void> {
   }
   const targets = process.argv.includes('--host')
     ? [
-        resolveSeaTarget(
-          process.platform,
-          process.arch,
-          (
+        resolveSeaTarget(process.platform, process.arch, {
+          glibc: (
             process.report.getReport() as {
               header: { glibcVersionRuntime?: string | undefined }
             }
           ).header.glibcVersionRuntime,
-        ),
+        }),
       ]
     : SEA_TARGETS
   for (const target of targets) {
@@ -62,15 +60,13 @@ export async function main(): Promise<void> {
       )
     }
   }
-  const host = resolveSeaTarget(
-    process.platform,
-    process.arch,
-    (
+  const host = resolveSeaTarget(process.platform, process.arch, {
+    glibc: (
       process.report.getReport() as {
         header: { glibcVersionRuntime?: string | undefined }
       }
     ).header.glibcVersionRuntime,
-  )
+  })
   for (const args of [['--version'], ['--help'], ['npm', '--version']]) {
     const result = await spawn(seaBinaryPath(host), args, {
       stdio: 'pipe',
@@ -89,11 +85,13 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META = {
+  describe: 'verify socket SEA artifact integrity and execution',
+  heavyJob: 'test' as const,
+  help: 'Usage: pnpm run check:sea-package [--host]',
+  json: 'native' as const,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe: 'verify socket SEA artifact integrity and execution',
-    help: 'Usage: pnpm run check:sea-package [--host]',
-    json: 'native',
-    heavyJob: 'test',
-  })
+  runMain(main, SCRIPT_META)
 }

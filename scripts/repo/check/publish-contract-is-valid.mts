@@ -34,9 +34,12 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META = {
+  describe: 'validates the Socket CLI npm release contract',
+  help: 'Usage: pnpm run prepublish:check [--reserved]',
+  json: 'result' as const,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe: 'validates the Socket CLI npm release contract',
-    help: 'Usage: pnpm run prepublish:check [--reserved]',
-  })
+  runMain(main, SCRIPT_META)
 }
