@@ -61,7 +61,7 @@ if not lib: errors.append("internal module demo:lib not emitted by its bare id")
 elif not in_prod(lib): errors.append("internal module demo:lib not in app's prod root")
 elif not direct.get(lib): errors.append("internal module demo:lib not marked direct")
 
-# Scope conflict (REA-799): Maven keeps demo.ext:shared under the test parent while its effective
+# Scope conflict: Maven keeps demo.ext:shared under the test parent while its effective
 # scope is compile, so it must land in the dev root. Reachability (checked by
 # ../assert-reachability.py) additionally proves it kept its parent edge.
 shared = coord('demo.ext:shared:jar:')

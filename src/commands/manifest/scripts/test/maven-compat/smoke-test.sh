@@ -6,7 +6,7 @@
 #    its transitive demo.ext:harness-core (only in a non-prod root -> the assembler's dev flag);
 #  - emits the internal reactor module demo:lib by its bare groupId:artifactId:version id (so the
 #    inter-module edge lines up with its `project` record);
-#  - resolves a scope conflict (REA-799) so the retained node stays reachable from its parent root;
+#  - resolves a scope conflict so the retained node stays reachable from its parent root;
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).

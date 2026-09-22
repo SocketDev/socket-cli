@@ -5,7 +5,7 @@
  * `src/commands/manifest/scripts/test/assert-reachability.py` over the records
  * its script emitted, asserting that each component is reachable from a direct
  * dependency of its own resolution root (the manifest consumer's "orphaned
- * component" check, REA-799). The fixtures need Gradle/Maven/sbt and a JDK, so
+ * component" check). The fixtures need Gradle/Maven/sbt and a JDK, so
  * these run the assertion over synthetic records instead.
  *
  * Implementation: src/commands/manifest/scripts/test/assert-reachability.py
@@ -111,7 +111,7 @@ describe('assert-reachability.py', () => {
   })
 
   it('rejects a node whose only parent edge lives in another root', () => {
-    // The Maven REA-799 shape: `shared` sits in the prod root, but its only
+    // The Maven scope-conflict shape: `shared` sits in the prod root, but its only
     // retained parent (`conflict-test`) is in the dev root.
     const { output, status } = run([
       ['meta', 'maven'].join('\t'),

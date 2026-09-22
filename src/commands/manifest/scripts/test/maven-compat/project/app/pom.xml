@@ -27,7 +27,7 @@
       <version>1.0</version>
       <scope>test</scope>
     </dependency>
-    <!-- Scope-conflict pair (REA-799): both pull demo.ext:shared at the same depth. Because the test
+    <!-- Scope-conflict pair: both pull demo.ext:shared at the same depth. Because the test
          dep is declared first, Maven keeps shared under the test parent but unions the scopes to
          compile, so shared's effective scope is prod while its only retained parent is dev. A
          scope-based prod/dev split would strand shared in the prod root with no parent edge (an

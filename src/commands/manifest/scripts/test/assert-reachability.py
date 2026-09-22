@@ -5,7 +5,7 @@
 #
 # The manifest consumer reports a component that is neither direct nor referenced as an "orphaned
 # component not reachable from any direct dependency". Porting a node to a root whose only parent
-# edge lives in another root is exactly how that happens (see REA-799), so every ecosystem's smoke
+# edge lives in another root is exactly how that happens, so every ecosystem's smoke
 # test runs this. Kept in its own file, rather than a heredoc inside each smoke-test.sh, so the unit
 # suite can run it over synthetic records without a build tool or a JDK.
 #

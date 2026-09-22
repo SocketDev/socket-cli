@@ -85,7 +85,7 @@ function buildRecords(internalModuleCoord: string): string {
       'demo.ext:harness-core:jar:1.0',
     ),
     nodeRow(TEST_ROOT, 'demo.ext:harness-core:jar:1.0', { direct: false }),
-    // Scope-conflict shape (REA-799): shared's effective scope is prod, but Maven kept it under a
+    // Scope-conflict shape: shared's effective scope is prod, but Maven kept it under a
     // test parent, so it belongs in the dev root and must keep that parent edge.
     nodeRow(TEST_ROOT, 'demo.ext:conflict-test:jar:1.0', { direct: true }),
     edgeRow(
