@@ -8,6 +8,12 @@ workspace-enumeration sibling (`socket-workspaces.init.gradle`,
 against a matrix of build-tool versions, asserting they still emit the
 expected line-protocol records.
 
+Every ecosystem's records are also checked against the shared
+`assert-reachability.py` invariant: within each resolution root, every component
+must be reachable from one of that root's direct dependencies, or the manifest
+consumer reports it as an orphaned component. It's unit-tested over
+synthetic records in `test/manifest-reachability-assertions.test.mts`.
+
 ## Run locally, on demand
 
 There is **no CI for this matrix**: SocketDev's org action allowlist forbids

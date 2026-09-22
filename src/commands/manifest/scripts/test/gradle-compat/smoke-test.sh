@@ -8,6 +8,7 @@
 #  - foo (prod) appears in a prod root, bar (test) only in non-prod roots -> the assembler's dev flag;
 #  - every resolved dependency gets an on-disk jar `file` record under -Psocket.withFiles (incl. the
 #    production dep reached via the legacy `compile` config on old Gradle);
+#  - every component is reachable from a direct dependency of its own root (no orphaned components);
 #  - -Psocket.populateFilesFor scopes materialization to a single GAV.
 #
 # Usage: smoke-test.sh /path/to/gradle
@@ -66,6 +67,8 @@ print(f"PASS ({'scoped' if scoped else 'full'}): nodes {sorted(nodes)}; foo prod
       + ("; bar skipped" if scoped else "; bar jar"))
 PY
 
+python3 "$HERE/../assert-reachability.py" "$RECORDS"
+
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
 SCOPE="$HERE/.populate-for.txt"
 printf 'demo.lib:foo:1.0\n' > "$SCOPE"
@@ -91,3 +94,5 @@ if errors:
     sys.exit(1)
 print("PASS (populateFilesFor scoping): foo materialized, bar skipped")
 PY
+
+python3 "$HERE/../assert-reachability.py" "$RECORDS"

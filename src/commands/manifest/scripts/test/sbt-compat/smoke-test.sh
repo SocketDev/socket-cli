@@ -6,6 +6,7 @@
 # ConfigRef, updateFull-vs-update) keep producing correct facts:
 #  - the two expected dependency nodes are present (demo.ext:tool prod, demo.ext:harness test);
 #  - tool appears in a prod root, harness only in non-prod roots -> the assembler's dev flag;
+#  - every component is reachable from a direct dependency of its own root (no orphaned components);
 #  - both get an on-disk jar `file` record under -Dsocket.withFiles.
 #
 # Both deps are stubs generated into project/localrepo at test time (../make-stub-repo.sh, shared with
@@ -75,3 +76,5 @@ if errors:
     sys.exit(1)
 print(f"PASS: demo.ext:tool prod+jar; demo.ext:harness dev+jar ({len(nodes)} nodes)")
 PY
+
+python3 "$HERE/../assert-reachability.py" "$RECORDS"

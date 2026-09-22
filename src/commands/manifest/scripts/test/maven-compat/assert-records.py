@@ -17,6 +17,10 @@ for r in rows:
 
 errors = []
 
+# NOTE: the generic "every component is reachable from a direct dependency of its root" invariant
+# lives in ../assert-reachability.py, which smoke-test.sh runs alongside this file. What remains here
+# is Maven-specific: which coordinate lands in which root, and jar materialization.
+
 def coord(prefix, fields=None):
     """The one emitted coordId starting with prefix, or None. Keeps assertions version-agnostic.
 
@@ -57,8 +61,15 @@ if not lib: errors.append("internal module demo:lib not emitted by its bare id")
 elif not in_prod(lib): errors.append("internal module demo:lib not in app's prod root")
 elif not direct.get(lib): errors.append("internal module demo:lib not marked direct")
 
+# Scope conflict: Maven keeps demo.ext:shared under the test parent while its effective
+# scope is compile, so it must land in the dev root. Reachability (checked by
+# ../assert-reachability.py) additionally proves it kept its parent edge.
+shared = coord('demo.ext:shared:jar:')
+if not shared: errors.append("missing scope-conflict dep demo.ext:shared")
+elif in_prod(shared): errors.append("scope-conflict demo.ext:shared wrongly in a prod root")
+
 if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; internal demo:lib (bare id, direct)")
+print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; internal demo:lib (bare id, direct); {shared} dev")

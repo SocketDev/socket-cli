@@ -27,5 +27,21 @@
       <version>1.0</version>
       <scope>test</scope>
     </dependency>
+    <!-- Scope-conflict pair: both pull demo.ext:shared at the same depth. Because the test
+         dep is declared first, Maven keeps shared under the test parent but unions the scopes to
+         compile, so shared's effective scope is prod while its only retained parent is dev. A
+         scope-based prod/dev split would strand shared in the prod root with no parent edge (an
+         unreachable, non-direct component); the reachability split keeps it with its parent. -->
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>conflict-test</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>conflict-prod</artifactId>
+      <version>1.0</version>
+    </dependency>
   </dependencies>
 </project>

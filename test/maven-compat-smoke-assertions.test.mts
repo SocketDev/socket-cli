@@ -58,9 +58,15 @@ function fileRow(rootId: string, coordId: string, filePath: string): string {
   return ['file', rootId, coordId, filePath].join('\t')
 }
 
+/** An `edge` row: root id in field 2, parent coord in field 3, child coord in field 4. */
+function edgeRow(rootId: string, parent: string, child: string): string {
+  return ['edge', rootId, parent, child].join('\t')
+}
+
 /**
  * A records file the assertions accept, apart from the internal module's
- * coordinate, which each test supplies.
+ * coordinate, which each test supplies. Every non-direct node carries a parent
+ * edge in its own root (the reachability invariant now asserted).
  */
 function buildRecords(internalModuleCoord: string): string {
   return [
@@ -73,9 +79,60 @@ function buildRecords(internalModuleCoord: string): string {
     // Test-scope dependency and its transitive, kept out of the prod root.
     nodeRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', { direct: true }),
     fileRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', '/repo/harness-1.0.jar'),
+    edgeRow(
+      TEST_ROOT,
+      'demo.ext:harness:jar:1.0',
+      'demo.ext:harness-core:jar:1.0',
+    ),
     nodeRow(TEST_ROOT, 'demo.ext:harness-core:jar:1.0', { direct: false }),
+    // Scope-conflict shape: shared's effective scope is prod, but Maven kept it under a
+    // test parent, so it belongs in the dev root and must keep that parent edge.
+    nodeRow(TEST_ROOT, 'demo.ext:conflict-test:jar:1.0', { direct: true }),
+    edgeRow(
+      TEST_ROOT,
+      'demo.ext:conflict-test:jar:1.0',
+      'demo.ext:shared:jar:1.0',
+    ),
+    nodeRow(TEST_ROOT, 'demo.ext:shared:jar:1.0', { direct: false }),
     // The internal reactor module under test.
     nodeRow(PROD_ROOT, internalModuleCoord, { direct: true }),
+    '',
+  ].join('\n')
+}
+
+/**
+ * The buggy pre-fix shape: `demo.ext:shared`'s effective scope is prod, so a
+ * scope-based split put it in the prod root while its only parent stayed in the
+ * test root. `withEdge=false` drops the prod-root parent edge, producing exactly
+ * the unreachable, non-direct component the validation flags.
+ */
+function scopeConflictRecords(sharedRoot: string, withEdge: boolean): string {
+  return [
+    ['meta', 'maven'].join('\t'),
+    rootRow(PROD_ROOT, { prod: true }),
+    rootRow(TEST_ROOT, { prod: false }),
+    nodeRow(PROD_ROOT, 'demo.ext:tool:jar:1.0', { direct: true }),
+    fileRow(PROD_ROOT, 'demo.ext:tool:jar:1.0', '/repo/tool-1.0.jar'),
+    nodeRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', { direct: true }),
+    fileRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', '/repo/harness-1.0.jar'),
+    edgeRow(
+      TEST_ROOT,
+      'demo.ext:harness:jar:1.0',
+      'demo.ext:harness-core:jar:1.0',
+    ),
+    nodeRow(TEST_ROOT, 'demo.ext:harness-core:jar:1.0', { direct: false }),
+    nodeRow(TEST_ROOT, 'demo.ext:conflict-test:jar:1.0', { direct: true }),
+    ...(withEdge
+      ? [
+          edgeRow(
+            TEST_ROOT,
+            'demo.ext:conflict-test:jar:1.0',
+            'demo.ext:shared:jar:1.0',
+          ),
+        ]
+      : []),
+    nodeRow(sharedRoot, 'demo.ext:shared:jar:1.0', { direct: false }),
+    nodeRow(PROD_ROOT, 'demo:lib:1.0', { direct: true }),
     '',
   ].join('\n')
 }
@@ -96,8 +153,16 @@ describe('maven-compat assert-records.py', () => {
     status: number | null
     output: string
   } {
+    return assertRecordsText(buildRecords(internalModuleCoord))
+  }
+
+  /** Run the fixture's assertions over a raw records file. */
+  function assertRecordsText(text: string): {
+    status: number | null
+    output: string
+  } {
     const recordsPath = path.join(workDir, 'records.tsv')
-    writeFileSync(recordsPath, buildRecords(internalModuleCoord))
+    writeFileSync(recordsPath, text)
 
     const result = spawnSync('python3', [ASSERT_RECORDS_PATH, recordsPath], {
       cwd: workDir,
@@ -129,6 +194,30 @@ describe('maven-compat assert-records.py', () => {
 
     expect(output).toContain(
       'internal module demo:lib not emitted by its bare id',
+    )
+    expect(status).not.toBe(0)
+  })
+
+  it('accepts a scope-conflict node kept in its parent root', () => {
+    // Fixed extension output: shared's effective scope is prod, but the retained
+    // parent is test, so it must land in the dev root with the edge that reaches it.
+    const { output, status } = assertRecordsText(
+      scopeConflictRecords(TEST_ROOT, true),
+    )
+
+    expect(output).toContain('PASS')
+    expect(status).toBe(0)
+  })
+
+  it('rejects a scope-conflict node stranded in the prod root', () => {
+    // Pre-fix output: shared sorted into the prod root by its effective scope. Reachability (the
+    // shared helper) would also flag it; here we assert the Maven-specific root classification.
+    const { output, status } = assertRecordsText(
+      scopeConflictRecords(PROD_ROOT, false),
+    )
+
+    expect(output).toContain(
+      'scope-conflict demo.ext:shared wrongly in a prod root',
     )
     expect(status).not.toBe(0)
   })

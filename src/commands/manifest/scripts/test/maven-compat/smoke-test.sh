@@ -6,6 +6,8 @@
 #    its transitive demo.ext:harness-core (only in a non-prod root -> the assembler's dev flag);
 #  - emits the internal reactor module demo:lib by its bare groupId:artifactId:version id (so the
 #    inter-module edge lines up with its `project` record);
+#  - resolves a scope conflict so the retained node stays reachable from its parent root;
+#  - every component is reachable from a direct dependency of its own root (no orphaned components);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).
 #
@@ -31,7 +33,10 @@ M2="$SOCKET_COMPAT_CACHE/m2"
 bash "$HERE/../make-stub-repo.sh" "$STUBS" \
   'demo.ext:tool:1.0' \
   'demo.ext:harness:1.0+demo.ext:harness-core:1.0' \
-  'demo.ext:harness-core:1.0'
+  'demo.ext:harness-core:1.0' \
+  'demo.ext:conflict-test:1.0+demo.ext:shared:1.0' \
+  'demo.ext:conflict-prod:1.0+demo.ext:shared:1.0' \
+  'demo.ext:shared:1.0'
 # Maven's own plugin closure stays cached between runs; the stubs never do, so every run has to
 # resolve them from the repo just generated.
 rm -rf "$M2/demo" "$RECORDS" "$PROJECT"/*/target "$PROJECT"/target
@@ -47,6 +52,7 @@ echo "+ $("$MVN" -v 2>/dev/null | head -1)"
     compile )
 
 python3 "$HERE/assert-records.py" "$RECORDS"
+python3 "$HERE/../assert-reachability.py" "$RECORDS"
 
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
 # The GAV comes from the records the first run just emitted, so it always matches the fixture pom.
@@ -94,3 +100,5 @@ if errors:
     sys.exit(1)
 print("PASS (populateFilesFor scoping): demo.ext:tool materialized, demo.ext:harness skipped")
 PY
+
+python3 "$HERE/../assert-reachability.py" "$RECORDS"
