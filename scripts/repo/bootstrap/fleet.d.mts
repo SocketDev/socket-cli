@@ -355,6 +355,7 @@ export interface InstallConfig {
   readonly json?: boolean | undefined;
   readonly manifest?: string | undefined;
   readonly quiet?: boolean | undefined;
+  readonly refresh?: boolean | undefined;
   readonly refreshTracked?: boolean | undefined;
   readonly ref: string;
   readonly repo?: string | undefined;
@@ -854,5 +855,7 @@ export declare function ensureCurrentFleet(config: InstallConfig, dependencies?:
  */
 export declare function installFleet(config: InstallConfig): Promise<number>;
 export declare function isMainModule(): boolean;
-export declare function main(): Promise<number>;
+export declare function main(dependencies?: {
+  readonly ensureCurrent?: typeof ensureCurrentFleet | undefined;
+} | undefined): Promise<number>;
 export { OCI_MANIFEST_ACCEPT as MANIFEST_ACCEPT, type ScriptMeta };

@@ -28909,7 +28909,7 @@ init_util()
 const SCRIPT_META = {
   describe:
     'Fetch, verify, and materialize the current green fleet tooling bundle.',
-  help: 'Usage: pnpm run sync-fleet [--from-template] [--json]',
+  help: 'Usage: pnpm run sync-fleet [--from-template] [--cached] [--json]',
   json: 'native',
 }
 const logger = getDep0Logger()
@@ -28936,6 +28936,7 @@ function parseArgs(argv) {
     json: false,
     manifest: void 0,
     quiet: false,
+    refresh: void 0,
     refreshTracked: false,
     preserveTracked: false,
     repairTracked: false,
@@ -28955,6 +28956,7 @@ function parseArgs(argv) {
     else if (arg === '--from-template') opts.fromTemplate = true
     else if (arg === '--manifest') opts.manifest = argv[++i]
     else if (arg === '--quiet') opts.quiet = true
+    else if (arg === '--cached') opts.refresh = false
     else if (arg === '--preserve-tracked') opts.preserveTracked = true
     else if (arg === '--repair-tracked') opts.repairTracked = true
     else if (arg === '--refresh-tracked') opts.refreshTracked = true
@@ -29106,6 +29108,7 @@ async function ensureCurrentFleet(config, dependencies) {
   const now = deps.now ?? Date.now
   const receipt = readEnsureCurrentReceipt(dest)
   if (
+    cfg.refresh !== true &&
     receipt !== void 0 &&
     isEnsureCurrentFresh(receipt, { now: now() }) &&
     appliedPayloadIsComplete(dest, receipt.ref)
@@ -29120,6 +29123,8 @@ async function ensureCurrentFleet(config, dependencies) {
     const current = readEnsureCurrentReceipt(dest)
     if (
       current !== void 0 &&
+      (cfg.refresh !== true ||
+        current.checkedAt > (receipt?.checkedAt ?? -Infinity)) &&
       isEnsureCurrentFresh(current, { now: now() }) &&
       appliedPayloadIsComplete(dest, current.ref)
     )
@@ -29139,13 +29144,19 @@ async function ensureCurrentFleet(config, dependencies) {
   )
   heartbeat.unref()
   try {
+    const latestReceipt = readEnsureCurrentReceipt(dest)
     const resolution = await (deps.resolve ?? resolveGreenPack)(
       cfg.repo ?? DEFAULT_REPO,
     )
     if (resolution === void 0) {
       const appliedRef = readAppliedRef(dest)
-      if (appliedRef !== void 0 && appliedPayloadIsComplete(dest, appliedRef))
+      if (appliedRef !== void 0 && appliedPayloadIsComplete(dest, appliedRef)) {
+        if (cfg.refresh === true)
+          logger.error(
+            `install-fleet: GHCR lookup failed; reusing verified local pack ${appliedRef}. The latest green pack was not confirmed.`,
+          )
         return 0
+      }
       logger.error(
         'install-fleet: no verified fleet pack is available locally or from GHCR. Run pnpm run sync-fleet when online.',
       )
@@ -29153,11 +29164,11 @@ async function ensureCurrentFleet(config, dependencies) {
     }
     const { receipt: oci, ref } = resolution
     if (
-      receipt !== void 0 &&
-      Date.parse(oci.created) < Date.parse(receipt.oci.created)
+      latestReceipt !== void 0 &&
+      Date.parse(oci.created) < Date.parse(latestReceipt.oci.created)
     ) {
       logger.error(
-        `install-fleet: refusing green-channel rollback from ${receipt.ref} (${receipt.oci.created}) to ${ref} (${oci.created}).`,
+        `install-fleet: refusing green-channel rollback from ${latestReceipt.ref} (${latestReceipt.oci.created}) to ${ref} (${oci.created}).`,
       )
       return 1
     }
@@ -29446,13 +29457,16 @@ function runFromTemplate(config) {
     )
   return 0
 }
-async function main() {
+async function main(dependencies) {
   const parsed = parseArgs(process$1.argv.slice(2))
   const exitCode = parsed.fromTemplate
     ? runFromTemplate(parsed)
     : parsed.bundle !== void 0 || parsed.ref !== ''
       ? await installFleet(parsed)
-      : await ensureCurrentFleet(parsed)
+      : await (dependencies?.ensureCurrent ?? ensureCurrentFleet)({
+          ...parsed,
+          refresh: parsed.refresh !== false,
+        })
   if (parsed.json)
     process$1.stdout.write(`${renderScriptResult({ exitCode })}\n`)
   return exitCode

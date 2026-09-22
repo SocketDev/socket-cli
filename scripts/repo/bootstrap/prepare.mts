@@ -736,7 +736,7 @@ export function fetchBundle(): boolean {
     }
     return true
   }
-  if (!tryRun('node', [fleet])) {
+  if (!tryRun('node', [fleet, '--cached'])) {
     log('bundle refresh (fleet.mjs) reported a problem — continuing')
     return false
   }

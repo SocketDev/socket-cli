@@ -328,10 +328,14 @@ export function ensurePayload(repoRoot: string): number {
     )
     return 0
   }
-  const result = spawnSync(process.execPath, [plan.fleet, '--quiet'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
+  const result = spawnSync(
+    process.execPath,
+    [plan.fleet, '--quiet', '--cached'],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    },
+  )
   if ((result.status ?? 1) !== 0) {
     warn(
       'fleet payload fetch reported a problem — continuing; run ' +
