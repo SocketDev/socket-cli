@@ -80,7 +80,9 @@ export function ignoreUnsupportedFilesPlugin(): Plugin {
 // canonical `@socketsecurity/lib`, the `-stable` npm: alias, or a local
 // `/socket-lib/` checkout. rolldown resolves the alias to the real
 // `@socketsecurity/lib/dist/` path; esbuild saw the `-stable` form.
-export function isSocketLibDistImporter(importer: string | undefined): boolean {
+export function isSocketLibDistImporter(
+  importer: string | undefined,
+): importer is string {
   if (!importer) {
     return false
   }
@@ -100,6 +102,9 @@ export function resolveSocketLibExternal(
     const parts = packageName.split('/')
     const scope = parts[0]
     const name = parts[1]
+    if (!scope || !name) {
+      return undefined
+    }
     const p = path.join(socketLibPath, 'dist', 'external', scope, `${name}.js`)
     return existsSync(p) ? p : undefined
   }
@@ -191,7 +196,7 @@ export function resolveSocketLibInternalsPlugin(): Plugin {
         }
         const packageName = source.startsWith('@')
           ? source.split('/').slice(0, 2).join('/')
-          : source.split('/')[0]
+          : source.split('/')[0]!
         const p = resolveSocketLibExternal(socketLibPath, packageName)
         return p ? { id: toRealPath(p) } : undefined
       }

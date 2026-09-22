@@ -16,7 +16,7 @@ export async function spawnNode(
   return spawn(
     runtime.executable,
     args,
-    { __proto__: null, ...options, env: runtime.environment },
+    { ...options, env: runtime.environment },
     extra,
   )
 }
