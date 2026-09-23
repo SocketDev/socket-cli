@@ -48,6 +48,7 @@
     "check:tsc:src": "tsgo",
     "check:tsc:scripts": "tsgo --project tsconfig.scripts.json",
     "check-ci": "pnpm check:lint",
+    "ci:setup-uv": "node scripts/ci/setup-uv.mts",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
     "coverage:type": "dotenvx -q run -f .env.local -- type-coverage --detail",
