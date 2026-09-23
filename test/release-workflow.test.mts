@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
 interface ReleaseStep {
+  env?: Record<string, string>
   name?: string
   run?: string
   uses?: string
@@ -12,6 +13,7 @@ interface ReleaseStep {
 interface ReleaseWorkflow {
   concurrency: { group: string; 'cancel-in-progress': boolean }
   jobs: {
+    land: { steps: ReleaseStep[] }
     verify: {
       environment?: string
       outputs: { sha: string }
@@ -36,6 +38,19 @@ const workflow = parse(
 ) as ReleaseWorkflow
 
 describe('v1 release workflow contract', () => {
+  it('scopes both release App tokens to the current repository', () => {
+    const mintSteps = Object.values(workflow.jobs)
+      .flatMap(job => job.steps)
+      .filter(step => step.run === 'node scripts/release/mint-app-token.mjs')
+    expect(mintSteps).toHaveLength(2)
+    for (const step of mintSteps) {
+      expect(step.env).toMatchObject({
+        PERMISSIONS: '{"contents":"write"}',
+        REPOSITORIES: '${{ github.event.repository.name }}',
+      })
+    }
+  })
+
   it('uses the migrated trusted publisher environment', () => {
     expect(workflow.jobs.publish.environment).toBe('publish-npm')
     expect(workflow.jobs.publish.permissions['id-token']).toBe('write')

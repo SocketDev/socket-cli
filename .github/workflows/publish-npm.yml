@@ -343,6 +343,7 @@ jobs:
           CLIENT_ID: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
           OWNER: ${{ github.repository_owner }}
           PERMISSIONS: '{"contents":"write"}'
+          REPOSITORIES: ${{ github.event.repository.name }}
         run: node scripts/release/mint-app-token.mjs
 
       # Derive the version from the commits since the last release, write
@@ -763,6 +764,7 @@ jobs:
           CLIENT_ID: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
           OWNER: ${{ github.repository_owner }}
           PERMISSIONS: '{"contents":"write"}'
+          REPOSITORIES: ${{ github.event.repository.name }}
         run: node scripts/release/mint-app-token.mjs
 
       - name: Land or discard the bump
