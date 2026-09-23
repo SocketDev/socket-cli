@@ -6,6 +6,12 @@ import type { Overrides } from './types.mts'
 import type { Agent } from '../../utils/package-environment.mts'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
+declare module '@socketsecurity/registry/lib/packages' {
+  interface EditablePackageJson {
+    fromJSON(data: string): this
+  }
+}
+
 const {
   BUN,
   NPM,
