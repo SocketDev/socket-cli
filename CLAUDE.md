@@ -160,7 +160,8 @@ Validate all three bindings after a workflow or environment rename.
   version heading. If nothing accrued, the release falls back to a section
   derived from the Conventional Commits in range.
 - Dispatch the workflow with `dry-run: true` (the default) to see which
-  version it would ship. It writes nothing.
+  version it would ship. It uploads a GitHub artifact and verifies its download.
+  It creates no npm stages, tags, releases, or release branches.
 - Dispatch with `dry-run: false` to release. `scripts/release/bump.mts` picks
   the version, writes `package.json` + `CHANGELOG.md`, and commits them via
   the release App onto a throwaway `npm-publish-v<X.Y.Z>` branch. `v1.x` is

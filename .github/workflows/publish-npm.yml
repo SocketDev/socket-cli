@@ -8,8 +8,9 @@ name: Publish to npm registry
 #      CHANGELOG's `## [Unreleased]` section as they land.
 #   2. Dispatch this workflow with dry-run=true (the default): the `verify`
 #      job derives and PRINTS the version it would ship, then builds, packs,
-#      and smoke-tests all three variants. It uploads nothing, marks nothing,
-#      writes nothing, and needs no publish credential.
+#      and smoke-tests all three variants. It uploads a GitHub artifact and
+#      verifies its download. It creates no npm stages, tags, releases, or
+#      release branches, and needs no publish credential.
 #   3. Dispatch with dry-run=false + dist-tag=latest. This branch is the line
 #      customers consume, so it owns `latest`; the guard below refuses that
 #      tag from anywhere else, and the default branch (the 2.x prerelease
@@ -353,10 +354,9 @@ jobs:
       # commit the release will be tagged at. The `land` job fast-forwards v1.x to
       # it only once staging succeeded.
       #
-      # A dry run derives and PRINTS the version, then stops: nothing is written,
-      # no branch is opened, and the packs below carry the tree's current version.
-      # That keeps a dry run free of side effects while still answering the one
-      # question worth asking before a release — which number is next.
+      # In a dry run, this step prints the next version without writing a bump
+      # or opening a branch. The following steps pack the tree's current version,
+      # upload a GitHub artifact, and verify its download.
       - name: Bump version and changelog
         if: ${{ inputs.bump }}
         id: bump
