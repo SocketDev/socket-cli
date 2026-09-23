@@ -13,10 +13,6 @@ export async function spawnNode(
   extra?: SpawnExtra | undefined,
 ): Promise<SpawnResult> {
   const runtime = await resolveNodeRuntime(options)
-  return spawn(
-    runtime.executable,
-    args,
-    { __proto__: null, ...options, env: runtime.environment },
-    extra,
-  )
+  const spawnOptions = { __proto__: null, ...options, env: runtime.environment }
+  return spawn(runtime.executable, args, spawnOptions, extra)
 }

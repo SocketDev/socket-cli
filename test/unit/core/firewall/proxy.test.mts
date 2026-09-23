@@ -105,7 +105,7 @@ describe('firewall proxy', () => {
         response.end('artifact')
       },
     )
-    const port = await listenFirewallFixture(upstream)
+    const port = await listenFirewallFixture(upstream, 'localhost')
     const checkRequest = vi.fn(async (url: URL) => ({
       blocked: url.pathname === '/blocked',
     }))
@@ -165,7 +165,7 @@ describe('firewall proxy', () => {
       certificateAuthority.issue('localhost'),
       (request, response) => response.end('artifact'),
     )
-    const port = await listenFirewallFixture(upstream)
+    const port = await listenFirewallFixture(upstream, 'localhost')
     const proxy = await startFirewallFixtureProxy({
       certificateAuthority,
       checkRequest: async () => ({ blocked: false }),
@@ -200,7 +200,7 @@ describe('firewall proxy', () => {
       certificateAuthority.issue('localhost'),
       (request, response) => response.end('artifact'),
     )
-    const port = await listenFirewallFixture(upstream)
+    const port = await listenFirewallFixture(upstream, 'localhost')
     const checkRequest = vi.fn(async () => ({ blocked: false }))
     const proxy = await startFirewallFixtureProxy({
       certificateAuthority,

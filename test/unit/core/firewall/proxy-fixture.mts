@@ -15,8 +15,9 @@ export function startFirewallFixtureProxy(config: FirewallProxyConfig) {
 
 export async function listenFirewallFixture(
   server: http.Server,
+  hostname = '127.0.0.1',
 ): Promise<number> {
-  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+  await new Promise<void>(resolve => server.listen(0, hostname, resolve))
   return (server.address() as AddressInfo).port
 }
 
