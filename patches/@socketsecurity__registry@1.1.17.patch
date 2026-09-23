@@ -1,0 +1,12 @@
+diff --git a/lib/packages.d.ts b/lib/packages.d.ts
+index 44f7e66fdbc7a99838936910e906bb204f7106eb..83fb429de31700d19c6e0453653e3acae2db98f2 100644
+--- a/lib/packages.d.ts
++++ b/lib/packages.d.ts
+@@ -16,6 +16,7 @@ declare namespace Packages {
+   >
+   export class EditablePackageJson extends NPMCliPackageJson {
+     content: Readonly<PackageJson>
++    fromJSON(data: string): this
+     override update: (content: Partial<PackageJson>) => this
+     // @ts-ignore TypeScript doesn't like an override with a different return type.
+     override save: (options?: SaveOptions | undefined) => Promise<boolean>

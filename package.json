@@ -293,7 +293,8 @@
       "bresenham@0.0.3": "patches/bresenham@0.0.3.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "rollup@4.50.1": "patches/rollup@4.50.1.patch",
-      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch"
+      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch",
+      "@socketsecurity/registry@1.1.17": "patches/@socketsecurity__registry@1.1.17.patch"
     }
   },
   "typeCoverage": {

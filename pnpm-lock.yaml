@@ -62,6 +62,9 @@ patchedDependencies:
   '@rollup/plugin-commonjs@28.0.6':
     hash: 4d412c02fa3df1b1f5b29b135bd3f0997f85248ceb3a578d01e7f40fba27c21b
     path: patches/@rollup__plugin-commonjs@28.0.6.patch
+  '@socketsecurity/registry@1.1.17':
+    hash: 0f0c3a9374c7211d109655f6226d442bdf9ea59cdf52871f4e92b7ae6d726b8b
+    path: patches/@socketsecurity__registry@1.1.17.patch
   ansi-term@0.0.2:
     hash: 06bb5127b7689d6ab2ea833f9617b2c3fbe9fe0048ce1c6b59b81f7e25ccbccb
     path: patches/ansi-term@0.0.2.patch
@@ -217,7 +220,7 @@ importers:
         version: 3.0.1
       '@socketsecurity/registry':
         specifier: 1.1.17
-        version: 1.1.17
+        version: 1.1.17(patch_hash=0f0c3a9374c7211d109655f6226d442bdf9ea59cdf52871f4e92b7ae6d726b8b)
       '@socketsecurity/sdk':
         specifier: 4.0.3
         version: 4.0.3
@@ -6698,7 +6701,7 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.1.17': {}
+  '@socketsecurity/registry@1.1.17(patch_hash=0f0c3a9374c7211d109655f6226d442bdf9ea59cdf52871f4e92b7ae6d726b8b)': {}
 
   '@socketsecurity/sdk@4.0.3': {}
 
