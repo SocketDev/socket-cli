@@ -10,8 +10,8 @@ import scala.reflect.ClassTag
  * Emits a flat line-protocol RECORDS file at the build root (NOT the final
  * `.socket.facts.json`, and NOT to stdout — sbt prints resolution noise to stdout
  * with no way to silence it). The TS assembler (utils/src/manifest-scripts/assemble.ts)
- * reads the records and owns all SBOM construction — graph merge, content-addressed
- * ids, contentHash. This plugin only RESOLVES and emits raw facts. See records.ts for
+ * reads the records and owns all SBOM construction — graph merge and per-subproject
+ * classpaths. This plugin only RESOLVES and emits raw facts. See records.ts for
  * the record grammar.
  *
  * Must compile on Scala 2.10/sbt 0.13 and Scala 2.12/sbt 1.x (compiled by the sbt
@@ -100,8 +100,8 @@ object SocketFactsPlugin extends AutoPlugin {
         }
       }
 
-      // One resolution root per (subproject, configuration); the TS assembler content-addresses
-      // divergent subtrees.
+      // One resolution root per (subproject, configuration); the TS assembler merges them by
+      // coordinate and derives each subproject's classpath from its roots.
       var rootIdx = 0
       perSub.foreach {
         case (_, tree) =>

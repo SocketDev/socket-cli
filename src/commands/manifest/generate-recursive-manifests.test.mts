@@ -61,14 +61,12 @@ describe('generateRecursiveManifests', () => {
                 name: 'moduleA',
                 subprojectDir: 'moduleA',
                 dependencies: [],
-                resolvedAs: [],
               },
               {
                 type: 'maven',
                 name: 'moduleB',
                 subprojectDir: 'moduleB',
                 dependencies: [],
-                resolvedAs: [],
               },
             ],
           }
@@ -137,7 +135,6 @@ describe('generateRecursiveManifests', () => {
                   name: 'shared-lib',
                   subprojectDir: `../${sharedLibName}`,
                   dependencies: [],
-                  resolvedAs: [],
                 },
               ],
             }

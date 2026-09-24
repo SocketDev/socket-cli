@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 
 import {
@@ -8,6 +7,7 @@ import {
   type SocketFactsSbomMetadata,
   type SocketFactsSbomProject,
   mavenCoordinateKey,
+  projectClasspathKey,
 } from './facts.mts'
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
@@ -51,14 +51,14 @@ export function assembleFacts(
 ): AssembleResult {
   const fileExists = opts.fileExists ?? existsSync
   const perRoot = buildPerRoot(parsed)
-  const { directByRoot, finalNodes } = mergePathSensitive(perRoot)
+  const { directByRoot, finalNodes } = mergeByCoordinate(perRoot)
 
   const tool = (parsed.tool || 'gradle') as SocketFactsSbomMetadata['tool']
   const components = buildComponents(finalNodes)
   const projects =
     opts.emitProjects === false
       ? []
-      : buildProjects(parsed, finalNodes, directByRoot, perRoot)
+      : buildProjects(parsed, directByRoot, perRoot)
 
   const metadata: SocketFactsSbomMetadata = {
     format: 'socket-facts-sbom',
@@ -77,6 +77,7 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
+      perRoot,
       fileExists,
     ),
   }
@@ -84,10 +85,6 @@ export function assembleFacts(
 
 function gav(group: string, name: string, version: string): string {
   return `${group}:${name}:${version}`
-}
-
-function shortHash(s: string): string {
-  return createHash('sha256').update(s, 'utf8').digest('hex').slice(0, 12)
 }
 
 function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
@@ -117,7 +114,7 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
     for (const [coordId, n] of r.nodes) {
       nodes.set(coordId, {
         coord: n.coord,
-        children: [...(childrenByParent.get(coordId) ?? [])].sort(),
+        children: [...(childrenByParent.get(coordId) ?? [])],
         direct: n.direct,
         targets: n.targets,
       })
@@ -127,83 +124,18 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
   return out
 }
 
-// A coordinate with identical subtrees everywhere collapses to one node (id =
-// coordId); divergent subtrees each get a content-addressed id
-// (`<coordId>#<subtree-hash>`) so per-subproject overrides stay distinct.
-function mergePathSensitive(perRoot: Map<string, PerRoot>): {
+// Components are merged by coordinate across every resolution root; which
+// coordinates belong to which subproject is kept separately (classpathByProject)
+// for reachability, which needs each subproject's exact classpath.
+function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
   finalNodes: Map<string, MergedNode>
   directByRoot: Map<string, Set<string>>
 } {
-  const memo = new Map<string, string>()
-  const nodesOf = (rootId: string) => perRoot.get(rootId)?.nodes
-
-  function computeSig(
-    rootId: string,
-    coordId: string,
-    onPath: Set<string>,
-  ): string {
-    const memoKey = rootId + ' ' + coordId
-    const cached = memo.get(memoKey)
-    if (cached !== undefined) {
-      return cached
-    }
-    if (onPath.has(coordId)) {
-      // Cycle: back-edge as leaf.
-      return coordId
-    }
-    const node = nodesOf(rootId)?.get(coordId)
-    if (!node) {
-      return coordId
-    }
-    onPath.add(coordId)
-    const childSigs = node.children.map(c => computeSig(rootId, c, onPath))
-    onPath.delete(coordId)
-    // Digest, not the raw string: caching expanded subtree strings OOMs on
-    // reconverging DAGs; a fixed-size digest keeps the pass O(V+E).
-    const sig = coordId + '{' + childSigs.join(',') + '}'
-    const digest = createHash('sha256')
-      .update(sig, 'utf8')
-      .digest('hex')
-      .slice(0, 16)
-    memo.set(memoKey, digest)
-    return digest
-  }
-
-  // Sorted iteration keeps cyclic-graph signatures stable run-to-run.
-  const sigsByCoord = new Map<string, Set<string>>()
-  for (const rootId of [...perRoot.keys()].sort()) {
-    const nodes = perRoot.get(rootId)!.nodes
-    for (const coordId of [...nodes.keys()].sort()) {
-      const sig = computeSig(rootId, coordId, new Set())
-      let set = sigsByCoord.get(coordId)
-      if (!set) {
-        set = new Set()
-        sigsByCoord.set(coordId, set)
-      }
-      set.add(sig)
-    }
-  }
-  const divergent = (coordId: string): boolean =>
-    (sigsByCoord.get(coordId)?.size ?? 0) > 1
-  const emittedIdMemo = new Map<string, string>()
-  const emittedIdFor = (rootId: string, coordId: string): string => {
-    const k = rootId + ' ' + coordId
-    let v = emittedIdMemo.get(k)
-    if (v === undefined) {
-      v = divergent(coordId)
-        ? coordId + '#' + shortHash(computeSig(rootId, coordId, new Set()))
-        : coordId
-      emittedIdMemo.set(k, v)
-    }
-    return v
-  }
-
   const finalNodes = new Map<string, MergedNode>()
   const directByRoot = new Map<string, Set<string>>()
   for (const [rootId, { nodes, prod }] of perRoot) {
     for (const [coordId, node] of nodes) {
-      const eid = emittedIdFor(rootId, coordId)
-      let fn = finalNodes.get(eid)
+      let fn = finalNodes.get(coordId)
       if (!fn) {
         fn = {
           coord: node.coord,
@@ -212,7 +144,7 @@ function mergePathSensitive(perRoot: Map<string, PerRoot>): {
           direct: false,
           targets: new Set(),
         }
-        finalNodes.set(eid, fn)
+        finalNodes.set(coordId, fn)
       }
       if (prod) {
         fn.prod = true
@@ -221,7 +153,7 @@ function mergePathSensitive(perRoot: Map<string, PerRoot>): {
         fn.direct = true
       }
       for (const c of node.children) {
-        fn.children.add(emittedIdFor(rootId, c))
+        fn.children.add(c)
       }
       for (const t of node.targets) {
         fn.targets.add(t)
@@ -232,7 +164,7 @@ function mergePathSensitive(perRoot: Map<string, PerRoot>): {
           d = new Set()
           directByRoot.set(rootId, d)
         }
-        d.add(eid)
+        d.add(coordId)
       }
     }
   }
@@ -277,20 +209,9 @@ function buildComponents(
 
 function buildProjects(
   parsed: ParsedRecords,
-  finalNodes: Map<string, MergedNode>,
   directByRoot: Map<string, Set<string>>,
   perRoot: Map<string, PerRoot>,
 ): SocketFactsSbomProject[] {
-  const idsByGav = new Map<string, Set<string>>()
-  for (const [id, fn] of finalNodes) {
-    const key = gav(fn.coord.group, fn.coord.name, fn.coord.version ?? '')
-    let set = idsByGav.get(key)
-    if (!set) {
-      set = new Set()
-      idsByGav.set(key, set)
-    }
-    set.add(id)
-  }
   const directByProject = new Map<string, Set<string>>()
   for (const [rootId, ids] of directByRoot) {
     const pk = perRoot.get(rootId)?.projectKey ?? ''
@@ -312,9 +233,6 @@ function buildProjects(
       ...(p.version ? { version: p.version } : {}),
       subprojectDir: p.dir,
       dependencies: [...(directByProject.get(p.projectKey) ?? [])].sort(),
-      resolvedAs: [
-        ...(idsByGav.get(gav(p.group, p.name, p.version)) ?? []),
-      ].sort(),
     }
     return entry
   })
@@ -346,9 +264,46 @@ function unionInto(
   }
 }
 
+function buildClasspathByProject(
+  projects: RawProject[],
+  perRoot: Map<string, PerRoot>,
+): Map<string, string[]> {
+  const idsByProjectKey = new Map<string, Set<string>>()
+  for (const { nodes, projectKey } of perRoot.values()) {
+    let set = idsByProjectKey.get(projectKey)
+    if (!set) {
+      set = new Set()
+      idsByProjectKey.set(projectKey, set)
+    }
+    for (const coordId of nodes.keys()) {
+      set.add(coordId)
+    }
+  }
+  const classpathByProject = new Map<string, Set<string>>()
+  for (const p of projects) {
+    const key = projectClasspathKey({
+      name: p.name,
+      namespace: p.group,
+      subprojectDir: p.dir,
+    })
+    let set = classpathByProject.get(key)
+    if (!set) {
+      set = new Set()
+      classpathByProject.set(key, set)
+    }
+    for (const id of idsByProjectKey.get(p.projectKey) ?? []) {
+      set.add(id)
+    }
+  }
+  return new Map(
+    [...classpathByProject].map(({ 0: key, 1: ids }) => [key, [...ids].sort()]),
+  )
+}
+
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
+  perRoot: Map<string, PerRoot>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
   const projectsByGav = new Map<
@@ -430,7 +385,13 @@ function buildArtifactPaths(
     unionInto(targetsByCoord, coordKey, targets)
     unionInto(targetsByGav, coordKey, targets)
   }
-  return { targetsByCoord, targetsByGav, sourcesByCoord, coords }
+  return {
+    targetsByCoord,
+    targetsByGav,
+    sourcesByCoord,
+    coords,
+    classpathByProject: buildClasspathByProject(projects, perRoot),
+  }
 }
 
 function buildReport(parsed: ParsedRecords): ResolutionReport {

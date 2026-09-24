@@ -20,7 +20,6 @@ function okResult(): WorkspaceEnumerationResult {
         name: 'root',
         subprojectDir: '.',
         dependencies: [],
-        resolvedAs: [],
       },
     ],
     stderr: '',

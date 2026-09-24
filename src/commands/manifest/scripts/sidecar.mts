@@ -1,4 +1,4 @@
-import { mavenCoordinateKey } from './facts.mts'
+import { mavenCoordinateKey, projectClasspathKey } from './facts.mts'
 
 import type {
   AnyPURL,
@@ -22,6 +22,9 @@ export type SidecarComponentEntry = SocketFactsSbomComponent & {
 export type SidecarProjectEntry = SocketFactsSbomProject & {
   targets?: string[] | undefined
   sources?: string[] | undefined
+  // Ids of this facts file's components[] forming the project's full
+  // transitive classpath across all its configurations.
+  classpath: string[]
 }
 
 // Frozen contract with `coana run --compute-artifacts-sidecar`; change only
@@ -105,9 +108,13 @@ export function accumulateSidecar(
 ): void {
   acc.set(factsFile, {
     components: facts.components.map(comp => attachPaths(comp, artifactPaths)),
-    projects: (facts.projects ?? []).map(proj =>
-      attachPaths(proj, artifactPaths),
-    ),
+    projects: (facts.projects ?? []).map(proj => ({
+      ...attachPaths(proj, artifactPaths),
+      classpath: [
+        ...(artifactPaths.classpathByProject.get(projectClasspathKey(proj)) ??
+          []),
+      ],
+    })),
   })
 }
 

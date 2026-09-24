@@ -221,7 +221,11 @@ export async function runManifestFacts({
     return
   }
 
-  await fs.writeFile(factsPath, JSON.stringify(facts, null, 2), 'utf8')
+  const socketCliVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
+  if (facts.metadata && socketCliVersion) {
+    facts.metadata.socketCliVersion = socketCliVersion
+  }
+  await fs.writeFile(factsPath, JSON.stringify(facts), 'utf8')
 
   if (withFiles && sidecarAcc) {
     // Key by the symlink-resolved path so the sidecar's keys are comparable

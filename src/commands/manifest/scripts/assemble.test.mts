@@ -52,9 +52,9 @@ describe('records → assemble → sidecar', () => {
         version: '1.0',
         subprojectDir: '/abs/app',
         dependencies: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
-        resolvedAs: [],
         targets: ['/abs/app/build/classes'],
         sources: ['/abs/app/src/main/java'],
+        classpath: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
       },
     ])
 
@@ -68,5 +68,52 @@ describe('records → assemble → sidecar', () => {
     const bom = byName.get('bom')
     expect(bom?.targets).toEqual([])
     expect(bom?.sources).toEqual([])
+  })
+  it('merges a coordinate with divergent subtrees into one component and scopes classpaths per project', () => {
+    // :a and :b both depend on `lib`, which pulls a different `dep` version in
+    // each subproject.
+    const records = [
+      'meta\tgradle\t8.0\t17',
+      'project\t:a\tcom.example\ta\t1.0\ta',
+      'project\t:b\tcom.example\tb\t1.0\tb',
+      'root\tr1\t:a\truntimeClasspath\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+      'edge\tr1\tg:lib:jar:1\tg:dep:jar:1',
+      'root\tr2\t:b\truntimeClasspath\t1',
+      'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr2\tg:dep:jar:2\tg\tdep\t2\tjar\t\t0',
+      'edge\tr2\tg:lib:jar:1\tg:dep:jar:2',
+      'root\tr3\t:b\ttestRuntimeClasspath\t0',
+      'node\tr3\tg:junit:jar:4\tg\tjunit\t4\tjar\t\t1',
+    ].join('\n')
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      fileExists: () => true,
+    })
+
+    expect(facts.components.map(c => c.id)).toEqual([
+      'g:dep:jar:1',
+      'g:dep:jar:2',
+      'g:junit:jar:4',
+      'g:lib:jar:1',
+    ])
+    expect(
+      facts.components.find(c => c.id === 'g:lib:jar:1')?.dependencies,
+    ).toEqual(['g:dep:jar:1', 'g:dep:jar:2'])
+
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
+    const byName = new Map(
+      serializeSidecar(acc)['/abs/.socket.facts.json']!.projects.map(p => [
+        p.name,
+        p.classpath,
+      ]),
+    )
+    expect(byName.get('a')).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
+    expect(byName.get('b')).toEqual([
+      'g:dep:jar:2',
+      'g:junit:jar:4',
+      'g:lib:jar:1',
+    ])
   })
 })
