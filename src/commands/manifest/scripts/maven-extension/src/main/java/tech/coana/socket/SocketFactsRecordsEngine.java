@@ -95,6 +95,9 @@ public final class SocketFactsRecordsEngine {
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
 
     for (MavenProject module : reactor) {
+      // No basedir: Maven's stand-in project for a directory without a POM. Skipping it lets Maven's
+      // own "no POM in this directory" error surface instead of an NPE.
+      if (module.getBasedir() == null) continue;
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
       if (SocketSupport.isExcludedPath(ws, excludes)) continue;
       rec(lines, "project", ws, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
@@ -109,6 +112,7 @@ public final class SocketFactsRecordsEngine {
     Set<Failure> failures = new LinkedHashSet<>();
     int rootIdx = 0;
     for (MavenProject module : reactor) {
+      if (module.getBasedir() == null) continue;
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
       // A wholly excluded reactor module is not resolved (matches the project-record skip above).
       if (SocketSupport.isExcludedPath(ws, excludes)) continue;
