@@ -152,7 +152,7 @@ export async function attemptDeviceLogin(
       tokenUrl,
       clientId,
       deviceAuth.device_code,
-      deviceAuth.interval || DEFAULT_POLL_INTERVAL_SECONDS,
+      deviceAuth.interval ?? DEFAULT_POLL_INTERVAL_SECONDS,
       deviceAuth.expires_in,
       effectiveApiProxy,
     )
@@ -186,17 +186,28 @@ export function parseDeviceAuthorizationResponse(
     typeof value['verification_uri_complete'] !== 'string' ||
     typeof value['expires_in'] !== 'number' ||
     !Number.isFinite(value['expires_in']) ||
+    value['expires_in'] <= 0 ||
     (value['interval'] !== undefined &&
       (typeof value['interval'] !== 'number' ||
-        !Number.isFinite(value['interval'])))
+        !Number.isFinite(value['interval']) ||
+        value['interval'] <= 0))
   ) {
     throw new DeviceLoginError('invalid_response')
   }
+
+  const verificationUri = parseDeviceVerificationUrl(value['verification_uri'])
+  const verificationUriComplete = parseDeviceVerificationUrl(
+    value['verification_uri_complete'],
+  )
+  if (verificationUri.origin !== verificationUriComplete.origin) {
+    throw new DeviceLoginError('invalid_response')
+  }
+
   return {
     device_code: value['device_code'],
     user_code: value['user_code'],
-    verification_uri: value['verification_uri'],
-    verification_uri_complete: value['verification_uri_complete'],
+    verification_uri: verificationUri.toString(),
+    verification_uri_complete: verificationUriComplete.toString(),
     expires_in: value['expires_in'],
     interval: value['interval'],
   }
@@ -226,6 +237,29 @@ export function parseDeviceTokenSuccessResponse(
   }
 }
 
+export function parseDeviceVerificationUrl(value: string): URL {
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new DeviceLoginError('invalid_response')
+  }
+  const loopbackHost =
+    url.hostname === 'localhost' ||
+    url.hostname.endsWith('.localhost') ||
+    url.hostname === '127.0.0.1' ||
+    url.hostname === '[::1]'
+  if (
+    (url.protocol !== 'https:' &&
+      !(url.protocol === 'http:' && loopbackHost)) ||
+    url.username !== '' ||
+    url.password !== ''
+  ) {
+    throw new DeviceLoginError('invalid_response')
+  }
+  return url
+}
+
 export async function pollForDeviceToken(
   tokenUrl: URL,
   clientId: string,
@@ -234,6 +268,14 @@ export async function pollForDeviceToken(
   expiresInSeconds: number,
   apiProxy?: string | undefined,
 ): Promise<DeviceTokenSuccessResponse> {
+  if (
+    !Number.isFinite(intervalSeconds) ||
+    intervalSeconds <= 0 ||
+    !Number.isFinite(expiresInSeconds) ||
+    expiresInSeconds <= 0
+  ) {
+    throw new DeviceLoginError('invalid_response')
+  }
   const deadline = Date.now() + expiresInSeconds * 1000
   let currentInterval = intervalSeconds
 
@@ -245,7 +287,7 @@ export async function pollForDeviceToken(
       )
     }
 
-    await sleep(currentInterval * 1000)
+    await sleep(Math.min(currentInterval * 1000, deadline - Date.now()))
 
     try {
       return await postForm(

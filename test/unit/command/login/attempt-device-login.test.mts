@@ -232,7 +232,7 @@ describe('attemptDeviceLogin', () => {
     expect(mockSleep).toHaveBeenNthCalledWith(2, 10_000)
   })
 
-  it('returns an error when the device code expires', async () => {
+  it('rejects a non-positive device code lifetime', async () => {
     mockHttpRequest.mockResolvedValueOnce(
       fakeResponse({
         status: 200,
@@ -242,7 +242,10 @@ describe('attemptDeviceLogin', () => {
 
     const result = await attemptDeviceLogin(undefined, undefined)
 
-    expect(result).toMatchObject({ ok: false, message: 'Device login failed' })
+    expect(result).toMatchObject({
+      ok: false,
+      message: 'Device authorization request failed',
+    })
     expect(mockHttpRequest).toHaveBeenCalledTimes(1)
   })
 
