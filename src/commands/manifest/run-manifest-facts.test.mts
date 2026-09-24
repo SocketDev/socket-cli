@@ -29,6 +29,7 @@ function okResult(): ManifestRunResult {
       targetsByGav: new Map(),
       sourcesByCoord: new Map(),
       coords: new Set(),
+      classpathByProject: new Map(),
     },
     stderr: '',
     stdout: '',
@@ -122,7 +123,6 @@ describe('runManifestFacts - sidecar', () => {
         version: '1.0',
         subprojectDir: '.',
         dependencies: [],
-        resolvedAs: [],
       },
     ]
     vi.mocked(runManifestScript).mockResolvedValue(result)

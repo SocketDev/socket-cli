@@ -17,6 +17,7 @@ function emptyArtifactPaths(): ResolvedArtifactPaths {
     targetsByGav: new Map(),
     sourcesByCoord: new Map(),
     coords: new Set(),
+    classpathByProject: new Map(),
   }
 }
 
@@ -177,7 +178,6 @@ describe('compute-artifacts sidecar', () => {
           version: '1.0',
           subprojectDir: 'app',
           dependencies: [],
-          resolvedAs: [],
         },
       ],
     }
@@ -202,10 +202,38 @@ describe('compute-artifacts sidecar', () => {
         version: '1.0',
         subprojectDir: 'app',
         dependencies: [],
-        resolvedAs: [],
         targets: ['/abs/app/build/classes'],
         sources: ['/abs/app/src/main/java'],
+        classpath: [],
       },
+    ])
+  })
+
+  it('attaches each project its own classpath ids, keyed by subprojectDir and name', () => {
+    const project = {
+      type: 'maven',
+      namespace: 'com.example',
+      version: '1.0',
+      dependencies: [],
+    }
+    const facts: SocketFactsSbom = {
+      components: [],
+      projects: [
+        { ...project, name: 'a', subprojectDir: 'a' },
+        { ...project, name: 'b', subprojectDir: 'b' },
+      ],
+    }
+    const artifactPaths = emptyArtifactPaths()
+    artifactPaths.classpathByProject.set('a com.example:a', ['g:x:jar:1'])
+    artifactPaths.classpathByProject.set('b com.example:b', ['g:x:jar:2'])
+
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(acc, facts, artifactPaths, '/root/.socket.facts.json')
+    const projects = serializeSidecar(acc)['/root/.socket.facts.json']!.projects
+
+    expect(projects.map(p => p.classpath)).toEqual([
+      ['g:x:jar:1'],
+      ['g:x:jar:2'],
     ])
   })
 
@@ -236,7 +264,6 @@ describe('compute-artifacts sidecar', () => {
           version: '1.0',
           subprojectDir: '.',
           dependencies: [],
-          resolvedAs: [],
         },
       ],
     }

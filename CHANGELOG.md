@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Updated the Coana CLI to v `15.10.54`.
+- Generated Maven, Gradle and sbt `.socket.facts.json` files are now substantially smaller, making uploads for large JVM projects faster and more reliable.
 
 ## [1.1.178](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.178) - 2026-09-23
 

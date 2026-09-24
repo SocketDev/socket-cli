@@ -221,7 +221,7 @@ export async function runManifestFacts({
     return
   }
 
-  await fs.writeFile(factsPath, JSON.stringify(facts, null, 2), 'utf8')
+  await fs.writeFile(factsPath, JSON.stringify(facts), 'utf8')
 
   if (withFiles && sidecarAcc) {
     // Key by the symlink-resolved path so the sidecar's keys are comparable

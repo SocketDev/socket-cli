@@ -334,7 +334,6 @@ describe('handleCreateNewScan excludePaths', () => {
               version: '1.0',
               subprojectDir: '.',
               dependencies: [],
-              resolvedAs: [],
               targets: ['/repo/service-a/build/classes'],
               sources: ['/repo/service-a/src/main/java'],
             },
