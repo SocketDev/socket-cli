@@ -1,9 +1,8 @@
 /**
  * Integration tests for `socket login` command.
  *
- * Tests the Socket API authentication flow. This command prompts for an API
- * token and stores it in the local configuration for subsequent CLI
- * operations.
+ * Tests the Socket API authentication flow. This command approves a device
+ * code by default and stores the resulting API token for subsequent CLI use.
  *
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
  * validation - API base URL customization (--api-base-url) - API proxy
@@ -51,17 +50,18 @@ describe('socket login', async () => {
               API Token Requirements
                 - Quota: 1 unit
           
-              Logs into the Socket API by prompting for an API token
+              Logs into the Socket API by approving a device code in your browser.
+              Use --no-device to enter an API token manually.
           
               Options
                 --api-base-url      API server to connect to for login
                 --api-proxy         Proxy to use when making connection to API server
-                --device            Log in by approving a device code in your browser instead of pasting an API token
+                --device            Log in by approving a device code in your browser (default)
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket login
-                $ socket login --device
+                $ socket login --no-device
                 $ socket login --api-proxy=http://localhost:1234"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -105,11 +105,10 @@ describe('socket login', async () => {
 
           Target file: /[HOME]/.config/socket/config.json
           Changes:
-            - Prompt for Socket API token
+            - Request a device code from Socket
+            - Open a browser to approve the device code
             - Verify token with Socket API
             - Save API token to config
-            - Optionally set default organization
-            - Optionally install bash completion
 
           Run without --dry-run to apply these changes."
       `)

@@ -57,9 +57,9 @@ export async function run(
       },
       device: {
         type: 'boolean',
-        default: false,
+        default: true,
         description:
-          'Log in by approving a device code in your browser instead of pasting an API token',
+          'Log in by approving a device code in your browser (default)',
       },
     }),
     help: (command: string, helpConfig: { flags: MeowFlags }) => `
@@ -69,14 +69,15 @@ export async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Logs into the Socket API by prompting for an API token
+    Logs into the Socket API by approving a device code in your browser.
+    Use --no-device to enter an API token manually.
 
     Options
       ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
-      $ ${command} --device
+      $ ${command} --no-device
       $ ${command} --api-proxy=http://localhost:1234
   `,
   }

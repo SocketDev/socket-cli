@@ -103,20 +103,20 @@ describe('cmd-login', () => {
           expect.stringContaining('config.json'),
           'authenticate with Socket API',
           expect.arrayContaining([
-            'Prompt for Socket API token',
+            'Request a device code from Socket',
+            'Open a browser to approve the device code',
             'Verify token with Socket API',
             'Save API token to config',
-            'Optionally set default organization',
-            'Optionally install bash completion',
           ]),
         )
-        expect(mockAttemptLogin).not.toHaveBeenCalled()
+        expect(mockAttemptDeviceLogin).not.toHaveBeenCalled()
       })
 
       it('should not perform authentication in dry-run mode', async () => {
         await cmdLogin.run(['--dry-run'], importMeta, context)
 
         expect(mockAttemptLogin).not.toHaveBeenCalled()
+        expect(mockAttemptDeviceLogin).not.toHaveBeenCalled()
       })
     })
 
@@ -144,39 +144,21 @@ describe('cmd-login', () => {
     })
 
     describe('login execution', () => {
-      it('should call attemptLogin with empty strings by default', async () => {
+      it('should use device login by default', async () => {
         await cmdLogin.run([], importMeta, context)
 
+        expect(mockAttemptDeviceLogin).toHaveBeenCalledWith('', '')
+        expect(mockAttemptLogin).not.toHaveBeenCalled()
+      })
+
+      it('should use manual token login with --no-device', async () => {
+        await cmdLogin.run(['--no-device'], importMeta, context)
+
         expect(mockAttemptLogin).toHaveBeenCalledWith('', '')
+        expect(mockAttemptDeviceLogin).not.toHaveBeenCalled()
       })
 
-      it('should pass API base URL when provided', async () => {
-        await cmdLogin.run(
-          ['--api-base-url=https://api.example.com'],
-          importMeta,
-          context,
-        )
-
-        expect(mockAttemptLogin).toHaveBeenCalledWith(
-          'https://api.example.com',
-          '',
-        )
-      })
-
-      it('should pass API proxy when provided', async () => {
-        await cmdLogin.run(
-          ['--api-proxy=http://localhost:8080'],
-          importMeta,
-          context,
-        )
-
-        expect(mockAttemptLogin).toHaveBeenCalledWith(
-          '',
-          'http://localhost:8080',
-        )
-      })
-
-      it('should pass both API base URL and proxy when provided', async () => {
+      it('should pass API base URL and proxy through device login by default', async () => {
         await cmdLogin.run(
           [
             '--api-base-url=https://api.example.com',
@@ -186,20 +168,25 @@ describe('cmd-login', () => {
           context,
         )
 
-        expect(mockAttemptLogin).toHaveBeenCalledWith(
+        expect(mockAttemptDeviceLogin).toHaveBeenCalledWith(
           'https://api.example.com',
           'http://localhost:8080',
         )
+        expect(mockAttemptLogin).not.toHaveBeenCalled()
       })
 
       it('should handle empty string API base URL', async () => {
-        await cmdLogin.run(['--api-base-url='], importMeta, context)
+        await cmdLogin.run(
+          ['--no-device', '--api-base-url='],
+          importMeta,
+          context,
+        )
 
         expect(mockAttemptLogin).toHaveBeenCalledWith('', '')
       })
 
       it('should handle empty string API proxy', async () => {
-        await cmdLogin.run(['--api-proxy='], importMeta, context)
+        await cmdLogin.run(['--no-device', '--api-proxy='], importMeta, context)
 
         expect(mockAttemptLogin).toHaveBeenCalledWith('', '')
       })
@@ -255,7 +242,7 @@ describe('cmd-login', () => {
     })
 
     describe('flag validation', () => {
-      it('should accept valid --api-base-url format', async () => {
+      it('should accept valid --api-base-url format for manual login', async () => {
         const validUrls = [
           'https://api.socket.dev',
           'http://localhost:3000',
@@ -265,12 +252,16 @@ describe('cmd-login', () => {
         for (let i = 0, { length } = validUrls; i < length; i += 1) {
           const url = validUrls[i]
           mockAttemptLogin.mockClear()
-          await cmdLogin.run([`--api-base-url=${url}`], importMeta, context)
+          await cmdLogin.run(
+            ['--no-device', `--api-base-url=${url}`],
+            importMeta,
+            context,
+          )
           expect(mockAttemptLogin).toHaveBeenCalledWith(url, '')
         }
       })
 
-      it('should accept valid --api-proxy format', async () => {
+      it('should accept valid --api-proxy format for manual login', async () => {
         const validProxies = [
           'http://localhost:1234',
           'https://proxy.example.com:8080',
@@ -280,53 +271,57 @@ describe('cmd-login', () => {
         for (let i = 0, { length } = validProxies; i < length; i += 1) {
           const proxy = validProxies[i]
           mockAttemptLogin.mockClear()
-          await cmdLogin.run([`--api-proxy=${proxy}`], importMeta, context)
+          await cmdLogin.run(
+            ['--no-device', `--api-proxy=${proxy}`],
+            importMeta,
+            context,
+          )
           expect(mockAttemptLogin).toHaveBeenCalledWith('', proxy)
         }
       })
     })
 
     describe('error handling', () => {
-      it('should propagate errors from attemptLogin', async () => {
+      it('should propagate errors from device login by default', async () => {
         const testError = new Error('Authentication failed')
-        mockAttemptLogin.mockRejectedValue(testError)
+        mockAttemptDeviceLogin.mockRejectedValue(testError)
 
         await expect(cmdLogin.run([], importMeta, context)).rejects.toThrow(
           'Authentication failed',
         )
       })
 
-      it('should not call attemptLogin when dry-run is enabled', async () => {
+      it('should not call device login when dry-run is enabled', async () => {
         await cmdLogin.run(['--dry-run'], importMeta, context)
 
-        expect(mockAttemptLogin).not.toHaveBeenCalled()
+        expect(mockAttemptDeviceLogin).not.toHaveBeenCalled()
       })
 
-      it('should not call attemptLogin when not interactive', async () => {
+      it('should not call device login when not interactive', async () => {
         mockIsInteractive.mockReturnValue(false)
 
         await expect(cmdLogin.run([], importMeta, context)).rejects.toThrow()
-        expect(mockAttemptLogin).not.toHaveBeenCalled()
+        expect(mockAttemptDeviceLogin).not.toHaveBeenCalled()
       })
     })
 
     describe('execution flow', () => {
-      it('should check interactivity before calling attemptLogin', async () => {
+      it('should check interactivity before device login', async () => {
         mockIsInteractive.mockReturnValue(true)
-        mockAttemptLogin.mockResolvedValue(undefined)
+        mockAttemptDeviceLogin.mockResolvedValue(undefined)
 
         await cmdLogin.run([], importMeta, context)
 
         expect(mockIsInteractive).toHaveBeenCalled()
-        expect(mockAttemptLogin).toHaveBeenCalled()
+        expect(mockAttemptDeviceLogin).toHaveBeenCalled()
       })
 
-      it('should call attemptLogin exactly once per successful run', async () => {
-        mockAttemptLogin.mockResolvedValue(undefined)
+      it('should call device login exactly once per successful run', async () => {
+        mockAttemptDeviceLogin.mockResolvedValue(undefined)
 
         await cmdLogin.run([], importMeta, context)
 
-        expect(mockAttemptLogin).toHaveBeenCalledTimes(1)
+        expect(mockAttemptDeviceLogin).toHaveBeenCalledTimes(1)
       })
     })
   })
