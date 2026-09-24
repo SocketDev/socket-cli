@@ -10,6 +10,7 @@ vi.mock('./scripts/run.mts', () => ({
 
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { runManifestScript } from './scripts/run.mts'
+import constants from '../../constants.mts'
 
 import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
@@ -136,5 +137,25 @@ describe('runManifestFacts - sidecar', () => {
     expect([...sidecarAcc.keys()]).toEqual([expectedFactsFile])
     const bucket = sidecarAcc.get(expectedFactsFile)
     expect(bucket?.projects.find(m => m.name === 'app')).toBeDefined()
+  })
+  it('stamps the inlined socket-cli version into the written facts metadata', async () => {
+    const result = okResult()
+    result.facts.metadata = {
+      format: 'socket-facts-sbom',
+      tool: 'maven',
+      toolVersion: '3.9.9',
+    }
+    vi.mocked(runManifestScript).mockResolvedValue(result)
+
+    await runManifestFacts({ ...baseArgs, cwd })
+
+    const written = JSON.parse(
+      await fs.readFile(path.join(cwd, '.socket.facts.json'), 'utf8'),
+    )
+    // Unit tests run unbuilt, where the version isn't inlined; the field is
+    // then omitted rather than written empty.
+    expect(written.metadata.socketCliVersion).toBe(
+      constants.ENV.INLINED_SOCKET_CLI_VERSION || undefined,
+    )
   })
 })

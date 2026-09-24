@@ -19,6 +19,8 @@ export type SocketFactsSbomMetadata = {
   tool: 'gradle' | 'maven' | 'sbt'
   toolVersion: string
   javaVersion?: string | undefined
+  // Lets a facts file be traced back to the generator release that produced it.
+  socketCliVersion?: string | undefined
 }
 
 export type SocketFactsSbomComponent = AnyPURL & {

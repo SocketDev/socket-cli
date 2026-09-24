@@ -221,6 +221,10 @@ export async function runManifestFacts({
     return
   }
 
+  const socketCliVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
+  if (facts.metadata && socketCliVersion) {
+    facts.metadata.socketCliVersion = socketCliVersion
+  }
   await fs.writeFile(factsPath, JSON.stringify(facts), 'utf8')
 
   if (withFiles && sidecarAcc) {
