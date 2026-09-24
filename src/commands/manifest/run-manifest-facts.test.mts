@@ -159,3 +159,48 @@ describe('runManifestFacts - sidecar', () => {
     )
   })
 })
+
+describe('runManifestFacts - sbt build detection', () => {
+  let cwd = ''
+
+  beforeEach(async () => {
+    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
+    vi.mocked(runManifestScript).mockReset()
+    process.exitCode = undefined
+  })
+  afterEach(async () => {
+    await fs.rm(cwd, { recursive: true, force: true })
+    process.exitCode = undefined
+  })
+
+  it('fails without running sbt when the directory has no sbt build', async () => {
+    const outcome = await runManifestFacts({
+      ...baseArgs,
+      cwd,
+      ecosystem: 'sbt',
+    })
+
+    expect(outcome).toBeNull()
+    expect(process.exitCode).toBe(1)
+    expect(runManifestScript).not.toHaveBeenCalled()
+    await expect(
+      fs.access(path.join(cwd, '.socket.facts.json')),
+    ).rejects.toThrow()
+  })
+
+  it.each(['build.sbt', 'project'])(
+    'runs sbt when the directory has %s',
+    async marker => {
+      if (marker === 'project') {
+        await fs.mkdir(path.join(cwd, marker))
+      } else {
+        await fs.writeFile(path.join(cwd, marker), '')
+      }
+      vi.mocked(runManifestScript).mockResolvedValue(okResult())
+
+      await runManifestFacts({ ...baseArgs, cwd, ecosystem: 'sbt' })
+
+      expect(runManifestScript).toHaveBeenCalledOnce()
+    },
+  )
+})

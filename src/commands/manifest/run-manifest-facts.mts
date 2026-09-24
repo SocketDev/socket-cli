@@ -7,6 +7,7 @@ import {
   expandEnvVarRefs,
   formatMissingEnvVarRefs,
 } from './expand-env-var-refs.mts'
+import { looksLikeSbtBuild } from './scripts/build-tool.mts'
 import { renderResolutionErrorReport } from './scripts/resolution-report-render.mts'
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
@@ -91,6 +92,14 @@ export async function runManifestFacts({
       return null
     }
     resolvedJavaHome = expanded.value
+  }
+
+  if (ecosystem === 'sbt' && !looksLikeSbtBuild(cwd)) {
+    process.exitCode = 1
+    logger.fail(
+      `No sbt build found at \`${cwd}\` (expected a build.sbt file or a project directory).`,
+    )
+    return null
   }
 
   logger.info(

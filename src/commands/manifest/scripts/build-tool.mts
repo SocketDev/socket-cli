@@ -19,6 +19,16 @@ const BUILD_TOOL_WRAPPER = {
   maven: 'mvnw',
 } as unknown as Partial<Record<BuildTool, string>>
 
+// sbt happily runs in any directory, synthesizing a default project from its
+// name, so an sbt run outside a build yields a plausible but bogus SBOM. Maven
+// and Gradle refuse such a directory themselves.
+export function looksLikeSbtBuild(projectDir: string): boolean {
+  return (
+    existsSync(resolve(projectDir, 'build.sbt')) ||
+    existsSync(resolve(projectDir, 'project'))
+  )
+}
+
 export function resolveBuildToolBin(
   tool: BuildTool,
   projectDir: string,
