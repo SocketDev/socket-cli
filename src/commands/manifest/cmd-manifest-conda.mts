@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { findCondaFile } from './detect-manifest-actions.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import constants, {
   ENVIRONMENT_YAML,
@@ -136,7 +137,7 @@ async function run(
       filename = sockJson.defaults?.manifest?.conda?.infile
       logger.info(`Using default --file from ${SOCKET_JSON}:`, filename)
     } else {
-      filename = ENVIRONMENT_YML
+      filename = findCondaFile(cwd) || ENVIRONMENT_YML
     }
   }
   if (

@@ -138,3 +138,58 @@ describe('detectManifestActions — gradle detector', () => {
     expect(result.count).toBe(0)
   })
 })
+
+describe('detectManifestActions — conda detector', () => {
+  let cwd: string
+
+  beforeEach(() => {
+    cwd = mkTmp()
+  })
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true })
+  })
+
+  it('detects environment.yml and reports it as the conda file', async () => {
+    touch(cwd, 'environment.yml')
+    const result = await detectManifestActions(null, cwd)
+    expect(result.conda).toBe(true)
+    expect(result.condaFile).toBe('environment.yml')
+    expect(result.count).toBe(1)
+  })
+
+  it('detects environment.yaml and reports it as the conda file', async () => {
+    touch(cwd, 'environment.yaml')
+    const result = await detectManifestActions(null, cwd)
+    expect(result.conda).toBe(true)
+    expect(result.condaFile).toBe('environment.yaml')
+    expect(result.count).toBe(1)
+  })
+
+  it('prefers environment.yml when both spellings exist', async () => {
+    touch(cwd, 'environment.yaml')
+    touch(cwd, 'environment.yml')
+    const result = await detectManifestActions(null, cwd)
+    expect(result.condaFile).toBe('environment.yml')
+    expect(result.count).toBe(1)
+  })
+
+  it('reports no conda file when neither spelling exists', async () => {
+    const result = await detectManifestActions(null, cwd)
+    expect(result.conda).toBe(false)
+    expect(result.condaFile).toBe('')
+  })
+
+  it('skips conda when defaults.manifest.conda.disabled is true', async () => {
+    touch(cwd, 'environment.yaml')
+    const result = await detectManifestActions(
+      {
+        defaults: { manifest: { conda: { disabled: true } } },
+      } as SocketJson,
+      cwd,
+    )
+    expect(result.conda).toBe(false)
+    expect(result.condaFile).toBe('')
+    expect(result.count).toBe(0)
+  })
+})
