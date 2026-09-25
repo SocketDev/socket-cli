@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { convertCondaToRequirements } from './convert-conda-to-requirements.mts'
 import { outputRequirements } from './output-requirements.mts'
 
@@ -18,5 +20,11 @@ export async function handleManifestConda({
 }): Promise<void> {
   const data = await convertCondaToRequirements(filename, cwd, verbose)
 
-  await outputRequirements(data, outputKind, out)
+  // --auto-manifest only collects the generated file when it lands inside
+  // the dir being scanned.
+  await outputRequirements(
+    data,
+    outputKind,
+    out === '-' ? out : path.resolve(cwd, out),
+  )
 }

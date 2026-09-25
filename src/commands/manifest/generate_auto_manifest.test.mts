@@ -35,6 +35,7 @@ import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
+import { handleManifestConda } from './handle-manifest-conda.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -43,8 +44,10 @@ const baseDetected = {
   bazel: false,
   cdxgen: false,
   conda: false,
+  condaFile: '',
   count: 0,
   gradle: false,
+  maven: false,
   sbt: false,
 }
 
@@ -300,5 +303,87 @@ describe('generateAutoManifest — bazel branch', () => {
         outLayout: 'flat',
       }),
     )
+  })
+})
+
+describe('generateAutoManifest — conda branch', () => {
+  beforeEach(() => {
+    vi.mocked(handleManifestConda).mockClear()
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
+    process.exitCode = undefined
+  })
+
+  it('reads the detected environment.yaml rather than the .yml default', async () => {
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: {
+        ...baseDetected,
+        conda: true,
+        condaFile: 'environment.yaml',
+        count: 1,
+      },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(handleManifestConda).toHaveBeenCalledWith(
+      expect.objectContaining({ filename: 'environment.yaml' }),
+    )
+  })
+
+  it('reads the detected environment.yml', async () => {
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: {
+        ...baseDetected,
+        conda: true,
+        condaFile: 'environment.yml',
+        count: 1,
+      },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(handleManifestConda).toHaveBeenCalledWith(
+      expect.objectContaining({ filename: 'environment.yml' }),
+    )
+  })
+
+  it('lets a socket.json infile win over the detected file', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: { manifest: { conda: { infile: 'conda-env.yml' } } },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: {
+        ...baseDetected,
+        conda: true,
+        condaFile: 'environment.yaml',
+        count: 1,
+      },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(handleManifestConda).toHaveBeenCalledWith(
+      expect.objectContaining({ filename: 'conda-env.yml' }),
+    )
+  })
+
+  it('aborts the run when the conda generator fails', async () => {
+    vi.mocked(handleManifestConda).mockImplementationOnce(async () => {
+      process.exitCode = 1
+    })
+    await expect(
+      generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected: {
+          ...baseDetected,
+          conda: true,
+          condaFile: 'environment.yaml',
+          count: 1,
+        },
+        outputKind: 'text',
+        verbose: false,
+      }),
+    ).rejects.toThrow(/Auto-manifest generation failed for the conda project/)
+    process.exitCode = undefined
   })
 })

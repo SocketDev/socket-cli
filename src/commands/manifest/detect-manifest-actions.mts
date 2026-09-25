@@ -19,9 +19,22 @@ export interface GeneratableManifests {
   cdxgen: boolean
   count: number
   conda: boolean
+  // The Conda file found at cwd, empty when there is none.
+  condaFile: string
   gradle: boolean
   maven: boolean
   sbt: boolean
+}
+
+// Conda reads both spellings of the environment file.
+export function findCondaFile(cwd: string): string {
+  if (existsSync(path.join(cwd, ENVIRONMENT_YML))) {
+    return ENVIRONMENT_YML
+  }
+  if (existsSync(path.join(cwd, ENVIRONMENT_YAML))) {
+    return ENVIRONMENT_YAML
+  }
+  return ''
 }
 
 export async function detectManifestActions(
@@ -35,6 +48,7 @@ export async function detectManifestActions(
     cdxgen: false, // TODO
     count: 0,
     conda: false,
+    condaFile: '',
     gradle: false,
     maven: false,
     sbt: false,
@@ -102,13 +116,11 @@ export async function detectManifestActions(
       `[DEBUG] - conda auto-detection is disabled in ${SOCKET_JSON}`,
     )
   } else {
-    const envyml = path.join(cwd, ENVIRONMENT_YML)
-    const hasEnvyml = existsSync(envyml)
-    const envyaml = path.join(cwd, ENVIRONMENT_YAML)
-    const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
-    if (hasEnvyml || hasEnvyaml) {
-      debugLog('notice', '[DEBUG] - Detected an environment.yml Conda file')
+    const condaFile = findCondaFile(cwd)
+    if (condaFile) {
+      debugLog('notice', `[DEBUG] - Detected the Conda file ${condaFile}`)
       output.conda = true
+      output.condaFile = condaFile
       output.count += 1
     }
   }

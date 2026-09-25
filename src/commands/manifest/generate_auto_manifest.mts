@@ -12,7 +12,11 @@ import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
-import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import {
+  ENVIRONMENT_YML,
+  REQUIREMENTS_TXT,
+  SOCKET_JSON,
+} from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
@@ -194,16 +198,20 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {
-    logger.log(
-      'Detected an environment.yml file, running default Conda generator...',
-    )
+    const condaFile =
+      sockJson.defaults?.manifest?.conda?.infile ||
+      detected.condaFile ||
+      ENVIRONMENT_YML
+    logger.log(`Detected ${condaFile}, running default Conda generator...`)
+    const beforeExitCode = process.exitCode
     await handleManifestConda({
       cwd,
-      filename: sockJson.defaults?.manifest?.conda?.infile ?? 'environment.yml',
+      filename: condaFile,
       outputKind,
       out: sockJson.defaults?.manifest?.conda?.outfile ?? REQUIREMENTS_TXT,
       verbose: Boolean(sockJson.defaults?.manifest?.conda?.verbose),
     })
+    abortManifestRunIfFailed('conda', beforeExitCode)
   }
 
   if (!sockJson?.defaults?.manifest?.bazel?.disabled && detected.bazel) {
