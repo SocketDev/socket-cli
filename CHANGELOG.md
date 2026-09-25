@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.180](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.180) - 2026-09-25
 
 ### Changed
 - A failed Conda manifest step now stops `--auto-manifest` instead of uploading a scan that under-reports your `pip:` dependencies, matching how Gradle, Maven and sbt already behave.
