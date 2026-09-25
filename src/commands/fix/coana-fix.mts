@@ -19,6 +19,7 @@ import {
   getCiEnvInstructions,
   getFixEnv,
 } from './env-helpers.mts'
+import { generateSocketFactsForFix } from './generated-socket-facts.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import {
@@ -30,6 +31,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
+import { withTmpDir } from '../../utils/fs.mts'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -50,6 +52,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
+import type { GeneratedSocketFacts } from './generated-socket-facts.mts'
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -59,6 +62,7 @@ type DiscoverGhsaIdsOptions = {
   coanaVersion?: string | undefined
   cwd?: string | undefined
   ecosystems?: PURL_Type[] | undefined
+  factsOnly?: boolean | undefined
   packageManagers?: string[] | undefined
   silence?: boolean | undefined
   spinner?: Spinner | undefined
@@ -137,6 +141,7 @@ async function discoverGhsaIds(
   const {
     cwd = process.cwd(),
     ecosystems,
+    factsOnly = false,
     packageManagers,
     silence = false,
     spinner,
@@ -165,6 +170,7 @@ async function discoverGhsaIds(
       ...(packageManagers?.length
         ? ['--package-managers', ...packageManagers]
         : []),
+      ...(factsOnly ? ['--maven-use-only-socket-facts'] : []),
     ],
     orgSlug,
     {
@@ -187,9 +193,46 @@ async function discoverGhsaIds(
   }
 }
 
-export async function coanaFix(
+function isFactsFile(filepath: string): boolean {
+  return path.basename(filepath).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON
+}
+
+function readWrittenFiles(outputFile: string): Set<string> | undefined {
+  const result = readJsonSync(outputFile, { throws: false }) as
+    | { modifiedFiles?: unknown }
+    | null
+    | undefined
+  const files = result?.modifiedFiles
+  return Array.isArray(files) && files.every(f => typeof f === 'string')
+    ? new Set(files)
+    : undefined
+}
+
+type CoanaFixResult = CResult<{ fixedAll: boolean; ghsaDetails: unknown[] }>
+
+type GeneratedSocketFactsSlot = {
+  generated?: GeneratedSocketFacts | undefined
+  tmpDir: string
+}
+
+export async function coanaFix(fixConfig: FixConfig): Promise<CoanaFixResult> {
+  if (!fixConfig.dynamicSbomInference) {
+    return await coanaFixWithFacts(fixConfig, undefined)
+  }
+  return await withTmpDir('socket-fix-facts-', async tmpDir => {
+    const slot: GeneratedSocketFactsSlot = { tmpDir }
+    try {
+      return await coanaFixWithFacts(fixConfig, slot)
+    } finally {
+      await slot.generated?.remove()
+    }
+  })
+}
+
+async function coanaFixWithFacts(
   fixConfig: FixConfig,
-): Promise<CResult<{ fixedAll: boolean; ghsaDetails: unknown[] }>> {
+  factsSlot: GeneratedSocketFactsSlot | undefined,
+): Promise<CoanaFixResult> {
   const {
     all,
     applyFixes,
@@ -258,16 +301,16 @@ export async function coanaFix(
   // sibling manifest's references). --exclude stays separate as a hidden
   // legacy escape hatch for the narrower "fix-application only" semantic.
   const coanaExcludePatterns = [...exclude, ...excludePaths]
-  const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
-    additionalIgnores,
-    config: socketConfig,
-    cwd,
-  })
+  const findScanFilepaths = () =>
+    getPackageFilesForScan(['.'], supportedFiles, {
+      additionalIgnores,
+      config: socketConfig,
+      cwd,
+    })
+  const scanFilepaths = await findScanFilepaths()
   // Fail if any .socket.facts.json files are present in the scan folder.
   // These are analysis artifacts and must be removed before re-running fix.
-  const factsFiles = scanFilepaths.filter(
-    p => path.basename(p).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON,
-  )
+  const factsFiles = scanFilepaths.filter(isFactsFile)
   if (factsFiles.length) {
     if (!silence) {
       spinner?.stop()
@@ -280,6 +323,31 @@ export async function coanaFix(
         factsFiles.map(p => `  - ${p}`).join('\n'),
     }
   }
+  if (factsSlot) {
+    if (!silence) {
+      spinner?.stop()
+      logger.info(
+        'Generating Socket facts for Gradle, sbt and Maven builds ...',
+      )
+    }
+    try {
+      factsSlot.generated = await generateSocketFactsForFix({
+        cwd,
+        excludePaths,
+        tmpDir: factsSlot.tmpDir,
+      })
+    } catch (e) {
+      // A failed build root aborts inference after others wrote their facts.
+      const partial = (await findScanFilepaths()).filter(isFactsFile)
+      await Promise.all(partial.map(p => fs.rm(p, { force: true })))
+      throw e
+    }
+    scanFilepaths.push(...factsSlot.generated.paths)
+    if (!silence) {
+      spinner?.start()
+    }
+  }
+  const factsOnlyFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {
       pathsRelativeTo: cwd,
@@ -347,6 +415,7 @@ export async function coanaFix(
         coanaVersion,
         cwd,
         ecosystems,
+        factsOnly: !!factsSlot,
         packageManagers,
         silence,
         spinner,
@@ -396,6 +465,7 @@ export async function coanaFix(
           ...(packageManagers.length
             ? ['--package-managers', ...packageManagers]
             : []),
+          ...factsOnlyFlags,
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
@@ -492,6 +562,7 @@ export async function coanaFix(
         coanaVersion,
         cwd,
         ecosystems,
+        factsOnly: !!factsSlot,
         packageManagers,
         silence,
         spinner,
@@ -539,6 +610,10 @@ export async function coanaFix(
     const ghsaId = ids[i]!
     debugFn('notice', `check: ${ghsaId}`)
 
+    // Resetting to the base branch cleans the untracked facts files away.
+    // eslint-disable-next-line no-await-in-loop
+    await factsSlot?.generated?.restore()
+
     // Create a temporary file for Coana output.
     const tmpDir = os.tmpdir()
     const tmpFile = path.join(tmpDir, `socket-fix-${ghsaId}-${Date.now()}.json`)
@@ -567,6 +642,7 @@ export async function coanaFix(
         ...(packageManagers.length
           ? ['--package-managers', ...packageManagers]
           : []),
+        ...factsOnlyFlags,
         ...(debug ? ['--debug'] : []),
         ...(disableExternalToolChecks
           ? ['--disable-external-tool-checks']
@@ -607,9 +683,13 @@ export async function coanaFix(
     // Check for modified files after applying the fix.
     // eslint-disable-next-line no-await-in-loop
     const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+    // Build scripts the fix edits need not be manifests the scan uploads.
+    const writtenFiles = readWrittenFiles(tmpFile)
     const modifiedFiles = unstagedCResult.ok
       ? unstagedCResult.data.filter(relPath =>
-          scanBaseNames.has(path.basename(relPath)),
+          writtenFiles
+            ? writtenFiles.has(relPath)
+            : scanBaseNames.has(path.basename(relPath)),
         )
       : []
 
