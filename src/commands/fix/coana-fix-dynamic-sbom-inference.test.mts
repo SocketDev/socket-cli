@@ -18,6 +18,9 @@ const mockGetFixEnv = vi.hoisted(() => vi.fn())
 const mockGetSocketFixPrs = vi.hoisted(() => vi.fn())
 const mockFetchGhsaDetails = vi.hoisted(() => vi.fn())
 const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
+const mockGitUntrackedFiles = vi.hoisted(() =>
+  vi.fn(async () => ({ ok: true, data: [] })),
+)
 const mockGitCommit = vi.hoisted(() => vi.fn())
 const mockGenerateSocketFactsForFix = vi.hoisted(() => vi.fn())
 
@@ -67,6 +70,7 @@ vi.mock('../../utils/git.mts', () => ({
   gitRemoteBranchExists: vi.fn(() => Promise.resolve(false)),
   gitResetAndClean: vi.fn(() => Promise.resolve(true)),
   gitUnstagedModifiedFiles: mockGitUnstagedModifiedFiles,
+  gitUntrackedFiles: mockGitUntrackedFiles,
 }))
 
 vi.mock('./generated-socket-facts.mts', () => ({
@@ -234,6 +238,42 @@ describe('socket fix --dynamic-sbom-inference', () => {
       expect(mockGitCommit).toHaveBeenCalledWith(
         expect.any(String),
         ['app/build.gradle', 'gradle/versions.gradle'],
+        expect.anything(),
+      )
+    })
+
+    it('commits files the fix creates', async () => {
+      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+        await fs.writeFile(
+          args[args.indexOf('--output-file') + 1]!,
+          JSON.stringify({
+            type: 'applied-fixes',
+            fixes: {},
+            modifiedFiles: [
+              'build.sbt',
+              'project/SocketDependencyOverrides.scala',
+            ],
+          }),
+        )
+        return { ok: true, data: '' }
+      })
+      mockGitUnstagedModifiedFiles.mockResolvedValue({
+        ok: true,
+        data: ['build.sbt'],
+      })
+      mockGitUntrackedFiles.mockResolvedValue({
+        ok: true,
+        data: [
+          'project/SocketDependencyOverrides.scala',
+          'app/.socket.facts.json',
+        ],
+      })
+
+      await coanaFix({ ...baseConfig, ghsas: ['GHSA-1111-1111-1111'] })
+
+      expect(mockGitCommit).toHaveBeenCalledWith(
+        expect.any(String),
+        ['build.sbt', 'project/SocketDependencyOverrides.scala'],
         expect.anything(),
       )
     })

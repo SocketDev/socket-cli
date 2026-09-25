@@ -41,6 +41,7 @@ import {
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
+  gitUntrackedFiles,
 } from '../../utils/git.mts'
 import {
   enablePrAutoMerge,
@@ -683,15 +684,23 @@ async function coanaFixWithFacts(
     // Check for modified files after applying the fix.
     // eslint-disable-next-line no-await-in-loop
     const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-    // Build scripts the fix edits need not be manifests the scan uploads.
+    // Build scripts the fix edits need not be manifests the scan uploads,
+    // and files it creates are untracked.
     const writtenFiles = readWrittenFiles(tmpFile)
-    const modifiedFiles = unstagedCResult.ok
-      ? unstagedCResult.data.filter(relPath =>
-          writtenFiles
-            ? writtenFiles.has(relPath)
-            : scanBaseNames.has(path.basename(relPath)),
-        )
-      : []
+    // eslint-disable-next-line no-await-in-loop
+    const untrackedCResult = writtenFiles
+      ? await gitUntrackedFiles(cwd)
+      : undefined
+    const modifiedFiles = writtenFiles
+      ? [
+          ...(unstagedCResult.ok ? unstagedCResult.data : []),
+          ...(untrackedCResult?.ok ? untrackedCResult.data : []),
+        ].filter(relPath => writtenFiles.has(relPath))
+      : unstagedCResult.ok
+        ? unstagedCResult.data.filter(relPath =>
+            scanBaseNames.has(path.basename(relPath)),
+          )
+        : []
 
     if (!modifiedFiles.length) {
       debugFn('notice', `skip: no changes for ${ghsaId}`)
