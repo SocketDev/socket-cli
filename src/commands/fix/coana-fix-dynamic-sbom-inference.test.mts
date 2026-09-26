@@ -8,7 +8,6 @@ import { coanaFix } from './coana-fix.mts'
 
 import type { FixConfig } from './types.mts'
 
-// Mock all external dependencies.
 const mockSpawnCoanaDlx = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())

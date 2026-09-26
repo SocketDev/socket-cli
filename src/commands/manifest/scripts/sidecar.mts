@@ -100,7 +100,7 @@ function sortByPurl<T extends AnyPURL>(entries: T[]): T[] {
 // A second call for the same factsFile (a dual-marker directory where two
 // build tools both target it) overwrites rather than merges, matching the
 // existing last-writer-wins convention for that case. Without `withPaths`
-// (artifact paths were not resolved) entries carry only the classpaths.
+// (artifact paths were not resolved) entries omit `targets` and `sources`.
 export function accumulateSidecar(
   acc: SidecarAccumulator,
   facts: SocketFactsSbom,

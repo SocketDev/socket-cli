@@ -11,10 +11,7 @@ export type GeneratedSocketFacts = {
   restore: () => Promise<void>
 }
 
-// The generated files describe the build before any fix, so they are kept
-// aside for restoring after `git clean` and removed once the fix is done.
-// Their sidecar gives each project's exact classpath, which the facts
-// files' merged component graph over-approximates.
+// Backed up so each fix attempt sees the pre-fix build after `git clean`.
 export async function generateSocketFactsForFix({
   cwd,
   excludePaths,
