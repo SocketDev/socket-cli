@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `socket fix --dynamic-sbom-inference` generates Socket facts for each Gradle, sbt and Maven build and fixes a vulnerable dependency only in the projects/modules that resolve it. The generated files are removed afterwards.
 
+### Changed
+- Updated the Coana CLI to v `15.10.55`.
+
 ### Fixed
 - Fixes opened as pull requests now include edits to build files that are not uploaded manifests, such as `gradle.properties` or sbt `project/*.scala` files, and the files a fix creates.
 
