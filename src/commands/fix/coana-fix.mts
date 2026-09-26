@@ -63,7 +63,7 @@ type DiscoverGhsaIdsOptions = {
   coanaVersion?: string | undefined
   cwd?: string | undefined
   ecosystems?: PURL_Type[] | undefined
-  factsOnly?: boolean | undefined
+  factsFlags?: string[] | undefined
   packageManagers?: string[] | undefined
   silence?: boolean | undefined
   spinner?: Spinner | undefined
@@ -142,7 +142,7 @@ async function discoverGhsaIds(
   const {
     cwd = process.cwd(),
     ecosystems,
-    factsOnly = false,
+    factsFlags = [],
     packageManagers,
     silence = false,
     spinner,
@@ -171,7 +171,7 @@ async function discoverGhsaIds(
       ...(packageManagers?.length
         ? ['--package-managers', ...packageManagers]
         : []),
-      ...(factsOnly ? ['--maven-use-only-socket-facts'] : []),
+      ...factsFlags,
     ],
     orgSlug,
     {
@@ -348,7 +348,14 @@ async function coanaFixWithFacts(
       spinner?.start()
     }
   }
-  const factsOnlyFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
+  const sidecarFile = factsSlot?.generated?.sidecarFile
+  // Discovery only needs which artifacts the facts files resolve; applying
+  // fixes also needs each project's exact classpath from the sidecar.
+  const discoveryFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
+  const factsFlags = [
+    ...discoveryFlags,
+    ...(sidecarFile ? ['--compute-artifacts-sidecar', sidecarFile] : []),
+  ]
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {
       pathsRelativeTo: cwd,
@@ -416,7 +423,7 @@ async function coanaFixWithFacts(
         coanaVersion,
         cwd,
         ecosystems,
-        factsOnly: !!factsSlot,
+        factsFlags: discoveryFlags,
         packageManagers,
         silence,
         spinner,
@@ -466,7 +473,7 @@ async function coanaFixWithFacts(
           ...(packageManagers.length
             ? ['--package-managers', ...packageManagers]
             : []),
-          ...factsOnlyFlags,
+          ...factsFlags,
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
           '--output-file',
           tmpFile,
@@ -563,7 +570,7 @@ async function coanaFixWithFacts(
         coanaVersion,
         cwd,
         ecosystems,
-        factsOnly: !!factsSlot,
+        factsFlags: discoveryFlags,
         packageManagers,
         silence,
         spinner,
@@ -643,7 +650,7 @@ async function coanaFixWithFacts(
         ...(packageManagers.length
           ? ['--package-managers', ...packageManagers]
           : []),
-        ...factsOnlyFlags,
+        ...factsFlags,
         ...(debug ? ['--debug'] : []),
         ...(disableExternalToolChecks
           ? ['--disable-external-tool-checks']
@@ -688,13 +695,11 @@ async function coanaFixWithFacts(
     // and files it creates are untracked.
     const writtenFiles = readWrittenFiles(tmpFile)
     // eslint-disable-next-line no-await-in-loop
-    const untrackedCResult = writtenFiles
-      ? await gitUntrackedFiles(cwd)
-      : undefined
+    const untrackedCResult = await gitUntrackedFiles(cwd)
     const modifiedFiles = writtenFiles
       ? [
           ...(unstagedCResult.ok ? unstagedCResult.data : []),
-          ...(untrackedCResult?.ok ? untrackedCResult.data : []),
+          ...(untrackedCResult.ok ? untrackedCResult.data : []),
         ].filter(relPath => writtenFiles.has(relPath))
       : unstagedCResult.ok
         ? unstagedCResult.data.filter(relPath =>

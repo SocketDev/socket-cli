@@ -124,6 +124,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
   const uploadManifestFiles = vi.fn()
   const generated = {
     paths: [FACTS],
+    sidecarFile: '/tmp/socket-fix-facts/sidecar.json',
     remove: vi.fn(),
     restore: vi.fn(),
   }
@@ -150,8 +151,10 @@ describe('socket fix --dynamic-sbom-inference', () => {
       ['/test/cwd/app/build.gradle', FACTS],
       { pathsRelativeTo: '/test/cwd' },
     )
-    expect(coanaCalls('compute-fixes-and-upgrade-purls')[0]).toContain(
-      '--maven-use-only-socket-facts',
+    const args = coanaCalls('compute-fixes-and-upgrade-purls')[0]!
+    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args[args.indexOf('--compute-artifacts-sidecar') + 1]).toBe(
+      generated.sidecarFile,
     )
     expect(generated.remove).toHaveBeenCalledTimes(1)
   })

@@ -236,7 +236,7 @@ export async function runManifestFacts({
   }
   await fs.writeFile(factsPath, JSON.stringify(facts), 'utf8')
 
-  if (withFiles && sidecarAcc) {
+  if (sidecarAcc) {
     // Key by the symlink-resolved path so the sidecar's keys are comparable
     // regardless of which caller's cwd it was joined against (the recursive
     // discovery path already resolves symlinks before this point; the plain
@@ -246,6 +246,7 @@ export async function runManifestFacts({
       facts,
       artifactPaths,
       await realpathOrResolved(factsPath),
+      !!withFiles,
     )
   }
 

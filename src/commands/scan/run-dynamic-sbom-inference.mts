@@ -22,19 +22,22 @@ export async function runDynamicSbomInference({
   cwd,
   excludePaths,
   sbtTmpDir,
+  sidecar,
   withFiles,
 }: {
   cwd: string
   excludePaths: string[]
+  // Collects the sidecar's per-project classpaths even without resolving
+  // artifact paths.
+  sidecar?: boolean | undefined
   // sbt provisions its Scala toolchain under this directory and withFiles'
   // artifactPaths point into it, so it must outlive whoever consumes them.
   // Only meaningful alongside `withFiles`.
   sbtTmpDir: string | undefined
   withFiles: boolean
 }): Promise<DynamicSbomInferenceResult> {
-  const sidecarAcc: SidecarAccumulator | undefined = withFiles
-    ? new Map()
-    : undefined
+  const sidecarAcc: SidecarAccumulator | undefined =
+    (sidecar ?? withFiles) ? new Map() : undefined
   const outcomes = await generateRecursiveManifests({
     cwd,
     excludePaths,

@@ -99,17 +99,21 @@ function sortByPurl<T extends AnyPURL>(entries: T[]): T[] {
 // roots are where reachability starts, so the sidecar must carry them.
 // A second call for the same factsFile (a dual-marker directory where two
 // build tools both target it) overwrites rather than merges, matching the
-// existing last-writer-wins convention for that case.
+// existing last-writer-wins convention for that case. Without `withPaths`
+// (artifact paths were not resolved) entries carry only the classpaths.
 export function accumulateSidecar(
   acc: SidecarAccumulator,
   facts: SocketFactsSbom,
   artifactPaths: ResolvedArtifactPaths,
   factsFile: string,
+  withPaths = true,
 ): void {
+  const paths = <T extends AnyPURL>(entry: T) =>
+    withPaths ? attachPaths(entry, artifactPaths) : { ...entry }
   acc.set(factsFile, {
-    components: facts.components.map(comp => attachPaths(comp, artifactPaths)),
+    components: facts.components.map(paths),
     projects: (facts.projects ?? []).map(proj => ({
-      ...attachPaths(proj, artifactPaths),
+      ...paths(proj),
       classpath: [
         ...(artifactPaths.classpathByProject.get(projectClasspathKey(proj)) ??
           []),
