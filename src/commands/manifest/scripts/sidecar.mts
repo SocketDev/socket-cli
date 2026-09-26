@@ -105,11 +105,15 @@ export function accumulateSidecar(
   facts: SocketFactsSbom,
   artifactPaths: ResolvedArtifactPaths,
   factsFile: string,
+  // Off when artifact paths were not resolved; entries then omit `targets` and `sources`.
+  withPaths = true,
 ): void {
+  const paths = <T extends AnyPURL>(entry: T) =>
+    withPaths ? attachPaths(entry, artifactPaths) : { ...entry }
   acc.set(factsFile, {
-    components: facts.components.map(comp => attachPaths(comp, artifactPaths)),
+    components: facts.components.map(paths),
     projects: (facts.projects ?? []).map(proj => ({
-      ...attachPaths(proj, artifactPaths),
+      ...paths(proj),
       classpath: [
         ...(artifactPaths.classpathByProject.get(projectClasspathKey(proj)) ??
           []),

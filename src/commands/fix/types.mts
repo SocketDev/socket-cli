@@ -11,6 +11,7 @@ export type FixConfig = {
   debug: boolean
   disableExternalToolChecks: boolean
   disableMajorUpdates: boolean
+  dynamicSbomInference: boolean
   ecosystems: PURL_Type[]
   exclude: string[]
   excludePaths: string[]

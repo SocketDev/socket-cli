@@ -533,6 +533,33 @@ export async function gitUnstagedModifiedFiles(
   }
 }
 
+export async function gitUntrackedFiles(
+  cwd = process.cwd(),
+): Promise<CResult<string[]>> {
+  try {
+    const result = await spawn(
+      'git',
+      ['ls-files', '--others', '--exclude-standard'],
+      { cwd },
+    )
+    return {
+      ok: true,
+      data: result.stdout
+        .split('\n')
+        .filter(Boolean)
+        .map(p => normalizePath(p)),
+    }
+  } catch (e) {
+    debugFn('error', 'Failed to list untracked files')
+    debugDir('error', e)
+    return {
+      ok: false,
+      message: 'Git Error',
+      cause: 'Unexpected error while trying to list untracked files',
+    }
+  }
+}
+
 const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>()
 
 export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | undefined {
