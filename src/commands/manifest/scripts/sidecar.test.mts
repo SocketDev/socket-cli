@@ -45,6 +45,48 @@ function mkComponentFixture(target: string): {
 }
 
 describe('compute-artifacts sidecar', () => {
+  it('carries only the classpaths when artifact paths were not resolved', () => {
+    const facts: SocketFactsSbom = {
+      projects: [
+        {
+          type: 'maven',
+          namespace: 'g',
+          name: 'app',
+          subprojectDir: 'app',
+          dependencies: ['g:a:jar:1'],
+        },
+      ],
+      components: [
+        {
+          type: 'maven',
+          namespace: 'g',
+          name: 'a',
+          version: '1',
+          qualifiers: { ext: 'jar' },
+          id: 'g:a:jar:1',
+        },
+      ],
+    }
+    const artifactPaths = emptyArtifactPaths()
+    artifactPaths.classpathByProject.set('app g:app', ['g:a:jar:1'])
+
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      acc,
+      facts,
+      artifactPaths,
+      '/root/.socket.facts.json',
+      false,
+    )
+    const entry = serializeSidecar(acc)['/root/.socket.facts.json']!
+
+    expect(entry.projects[0]).toEqual({
+      ...facts.projects![0],
+      classpath: ['g:a:jar:1'],
+    })
+    expect(entry.components[0]).toEqual(facts.components[0])
+  })
+
   it('carries a component through with resolved targets/sources attached, keyed by its own facts file', () => {
     const facts: SocketFactsSbom = {
       components: [

@@ -32,6 +32,7 @@ import {
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
+import { DYNAMIC_SBOM_INFERENCE_DESCRIPTION } from '../scan/reachability-flags.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -176,6 +177,11 @@ Available styles:
     type: 'boolean',
     default: false,
     description: 'Disable external tool checks during fix analysis.',
+  },
+  dynamicSbomInference: {
+    type: 'boolean',
+    default: false,
+    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Fixes are then attributed to the projects/modules that actually resolve each vulnerable dependency. The generated files are removed afterwards.`,
   },
   ecosystems: {
     type: 'string',
@@ -325,6 +331,7 @@ async function run(
     autopilot,
     debug,
     disableExternalToolChecks,
+    dynamicSbomInference,
     ecosystems,
     exclude,
     excludePaths,
@@ -351,6 +358,7 @@ async function run(
     autopilot: boolean
     debug: boolean
     disableExternalToolChecks: boolean
+    dynamicSbomInference: boolean
     ecosystems: string[]
     exclude: string[]
     excludePaths: string[]
@@ -519,6 +527,7 @@ async function run(
     debug,
     disableExternalToolChecks,
     disableMajorUpdates,
+    dynamicSbomInference,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,
     excludePaths: excludePathsPatterns,

@@ -18,6 +18,9 @@ const mockGetFixEnv = vi.hoisted(() => vi.fn())
 const mockGetSocketFixPrs = vi.hoisted(() => vi.fn())
 const mockFetchGhsaDetails = vi.hoisted(() => vi.fn())
 const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
+const mockGitUntrackedFiles = vi.hoisted(() =>
+  vi.fn(async () => ({ ok: true, data: [] })),
+)
 
 vi.mock('../../utils/dlx.mts', () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
@@ -65,6 +68,7 @@ vi.mock('../../utils/git.mts', () => ({
   gitRemoteBranchExists: vi.fn(() => Promise.resolve(false)),
   gitResetAndClean: vi.fn(() => Promise.resolve(true)),
   gitUnstagedModifiedFiles: mockGitUnstagedModifiedFiles,
+  gitUntrackedFiles: mockGitUntrackedFiles,
 }))
 
 vi.mock('./branch-cleanup.mts', () => ({
