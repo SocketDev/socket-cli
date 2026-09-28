@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `socket scan create --uv-members <dir...>` scans selected uv workspace members with the versions and dependency relationships pinned in their shared `uv.lock`, leaving unrelated members out of the scan. Dependencies used only by dependency groups are marked as development dependencies. Requires uv with CycloneDX export support.
+
 ## [1.2.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.2.1) - 2026-09-28
 
 ### Changed

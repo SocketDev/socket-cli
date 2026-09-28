@@ -63,6 +63,39 @@ All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
 
+### Scanning uv workspace members
+
+Use `--uv-members` to scan selected directories of a uv workspace with the
+versions pinned in the workspace's shared `uv.lock`:
+
+```sh
+socket scan create --uv-members ./packages/api ./packages/worker
+```
+
+Each TARGET is a directory with its own `pyproject.toml`. uv finds the
+`uv.lock` in that directory or in its workspace root, so one scan can cover
+members of several workspaces. The scan includes each target's transitive and
+local workspace dependencies, all extras, and all dependency groups.
+Dependencies used only by dependency groups are marked as development
+dependencies. Unrelated members and the shared lockfile are not added to the
+scan.
+
+This mode requires uv on PATH with support for `uv export --format cyclonedx1.5`,
+which uv currently treats as a preview feature. The export runs offline with
+`--frozen`, so it uses the existing lockfile without resolving newer versions,
+installing packages, or changing the project.
+
+The CLI writes a `socket-uv-cdx.json` SBOM into each target directory, uploads
+only those SBOMs in place of regular manifest discovery, and removes them after
+the scan, including on failure, Ctrl-C, or SIGTERM. It stops if that file
+already exists.
+`--read-only` prepares the SBOMs without uploading them, and `--dry-run`
+validates the options without running uv.
+
+With `--reach`, pass a single target. Reachability analysis then runs on that
+member's directory. `--uv-members` cannot be combined with `--auto-manifest` or
+`--dynamic-sbom-inference`.
+
 ### Reachability analysis
 
 Socket reachability analysis comes in three forms:

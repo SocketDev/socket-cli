@@ -1,0 +1,5 @@
+[project]
+name = "workspace-shared"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["typing-extensions==4.12.2", "tzdata==2025.1; sys_platform == 'win32'"]

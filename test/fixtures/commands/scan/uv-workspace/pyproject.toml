@@ -1,0 +1,9 @@
+[project]
+name = "workspace-root"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["click==8.1.7"]
+[dependency-groups]
+dev = ["packaging==24.2"]
+[tool.uv.workspace]
+members = ["packages/*"]

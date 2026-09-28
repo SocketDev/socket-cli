@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { describe, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -16,6 +16,70 @@ const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/create')
 
 describe('socket scan create', async () => {
   const { binCliPath } = constants
+
+  const uvFixture = path.join(testPath, 'fixtures/commands/scan/uv-workspace')
+  const uvBaseArgs = [
+    'scan',
+    'create',
+    '--cwd',
+    uvFixture,
+    '--org',
+    'test-org',
+    '--repo',
+    'test-repo',
+    '--branch',
+    'main',
+    '--dry-run',
+    '--no-interactive',
+    FLAG_CONFIG,
+    '{}',
+  ]
+
+  it(
+    'accepts uv member directories as targets',
+    { timeout: 30_000 },
+    async () => {
+      const result = await spawnSocketCli(binCliPath, [
+        ...uvBaseArgs,
+        '--uv-members',
+        'packages/api',
+        'packages/other',
+      ])
+      expect(result.code).toBe(0)
+      expect(result.stdout).toContain('[DryRun]: Bailing now')
+    },
+  )
+
+  it.each([
+    {
+      args: ['--uv-members', 'packages/missing'],
+      error: 'directory inside --cwd',
+    },
+    {
+      args: ['--uv-members', '..'],
+      error: 'directory inside --cwd',
+    },
+    {
+      args: ['--uv-members', 'packages'],
+      error: 'requires a pyproject.toml in every TARGET',
+    },
+    {
+      args: ['--uv-members', 'packages/api', '--auto-manifest'],
+      error: 'cannot be combined',
+    },
+    {
+      args: ['--uv-members', 'packages/api', '--dynamic-sbom-inference'],
+      error: 'cannot be combined',
+    },
+  ])(
+    'rejects invalid uv member options: $args',
+    { timeout: 30_000 },
+    async ({ args, error }) => {
+      const result = await spawnSocketCli(binCliPath, [...uvBaseArgs, ...args])
+      expect(result.code).not.toBe(0)
+      expect(result.stdout + result.stderr).toContain(error)
+    },
+  )
 
   cmdit(
     ['scan', 'create', FLAG_HELP, FLAG_CONFIG, '{}'],
@@ -54,6 +118,7 @@ describe('socket scan create', async () => {
             --report-level      Which policy level alerts should be reported (default 'error')
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
+            --uv-members        Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH.
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
@@ -109,7 +174,8 @@ describe('socket scan create', async () => {
           Examples
             $ socket scan create
             $ socket scan create ./proj --json
-            $ socket scan create --repo=test-repo --branch=main ./package.json"
+            $ socket scan create --repo=test-repo --branch=main ./package.json
+            $ socket scan create --uv-members ./packages/api ./packages/worker"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

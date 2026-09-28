@@ -73,6 +73,11 @@ function filterToPregeneratedSboms(
   )
 }
 
+export type GeneratedScanFiles = {
+  cleanup: () => Promise<void>
+  files: string[]
+}
+
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
   branchName: string
@@ -81,6 +86,8 @@ export type HandleCreateNewScanConfig = {
   committers: string
   cwd: string
   defaultBranch: boolean
+  // Supplies the complete scan input and replaces manifest discovery.
+  generateScanFiles?: (() => Promise<GeneratedScanFiles>) | undefined
   interactive: boolean
   orgSlug: string
   pendingHead: boolean
@@ -101,28 +108,31 @@ export type HandleCreateNewScanConfig = {
   workspace?: string | undefined
 }
 
-export async function handleCreateNewScan({
-  autoManifest,
-  branchName,
-  commitHash,
-  commitMessage,
-  committers,
-  cwd,
-  defaultBranch,
-  interactive,
-  orgSlug,
-  outputKind,
-  pendingHead,
-  pullRequest,
-  reach,
-  readOnly,
-  repoName,
-  report,
-  reportLevel,
-  targets,
-  tmp,
-  workspace,
-}: HandleCreateNewScanConfig): Promise<void> {
+async function createNewScan(
+  {
+    autoManifest,
+    branchName,
+    commitHash,
+    commitMessage,
+    committers,
+    cwd,
+    defaultBranch,
+    interactive,
+    orgSlug,
+    outputKind,
+    pendingHead,
+    pullRequest,
+    reach,
+    readOnly,
+    repoName,
+    report,
+    reportLevel,
+    targets,
+    tmp,
+    workspace,
+  }: HandleCreateNewScanConfig,
+  scanFiles: string[] | undefined,
+): Promise<void> {
   let scanTargets = targets
 
   debugFn(
@@ -256,15 +266,13 @@ export async function handleCreateNewScan({
         target: targets[0]!,
       })
 
-    const packagePaths = await getPackageFilesForScan(
-      scanTargets,
-      supportedFiles,
-      {
+    const packagePaths =
+      scanFiles ??
+      (await getPackageFilesForScan(scanTargets, supportedFiles, {
         additionalIgnores: additionalScaIgnores,
         config: socketConfig,
         cwd,
-      },
-    )
+      }))
 
     spinner.successAndStop(
       `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
@@ -496,4 +504,15 @@ export async function handleCreateNewScan({
       })
     }
   })
+}
+
+export async function handleCreateNewScan(
+  config: HandleCreateNewScanConfig,
+): Promise<void> {
+  const generated = await config.generateScanFiles?.()
+  try {
+    await createNewScan(config, generated?.files)
+  } finally {
+    await generated?.cleanup()
+  }
 }

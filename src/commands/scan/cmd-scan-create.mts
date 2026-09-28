@@ -4,6 +4,10 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
+import {
+  generateUvMemberSboms,
+  resolveUvMemberDirs,
+} from './generate-uv-member-sboms.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import {
@@ -172,6 +176,12 @@ const generalFlags: MeowFlags = {
       'Set the visibility (true/false) of the scan in your dashboard.',
     shortFlag: 't',
   },
+  uvMembers: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH.',
+  },
 }
 
 export const cmdScanCreate = {
@@ -241,6 +251,7 @@ async function run(
       $ ${command}
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
+      $ ${command} --uv-members ./packages/api ./packages/worker
   `,
   }
 
@@ -332,6 +343,7 @@ async function run(
   )
 
   const dryRun = !!cli.flags['dryRun']
+  const uvMembers = !!cli.flags['uvMembers']
 
   let {
     autoManifest,
@@ -472,6 +484,7 @@ async function run(
     detected.count > 0 &&
     !autoManifest &&
     !dynamicSbomInference &&
+    !uvMembers &&
     !hasFactsFile
   ) {
     logger.info(
@@ -569,6 +582,13 @@ async function run(
     },
     {
       nook: true,
+      test: !uvMembers || (!autoManifest && !dynamicSbomInference),
+      message:
+        '--uv-members cannot be combined with --auto-manifest or --dynamic-sbom-inference',
+      fail: 'select one source of generated SBOMs',
+    },
+    {
+      nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
@@ -629,6 +649,8 @@ async function run(
     return
   }
 
+  const uvMemberDirs = uvMembers ? resolveUvMemberDirs(targets, cwd) : undefined
+
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
     return
@@ -642,6 +664,9 @@ async function run(
     committers: (committers && String(committers)) || '',
     cwd,
     defaultBranch: Boolean(defaultBranch),
+    generateScanFiles: uvMemberDirs
+      ? () => generateUvMemberSboms(uvMemberDirs)
+      : undefined,
     interactive: Boolean(interactive),
     orgSlug,
     outputKind,
