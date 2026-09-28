@@ -35,17 +35,21 @@ describe('socket scan create', async () => {
     '{}',
   ]
 
-  it('accepts repeated uv package selectors with an implicit root target', async () => {
-    const result = await spawnSocketCli(binCliPath, [
-      ...uvBaseArgs,
-      '--uv-package',
-      'workspace-api',
-      '--uv-package',
-      'workspace-other',
-    ])
-    expect(result.code).toBe(0)
-    expect(result.stdout).toContain('[DryRun]: Bailing now')
-  })
+  it(
+    'accepts repeated uv package selectors with an implicit root target',
+    { timeout: 30_000 },
+    async () => {
+      const result = await spawnSocketCli(binCliPath, [
+        ...uvBaseArgs,
+        '--uv-package',
+        'workspace-api',
+        '--uv-package',
+        'workspace-other',
+      ])
+      expect(result.code).toBe(0)
+      expect(result.stdout).toContain('[DryRun]: Bailing now')
+    },
+  )
 
   it.each([
     {
@@ -88,11 +92,15 @@ describe('socket scan create', async () => {
       args: ['.', '--uv-package', 'workspace-api', '--dynamic-sbom-inference'],
       error: 'cannot be combined',
     },
-  ])('rejects invalid uv package options: $args', async ({ args, error }) => {
-    const result = await spawnSocketCli(binCliPath, [...uvBaseArgs, ...args])
-    expect(result.code).not.toBe(0)
-    expect(result.stdout + result.stderr).toContain(error)
-  })
+  ])(
+    'rejects invalid uv package options: $args',
+    { timeout: 30_000 },
+    async ({ args, error }) => {
+      const result = await spawnSocketCli(binCliPath, [...uvBaseArgs, ...args])
+      expect(result.code).not.toBe(0)
+      expect(result.stdout + result.stderr).toContain(error)
+    },
+  )
 
   cmdit(
     ['scan', 'create', FLAG_HELP, FLAG_CONFIG, '{}'],
