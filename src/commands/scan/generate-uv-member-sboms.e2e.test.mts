@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { generateUvPackageSboms } from './generate-uv-package-sboms.mts'
+import { generateUvMemberSboms } from './generate-uv-member-sboms.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 
 import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
@@ -48,7 +48,7 @@ type Sbom = {
   bomFormat: string
   metadata: { component: Component }
   components: Component[]
-  dependencies: Array<{ ref: string; dependsOn: string[] }>
+  dependencies: Array<{ ref: string; dependsOn?: string[] }>
 }
 
 function assertApiGraph(sbom: Sbom): void {
@@ -88,51 +88,54 @@ function assertApiGraph(sbom: Sbom): void {
   const refs = new Set(components.map(c => c['bom-ref']))
   for (const edge of sbom.dependencies) {
     expect(refs.has(edge.ref)).toBe(true)
-    expect(edge.dependsOn.every(ref => refs.has(ref))).toBe(true)
+    // uv 0.12 omits dependsOn for leaf nodes.
+    expect((edge.dependsOn ?? []).every(ref => refs.has(ref))).toBe(true)
   }
 }
 
-describe('uv package scans with the real uv binary', () => {
+describe('uv member scans with the real uv binary', () => {
+  let apiDir: string
   let projectRoot: string
-  let outputDir: string
 
   beforeEach(async () => {
     vi.clearAllMocks()
     projectRoot = await fs.mkdtemp(path.join(tmpdir(), 'socket-uv-project-'))
-    outputDir = await fs.mkdtemp(path.join(tmpdir(), 'socket-uv-sboms-'))
+    apiDir = path.join(projectRoot, 'packages/api')
     await fs.cp(fixture, projectRoot, { recursive: true })
   })
 
   afterEach(async () => {
     await fs.rm(projectRoot, { recursive: true, force: true })
-    await fs.rm(outputDir, { recursive: true, force: true })
   })
 
   it('preserves pinned dependency edges, extras, groups and markers without unrelated packages', async () => {
     const lock = await fs.readFile(path.join(projectRoot, 'uv.lock'), 'utf8')
-    const paths = await generateUvPackageSboms({
-      outputDir,
-      packageNames: ['workspace-api'],
-      projectRoot,
-    })
-    assertApiGraph(JSON.parse(await fs.readFile(paths[0]!, 'utf8')))
+    const { files } = await generateUvMemberSboms([apiDir])
+    expect(files).toEqual([path.join(apiDir, 'socket-uv-cdx.json')])
+    assertApiGraph(JSON.parse(await fs.readFile(files[0]!, 'utf8')))
     expect(await fs.readFile(path.join(projectRoot, 'uv.lock'), 'utf8')).toBe(
       lock,
     )
     expect(existsSync(path.join(projectRoot, '.venv'))).toBe(false)
+    expect(existsSync(path.join(apiDir, '.venv'))).toBe(false)
   })
 
-  it('exports distinct package roots and graphs when multiple packages are requested', async () => {
-    const paths = await generateUvPackageSboms({
-      outputDir,
-      packageNames: ['workspace-api', 'workspace-other'],
-      projectRoot,
-    })
-    expect(paths).toHaveLength(2)
-    assertApiGraph(JSON.parse(await fs.readFile(paths[0]!, 'utf8')))
-    const other = JSON.parse(await fs.readFile(paths[1]!, 'utf8')) as Sbom
+  it('exports distinct package roots and graphs when multiple members are requested', async () => {
+    const { files } = await generateUvMemberSboms([
+      apiDir,
+      path.join(projectRoot, 'packages/other'),
+    ])
+    expect(files).toHaveLength(2)
+    assertApiGraph(JSON.parse(await fs.readFile(files[0]!, 'utf8')))
+    const other = JSON.parse(await fs.readFile(files[1]!, 'utf8')) as Sbom
     expect(other.metadata.component.name).toBe('workspace-other')
-    expect(other.components.map(c => c.name)).toEqual(['sniffio'])
+    expect(
+      other.components.filter(c => c.scope === 'required').map(c => c.name),
+    ).toEqual(['sniffio'])
+    // uv 0.12 adds the workspace root's dependency groups to this member.
+    for (const name of ['colorama', 'idna', 'iniconfig']) {
+      expect(other.components.map(c => c.name)).not.toContain(name)
+    }
   })
 
   it('uses the existing pins when the member allows a newer version', async () => {
@@ -141,12 +144,8 @@ describe('uv package scans with the real uv binary', () => {
       manifest,
       (await fs.readFile(manifest, 'utf8')).replace('idna==3.10', 'idna>=3'),
     )
-    const paths = await generateUvPackageSboms({
-      outputDir,
-      packageNames: ['workspace-api'],
-      projectRoot,
-    })
-    assertApiGraph(JSON.parse(await fs.readFile(paths[0]!, 'utf8')))
+    const { files } = await generateUvMemberSboms([apiDir])
+    assertApiGraph(JSON.parse(await fs.readFile(files[0]!, 'utf8')))
   })
 
   it('classifies transitive group dependencies and keeps shared production dependencies required', async () => {
@@ -170,12 +169,8 @@ describe('uv package scans with the real uv binary', () => {
         'dev = [\n    { name = "iniconfig" },\n    { name = "idna" },\n    { name = "workspace-other" },\n]\nqa = [{ name = "packaging" }]',
       ),
     )
-    const [filename] = await generateUvPackageSboms({
-      outputDir,
-      packageNames: ['workspace-api'],
-      projectRoot,
-    })
-    const sbom = JSON.parse(await fs.readFile(filename!, 'utf8')) as Sbom
+    const { files } = await generateUvMemberSboms([apiDir])
+    const sbom = JSON.parse(await fs.readFile(files[0]!, 'utf8')) as Sbom
     expect(
       Object.fromEntries(sbom.components.map(c => [c.name, c.scope])),
     ).toEqual({
@@ -191,27 +186,32 @@ describe('uv package scans with the real uv binary', () => {
     })
   })
 
-  it('rejects unknown packages and does not fall back to the workspace root', async () => {
-    await expect(
-      generateUvPackageSboms({
-        outputDir,
-        packageNames: ['does-not-exist'],
-        projectRoot,
-      }),
-    ).rejects.toThrow('Could not export uv package "does-not-exist"')
+  it('rejects a project outside any uv workspace without writing an SBOM', async () => {
+    const loneDir = await fs.mkdtemp(path.join(tmpdir(), 'socket-uv-lone-'))
+    try {
+      await fs.writeFile(
+        path.join(loneDir, 'pyproject.toml'),
+        '[project]\nname = "lone"\nversion = "0.1.0"\ndependencies = []\n',
+      )
+      await expect(generateUvMemberSboms([loneDir])).rejects.toMatchObject({
+        message: expect.stringContaining(
+          `Could not export the uv dependency graph for ${loneDir}`,
+        ),
+        body: expect.stringContaining('uv.lock'),
+      })
+      expect(existsSync(path.join(loneDir, 'socket-uv-cdx.json'))).toBe(false)
+    } finally {
+      await fs.rm(loneDir, { recursive: true, force: true })
+    }
   })
 
-  it('passes only the scoped graph to the SDK and cleans up after upload', async () => {
-    let uploadRoot = ''
+  it('passes only the member graph to the SDK and cleans up after upload', async () => {
+    const sbomPath = path.join(apiDir, 'socket-uv-cdx.json')
     mockCreateFullScan.mockImplementationOnce(
       async (_org, paths: string[], options) => {
-        uploadRoot = options.pathsRelativeTo
-        expect(paths).toEqual([
-          path.join(uploadRoot, 'socket-workspace-api-cdx.json'),
-        ])
+        expect(options.pathsRelativeTo).toBe(projectRoot)
+        expect(paths).toEqual([sbomPath])
         assertApiGraph(JSON.parse(await fs.readFile(paths[0]!, 'utf8')))
-        expect(existsSync(path.join(uploadRoot, 'uv.lock'))).toBe(false)
-        expect(existsSync(path.join(uploadRoot, 'pyproject.toml'))).toBe(false)
         return { success: true, status: 200, data: { id: 'test-scan' } }
       },
     )
@@ -223,6 +223,7 @@ describe('uv package scans with the real uv binary', () => {
       committers: '',
       cwd: projectRoot,
       defaultBranch: false,
+      generateScanFiles: () => generateUvMemberSboms([apiDir]),
       interactive: false,
       orgSlug: 'test-org',
       outputKind: 'text',
@@ -256,13 +257,11 @@ describe('uv package scans with the real uv binary', () => {
       repoName: 'test-repo',
       report: false,
       reportLevel: 'error',
-      targets: ['.'],
+      targets: ['packages/api'],
       tmp: true,
-      uvPackages: ['workspace-api'],
     }
     await handleCreateNewScan(config)
     expect(mockCreateFullScan).toHaveBeenCalledOnce()
-    expect(uploadRoot).not.toBe('')
-    expect(existsSync(uploadRoot)).toBe(false)
+    expect(existsSync(sbomPath)).toBe(false)
   })
 })

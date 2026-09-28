@@ -1,4 +1,4 @@
-import { copyFile, unlink } from 'node:fs/promises'
+import { unlink } from 'node:fs/promises'
 import path from 'node:path'
 
 import micromatch from 'micromatch'
@@ -11,10 +11,6 @@ import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
-import {
-  generateUvPackageSboms,
-  resolveUvProjectRoot,
-} from './generate-uv-package-sboms.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
@@ -26,7 +22,6 @@ import {
   snapshotSocketFacts,
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
-import { InputError } from '../../utils/errors.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -78,6 +73,11 @@ function filterToPregeneratedSboms(
   )
 }
 
+export type GeneratedScanFiles = {
+  cleanup: () => Promise<void>
+  files: string[]
+}
+
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
   branchName: string
@@ -86,6 +86,8 @@ export type HandleCreateNewScanConfig = {
   committers: string
   cwd: string
   defaultBranch: boolean
+  // Supplies the complete scan input and replaces manifest discovery.
+  generateScanFiles?: (() => Promise<GeneratedScanFiles>) | undefined
   interactive: boolean
   orgSlug: string
   pendingHead: boolean
@@ -103,42 +105,35 @@ export type HandleCreateNewScanConfig = {
   reportLevel: REPORT_LEVEL
   targets: string[]
   tmp: boolean
-  uvPackages?: string[] | undefined
   workspace?: string | undefined
 }
 
-export async function handleCreateNewScan({
-  autoManifest,
-  branchName,
-  commitHash,
-  commitMessage,
-  committers,
-  cwd,
-  defaultBranch,
-  interactive,
-  orgSlug,
-  outputKind,
-  pendingHead,
-  pullRequest,
-  reach,
-  readOnly,
-  repoName,
-  report,
-  reportLevel,
-  targets,
-  tmp,
-  uvPackages = [],
-  workspace,
-}: HandleCreateNewScanConfig): Promise<void> {
+async function createNewScan(
+  {
+    autoManifest,
+    branchName,
+    commitHash,
+    commitMessage,
+    committers,
+    cwd,
+    defaultBranch,
+    interactive,
+    orgSlug,
+    outputKind,
+    pendingHead,
+    pullRequest,
+    reach,
+    readOnly,
+    repoName,
+    report,
+    reportLevel,
+    targets,
+    tmp,
+    workspace,
+  }: HandleCreateNewScanConfig,
+  scanFiles: string[] | undefined,
+): Promise<void> {
   let scanTargets = targets
-  if (uvPackages.length && (autoManifest || reach.dynamicSbomInference)) {
-    throw new InputError(
-      '--uv-package cannot be combined with --auto-manifest or --dynamic-sbom-inference',
-    )
-  }
-  const uvProjectRoot = uvPackages.length
-    ? resolveUvProjectRoot(targets, cwd)
-    : undefined
 
   debugFn(
     'notice',
@@ -254,11 +249,7 @@ export async function handleCreateNewScan({
       `Fetched ${supportedFilesCResult.data['size']} supported file types`,
     )
 
-    spinner.start(
-      uvProjectRoot
-        ? 'Exporting selected uv packages...'
-        : 'Searching for local files to include in scan...',
-    )
+    spinner.start('Searching for local files to include in scan...')
 
     const supportedFiles = supportedFilesCResult.data
 
@@ -275,17 +266,13 @@ export async function handleCreateNewScan({
         target: targets[0]!,
       })
 
-    const packagePaths = uvProjectRoot
-      ? await generateUvPackageSboms({
-          outputDir: manifestTmpDir,
-          packageNames: uvPackages,
-          projectRoot: uvProjectRoot,
-        })
-      : await getPackageFilesForScan(scanTargets, supportedFiles, {
-          additionalIgnores: additionalScaIgnores,
-          config: socketConfig,
-          cwd,
-        })
+    const packagePaths =
+      scanFiles ??
+      (await getPackageFilesForScan(scanTargets, supportedFiles, {
+        additionalIgnores: additionalScaIgnores,
+        config: socketConfig,
+        cwd,
+      }))
 
     spinner.successAndStop(
       `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
@@ -341,7 +328,6 @@ export async function handleCreateNewScan({
         orgSlug,
         outputKind,
         packagePaths,
-        ...(uvProjectRoot ? { manifestUploadRoot: manifestTmpDir } : {}),
         reachabilityOptions: mergedReachabilityOptions,
         repoName,
         resolvedPathsSidecar,
@@ -397,19 +383,6 @@ export async function handleCreateNewScan({
       }
     }
 
-    // Keep the reachability report beside the exported SBOMs for upload.
-    // Coana still runs against the original source directory.
-    if (uvProjectRoot && reachabilityReport && !reachabilityFallback) {
-      const stagedReport = path.join(
-        manifestTmpDir,
-        constants.DOT_SOCKET_DOT_FACTS_JSON,
-      )
-      await copyFile(path.resolve(cwd, reachabilityReport), stagedReport)
-      scanPaths = scanPaths.map(p =>
-        p === reachabilityReport ? stagedReport : p,
-      )
-    }
-
     // Brotli-compress any .socket.facts.json paths in scanPaths just before
     // upload. depscan's api-v0 multipart boundary streams brotli decode based
     // on the .br filename suffix. Coana keeps writing plain .socket.facts.json
@@ -436,7 +409,7 @@ export async function handleCreateNewScan({
           workspace,
         },
         {
-          cwd: uvProjectRoot ? manifestTmpDir : cwd,
+          cwd,
           defaultBranch,
           pendingHead,
           tmp,
@@ -531,4 +504,15 @@ export async function handleCreateNewScan({
       })
     }
   })
+}
+
+export async function handleCreateNewScan(
+  config: HandleCreateNewScanConfig,
+): Promise<void> {
+  const generated = await config.generateScanFiles?.()
+  try {
+    await createNewScan(config, generated?.files)
+  } finally {
+    await generated?.cleanup()
+  }
 }

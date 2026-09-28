@@ -1,14 +1,13 @@
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  generateUvPackageSboms,
-  normalizeUvPackageNames,
-  resolveUvProjectRoot,
-} from './generate-uv-package-sboms.mts'
+  generateUvMemberSboms,
+  resolveUvMemberDirs,
+} from './generate-uv-member-sboms.mts'
 
 const { mockSpawn } = vi.hoisted(() => ({ mockSpawn: vi.fn() }))
 
@@ -22,31 +21,31 @@ const sbom = JSON.stringify({
   dependencies: [{ ref: 'api', dependsOn: ['idna'] }],
 })
 
-describe('uv package SBOM export', () => {
-  let projectRoot: string
-  let outputDir: string
+describe('uv member SBOM export', () => {
+  let cwd: string
+  let apiDir: string
+  let workerDir: string
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    projectRoot = await fs.mkdtemp(path.join(tmpdir(), 'socket-uv-unit-'))
-    outputDir = path.join(projectRoot, 'output')
-    await fs.writeFile(path.join(projectRoot, 'pyproject.toml'), '')
-    await fs.writeFile(path.join(projectRoot, 'uv.lock'), '')
+    cwd = await fs.mkdtemp(path.join(tmpdir(), 'socket-uv-unit-'))
+    apiDir = path.join(cwd, 'packages/api')
+    workerDir = path.join(cwd, 'packages/worker')
+    await fs.mkdir(apiDir, { recursive: true })
+    await fs.mkdir(workerDir, { recursive: true })
+    await fs.writeFile(path.join(apiDir, 'pyproject.toml'), '')
+    await fs.writeFile(path.join(workerDir, 'pyproject.toml'), '')
     mockSpawn.mockResolvedValue({ stdout: sbom })
   })
 
   afterEach(async () => {
-    await fs.rm(projectRoot, { recursive: true, force: true })
+    await fs.rm(cwd, { recursive: true, force: true })
   })
 
-  it('preserves the graph and marks production dependencies as required', async () => {
-    const paths = await generateUvPackageSboms({
-      outputDir,
-      packageNames: ['api'],
-      projectRoot,
-    })
-    expect(paths).toEqual([path.join(outputDir, 'socket-api-cdx.json')])
-    expect(JSON.parse(await fs.readFile(paths[0]!, 'utf8'))).toEqual({
+  it('writes the graph beside the member and marks production dependencies as required', async () => {
+    const { files } = await generateUvMemberSboms([apiDir])
+    expect(files).toEqual([path.join(apiDir, 'socket-uv-cdx.json')])
+    expect(JSON.parse(await fs.readFile(files[0]!, 'utf8'))).toEqual({
       ...JSON.parse(sbom),
       components: [
         { name: 'idna', version: '3.10', 'bom-ref': 'idna', scope: 'required' },
@@ -59,9 +58,7 @@ describe('uv package SBOM export', () => {
       [
         'export',
         '--project',
-        projectRoot,
-        '--package',
-        'api',
+        apiDir,
         '--format',
         'cyclonedx1.5',
         '--frozen',
@@ -70,14 +67,25 @@ describe('uv package SBOM export', () => {
         '--all-extras',
         '--all-groups',
       ],
-      expect.objectContaining({ cwd: projectRoot, stdio: 'pipe' }),
+      expect.objectContaining({ cwd: apiDir, stdio: 'pipe' }),
     )
     expect(mockSpawn).toHaveBeenNthCalledWith(
       2,
       'uv',
       [...mockSpawn.mock.calls[0]![1].slice(0, -1), '--no-default-groups'],
-      expect.objectContaining({ cwd: projectRoot, stdio: 'pipe' }),
+      expect.objectContaining({ cwd: apiDir, stdio: 'pipe' }),
     )
+  })
+
+  it('removes every written SBOM on cleanup', async () => {
+    const { cleanup, files } = await generateUvMemberSboms([apiDir, workerDir])
+    expect(files).toEqual([
+      path.join(apiDir, 'socket-uv-cdx.json'),
+      path.join(workerDir, 'socket-uv-cdx.json'),
+    ])
+    expect(files.every(existsSync)).toBe(true)
+    await cleanup()
+    expect(files.some(existsSync)).toBe(false)
   })
 
   it('matches package identities across exports without changing edges or metadata', async () => {
@@ -111,12 +119,8 @@ describe('uv package SBOM export', () => {
           ],
         }),
       })
-    const [filename] = await generateUvPackageSboms({
-      outputDir,
-      packageNames: ['api'],
-      projectRoot,
-    })
-    expect(JSON.parse(await fs.readFile(filename!, 'utf8'))).toEqual({
+    const { files } = await generateUvMemberSboms([apiDir])
+    expect(JSON.parse(await fs.readFile(files[0]!, 'utf8'))).toEqual({
       ...graph,
       components: graph.components.map((component, index) => ({
         ...component,
@@ -133,110 +137,90 @@ describe('uv package SBOM export', () => {
         dependencies: [],
       }),
     })
-    const [filename] = await generateUvPackageSboms({
-      outputDir,
-      packageNames: ['api'],
-      projectRoot,
-    })
-    expect(JSON.parse(await fs.readFile(filename!, 'utf8')).components).toEqual(
+    const { files } = await generateUvMemberSboms([apiDir])
+    expect(JSON.parse(await fs.readFile(files[0]!, 'utf8')).components).toEqual(
       [{ name: 'idna', version: '3.10', 'bom-ref': 'idna', scope: 'optional' }],
     )
   })
 
   it.each(['invalid graph', 'export failure'])(
-    'does not write an SBOM when the production export has an %s',
+    'writes no SBOM for any member when a later export has an %s',
     async failure => {
-      mockSpawn.mockResolvedValueOnce({ stdout: sbom })
+      mockSpawn
+        .mockResolvedValueOnce({ stdout: sbom })
+        .mockResolvedValueOnce({ stdout: sbom })
+        .mockResolvedValueOnce({ stdout: sbom })
       if (failure === 'invalid graph') {
         mockSpawn.mockResolvedValueOnce({ stdout: '{}' })
       } else {
         mockSpawn.mockRejectedValueOnce(new Error('export failed'))
       }
-      await expect(
-        generateUvPackageSboms({
-          outputDir,
-          packageNames: ['api'],
-          projectRoot,
-        }),
-      ).rejects.toThrow()
-      await expect(
-        fs.stat(path.join(outputDir, 'socket-api-cdx.json')),
-      ).rejects.toMatchObject({ code: 'ENOENT' })
+      await expect(generateUvMemberSboms([apiDir, workerDir])).rejects.toThrow()
+      expect(existsSync(path.join(apiDir, 'socket-uv-cdx.json'))).toBe(false)
+      expect(existsSync(path.join(workerDir, 'socket-uv-cdx.json'))).toBe(false)
     },
   )
 
-  it('normalizes and deduplicates package names', () => {
-    expect(normalizeUvPackageNames(['My_API', 'my.api', 'other'])).toEqual([
-      'my-api',
-      'other',
-    ])
-    expect(normalizeUvPackageNames([])).toEqual([])
-  })
-
-  it.each([
-    '',
-    './packages/api',
-    '../api',
-    '--all-packages',
-    'api,worker',
-    '*',
-    'api/worker',
-  ])('rejects invalid package selector %j', value => {
-    expect(() => normalizeUvPackageNames([value])).toThrow('project.name')
+  it('removes SBOMs it already wrote when a later write fails', async () => {
+    await fs.writeFile(path.join(workerDir, 'socket-uv-cdx.json'), 'user file')
+    await expect(generateUvMemberSboms([apiDir, workerDir])).rejects.toThrow()
+    expect(existsSync(path.join(apiDir, 'socket-uv-cdx.json'))).toBe(false)
+    expect(
+      await fs.readFile(path.join(workerDir, 'socket-uv-cdx.json'), 'utf8'),
+    ).toBe('user file')
   })
 
   it.each([
     'not JSON',
     '{}',
     '{"bomFormat":"CycloneDX","metadata":{"component":{"name":"api"}}}',
-    sbom.replace('"name":"api"', '"name":"wrong-root"'),
-  ])('rejects an invalid or incorrectly scoped SBOM', async stdout => {
+    '{"bomFormat":"CycloneDX","dependencies":[]}',
+  ])('rejects an invalid SBOM', async stdout => {
     mockSpawn.mockResolvedValueOnce({ stdout })
-    await expect(
-      generateUvPackageSboms({ outputDir, packageNames: ['api'], projectRoot }),
-    ).rejects.toThrow('dependency graph rooted at "api"')
-    await expect(
-      fs.stat(path.join(outputDir, 'socket-api-cdx.json')),
-    ).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(generateUvMemberSboms([apiDir])).rejects.toThrow(
+      `uv did not return a CycloneDX dependency graph for ${apiDir}`,
+    )
+    expect(existsSync(path.join(apiDir, 'socket-uv-cdx.json'))).toBe(false)
   })
 
   it.each([
-    'No workspace member named api',
+    'Unable to find lockfile at `uv.lock`',
     'Unsupported lockfile version',
     'uv is not installed',
   ])('reports an export failure: %s', async stderr => {
     mockSpawn.mockRejectedValueOnce(
       Object.assign(new Error('command failed'), { stderr }),
     )
-    await expect(
-      generateUvPackageSboms({ outputDir, packageNames: ['api'], projectRoot }),
-    ).rejects.toMatchObject({
-      message: expect.stringContaining('Could not export uv package "api"'),
+    await expect(generateUvMemberSboms([apiDir])).rejects.toMatchObject({
+      message: expect.stringContaining(
+        `Could not export the uv dependency graph for ${apiDir}`,
+      ),
       body: stderr,
     })
   })
 
-  it('resolves a single project root relative to cwd', () => {
-    expect(resolveUvProjectRoot(['.'], projectRoot)).toBe(projectRoot)
-    expect(resolveUvProjectRoot([projectRoot], projectRoot)).toBe(projectRoot)
+  it('resolves member directories relative to cwd and deduplicates them', () => {
+    expect(
+      resolveUvMemberDirs(
+        ['packages/api', './packages/api/', apiDir, 'packages/worker'],
+        cwd,
+      ),
+    ).toEqual([apiDir, workerDir])
   })
 
-  it.each([[], ['.', '.'], ['pyproject.toml'], ['missing'], ['..']])(
-    'rejects invalid project roots %j',
-    (...targets) => {
-      expect(() => resolveUvProjectRoot(targets, projectRoot)).toThrow(
-        '--uv-package requires',
-      )
-    },
-  )
+  it.each([
+    ['packages/missing', 'directory inside --cwd'],
+    ['packages/api/pyproject.toml', 'directory inside --cwd'],
+    ['..', 'directory inside --cwd'],
+    ['packages', 'requires a pyproject.toml in every TARGET'],
+  ])('rejects target %j', (target, error) => {
+    expect(() => resolveUvMemberDirs([target], cwd)).toThrow(error)
+  })
 
-  it.each(['pyproject.toml', 'uv.lock'])(
-    'requires %s at the target root',
-    async filename => {
-      await fs.unlink(path.join(projectRoot, filename))
-      expect(() => resolveUvProjectRoot(['.'], projectRoot)).toThrow(
-        'requires pyproject.toml and uv.lock',
-      )
-    },
-  )
+  it('refuses to overwrite an existing SBOM in a member directory', async () => {
+    await fs.writeFile(path.join(apiDir, 'socket-uv-cdx.json'), '{}')
+    expect(() => resolveUvMemberDirs(['packages/api'], cwd)).toThrow(
+      'already exists',
+    )
+  })
 })

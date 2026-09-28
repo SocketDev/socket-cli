@@ -165,6 +165,104 @@ describe('handleCreateNewScan excludePaths', () => {
     mockReadOrDefaultSocketJson.mockReturnValue({})
   })
 
+  it('uploads only generated scan files and cleans them up after uploading', async () => {
+    const cleanup = vi.fn()
+    const files = [
+      '/repo/packages/api/socket-uv-cdx.json',
+      '/repo/packages/worker/socket-uv-cdx.json',
+    ]
+    mockFetchCreateOrgFullScan.mockImplementationOnce(async () => {
+      expect(cleanup).not.toHaveBeenCalled()
+      return { ok: true, data: { id: 'scan-id' } }
+    })
+    await handleCreateNewScan(
+      createConfig({
+        generateScanFiles: async () => ({ cleanup, files }),
+        targets: ['packages/api', 'packages/worker'],
+      }),
+    )
+    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      files,
+      'fakeOrg',
+      expect.anything(),
+      expect.objectContaining({ cwd: '/repo' }),
+    )
+    expect(cleanup).toHaveBeenCalledOnce()
+  })
+
+  it('cleans up generated scan files in read-only mode without uploading', async () => {
+    const cleanup = vi.fn()
+    await handleCreateNewScan(
+      createConfig({
+        generateScanFiles: async () => ({ cleanup, files: ['/repo/a.json'] }),
+        readOnly: true,
+      }),
+    )
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
+    expect(cleanup).toHaveBeenCalledOnce()
+  })
+
+  it('cleans up generated scan files when the upload throws', async () => {
+    const cleanup = vi.fn()
+    mockFetchCreateOrgFullScan.mockRejectedValueOnce(new Error('upload failed'))
+    await expect(
+      handleCreateNewScan(
+        createConfig({
+          generateScanFiles: async () => ({ cleanup, files: ['/repo/a.json'] }),
+        }),
+      ),
+    ).rejects.toThrow('upload failed')
+    expect(cleanup).toHaveBeenCalledOnce()
+  })
+
+  it('stops before discovery and upload when generating scan files fails', async () => {
+    await expect(
+      handleCreateNewScan(
+        createConfig({
+          generateScanFiles: async () => {
+            throw new Error('export failed')
+          },
+        }),
+      ),
+    ).rejects.toThrow('export failed')
+    expect(mockFetchSupportedScanFileNames).not.toHaveBeenCalled()
+    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
+  })
+
+  it('analyzes generated scan files against the target with the default upload roots', async () => {
+    const cleanup = vi.fn()
+    const files = ['/repo/packages/api/socket-uv-cdx.json']
+    const config = createConfig({
+      generateScanFiles: async () => ({ cleanup, files }),
+      targets: ['packages/api'],
+    })
+    config.reach.runReachabilityAnalysis = true
+    mockPerformReachabilityAnalysis.mockResolvedValueOnce({
+      data: {
+        reachabilityReport: 'packages/api/.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+      ok: true,
+    })
+    await handleCreateNewScan(config)
+    expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/repo',
+        packagePaths: files,
+        target: 'packages/api',
+      }),
+    )
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      [...files, 'packages/api/.socket.facts.json'],
+      'fakeOrg',
+      expect.anything(),
+      expect.objectContaining({ cwd: '/repo' }),
+    )
+    expect(cleanup).toHaveBeenCalledOnce()
+  })
+
   it('includes generated auto-manifest files in SCA discovery targets', async () => {
     mockGenerateAutoManifest.mockResolvedValueOnce({
       generatedFiles: ['/repo/.socket-auto-manifest/maven_install.json'],

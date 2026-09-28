@@ -8,6 +8,10 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../../constants.mts'
 import { InputError, getErrorMessage } from '../../utils/errors.mts'
 
+import type { GeneratedScanFiles } from './handle-create-new-scan.mts'
+
+const UV_SBOM_FILENAME = 'socket-uv-cdx.json'
+
 type Component = {
   name: string
   version?: string
@@ -22,36 +26,27 @@ type Sbom = {
   metadata?: { component?: { name?: string } }
 }
 
-function normalizePackageName(name: string): string {
-  return name.toLowerCase().replaceAll(/[._-]+/g, '-')
-}
-
-function parseSbom(content: string, packageName: string): Sbom {
-  try {
-    const sbom = JSON.parse(content) as Sbom
-    const rootName = sbom?.metadata?.component?.name
-    if (
-      sbom?.bomFormat === 'CycloneDX' &&
-      Array.isArray(sbom.dependencies) &&
-      (sbom.components === undefined || Array.isArray(sbom.components)) &&
-      typeof rootName === 'string' &&
-      normalizePackageName(rootName) === packageName
-    ) {
-      return sbom
-    }
-  } catch {}
-  throw new InputError(
-    `uv did not return a CycloneDX dependency graph rooted at "${packageName}". Update uv and try again.`,
-  )
-}
-
 function componentIdentity(component: Component): string {
   return JSON.stringify([component.name, component.version, component.purl])
 }
 
+async function exportMemberSbom(memberDir: string): Promise<Sbom> {
+  const sbom = await exportSbom(memberDir, '--all-groups')
+  const productionSbom = await exportSbom(memberDir, '--no-default-groups')
+  // uv can renumber bom-ref values between exports.
+  const productionPackages = new Set(
+    productionSbom.components?.map(componentIdentity),
+  )
+  for (const component of sbom.components ?? []) {
+    component.scope = productionPackages.has(componentIdentity(component))
+      ? 'required'
+      : 'optional'
+  }
+  return sbom
+}
+
 async function exportSbom(
-  projectRoot: string,
-  packageName: string,
+  memberDir: string,
   groups: '--all-groups' | '--no-default-groups',
 ): Promise<Sbom> {
   let content: string
@@ -61,9 +56,7 @@ async function exportSbom(
       [
         'export',
         '--project',
-        projectRoot,
-        '--package',
-        packageName,
+        memberDir,
         '--format',
         'cyclonedx1.5',
         '--frozen',
@@ -73,7 +66,7 @@ async function exportSbom(
         groups,
       ],
       {
-        cwd: projectRoot,
+        cwd: memberDir,
         signal: constants.abortSignal,
         stdio: 'pipe',
       },
@@ -81,91 +74,87 @@ async function exportSbom(
     content = stdout
   } catch (e) {
     throw new InputError(
-      `Could not export uv package "${packageName}" from ${projectRoot}. Install uv on PATH with CycloneDX export support and check that this package is in the shared uv.lock.`,
+      `Could not export the uv dependency graph for ${memberDir}. Install uv on PATH with CycloneDX export support and check that the directory is a uv project with a uv.lock in it or in its workspace root.`,
       e && typeof e === 'object' && 'stderr' in e
         ? String(e.stderr).trim() || getErrorMessage(e)
         : getErrorMessage(e),
     )
   }
-  return parseSbom(content, packageName)
+  return parseSbom(content, memberDir)
 }
 
-export async function generateUvPackageSboms({
-  outputDir,
-  packageNames,
-  projectRoot,
-}: {
-  outputDir: string
-  packageNames: string[]
-  projectRoot: string
-}): Promise<string[]> {
-  const paths: string[] = []
-  for (const packageName of normalizeUvPackageNames(packageNames)) {
-    logger.info(`Exporting the uv dependency graph for ${packageName}...`)
-    // eslint-disable-next-line no-await-in-loop
-    const sbom = await exportSbom(projectRoot, packageName, '--all-groups')
-    // eslint-disable-next-line no-await-in-loop
-    const productionSbom = await exportSbom(
-      projectRoot,
-      packageName,
-      '--no-default-groups',
-    )
-    // uv can renumber bom-ref values between exports.
-    const productionPackages = new Set(
-      productionSbom.components?.map(componentIdentity),
-    )
-    for (const component of sbom.components ?? []) {
-      component.scope = productionPackages.has(componentIdentity(component))
-        ? 'required'
-        : 'optional'
+function parseSbom(content: string, memberDir: string): Sbom {
+  try {
+    const sbom = JSON.parse(content) as Sbom
+    if (
+      sbom?.bomFormat === 'CycloneDX' &&
+      Array.isArray(sbom.dependencies) &&
+      (sbom.components === undefined || Array.isArray(sbom.components)) &&
+      typeof sbom.metadata?.component?.name === 'string'
+    ) {
+      return sbom
     }
-    // Keep workspace-relative paths in the SBOM relative to the upload root.
-    const filename = path.join(outputDir, `socket-${packageName}-cdx.json`)
-    // eslint-disable-next-line no-await-in-loop
-    await fs.mkdir(outputDir, { recursive: true })
-    // eslint-disable-next-line no-await-in-loop
-    await fs.writeFile(filename, JSON.stringify(sbom))
-    paths.push(filename)
-  }
-  return paths
+  } catch {}
+  throw new InputError(
+    `uv did not return a CycloneDX dependency graph for ${memberDir}. Update uv and try again.`,
+  )
 }
 
-export function normalizeUvPackageNames(values: readonly string[]): string[] {
-  for (const value of values) {
-    if (!/^[a-z\d](?:[a-z\d._-]*[a-z\d])?$/i.test(value)) {
+export async function generateUvMemberSboms(
+  memberDirs: string[],
+): Promise<GeneratedScanFiles> {
+  const sboms: Sbom[] = []
+  for (const memberDir of memberDirs) {
+    logger.info(`Exporting the uv dependency graph for ${memberDir}...`)
+    // eslint-disable-next-line no-await-in-loop
+    sboms.push(await exportMemberSbom(memberDir))
+  }
+  const files: string[] = []
+  const cleanup = async () => {
+    await Promise.all(files.map(file => fs.rm(file, { force: true })))
+  }
+  try {
+    for (let i = 0; i < memberDirs.length; i += 1) {
+      // The SBOM sits where the member's own manifest would, so upload paths
+      // and the reachability target line up with the member directory.
+      const filename = path.join(memberDirs[i]!, UV_SBOM_FILENAME)
+      // eslint-disable-next-line no-await-in-loop
+      await fs.writeFile(filename, JSON.stringify(sboms[i]), { flag: 'wx' })
+      files.push(filename)
+    }
+  } catch (e) {
+    await cleanup()
+    throw e
+  }
+  return { cleanup, files }
+}
+
+export function resolveUvMemberDirs(targets: string[], cwd: string): string[] {
+  const memberDirs = new Set<string>()
+  for (const target of targets) {
+    const memberDir = path.resolve(cwd, target)
+    const relativeDir = path.relative(cwd, memberDir)
+    if (
+      relativeDir === '..' ||
+      relativeDir.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relativeDir) ||
+      !isDirSync(memberDir)
+    ) {
       throw new InputError(
-        '--uv-package expects a project.name from pyproject.toml, such as "api". Repeat the flag to select more packages.',
+        `--uv-members requires every TARGET to be a directory inside --cwd, but got ${target}`,
       )
     }
+    if (!existsSync(path.join(memberDir, 'pyproject.toml'))) {
+      throw new InputError(
+        `--uv-members requires a pyproject.toml in every TARGET, but ${target} has none`,
+      )
+    }
+    if (existsSync(path.join(memberDir, UV_SBOM_FILENAME))) {
+      throw new InputError(
+        `${path.join(target, UV_SBOM_FILENAME)} already exists. Remove it and run the scan again.`,
+      )
+    }
+    memberDirs.add(memberDir)
   }
-  return Array.from(new Set(values.map(normalizePackageName)))
-}
-
-export function resolveUvProjectRoot(targets: string[], cwd: string): string {
-  if (targets.length !== 1) {
-    throw new InputError(
-      '--uv-package requires exactly one uv project root as TARGET',
-    )
-  }
-  const projectRoot = path.resolve(cwd, targets[0]!)
-  const relativeRoot = path.relative(cwd, projectRoot)
-  if (
-    relativeRoot === '..' ||
-    relativeRoot.startsWith(`..${path.sep}`) ||
-    path.isAbsolute(relativeRoot) ||
-    !isDirSync(projectRoot)
-  ) {
-    throw new InputError(
-      '--uv-package requires a target directory inside --cwd',
-    )
-  }
-  if (
-    !existsSync(path.join(projectRoot, 'pyproject.toml')) ||
-    !existsSync(path.join(projectRoot, 'uv.lock'))
-  ) {
-    throw new InputError(
-      '--uv-package requires pyproject.toml and uv.lock in the target directory',
-    )
-  }
-  return projectRoot
+  return Array.from(memberDirs)
 }

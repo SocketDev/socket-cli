@@ -36,15 +36,14 @@ describe('socket scan create', async () => {
   ]
 
   it(
-    'accepts repeated uv package selectors with an implicit root target',
+    'accepts uv member directories as targets',
     { timeout: 30_000 },
     async () => {
       const result = await spawnSocketCli(binCliPath, [
         ...uvBaseArgs,
-        '--uv-package',
-        'workspace-api',
-        '--uv-package',
-        'workspace-other',
+        '--uv-members',
+        'packages/api',
+        'packages/other',
       ])
       expect(result.code).toBe(0)
       expect(result.stdout).toContain('[DryRun]: Bailing now')
@@ -53,47 +52,27 @@ describe('socket scan create', async () => {
 
   it.each([
     {
-      args: ['.', '--uv-package', './packages/api'],
-      error: 'expects a project.name',
+      args: ['--uv-members', 'packages/missing'],
+      error: 'directory inside --cwd',
     },
     {
-      args: ['.', '--uv-package='],
-      error: 'requires a package name after every occurrence',
+      args: ['--uv-members', '..'],
+      error: 'directory inside --cwd',
     },
     {
-      args: ['.', '--uv-package'],
-      error: 'requires a package name after every occurrence',
+      args: ['--uv-members', 'packages'],
+      error: 'requires a pyproject.toml in every TARGET',
     },
     {
-      args: ['.', '--uvPackage'],
-      error: 'requires a package name after every occurrence',
-    },
-    {
-      args: ['.', '--uv-package', 'workspace-api', '--uv-package='],
-      error: 'requires a package name after every occurrence',
-    },
-    {
-      args: ['.', '--uv-package', '--uv-package', 'workspace-api'],
-      error: 'requires a package name after every occurrence',
-    },
-    {
-      args: ['.', '.', '--uv-package', 'workspace-api'],
-      error: 'requires exactly one uv project root',
-    },
-    {
-      args: ['packages/api', '--uv-package', 'workspace-api'],
-      error: 'requires pyproject.toml and uv.lock',
-    },
-    {
-      args: ['.', '--uv-package', 'workspace-api', '--auto-manifest'],
+      args: ['--uv-members', 'packages/api', '--auto-manifest'],
       error: 'cannot be combined',
     },
     {
-      args: ['.', '--uv-package', 'workspace-api', '--dynamic-sbom-inference'],
+      args: ['--uv-members', 'packages/api', '--dynamic-sbom-inference'],
       error: 'cannot be combined',
     },
   ])(
-    'rejects invalid uv package options: $args',
+    'rejects invalid uv member options: $args',
     { timeout: 30_000 },
     async ({ args, error }) => {
       const result = await spawnSocketCli(binCliPath, [...uvBaseArgs, ...args])
@@ -139,7 +118,7 @@ describe('socket scan create', async () => {
             --report-level      Which policy level alerts should be reported (default 'error')
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
-            --uv-package        Scan only the named uv packages from one project root using CycloneDX dependency graphs from its uv.lock. Use project.name from pyproject.toml. Repeat to select more packages. Requires uv on PATH. Includes all extras and dependency groups.
+            --uv-members        Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH.
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
@@ -196,7 +175,7 @@ describe('socket scan create', async () => {
             $ socket scan create
             $ socket scan create ./proj --json
             $ socket scan create --repo=test-repo --branch=main ./package.json
-            $ socket scan create . --uv-package api --uv-package worker"
+            $ socket scan create --uv-members ./packages/api ./packages/worker"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

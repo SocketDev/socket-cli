@@ -5,9 +5,9 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import {
-  normalizeUvPackageNames,
-  resolveUvProjectRoot,
-} from './generate-uv-package-sboms.mts'
+  generateUvMemberSboms,
+  resolveUvMemberDirs,
+} from './generate-uv-member-sboms.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import {
@@ -28,7 +28,6 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { parseReachEcosystems } from '../../utils/ecosystem.mts'
-import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import {
   detectDefaultBranch,
@@ -177,11 +176,11 @@ const generalFlags: MeowFlags = {
       'Set the visibility (true/false) of the scan in your dashboard.',
     shortFlag: 't',
   },
-  uvPackage: {
-    type: 'string',
-    isMultiple: true,
+  uvMembers: {
+    type: 'boolean',
+    default: false,
     description:
-      'Scan only the named uv packages from one project root using CycloneDX dependency graphs from its uv.lock. Use project.name from pyproject.toml. Repeat to select more packages. Requires uv on PATH. Includes all extras and dependency groups.',
+      'Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH.',
   },
 }
 
@@ -252,7 +251,7 @@ async function run(
       $ ${command}
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
-      $ ${command} . --uv-package api --uv-package worker
+      $ ${command} --uv-members ./packages/api ./packages/worker
   `,
   }
 
@@ -344,23 +343,7 @@ async function run(
   )
 
   const dryRun = !!cli.flags['dryRun']
-  const uvPackageValues = (cli.flags['uvPackage'] ?? []) as string[]
-  // Meow drops empty values from repeated string flags.
-  let uvPackageFlagCount = 0
-  for (const arg of argv) {
-    if (arg === '--') {
-      break
-    }
-    if (/^--uv(?:-package|Package)(?:=|$)/.test(arg)) {
-      uvPackageFlagCount++
-    }
-  }
-  if (uvPackageFlagCount > uvPackageValues.length) {
-    throw new InputError(
-      '--uv-package requires a package name after every occurrence.',
-    )
-  }
-  const uvPackages = normalizeUvPackageNames(uvPackageValues)
+  const uvMembers = !!cli.flags['uvMembers']
 
   let {
     autoManifest,
@@ -438,7 +421,7 @@ async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? cli.input : []
 
-  if (!targets.length && !dryRun && interactive && !uvPackages.length) {
+  if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
     updatedInput = true
   }
@@ -448,7 +431,7 @@ async function run(
   // because wrapPrompt swallows non-TypeError errors and returns undefined),
   // default to '.' so that downstream validations don't fail with confusing
   // "At least one TARGET (missing)" errors.
-  if (!targets.length && (!dryRun || uvPackages.length)) {
+  if (!targets.length && !dryRun) {
     targets = ['.']
   }
 
@@ -501,7 +484,7 @@ async function run(
     detected.count > 0 &&
     !autoManifest &&
     !dynamicSbomInference &&
-    !uvPackages.length &&
+    !uvMembers &&
     !hasFactsFile
   ) {
     logger.info(
@@ -599,9 +582,9 @@ async function run(
     },
     {
       nook: true,
-      test: !uvPackages.length || (!autoManifest && !dynamicSbomInference),
+      test: !uvMembers || (!autoManifest && !dynamicSbomInference),
       message:
-        '--uv-package cannot be combined with --auto-manifest or --dynamic-sbom-inference',
+        '--uv-members cannot be combined with --auto-manifest or --dynamic-sbom-inference',
       fail: 'select one source of generated SBOMs',
     },
     {
@@ -666,9 +649,7 @@ async function run(
     return
   }
 
-  if (uvPackages.length) {
-    resolveUvProjectRoot(targets, cwd)
-  }
+  const uvMemberDirs = uvMembers ? resolveUvMemberDirs(targets, cwd) : undefined
 
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
@@ -683,6 +664,9 @@ async function run(
     committers: (committers && String(committers)) || '',
     cwd,
     defaultBranch: Boolean(defaultBranch),
+    generateScanFiles: uvMemberDirs
+      ? () => generateUvMemberSboms(uvMemberDirs)
+      : undefined,
     interactive: Boolean(interactive),
     orgSlug,
     outputKind,
@@ -718,7 +702,6 @@ async function run(
     reportLevel,
     targets,
     tmp: Boolean(tmp),
-    uvPackages,
     workspace: (workspace && String(workspace)) || '',
   })
 }
