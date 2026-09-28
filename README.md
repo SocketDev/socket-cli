@@ -87,7 +87,8 @@ installing packages, or changing the project.
 
 The CLI writes a `socket-uv-cdx.json` SBOM into each target directory, uploads
 only those SBOMs in place of regular manifest discovery, and removes them after
-the scan, including on failure. It stops if that file already exists.
+the scan, including on failure, Ctrl-C, or SIGTERM. It stops if that file
+already exists.
 `--read-only` prepares the SBOMs without uploading them, and `--dry-run`
 validates the options without running uv.
 

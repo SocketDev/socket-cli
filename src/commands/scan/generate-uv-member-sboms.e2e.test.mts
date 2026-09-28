@@ -93,7 +93,7 @@ function assertApiGraph(sbom: Sbom): void {
   }
 }
 
-describe('uv member scans with the real uv binary', () => {
+describe('uv member scans with the real uv binary', { timeout: 30_000 }, () => {
   let apiDir: string
   let projectRoot: string
 

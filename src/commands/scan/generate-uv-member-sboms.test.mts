@@ -88,6 +88,26 @@ describe('uv member SBOM export', () => {
     expect(files.some(existsSync)).toBe(false)
   })
 
+  it.each(['exit', 'SIGHUP', 'SIGINT', 'SIGTERM'])(
+    'removes written SBOMs synchronously on %s',
+    async event => {
+      const once = vi.spyOn(process, 'once')
+      try {
+        const { cleanup, files } = await generateUvMemberSboms([apiDir])
+        const call = once.mock.calls.find(({ 0: name }) => name === event)
+        expect(call).toBeDefined()
+        ;(call![1] as () => void)()
+        expect(files.some(existsSync)).toBe(false)
+        await cleanup()
+        expect(process.listeners(event as NodeJS.Signals)).not.toContain(
+          call![1],
+        )
+      } finally {
+        once.mockRestore()
+      }
+    },
+  )
+
   it('matches package identities across exports without changing edges or metadata', async () => {
     const graph = {
       ...JSON.parse(sbom),

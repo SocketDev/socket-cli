@@ -1,4 +1,4 @@
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync, promises as fs, rmSync } from 'node:fs'
 import path from 'node:path'
 
 import { isDirSync } from '@socketsecurity/registry/lib/fs'
@@ -9,6 +9,8 @@ import constants from '../../constants.mts'
 import { InputError, getErrorMessage } from '../../utils/errors.mts'
 
 import type { GeneratedScanFiles } from './handle-create-new-scan.mts'
+
+const CLEANUP_SIGNALS: NodeJS.Signals[] = ['SIGHUP', 'SIGINT', 'SIGTERM']
 
 const UV_SBOM_FILENAME = 'socket-uv-cdx.json'
 
@@ -110,7 +112,22 @@ export async function generateUvMemberSboms(
     sboms.push(await exportMemberSbom(memberDir))
   }
   const files: string[] = []
+  const removeFilesSync = () => {
+    for (const file of files) {
+      rmSync(file, { force: true })
+    }
+  }
+  // A signalled or exiting scan skips finally blocks, and the bin launcher
+  // SIGKILLs a signalled scan after a short grace period.
+  process.once('exit', removeFilesSync)
+  for (const signal of CLEANUP_SIGNALS) {
+    process.once(signal, removeFilesSync)
+  }
   const cleanup = async () => {
+    process.removeListener('exit', removeFilesSync)
+    for (const signal of CLEANUP_SIGNALS) {
+      process.removeListener(signal, removeFilesSync)
+    }
     await Promise.all(files.map(file => fs.rm(file, { force: true })))
   }
   try {
