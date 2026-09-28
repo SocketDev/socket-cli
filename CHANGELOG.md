@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `socket scan create --uv-package <name>` scans selected uv packages with locked versions and dependency relationships from their shared `uv.lock`. Dependencies used only by dependency groups are marked as development dependencies. Repeat the option to select more packages. Requires uv with CycloneDX export support.
 
+## [1.2.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.2.1) - 2026-09-28
+
+### Changed
+- Updated the Coana CLI to v `15.11.3`.
+
 ## [1.2.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.2.0) - 2026-09-27
 
 ### Added
