@@ -137,7 +137,6 @@ export async function performReachabilityAnalysis(
 
   spinner?.start('Uploading manifests for reachability analysis...')
 
-  // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path
   // NOTE: previously stripped any `.socket.facts.json` from packagePaths
   // here to avoid uploading leftover post-reachability output. With the
   // producer flow (`socket manifest gradle --facts`) those files are

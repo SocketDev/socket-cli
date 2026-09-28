@@ -275,8 +275,6 @@ export async function handleCreateNewScan({
         target: targets[0]!,
       })
 
-    // Explicit package selection supplies the complete scan input. Uploading
-    // discovered manifests alongside these SBOMs would expand the scan again.
     const packagePaths = uvProjectRoot
       ? await generateUvPackageSboms({
           outputDir: manifestTmpDir,
