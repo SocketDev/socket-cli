@@ -40,6 +40,7 @@ type Component = {
   'bom-ref': string
   name: string
   version: string
+  scope?: string
   properties?: Array<{ name: string; value: string }>
 }
 
@@ -73,6 +74,11 @@ function assertApiGraph(sbom: Sbom): void {
     'tzdata@2025.1',
     'workspace-shared@0.1.0',
   ])
+  for (const component of sbom.components) {
+    expect(component.scope).toBe(
+      component.name === 'iniconfig' ? 'optional' : 'required',
+    )
+  }
   expect(
     sbom.components.find(c => c.name === 'tzdata')?.properties,
   ).toContainEqual({
@@ -141,6 +147,48 @@ describe('uv package scans with the real uv binary', () => {
       projectRoot,
     })
     assertApiGraph(JSON.parse(await fs.readFile(paths[0]!, 'utf8')))
+  })
+
+  it('classifies transitive group dependencies and keeps shared production dependencies required', async () => {
+    const manifest = path.join(projectRoot, 'packages/api/pyproject.toml')
+    await fs.writeFile(
+      manifest,
+      (await fs.readFile(manifest, 'utf8'))
+        .replace(
+          'dev = ["iniconfig==2.1.0"]',
+          'dev = ["iniconfig==2.1.0", "idna==3.10", "workspace-other"]\nqa = ["packaging==24.2"]',
+        )
+        .concat(
+          '\nworkspace-other = { workspace = true }\n[tool.uv]\ndefault-groups = ["dev", "qa"]\n',
+        ),
+    )
+    const lockfile = path.join(projectRoot, 'uv.lock')
+    await fs.writeFile(
+      lockfile,
+      (await fs.readFile(lockfile, 'utf8')).replace(
+        'dev = [\n    { name = "iniconfig" },\n]',
+        'dev = [\n    { name = "iniconfig" },\n    { name = "idna" },\n    { name = "workspace-other" },\n]\nqa = [{ name = "packaging" }]',
+      ),
+    )
+    const [filename] = await generateUvPackageSboms({
+      outputDir,
+      packageNames: ['workspace-api'],
+      projectRoot,
+    })
+    const sbom = JSON.parse(await fs.readFile(filename!, 'utf8')) as Sbom
+    expect(
+      Object.fromEntries(sbom.components.map(c => [c.name, c.scope])),
+    ).toEqual({
+      colorama: 'required',
+      idna: 'required',
+      iniconfig: 'optional',
+      packaging: 'optional',
+      sniffio: 'optional',
+      'typing-extensions': 'required',
+      tzdata: 'required',
+      'workspace-other': 'optional',
+      'workspace-shared': 'required',
+    })
   })
 
   it('rejects unknown packages and does not fall back to the workspace root', async () => {

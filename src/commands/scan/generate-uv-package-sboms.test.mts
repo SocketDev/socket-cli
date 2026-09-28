@@ -39,15 +39,22 @@ describe('uv package SBOM export', () => {
     await fs.rm(projectRoot, { recursive: true, force: true })
   })
 
-  it('exports the graph without changing its contents', async () => {
+  it('preserves the graph and marks production dependencies as required', async () => {
     const paths = await generateUvPackageSboms({
       outputDir,
       packageNames: ['api'],
       projectRoot,
     })
     expect(paths).toEqual([path.join(outputDir, 'socket-api-cdx.json')])
-    expect(await fs.readFile(paths[0]!, 'utf8')).toBe(sbom)
-    expect(mockSpawn).toHaveBeenCalledWith(
+    expect(JSON.parse(await fs.readFile(paths[0]!, 'utf8'))).toEqual({
+      ...JSON.parse(sbom),
+      components: [
+        { name: 'idna', version: '3.10', 'bom-ref': 'idna', scope: 'required' },
+      ],
+    })
+    expect(mockSpawn).toHaveBeenCalledTimes(2)
+    expect(mockSpawn).toHaveBeenNthCalledWith(
+      1,
       'uv',
       [
         'export',
@@ -65,7 +72,98 @@ describe('uv package SBOM export', () => {
       ],
       expect.objectContaining({ cwd: projectRoot, stdio: 'pipe' }),
     )
+    expect(mockSpawn).toHaveBeenNthCalledWith(
+      2,
+      'uv',
+      [...mockSpawn.mock.calls[0]![1].slice(0, -1), '--no-default-groups'],
+      expect.objectContaining({ cwd: projectRoot, stdio: 'pipe' }),
+    )
   })
+
+  it('matches package identities across exports without changing edges or metadata', async () => {
+    const graph = {
+      ...JSON.parse(sbom),
+      components: [
+        { name: 'shared', version: '1', 'bom-ref': 'shared-2' },
+        { name: 'library', version: '1', 'bom-ref': 'library-3' },
+        { name: 'library', version: '2', 'bom-ref': 'library-4' },
+        {
+          name: 'library',
+          version: '1',
+          purl: 'pkg:pypi/library@1?repository_url=https://other.example',
+          'bom-ref': 'library-5',
+        },
+      ],
+      dependencies: [
+        { ref: 'api', dependsOn: ['shared-2', 'library-4'] },
+        { ref: 'shared-2', dependsOn: ['library-3'] },
+        { ref: 'library-4', dependsOn: ['library-5'] },
+      ],
+    }
+    mockSpawn
+      .mockResolvedValueOnce({ stdout: JSON.stringify(graph) })
+      .mockResolvedValueOnce({
+        stdout: JSON.stringify({
+          ...JSON.parse(sbom),
+          components: [
+            { name: 'shared', version: '1', 'bom-ref': 'shared-4' },
+            { name: 'library', version: '1', 'bom-ref': 'library-2' },
+          ],
+        }),
+      })
+    const [filename] = await generateUvPackageSboms({
+      outputDir,
+      packageNames: ['api'],
+      projectRoot,
+    })
+    expect(JSON.parse(await fs.readFile(filename!, 'utf8'))).toEqual({
+      ...graph,
+      components: graph.components.map((component, index) => ({
+        ...component,
+        scope: index < 2 ? 'required' : 'optional',
+      })),
+    })
+  })
+
+  it('marks all dependencies as development when the production graph is empty', async () => {
+    mockSpawn.mockResolvedValueOnce({ stdout: sbom }).mockResolvedValueOnce({
+      stdout: JSON.stringify({
+        ...JSON.parse(sbom),
+        components: undefined,
+        dependencies: [],
+      }),
+    })
+    const [filename] = await generateUvPackageSboms({
+      outputDir,
+      packageNames: ['api'],
+      projectRoot,
+    })
+    expect(JSON.parse(await fs.readFile(filename!, 'utf8')).components).toEqual(
+      [{ name: 'idna', version: '3.10', 'bom-ref': 'idna', scope: 'optional' }],
+    )
+  })
+
+  it.each(['invalid graph', 'export failure'])(
+    'does not write an SBOM when the production export has an %s',
+    async failure => {
+      mockSpawn.mockResolvedValueOnce({ stdout: sbom })
+      if (failure === 'invalid graph') {
+        mockSpawn.mockResolvedValueOnce({ stdout: '{}' })
+      } else {
+        mockSpawn.mockRejectedValueOnce(new Error('export failed'))
+      }
+      await expect(
+        generateUvPackageSboms({
+          outputDir,
+          packageNames: ['api'],
+          projectRoot,
+        }),
+      ).rejects.toThrow()
+      await expect(
+        fs.stat(path.join(outputDir, 'socket-api-cdx.json')),
+      ).rejects.toMatchObject({ code: 'ENOENT' })
+    },
+  )
 
   it('normalizes and deduplicates package names', () => {
     expect(normalizeUvPackageNames(['My_API', 'my.api', 'other'])).toEqual([

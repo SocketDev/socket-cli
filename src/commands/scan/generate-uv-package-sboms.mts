@@ -8,30 +8,86 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../../constants.mts'
 import { InputError, getErrorMessage } from '../../utils/errors.mts'
 
+type Component = {
+  name: string
+  version?: string
+  purl?: string
+  scope?: string
+}
+
+type Sbom = {
+  bomFormat?: string
+  components?: Component[]
+  dependencies?: unknown[]
+  metadata?: { component?: { name?: string } }
+}
+
 function normalizePackageName(name: string): string {
   return name.toLowerCase().replaceAll(/[._-]+/g, '-')
 }
 
-function validateSbom(content: string, packageName: string): void {
+function parseSbom(content: string, packageName: string): Sbom {
   try {
-    const sbom = JSON.parse(content) as {
-      bomFormat?: string
-      dependencies?: unknown[]
-      metadata?: { component?: { name?: string } }
-    }
+    const sbom = JSON.parse(content) as Sbom
     const rootName = sbom?.metadata?.component?.name
     if (
       sbom?.bomFormat === 'CycloneDX' &&
       Array.isArray(sbom.dependencies) &&
+      (sbom.components === undefined || Array.isArray(sbom.components)) &&
       typeof rootName === 'string' &&
       normalizePackageName(rootName) === packageName
     ) {
-      return
+      return sbom
     }
   } catch {}
   throw new InputError(
     `uv did not return a CycloneDX dependency graph rooted at "${packageName}". Update uv and try again.`,
   )
+}
+
+function componentIdentity(component: Component): string {
+  return JSON.stringify([component.name, component.version, component.purl])
+}
+
+async function exportSbom(
+  projectRoot: string,
+  packageName: string,
+  groups: '--all-groups' | '--no-default-groups',
+): Promise<Sbom> {
+  let content: string
+  try {
+    const { stdout } = await spawn(
+      'uv',
+      [
+        'export',
+        '--project',
+        projectRoot,
+        '--package',
+        packageName,
+        '--format',
+        'cyclonedx1.5',
+        '--frozen',
+        '--offline',
+        '--no-python-downloads',
+        '--all-extras',
+        groups,
+      ],
+      {
+        cwd: projectRoot,
+        signal: constants.abortSignal,
+        stdio: 'pipe',
+      },
+    )
+    content = stdout
+  } catch (e) {
+    throw new InputError(
+      `Could not export uv package "${packageName}" from ${projectRoot}. Install uv on PATH with CycloneDX export support and check that this package is in the shared uv.lock.`,
+      e && typeof e === 'object' && 'stderr' in e
+        ? String(e.stderr).trim() || getErrorMessage(e)
+        : getErrorMessage(e),
+    )
+  }
+  return parseSbom(content, packageName)
 }
 
 export async function generateUvPackageSboms({
@@ -46,48 +102,29 @@ export async function generateUvPackageSboms({
   const paths: string[] = []
   for (const packageName of normalizeUvPackageNames(packageNames)) {
     logger.info(`Exporting the uv dependency graph for ${packageName}...`)
-    let content: string
-    try {
-      // Export each package separately so each SBOM has its own project root.
-      // eslint-disable-next-line no-await-in-loop
-      const { stdout } = await spawn(
-        'uv',
-        [
-          'export',
-          '--project',
-          projectRoot,
-          '--package',
-          packageName,
-          '--format',
-          'cyclonedx1.5',
-          '--frozen',
-          '--offline',
-          '--no-python-downloads',
-          '--all-extras',
-          '--all-groups',
-        ],
-        {
-          cwd: projectRoot,
-          signal: constants.abortSignal,
-          stdio: 'pipe',
-        },
-      )
-      content = stdout
-    } catch (e) {
-      throw new InputError(
-        `Could not export uv package "${packageName}" from ${projectRoot}. Install uv on PATH with CycloneDX export support and check that this package is in the shared uv.lock.`,
-        e && typeof e === 'object' && 'stderr' in e
-          ? String(e.stderr).trim() || getErrorMessage(e)
-          : getErrorMessage(e),
-      )
+    // eslint-disable-next-line no-await-in-loop
+    const sbom = await exportSbom(projectRoot, packageName, '--all-groups')
+    // eslint-disable-next-line no-await-in-loop
+    const productionSbom = await exportSbom(
+      projectRoot,
+      packageName,
+      '--no-default-groups',
+    )
+    // uv can renumber bom-ref values between exports.
+    const productionPackages = new Set(
+      productionSbom.components?.map(componentIdentity),
+    )
+    for (const component of sbom.components ?? []) {
+      component.scope = productionPackages.has(componentIdentity(component))
+        ? 'required'
+        : 'optional'
     }
-    validateSbom(content, packageName)
     // Keep workspace-relative paths in the SBOM relative to the upload root.
     const filename = path.join(outputDir, `socket-${packageName}-cdx.json`)
     // eslint-disable-next-line no-await-in-loop
     await fs.mkdir(outputDir, { recursive: true })
     // eslint-disable-next-line no-await-in-loop
-    await fs.writeFile(filename, content)
+    await fs.writeFile(filename, JSON.stringify(sbom))
     paths.push(filename)
   }
   return paths

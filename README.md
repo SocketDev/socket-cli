@@ -84,6 +84,7 @@ socket scan create --cwd ./python-workspace . --uv-package api
 This mode requires uv on PATH with support for `uv export --format cyclonedx1.5`.
 It exports a separate CycloneDX SBOM for each package, including transitive
 and local workspace dependencies, all extras, and all dependency groups.
+Dependencies used only by dependency groups are marked as development dependencies.
 The export runs offline with `--frozen`, so it uses the existing lockfile
 without resolving newer versions, installing packages, or changing the project.
 uv currently treats CycloneDX export as a preview feature.
