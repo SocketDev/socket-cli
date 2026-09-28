@@ -4,6 +4,10 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
+import {
+  normalizeUvPackageNames,
+  resolveUvProjectRoot,
+} from './generate-uv-package-sboms.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import {
@@ -24,6 +28,7 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { parseReachEcosystems } from '../../utils/ecosystem.mts'
+import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import {
   detectDefaultBranch,
@@ -172,6 +177,12 @@ const generalFlags: MeowFlags = {
       'Set the visibility (true/false) of the scan in your dashboard.',
     shortFlag: 't',
   },
+  uvPackage: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'Scan only the named uv packages from one project root using CycloneDX dependency graphs from its uv.lock. Use project.name from pyproject.toml. Repeat to select more packages. Requires uv on PATH. Includes all extras and dependency groups.',
+  },
 }
 
 export const cmdScanCreate = {
@@ -241,6 +252,7 @@ async function run(
       $ ${command}
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
+      $ ${command} . --uv-package api --uv-package worker
   `,
   }
 
@@ -332,6 +344,23 @@ async function run(
   )
 
   const dryRun = !!cli.flags['dryRun']
+  const uvPackageValues = (cli.flags['uvPackage'] ?? []) as string[]
+  // Meow drops empty values from repeated string flags.
+  let uvPackageFlagCount = 0
+  for (const arg of argv) {
+    if (arg === '--') {
+      break
+    }
+    if (/^--uv(?:-package|Package)(?:=|$)/.test(arg)) {
+      uvPackageFlagCount++
+    }
+  }
+  if (uvPackageFlagCount > uvPackageValues.length) {
+    throw new InputError(
+      '--uv-package requires a package name after every occurrence.',
+    )
+  }
+  const uvPackages = normalizeUvPackageNames(uvPackageValues)
 
   let {
     autoManifest,
@@ -409,7 +438,7 @@ async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? cli.input : []
 
-  if (!targets.length && !dryRun && interactive) {
+  if (!targets.length && !dryRun && interactive && !uvPackages.length) {
     targets = await suggestTarget()
     updatedInput = true
   }
@@ -419,7 +448,7 @@ async function run(
   // because wrapPrompt swallows non-TypeError errors and returns undefined),
   // default to '.' so that downstream validations don't fail with confusing
   // "At least one TARGET (missing)" errors.
-  if (!targets.length && !dryRun) {
+  if (!targets.length && (!dryRun || uvPackages.length)) {
     targets = ['.']
   }
 
@@ -472,6 +501,7 @@ async function run(
     detected.count > 0 &&
     !autoManifest &&
     !dynamicSbomInference &&
+    !uvPackages.length &&
     !hasFactsFile
   ) {
     logger.info(
@@ -569,6 +599,13 @@ async function run(
     },
     {
       nook: true,
+      test: !uvPackages.length || (!autoManifest && !dynamicSbomInference),
+      message:
+        '--uv-package cannot be combined with --auto-manifest or --dynamic-sbom-inference',
+      fail: 'select one source of generated SBOMs',
+    },
+    {
+      nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
@@ -629,6 +666,10 @@ async function run(
     return
   }
 
+  if (uvPackages.length) {
+    resolveUvProjectRoot(targets, cwd)
+  }
+
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
     return
@@ -677,6 +718,7 @@ async function run(
     reportLevel,
     targets,
     tmp: Boolean(tmp),
+    uvPackages,
     workspace: (workspace && String(workspace)) || '',
   })
 }

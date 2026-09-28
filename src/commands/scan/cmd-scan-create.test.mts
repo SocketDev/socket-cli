@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { describe, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -16,6 +16,83 @@ const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/create')
 
 describe('socket scan create', async () => {
   const { binCliPath } = constants
+
+  const uvFixture = path.join(testPath, 'fixtures/commands/scan/uv-workspace')
+  const uvBaseArgs = [
+    'scan',
+    'create',
+    '--cwd',
+    uvFixture,
+    '--org',
+    'test-org',
+    '--repo',
+    'test-repo',
+    '--branch',
+    'main',
+    '--dry-run',
+    '--no-interactive',
+    FLAG_CONFIG,
+    '{}',
+  ]
+
+  it('accepts repeated uv package selectors with an implicit root target', async () => {
+    const result = await spawnSocketCli(binCliPath, [
+      ...uvBaseArgs,
+      '--uv-package',
+      'workspace-api',
+      '--uv-package',
+      'workspace-other',
+    ])
+    expect(result.code).toBe(0)
+    expect(result.stdout).toContain('[DryRun]: Bailing now')
+  })
+
+  it.each([
+    {
+      args: ['.', '--uv-package', './packages/api'],
+      error: 'expects a project.name',
+    },
+    {
+      args: ['.', '--uv-package='],
+      error: 'requires a package name after every occurrence',
+    },
+    {
+      args: ['.', '--uv-package'],
+      error: 'requires a package name after every occurrence',
+    },
+    {
+      args: ['.', '--uvPackage'],
+      error: 'requires a package name after every occurrence',
+    },
+    {
+      args: ['.', '--uv-package', 'workspace-api', '--uv-package='],
+      error: 'requires a package name after every occurrence',
+    },
+    {
+      args: ['.', '--uv-package', '--uv-package', 'workspace-api'],
+      error: 'requires a package name after every occurrence',
+    },
+    {
+      args: ['.', '.', '--uv-package', 'workspace-api'],
+      error: 'requires exactly one uv project root',
+    },
+    {
+      args: ['packages/api', '--uv-package', 'workspace-api'],
+      error: 'requires pyproject.toml and uv.lock',
+    },
+    {
+      args: ['.', '--uv-package', 'workspace-api', '--auto-manifest'],
+      error: 'cannot be combined',
+    },
+    {
+      args: ['.', '--uv-package', 'workspace-api', '--dynamic-sbom-inference'],
+      error: 'cannot be combined',
+    },
+  ])('rejects invalid uv package options: $args', async ({ args, error }) => {
+    const result = await spawnSocketCli(binCliPath, [...uvBaseArgs, ...args])
+    expect(result.code).not.toBe(0)
+    expect(result.stdout + result.stderr).toContain(error)
+  })
 
   cmdit(
     ['scan', 'create', FLAG_HELP, FLAG_CONFIG, '{}'],
@@ -54,6 +131,7 @@ describe('socket scan create', async () => {
             --report-level      Which policy level alerts should be reported (default 'error')
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
+            --uv-package        Scan only the named uv packages from one project root using CycloneDX dependency graphs from its uv.lock. Use project.name from pyproject.toml. Repeat to select more packages. Requires uv on PATH. Includes all extras and dependency groups.
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
@@ -109,7 +187,8 @@ describe('socket scan create', async () => {
           Examples
             $ socket scan create
             $ socket scan create ./proj --json
-            $ socket scan create --repo=test-repo --branch=main ./package.json"
+            $ socket scan create --repo=test-repo --branch=main ./package.json
+            $ socket scan create . --uv-package api --uv-package worker"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

@@ -1,0 +1,5 @@
+[project]
+name = "workspace-other"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["sniffio==1.3.1"]

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `socket scan create --uv-package <name>` scans selected uv packages with locked versions and dependency relationships from their shared `uv.lock`. Repeat the option to select more packages. Requires uv with CycloneDX export support.
+
 ## [1.2.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.2.0) - 2026-09-27
 
 ### Added

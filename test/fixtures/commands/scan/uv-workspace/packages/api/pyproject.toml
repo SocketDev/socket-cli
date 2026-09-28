@@ -1,0 +1,11 @@
+[project]
+name = "workspace-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["workspace-shared", "idna==3.10"]
+[project.optional-dependencies]
+color = ["colorama==0.4.6"]
+[dependency-groups]
+dev = ["iniconfig==2.1.0"]
+[tool.uv.sources]
+workspace-shared = { workspace = true }

@@ -54,6 +54,8 @@ export type ReachabilityAnalysisOptions = {
   outputKind?: OutputKind | undefined
   outputPath?: string | undefined
   packagePaths: string[]
+  // Generated SBOMs can live outside the source tree during an upload.
+  manifestUploadRoot?: string | undefined
   reachabilityOptions: ReachabilityOptions
   // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
   // reuses these paths instead of re-resolving the build.
@@ -74,6 +76,7 @@ export async function performReachabilityAnalysis(
   const {
     branchName,
     cwd = process.cwd(),
+    manifestUploadRoot,
     orgSlug,
     outputKind = 'text',
     outputPath,
@@ -143,7 +146,7 @@ export async function performReachabilityAnalysis(
   // deletion in handle-create-new-scan.mts.
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, packagePaths, {
-      pathsRelativeTo: path.resolve(cwd, analysisTarget),
+      pathsRelativeTo: manifestUploadRoot ?? path.resolve(cwd, analysisTarget),
     }),
     {
       description: 'upload manifests',

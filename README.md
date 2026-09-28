@@ -63,6 +63,44 @@ All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
 
+### Scanning selected uv packages
+
+Use `--uv-package` to scan specific packages from a shared `uv.lock`, with
+locked versions and dependency relationships preserved:
+
+```sh
+socket scan create . --uv-package api --uv-package worker
+```
+
+Each value is a package's `project.name` from `pyproject.toml`, rather than a
+directory path. Repeat the option to select more packages. TARGET must be one
+project root containing both `pyproject.toml` and `uv.lock`. Use `--cwd` to run
+from another directory:
+
+```sh
+socket scan create --cwd ./python-workspace . --uv-package api
+```
+
+This mode requires uv on PATH with support for `uv export --format cyclonedx1.5`.
+It exports a separate CycloneDX SBOM for each package, including transitive
+and local workspace dependencies, all extras, and all dependency groups.
+The export runs offline with `--frozen`, so it uses the existing lockfile
+without resolving newer versions, installing packages, or changing the project.
+uv currently treats CycloneDX export as a preview feature.
+
+Only the generated SBOMs are uploaded. The target supplies workspace context,
+and package selection replaces regular manifest discovery and its file ignore
+patterns. Unrelated manifests and the shared lockfile are not added to the scan.
+Temporary SBOMs are removed after the scan, including on failure. Export errors
+stop the scan. `--read-only` prepares the SBOMs without uploading them, and
+`--dry-run` validates the options without running uv.
+
+You can combine this option with `--reach`. The same scoped SBOMs are used for
+its manifest upload, while source analysis runs against TARGET and respects
+reachability exclusions. `--uv-package` cannot be combined with
+`--auto-manifest` or `--dynamic-sbom-inference`. Scans without `--uv-package`
+keep their usual manifest discovery behavior.
+
 ### Reachability analysis
 
 Socket reachability analysis comes in three forms:
