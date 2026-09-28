@@ -220,29 +220,6 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
     expect(args[args.indexOf('--manifests-tar-hash') + 1]).toBe(TEST_TAR_HASH)
   })
 
-  it('uploads generated SBOMs relative to their staging root while analyzing the original target', async () => {
-    const uploadManifestFiles = vi.fn()
-    mockSetupSdk.mockResolvedValueOnce({
-      ok: true,
-      data: { uploadManifestFiles },
-    })
-    const packagePaths = ['/staged/socket-api-cdx.json']
-    await performReachabilityAnalysis({
-      cwd: scanCwd,
-      manifestUploadRoot: '/staged',
-      orgSlug: TEST_ORG_SLUG,
-      packagePaths,
-      reachabilityOptions: makeReachabilityOptions(),
-      target: scanCwd,
-    })
-    expect(uploadManifestFiles).toHaveBeenCalledWith(
-      TEST_ORG_SLUG,
-      packagePaths,
-      { pathsRelativeTo: '/staged' },
-    )
-    expect(mockSpawnCoanaDlx.mock.calls[0]?.[2].cwd).toBe(scanCwd)
-  })
-
   it('fails without spawning Coana when the upload returns no tar hash', async () => {
     mockHandleApiCall.mockResolvedValueOnce({ ok: true, data: {} } as never)
 

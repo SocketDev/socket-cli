@@ -24,7 +24,6 @@ const {
   mockFindSocketYmlSync,
   mockGenerateAutoManifest,
   mockGenerateRecursiveManifests,
-  mockGenerateUvPackageSboms,
   mockGetPackageFilesForScan,
   mockPerformReachabilityAnalysis,
   mockReadOrDefaultSocketJson,
@@ -34,7 +33,6 @@ const {
   mockFindSocketYmlSync: vi.fn(),
   mockGenerateAutoManifest: vi.fn(),
   mockGenerateRecursiveManifests: vi.fn(),
-  mockGenerateUvPackageSboms: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
   mockPerformReachabilityAnalysis: vi.fn(),
   mockReadOrDefaultSocketJson: vi.fn(),
@@ -50,11 +48,6 @@ vi.mock('./fetch-supported-scan-file-names.mts', () => ({
 
 vi.mock('./finalize-tier1-scan.mts', () => ({
   finalizeTier1Scan: vi.fn(),
-}))
-
-vi.mock('./generate-uv-package-sboms.mts', () => ({
-  generateUvPackageSboms: mockGenerateUvPackageSboms,
-  resolveUvProjectRoot: () => '/repo',
 }))
 
 vi.mock('./handle-scan-report.mts', () => ({
@@ -162,17 +155,6 @@ describe('handleCreateNewScan excludePaths', () => {
     mockGenerateAutoManifest.mockResolvedValue({ generatedFiles: [] })
     mockGenerateRecursiveManifests.mockResolvedValue([])
     mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
-    mockGenerateUvPackageSboms.mockImplementation(
-      async ({ outputDir, packageNames }) =>
-        packageNames.map((name: string) => {
-          const filename = path.join(outputDir, `socket-${name}-cdx.json`)
-          writeFileSync(
-            filename,
-            JSON.stringify({ bomFormat: 'CycloneDX', package: name }),
-          )
-          return filename
-        }),
-    )
     mockPerformReachabilityAnalysis.mockResolvedValue({
       data: {
         reachabilityReport: '.socket.facts.json',
@@ -181,144 +163,6 @@ describe('handleCreateNewScan excludePaths', () => {
       ok: true,
     })
     mockReadOrDefaultSocketJson.mockReturnValue({})
-  })
-
-  it('uses only selected uv SBOMs and cleans them up after uploading', async () => {
-    let uploadRoot = ''
-    mockGetPackageFilesForScan.mockResolvedValue([
-      '/repo/uv.lock',
-      '/repo/pyproject.toml',
-    ])
-    mockFetchCreateOrgFullScan.mockImplementationOnce(
-      async (paths, _org, _config, options) => {
-        uploadRoot = options.cwd
-        expect(paths).toEqual([
-          path.join(uploadRoot, 'socket-api-cdx.json'),
-          path.join(uploadRoot, 'socket-worker-cdx.json'),
-        ])
-        expect(JSON.parse(readFileSync(paths[0], 'utf8')).package).toBe('api')
-        return { ok: true, data: { id: 'scan-id' } }
-      },
-    )
-    await handleCreateNewScan(createConfig({ uvPackages: ['api', 'worker'] }))
-    expect(mockGenerateUvPackageSboms).toHaveBeenCalledWith({
-      outputDir: uploadRoot,
-      packageNames: ['api', 'worker'],
-      projectRoot: '/repo',
-    })
-    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
-    expect(existsSync(uploadRoot)).toBe(false)
-  })
-
-  it('does not export uv packages unless explicitly requested', async () => {
-    mockGetPackageFilesForScan.mockResolvedValueOnce([
-      '/repo/packages/api/pyproject.toml',
-    ])
-    await handleCreateNewScan(createConfig())
-    expect(mockGenerateUvPackageSboms).not.toHaveBeenCalled()
-    expect(mockFetchCreateOrgFullScan.mock.calls[0]?.[0]).toEqual([
-      '/repo/packages/api/pyproject.toml',
-    ])
-  })
-
-  it('prepares and cleans uv SBOMs in read-only mode without uploading', async () => {
-    await handleCreateNewScan(
-      createConfig({ readOnly: true, uvPackages: ['api'] }),
-    )
-    expect(mockGenerateUvPackageSboms).toHaveBeenCalledOnce()
-    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
-    expect(
-      existsSync(mockGenerateUvPackageSboms.mock.calls[0]?.[0].outputDir),
-    ).toBe(false)
-  })
-
-  it('cleans partial uv output and does not upload if any export fails', async () => {
-    let outputDir = ''
-    mockGenerateUvPackageSboms.mockImplementationOnce(async options => {
-      outputDir = options.outputDir
-      writeFileSync(path.join(outputDir, 'partial.json'), '{}')
-      throw new Error('second package failed')
-    })
-    await expect(
-      handleCreateNewScan(createConfig({ uvPackages: ['api', 'worker'] })),
-    ).rejects.toThrow('second package failed')
-    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
-    expect(existsSync(outputDir)).toBe(false)
-  })
-
-  it('cleans uv output when the upload throws', async () => {
-    mockFetchCreateOrgFullScan.mockRejectedValueOnce(new Error('upload failed'))
-    await expect(
-      handleCreateNewScan(createConfig({ uvPackages: ['api'] })),
-    ).rejects.toThrow('upload failed')
-    expect(
-      existsSync(mockGenerateUvPackageSboms.mock.calls[0]?.[0].outputDir),
-    ).toBe(false)
-  })
-
-  it('rejects other generators in uv package mode before generating files', async () => {
-    await expect(
-      handleCreateNewScan(
-        createConfig({ autoManifest: true, uvPackages: ['api'] }),
-      ),
-    ).rejects.toThrow('cannot be combined')
-    expect(mockGenerateAutoManifest).not.toHaveBeenCalled()
-    expect(mockGenerateUvPackageSboms).not.toHaveBeenCalled()
-  })
-
-  it('uses the same uv SBOMs for reachability and stages its report for the final scan', async () => {
-    const cwd = mkdtempSync(path.join(tmpdir(), 'socket-uv-reach-'))
-    try {
-      const config = createConfig({ cwd, targets: [cwd], uvPackages: ['api'] })
-      config.reach.runReachabilityAnalysis = true
-      mockPerformReachabilityAnalysis.mockImplementationOnce(async options => {
-        expect(options.cwd).toBe(cwd)
-        expect(options.target).toBe(cwd)
-        expect(options.packagePaths).toEqual([
-          path.join(options.manifestUploadRoot, 'socket-api-cdx.json'),
-        ])
-        writeFileSync(path.join(cwd, '.socket.facts.json'), '{"components":[]}')
-        return {
-          ok: true,
-          data: {
-            reachabilityReport: '.socket.facts.json',
-            tier1ReachabilityScanId: 'tier1-id',
-          },
-        }
-      })
-      mockFetchCreateOrgFullScan.mockImplementationOnce(
-        async (paths, _org, _config, options) => {
-          expect(paths).toEqual([
-            path.join(options.cwd, 'socket-api-cdx.json'),
-            path.join(options.cwd, '.socket.facts.json.br'),
-          ])
-          expect(paths.every(existsSync)).toBe(true)
-          return { ok: true, data: { id: 'scan-id' } }
-        },
-      )
-      await handleCreateNewScan(config)
-      expect(
-        existsSync(mockGenerateUvPackageSboms.mock.calls[0]?.[0].outputDir),
-      ).toBe(false)
-    } finally {
-      rmSync(cwd, { recursive: true, force: true })
-    }
-  })
-
-  it('keeps the scoped uv SBOMs when reachability falls back to a regular scan', async () => {
-    const config = createConfig({ uvPackages: ['api'] })
-    config.reach.runReachabilityAnalysis = true
-    config.reach.reachFallbackToRegularScan = true
-    mockPerformReachabilityAnalysis.mockResolvedValueOnce({
-      ok: false,
-      message: 'analysis failed',
-    })
-    await handleCreateNewScan(config)
-    const uploadRoot = mockGenerateUvPackageSboms.mock.calls[0]?.[0].outputDir
-    expect(mockFetchCreateOrgFullScan.mock.calls[0]?.[0]).toEqual([
-      path.join(uploadRoot, 'socket-api-cdx.json'),
-    ])
-    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
   })
 
   it('includes generated auto-manifest files in SCA discovery targets', async () => {
