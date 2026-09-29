@@ -54,7 +54,11 @@ export function assembleFacts(
   const { directByRoot, finalNodes } = mergeByCoordinate(perRoot)
 
   const tool = (parsed.tool || 'gradle') as SocketFactsSbomMetadata['tool']
-  const components = buildComponents(finalNodes)
+  const projectsByGav = new Map<string, RawProject>()
+  for (const p of parsed.projects.values()) {
+    projectsByGav.set(gav(p.group, p.name, p.version), p)
+  }
+  const components = buildComponents(finalNodes, projectsByGav)
   const projects =
     opts.emitProjects === false
       ? []
@@ -77,6 +81,7 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
+      projectsByGav,
       perRoot,
       fileExists,
     ),
@@ -173,6 +178,7 @@ function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
 
 function buildComponents(
   finalNodes: Map<string, MergedNode>,
+  projectsByGav: Map<string, RawProject>,
 ): SocketFactsSbomComponent[] {
   return [...finalNodes.keys()].sort().map(id => {
     const fn = finalNodes.get(id)!
@@ -199,6 +205,9 @@ function buildComponents(
     }
     if (!fn.prod) {
       comp.dev = true
+    }
+    if (projectsByGav.has(gav(c.group, c.name, c.version ?? ''))) {
+      comp.firstParty = true
     }
     if (fn.children.size) {
       comp.dependencies = [...fn.children].sort()
@@ -303,19 +312,10 @@ function buildClasspathByProject(
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
+  projectsByGav: Map<string, RawProject>,
   perRoot: Map<string, PerRoot>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
-  const projectsByGav = new Map<
-    string,
-    { sources: string[]; targets: string[] }
-  >()
-  for (const p of projects) {
-    projectsByGav.set(gav(p.group, p.name, p.version), {
-      sources: p.sources,
-      targets: p.targets,
-    })
-  }
   const targetsByCoord = new Map<string, string[]>()
   const targetsByGav = new Map<string, string[]>()
   const sourcesByCoord = new Map<string, string[]>()
