@@ -27,6 +27,8 @@ export type SocketFactsSbomComponent = AnyPURL & {
   id: string
   direct?: boolean | undefined
   dev?: boolean | undefined
+  // A module of the scanned build itself (same GAV as a projects[] entry).
+  firstParty?: boolean | undefined
   dependencies?: string[] | undefined
 }
 

@@ -116,4 +116,27 @@ describe('records → assemble → sidecar', () => {
       'g:lib:jar:1',
     ])
   })
+  it('marks only components with the exact coordinate of a build module as firstParty', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\t:a\tg\ta\t1.0-SNAPSHOT\ta',
+      'project\t:b\tg\tb\t1.0-SNAPSHOT\tb',
+      'root\tr1\t:a\truntimeClasspath\t1',
+      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t1',
+      'root\tr2\t:b\truntimeClasspath\t1',
+      'node\tr2\tg:a:jar:1.0-SNAPSHOT\tg\ta\t1.0-SNAPSHOT\tjar\t\t1',
+      'node\tr2\tg:ext:jar:2\tg\text\t2\tjar\t\t0',
+      'edge\tr2\tg:a:jar:1.0-SNAPSHOT\tg:ext:jar:2',
+      'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(facts.components.map(c => [c.id, c.firstParty ?? 'absent'])).toEqual(
+      [
+        ['g:a:jar:1.0-SNAPSHOT', true],
+        ['g:b:jar:0.9', 'absent'],
+        ['g:ext:jar:2', 'absent'],
+      ],
+    )
+  })
 })
