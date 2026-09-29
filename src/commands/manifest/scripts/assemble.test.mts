@@ -129,7 +129,7 @@ describe('records → assemble → sidecar', () => {
       'edge\tr2\tg:a:jar:1.0-SNAPSHOT\tg:ext:jar:2',
       'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1',
     ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records))
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
 
     expect(facts.components.map(c => [c.id, c.firstParty ?? 'absent'])).toEqual(
       [
@@ -138,5 +138,15 @@ describe('records → assemble → sidecar', () => {
         ['g:ext:jar:2', 'absent'],
       ],
     )
+
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
+    const bucket = serializeSidecar(acc)['/abs/.socket.facts.json']!
+    expect(
+      bucket.components.find(c => c.id === 'g:a:jar:1.0-SNAPSHOT')?.firstParty,
+    ).toBe(true)
+    for (const project of bucket.projects) {
+      expect(project).not.toHaveProperty('firstParty')
+    }
   })
 })
