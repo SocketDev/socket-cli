@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Updated the Coana CLI to v `15.11.5`.
+
 ### Fixed
 - `socket fix` pull requests now include every file a fix changes, such as `package.json` override bumps, and work when run from a subdirectory of the repository.
 
