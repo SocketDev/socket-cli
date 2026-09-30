@@ -511,16 +511,19 @@ export async function gitUnstagedModifiedFiles(
 ): Promise<CResult<string[]>> {
   const stdioPipeOptions: SpawnOptions = { cwd }
   try {
+    // --relative matches the cwd-relative paths of `git ls-files` and
+    // `git add`; plain `git diff` prints them relative to the repo root.
     const gitDiffResult = await spawn(
       'git',
-      ['diff', '--name-only'],
+      ['diff', '--name-only', '--relative', '-z'],
       stdioPipeOptions,
     )
-    const changedFilesDetails = gitDiffResult.stdout
-    const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,
-      data: relPaths.map(p => normalizePath(p)),
+      data: gitDiffResult.stdout
+        .split('\0')
+        .filter(Boolean)
+        .map(p => normalizePath(p)),
     }
   } catch (e) {
     debugFn('error', 'Failed to get unstaged modified files')
@@ -539,13 +542,13 @@ export async function gitUntrackedFiles(
   try {
     const result = await spawn(
       'git',
-      ['ls-files', '--others', '--exclude-standard'],
+      ['ls-files', '--others', '--exclude-standard', '-z'],
       { cwd },
     )
     return {
       ok: true,
       data: result.stdout
-        .split('\n')
+        .split('\0')
         .filter(Boolean)
         .map(p => normalizePath(p)),
     }

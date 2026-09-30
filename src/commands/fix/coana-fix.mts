@@ -198,6 +198,47 @@ function isFactsFile(filepath: string): boolean {
   return path.basename(filepath).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON
 }
 
+type GitWorkingTreeChanges = {
+  modified: string[]
+  untracked: string[]
+}
+
+async function gitWorkingTreeChanges(
+  cwd: string,
+): Promise<GitWorkingTreeChanges> {
+  const { 0: modifiedCResult, 1: untrackedCResult } = await Promise.all([
+    gitUnstagedModifiedFiles(cwd),
+    gitUntrackedFiles(cwd),
+  ])
+  return {
+    modified: modifiedCResult.ok ? modifiedCResult.data : [],
+    untracked: untrackedCResult.ok ? untrackedCResult.data : [],
+  }
+}
+
+// Coana's modifiedFiles may under-report, so every tracked file the fix
+// changes is committed. Untracked files also need coana or a manifest name
+// to vouch for them, keeping build output in repos without a .gitignore out.
+function selectFixedFiles(
+  before: GitWorkingTreeChanges,
+  after: GitWorkingTreeChanges,
+  writtenFiles: Set<string> | undefined,
+  scanBaseNames: Set<string>,
+): string[] {
+  const dirtyBefore = new Set([...before.modified, ...before.untracked])
+  const isFromFix = (relPath: string) =>
+    !!writtenFiles?.has(relPath) || !dirtyBefore.has(relPath)
+  return [
+    ...after.modified.filter(isFromFix),
+    ...after.untracked.filter(
+      relPath =>
+        isFromFix(relPath) &&
+        (!!writtenFiles?.has(relPath) ||
+          scanBaseNames.has(path.basename(relPath))),
+    ),
+  ]
+}
+
 function readWrittenFiles(outputFile: string): Set<string> | undefined {
   const result = readJsonSync(outputFile, { throws: false }) as
     | { modifiedFiles?: unknown }
@@ -622,6 +663,9 @@ async function coanaFixWithFacts(
     // eslint-disable-next-line no-await-in-loop
     await factsSlot?.generated?.restore()
 
+    // eslint-disable-next-line no-await-in-loop
+    const changesBefore = await gitWorkingTreeChanges(cwd)
+
     // Create a temporary file for Coana output.
     const tmpDir = os.tmpdir()
     const tmpFile = path.join(tmpDir, `socket-fix-${ghsaId}-${Date.now()}.json`)
@@ -688,24 +732,13 @@ async function coanaFixWithFacts(
       continue ghsaLoop
     }
 
-    // Check for modified files after applying the fix.
-    // eslint-disable-next-line no-await-in-loop
-    const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-    // Build scripts the fix edits need not be manifests the scan uploads,
-    // and files it creates are untracked.
-    const writtenFiles = readWrittenFiles(tmpFile)
-    // eslint-disable-next-line no-await-in-loop
-    const untrackedCResult = await gitUntrackedFiles(cwd)
-    const modifiedFiles = writtenFiles
-      ? [
-          ...(unstagedCResult.ok ? unstagedCResult.data : []),
-          ...(untrackedCResult.ok ? untrackedCResult.data : []),
-        ].filter(relPath => writtenFiles.has(relPath))
-      : unstagedCResult.ok
-        ? unstagedCResult.data.filter(relPath =>
-            scanBaseNames.has(path.basename(relPath)),
-          )
-        : []
+    const modifiedFiles = selectFixedFiles(
+      changesBefore,
+      // eslint-disable-next-line no-await-in-loop
+      await gitWorkingTreeChanges(cwd),
+      readWrittenFiles(tmpFile),
+      scanBaseNames,
+    )
 
     if (!modifiedFiles.length) {
       debugFn('notice', `skip: no changes for ${ghsaId}`)
