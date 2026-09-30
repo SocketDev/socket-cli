@@ -232,7 +232,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
       })
       mockGitUnstagedModifiedFiles.mockResolvedValue({
         ok: true,
-        data: ['app/build.gradle', 'gradle/versions.gradle', 'README.md'],
+        data: ['app/build.gradle', 'gradle/versions.gradle'],
       })
 
       await coanaFix({ ...baseConfig, ghsas: ['GHSA-1111-1111-1111'] })

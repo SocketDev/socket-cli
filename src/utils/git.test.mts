@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -6,7 +6,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { getCiBranch, gitBranch } from './git.mts'
+import {
+  getCiBranch,
+  gitBranch,
+  gitCommit,
+  gitUnstagedModifiedFiles,
+  gitUntrackedFiles,
+} from './git.mts'
 
 // GitHub Actions sets these in its own runs, so they have to be cleared for
 // the tests to exercise anything other than the CI job they run inside.
@@ -136,5 +142,63 @@ describe('gitBranch', () => {
     process.env['GITHUB_REF_NAME'] = 'main'
     process.env['GITHUB_REF_TYPE'] = 'branch'
     expect(await gitBranch(repoPath)).toBe('feature-branch')
+  })
+})
+
+describe('working tree changes below the repo root', () => {
+  let repoPath = ''
+  let subPath = ''
+
+  beforeEach(async () => {
+    repoPath = await createTempRepo()
+    subPath = path.join(repoPath, 'sub')
+    mkdirSync(subPath)
+    writeFileSync(path.join(subPath, 'package.json'), '{}\n')
+    writeFileSync(path.join(repoPath, 'root.json'), '{}\n')
+    await spawn('git', ['add', '.'], { cwd: repoPath })
+    await spawn('git', ['commit', '-m', 'Add manifests'], { cwd: repoPath })
+    writeFileSync(path.join(subPath, 'package.json'), '{"a":1}\n')
+    writeFileSync(path.join(repoPath, 'root.json'), '{"a":1}\n')
+    writeFileSync(path.join(subPath, 'new file.txt'), '\n')
+  })
+
+  afterEach(() => {
+    rmSync(repoPath, { force: true, recursive: true })
+  })
+
+  it('lists modified and untracked files relative to cwd', async () => {
+    expect(await gitUnstagedModifiedFiles(subPath)).toEqual({
+      ok: true,
+      data: ['package.json'],
+    })
+    expect(await gitUntrackedFiles(subPath)).toEqual({
+      ok: true,
+      data: ['new file.txt'],
+    })
+  })
+
+  it('commits the listed paths from cwd', async () => {
+    const modified = await gitUnstagedModifiedFiles(subPath)
+    const untracked = await gitUntrackedFiles(subPath)
+    const filepaths = [
+      ...(modified.ok ? modified.data : []),
+      ...(untracked.ok ? untracked.data : []),
+    ]
+    expect(
+      await gitCommit('Fix', filepaths, {
+        cwd: subPath,
+        email: 'test@socket.dev',
+        user: 'Socket Test',
+      }),
+    ).toBe(true)
+    const committed = (
+      await spawn('git', ['show', '--name-only', '--format=', 'HEAD'], {
+        cwd: repoPath,
+      })
+    ).stdout
+    expect(committed.split('\n')).toEqual([
+      'sub/new file.txt',
+      'sub/package.json',
+    ])
   })
 })
