@@ -216,9 +216,8 @@ async function gitWorkingTreeChanges(
   }
 }
 
-// Coana's modifiedFiles may under-report, so every tracked file the fix
-// changes is committed. Untracked files also need coana or a manifest name
-// to vouch for them, keeping build output in repos without a .gitignore out.
+// Coana's modifiedFiles may under-report; untracked files still need it or a
+// manifest name, so build output in repos without a .gitignore stays out.
 function selectFixedFiles(
   before: GitWorkingTreeChanges,
   after: GitWorkingTreeChanges,
