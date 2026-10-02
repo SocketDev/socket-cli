@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `socket fix --allow-overrides` fixes a vulnerability that a parent package's version range blocks by writing an override or resolution that forces the fixed version under that parent, in npm, pnpm, Yarn Berry and Rush projects.
+
 ### Changed
 - Updated the Coana CLI to v `15.12.0`.
 

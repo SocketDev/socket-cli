@@ -276,6 +276,7 @@ async function coanaFixWithFacts(
 ): Promise<CoanaFixResult> {
   const {
     all,
+    allowOverrides,
     applyFixes,
     autopilot,
     coanaVersion,
@@ -522,6 +523,7 @@ async function coanaFixWithFacts(
             ? ['--disable-external-tool-checks']
             : []),
           ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+          ...(allowOverrides ? ['--allow-overrides'] : []),
           ...(showAffectedDirectDependencies
             ? ['--show-affected-direct-dependencies']
             : []),
@@ -699,6 +701,7 @@ async function coanaFixWithFacts(
           ? ['--disable-external-tool-checks']
           : []),
         ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+        ...(allowOverrides ? ['--allow-overrides'] : []),
         ...(showAffectedDirectDependencies
           ? ['--show-affected-direct-dependencies']
           : []),

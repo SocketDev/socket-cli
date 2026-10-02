@@ -57,6 +57,12 @@ export const cmdFix = {
 }
 
 const generalFlags: MeowFlags = {
+  allowOverrides: {
+    type: 'boolean',
+    default: false,
+    description:
+      "When the only fix for a vulnerability is blocked by a parent package's declared version range, write an override or resolution that forces the fixed version under that parent. This can install a version outside the range the parent declares, so test the parent afterwards. Works for npm, pnpm, Yarn Berry and Rush projects.",
+  },
   autopilot: {
     type: 'boolean',
     default: false,
@@ -327,6 +333,7 @@ async function run(
 
   const {
     all,
+    allowOverrides,
     applyFixes,
     autopilot,
     debug,
@@ -354,6 +361,7 @@ async function run(
     unknownFlags = [],
   } = cli.flags as {
     all: boolean
+    allowOverrides: boolean
     applyFixes: boolean
     autopilot: boolean
     debug: boolean
@@ -520,6 +528,7 @@ async function run(
 
   await handleFix({
     all,
+    allowOverrides,
     applyFixes,
     autopilot,
     coanaVersion: fixVersion,
