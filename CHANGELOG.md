@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- `socket fix --allow-overrides` fixes a vulnerability that a parent package's version range blocks by writing an override or resolution that forces the fixed version under that parent, in npm, pnpm, Yarn Berry and Rush projects.
+
 ## [1.4.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.4.1) - 2026-09-30
 
 ### Changed

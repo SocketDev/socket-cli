@@ -107,6 +107,7 @@ function mockDiscoveryEnvelope(envelope: {
 describe('socket fix --pr-limit behavior verification', () => {
   const baseConfig: FixConfig = {
     all: false,
+    allowOverrides: false,
     applyFixes: true,
     autopilot: false,
     coanaVersion: undefined,
@@ -689,6 +690,66 @@ describe('socket fix --pr-limit behavior verification', () => {
         'legacy-workspace',
         'data/postgres/pgdata',
       ])
+    })
+  })
+
+  describe('--allow-overrides flag', () => {
+    it('forwards --allow-overrides to coana in local mode', async () => {
+      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+
+      await coanaFix({
+        ...baseConfig,
+        allowOverrides: true,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(callArgs[0]).toBe('compute-fixes-and-upgrade-purls')
+      expect(callArgs).toContain('--allow-overrides')
+    })
+
+    it('omits --allow-overrides when the flag is not set', async () => {
+      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+
+      await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(callArgs).not.toContain('--allow-overrides')
+    })
+
+    it('forwards --allow-overrides to coana in PR mode', async () => {
+      mockGetFixEnv.mockResolvedValue({
+        baseBranch: 'main',
+        githubToken: 'test-token',
+        gitEmail: 'test@example.com',
+        gitUser: 'test-user',
+        isCi: true,
+        repoInfo: {
+          defaultBranch: 'main',
+          owner: 'test-owner',
+          repo: 'test-repo',
+        },
+      })
+      mockGetSocketFixPrs.mockResolvedValue([])
+      mockFetchGhsaDetails.mockResolvedValue(new Map())
+      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+
+      await coanaFix({
+        ...baseConfig,
+        allowOverrides: true,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(callArgs[0]).toBe('compute-fixes-and-upgrade-purls')
+      expect(callArgs).toContain('GHSA-1111-1111-1111')
+      expect(callArgs).toContain('--allow-overrides')
     })
   })
 })
