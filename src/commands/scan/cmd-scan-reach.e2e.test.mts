@@ -90,6 +90,12 @@ function getTestEnv(apiToken: string): Record<string, string | undefined> {
     http_proxy: undefined,
     https_proxy: undefined,
     SOCKET_CLI_API_PROXY: undefined,
+    // A firewall proxy (e.g. sfw in CI) also points these at its own CA, which
+    // then becomes the only trusted root for direct connections.
+    GIT_SSL_CAINFO: undefined,
+    PIP_CERT: undefined,
+    SSL_CERT_DIR: undefined,
+    SSL_CERT_FILE: undefined,
   }
 }
 
@@ -980,11 +986,6 @@ describe('socket scan reach (E2E tests)', async () => {
         // Coana v15 halts on by default. The test asserts on the ecosystem
         // filter, not source-file presence.
         '--reach-continue-on-no-source-files',
-        // The CI runner's network firewall blocks pypi.org, so the pypi
-        // pre-install step fails. Coana v15 halts on install errors by
-        // default; this test asserts on ecosystem-filter discovery, not
-        // successful installation.
-        '--reach-continue-on-install-errors',
       ],
       'should only analyze pypi ecosystem when --reach-ecosystems pypi is specified',
       async cmd => {
