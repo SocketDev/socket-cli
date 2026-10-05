@@ -27,6 +27,12 @@ function getTestEnv(apiToken: string): Record<string, string | undefined> {
     http_proxy: undefined,
     https_proxy: undefined,
     SOCKET_CLI_API_PROXY: undefined,
+    // A firewall proxy (e.g. sfw in CI) also points these at its own CA, which
+    // then becomes the only trusted root for direct connections.
+    GIT_SSL_CAINFO: undefined,
+    PIP_CERT: undefined,
+    SSL_CERT_DIR: undefined,
+    SSL_CERT_FILE: undefined,
   }
 }
 
