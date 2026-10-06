@@ -90,6 +90,12 @@ object SocketFactsPlugin extends AutoPlugin {
           val mid = rootIdOf(extracted, ref)
           val ver = if (mid.revision == null) "" else mid.revision
           rec("project", ref.project, mid.organization, mid.name, ver, relOf(extracted.get(baseDirectory.in(ref))))
+          // sbt's own discovery of a project's .sbt files (Load.discoverProjects); a subproject defined
+          // only in the root build.sbt has none.
+          BuildPaths
+            .configurationSources(extracted.get(baseDirectory.in(ref)))
+            .filterNot(_.isHidden)
+            .foreach(f => rec("projectBuild", ref.project, relOf(f)))
           if (withFiles) {
             moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
               case (sources, targets) =>

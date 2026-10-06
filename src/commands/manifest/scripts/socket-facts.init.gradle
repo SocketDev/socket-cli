@@ -114,6 +114,13 @@ gradle.projectsEvaluated { g ->
         }
       }
     } catch (Exception ignore) {}
+    // `buildFile` is the configured script even when absent on disk (a project configured from the
+    // root or a convention plugin); only a script that exists is the project's own build file.
+    def buildFiles = []
+    try {
+      def bf = p.buildFile
+      if (bf != null && bf.isFile()) buildFiles << rel(bf)
+    } catch (Exception ignore) {}
     g.socketFactsState.projectsInfo.add([
       path   : p.path,
       group  : (p.group ?: '').toString(),
@@ -122,6 +129,7 @@ gradle.projectsEvaluated { g ->
       dir    : rel(p.projectDir),
       sources: (sources as List).sort(),
       targets: (targets as List).sort(),
+      buildFiles: buildFiles,
     ])
   }
 }
@@ -491,6 +499,7 @@ rootProject { rp ->
       synchronized (state.projectsInfo) { projectsInfo = new ArrayList(state.projectsInfo) }
       projectsInfo.each { pi ->
         rec(['project', pi.path, pi.group ?: '', pi.name, pi.version ?: '', pi.dir])
+        pi.buildFiles.each { f -> rec(['projectBuild', pi.path, f]) }
         if (withFilesProjects) {
           pi.sources.each { s -> rec(['projectSrc', pi.path, s]) }
           pi.targets.each { t -> rec(['projectTgt', pi.path, t]) }
