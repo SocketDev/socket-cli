@@ -1,6 +1,7 @@
 /**
- * @file The GitHub REST calls the release flow needs: branch refs and a signed
- *   commit built out of git objects (blob → tree → commit → ref).
+ * @file The GitHub REST calls the release flow needs: branch refs, a signed
+ *   commit built out of git objects (blob → tree → commit → ref), and the
+ *   release pull request.
  *
  *   A commit created through the API is web-flow VERIFIED without a local GPG or
  *   SSH key, which is the only way CI can land a commit on a branch that
@@ -27,7 +28,7 @@ export interface GithubRequestConfig {
   readonly method: string
   // Path below the API origin, e.g. `/repos/owner/name/git/refs`.
   readonly path: string
-  // Token with contents:write — the release App installation token in CI.
+  // The release App installation token in CI.
   readonly token: string
 }
 
@@ -97,10 +98,8 @@ export async function createBranchRef(
 }
 
 /**
- * Advance `refs/heads/<branch>` to `sha`. With `force` false — the default —
- * GitHub rejects a non-fast-forward advance with 422, which is what keeps the
- * post-publish landing honest: if the release line moved to a commit this one
- * does not descend from, the run stops loudly instead of rewriting work.
+ * Advance `refs/heads/<branch>` to `sha`. With `force` false, the default,
+ * GitHub rejects a non-fast-forward advance with 422.
  */
 export async function updateBranchRef(
   config: WriteBranchRefConfig,
@@ -219,4 +218,68 @@ export async function commitViaGithubApi(
     token: cfg.token,
   })
   return commit!.sha
+}
+
+export interface PullRequest {
+  readonly html_url: string
+  readonly number: number
+}
+
+export interface ReleasePullRequestConfig {
+  readonly apiUrl?: string | undefined
+  // Branch the PR merges into.
+  readonly base: string
+  readonly body: string
+  // Branch the PR merges from, in the same repository.
+  readonly head: string
+  readonly repo: string
+  readonly title: string
+  readonly token: string
+}
+
+/**
+ * Open a PR from `head` into `base`, or return the open one that already
+ * exists for that pair. A re-run force-resets `head`, so the existing PR picks
+ * up the new commit by itself and only its title and body need refreshing.
+ */
+export async function upsertPullRequest(
+  config: ReleasePullRequestConfig,
+): Promise<PullRequest> {
+  const cfg = { __proto__: null, ...config } as ReleasePullRequestConfig
+  const owner = cfg.repo.split('/')[0]
+  const query = new URLSearchParams({
+    base: cfg.base,
+    head: `${owner}:${cfg.head}`,
+    state: 'open',
+  })
+  const existing = await githubRequest<PullRequest[]>({
+    apiUrl: cfg.apiUrl,
+    method: 'GET',
+    path: `/repos/${cfg.repo}/pulls?${query}`,
+    token: cfg.token,
+  })
+  const open = existing?.[0]
+  if (open) {
+    const updated = await githubRequest<PullRequest>({
+      apiUrl: cfg.apiUrl,
+      body: { body: cfg.body, title: cfg.title },
+      method: 'PATCH',
+      path: `/repos/${cfg.repo}/pulls/${open.number}`,
+      token: cfg.token,
+    })
+    return updated!
+  }
+  const created = await githubRequest<PullRequest>({
+    apiUrl: cfg.apiUrl,
+    body: {
+      base: cfg.base,
+      body: cfg.body,
+      head: cfg.head,
+      title: cfg.title,
+    },
+    method: 'POST',
+    path: `/repos/${cfg.repo}/pulls`,
+    token: cfg.token,
+  })
+  return created!
 }

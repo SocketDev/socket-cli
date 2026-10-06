@@ -6,29 +6,23 @@ name: Publish to npm registry
 #   1. Between releases nobody touches the version. package.json keeps the
 #      last released number and user-facing notes accrue under the
 #      CHANGELOG's `## [Unreleased]` section as they land.
-#   2. Dispatch this workflow with dry-run=true (the default): the `verify`
-#      job derives and PRINTS the version it would ship, then builds, packs,
-#      and smoke-tests all three variants. It uploads a GitHub artifact and
-#      verifies its download. It creates no npm stages, tags, releases, or
-#      release branches, and needs no publish credential.
-#   3. Dispatch with dry-run=false + dist-tag=latest. This branch is the line
-#      customers consume, so it owns `latest`; the guard below refuses that
-#      tag from anywhere else, and the default branch (the 2.x prerelease
-#      line) publishes under next/beta/canary/rc.
-#   4. `verify` now BUMPS in-run: scripts/release/bump.mts derives the next
-#      version from the commits since the last release, writes package.json +
-#      CHANGELOG.md, and commits the pair via the release App onto a throwaway
-#      `npm-publish-v<X.Y.Z>` branch. No hand `chore(release):` commit ever
-#      lands on v1.x, and the release line is not touched until the run is
-#      proven.
-#   5. `publish` cuts the v<X.Y.Z> tag + the immutable GitHub release — both
-#      belong to the `socket` package, exactly one of each per run — then
-#      STAGES those exact tarballs.
+#   2. Dispatch with mode=release-pr. The `derive` job runs
+#      scripts/release/bump.mts to pick the next version and rewrite
+#      package.json + CHANGELOG.md. With dry-run=true (the default) it only
+#      prints the version. With dry-run=false the `release-pr` job commits the
+#      pair via the release App onto `npm-publish-v<X.Y.Z>` and opens a
+#      `chore(release): X.Y.Z` PR into this branch.
+#   3. A human reviews and squash-merges the release PR. v1.x is protected, so
+#      that PR is the only way a version bump reaches it.
+#   4. Dispatch with mode=publish. A dry run builds, packs, and smoke-tests
+#      HEAD and creates nothing. With dry-run=false the `verify` job checks out
+#      the newest commit that changed package.json's version (the merged
+#      release PR) and builds that. This branch is the line customers consume,
+#      so it owns `latest`. The guard below refuses that tag from anywhere else.
+#   5. `publish` cuts the v<X.Y.Z> tag + the immutable GitHub release at that
+#      commit, then STAGES the exact tarballs `verify` packed.
 #   6. A human promotes each staged upload (`pnpm stage approve` with web
-#      2FA, or the npm web UI); nothing is public until then.
-#   7. `land` fast-forwards v1.x to the bump commit once staging succeeded,
-#      and DELETES the throwaway branch when anything failed — so a failed run
-#      leaves the release line exactly as it found it.
+#      2FA, or the npm web UI). Nothing is public until then.
 #
 # Stable tags from this major version reserve their versions, including tags
 # on unlanded bump commits. Reachable tags anchor the changelog history.
@@ -38,13 +32,11 @@ name: Publish to npm registry
 # makes it minor. A MAJOR is never derived — a breaking commit stops the bump
 # and asks a human to pass release-as.
 #
-# THREE JOBS, ONE CREDENTIAL BOUNDARY. `verify` binds no environment and mints
-# no OIDC token, so nothing it runs — install scripts, build tooling, actions —
-# can reach a publish credential. The release App token it does hold is a
-# contents:write GIT credential, never a registry one, so the registry boundary
-# is untouched. `publish` holds the registry credential and does almost nothing:
-# no checkout, no install, no build. It publishes the exact bytes `verify`
-# packed and proved, so what shipped is what was tested.
+# CREDENTIAL BOUNDARIES. `derive` and `verify` install and build, and hold no
+# write credential of any kind. `release-pr` holds the release App token and
+# runs no installed code. `publish` holds the registry credential and does
+# almost nothing: no checkout, no install, no build. It publishes the exact
+# bytes `verify` packed and proved, so what shipped is what was tested.
 
 on:
   workflow_dispatch:
@@ -54,18 +46,21 @@ on:
         required: false
         default: 'latest'
         type: string
-      dry-run:
-        description: 'Build everything but do NOT publish, tag, or cut a release. Defaults to true so an accidental dispatch never reaches the registry — set to false for a real release.'
+      mode:
+        description: 'release-pr opens the version bump PR. publish releases the newest merged release PR.'
         required: false
-        default: true
-        type: boolean
-      bump:
-        description: 'Derive the version + CHANGELOG in-run and commit them via the release App. Leave on. Turning it off publishes whatever version the tree already carries, which is only ever right for re-running a run whose bump commit already landed.'
+        default: 'publish'
+        type: choice
+        options:
+          - publish
+          - release-pr
+      dry-run:
+        description: 'Defaults to true so an accidental dispatch writes nothing. release-pr: print the next version without opening a PR. publish: build everything but do NOT publish, tag, or cut a release.'
         required: false
         default: true
         type: boolean
       release-as:
-        description: 'Force the bump level instead of deriving it from the commits. MAJOR is never derived — a breaking change stops the bump until a human picks major here.'
+        description: 'release-pr only. Force the bump level instead of deriving it from the commits. MAJOR is never derived — a breaking change stops the bump until a human picks major here.'
         required: false
         default: ''
         type: choice
@@ -95,6 +90,7 @@ jobs:
   # what ship, so what was tested is what publishes.
   verify:
     name: Verify and pack
+    if: ${{ inputs.mode == 'publish' }}
     runs-on: ubuntu-latest
 
     permissions:
@@ -104,10 +100,7 @@ jobs:
     outputs:
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
       artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
-      # Empty on a dry run or a bump=false dispatch, which is what the `land`
-      # job keys off: no branch means there is nothing to land or discard.
-      release-branch: ${{ steps.bump.outputs.release-branch }}
-      sha: ${{ steps.release-meta.outputs.sha || steps.bump.outputs.sha }}
+      sha: ${{ steps.release-meta.outputs.sha }}
       version: ${{ steps.release-meta.outputs.version }}
 
     steps:
@@ -137,9 +130,11 @@ jobs:
           fi
           echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
 
-      # Full history anchors the changelog. All tags expose reserved versions,
-      # including release tags on bump commits that did not land.
-      - name: Checkout source
+      # Full history locates the release commit here and anchors the changelog
+      # in `derive`. All tags expose reserved versions, including release tags
+      # on bump commits that did not land.
+      - &checkout-full-history
+        name: Checkout source
         shell: bash
         env:
           CHECKOUT_REF: ${{ github.sha }}
@@ -158,7 +153,29 @@ jobs:
           git fetch --tags origin "$CHECKOUT_REF" '+refs/heads/*:refs/remotes/origin/*'
           git checkout -q --detach FETCH_HEAD
 
-      - name: Install pnpm
+      # A real publish ships the newest first-parent commit that changed
+      # package.json's version, i.e. the merged release PR. Commits merged after
+      # it wait for the next release, and a version nobody reviewed in a release
+      # PR never ships. A dry run packs HEAD as it is.
+      - name: Check out the release commit
+        if: ${{ inputs.dry-run == false }}
+        run: |
+          set -euo pipefail
+          for COMMIT in $(git rev-list --first-parent --max-count=500 HEAD -- package.json); do
+            VERSION=$(git show "$COMMIT:package.json" | jq -r .version)
+            PREVIOUS=$(git show "$COMMIT^:package.json" | jq -r .version)
+            if [ "$VERSION" != "$PREVIOUS" ]; then
+              git checkout -q --detach "$COMMIT"
+              echo "Releasing $VERSION from $(git log -1 --format='%h %s')."
+              exit 0
+            fi
+          done
+          echo "::error::No commit on this branch changed the package.json version." >&2
+          echo "::error::Fix: dispatch with mode=release-pr, merge that PR, then dispatch mode=publish." >&2
+          exit 1
+
+      - &install-pnpm
+        name: Install pnpm
         shell: bash
         run: | # zizmor: ignore[github-env]
           # pnpm 11 is required for `pnpm stage publish` (the staged upload
@@ -202,13 +219,15 @@ jobs:
           "${RUNNER_TEMP}/pnpm-bin/pnpm" stage --help > /dev/null
           echo "pnpm stage resolves via the pinned binary."
 
-      - name: Install Node.js
+      - &install-node
+        name: Install Node.js
         shell: bash
         env:
           NODE_VERSION: 25.9.0
         run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
 
-      - name: Download sfw
+      - &download-sfw
+        name: Download sfw
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -274,7 +293,8 @@ jobs:
             echo "SOCKET_API_KEY=$SOCKET_API_KEY" >> "${GITHUB_ENV:-/dev/null}"
           fi
 
-      - name: Create sfw shims
+      - &create-sfw-shims
+        name: Create sfw shims
         shell: bash
         run: | # zizmor: ignore[github-env]
           SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
@@ -328,50 +348,13 @@ jobs:
           echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
           echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
 
-      - name: Install dependencies
+      - &install-dependencies
+        name: Install dependencies
         run: pnpm install --loglevel error
 
-      # The release App signs the bump commit through the GitHub API, so the
-      # workflow's own GITHUB_TOKEN stays contents: read for the whole run. The
-      # mint is contents:write and nothing more — it moves branch refs, it does
-      # not touch the registry. A dry run and a bump=false dispatch both skip it,
-      # since neither writes a commit.
-      - name: Mint release App token
-        if: ${{ inputs.dry-run == false && inputs.bump }}
-        id: release-app
-        env:
-          APP_PRIVATE_KEY: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
-          CLIENT_ID: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
-          OWNER: ${{ github.repository_owner }}
-          PERMISSIONS: '{"contents":"write"}'
-          REPOSITORIES: ${{ github.event.repository.name }}
-        run: node scripts/release/mint-app-token.mjs
-
-      # Derive the version from the commits since the last release, write
-      # package.json + CHANGELOG.md, and commit the pair via the release App onto
-      # a throwaway npm-publish-v<version> branch — NOT v1.x. The checkout resets
-      # to that commit, so everything built and packed below comes from the exact
-      # commit the release will be tagged at. The `land` job fast-forwards v1.x to
-      # it only once staging succeeded.
-      #
-      # In a dry run, this step prints the next version without writing a bump
-      # or opening a branch. The following steps pack the tree's current version,
-      # upload a GitHub artifact, and verify its download.
-      - name: Bump version and changelog
-        if: ${{ inputs.bump }}
-        id: bump
-        env:
-          RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
-          RELEASE_AS: ${{ inputs.release-as }}
-        run: |
-          node scripts/release/bump.mts \
-            ${RELEASE_AS:+--release-as "$RELEASE_AS"} \
-            ${{ inputs.dry-run && '--dry-run' || '' }}
-
-      # Whatever produced the version — the bump above, or the tree itself on a
-      # bump=false dispatch — it must be a bare X.Y.Z before anything reaches the
-      # registry. A prerelease-suffixed version is a work-in-progress marker, not
-      # a releasable one, so fail closed rather than publish it.
+      # The version must be a bare X.Y.Z before anything reaches the registry. A
+      # prerelease-suffixed version is a work-in-progress marker, not a
+      # releasable one, so fail closed rather than publish it.
       - name: Refuse a publish on a non-release version
         if: ${{ inputs.dry-run == false }}
         run: |
@@ -379,7 +362,7 @@ jobs:
           case "$VERSION" in
             *-*)
               echo "::error::package.json version is '$VERSION' — a prerelease version, not a releasable one." >&2
-              echo "::error::Where: the tree this run will pack, after the bump stage." >&2
+              echo "::error::Where: the tree this run will pack." >&2
               echo "::error::Saw: a prerelease suffix; wanted a bare X.Y.Z." >&2
               echo "::error::Fix: land a release-shaped version on v1.x, then re-dispatch." >&2
               exit 1
@@ -459,11 +442,6 @@ jobs:
       # the commit are read once here and handed to the publish job. The
       # publish job never checks the repo out — it only needs these two
       # strings plus the tarballs.
-      #
-      # The SHA comes from HEAD, not github.sha: the bump reset the checkout to
-      # the commit it created on the throwaway branch, and github.sha still names
-      # the pre-bump dispatch commit. Tagging that one would mark a commit whose
-      # package.json carries the PREVIOUS version.
       - name: Resolve release metadata
         id: release-meta
         run: |
@@ -715,35 +693,59 @@ jobs:
           done
           echo "All three packages staged. Promote each with: pnpm stage approve <id>"
 
-  # Decide what happens to the bump. This is the ONLY job that writes to v1.x,
-  # and it runs after everything that could fail has either succeeded or not.
-  #
-  #   The run staged all three packages -> fast-forward v1.x to the bump commit,
-  #     then delete the throwaway branch.
-  #   Anything else -> delete the throwaway branch and leave v1.x untouched, so
-  #     a failed run costs nothing but the burned version number.
-  #
-  # The fast-forward preserves the App's exact signed SHA — the SHA the release
-  # tag already points at — which a merge or squash would rewrite. It is a ref
-  # PATCH, not a pull request: a fresh bump branch has no protected-branch rules
-  # to satisfy, so a PR route would park the release behind checks it can never
-  # pass, and there is nothing to review in a machine-generated bump anyway.
-  #
-  # `always()` is what makes the discard leg reachable — this has to run when
-  # `publish` failed, not only when it succeeded. The release-branch guard keeps
-  # it a no-op for dry runs and bump=false dispatches, which never open a branch.
-  land:
-    name: Land the bump
-    needs: [verify, publish]
-    if: ${{ always() && needs.verify.outputs.release-branch != '' }}
+  # Derive the next version and write package.json + CHANGELOG.md. Runs the
+  # installed toolchain, so it holds no write credential. The bump leaves this
+  # job as a patch limited to those two files.
+  derive:
+    name: Derive the release bump
+    if: ${{ inputs.mode == 'release-pr' }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    outputs:
+      patch: ${{ steps.patch.outputs.patch }}
+      version: ${{ steps.bump.outputs.version }}
+
+    steps:
+      - *checkout-full-history
+      - *install-pnpm
+      - *install-node
+      - *download-sfw
+      - *create-sfw-shims
+      - *install-dependencies
+
+      - name: Bump version and changelog
+        id: bump
+        env:
+          RELEASE_AS: ${{ inputs.release-as }}
+        run: |
+          node scripts/release/bump.mts \
+            ${RELEASE_AS:+--release-as "$RELEASE_AS"} \
+            ${{ inputs.dry-run && '--dry-run' || '' }}
+
+      - name: Export the bump as a patch
+        if: ${{ inputs.dry-run == false }}
+        id: patch
+        run: |
+          echo "patch=$(git diff --binary HEAD -- CHANGELOG.md package.json | base64 -w0)" >> "$GITHUB_OUTPUT"
+          git diff --stat HEAD
+
+  # Commit the bump via the release App and open the release PR. This job
+  # installs nothing, so no third-party code shares a job with the App token.
+  release-pr:
+    name: Open the release PR
+    needs: derive
+    if: ${{ inputs.mode == 'release-pr' && inputs.dry-run == false }}
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
 
     steps:
-      # promote.mts is the only thing needed from the tree, and it is identical
-      # on the dispatch ref and the bump commit, so the plain checkout is enough.
+      # The bump commit's parent is github.sha, so a shallow checkout of it is
+      # enough to apply the patch and read the base tree.
       - name: Checkout source
         shell: bash
         env:
@@ -763,11 +765,12 @@ jobs:
           git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
           git checkout -q --detach FETCH_HEAD
 
-      - name: Install Node.js
-        shell: bash
+      - *install-node
+
+      - name: Apply the bump
         env:
-          NODE_VERSION: 25.9.0
-        run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
+          PATCH_B64: ${{ needs.derive.outputs.patch }}
+        run: printf '%s' "$PATCH_B64" | base64 -d | git apply
 
       - name: Mint release App token
         id: release-app
@@ -775,17 +778,12 @@ jobs:
           APP_PRIVATE_KEY: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           CLIENT_ID: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
           OWNER: ${{ github.repository_owner }}
-          PERMISSIONS: '{"contents":"write"}'
+          PERMISSIONS: '{"contents":"write","pull_requests":"write"}'
           REPOSITORIES: ${{ github.event.repository.name }}
         run: node scripts/release/mint-app-token.mjs
 
-      - name: Land or discard the bump
+      - name: Commit the bump and open the release PR
         env:
-          BRANCH: ${{ needs.verify.outputs.release-branch }}
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
-          SHA: ${{ needs.verify.outputs.sha }}
-        run: |
-          node scripts/release/promote.mts \
-            --branch "$BRANCH" \
-            --sha "$SHA" \
-            ${{ needs.publish.result != 'success' && '--discard' || '' }}
+          VERSION: ${{ needs.derive.outputs.version }}
+        run: node scripts/release/open-release-pr.mts --version "$VERSION"

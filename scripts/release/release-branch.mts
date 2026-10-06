@@ -1,19 +1,7 @@
 /**
- * @file The throwaway release branch a CI bump lands on, and the two ways it
- *   ends.
- *
- *   The bump commit never lands on the release line directly. It goes to
- *   `npm-publish-v<version>`, and only a run that gets all the way through
- *   staging fast-forwards the release line to that branch tip. A run that fails
- *   anywhere — build, pack, smoke test, tag, stage — deletes the branch instead,
- *   so the release line never sees a version that did not ship.
- *
- *   The landing is a ref fast-forward, not a pull request. A fresh bump branch
- *   has no protected-branch rules to satisfy, so a PR route parks the release
- *   behind checks it can never pass, and there is nothing to review in a
- *   machine-generated bump anyway. The fast-forward also preserves the App's
- *   exact signed SHA — the SHA the release tag already points at — which a
- *   squash would rewrite.
+ * @file The `npm-publish-v<version>` branch a CI bump is committed to, and the
+ *   pull request that carries it onto the protected release line. The publish
+ *   run tags whatever commit that PR's merge leaves at the release line's tip.
  */
 
 import process from 'node:process'
@@ -23,15 +11,17 @@ import {
   createBranchRef,
   deleteBranchRef,
   updateBranchRef,
+  upsertPullRequest,
 } from './github-api.mts'
 
+import type { PullRequest } from './github-api.mts'
+
 export interface ReleaseEnv {
-  // The branch a successful publish fast-forwards, i.e. the dispatch branch.
+  // The branch the release PR targets, i.e. the dispatch branch.
   readonly releaseLine: string
   // Repo in `owner/name` form.
   readonly repo: string
-  // Release App token with contents:write — the branch refs, the bump commit,
-  // and the fast-forward that lands it.
+  // Release App token with contents:write and pull_requests:write.
   readonly token: string
 }
 
@@ -42,11 +32,7 @@ export interface ReleaseBranch {
 }
 
 /**
- * Resolve the CI release environment. This is the PROMOTE PREFLIGHT: it runs at
- * bump time, before anything is built or staged, so a missing token refuses
- * while nothing has been paid for. Checking at landing time would put the
- * failure after the irreversible registry write, stranding a shipped version on
- * a throwaway branch.
+ * Resolve the CI release environment before any branch is written.
  */
 export function resolveReleaseEnv(): ReleaseEnv {
   const repo = process.env['GITHUB_REPOSITORY']
@@ -65,7 +51,7 @@ export function resolveReleaseEnv(): ReleaseEnv {
       `[release-branch] the CI bump is missing ${missing.join(', ')}.\n` +
         `  Where: the publish-npm workflow's step env, read before anything is built.\n` +
         `  Wanted: GITHUB_REPOSITORY + GITHUB_REF_NAME, plus a release App token with\n` +
-        `  contents:write for the branch, the bump commit, and the fast-forward.\n` +
+        `  contents:write and pull_requests:write for the branch, commit, and PR.\n` +
         `  Fix: mint the token in the workflow step and pass it as RELEASE_APP_TOKEN.`,
     )
   }
@@ -122,42 +108,41 @@ export async function openReleaseBranch(
 }
 
 /**
- * The publish succeeded: fast-forward the release line to the branch tip, then
- * delete the branch. `force` stays false, so GitHub rejects the advance with 422
- * when the release line moved to a commit this one does not descend from.
- *
- * Removing the branch is tidiness, never correctness — the version is already
- * live and already on the release line by then — so a cleanup failure warns
- * instead of failing the run.
+ * Open (or refresh) the PR that merges the bump into the release line.
  */
-export async function promoteReleaseBranch(
+export async function openReleasePullRequest(
   releaseBranch: ReleaseBranch,
-  tipSha: string,
-): Promise<void> {
+): Promise<PullRequest> {
   const { branch, env, version } = releaseBranch
-  await updateBranchRef({
-    branch: env.releaseLine,
+  return await upsertPullRequest({
+    base: env.releaseLine,
+    body: releasePullRequestBody(env.releaseLine, version),
+    head: branch,
     repo: env.repo,
-    sha: tipSha,
+    title: `chore(release): ${version}`,
     token: env.token,
   })
-  process.stdout.write(
-    `[release-branch] fast-forwarded ${env.releaseLine} to ${tipSha.slice(0, 7)} ` +
-      `("chore(release): ${version}") via the release App.\n`,
-  )
-  try {
-    await deleteBranchRef({ branch, repo: env.repo, token: env.token })
-  } catch (e) {
-    process.stdout.write(
-      `[release-branch] ${env.releaseLine} is landed, but removing ${branch} failed: ` +
-        `${e instanceof Error ? e.message : String(e)}. Delete it by hand.\n`,
-    )
-  }
+}
+
+export function releasePullRequestBody(
+  releaseLine: string,
+  version: string,
+): string {
+  return [
+    `Bumps package.json to ${version} and moves the \`## [Unreleased]\` notes under the ${version} heading.`,
+    '',
+    'To release:',
+    '',
+    '1. Review the CHANGELOG section and squash-merge this PR.',
+    `2. Dispatch **Publish to npm registry** on \`${releaseLine}\` with \`dry-run: false\`. It tags the merge commit, cuts the GitHub release, and stages all three packages.`,
+    '3. Approve each staged package with `pnpm stage approve`.',
+    '',
+    `If ${releaseLine} moves before this merges, re-dispatch with \`mode: release-pr\` to rebuild the bump on the new tip.`,
+  ].join('\n')
 }
 
 /**
- * The publish failed: delete the release branch. The release line is never
- * touched, so a rejected run leaves no version bump behind.
+ * Delete the release branch after a failed bump commit.
  */
 export async function discardReleaseBranch(
   releaseBranch: ReleaseBranch,
@@ -165,7 +150,7 @@ export async function discardReleaseBranch(
   const { branch, env } = releaseBranch
   await deleteBranchRef({ branch, repo: env.repo, token: env.token })
   process.stdout.write(
-    `[release-branch] publish failed — removed ${branch}; ` +
+    `[release-branch] bump failed, removed ${branch}. ` +
       `${env.releaseLine} untouched.\n`,
   )
 }

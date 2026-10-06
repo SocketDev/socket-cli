@@ -6,8 +6,8 @@
  * installation token scoped by the PERMISSIONS env. The token is masked, then
  * handed back via $GITHUB_OUTPUT.
  *
- * The publish-npm workflow runs this to get the contents:write token that
- * signs the bump commit and lands it — the workflow's own GITHUB_TOKEN stays
+ * The publish-npm workflow runs this to get the token that signs the bump
+ * commit and opens the release PR — the workflow's own GITHUB_TOKEN stays
  * contents:read. PERMISSIONS is always passed non-blank so the mint is
  * least-privilege; an empty object would mint blanket permissions and is
  * rejected below.
@@ -135,8 +135,8 @@ export function formatAppPermissionLabel(scope) {
 // The scopes the REQUEST asks for that the installation's own grant does not
 // cover, each with what was wanted vs what is actually granted. This is the
 // PREFLIGHT: an installation missing a scope 422s the mint (or, worse, a widened
-// request lands and the permission is only exercised LATER — a promote PR 403ing
-// after the irreversible publish). Comparing the grant up front turns that into
+// request lands and the permission is only exercised LATER — the release PR
+// 403ing after its branch is written). Comparing the grant up front turns that into
 // a refusal before anything is published. Pure + exported so it is
 // unit-testable.
 export function findMissingAppPermissions(config) {
@@ -175,7 +175,7 @@ export function formatAppPermissionShortfall(config) {
   }
   lines.push(
     `  A missing scope fails LATE otherwise — the mint 422s, or the permission is first`,
-    `  exercised after the irreversible publish (the promote PR 403s mid-release).`,
+    `  exercised after the release branch is written (the release PR 403s).`,
     `  Fix: ${url}`,
   )
   for (const entry of missing) {
@@ -245,10 +245,7 @@ async function main() {
   }
 
   // PREFLIGHT: the installation's own grant must already cover every requested
-  // scope. Runs before the mint and therefore before any publish/promote — the
-  // widened `pull_requests: write` request is only exercised by the promote PR
-  // that follows a successful publish, so without this the shortfall surfaces
-  // as a 403 in the irreversible window.
+  // scope, so a shortfall refuses before any branch or commit is written.
   if (permissions !== undefined) {
     const missing = findMissingAppPermissions({
       granted: installation.permissions,

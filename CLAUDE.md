@@ -159,17 +159,22 @@ Validate all three bindings after a workflow or environment rename.
   the work lands. The release promotes that block verbatim under the new
   version heading. If nothing accrued, the release falls back to a section
   derived from the Conventional Commits in range.
-- Dispatch the workflow with `dry-run: true` (the default) to see which
-  version it would ship. It uploads a GitHub artifact and verifies its download.
-  It creates no npm stages, tags, releases, or release branches.
-- Dispatch with `dry-run: false` to release. `scripts/release/bump.mts` picks
-  the version, writes `package.json` + `CHANGELOG.md`, and commits them via
-  the release App onto a throwaway `npm-publish-v<X.Y.Z>` branch. `v1.x` is
-  fast-forwarded to that commit only after all three packages are staged.
+- Dispatch with `mode: release-pr` and `dry-run: true` (the default) to see
+  which version the next release would get. Nothing is written.
+- Dispatch with `mode: release-pr` and `dry-run: false` to open the release
+  PR. `scripts/release/bump.mts` picks the version and writes `package.json` +
+  `CHANGELOG.md`, and `scripts/release/open-release-pr.mts` commits them via
+  the release App onto `npm-publish-v<X.Y.Z>` and opens a
+  `chore(release): X.Y.Z` PR into `v1.x`. Review it and squash-merge it.
+- Dispatch with `mode: publish` and `dry-run: false` to release. It builds the
+  newest commit that changed the `package.json` version, tags it, cuts the
+  GitHub release, and stages all three packages for `pnpm stage approve`.
+  `mode: publish` with `dry-run: true` packs and smoke-tests HEAD and creates
+  nothing.
 - The level is patch by default and minor when a `feat:` is in range. A major
   is never derived — a breaking commit stops the bump until someone passes
   `release-as: major`.
-- A tag reserves its version even when staging or landing fails. Stable tags
+- A tag reserves its version even when staging fails. Stable tags
   from this major version set the reservation floor. Reachable tags anchor
   the changelog history. The next release skips all reserved versions.
 - Run `pnpm run release:preflight --version <version>` to check all three
