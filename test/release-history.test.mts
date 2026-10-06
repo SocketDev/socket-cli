@@ -47,7 +47,31 @@ function createReleaseRepository() {
       subject,
     ])
   }
-  return { commit, cwd, git }
+  // A commit whose tree holds a package.json at `version`.
+  function commitManifest(
+    subject: string,
+    version: string,
+    parent?: string,
+  ): string {
+    const blob = execFileSync('git', ['hash-object', '-w', '--stdin'], {
+      cwd,
+      encoding: 'utf8',
+      input: `{\n  "name": "fixture",\n  "version": "${version}"\n}\n`,
+    }).trim()
+    const manifestTree = execFileSync('git', ['mktree'], {
+      cwd,
+      encoding: 'utf8',
+      input: `100644 blob ${blob}\tpackage.json\n`,
+    }).trim()
+    return git([
+      'commit-tree',
+      manifestTree,
+      ...(parent ? ['-p', parent] : []),
+      '-m',
+      subject,
+    ])
+  }
+  return { commit, commitManifest, cwd, git }
 }
 
 afterEach(() => {
@@ -73,12 +97,12 @@ describe('release history and version reservations', () => {
       '1.1.11-prerelease',
     )
     expect(history).toEqual({
-      anchorTag: 'v1.1.10',
+      anchorRef: 'v1.1.10',
       reservedVersions: ['v1.1.10', 'v1.1.11', 'v1.1.12'],
       tagVersions: ['v1.1.10'],
     })
     const commits = parseConventionalCommits(
-      await readReleaseCommits(repository.cwd, history.anchorTag),
+      await readReleaseCommits(repository.cwd, history.anchorRef),
     )
     expect(commits.map(commit => commit.hash)).toEqual([head])
     expect(
@@ -110,7 +134,7 @@ describe('release history and version reservations', () => {
       '1.1.11-prerelease',
     )
     const commits = parseConventionalCommits(
-      await readReleaseCommits(repository.cwd, history.anchorTag),
+      await readReleaseCommits(repository.cwd, history.anchorRef),
     )
     expect(
       deriveNextVersion({
@@ -122,6 +146,53 @@ describe('release history and version reservations', () => {
     ).toMatchObject({ base: '1.1.10', level: 'minor', version: '1.2.2' })
   })
 
+  it('anchors to the squash commit that landed a release tagged off the line', async () => {
+    const repository = createReleaseRepository()
+    const base = repository.commitManifest('chore(release): 1.4.1', '1.4.1')
+    repository.git(['tag', 'v1.4.1', base])
+    const fix = repository.commitManifest(
+      'fix(cli): handle timeouts',
+      '1.4.1',
+      base,
+    )
+    const bump = repository.commitManifest(
+      'chore(release): 1.4.2',
+      '1.4.2',
+      fix,
+    )
+    repository.git(['tag', 'v1.4.2', bump])
+    const squash = repository.commitManifest(
+      'chore(release): 1.4.2 (#12)',
+      '1.4.2',
+      fix,
+    )
+    const head = repository.commitManifest(
+      'fix(cli): quote paths',
+      '1.4.2',
+      squash,
+    )
+    repository.git(['update-ref', 'refs/heads/fixture-release', head])
+    const history = await readReleaseHistory(repository.cwd, '1.4.2')
+    expect(history).toEqual({
+      anchorRef: squash,
+      reservedVersions: ['v1.4.1', 'v1.4.2'],
+      tagVersions: ['v1.4.1', 'v1.4.2'],
+    })
+    const commits = parseConventionalCommits(
+      await readReleaseCommits(repository.cwd, history.anchorRef),
+    )
+    expect(commits.map(commit => commit.hash)).toEqual([head])
+    expect(
+      deriveNextVersion({
+        commits,
+        manifestVersion: '1.4.2',
+        publishedVersion: '1.4.2',
+        reservedVersions: history.reservedVersions,
+        tagVersions: history.tagVersions,
+      }),
+    ).toMatchObject({ base: '1.4.2', level: 'patch', version: '1.4.3' })
+  })
+
   it('uses the complete history for an untagged release line', async () => {
     const repository = createReleaseRepository()
     const head = repository.commit('feat(cli): add initial command')
@@ -129,13 +200,13 @@ describe('release history and version reservations', () => {
     repository.git(['tag', 'v2.0.0', head])
     const history = await readReleaseHistory(repository.cwd, '1.0.0-prerelease')
     expect(history).toEqual({
-      anchorTag: undefined,
+      anchorRef: undefined,
       reservedVersions: [],
       tagVersions: [],
     })
     expect(
       parseConventionalCommits(
-        await readReleaseCommits(repository.cwd, history.anchorTag),
+        await readReleaseCommits(repository.cwd, history.anchorRef),
       ).map(commit => commit.hash),
     ).toEqual([head])
   })

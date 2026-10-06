@@ -134,7 +134,7 @@ async function main(): Promise<void> {
       `${history.tagVersions.length} landed release tag(s); ` +
       `${history.reservedVersions.length} reserved tag(s); manifest ${manifestVersion}.`,
   )
-  const commitsRaw = await readReleaseCommits(rootPath, history.anchorTag)
+  const commitsRaw = await readReleaseCommits(rootPath, history.anchorRef)
   const commits = parseConventionalCommits(commitsRaw)
   const derived = deriveNextVersion({
     commits,
