@@ -76,6 +76,22 @@ object SocketFactsPlugin extends AutoPlugin {
       val moduleDirs: Map[String, (Seq[String], Seq[String])] =
         if (withFiles) buildModuleDirs(allRefs, extracted) else Map.empty
 
+      // Where sbt recorded the project's own settings as defined (the root build.sbt for a subproject
+      // defined there); positions outside the build are sbt defaults, plugins or our injected base.
+      val buildFilesByRef: Map[ProjectRef, Seq[String]] =
+        extracted.structure.settings
+          .flatMap { setting =>
+            (setting.key.scope.project, setting.pos) match {
+              case (Select(ref: ProjectRef), pos: FilePosition) =>
+                val f = new File(pos.path)
+                if (f.isAbsolute && f.isFile && f.getCanonicalFile.toPath.startsWith(rootCanonPath)) Some(ref -> relOf(f))
+                else None
+              case _ => None
+            }
+          }
+          .groupBy(_._1)
+          .map { case (ref, pairs) => ref -> pairs.map(_._2).distinct.sorted }
+
       val sb = new StringBuilder
       def rec(fields: String*): Unit = {
         sb.append(fields.map(esc).mkString("\t")); sb.append('\n')
@@ -90,12 +106,7 @@ object SocketFactsPlugin extends AutoPlugin {
           val mid = rootIdOf(extracted, ref)
           val ver = if (mid.revision == null) "" else mid.revision
           rec("project", ref.project, mid.organization, mid.name, ver, relOf(extracted.get(baseDirectory.in(ref))))
-          // sbt's own discovery of a project's .sbt files (Load.discoverProjects); a subproject defined
-          // only in the root build.sbt has none.
-          BuildPaths
-            .configurationSources(extracted.get(baseDirectory.in(ref)))
-            .filterNot(_.isHidden)
-            .foreach(f => rec("projectBuild", ref.project, relOf(f)))
+          buildFilesByRef.getOrElse(ref, Nil).foreach(f => rec("projectBuild", ref.project, f))
           if (withFiles) {
             moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
               case (sources, targets) =>
