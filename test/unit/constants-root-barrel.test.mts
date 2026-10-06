@@ -277,7 +277,7 @@ describe('constants root barrel exports', () => {
 
     it('exports socket CLI name constants', () => {
       expect(SOCKET_CLI_BIN_NAME).toBe('socket')
-      expect(SOCKET_CLI_PACKAGE_NAME).toBe('@socketsecurity/cli')
+      expect(SOCKET_CLI_PACKAGE_NAME).toBe('socket')
     })
   })
 
