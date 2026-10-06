@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Socket facts for multi-module Maven, Gradle and sbt builds now attribute each direct dependency to the subproject build files that pull it in, so the dashboard shows which module brought it in.
 
 ### Changed
-- Updated the Coana CLI to v `15.12.0`.
+- Updated the Coana CLI to v `15.12.1`.
 
 ## [1.4.2](https://github.com/SocketDev/socket-cli/releases/tag/v1.4.2) - 2026-10-05
 
