@@ -84,6 +84,7 @@ function committedFiles(): string[] {
 describe('socket fix PR mode commits', () => {
   const baseConfig: FixConfig = {
     all: false,
+    allowOverrides: false,
     applyFixes: true,
     autopilot: false,
     coanaVersion: undefined,

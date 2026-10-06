@@ -164,6 +164,7 @@ describe('socket fix', async () => {
 
           Options
             --all               Process all discovered vulnerabilities in local mode. Cannot be used with --id.
+            --allow-overrides   When the only fix for a vulnerability is blocked by a parent package's declared version range, write an override or resolution that forces the fixed version under that parent. This can install a version outside the range the parent declares, so test the parent afterwards. Works for npm, pnpm, Yarn Berry and Rush projects.
             --autopilot         Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
             --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.
@@ -391,6 +392,22 @@ describe('socket fix', async () => {
       '{"apiToken":"fakeToken"}',
     ],
     'should accept --no-major-updates flag',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--allow-overrides',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept --allow-overrides flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)

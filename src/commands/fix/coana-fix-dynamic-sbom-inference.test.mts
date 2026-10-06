@@ -94,6 +94,7 @@ function coanaCalls(command: string): string[][] {
 describe('socket fix --dynamic-sbom-inference', () => {
   const baseConfig: FixConfig = {
     all: false,
+    allowOverrides: false,
     applyFixes: true,
     autopilot: false,
     coanaVersion: undefined,
