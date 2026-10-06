@@ -56,7 +56,7 @@ describe('constants barrel exports', () => {
 
     it('exports package name constants', () => {
       expect(SOCKET_CLI_BIN_NAME).toBe('socket')
-      expect(SOCKET_CLI_PACKAGE_NAME).toBe('@socketsecurity/cli')
+      expect(SOCKET_CLI_PACKAGE_NAME).toBe('socket')
     })
 
     it('exports VITEST constant', () => {

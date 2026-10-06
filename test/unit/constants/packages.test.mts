@@ -91,7 +91,7 @@ describe('packages constants', () => {
 
   describe('Socket CLI package name constants', () => {
     it('has SOCKET_CLI_PACKAGE_NAME constant', () => {
-      expect(SOCKET_CLI_PACKAGE_NAME).toBe('@socketsecurity/cli')
+      expect(SOCKET_CLI_PACKAGE_NAME).toBe('socket')
     })
   })
 
