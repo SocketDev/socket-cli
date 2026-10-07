@@ -256,10 +256,8 @@ function buildComponents(
   })
 }
 
-// One dependency tree per subproject, the union of its configurations. Tree
-// positions merge when their full subtrees are equal: the coarsest bisimulation
-// over the subproject graphs labelled by component, found by partition
-// refinement so that cycles merge exactly too.
+// Equal subtrees share an entry; partition refinement (coarsest bisimulation)
+// keeps that exact on cycles too.
 function buildDependencyGraph(
   parsed: ParsedRecords,
   perRoot: Map<string, PerRoot>,
@@ -291,7 +289,6 @@ function buildDependencyGraph(
     }
   }
 
-  // Vertices are (subproject, coordinate) pairs.
   const vertexIds = new Map<string, number>()
   const labels: number[] = []
   const edges: number[][] = []
@@ -396,9 +393,7 @@ function buildDependencyGraph(
   }
 }
 
-// Direct dependencies first, then what they leave unreached: nodes nothing
-// depends on, then anything left on an unreached cycle. Every resolved
-// dependency of the subproject is then in its tree.
+// Unreached nodes become roots too, so every resolved dependency is in the tree.
 function treeRoots(
   graph: SubprojectGraph | undefined,
   byComponent: (a: string, b: string) => number,

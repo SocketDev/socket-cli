@@ -40,9 +40,8 @@ export type SocketFactsManifestReference = {
   file: string
 }
 
-// A component together with its exact dependency subtree. Entries are shared
-// by every position whose subtree is identical, so one component has an entry
-// per distinct subtree.
+// A component with one exact subtree, shared by every position whose subtree
+// is identical.
 export type SocketFactsSbomDependency = {
   // Index into components[].
   component: number
