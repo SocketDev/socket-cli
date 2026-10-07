@@ -12,6 +12,7 @@ export type SocketFactsSbom = {
   metadata?: SocketFactsSbomMetadata | undefined
   projects?: SocketFactsSbomProject[] | undefined
   components: SocketFactsSbomComponent[]
+  dependencies?: SocketFactsSbomDependency[] | undefined
 }
 
 export type SocketFactsSbomMetadata = {
@@ -29,7 +30,6 @@ export type SocketFactsSbomComponent = AnyPURL & {
   dev?: boolean | undefined
   // A module of the scanned build itself (same GAV as a projects[] entry).
   firstParty?: true | undefined
-  dependencies?: string[] | undefined
   // Direct dependencies only: the facts file plus the build files of the subprojects
   // pulling it in directly, which need not declare it (e.g. a parent POM does).
   manifestFiles?: SocketFactsManifestReference[] | undefined
@@ -40,9 +40,22 @@ export type SocketFactsManifestReference = {
   file: string
 }
 
+// A component together with its exact dependency subtree. Entries are shared
+// by every position whose subtree is identical, so one component has an entry
+// per distinct subtree.
+export type SocketFactsSbomDependency = {
+  // Index into components[].
+  component: number
+  // Indices into dependencies[].
+  children?: number[] | undefined
+}
+
 export type SocketFactsSbomProject = AnyPURL & {
   subprojectDir: string
-  dependencies: string[]
+  // Indices into dependencies[]: the roots of this subproject's dependency
+  // tree, i.e. its direct dependencies plus any resolved dependency they don't
+  // reach.
+  children: number[]
 }
 
 // Resolved on-disk paths for a --with-files run, keyed by coordinate. `targets`
@@ -58,6 +71,9 @@ export type ResolvedArtifactPaths = {
   // Component ids on each project's resolved classpath (union over its
   // configurations), keyed by projectClasspathKey.
   classpathByProject: Map<string, string[]>
+  // Component ids of each project's direct dependencies, keyed by
+  // projectClasspathKey.
+  directDependenciesByProject: Map<string, string[]>
 }
 
 export function projectClasspathKey(

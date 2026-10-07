@@ -31,6 +31,7 @@ function okResult(): ManifestRunResult {
       sourcesByCoord: new Map(),
       coords: new Set(),
       classpathByProject: new Map(),
+      directDependenciesByProject: new Map(),
     },
     stderr: '',
     stdout: '',
@@ -123,7 +124,7 @@ describe('runManifestFacts - sidecar', () => {
         name: 'app',
         version: '1.0',
         subprojectDir: '.',
-        dependencies: [],
+        children: [],
       },
     ]
     vi.mocked(runManifestScript).mockResolvedValue(result)

@@ -239,13 +239,13 @@ describe('markWorkspaceCoverage', () => {
           type: 'maven',
           name: 'moduleA',
           subprojectDir: 'moduleA',
-          dependencies: [],
+          children: [],
         },
         {
           type: 'maven',
           name: 'moduleB',
           subprojectDir: 'moduleB',
-          dependencies: [],
+          children: [],
         },
       ],
     })
@@ -271,13 +271,13 @@ describe('markWorkspaceCoverage', () => {
           type: 'maven',
           name: 'moduleA',
           subprojectDir: 'moduleA',
-          dependencies: [],
+          children: [],
         },
         {
           type: 'maven',
           name: 'shared-lib',
           subprojectDir: '../shared-lib',
-          dependencies: [],
+          children: [],
         },
       ],
     })
@@ -1166,13 +1166,13 @@ describe('setupRecursiveManifestConfig', () => {
                 type: 'maven',
                 name: 'module-a',
                 subprojectDir: 'module-a',
-                dependencies: [],
+                children: [],
               },
               {
                 type: 'maven',
                 name: 'module-b',
                 subprojectDir: 'module-b',
-                dependencies: [],
+                children: [],
               },
             ],
           }

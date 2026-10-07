@@ -19,9 +19,11 @@ export type SidecarComponentEntry = SocketFactsSbomComponent & {
   sources?: string[] | undefined
 }
 
-export type SidecarProjectEntry = SocketFactsSbomProject & {
+export type SidecarProjectEntry = Omit<SocketFactsSbomProject, 'children'> & {
   targets?: string[] | undefined
   sources?: string[] | undefined
+  // Ids of this facts file's components[] the project depends on directly.
+  dependencies: string[]
   // Ids of this facts file's components[] forming the project's full
   // transitive classpath across all its configurations.
   classpath: string[]
@@ -112,13 +114,20 @@ export function accumulateSidecar(
     withPaths ? attachPaths(entry, artifactPaths) : { ...entry }
   acc.set(factsFile, {
     components: facts.components.map(paths),
-    projects: (facts.projects ?? []).map(proj => ({
-      ...paths(proj),
-      classpath: [
-        ...(artifactPaths.classpathByProject.get(projectClasspathKey(proj)) ??
-          []),
-      ],
-    })),
+    projects: (facts.projects ?? []).map(
+      ({ children: _children, ...proj }) => ({
+        ...paths(proj),
+        dependencies: [
+          ...(artifactPaths.directDependenciesByProject.get(
+            projectClasspathKey(proj),
+          ) ?? []),
+        ],
+        classpath: [
+          ...(artifactPaths.classpathByProject.get(projectClasspathKey(proj)) ??
+            []),
+        ],
+      }),
+    ),
   })
 }
 
