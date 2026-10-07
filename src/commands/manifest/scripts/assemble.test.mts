@@ -149,4 +149,41 @@ describe('records → assemble → sidecar', () => {
       expect(project).not.toHaveProperty('firstParty')
     }
   })
+  it('marks direct dependencies with the facts file and the build files of the subprojects they are direct in', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\ta\tg\ta\t1\ta',
+      'projectBuild\ta\ta/pom.xml',
+      'project\tb\tg\tb\t1\tb',
+      'projectBuild\tb\tb/pom.xml',
+      // No build file of its own, e.g. configured from the root build.
+      'project\tc\tg\tc\t1\tc',
+      'root\tr1\ta\truntimeClasspath\t1',
+      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t1',
+      'node\tr1\tg:dep:jar:3\tg\tdep\t3\tjar\t\t0',
+      'edge\tr1\tg:ext:jar:2\tg:dep:jar:3',
+      'root\tr2\tb\ttestRuntimeClasspath\t0',
+      'node\tr2\tg:a:jar:1\tg\ta\t1\tjar\t\t1',
+      'node\tr2\tg:ext:jar:2\tg\text\t2\tjar\t\t1',
+      'edge\tr2\tg:a:jar:1\tg:ext:jar:2',
+      'root\tr3\tc\truntimeClasspath\t1',
+      'node\tr3\tg:solo:jar:1\tg\tsolo\t1\tjar\t\t1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(
+      Object.fromEntries(
+        facts.components.map(c => [c.id, c.manifestFiles ?? 'absent']),
+      ),
+    ).toEqual({
+      'g:a:jar:1': [{ file: '.socket.facts.json' }, { file: 'b/pom.xml' }],
+      'g:dep:jar:3': 'absent',
+      'g:ext:jar:2': [
+        { file: '.socket.facts.json' },
+        { file: 'a/pom.xml' },
+        { file: 'b/pom.xml' },
+      ],
+      'g:solo:jar:1': [{ file: '.socket.facts.json' }],
+    })
+  })
 })

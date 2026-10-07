@@ -19,6 +19,10 @@ public final class SocketSupport {
     return rootDir.equals(projectDir) ? "." : rootDir.relativize(projectDir).toString();
   }
 
+  public static String relativePath(Path rootDir, Path file) {
+    return rootDir.relativize(file).toString().replace(File.separatorChar, '/');
+  }
+
   /**
    * Full Maven coordinate {@code groupId:artifactId:type:classifier:version} with empty segments
    * dropped — the per-root node key the assembler uses. {@code type} is the Maven packaging (the

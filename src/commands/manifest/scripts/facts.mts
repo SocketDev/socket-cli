@@ -30,6 +30,14 @@ export type SocketFactsSbomComponent = AnyPURL & {
   // A module of the scanned build itself (same GAV as a projects[] entry).
   firstParty?: true | undefined
   dependencies?: string[] | undefined
+  // Direct dependencies only: the facts file plus the build files of the subprojects
+  // pulling it in directly, which need not declare it (e.g. a parent POM does).
+  manifestFiles?: SocketFactsManifestReference[] | undefined
+}
+
+// Relative to the facts file's directory.
+export type SocketFactsManifestReference = {
+  file: string
 }
 
 export type SocketFactsSbomProject = AnyPURL & {

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `socket fix --allow-overrides` fixes a vulnerability that a parent package's version range blocks by writing an override or resolution that forces the fixed version under that parent, in npm, pnpm, Yarn Berry and Rush projects.
+- Socket facts for multi-module Maven, Gradle and sbt builds now attribute each direct dependency to the subproject build files that pull it in, so the dashboard shows which module brought it in.
 
 ### Changed
 - Updated the Coana CLI to v `15.12.1`.
