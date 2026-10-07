@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs'
 
 import {
   type ResolvedArtifactPaths,
-  type SocketFactsManifestReference,
   type SocketFactsSbom,
   type SocketFactsSbomComponent,
   type SocketFactsSbomDependency,
@@ -11,7 +10,6 @@ import {
   mavenCoordinateKey,
   projectClasspathKey,
 } from './facts.mts'
-import constants from '../../../constants.mts'
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
@@ -64,11 +62,7 @@ export function assembleFacts(
   for (const p of parsed.projects.values()) {
     projectsByGav.set(gav(p.group, p.name, p.version), p)
   }
-  const components = buildComponents(
-    finalNodes,
-    projectsByGav,
-    buildManifestFilesByCoord(parsed, directByRoot, perRoot),
-  )
+  const components = buildComponents(finalNodes, projectsByGav)
   const { dependencies, projects } = buildDependencyGraph(
     parsed,
     perRoot,
@@ -184,40 +178,9 @@ function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
   return { finalNodes, directByRoot }
 }
 
-function buildManifestFilesByCoord(
-  parsed: ParsedRecords,
-  directByRoot: Map<string, Set<string>>,
-  perRoot: Map<string, PerRoot>,
-): Map<string, SocketFactsManifestReference[]> {
-  const buildFilesByCoord = new Map<string, Set<string>>()
-  for (const [rootId, ids] of directByRoot) {
-    const projectKey = perRoot.get(rootId)?.projectKey ?? ''
-    const buildFiles = parsed.projects.get(projectKey)?.buildFiles ?? []
-    for (const id of ids) {
-      let set = buildFilesByCoord.get(id)
-      if (!set) {
-        set = new Set()
-        buildFilesByCoord.set(id, set)
-      }
-      for (const f of buildFiles) {
-        set.add(f)
-      }
-    }
-  }
-  return new Map(
-    [...buildFilesByCoord].map(({ 0: id, 1: buildFiles }) => [
-      id,
-      [constants.DOT_SOCKET_DOT_FACTS_JSON, ...[...buildFiles].sort()].map(
-        file => ({ file }),
-      ),
-    ]),
-  )
-}
-
 function buildComponents(
   finalNodes: Map<string, MergedNode>,
   projectsByGav: Map<string, RawProject>,
-  manifestFilesByCoord: Map<string, SocketFactsManifestReference[]>,
 ): SocketFactsSbomComponent[] {
   return [...finalNodes.keys()].sort().map(id => {
     const fn = finalNodes.get(id)!
@@ -247,10 +210,6 @@ function buildComponents(
     }
     if (projectsByGav.has(gav(c.group, c.name, c.version ?? ''))) {
       comp.firstParty = true
-    }
-    const manifestFiles = manifestFilesByCoord.get(id)
-    if (manifestFiles) {
-      comp.manifestFiles = manifestFiles
     }
     return comp
   })
@@ -386,6 +345,13 @@ function buildDependencyGraph(
       name: p.name,
       ...(p.version ? { version: p.version } : {}),
       subprojectDir: p.dir,
+      ...(p.buildFiles.length
+        ? {
+            manifestFiles: [...new Set(p.buildFiles)]
+              .sort()
+              .map(file => ({ file })),
+          }
+        : {}),
       children: roots
         .map(coordId => indexOf(vertex(p.projectKey, coordId)))
         .sort((x, y) => x - y),

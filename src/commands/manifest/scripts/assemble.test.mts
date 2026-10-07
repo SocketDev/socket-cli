@@ -313,7 +313,7 @@ describe('records → assemble → sidecar', () => {
       expect(project).not.toHaveProperty('firstParty')
     }
   })
-  it('marks direct dependencies with the facts file and the build files of the subprojects they are direct in', () => {
+  it('marks each subproject with its own build files and no component with any', () => {
     const records = [
       'meta\tmaven\t3.9.6\t17',
       'project\ta\tg\ta\t1\ta',
@@ -337,17 +337,15 @@ describe('records → assemble → sidecar', () => {
 
     expect(
       Object.fromEntries(
-        facts.components.map(c => [c.id, c.manifestFiles ?? 'absent']),
+        facts.projects!.map(p => [p.name, p.manifestFiles ?? 'absent']),
       ),
     ).toEqual({
-      'g:a:jar:1': [{ file: '.socket.facts.json' }, { file: 'b/pom.xml' }],
-      'g:dep:jar:3': 'absent',
-      'g:ext:jar:2': [
-        { file: '.socket.facts.json' },
-        { file: 'a/pom.xml' },
-        { file: 'b/pom.xml' },
-      ],
-      'g:solo:jar:1': [{ file: '.socket.facts.json' }],
+      a: [{ file: 'a/pom.xml' }],
+      b: [{ file: 'b/pom.xml' }],
+      c: 'absent',
     })
+    for (const c of facts.components) {
+      expect(c).not.toHaveProperty('manifestFiles')
+    }
   })
 })
