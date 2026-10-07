@@ -73,6 +73,7 @@ export interface NpmRemoteScanReceipt {
   verdict: 'passed'
   policy: {
     errorAlerts: number
+    totalAlerts: number
     warnAlerts: number
   }
 }
@@ -119,6 +120,7 @@ export function parseNpmRemoteScanReceipt(
     verdict: receipt['verdict'],
     policy: {
       errorAlerts: policy['errorAlerts'],
+      totalAlerts: policy['totalAlerts'],
       warnAlerts: policy['warnAlerts'],
     },
   }
@@ -141,8 +143,10 @@ export function parseNpmRemoteScanReceipt(
     parsed.verdict === 'passed',
     Number.isSafeInteger(parsed.policy.errorAlerts),
     parsed.policy.errorAlerts === 0,
+    Number.isSafeInteger(parsed.policy.totalAlerts),
+    parsed.policy.totalAlerts === 0,
     Number.isSafeInteger(parsed.policy.warnAlerts),
-    Number(parsed.policy.warnAlerts) >= 0,
+    parsed.policy.warnAlerts === 0,
   ]
   if (checks.includes(false)) {
     throw new Error('Remote npm scan receipt is malformed or non-passing.')

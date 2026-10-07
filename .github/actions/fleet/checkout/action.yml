@@ -358,15 +358,10 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         if [ -d .github ]; then
-          # Pass --gh-token only when a token is actually present. In a local
-          # local-ci run github.token is empty, and zizmor 1.25+ treats an empty
-          # `--gh-token ""` as a real token, then fatally errors ("no audit was
-          # performed") when its online impostor-commit check can't reach the
-          # GitHub API. Omitting the flag makes zizmor skip its online audits
-          # cleanly; CI (with a real token) still runs the full online set.
+          # Tokenless runs use offline audits. Authenticated runs include online audits.
           if [ -n "${GITHUB_TOKEN}" ]; then
             zizmor .github --gh-token "${GITHUB_TOKEN}" --min-severity medium
           else
-            zizmor .github --min-severity medium
+            zizmor .github --offline --min-severity medium
           fi
         fi

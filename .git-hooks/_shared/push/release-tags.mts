@@ -20,9 +20,9 @@
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
-import { debugCheck } from './check-output.mts'
+import { debugCheck } from '../check-output.mts'
 
-import { git, gitLines } from './git.mts'
+import { git, gitLines } from '../git.mts'
 
 // How many exempt commits the notice names before it summarizes the rest.
 const EXEMPT_SAMPLE_LIMIT = 5

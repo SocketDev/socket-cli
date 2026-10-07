@@ -2,33 +2,34 @@
  * @file Produce a CI-only Socket scan receipt for exact staged npm bytes.
  */
 
+import crypto from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
-import { isMainModule } from '../process/is-main-module.mts'
-import { runMain } from '../process/run-main.mts'
-import type { ScriptMeta } from '../process/run-main.mts'
-import type { ScriptResult } from '../process/script-result.mts'
-import { resolveReleaseSubject } from '../release/subject.mts'
-import { scanStagedEntryDetailed } from '../registry-infra/npm/scan.mts'
-import type { StagedScanVerdict } from '../registry-infra/npm/scan.mts'
-import { defaultPackTarball } from '../registry-infra/npm/staged.mts'
-import { resolveNpmWorkspaceLayout } from '../registry-infra/npm/workspace.mts'
-import { rootPath, runCapture } from '../registry-infra/shared.mts'
+import { isMainModule } from '../../process/is-main-module.mts'
+import { runMain } from '../../process/main/run.mts'
+import type { ScriptMeta } from '../../process/main/run.mts'
+import type { ScriptResult } from '../../process/script-result.mts'
+import { resolveReleaseSubject } from '../../release/subject.mts'
+import { scanStagedEntryDetailed } from '../../registry/npm/scan/run.mts'
+import type { StagedScanVerdict } from '../../registry/npm/scan/run.mts'
 import {
-  NPM_SCAN_RECEIPT_FILE,
-  parseNpmRemoteScanReceipt,
-} from './scan-receipt.mts'
-import type { NpmRemoteScanReceipt } from './scan-receipt.mts'
+  defaultDownloadStagedTarball,
+  defaultPackTarball,
+} from '../../registry/npm/staged.mts'
+import { resolveNpmWorkspaceLayout } from '../../registry/npm/workspace.mts'
+import { rootPath, runCapture } from '../../registry/shared.mts'
+import { NPM_SCAN_RECEIPT_FILE, parseNpmRemoteScanReceipt } from './receipt.mts'
+import type { NpmRemoteScanReceipt } from './receipt.mts'
 
 const SHA_RE = /^[0-9a-f]{40}$/u
 const STAGE_ID_RE = /^[0-9a-f-]{36}$/u
 const RECEIPT_PATH = path.join(
   rootPath,
-  '.cache/fleet/npm-scan-ci',
+  '.cache/fleet/npm-socket-staged-scan',
   NPM_SCAN_RECEIPT_FILE,
 )
 
@@ -46,6 +47,7 @@ export interface ScanCiConfig {
 
 interface ScanCiDeps {
   headSha: () => Promise<string>
+  download: typeof defaultDownloadStagedTarball
   pack: typeof defaultPackTarball
   scan: typeof scanStagedEntryDetailed
   subject: (root: string) => { name: string; version: string }
@@ -134,6 +136,7 @@ function receiptFrom(
     packageVersion: config.packageVersion,
     policy: {
       errorAlerts: verdict.errorAlerts.length,
+      totalAlerts: verdict.totalAlerts,
       warnAlerts: verdict.warnAlerts.length,
     },
     publishRunId: config.originalPublishRunId,
@@ -153,6 +156,7 @@ function receiptFrom(
 function runtimeDeps(packageName: string): ScanCiDeps {
   return {
     headSha: currentHeadSha,
+    download: defaultDownloadStagedTarball,
     pack: defaultPackTarball,
     scan: scanStagedEntryDetailed,
     subject(root) {
@@ -187,18 +191,26 @@ export async function runScanCi(
     subject.version !== config.packageVersion
   ) {
     throw new Error(
-      `Package mismatch. Where: rebuilt publish subject. Saw: ${subject.name}@${subject.version}; wanted ${config.packageName}@${config.packageVersion}. Fix: use the exact signed bump SHA.`,
+      `Package mismatch. Where: signed release subject. Saw: ${subject.name}@${subject.version}; wanted ${config.packageName}@${config.packageVersion}. Fix: use the exact signed bump SHA.`,
     )
   }
-  const tarball = await deps.pack(
-    config.packageName,
-    config.packageVersion,
-    rootPath,
-  )
+  const downloaded = await deps.download(config.stageId)
+  const tarball =
+    downloaded ?? (await deps.pack(config.packageName, config.packageVersion))
   if (!tarball) {
-    throw new Error('Canonical npm pack produced no tarball.')
+    throw new Error(
+      `Staged tarball unavailable. Where: npm stage ${config.stageId}. Saw: neither an authenticated download nor a source-built package; wanted bytes matching ${config.stageSha1}. Fix: restore staged-download authentication or build the signed release source before scanning.`,
+    )
   }
   try {
+    if (!downloaded) {
+      const sourcePackSha1 = crypto.hash('sha1', await fs.readFile(tarball))
+      if (sourcePackSha1 !== config.stageSha1) {
+        throw new Error(
+          `Source-built tarball mismatch. Where: npm stage ${config.stageId}. Saw: SHA-1 ${sourcePackSha1}; wanted ${config.stageSha1}. Fix: reproduce the signed release build or restore authenticated staged download.`,
+        )
+      }
+    }
     const verdict = await deps.scan(
       { name: config.packageName, version: config.packageVersion },
       {
@@ -220,12 +232,11 @@ export async function main(): Promise<ScriptResult> {
 }
 
 const SCRIPT_META: ScriptMeta = {
-  describe:
-    'rebuilds exact staged npm bytes in CI and records a Socket policy scan',
+  describe: 'scans npm staged bytes or a source-built SHA-1 match in CI',
   help: `Usage: pnpm run npm:scan:ci [--json]\n\nCI only. Inputs come from the publish-npm workflow environment.`,
   json: 'result',
 }
 
 if (isMainModule(import.meta.url)) {
-  runMain(main, SCRIPT_META)
+  runMain(() => main(), SCRIPT_META)
 }

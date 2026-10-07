@@ -7,9 +7,11 @@
       "variant": "",
       "label": "ubuntu-26.04",
       "channel": "ubuntu26",
-      "release": "ubuntu26/20260907.131",
-      "publishedAt": "2026-09-08T09:36:28Z",
-      "aliases": ["ubuntu-latest"]
+      "release": "ubuntu26/20260927.149",
+      "publishedAt": "2026-09-28T18:47:14Z",
+      "aliases": [
+        "ubuntu-latest"
+      ]
     },
     "macos-arm64": {
       "os": "macos",
@@ -19,7 +21,9 @@
       "channel": "macos-26-arm64",
       "release": "macos-26-arm64/20260831.0337",
       "publishedAt": "2026-09-01T11:17:55Z",
-      "aliases": ["macos-latest"]
+      "aliases": [
+        "macos-latest"
+      ]
     },
     "windows-x64": {
       "os": "windows",
@@ -27,135 +31,246 @@
       "variant": "",
       "label": "windows-2025",
       "channel": "win25-vs2026",
-      "release": "win25-vs2026/20260907.229",
-      "publishedAt": "2026-09-08T12:01:04Z",
-      "aliases": ["windows-latest"]
+      "release": "win25-vs2026/20260925.250",
+      "publishedAt": "2026-09-28T19:12:20Z",
+      "aliases": [
+        "windows-latest"
+      ]
     }
   },
   "locations": [
     {
       "file": ".github/workflows/publish-private-snapshot-launcher.yml",
-      "path": ["jobs", "launcher-macos", "runs-on"],
+      "path": [
+        "jobs",
+        "launcher-macos",
+        "runs-on"
+      ],
       "role": "macos-arm64"
     },
     {
       "file": ".github/workflows/publish-private-snapshot-launcher.yml",
-      "path": ["jobs", "launcher-linux", "runs-on"],
+      "path": [
+        "jobs",
+        "launcher-linux",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-private-snapshot-launcher.yml",
-      "path": ["jobs", "launcher-windows", "runs-on"],
+      "path": [
+        "jobs",
+        "launcher-windows",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/ci-gates.yml",
-      "path": ["jobs", "check", "runs-on"],
+      "path": [
+        "jobs",
+        "check",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/ci-gates.yml",
-      "path": ["jobs", "cover-shards", "runs-on"],
+      "path": [
+        "jobs",
+        "cover-shards",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/ci-gates.yml",
-      "path": ["jobs", "cover", "runs-on"],
+      "path": [
+        "jobs",
+        "cover",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/ci-gates.yml",
-      "path": ["jobs", "validate", "runs-on"],
+      "path": [
+        "jobs",
+        "validate",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/sweep-jobs.yml",
-      "path": ["jobs", "prune", "runs-on"],
+      "path": [
+        "jobs",
+        "prune",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/scan-codeql.yml",
-      "path": ["jobs", "plan", "runs-on"],
+      "path": [
+        "jobs",
+        "plan",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/ci-fix.yml",
-      "path": ["jobs", "repair", "runs-on"],
+      "path": [
+        "jobs",
+        "repair",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-update.yml",
-      "path": ["jobs", "check-updates", "runs-on"],
+      "path": [
+        "jobs",
+        "check-updates",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-update.yml",
-      "path": ["jobs", "update", "runs-on"],
+      "path": [
+        "jobs",
+        "update",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-odai-cache.yml",
-      "path": ["jobs", "fill", "runs-on"],
+      "path": [
+        "jobs",
+        "fill",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-odai-cache.yml",
-      "path": ["jobs", "verify", "runs-on"],
+      "path": [
+        "jobs",
+        "verify",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-fuzz.yml",
-      "path": ["jobs", "discover", "runs-on"],
+      "path": [
+        "jobs",
+        "discover",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-fuzz.yml",
-      "path": ["jobs", "fuzz-rust", "runs-on"],
+      "path": [
+        "jobs",
+        "fuzz-rust",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-fuzz.yml",
-      "path": ["jobs", "fuzz-js", "runs-on"],
+      "path": [
+        "jobs",
+        "fuzz-js",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-fuzz.yml",
-      "path": ["jobs", "fuzz-go", "runs-on"],
+      "path": [
+        "jobs",
+        "fuzz-go",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-fuzz.yml",
-      "path": ["jobs", "fuzz-cpp", "runs-on"],
+      "path": [
+        "jobs",
+        "fuzz-cpp",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/cron-weekly-fuzz.yml",
-      "path": ["jobs", "report-crashes", "runs-on"],
+      "path": [
+        "jobs",
+        "report-crashes",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/ci-gates.yml",
-      "path": ["jobs", "test", "strategy", "matrix", "os", 0],
+      "path": [
+        "jobs",
+        "test",
+        "strategy",
+        "matrix",
+        "os",
+        0
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/ci-gates.yml",
-      "path": ["jobs", "test", "strategy", "matrix", "os", 1],
+      "path": [
+        "jobs",
+        "test",
+        "strategy",
+        "matrix",
+        "os",
+        1
+      ],
       "role": "macos-arm64"
     },
     {
       "file": ".github/workflows/ci-gates.yml",
-      "path": ["jobs", "test", "strategy", "matrix", "os", 2],
+      "path": [
+        "jobs",
+        "test",
+        "strategy",
+        "matrix",
+        "os",
+        2
+      ],
       "role": "windows-x64"
     },
     {
       "file": ".github/workflows/test-coverage.yml",
-      "path": ["jobs", "coverage", "runs-on"],
+      "path": [
+        "jobs",
+        "coverage",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-npm-addons.yml",
-      "path": ["jobs", "napi-matrix", "runs-on"],
+      "path": [
+        "jobs",
+        "napi-matrix",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
@@ -186,62 +301,110 @@
     },
     {
       "file": ".github/workflows/publish-npm.yml",
-      "path": ["jobs", "publish", "runs-on"],
+      "path": [
+        "jobs",
+        "publish",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/check-dist.yml",
-      "path": ["jobs", "check-dist", "runs-on"],
+      "path": [
+        "jobs",
+        "check-dist",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-npm.yml",
-      "path": ["jobs", "coverage-plan", "runs-on"],
+      "path": [
+        "jobs",
+        "coverage-plan",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-npm.yml",
-      "path": ["jobs", "coverage-shards", "runs-on"],
+      "path": [
+        "jobs",
+        "coverage-shards",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-npm.yml",
-      "path": ["jobs", "coverage", "runs-on"],
+      "path": [
+        "jobs",
+        "coverage",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-npm.yml",
-      "path": ["jobs", "npm-publish", "runs-on"],
+      "path": [
+        "jobs",
+        "npm-publish",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-npm.yml",
-      "path": ["jobs", "scan-staged-package", "runs-on"],
+      "path": [
+        "jobs",
+        "scan-staged-package",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-prebake-pack.yml",
-      "path": ["jobs", "bake", "runs-on"],
+      "path": [
+        "jobs",
+        "bake",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-go.yml",
-      "path": ["jobs", "verify-and-warm", "runs-on"],
+      "path": [
+        "jobs",
+        "verify-and-warm",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/release-github.yml",
-      "path": ["jobs", "gate", "runs-on"],
+      "path": [
+        "jobs",
+        "gate",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/release-github.yml",
-      "path": ["jobs", "github-release", "runs-on"],
+      "path": [
+        "jobs",
+        "github-release",
+        "runs-on"
+      ],
       "role": "linux-x64"
     },
     {
       "file": ".github/workflows/publish-cargo.yml",
-      "path": ["jobs", "publish", "runs-on"],
+      "path": [
+        "jobs",
+        "publish",
+        "runs-on"
+      ],
       "role": "linux-x64"
     }
   ]

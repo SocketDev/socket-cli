@@ -83,6 +83,8 @@ export function readPnpmEcosystemOwnership(root, options = {}) {
         {
           cwd: root,
           encoding: 'utf8',
+          // This local query needs no sfw network-auth handshake.
+          env: { ...pnpmProcess.env, SOCKET_SHIM_ACTIVE_PNPM: '1' },
           maxBuffer: PNPM_CONFIG_MAX_BYTES,
           stdio: ['ignore', 'pipe', 'pipe'],
           timeout: PNPM_CONFIG_TIMEOUT_MS,

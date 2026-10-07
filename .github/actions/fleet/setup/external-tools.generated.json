@@ -87,111 +87,111 @@
       "description": "Claude Code native binary verified through the Anthropic signed release manifest",
       "origin": "native",
       "repository": "claude",
-      "version": "2.1.259",
-      "published": "2026-09-02T20:40:41Z",
+      "version": "2.1.284",
+      "published": "2026-09-28T02:36:51Z",
       "platforms": {
         "darwin-arm64": {
           "asset": "claude",
           "binary": "claude",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/darwin-arm64/claude",
-          "integrity": "sha256-iEuqOP4aYkviXEqRVov1oItc9OfXrPKbd2DjUl2WSJg="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/darwin-arm64/claude",
+          "integrity": "sha256-UKFML1D1Zmg4D92kkBZ/HTYw1cwY+4rtMHPCx+pzFP4="
         },
         "darwin-x64": {
           "asset": "claude",
           "binary": "claude",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/darwin-x64/claude",
-          "integrity": "sha256-r4dBz/DT+1xLiTx8s2E70hso+mHMpFRp1guOXhYeudg="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/darwin-x64/claude",
+          "integrity": "sha256-eUQbhok1oR7QYwsu5ZMn7an2qTu41HC9ZjPAPfdtITU="
         },
         "linux-arm64": {
           "asset": "claude",
           "binary": "claude",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-arm64/claude",
-          "integrity": "sha256-xv8Dw4nM3q4PGencMkiO66YfvvR5b1Mdv7psAPRQQNA="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/linux-arm64/claude",
+          "integrity": "sha256-PdD5bXraRjFS0gMAGG9s/Gq5S1fiGPSeOshttCrGlaY="
         },
         "linux-arm64-musl": {
           "asset": "claude",
           "binary": "claude",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-arm64-musl/claude",
-          "integrity": "sha256-IgOhfQ3d98Wv7OLZSNYNIP3vTyJ//AwcHtF85iIfpls="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/linux-arm64-musl/claude",
+          "integrity": "sha256-2Lzlck7NHmkw3fX0zvfOuwzT5QtPXVFYswpT+Bgk+YI="
         },
         "linux-x64": {
           "asset": "claude",
           "binary": "claude",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-x64/claude",
-          "integrity": "sha256-991irkFTeAGM0h3ZUOs7rBdKsIWDAwTTuLCYFGv9R7Y="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/linux-x64/claude",
+          "integrity": "sha256-XNkKq9g/ihUTbDWqN7sdkrNImTVzMWZD3D/k4Er7+I8="
         },
         "linux-x64-musl": {
           "asset": "claude",
           "binary": "claude",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/linux-x64-musl/claude",
-          "integrity": "sha256-GllWmSEVAQh+j7MZUiVNA6E+u2Kj5F+VmQ8VE47sbXA="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/linux-x64-musl/claude",
+          "integrity": "sha256-HF5NdDHB5wxF79zmnqdMLJoq0wnxZVX33FY/R0PZeKA="
         },
         "win32-arm64": {
           "asset": "claude.exe",
           "binary": "claude.exe",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/win32-arm64/claude.exe",
-          "integrity": "sha256-XZZLW8aMGkzWGKb5kq5WJmyzTmiuLErtmqDtaCR90hg="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/win32-arm64/claude.exe",
+          "integrity": "sha256-ipaOFQBXbupD0E18/9QM85scg+W0Q1Irr+DpLlDWo4k="
         },
         "win32-x64": {
           "asset": "claude.exe",
           "binary": "claude.exe",
-          "source": "https://downloads.claude.ai/claude-code-releases/2.1.259/win32-x64/claude.exe",
-          "integrity": "sha256-hUKQAOybgAgmE+ns0uDTsidsnVsipoGTZXXSxMLzQu0="
+          "source": "https://downloads.claude.ai/claude-code-releases/2.1.284/win32-x64/claude.exe",
+          "integrity": "sha256-BBZjHoRvdDEQ2lKCQJd2+hMT5l8zpYiq4Gbq+NsP2n0="
         }
       }
     },
     "codex": {
       "description": "codex native CLI, pinned publisher release artifacts",
       "repository": "github:openai/codex",
-      "version": "0.153.4",
-      "versionDate": "2026-09-04",
+      "version": "0.159.0",
+      "versionDate": "2026-09-18",
       "binaryName": "codex",
       "platforms": {
         "darwin-arm64": {
           "asset": "codex-package-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-qe0VbRGa/xQtOdqo3bxeEzC21Tw4Riy1aLrHTPlHEpzM4yVxstaY6R2PudMOLrDTSsNMJEs57Ou1ZVUqk20q9w==",
+          "integrity": "sha512-7qlCHeVybN+5EL7hfNCR3um5b1ddyez+pCh8Z713M7buNlpMV5HnAGQYq5K7Fk4iszhdVTtygJNWLBGZXd8nDQ==",
           "binary": "bin/codex"
         },
         "darwin-x64": {
           "asset": "codex-package-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-NcXodo3Ckr7UXhLevGzYYpi445/J4406/I4WzrduHGARpUmXsITnZ090JMGZ9Z3DaL8BTrQ8qwZ90DooqjE2zQ==",
+          "integrity": "sha512-32WbRlG2H5H5ohJFVyQEoHZ18xCn7fhbhcR8ZyFz810VhLcjGvwoy7gC6iOH+9G3JIm9whUxjFhmX2pIXZTVLQ==",
           "binary": "bin/codex"
         },
         "linux-arm64": {
           "asset": "codex-package-aarch64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-plmIDQ6pNI9pPpJpWQAq29svm4KsVW14MBYuXoA0Y5GVvUo6dvF4E6qW7JfhlCxPPoMN86gbS0Ts5Ptrbc6Qlg==",
+          "integrity": "sha512-DQsTjEEGIjsGts3HVSw7CRc8zw1c/RY045KEUspDsxai8Si3YlPoQBfGkHvzJHCv4k/96gyWsnAT591CIH+1kg==",
           "binary": "bin/codex"
         },
         "linux-arm64-musl": {
           "asset": "codex-package-aarch64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-plmIDQ6pNI9pPpJpWQAq29svm4KsVW14MBYuXoA0Y5GVvUo6dvF4E6qW7JfhlCxPPoMN86gbS0Ts5Ptrbc6Qlg==",
+          "integrity": "sha512-DQsTjEEGIjsGts3HVSw7CRc8zw1c/RY045KEUspDsxai8Si3YlPoQBfGkHvzJHCv4k/96gyWsnAT591CIH+1kg==",
           "binary": "bin/codex"
         },
         "linux-x64": {
           "asset": "codex-package-x86_64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-6YPMfyQMQzJWGiQgdIY7g/nzdkyn1cBxhMYzHWX3ntOSjHqMpb6NYu7vcaA7v1ngO++bK97uPbuiFqeTCz7N/w==",
+          "integrity": "sha512-ipCnWdwQRDYeesjGR+30vmWxnhXqQhOMJdp4VKZ91JaBGlNT8zjNl1k3iyFw5oUhg09u0TPn0oKQKEhyg5DBnQ==",
           "binary": "bin/codex"
         },
         "linux-x64-musl": {
           "asset": "codex-package-x86_64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-6YPMfyQMQzJWGiQgdIY7g/nzdkyn1cBxhMYzHWX3ntOSjHqMpb6NYu7vcaA7v1ngO++bK97uPbuiFqeTCz7N/w==",
+          "integrity": "sha512-ipCnWdwQRDYeesjGR+30vmWxnhXqQhOMJdp4VKZ91JaBGlNT8zjNl1k3iyFw5oUhg09u0TPn0oKQKEhyg5DBnQ==",
           "binary": "bin/codex"
         },
         "win32-arm64": {
           "asset": "codex-package-aarch64-pc-windows-msvc.tar.gz",
-          "integrity": "sha512-G3d2foCnETOENgo7upxX8IvnwC0DUNTlOJu5QduzXm4CqXZZ6yeues8no2FfwMaYAtModE95CHgBQXLUDq1q5Q==",
+          "integrity": "sha512-XhvNzw3xV9jC30v7D/oFEvDcsyAS4fEukba8M6Zk0eZYgQwMafXxRXDPEvjpl0CNKpMKo3r1ATbvRhQ5NEUdZA==",
           "binary": "bin/codex.exe"
         },
         "win32-x64": {
           "asset": "codex-package-x86_64-pc-windows-msvc.tar.gz",
-          "integrity": "sha512-+eslGChi76luYlP2szi3iw2aGQ81CWOuva05DUBNvnFYj5hqmpvgMczFvIrTpl6g8nzn8hZpnDeV1Rh3A3f0Hw==",
+          "integrity": "sha512-sePz15qOkT2PTsfQMJXZ0mkH8dnGwgpxP/xkUmFbKzcP9x6u2gV0FdjG4LOPJ2K9cD4uSe5jFK+ZdX/4RrXX3g==",
           "binary": "bin/codex.exe"
         }
       },
       "origin": "gh-asset",
-      "tag": "rust-v0.153.4",
+      "tag": "rust-v0.159.0",
       "notes": [
-        "Platform SHA-256 values come from GitHub release asset digests at https://api.github.com/repos/openai/codex/releases/tags/rust-v0.153.4. The shared installer verifies downloaded bytes before activation."
+        "Platform SHA-256 values come from GitHub release asset digests at https://api.github.com/repos/openai/codex/releases/tags/rust-v0.155.1. The shared installer verifies downloaded bytes before activation."
       ]
     },
     "fff": {
@@ -201,41 +201,41 @@
       ],
       "description": "fff-mcp — file-search MCP server (pinned, SRI-verified per platform)",
       "repository": "github:dmtrKovalenko/fff",
-      "version": "0.10.6",
-      "tag": "v0.10.6",
+      "version": "0.11.0",
+      "tag": "v0.11.0",
       "binaryName": "fff-mcp",
       "platforms": {
         "darwin-arm64": {
           "asset": "fff-mcp-aarch64-apple-darwin",
-          "integrity": "sha512-VbyMeWW2JeNwHJL7lITiPkz+ZTCcAX0qrZ2zkNsGD/4Z7UXH9bKUYYYaYQI+pH8r1ocJlCQ8dAyfce/9sFKm7A=="
+          "integrity": "sha512-bhrXZ3knCtECIPP9OBUWwFbxHoU31UjhPdQy6PR/enl6Qdfalx5vruaYK34pK5wIWfJXtFZwEnh3kgtyM0G5dg=="
         },
         "darwin-x64": {
           "asset": "fff-mcp-x86_64-apple-darwin",
-          "integrity": "sha512-tM1/o68xY5IxSNJpj37AZb8cTeu7qIg9TU9eVokc2aq6Uvu5rWJzDCLVgsrEEB9MWrQq5oKAGJNkOe6AjazH6g=="
+          "integrity": "sha512-FeD/LohaHhTvVhXhfZgHMmFsB2Mz2apMMDDwMtN24onTPe8MIsQWrom51UaDU5+lyN1Y6m1te51M1YCjrs4O3g=="
         },
         "linux-arm64": {
           "asset": "fff-mcp-aarch64-unknown-linux-gnu",
-          "integrity": "sha512-3LzyyvariFdoEwXeojLFcJshPN1/fls616d6RORWYEO5iUpGOG8Yk3tezhY25wmtRdE+MLlV8kZ6C5gnN7D0FA=="
+          "integrity": "sha512-d6ag1LQvrIsOsSWyBNa8ZN0DQRNGS3gVw8MvcE48xTwoOp3/HkvX/ym/JhqW5RtG71DTVTQ7GGIAGEifxabVig=="
         },
         "linux-arm64-musl": {
           "asset": "fff-mcp-aarch64-unknown-linux-musl",
-          "integrity": "sha512-YNZQGSyxCeDTF6dWcMXNDY2228amO2qz4bRv2nQbxi9HqbzdEojroAoRYqCP9lha5daGbGP3srdz2j36MBoKmw=="
+          "integrity": "sha512-ZKKRO8LEIWoUmLVuPKHoEaPZAfcz6xPLw3OC+1TaGUAvRw5P7rIDStXcLKG+yRkXP7rmelkD86FcXQq9OM10qw=="
         },
         "linux-x64": {
           "asset": "fff-mcp-x86_64-unknown-linux-gnu",
-          "integrity": "sha512-g3jBM57thrgkbTagonlLSrI2Pl3h+BK5P3U4JVcrI9cYgWUpYqbaJyq+rftTshVh0I3S/u5hfsarQt84z6AfOQ=="
+          "integrity": "sha512-QLCGlAbYjj/mte8t50WcLXqSYb7TdsmMwGcPu44OLWNTpZdWC5fwEzR5982QimhforqVsYy7fR+iigAn6oMj6Q=="
         },
         "linux-x64-musl": {
           "asset": "fff-mcp-x86_64-unknown-linux-musl",
-          "integrity": "sha512-uvW4Qo4BAcc9Gj+M2LwDR9xQ4rd0JAUTDIfKptF6/mPHbeFy1bMzqtjiaZOMyaQ57866W2uTT8ep2sy7XtkJsw=="
+          "integrity": "sha512-k0bDPOuHDvTZ/Rf/nNVqdURPzzem4l/D98Kl9YDmMmedU3N13jKpnn5Vtkq+mMjbjDHT04PU1tGem9neZkJrFw=="
         },
         "win32-arm64": {
           "asset": "fff-mcp-aarch64-pc-windows-msvc.exe",
-          "integrity": "sha512-MPB7uvbzGSEOldHkZGEVenQeEJc/+Qy4kIo2WWnDOdjARP62TIDINcv0E+Cr3GW+iUImwZZhdNHDRXWZNhlCwg=="
+          "integrity": "sha512-TqAtd7tSPTBCB5gLfOw6d2JCr19pPjeM4u0DbMVAjjmsnvGjXJOU2bql/HBtI3EzaXqQhqQtGeT4Z7GIwESHvw=="
         },
         "win32-x64": {
           "asset": "fff-mcp-x86_64-pc-windows-msvc.exe",
-          "integrity": "sha512-hNpJCAAEvlmYPQ3W65lK6GySD14NtKjE5+mTkDQ/iKBR9FBkjnrrBLSapQez27u1K7blnBiGB778DWi4Q4ePaA=="
+          "integrity": "sha512-Kau32/aSX5y1YLiUq0uGiZQvGUD1VSS7x+78qYb60x1FBfn3HFF7M0W+Wlq2KIu1DXZMtdcpxp4e8Et9dq0ZnQ=="
         }
       },
       "origin": "gh-asset"
@@ -341,8 +341,8 @@
     },
     "google-chrome-beta": {
       "description": "Google Chrome Beta for the Gemma on-device AI backend",
-      "version": "153.0.8010.12-1",
-      "versionDate": "2026-08-26T16:44:52.610924Z",
+      "version": "155.0.8059.12-1",
+      "versionDate": "2026-09-23T16:28:19.340691Z",
       "chromeVersionExclusions": [
         {
           "version": "154.0.8037.0-1",
@@ -356,8 +356,8 @@
       ],
       "platforms": {
         "linux-x64": {
-          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-beta/google-chrome-beta_153.0.8010.12-1_amd64.deb",
-          "integrity": "sha512-7UbGeK/cyROr8L0RNzpiNn5dc2oJOlvpTjyvXZvuCzXs87bDf3sE/MXREZvLPTOnBxNqioo5us09r7Xji/LPyA=="
+          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-beta/google-chrome-beta_155.0.8059.12-1_amd64.deb",
+          "integrity": "sha512-Y+OdK+18q5zuh22tBx65KOZQlEPMg5cjLMfTNAR6umECNbJb2tJB4UEE5qWuRX0BNw3WfURarHvxIizjQQVd3A=="
         }
       },
       "origin": "node-dist"
@@ -370,16 +370,12 @@
         "Linux x64 ONLY — odai's on-device model runs on ubuntu-latest (x64); other platforms report not-ready and clean-skip, so no other canonical key is pinned here."
       ],
       "description": "Google Chrome stable .deb — for the odai on-device AI backend (pinned, SHA-256-verified before apt-get install)",
-      "version": "151.0.7922.137-1",
-      "versionDate": "2026-08-18",
+      "version": "154.0.8037.57-1",
+      "versionDate": "2026-09-22T18:09:00.403193Z",
       "platforms": {
         "linux-x64": {
-          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_151.0.7922.137-1_amd64.deb",
-          "integrity": {
-            "value": "sha256-e6dabf044cf9cd0279cfe86efa431682c18bfc06d06339ce055aaa87ae871727",
-            "src": "https://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages",
-            "date": "2026-08-18"
-          }
+          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_154.0.8037.57-1_amd64.deb",
+          "integrity": "sha512-UDv9rIY53d60TDObN6KVODpadm5HIEsm9OPhG1UJN6HhwbDEHWPDvLvPJnldU6K3MThQZckkX7VQnzPlnP9oZA=="
         }
       },
       "origin": "node-dist"
@@ -404,29 +400,34 @@
       "origin": "gh-asset"
     },
     "mbx": {
-      "version": "1.10.1",
-      "tag": "v1.10.1",
+      "version": "1.22.0",
+      "tag": "v1.22.0",
       "repository": "github:jdx/mr-boxington",
       "origin": "gh-asset",
       "platforms": {
         "darwin-arm64": {
           "asset": "mbx-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-0s8CmxC7C4IiOn5SNATUJeHvDZNMsEW4OWcSJLZ8hjixm1TXDcDsoIc2g9xFXYFfM+5h41wyB/vHGkA1vKI96w=="
+          "integrity": "sha512-Tjab3gdmPQtkmEvsjgjOqMzEWWxBCsAlQifXCcN/mv8oRH1BN8RRthm8jVdQ9PsNQjEhIhyYYlnhcysJ4+1YRg=="
         },
         "linux-arm64-musl": {
           "asset": "mbx-aarch64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-4kxUNgRnyyZegTQAE59BG0xLH6oX6rG9z/1tTxZrFdbTTG0qBt4xQNEz/tlKPNl0uXL5o4JSgHs6FAF66JTA2A=="
+          "integrity": "sha512-qgsbEFeo6J9K7tH4K2hfFJjV6Rm6s26na2eEd8nw/qsSLzw/8E26rWrhTqsyXPog7f160iWG3/u6XV2sgSaYvg=="
         },
         "linux-x64-musl": {
           "asset": "mbx-x86_64-unknown-linux-musl.tar.gz",
-          "integrity": "sha512-ulAKaVrj3Hb5PSjkJdT4ihoLILtAD4R+Y7Iw02H4mVDRtvksjN3vSUEzoKphIwePpbmxdz9293FPYpfDdJajEA=="
+          "integrity": "sha512-tdOgq9JazUqnPrDkwsCd77mZpao5kNCaXSun1QdV690X/LneoSzh0AK0z/609n6X8awdg4JNGsHolJs7WNbU2g=="
         },
         "win32-x64": {
           "asset": "mbx-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-mIH6V6PXASicF3J8AuW9pVOgBkNW+arhNBkH+J8dLKsfvQKbEnrdwoU/QgIBVAz1adPIeuMn5/03Pv491bmgEw=="
+          "integrity": "sha512-BflfuUwzGfNGYPnbhIjs2bDXTSjpNqpXUjZ4AjPQhN/Eklpg1K2dlnyfeJX2ZQCikLknO02e5QnowSxuFgiihw=="
         }
       },
-      "description": "Cache front-end for cargo: put mbx in front of any cargo command and one cache warms every worktree and CI run, pruning itself to a size budget."
+      "description": "Cache front-end for cargo: put mbx in front of any cargo command and one cache warms every worktree and CI run, pruning itself to a size budget.",
+      "soakBypass": {
+        "published": "2026-10-03",
+        "removable": "2026-10-10",
+        "version": "1.22.0"
+      }
     },
     "mise": {
       "binaryName": "mise",
@@ -437,9 +438,9 @@
       ],
       "origin": "gh-asset",
       "repository": "github:jdx/mise",
-      "version": "2026.9.1",
-      "tag": "v2026.9.1",
-      "versionDate": "2026-09-02",
+      "version": "2026.9.17",
+      "tag": "v2026.9.17",
+      "versionDate": "2026-09-18",
       "misePolicy": {
         "autoInstall": false,
         "autoUpdate": false,
@@ -456,45 +457,71 @@
       },
       "platforms": {
         "darwin-arm64": {
-          "asset": "mise-v2026.9.1-macos-arm64.tar.gz",
+          "asset": "mise-v2026.9.17-macos-arm64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha256-v+oKtBe0jB6LmUEvyvIM4XQkoyhqh2bX0rAFH+Mh1WU="
+          "integrity": "sha512-KXC8OPlak3jEScYTHA9BRvTFkarcGnsj5ggrhufRDNBsGw7W37t0uareMEEyKH4oGEKS5zXxvo7fpuU8gHsUIQ=="
         },
         "darwin-x64": {
-          "asset": "mise-v2026.9.1-macos-x64.tar.gz",
+          "asset": "mise-v2026.9.17-macos-x64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha256-7tdoOMaKpJt78HxGjdSZOFW7s0KkRC9nNVtv++dG5NQ="
+          "integrity": "sha512-8EDBpSOF02FRVHagSCZ0huX3jjOXH2foL0DKxOmUntITBCO20w2sM1IjsurXz2Vh6HZOEwgRSBeafykwbrW1Nw=="
         },
         "linux-arm64": {
-          "asset": "mise-v2026.9.1-linux-arm64.tar.gz",
+          "asset": "mise-v2026.9.17-linux-arm64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha256-mNLqe4Ldlmr9uKn06e28p3Gs8qMNKEK/wO/be2HIhqM="
+          "integrity": "sha512-8uwEFpj4x7DpbLuhjqt9ypMmZu39ugLMI7rI5TCqHh2uFhfdFmff6+mssTkdnpjCBlH0daVbzKDOJ7w59kOQ8A=="
         },
         "linux-arm64-musl": {
-          "asset": "mise-v2026.9.1-linux-arm64-musl.tar.gz",
+          "asset": "mise-v2026.9.17-linux-arm64-musl.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha256-32ldvPpUN5IIG9uG+Z/5HD3FuQQ5YXGzCLbvHhVzAYI="
+          "integrity": "sha512-P+CVCzEMJi3ErOHCKH7VhOQ6uoLcSJwXM44gJ5Dk60SQ2LFj3mEbLuV8yVLMlT/UVz6270Hhy1ZYZKDDYDk3BA=="
         },
         "linux-x64": {
-          "asset": "mise-v2026.9.1-linux-x64.tar.gz",
+          "asset": "mise-v2026.9.17-linux-x64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha256-Bj3akUmra+U9qHfC0Xav4OrGjmTPjKKVvQUocgcBxl0="
+          "integrity": "sha512-CXuO3KZ/ZBU1URPr8Y2u0RYbyOfwMEsp0kEkR1OSNORuFXj2uwhHbqPD9zf7rqhrNRR67FsgT/f2huYa/aV44w=="
         },
         "linux-x64-musl": {
-          "asset": "mise-v2026.9.1-linux-x64-musl.tar.gz",
+          "asset": "mise-v2026.9.17-linux-x64-musl.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha256-sTvNi8UWdz/ZtgBojObmwBtiBxrlf2quRL4HE6bYNPE="
+          "integrity": "sha512-xWWAqSx+3K2GSJpxfwzxW0KJWylfnam7iXmC207T418wLCRSv7IiX9vSA+meNJRxTak/Jd1amaPoT43IDZwjqg=="
         },
         "win32-arm64": {
-          "asset": "mise-v2026.9.1-windows-arm64.zip",
+          "asset": "mise-v2026.9.17-windows-arm64.zip",
           "binary": "mise/bin/mise.exe",
-          "integrity": "sha256-bC/L7ARk366YI47VON8706NOor2t+VBJo2UOtlL0U58="
+          "integrity": "sha512-t+OEw5t8LxDF0zTz1MAhI7XaWyGE1Yx78I8iyDit1YeSKPFXLJXhiiByvZjkNIUE2z3bO2qhYfe+oh5nKRIoVw=="
         },
         "win32-x64": {
-          "asset": "mise-v2026.9.1-windows-x64.zip",
+          "asset": "mise-v2026.9.17-windows-x64.zip",
           "binary": "mise/bin/mise.exe",
-          "integrity": "sha256-lVYpbbIXd059ro/CQVQta7wjURIrqTyN8qZdO5Ideig="
+          "integrity": "sha512-vhEXFV9E1TMBz1MI5WmnAsUc3ar8yrdU6utanDT2kezSVzI4xKTHEVOLqFUbquN+1hlPJu+mHeOGCbFk5j+WNw=="
         }
+      }
+    },
+    "mold": {
+      "version": "3.0.0",
+      "tag": "v3.0.0",
+      "repository": "github:rui314/mold",
+      "origin": "gh-asset",
+      "platforms": {
+        "linux-arm64": {
+          "asset": "mold-3.0.0-aarch64-linux.tar.gz",
+          "integrity": "sha512-jDWp/Rqbubf7kSxa8dKBFGyTmruUZ5Ru4zA7oYbh21amlJ62Z2jnoh5rJCDGtAH/etAEs4GNLXXLScs9dCsotA=="
+        },
+        "linux-x64": {
+          "asset": "mold-3.0.0-x86_64-linux.tar.gz",
+          "integrity": "sha512-6kN2v43zL1G7TmZz76xLiTbhzowkEKBMu8aKE5rEXBQVd657UEs2vjhOY69DUtnsiP5cHFCn88hW5e4F5hxTmA=="
+        },
+        "win32-x64": {
+          "asset": "mold-3.0.0-x86_64-windows.zip",
+          "integrity": "sha512-zaBDy80sdWAo7Ht71p1wmrgyTvdN1FkeirMzKTHH++kX+ahDzEPaeoGsLEvFTR20OL8VysuLGKQVfxhbSqNlRA=="
+        }
+      },
+      "description": "mold high-speed ELF linker for Linux builds",
+      "soakBypass": {
+        "version": "3.0.0",
+        "published": "2026-10-05",
+        "removable": "2026-10-12"
       }
     },
     "npm": {
@@ -505,121 +532,127 @@
       ],
       "description": "npm — pinned, SRI-verified registry tarball; installed without self-update",
       "repository": "npm:npm",
-      "version": "12.0.2",
-      "integrity": "sha512-uIXokLlBj6FpNUTQX1PmT5pz7BlIN9QlixX+zdaSNHsd0qUXsbDLr50xzY6Sw7cJVr0uzHKDOle0swmPW/p5Qw==",
+      "version": "12.2.0",
+      "integrity": "sha512-ZsJjKpTnlmSXOLLXiU1xDCzC4Wlok4IwZmh/aw2KUuXytU7q6qMv/cUT7MoeSf95Slwuw/lRXYefGzGCspHPNQ==",
+      "soakBypass": {
+        "version": "12.2.0",
+        "published": "2026-09-30",
+        "removable": "2026-10-07"
+      },
       "origin": "npm"
     },
     "opencode": {
       "description": "OpenCode CLI; approved native binaries and a pending npm-native update",
       "repository": "opencode",
-      "version": "1.18.27",
+      "version": "2.0.16",
       "versionDate": "2026-08-28",
       "binaryName": "opencode",
       "platforms": {
         "darwin-arm64": {
-          "asset": "opencode-darwin-arm64.zip",
-          "integrity": "sha512-6N3TT1FwdLorKvEJd3x/RpiTwuQuU3n7OrrnLfmBmKrZCufV/J9zK6GVuIKyulW/vwUu+q8X3SFMnXbln6VoEw==",
-          "binary": "opencode",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-darwin-arm64.zip"
+          "asset": "cli-darwin-arm64-2.0.16.tgz",
+          "binary": "package/bin/opencode",
+          "source": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.0.16.tgz",
+          "integrity": "sha512-WlzjaxNb/QY/nJk93AbFNmlxpb5YDdy/2/6FPLbd10QbrkYtfz1TmI6Y0sM3BASDOLG/yJ+0oBfj9OZ5fZ5rfA=="
         },
         "darwin-x64": {
-          "asset": "opencode-darwin-x64-baseline.zip",
-          "integrity": "sha512-FLqn6SwIAGX7UMI289kCKuxaWafzV6/frBOspwcEhi7C8XO7WV70uYKfNhS9ha9y7cd1EUHb3NrNgcV1Po8kNg==",
-          "binary": "opencode",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-darwin-x64-baseline.zip"
+          "asset": "cli-darwin-x64-baseline-2.0.16.tgz",
+          "binary": "package/bin/opencode",
+          "source": "https://registry.npmjs.org/@opencode/cli-darwin-x64-baseline/-/cli-darwin-x64-baseline-2.0.16.tgz",
+          "integrity": "sha512-T+tKaSaDXMF9t0mNV3bflCQNeK5mAdqnDBHsisT+9AHYztsyoRr2oeVrR5bjMC5PeyxTJLYrlLVUTOkbgFyUFA=="
         },
         "linux-arm64": {
-          "asset": "opencode-linux-arm64.tar.gz",
-          "integrity": "sha512-TDDmlI38N0tgUIZwm/gPxc6WVxx+CsBZg5miXsiiZjLODwxddpfzK0B/wL4pH3ksqEY17FN0npl7G6EJA/AOYw==",
-          "binary": "opencode",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-arm64.tar.gz"
+          "asset": "cli-linux-arm64-2.0.16.tgz",
+          "binary": "package/bin/opencode",
+          "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.16.tgz",
+          "integrity": "sha512-BThpExec9wEIhC4U9iRY/jWecM8bVOVuYw2YTYYZ/qNn2r/RljDG2flngDmCZFM1cC6miu2kqOgPkVnVeqaapQ=="
         },
         "linux-arm64-musl": {
-          "asset": "opencode-linux-arm64-musl.tar.gz",
-          "integrity": "sha512-9vemviplXBE0CnjabDgO28ma6D0cQSZ/sm0m5DtrdgcjFxm4fWzd/GA92NC6mr8sC43SWb9+VmethgopKY4rEw==",
-          "binary": "opencode",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-arm64-musl.tar.gz"
+          "asset": "cli-linux-arm64-musl-2.0.16.tgz",
+          "binary": "package/bin/opencode",
+          "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.0.16.tgz",
+          "integrity": "sha512-lL5nQm2PSahKKVLAiX0uSBuD+4AdP8CGjfr60tI69sYJ7xoEDfVw1kCuJY9SW0NMT4uBso1gkD8StYttBHXYMw=="
         },
         "linux-x64": {
-          "asset": "opencode-linux-x64-baseline.tar.gz",
-          "integrity": "sha512-JFvBS17pPI7I4yxOvi7tPlpsXK1lbH/GfbQHtfh7p8ft4GQk0ncAOMFBGDLcXqMwR/CY/5fgz67+Yj0xI2uR4A==",
-          "binary": "opencode",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-x64-baseline.tar.gz"
+          "asset": "cli-linux-x64-baseline-2.0.16.tgz",
+          "binary": "package/bin/opencode",
+          "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline/-/cli-linux-x64-baseline-2.0.16.tgz",
+          "integrity": "sha512-gux35kDqrnl41h41d4xudIN/fab/7hfBlLtYb3dbSdCC+bhwL1TmD9M3PIMaeznya8tqra31HMyRkc7aeJFnYg=="
         },
         "linux-x64-musl": {
-          "asset": "opencode-linux-x64-baseline-musl.tar.gz",
-          "integrity": "sha512-ena11nKehP4z800R9ENdWYAZmBcVHv70g16GHKEAHiTV9VIGutEQaFtd4VVvEaI66YacJP5y43NvcEW4uuJCqw==",
-          "binary": "opencode",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-linux-x64-baseline-musl.tar.gz"
+          "asset": "cli-linux-x64-baseline-musl-2.0.16.tgz",
+          "binary": "package/bin/opencode",
+          "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline-musl/-/cli-linux-x64-baseline-musl-2.0.16.tgz",
+          "integrity": "sha512-CeD2oYHH/vR2jCs7CSJoWWWpvGMy5iNWWyy4BpjdjravfwjqcgbKgaVm9BABnAMlHPFJklz1upvPyfYk/nEaEw=="
         },
         "win32-arm64": {
-          "asset": "opencode-windows-arm64.zip",
-          "integrity": "sha512-gLpFd4uxuwAKDozYLv4ARWNqpLwXPL3cJLdRpqe96wYpwsElRFm5lBA75J/hZE9RLogK35dRmYDrWigiqSGyvg==",
-          "binary": "opencode.exe",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-windows-arm64.zip"
+          "asset": "cli-windows-arm64-2.0.16.tgz",
+          "binary": "package/bin/opencode.exe",
+          "source": "https://registry.npmjs.org/@opencode/cli-windows-arm64/-/cli-windows-arm64-2.0.16.tgz",
+          "integrity": "sha512-zZqQ/yxkGuoVSRup4LXhOEN/4KhSSv4qS+sqsDdTpsD/4oMw7OkYIV+rQ4vdPeqGPmBK2OeevmBUndEUusBHmA=="
         },
         "win32-x64": {
-          "asset": "opencode-windows-x64-baseline.zip",
-          "integrity": "sha512-ZMybz1FgNdLBttX6ISsho7gv7WCTNCN5LR+jifmtavmKcDTWmK+x/Tz2LbnrQP6OT3RhQcX8c26Jd0D2cqUAAQ==",
-          "binary": "opencode.exe",
-          "source": "https://github.com/anomalyco/opencode/releases/download/v1.18.27/opencode-windows-x64-baseline.zip"
+          "asset": "cli-windows-x64-baseline-2.0.16.tgz",
+          "binary": "package/bin/opencode.exe",
+          "source": "https://registry.npmjs.org/@opencode/cli-windows-x64-baseline/-/cli-windows-x64-baseline-2.0.16.tgz",
+          "integrity": "sha512-MyfEOA9Pzsx4yary0WcLrXhjsQjIOfaeq1ngmLxBpmTWV6EBmtL5VZ3t5IfDfULvBlxhdizQ/36DR3Wu1t7UgA=="
         }
       },
       "origin": "native",
       "notes": [
         "Active and pending artifacts carry immutable URLs and publisher integrity values; installation verifies downloaded bytes before activation."
       ],
+      "published": "2026-09-24T06:34:29.888Z",
       "pending": {
-        "version": "2.0.2",
-        "published": "2026-09-12T07:57:36.257Z",
+        "version": "2.0.24",
+        "published": "2026-10-06T03:09:11.282Z",
         "platforms": {
           "darwin-arm64": {
-            "asset": "cli-darwin-arm64-2.0.2.tgz",
+            "asset": "cli-darwin-arm64-2.0.24.tgz",
             "binary": "package/bin/opencode",
-            "source": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.0.2.tgz",
-            "integrity": "sha512-JgCEsOQ/GxrhXFB5UG3nVw43iuFKiCc3LMDvck6T42e2X1MGP/tH3bdaPYQdtKHdh6kXr82qD0uYVvNYaIxGtw=="
+            "source": "https://registry.npmjs.org/@opencode/cli-darwin-arm64/-/cli-darwin-arm64-2.0.24.tgz",
+            "integrity": "sha512-KGZeXsTu7YQuijMuihwTsKM6ezLoksyqkL+RUdKBUv87XBdwDf9bv692tFaTQqcyuL++BMGEZdffy0ImLBtm3w=="
           },
           "darwin-x64": {
-            "asset": "cli-darwin-x64-baseline-2.0.2.tgz",
+            "asset": "cli-darwin-x64-baseline-2.0.24.tgz",
             "binary": "package/bin/opencode",
-            "source": "https://registry.npmjs.org/@opencode/cli-darwin-x64-baseline/-/cli-darwin-x64-baseline-2.0.2.tgz",
-            "integrity": "sha512-sQmjh9r3Lbkx7adlGcSFsNOQrMMqWpnkYipsUjOj5P40iiN8uetTHl6LrnpaGDEQI+mVChfffRL5DZO5y0amqg=="
+            "source": "https://registry.npmjs.org/@opencode/cli-darwin-x64-baseline/-/cli-darwin-x64-baseline-2.0.24.tgz",
+            "integrity": "sha512-vCNA3+aRM4LlPl7BDEzEzsWur9OtC5Lg9ldqh7n9HUpo6Sla7G4ExCO3u6tqFUdFQIZ6/ciFLBXCowBJ1U5pJw=="
           },
           "linux-arm64": {
-            "asset": "cli-linux-arm64-2.0.2.tgz",
+            "asset": "cli-linux-arm64-2.0.24.tgz",
             "binary": "package/bin/opencode",
-            "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.2.tgz",
-            "integrity": "sha512-9NUcKcihSNRd4ofy/lRamaOop6A/REQPyGEvfV/1OsyiRR9WGkAiJoyZ0fO0gS9RonQlxDyI9IBxlF7HRQwHNA=="
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.24.tgz",
+            "integrity": "sha512-n+C1XkoIB0NaHK9CQo4gGIc9FRGDhrMdCXO8heEOvUgKsH/0ROxCr3CxUuJaKolL/5+c5u3CoiXsckL+fa52ag=="
           },
           "linux-arm64-musl": {
-            "asset": "cli-linux-arm64-musl-2.0.2.tgz",
+            "asset": "cli-linux-arm64-musl-2.0.24.tgz",
             "binary": "package/bin/opencode",
-            "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.0.2.tgz",
-            "integrity": "sha512-hwCrSEMQMr/ABkVZb2pzP7oMpFwllhPLQxKprIv/0zd6766LhY1pIw4W2o0Q4G9hBCpKzTk9Hx88ThE1burMGA=="
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.0.24.tgz",
+            "integrity": "sha512-DfL6bISz9udxWU5AIEocMjDLnpgtWGfx5sw7fXKpLUhBFhsjdBOkCrBYuDBFuPwJoe5VJPdF+A/OoTfe+Wi6XA=="
           },
           "linux-x64": {
-            "asset": "cli-linux-x64-baseline-2.0.2.tgz",
+            "asset": "cli-linux-x64-baseline-2.0.24.tgz",
             "binary": "package/bin/opencode",
-            "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline/-/cli-linux-x64-baseline-2.0.2.tgz",
-            "integrity": "sha512-QnxTyLDrIWbKDnHO1q8glguu/neWaPSTBMQNsNN9cspswZ3m4cMy+ZGaR4lbOyaSlBdkQIQB2SJUwqmSAH7vZg=="
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline/-/cli-linux-x64-baseline-2.0.24.tgz",
+            "integrity": "sha512-dGa99UyGYS46alr6uxgaSKKHa/CtGgTlWdse1bbhNjLomeOhdIJVJwwxVKfFQz4/NDg1SzDXbxgcIXha2QYHPg=="
           },
           "linux-x64-musl": {
-            "asset": "cli-linux-x64-baseline-musl-2.0.2.tgz",
+            "asset": "cli-linux-x64-baseline-musl-2.0.24.tgz",
             "binary": "package/bin/opencode",
-            "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline-musl/-/cli-linux-x64-baseline-musl-2.0.2.tgz",
-            "integrity": "sha512-LjHsVgO5Py/0oDCIYPD3tN6V4Cuv1SGM+oPEt9aoFDMft5/+rCxwf9RN1w053OoF8UpdE70Ed6jtK0AYcqpICQ=="
+            "source": "https://registry.npmjs.org/@opencode/cli-linux-x64-baseline-musl/-/cli-linux-x64-baseline-musl-2.0.24.tgz",
+            "integrity": "sha512-P5tr3bN+SzsCqGGK3GwLUy/eEhnI45Oi7mBR94RrDWYWg2VmLfkgE91a9F/0EohJXahqL0vbXIawLO6lAl2M0w=="
           },
           "win32-arm64": {
-            "asset": "cli-windows-arm64-2.0.2.tgz",
+            "asset": "cli-windows-arm64-2.0.24.tgz",
             "binary": "package/bin/opencode.exe",
-            "source": "https://registry.npmjs.org/@opencode/cli-windows-arm64/-/cli-windows-arm64-2.0.2.tgz",
-            "integrity": "sha512-AzpKajNpEmQu9ziGhpJlmrXTMwHshwE7e/q/YVWHbg1cFmEOPcneBbpBfoa98+ohRNRL7Nn9IecgHsX6+eKRSQ=="
+            "source": "https://registry.npmjs.org/@opencode/cli-windows-arm64/-/cli-windows-arm64-2.0.24.tgz",
+            "integrity": "sha512-p+nOzm4heuV/KfoOcUyx6gyBRCsJ9DsDCmnBihmvyLFbqKGHrTCMSitv08denVf5PxVQZ/1mtnl5tr4XUgoEGg=="
           },
           "win32-x64": {
-            "asset": "cli-windows-x64-baseline-2.0.2.tgz",
+            "asset": "cli-windows-x64-baseline-2.0.24.tgz",
             "binary": "package/bin/opencode.exe",
-            "source": "https://registry.npmjs.org/@opencode/cli-windows-x64-baseline/-/cli-windows-x64-baseline-2.0.2.tgz",
-            "integrity": "sha512-ZpmS0Odywn3qoDSYXJEVUX0gjlVgGGICRKttV8tKUwKkyS3OrZcdbPQ7Y0cvXN+tb/YX2qL2QHGwJSBNj1LpNw=="
+            "source": "https://registry.npmjs.org/@opencode/cli-windows-x64-baseline/-/cli-windows-x64-baseline-2.0.24.tgz",
+            "integrity": "sha512-hYjG7D7Qw5rJTXdxxaZ7ClswXipC1ku5+U08Ph1Rk9XuyzBOcXMFFha1Bd2OQWgRuWEyAHr4ZyMxadejmBcnHQ=="
           }
         }
       }
@@ -710,128 +743,128 @@
     },
     "pnpm": {
       "notes": [
-        "Eight supported platforms use native binaries from the pnpm v12.5.1 GitHub release, including darwin-x64.",
+        "Eight supported platforms use native binaries from the pnpm v12.9.1 GitHub release, including darwin-x64.",
         "Linux glibc and musl platforms use distinct assets and integrity values.",
         "Each platform asset has a verified SHA-512 integrity value.",
-        "The dated soak exception expires on 2026-09-25."
+        "The dated soak exception expires on 2026-10-10."
       ],
       "description": "Fast, disk space efficient package manager",
       "repository": "github:pnpm/pnpm",
-      "version": "12.5.1",
-      "tag": "v12.5.1",
+      "version": "12.9.1",
+      "tag": "v12.9.1",
       "platforms": {
         "darwin-arm64": {
           "asset": "pnpm-darwin-arm64.tar.gz",
-          "integrity": "sha512-7GLgWcD/bTcxEZh96R1fPc6W33GGidiZG42WhR6GC28JflnkfFbGIGb89wKcI0H3E7nP6xxlt7wylrBQLN3dzA=="
+          "integrity": "sha512-KBY1efj7bUwzOPymmQAVJCAiSW2OpIiwX9GnuhzB9c66ZEdKT+MxKc3eNQ4t7WxaCmeVasuxnIs3GWmaE2f6xA=="
         },
         "darwin-x64": {
           "asset": "pnpm-darwin-x64.tar.gz",
-          "integrity": "sha512-uz5+05+e72eng0mbmJC3tFkviTkBmUmOjhp2PfxpKtdps9LLCYGrQxUGMo+GqYUd/rVJqAt23gq1OMCiBjRK6Q=="
+          "integrity": "sha512-kO4lMv3NTPjDu08ITCz7amdql7XdNIBhsb7GNjB4N46EQbOEIg1jKqFucxc8zFChhksofi5GrRQxQ+ePyOBI2Q=="
         },
         "linux-arm64": {
           "asset": "pnpm-linux-arm64.tar.gz",
-          "integrity": "sha512-n2MEcrXdKoi8VdA15dlFa+jAxLzXOHH6nzzAQItf+RWKkBQGtJHs/Z/K/SIXGyvqUnZaYKd16U2BJhNPr99Jlg=="
+          "integrity": "sha512-jqPz0eakopYiDsgn4hNeNPN1Yfx8rvh0ngGxAUXcuwi0HYNyn2h0/tc0iAbiS4okSWuNKJ00WFtMteELAqHwXg=="
         },
         "linux-arm64-musl": {
           "asset": "pnpm-linux-arm64-musl.tar.gz",
-          "integrity": "sha512-g0iyen3lOUGKjNcJ1PmWP0+2d7BHDUuy9NcNL4B8lZL4wCrMmcA2toaQVOMMSOtksJASN1w2ClZ2AHsvymPqFA=="
+          "integrity": "sha512-N/fLbCzGzfVpFjHoi5wS0QrDy2NkQnDS4WrZSD4rZQOZfZ6lbzcfy/wVy8jt+NmOUtBEomR3Kkd1YNKe42muYA=="
         },
         "linux-x64": {
           "asset": "pnpm-linux-x64.tar.gz",
-          "integrity": "sha512-UgaqiAeUWnm4AYbWfR1qcMxhZ62W8I3Swd5oP3ie2+uPPlfIO1ompyZMni/Jh6EAbpFno/rN9zuNOQ/a5MpY4g=="
+          "integrity": "sha512-vGKnhv2BjECcBAbTlRooQdrXhYgdRbKEqD4VLL4tML+0rDD7kdyURlL6KD+NxjXvsVB2fekcJX/vKBWdyTEZqQ=="
         },
         "linux-x64-musl": {
           "asset": "pnpm-linux-x64-musl.tar.gz",
-          "integrity": "sha512-K+9srdwb/gLTFTtniXaiMm3xvpJm3A2vjYTg3gAqptuCP/Ukrw7taP+B5QZQfQHidy9KY7D4oVFtPIpL/GquBg=="
+          "integrity": "sha512-e/nbnXVLVcpxXGt+DjpvliW0JS+bElUwePmb3mwfrFDS/tIs7/w2Lxm7/Bz+y1ZZlKXb/oW35BgVXIuAQvbcHA=="
         },
         "win32-arm64": {
           "asset": "pnpm-win32-arm64.zip",
-          "integrity": "sha512-DfA0GHpnk193lG7e3On+8mYF4b+FW7D0nxyo/VFKDEFJ8BPXgEpw3+EetFF+TmxL+cd8PJf+bAcu8UBJN3CcUg=="
+          "integrity": "sha512-UsILAOi1l8ASIQIiT8i/YL4Q7onj8Wo5XVIhN5KrlCOF86/FGhO+C/nEgeD1OkuY6jc3sYlPIJE4ouvM0h5Ucw=="
         },
         "win32-x64": {
           "asset": "pnpm-win32-x64.zip",
-          "integrity": "sha512-wGfyik7USomKHBjzuYW8L48oTpG8Le9tF6RUBEwSDrR+iTKHtD7NKCDgj8V2yu3WbOJxvPmCBSjUFTd7Y1xExw=="
+          "integrity": "sha512-iWK++jwlMf4Mjb61AdXXYp5f8MPnwkNfTQDZaHNb4jf+Gtkt7wJ65wqXcYYuVtO1fh+b3FMTfh4mUJH97PRg+g=="
         }
       },
       "origin": "gh-asset",
       "soakBypass": {
-        "published": "2026-09-18",
-        "removable": "2026-09-25",
-        "version": "12.5.1"
+        "version": "12.9.1",
+        "published": "2026-10-03",
+        "removable": "2026-10-10"
       }
     },
     "rustup": {
       "notes": [
-        "rustup-init — the Rust toolchain bootstrap binary, installed by the setup-rust-toolchain composite action when rustup is not already on PATH. Pinned to 1.30.0 (2026-08-18) with per-platform SHA-256 from the rustup dist sidecars at https://static.rust-lang.org/rustup/dist/<target>/rustup-init<.exe>.sha256.",
-        "The static.rust-lang.org dist URL serves the CURRENT rustup build (a floating ref); the pinned SHA-256 here is the integrity gate — if upstream ships a new rustup, the hash mismatch aborts the download loudly rather than executing an unpinned binary. Re-pin the hash (and version) deliberately on a rustup bump.",
+        "rustup-init supplies the Rust toolchain bootstrap binary when rustup is absent from PATH. Version 1.29.1 was released on 2026-09-01; its signed upstream tag is 3b0a80f56f91d9c1f102d431d853de9fac3fc444.",
+        "Each binary and checksum sidecar uses the versioned rustup archive. Every platform digest was measured against its archive binary and matched the corresponding sidecar on 2026-10-04.",
         "integrity is the object form ({ value, src, date }) — value is `sha256-<hex>` (the rustup sidecar shape), src the per-target sidecar URL, date the pin day. install-tool.mjs downloads + SRI-verifies the bare binary, then the action runs it with -y --default-toolchain none --profile minimal."
       ],
       "description": "rustup-init — the Rust toolchain bootstrap binary (pinned, SHA-256-verified per platform before execute)",
-      "version": "1.30.0",
-      "versionDate": "2026-08-18",
+      "version": "1.29.1",
+      "versionDate": "2026-09-01",
       "platforms": {
         "darwin-arm64": {
-          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-apple-darwin/rustup-init",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-apple-darwin/rustup-init",
           "integrity": {
-            "value": "sha256-aeb4105778ca1bd3c6b0e75768f581c656633cd51368fa61289b6a71696ac7e1",
-            "src": "https://static.rust-lang.org/rustup/dist/aarch64-apple-darwin/rustup-init.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-ec1b9233e7f72990ecd8e62063fa7f6c3dfc2bec8e97f88bff165f9100ac696a",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-apple-darwin/rustup-init.sha256",
+            "date": "2026-10-04"
           }
         },
         "darwin-x64": {
-          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-apple-darwin/rustup-init",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-apple-darwin/rustup-init",
           "integrity": {
-            "value": "sha256-33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7",
-            "src": "https://static.rust-lang.org/rustup/dist/x86_64-apple-darwin/rustup-init.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-259e2b84274434085163fe8d556510571772cda2aa6d87ca6aa664f57bc644e3",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-apple-darwin/rustup-init.sha256",
+            "date": "2026-10-04"
           }
         },
         "linux-arm64": {
-          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-gnu/rustup-init",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-unknown-linux-gnu/rustup-init",
           "integrity": {
-            "value": "sha256-9732d6c5e2a098d3521fca8145d826ae0aaa067ef2385ead08e6feac88fa5792",
-            "src": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-gnu/rustup-init.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-15f6e4ce9f583b929c996c91562bad6d4454f3281de858b02cdfdef615fac433",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-unknown-linux-gnu/rustup-init.sha256",
+            "date": "2026-10-04"
           }
         },
         "linux-arm64-musl": {
-          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-musl/rustup-init",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-unknown-linux-musl/rustup-init",
           "integrity": {
-            "value": "sha256-88761caacddb92cd79b0b1f939f3990ba1997d701a38b3e8dd6746a562f2a759",
-            "src": "https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-musl/rustup-init.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-1ddf36182ac5d1782dbeefcb9bea7f5f9412d88f4a0d5047b1564a223624e8c6",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-unknown-linux-musl/rustup-init.sha256",
+            "date": "2026-10-04"
           }
         },
         "linux-x64": {
-          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-unknown-linux-gnu/rustup-init",
           "integrity": {
-            "value": "sha256-4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10",
-            "src": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-unknown-linux-gnu/rustup-init.sha256",
+            "date": "2026-10-04"
           }
         },
         "linux-x64-musl": {
-          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-musl/rustup-init",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-unknown-linux-musl/rustup-init",
           "integrity": {
-            "value": "sha256-9cd3fda5fd293890e36ab271af6a786ee22084b5f6c2b83fd8323cec6f0992c1",
-            "src": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-musl/rustup-init.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-331228566cc931f32cd684f9bebc5956a5e5d7394c8d5de595f196a658ab98e6",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-unknown-linux-musl/rustup-init.sha256",
+            "date": "2026-10-04"
           }
         },
         "win32-arm64": {
-          "asset": "https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-pc-windows-msvc/rustup-init.exe",
           "integrity": {
-            "value": "sha256-3af309e6c3062aa11df0e932954f69d13b734d8a431e593812f3ecd9ff9e6ef6",
-            "src": "https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-01aa49cf9574a8bd0ae52005d7de2590e8f27181ded6748236e702c92aef826d",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/aarch64-pc-windows-msvc/rustup-init.exe.sha256",
+            "date": "2026-10-04"
           }
         },
         "win32-x64": {
-          "asset": "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe",
+          "asset": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-pc-windows-msvc/rustup-init.exe",
           "integrity": {
-            "value": "sha256-86478e53f769379d7f0ebfa7c9aa97cb76ca92233f79aa2cc0dbee2efaac73c7",
-            "src": "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe.sha256",
-            "date": "2026-08-18"
+            "value": "sha256-6f4bef66261261fcb43131be8720bab817d403a09edec7455c371974b90bdb7e",
+            "src": "https://static.rust-lang.org/rustup/archive/1.29.1/x86_64-pc-windows-msvc/rustup-init.exe.sha256",
+            "date": "2026-10-04"
           }
         }
       },
@@ -844,41 +877,46 @@
         "Installed when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set; otherwise the free flavor (sfw-free) is used. The two flavors share a version and install to the same `sfw` binary name."
       ],
       "description": "Socket Firewall (enterprise tier) — package manager command wrapper",
-      "version": "1.15.2",
+      "version": "1.15.4",
       "repository": "github:SocketDev/firewall-release",
-      "tag": "v1.15.2",
+      "tag": "v1.15.4",
       "binaryName": "sfw",
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-macos-arm64",
-          "integrity": "sha512-dkETkXxmdVqA/NhV2Pp+754e8t65WHx2x+LE+D4dbX11QhNRAV4pfH2NxKCV3J9YXgzg8MwdLTB9pu6gxfX/7g=="
+          "integrity": "sha512-rhW6U8/3w7eciriH9mLCE3krMAQuS1xl0CXayw26Xn1kWLh6PwIbpRDjF4QvKFNSpYQKdfEhh9dsBabUxza6sw=="
         },
         "darwin-x64": {
           "asset": "sfw-macos-x86_64",
-          "integrity": "sha512-SCDBU28Eq/1plsmUBhzdf1GLtaYlwHvgMe3ytawP0TkZNi1TcaiUQvZR8mOypej6Q10b/yjeUSAyCUUujrK/fg=="
+          "integrity": "sha512-J+xy3DdHah837x0bIlByCQ2pABtPPu5zkKdthIDpsdwNxLWmeFbPyaZQCwrWV4bzkFQz6p0aqGK0SdvqYXR8lw=="
         },
         "linux-arm64": {
           "asset": "sfw-linux-arm64",
-          "integrity": "sha512-voSGk2iyayKn5MtfjJzipZSj2EBIQNaHRj2GyShpTbPtNYb4KCfXU9Xjk3h7ySN8buUNdGWkwbbF6bewuOr+vg=="
+          "integrity": "sha512-+cOHb1eZOGSEnHMNUsrGOk7hUSEMqTNSBQBEX9zOk9bapFe6bFAz41286L5Od3VxOrlPk6+szHP4d+J7XM604A=="
         },
         "linux-arm64-musl": {
           "asset": "sfw-musl-linux-arm64",
-          "integrity": "sha512-XwqBwq3VFRLASFWu6gVHZTnI23uPAig9bFVCS7rXQe5ykog8a0aLnQG834P+owIR7T8YgSsTTFZh4d6joyWZJg=="
+          "integrity": "sha512-wtPmCCSxNIhcTdyIb6eiUN1rK2fCxrH39QAuYgcyxwtPSAS1dEHYb7yHPNJlOQfZm+WnQ3j7VQL4sCrswSIzbQ=="
         },
         "linux-x64": {
           "asset": "sfw-linux-x86_64",
-          "integrity": "sha512-p+hVx3A51RdMjkUsNlE6Hor6fnwBBEczorwL2ee6xGWfu0Q7Ok8POIIhX+kFPGnSDmytpNaTYkioLVFP+Hn9Og=="
+          "integrity": "sha512-Kxuztnz5CkV/Jt5hMZnyjkwrUwlnzjnxt9oBQMAnUdfoPebDJ64s6PSa/WF3xxM9mIIt0k462+oC+ykzMTdzag=="
         },
         "linux-x64-musl": {
           "asset": "sfw-musl-linux-x86_64",
-          "integrity": "sha512-6Ylukj7jrw6zGxpiqMJRH8Q9n6RDjd84DCXArd9ZahaPoSVvWnJ56nZOzPM3G8uwG5Htn/0s+hj1J6K3FKKNQg=="
+          "integrity": "sha512-pz7rsn/WAAwEXzhFEcULpB8jfFANGN6g8AQNuTrl9ildDKrb/JTS9MbXylzCIc3GUWL1mE1olekPnBAkb8/A+w=="
         },
         "win32-x64": {
           "asset": "sfw-windows-x86_64.exe",
-          "integrity": "sha512-xXhch+OLtqYjatxThlqOv+HY2ooSoyA0B/hujjjSLyQ7xz8LLcJtc+Db0iBB/2mOKYc4KqQT4ukeTtxz3g0+xQ=="
+          "integrity": "sha512-zi2isECucghnSVLVDjTaABKr/2nsmiUHVGEELcj1/7DRLbFIYLq+m3zpcfRJTLstElWbht2PjIJQuHWtnrzLrw=="
         }
       },
-      "origin": "gh-asset"
+      "origin": "gh-asset",
+      "soakBypass": {
+        "published": "2026-10-01",
+        "removable": "2026-10-08",
+        "version": "1.15.4"
+      }
     },
     "sfw-free": {
       "notes": [
@@ -886,41 +924,46 @@
         "Installed when neither SOCKET_API_KEY nor SOCKET_API_TOKEN is set; the enterprise flavor (sfw-enterprise) is selected when one of those is present. The two flavors share a version and install to the same `sfw` binary name."
       ],
       "description": "Socket Firewall (free tier) — package manager command wrapper",
-      "version": "1.15.2",
+      "version": "1.15.4",
       "repository": "github:SocketDev/sfw-free",
-      "tag": "v1.15.2",
+      "tag": "v1.15.4",
       "binaryName": "sfw",
       "platforms": {
         "darwin-arm64": {
           "asset": "sfw-free-macos-arm64",
-          "integrity": "sha512-pimnuYldUXHrc4j6ZO501ibgo8oIyEsgHDHeQhih8huJEttEB29HPCO7Lk/+2MAF7Sv37mOkiQjYI3OU91Db6Q=="
+          "integrity": "sha512-r+J3NSFkpqzlXVCPohISrPoDU33y0eTWcSNmvPQRyQTV2D05eF6H/LzJRS4b7ONuKQIpu/t5KgXyoPkyGiAEgg=="
         },
         "darwin-x64": {
           "asset": "sfw-free-macos-x86_64",
-          "integrity": "sha512-EjBRxWgrdITmVg5ZLvjjnZ5vDCKSBNqTLPOuDjYeHdjXf+BkYs+SGfH/z6lsMUumiDqj/kTtvbRMXoKDMY4x+w=="
+          "integrity": "sha512-Owc7IfGNh+ZQfDKhuUa7TtBWpnPQJWYbTzALDFsss+s3d8g9rISTcsdx4rhjM18e3TLG6QM3bHLYw2G3bYJTng=="
         },
         "linux-arm64": {
           "asset": "sfw-free-linux-arm64",
-          "integrity": "sha512-PttVwERdz6OGIhBKbpKklnZC8/cdfpeFxrcDETS1G38+taDqpWYV8Hg12Gh9LDdHsJfrksrdjnPa/tfHaTE5lw=="
+          "integrity": "sha512-6jIeFfwMO3RRM0t8Fdpj2BBAREgSWwdaj1dAjTE+9rAYP1PyWDT+ZxJWoDHKCqePYrhvGANVs9GlQdLptLN3OQ=="
         },
         "linux-arm64-musl": {
           "asset": "sfw-free-musl-linux-arm64",
-          "integrity": "sha512-motTFDIZGBRcTomoeIbpcFsy2DFknnzZxTaHDZrRQcF42UoUjeXiJieH1mALF7H/zCsc0hFajohmLlvxsUO1sQ=="
+          "integrity": "sha512-kMO5ZgMG9Xq+dbnwTueQ/kO/sx6+CGdGd+Lo0zTMoyvUtbeeO4xk5UKg9N3k7lG7KoBtcf5f4yQV4w1tNlSNxA=="
         },
         "linux-x64": {
           "asset": "sfw-free-linux-x86_64",
-          "integrity": "sha512-oHiRTl9O8kdHINEGWjqocj/gz70fPVzVVeS35PwraK7lzHSO4I3++CtUni0NsRvLhIxSZqD3A/xmKzvkgYXDJQ=="
+          "integrity": "sha512-mOxJNA9c3jsOzxXE2grwWYGv/3BN8cj4t9Kfiu7z6Q0Z4p2UcEuR5ldHoZkMReD08F3hV13+c/YuHFtR9K5Bfw=="
         },
         "linux-x64-musl": {
           "asset": "sfw-free-musl-linux-x86_64",
-          "integrity": "sha512-CLmE1J6q1BCHu1QKge+zJda3iXkKuFE8+3ITW7++iUJxVTbcMRCxdB2EqYnUpLQG1MM4pbQxgQ7Dq7OozBQjAw=="
+          "integrity": "sha512-Z1kyV0D0WP6P2N9FCmpITviITiGSE7vcdvBBJXUGNghtfZRVhhanwGf5FkS0UNDAXHziqE+rISs4Ve++sZj8tg=="
         },
         "win32-x64": {
           "asset": "sfw-free-windows-x86_64.exe",
-          "integrity": "sha512-vPOL88R3H75j0rHg6lRv53rwtRxFxDo7rzjXU0rWWPDY1U1e3hQzAmvsloS19uo6noWeCXIBJ8ZAbZxQf7EFxA=="
+          "integrity": "sha512-kh7yWn5TzLGI+rpujGwzX+HIaVa1/BHTVpJ58cBAYnwPSuYRhgUciX0vqKKoK3P3nYYMGrN7IvhZ4L91krsYLw=="
         }
       },
-      "origin": "gh-asset"
+      "origin": "gh-asset",
+      "soakBypass": {
+        "published": "2026-10-01",
+        "removable": "2026-10-08",
+        "version": "1.15.4"
+      }
     },
     "uv": {
       "notes": [
@@ -929,37 +972,42 @@
       ],
       "description": "uv — Astral Python package/project manager (pinned, SRI-verified)",
       "repository": "github:astral-sh/uv",
-      "version": "0.12.15",
-      "tag": "0.12.15",
-      "versionDate": "2026-09-15",
+      "version": "0.12.23",
+      "tag": "0.12.23",
+      "versionDate": "2026-10-03",
       "binaryName": "uv",
       "platforms": {
         "darwin-arm64": {
           "asset": "uv-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-y7xj4+kxiyA66dzmrddriihGl077SM74Q2/XwlI4Kw8jO7yh0pOe3IR/YyVyCfCEq0ccpwVLMOgo5YY2BVd0lw=="
+          "integrity": "sha512-gfcAJYNFwKXKBwMYW/JKTLGO4O8YJ7bQAUhktvAG7nBRWwWhCBdLvFsFOL5qonUgZguve0oENxa2/o/ElT3E2A=="
         },
         "darwin-x64": {
           "asset": "uv-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-r59SZFSWLGcmda5b7rq2yO2sI6SsDKdBE+qvC8KHeoRLV7zCCm1m3s5GwTUCP9O8kx4A7D2GUiV0gPdj2Vkraw=="
+          "integrity": "sha512-T1F7q5xWEOkUPLGeekoWOwz8Cdkkc9akMfwLU2QO8i824WdfOipJ4/zddpkG/Xr9NWA+/LuyHFGwPdwtVv/grg=="
         },
         "linux-arm64": {
           "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-wtjxaDy/A91/eSUbn927LdJEsQy9JRpFfmaXqOxiSafoi+wHEFaNWvjxOpqwoMAky7UrBd0icT6PCttBpagKvA=="
+          "integrity": "sha512-ebIJu9Gjeq5JoMPzMgW3F8ZF87IiQRjGV48JaEriium+Qy1dYsEP720173ekwSwrKRvE0FdhPyRb8QUEsbxuBg=="
         },
         "linux-x64": {
           "asset": "uv-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-HnyqtvfbH/vq3MTydIYAbCr6hS8kC8kuZpXxrGJ/Nr2dac/wJQA3Z6S9bx95TYCTBdOZ1kPbDjtrzfIgwi4xDw=="
+          "integrity": "sha512-SYTJBAowVTXLInaa6v0NuBgzOOIC+CoupwDRwwcKHEHgYZOLUGOMUDgBEt2bX2n+Jc6Jz9PQfcvA7D+3Id+Gpg=="
         },
         "win32-arm64": {
           "asset": "uv-aarch64-pc-windows-msvc.zip",
-          "integrity": "sha512-+YD0ZEuCcztbfQcd+rCkRgP4YcUXzZIxyDOcYJzya2Bm16z42RVq5/9sPS8rcNmXf9m7B8ZK08CVLzTXAqGitA=="
+          "integrity": "sha512-RTNfWHH9F1k5oG1i4y8TACMbjh3PSyoR7bkoAKiaX0mNwZedokm4JXq3UpOZ/SwQZL6DpI1BRfuRsEwq2KtazQ=="
         },
         "win32-x64": {
           "asset": "uv-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-sSjnNsmzOB+6d6yvegbwumNJhOSsdEM8ZT8qxnDoUpp4CLym3t00OrImSCCW8dyqh6IUPs6uB7NKY+F1A4D3dQ=="
+          "integrity": "sha512-8vtkGZbm5WXtEcuwkrgp50tNdxZpHah9tcwR/F9uMeNgw1yYTyVf6RYHhvliPnPUpMY3JEdzgUbID4LOhLflsw=="
         }
       },
-      "origin": "gh-asset"
+      "origin": "gh-asset",
+      "soakBypass": {
+        "version": "0.12.23",
+        "published": "2026-10-03",
+        "removable": "2026-10-10"
+      }
     },
     "zizmor": {
       "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",

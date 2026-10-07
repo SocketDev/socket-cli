@@ -43,7 +43,7 @@ inputs:
   node-version:
     description: 'Node.js version to use'
     required: false
-    default: '26.8.1'
+    default: ''
   socket-api-token:
     description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
     required: false

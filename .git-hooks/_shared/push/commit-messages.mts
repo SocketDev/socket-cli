@@ -7,16 +7,16 @@
 // it has nothing to say about a commit a published tag has already frozen.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { debugCheck } from './check-output.mts'
+import { debugCheck } from '../check-output.mts'
 
-import { containsAiAttribution } from '../../.claude/hooks/fleet/_shared/ai-attribution.mts'
-import { git } from './git.mts'
+import { containsAiAttribution } from '../../../.claude/hooks/fleet/_shared/ai-attribution.mts'
+import { git } from '../git.mts'
 import {
   reportReleaseTagExemption,
   resolveRewritableCommits,
-} from './push-release-tags.mts'
+} from './release-tags.mts'
 
-import type { ReleaseTagOptions } from './push-release-tags.mts'
+import type { ReleaseTagOptions } from './release-tags.mts'
 
 const logger = getDefaultLogger()
 

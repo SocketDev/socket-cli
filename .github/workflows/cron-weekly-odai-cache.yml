@@ -9,7 +9,7 @@ run-name: 'cron: weekly odai cache'
 # offline.
 #
 # The weekly schedule is load-bearing twice over: Actions caches evict after
-# 7 idle days, and prune-actions-caches never evicts an entry accessed within
+# 7 idle days, and the cache prune (workflow/caches/prune.mts) never evicts an entry accessed within
 # its fresh window — a weekly touch keeps the one 4 GB profile entry both
 # alive and prune-protected.
 #

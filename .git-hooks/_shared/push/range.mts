@@ -6,9 +6,9 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { debugCheck } from './check-output.mts'
+import { debugCheck } from '../check-output.mts'
 
-import { git } from './git.mts'
+import { git } from '../git.mts'
 
 const logger = getDefaultLogger()
 
@@ -83,7 +83,7 @@ export const computeRange = (
     // This base is wider than "new work": a history repair that reattaches an
     // orphaned release tag puts already-published commits back in front of it.
     // Gates whose only remedy is a rewrite subtract those via
-    // `resolveRewritableCommits` in ./push-release-tags.mts rather than
+    // `resolveRewritableCommits` in ./release-tags.mts rather than
     // demanding a rewrite that would re-orphan the tag.
     const def = defaultBranchOf(remote)
     const baseRef = `${remote}/${def}`

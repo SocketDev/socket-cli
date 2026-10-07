@@ -55,6 +55,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { verifyIntegrityProvenance } from './verify-integrity-provenance.mjs'
+import { installToolAtomically } from './install/atomic.mjs'
 
 // Composite-action helper runs on the raw runner BEFORE setup-node finishes
 // resolving node_modules — `@socketsecurity/lib-stable` is not on disk yet
@@ -156,10 +157,9 @@ export async function readToolArchive({
   }
   const response = await fetchToolResponse(url, headers)
   if (!response.ok) {
-    logger.fail(
-      `Download failed: HTTP ${response.status} ${response.statusText} for ${url}`,
+    throw new Error(
+      `Tool download failed at ${url}: saw HTTP ${response.status} ${response.statusText}; wanted a successful response. Check the release URL and access permissions.`,
     )
-    process.exit(1)
   }
   return new Uint8Array(await response.arrayBuffer())
 }
@@ -221,9 +221,55 @@ function isMainModule() {
   }
 }
 
-// CLI entry point. Guarded by isMainModule() so importing this file (for the
-// exported parseIntegrity helper) does NOT run the download/verify/extract
-// pipeline.
+function parseToolInstallArgs(argv) {
+  // Positionals: <url> <integrity> <dest-dir> [<bin-name>]. Optional flags
+  // --src <url> and --date <iso> carry the object-form integrity provenance
+  // (forwarded by the composite actions from resolve-external-tool-asset.generated.mjs's
+  // JSON output) so the live src / staleness checks run after the SRI check.
+  const flags = { src: '', date: '', cache: false, atomic: '' }
+  const positionals = []
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]
+    if (a === '--cache') {
+      flags.cache = true
+    } else if (a === '--atomic' || a === '--date' || a === '--src') {
+      flags[a.slice(2)] = argv[++i] ?? ''
+      if (
+        a === '--atomic' &&
+        (!flags.atomic || flags.atomic.startsWith('--'))
+      ) {
+        throw new Error(
+          'Atomic installation needs an executable path at --atomic: no path supplied. Pass the relative extracted executable path.',
+        )
+      }
+    } else {
+      positionals.push(a)
+    }
+  }
+  return { __proto__: null, flags, positionals }
+}
+
+async function verifyToolInstallProvenance(flags, { integrityArg, assetName }) {
+  if (!flags.src && !flags.date) {
+    return true
+  }
+  const maxAgeEnv = Number(process.env.SFW_INTEGRITY_MAX_AGE_DAYS)
+  const provenance = await verifyIntegrityProvenance(
+    { value: integrityArg, src: flags.src, date: flags.date },
+    {
+      assetFilename: assetName,
+      maxAgeDays: Number.isFinite(maxAgeEnv) && maxAgeEnv > 0 ? maxAgeEnv : 90,
+      strict: process.env.SFW_INTEGRITY_STRICT === '1',
+    },
+  )
+  if (!provenance.ok) {
+    // oxlint-disable-next-line socket/no-logger-glyph-prefix -- bootstrap shim
+    logger.fail(`× integrity provenance check failed for ${assetName}`)
+    logger.fail(`  ${provenance.reason}`)
+  }
+  return provenance.ok
+}
+
 async function run() {
   if (process.argv[2] === '--directory') {
     const [, , , root, url, integrity] = process.argv
@@ -234,50 +280,31 @@ async function run() {
     process.stdout.write(`${toolCacheDirectory({ root, url, integrity })}\n`)
     return
   }
-  // Positionals: <url> <integrity> <dest-dir> [<bin-name>]. Optional flags
-  // --src <url> and --date <iso> carry the object-form integrity provenance
-  // (forwarded by the composite actions from resolve-external-tool-asset.generated.mjs's
-  // JSON output) so the live src / staleness checks run after the SRI check.
-  const flags = { src: '', date: '', cache: false }
-  const positionals = []
-  for (let i = 2; i < process.argv.length; i++) {
-    const a = process.argv[i]
-    if (a === '--cache') {
-      flags.cache = true
-    } else if (a === '--date' || a === '--src') {
-      flags[a.slice(2)] = process.argv[++i] ?? ''
-    } else {
-      positionals.push(a)
-    }
-  }
-  const { 0: url, 1: integrityArg, 2: destDir, 3: binName } = positionals
+  const { flags, positionals } = parseToolInstallArgs(process.argv.slice(2))
+  const { 0: url, 1: integrityArg, 2: destination, 3: binName } = positionals
 
-  if (!url || !integrityArg || !destDir) {
+  if (!url || !integrityArg || !destination) {
     logger.fail(
-      'usage: install-tool.mjs <url> <integrity> <dest-dir> [<bin-name>] [--src <url>] [--date <iso>]',
+      'usage: install-tool.mjs <url> <integrity> <dest-dir> [<bin-name>] [--src <url>] [--date <iso>] [--atomic <executable>]',
     )
     process.exit(1)
   }
 
   const { algo, expected } = parseIntegrity(integrityArg)
 
-  mkdirSync(destDir, { recursive: true })
-
   const assetName = path.basename(new URL(url).pathname)
-  const archivePath = path.join(destDir, assetName)
-  const cachePath = flags.cache
-    ? path.join(destDir, '.verified-archive')
-    : undefined
 
   const headers = toolDownloadHeaders(url, process.env.GITHUB_TOKEN)
 
   // Composite-action helper runs as a standalone node script on the raw runner;
   // the CJS bundle target rejects top-level await, so the download / verify /
   // extract pipeline runs inside an async main().
-  // every non-returning arm ends in process.exit(1); the analyzer cannot see
-  // the never.
-  // oxlint-disable-next-line socket/export-top-level-functions, typescript/consistent-return -- action helper
-  async function main() {
+  async function main(destDir) {
+    mkdirSync(destDir, { recursive: true })
+    const archivePath = path.join(destDir, assetName)
+    const cachePath = flags.cache
+      ? path.join(destDir, '.verified-archive')
+      : undefined
     const bytes = await readToolArchive({
       url,
       headers,
@@ -296,7 +323,7 @@ async function run() {
       logger.fail(`  Expected: ${algo}-${expected}`)
       logger.fail(`  Actual:   ${algo}-${actual}`)
       logger.fail(`  URL:      ${url}`)
-      process.exit(2)
+      return 2
     }
 
     // ── live provenance + staleness check ────────────────────────────────
@@ -306,23 +333,10 @@ async function run() {
     // pin is not stale. Runs BEFORE extract/execute so a stale / re-released
     // / compromised pin aborts loudly (exit 2) before the asset touches disk
     // for extraction. String-form integrity (no flags) is a no-op here.
-    if (flags.src || flags.date) {
-      const maxAgeEnv = Number(process.env.SFW_INTEGRITY_MAX_AGE_DAYS)
-      const provenance = await verifyIntegrityProvenance(
-        { value: integrityArg, src: flags.src, date: flags.date },
-        {
-          assetFilename: assetName,
-          maxAgeDays:
-            Number.isFinite(maxAgeEnv) && maxAgeEnv > 0 ? maxAgeEnv : 90,
-          strict: process.env.SFW_INTEGRITY_STRICT === '1',
-        },
-      )
-      if (!provenance.ok) {
-        // oxlint-disable-next-line socket/no-logger-glyph-prefix -- bootstrap shim
-        logger.fail(`× integrity provenance check failed for ${assetName}`)
-        logger.fail(`  ${provenance.reason}`)
-        process.exit(2)
-      }
+    if (
+      !(await verifyToolInstallProvenance(flags, { integrityArg, assetName }))
+    ) {
+      return 2
     }
 
     if (cachePath) {
@@ -368,7 +382,7 @@ async function run() {
       if (r.status !== 0) {
         // oxlint-disable-next-line socket/no-logger-glyph-prefix -- bootstrap shim; logger.fail does not print a glyph
         logger.fail(`× extraction failed: ${extractCmd} exited ${r.status}`)
-        process.exit(1)
+        return 1
       }
       // dep-0: pre-setup-node composite-action helper; @socketsecurity/lib-stable
       // is not on disk yet, so safeDelete is unavailable.
@@ -382,12 +396,24 @@ async function run() {
     } else {
       chmodSync(archivePath, 0o755)
     }
+    return 0
   }
 
-  void main().catch(e => {
-    logger.fail(e)
-    process.exit(1)
-  })
+  const installation = flags.atomic
+    ? installToolAtomically({
+        destination,
+        executable: flags.atomic,
+        install: main,
+      })
+    : main(destination)
+  void installation
+    .then(exitCode => {
+      process.exitCode = exitCode
+    })
+    .catch(e => {
+      logger.fail(e)
+      process.exitCode = 1
+    })
 }
 
 if (isMainModule()) {

@@ -86,8 +86,8 @@ const bootstrapRunner = (function (
    * parser truncates there — every flag after it is DISCARDED, not collected as
    * a positional. The script then runs with default behaviour while the caller
    * believes they passed flags. That is merely confusing for a read-only script
-   * and dangerous for a destructive one: `prune:branch-backups -- --dry-run`
-   * drops the `--dry-run` and performs a live run against every repo.
+   * and dangerous for a destructive one: `prune:branch-backups -- <flag>` drops
+   * the trailing flag and performs a live run against every repo.
    *
    * Checked against `process.argv` because by the time parsing finishes the
    * dropped flags are unrecoverable — the parsed result cannot tell you what
@@ -107,7 +107,7 @@ const bootstrapRunner = (function (
       `  Where: the argv for ${scriptName}.\n` +
       '  Saw:   flags after `--`. The argv parser truncates there, so those ' +
       'flags were NOT applied and the script ran with its defaults.\n' +
-      `  Fix:   drop the \`--\`, e.g. \`pnpm run ${scriptName} --dry-run\`.`
+      `  Fix:   drop the \`--\`, e.g. \`pnpm run ${scriptName} --json\`.`
     )
   }
 
@@ -120,6 +120,7 @@ const bootstrapRunner = (function (
    * `main()` actually parses.
    */
   interface ScriptMeta {
+    readonly commandBoundary?: '--exec' | undefined
     readonly heavyJob?: 'test' | 'coverage' | 'build' | 'type' | undefined
     readonly json?: 'native' | 'result' | undefined
     readonly describe: string

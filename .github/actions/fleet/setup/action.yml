@@ -21,9 +21,9 @@ inputs:
     required: false
     default: 'false'
   node-version:
-    description: 'Node.js version'
+    description: 'Node.js version; defaults to the checked-out repository .node-version'
     required: false
-    default: '26.8.1'
+    default: ''
   socket-api-token:
     description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
     required: false
@@ -291,6 +291,8 @@ runs:
         # Map the input to env so the run block reads $NODE_WANTED instead of
         # interpolating ${{ inputs.* }} into shell (zizmor template-injection).
         NODE_WANTED: ${{ inputs.node-version }}
+        NODE_VERSION_FILE: .node-version
+      working-directory: ${{ inputs.working-directory }}
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
         # Native port of actions/setup-node (reference pin
@@ -304,7 +306,7 @@ runs:
         # and leaves a placeholder NODE_AUTH_TOKEN in every later step's env;
         # fleet npm publishes authenticate via OIDC trusted publishing and the
         # preflight refuses any set token
-        # (scripts/fleet/registry-infra/npm/auth-posture.mts), so the port
+        # (scripts/fleet/registry/npm/auth-posture.mts), so the port
         # removes that credential surface instead of reproducing it. Branch
         # decisions — version-spec resolution, the platform → asset mapping,
         # and the SHASUMS256 hex → SRI conversion — live in the co-located
@@ -325,8 +327,9 @@ runs:
         } <<<"$DIST"
         NODE_DIR="${RUNNER_TOOL_CACHE:-${RUNNER_TEMP:-/tmp}}/socket-node/${NODE_VERSION}-${PLATFORM}"
         NODE_BIN_DIR="${NODE_DIR}/${BIN_REL}"
-        NODE_BIN="${NODE_BIN_DIR}/node"
-        [[ "$ASSET" == *.zip ]] && NODE_BIN="${NODE_BIN_DIR}/node.exe"
+        NODE_EXECUTABLE="node"
+        [[ "$ASSET" == *.zip ]] && NODE_EXECUTABLE="node.exe"
+        NODE_BIN="${NODE_BIN_DIR}/${NODE_EXECUTABLE}"
         if [ ! -x "$NODE_BIN" ]; then
           # SHASUMS256.txt is fetched fresh beside the archive on every
           # install; the plan converts the asset's hex line into the SRI
@@ -336,7 +339,8 @@ runs:
           node "$INSTALL_TOOL" \
             "https://nodejs.org/dist/v${NODE_VERSION}/${ASSET}" \
             "$INTEGRITY" \
-            "$NODE_DIR"
+            "$NODE_DIR" \
+            --atomic "${BIN_REL}/${NODE_EXECUTABLE}"
           if [ ! -x "$NODE_BIN" ]; then
             echo "× Node.js install reported success but ${NODE_BIN} is missing or not executable." >&2
             echo "  Contents of ${NODE_DIR}:" >&2
@@ -879,5 +883,5 @@ runs:
         ACTION_DIR: ${{ github.action_path }}
       run: |
         set -euo pipefail
-        BOOTSTRAP="${ACTION_DIR}/../../../../scripts/fleet/setup/bootstrap-zero-dep-packages.mjs"
+        BOOTSTRAP="${ACTION_DIR}/../../../../scripts/fleet/setup/bootstrap/zero-dep-packages.mjs"
         node "$BOOTSTRAP" --repo-root "$PWD"

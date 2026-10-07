@@ -10,15 +10,14 @@ run-name: 'sweep: jobs'
 #   - purges every run of workflows whose source is gone from the default
 #     branch.
 #
-# Cache (scripts/fleet/prune-actions-caches.mts): keeps the newest generations
+# Cache (scripts/fleet/workflow/caches/prune.mts): keeps the newest generations
 # per cache-key group and holds the total under an 8 GB budget. This one is not
 # cosmetic — GitHub caps a repo at 10 GB and silently LRU-evicts past it, so an
 # over-budget repo quietly loses the entries it restores most and every job
 # rebuilds cold.
 #
-# Byte-identical across the fleet (cascaded); edit
-# template/base/universal/.github/workflows/sweep-jobs.yml and re-cascade via
-# `pnpm run sync`.
+# Byte-identical across the fleet (cascaded); edit this template and run
+# `pnpm run dogfood fleet-code --dogfood` to update this checkout.
 
 on:
   schedule:
@@ -129,4 +128,4 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then
             ARGS+=(--dry-run)
           fi
-          node scripts/fleet/prune-actions-caches.mts "${ARGS[@]}"
+          node scripts/fleet/workflow/caches/prune.mts "${ARGS[@]}"

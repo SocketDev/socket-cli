@@ -1,7 +1,7 @@
 import {
   sharedFleetTsconfigCheckJsonPath,
   sharedTypescriptBinTscPath,
-} from '../../scripts/fleet/paths/util.mts'
+} from '../../../scripts/fleet/paths/util.mts'
 // Pre-push repo-level gates that run against the working-tree state (not a
 // commit range): submodule pristine-ness, soak-bypass date annotations, the
 // fast lint/format gate, and the wheelhouse-only hook-dispatch-table drift check.
@@ -18,19 +18,19 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { gitLines } from './git.mts'
+import { gitLines } from '../git.mts'
 import {
   debugCheck,
   showCheckOutput,
   showCheckResult,
-} from './check-output.mts'
+} from '../check-output.mts'
 import {
   dirtyEntry,
   readTypecheckVerdict,
   typecheckCacheKey,
   waitForTypecheckTurn,
   writeTypecheckVerdict,
-} from './typecheck-cache.mts'
+} from '../typecheck-cache.mts'
 
 // The repo-wide fixer lock, the same one lint.mts and fix.mts take. Sharing
 // it is deliberate: a push's typecheck should also serialize against a
@@ -38,18 +38,18 @@ import {
 import {
   acquireFixerLock,
   fixerLockPath,
-} from '../../scripts/fleet/process/fixer-lock.mts'
+} from '../../../scripts/fleet/process/fixer-lock.mts'
 // One owner for the path, per `paths-are-constructed-once`: a cascaded file is
 // tracked twice (source + live mirror), so a literal spelled here counts as
 // two construction sites on its own.
-import { HEAVY_JOB_BUSY_EXIT_CODE } from '../../scripts/fleet/process/heavy-job/admission.mts'
+import { HEAVY_JOB_BUSY_EXIT_CODE } from '../../../scripts/fleet/process/job/heavy/admission.mts'
 import {
   FLEET_TYPE_SCRIPT,
   TYPECHECK_CACHE_DIR,
-} from '../../scripts/fleet/paths.mts'
+} from '../../../scripts/fleet/paths.mts'
 
-import type { TypecheckVerdict } from './typecheck-cache.mts'
-import { scanSoakExcludeDateAnnotations } from './scan-supply-chain.mts'
+import type { TypecheckVerdict } from '../typecheck-cache.mts'
+import { scanSoakExcludeDateAnnotations } from '../scan-supply-chain.mts'
 
 const logger = getDefaultLogger()
 

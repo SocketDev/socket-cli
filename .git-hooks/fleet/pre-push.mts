@@ -15,13 +15,13 @@
 //   already-merged history. Release tags do bound it in the other direction:
 //   the force-push fallback widens the base to remote/<default_branch>, which
 //   can sweep in commits a published tag already froze, so the AI-attribution
-//   gate subtracts tag-reachable commits (../_shared/push-release-tags.mts).
+//   gate subtracts tag-reachable commits (../_shared/push/release-tags.mts).
 //
 // Stdin format, provided by git: one push line per ref, each line:
 //   <local_ref> <local_sha> <remote_ref> <remote_sha>
 //
 // This entry point is a thin orchestrator: each gate lives in a focused
-// `../_shared/push-*.mts` leaf, and `main` sequences them per push line.
+// `../_shared/push/*.mts` leaf, and `main` sequences them per push line.
 
 import process from 'node:process'
 
@@ -35,19 +35,20 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // assumes native .mts type stripping.
 import { splitLines } from '../_shared/helpers.mts'
 import { debugCheck } from '../_shared/check-output.mts'
-import { scanCommitMessages } from '../_shared/push-commit-messages.mts'
-import { scanFilesInRange } from '../_shared/push-file-scan.mts'
-import { computeRange } from '../_shared/push-range.mts'
+import { scanCommitMessages } from '../_shared/push/commit-messages.mts'
+import { scanFilesInRange } from '../_shared/push/file-scan.mts'
+import { computeRange } from '../_shared/push/range.mts'
 import {
   checkSubmodules,
   scanDispatchDrift,
   scanFastChecks,
   scanSoakAnnotations,
   scanTypeCheck,
-} from '../_shared/push-repo-gates.mts'
-import { scanSignedCommits } from '../_shared/push-signatures.mts'
-import { isDurableBackupPush } from '../_shared/push-durable-ref.mts'
-import { isSquashHistoryRepo } from '../_shared/push-squash-history.mts'
+} from '../_shared/push/repo-gates.mts'
+import { scanSignedCommits } from '../_shared/push/signatures.mts'
+import { isDurableBackupPush } from '../_shared/push/durable-ref.mts'
+import { isSquashHistoryRepo } from '../_shared/push/squash-history.mts'
+import { checkPrCommitCount } from '../_shared/push/pr-commit-count.mts'
 
 const logger = getDefaultLogger()
 
@@ -93,6 +94,11 @@ const main = async (): Promise<number> => {
       continue
     }
     pushedRemoteRefs.push(remoteRef)
+    const prCommitError = checkPrCommitCount(remote, localSha, remoteRef)
+    if (prCommitError) {
+      logger.fail(prCommitError)
+      totalErrors += 1
+    }
     const range = computeRange(remote, localRef, localSha, remoteSha)
     // `computeRange` returns `undefined` for skip cases (tags, deletions, new
     // branches); use loose equality so both `null` and `undefined` skip. A
