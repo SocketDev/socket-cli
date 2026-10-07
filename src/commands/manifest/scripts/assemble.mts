@@ -5,6 +5,7 @@ import {
   type SocketFactsManifestReference,
   type SocketFactsSbom,
   type SocketFactsSbomComponent,
+  type SocketFactsSbomDependency,
   type SocketFactsSbomMetadata,
   type SocketFactsSbomProject,
   mavenCoordinateKey,
@@ -24,7 +25,6 @@ export type AssembleResult = {
 }
 
 export type AssembleOptions = {
-  emitProjects?: boolean | undefined
   // Injectable for tests; an uncompiled module's output dir is dropped (module
   // stays resolvable via its sources).
   fileExists?: ((path: string) => boolean) | undefined
@@ -32,10 +32,14 @@ export type AssembleOptions = {
 
 type MergedNode = {
   coord: RawCoord
-  children: Set<string>
   prod: boolean
   direct: boolean
   targets: Set<string>
+}
+
+type SubprojectGraph = {
+  children: Map<string, Set<string>>
+  direct: Set<string>
 }
 
 type PerRoot = {
@@ -65,10 +69,11 @@ export function assembleFacts(
     projectsByGav,
     buildManifestFilesByCoord(parsed, directByRoot, perRoot),
   )
-  const projects =
-    opts.emitProjects === false
-      ? []
-      : buildProjects(parsed, directByRoot, perRoot)
+  const { dependencies, projects } = buildDependencyGraph(
+    parsed,
+    perRoot,
+    components,
+  )
 
   const metadata: SocketFactsSbomMetadata = {
     format: 'socket-facts-sbom',
@@ -78,7 +83,7 @@ export function assembleFacts(
   }
 
   const facts: SocketFactsSbom = projects.length
-    ? { metadata, projects, components }
+    ? { metadata, projects, components, dependencies }
     : { metadata, components }
 
   return {
@@ -87,6 +92,7 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
+      directByRoot,
       projectsByGav,
       perRoot,
       fileExists,
@@ -150,7 +156,6 @@ function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
       if (!fn) {
         fn = {
           coord: node.coord,
-          children: new Set(),
           prod: false,
           direct: false,
           targets: new Set(),
@@ -162,9 +167,6 @@ function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
       }
       if (node.direct) {
         fn.direct = true
-      }
-      for (const c of node.children) {
-        fn.children.add(c)
       }
       for (const t of node.targets) {
         fn.targets.add(t)
@@ -246,9 +248,6 @@ function buildComponents(
     if (projectsByGav.has(gav(c.group, c.name, c.version ?? ''))) {
       comp.firstParty = true
     }
-    if (fn.children.size) {
-      comp.dependencies = [...fn.children].sort()
-    }
     const manifestFiles = manifestFilesByCoord.get(id)
     if (manifestFiles) {
       comp.manifestFiles = manifestFiles
@@ -257,41 +256,178 @@ function buildComponents(
   })
 }
 
-function buildProjects(
+// Equal subtrees share an entry; partition refinement (coarsest bisimulation)
+// keeps that exact on cycles too.
+function buildDependencyGraph(
   parsed: ParsedRecords,
-  directByRoot: Map<string, Set<string>>,
   perRoot: Map<string, PerRoot>,
-): SocketFactsSbomProject[] {
-  const directByProject = new Map<string, Set<string>>()
-  for (const [rootId, ids] of directByRoot) {
-    const pk = perRoot.get(rootId)?.projectKey ?? ''
-    let set = directByProject.get(pk)
-    if (!set) {
-      set = new Set()
-      directByProject.set(pk, set)
+  components: SocketFactsSbomComponent[],
+): {
+  dependencies: SocketFactsSbomDependency[]
+  projects: SocketFactsSbomProject[]
+} {
+  const componentIndex = new Map(components.map((c, i) => [c.id, i]))
+  const graphs = new Map<string, SubprojectGraph>()
+  for (const { nodes, projectKey } of perRoot.values()) {
+    let g = graphs.get(projectKey)
+    if (!g) {
+      g = { children: new Map(), direct: new Set() }
+      graphs.set(projectKey, g)
     }
-    for (const id of ids) {
-      set.add(id)
+    for (const [coordId, node] of nodes) {
+      let set = g.children.get(coordId)
+      if (!set) {
+        set = new Set()
+        g.children.set(coordId, set)
+      }
+      for (const c of node.children) {
+        set.add(c)
+      }
+      if (node.direct) {
+        g.direct.add(coordId)
+      }
     }
   }
 
-  const projects = [...parsed.projects.values()].map(p => {
-    const entry: SocketFactsSbomProject = {
+  const vertexIds = new Map<string, number>()
+  const labels: number[] = []
+  const edges: number[][] = []
+  const vertex = (projectKey: string, coordId: string): number => {
+    const key = `${projectKey}\t${coordId}`
+    let v = vertexIds.get(key)
+    if (v === undefined) {
+      v = labels.length
+      vertexIds.set(key, v)
+      labels.push(componentIndex.get(coordId)!)
+      edges.push([])
+    }
+    return v
+  }
+  for (const [projectKey, { children }] of graphs) {
+    for (const [coordId, kids] of children) {
+      const v = vertex(projectKey, coordId)
+      for (const c of kids) {
+        edges[v]!.push(vertex(projectKey, c))
+      }
+    }
+  }
+
+  // Each round splits blocks by their children's blocks; a round that splits
+  // nothing is stable.
+  let block = [...labels]
+  let blockCount = new Set(block).size
+  for (;;) {
+    const ids = new Map<string, number>()
+    block = block.map((b, v) => {
+      const childBlocks = [...new Set(edges[v]!.map(c => block[c]!))].sort(
+        (x, y) => x - y,
+      )
+      const sig = `${b}:${childBlocks.join(',')}`
+      let id = ids.get(sig)
+      if (id === undefined) {
+        id = ids.size
+        ids.set(sig, id)
+      }
+      return id
+    })
+    if (ids.size === blockCount) {
+      break
+    }
+    blockCount = ids.size
+  }
+
+  const byComponent = (a: string, b: string) =>
+    componentIndex.get(a)! - componentIndex.get(b)!
+  const projects = [...parsed.projects.values()]
+    .map(p => ({
+      p,
+      roots: treeRoots(graphs.get(p.projectKey), byComponent),
+    }))
+    .sort((a, b) => {
+      const ka = `${a.p.dir} ${a.p.group}:${a.p.name}`
+      const kb = `${b.p.dir} ${b.p.group}:${b.p.name}`
+      return ka < kb ? -1 : ka > kb ? 1 : 0
+    })
+
+  // Post-order over the sorted projects, so the numbering is stable.
+  const indexOfBlock = new Map<number, number>()
+  const vertexOfBlock = new Map<number, number>()
+  const dependencies: SocketFactsSbomDependency[] = []
+  const visit = (v: number): void => {
+    const b = block[v]!
+    if (vertexOfBlock.has(b)) {
+      return
+    }
+    vertexOfBlock.set(b, v)
+    for (const c of [...edges[v]!].sort((x, y) => labels[x]! - labels[y]!)) {
+      visit(c)
+    }
+    indexOfBlock.set(b, dependencies.length)
+    dependencies.push({ component: labels[v]! })
+  }
+  const indexOf = (v: number) => indexOfBlock.get(block[v]!)!
+  for (const { p, roots } of projects) {
+    for (const coordId of roots) {
+      visit(vertex(p.projectKey, coordId))
+    }
+  }
+  for (const [b, v] of vertexOfBlock) {
+    const children = [...new Set(edges[v]!.map(indexOf))].sort((x, y) => x - y)
+    if (children.length) {
+      dependencies[indexOfBlock.get(b)!]!.children = children
+    }
+  }
+
+  return {
+    dependencies,
+    projects: projects.map(({ p, roots }) => ({
       type: PURL_TYPE_MAVEN,
       namespace: p.group,
       name: p.name,
       ...(p.version ? { version: p.version } : {}),
       subprojectDir: p.dir,
-      dependencies: [...(directByProject.get(p.projectKey) ?? [])].sort(),
+      children: roots
+        .map(coordId => indexOf(vertex(p.projectKey, coordId)))
+        .sort((x, y) => x - y),
+    })),
+  }
+}
+
+// Unreached nodes become roots too, so every resolved dependency is in the tree.
+function treeRoots(
+  graph: SubprojectGraph | undefined,
+  byComponent: (a: string, b: string) => number,
+): string[] {
+  if (!graph) {
+    return []
+  }
+  const roots: string[] = []
+  const reached = new Set<string>()
+  const add = (root: string) => {
+    roots.push(root)
+    const stack = [root]
+    while (stack.length) {
+      const id = stack.pop()!
+      if (!reached.has(id)) {
+        reached.add(id)
+        stack.push(...graph.children.get(id)!)
+      }
     }
-    return entry
-  })
-  projects.sort((a, b) => {
-    const ka = `${a.subprojectDir} ${a.namespace}:${a.name}`
-    const kb = `${b.subprojectDir} ${b.namespace}:${b.name}`
-    return ka < kb ? -1 : ka > kb ? 1 : 0
-  })
-  return projects
+  }
+  for (const id of [...graph.direct].sort(byComponent)) {
+    add(id)
+  }
+  const hasParent = new Set([...graph.children.values()].flatMap(c => [...c]))
+  const rest = [...graph.children.keys()].sort(byComponent)
+  for (const id of [
+    ...rest.filter(id => !hasParent.has(id)),
+    ...rest.filter(id => hasParent.has(id)),
+  ]) {
+    if (!reached.has(id)) {
+      add(id)
+    }
+  }
+  return roots
 }
 
 function unionInto(
@@ -350,9 +486,48 @@ function buildClasspathByProject(
   )
 }
 
+function buildDirectDependenciesByProject(
+  projects: RawProject[],
+  directByRoot: Map<string, Set<string>>,
+  perRoot: Map<string, PerRoot>,
+): Map<string, string[]> {
+  const idsByProjectKey = new Map<string, Set<string>>()
+  for (const [rootId, ids] of directByRoot) {
+    const projectKey = perRoot.get(rootId)?.projectKey ?? ''
+    let set = idsByProjectKey.get(projectKey)
+    if (!set) {
+      set = new Set()
+      idsByProjectKey.set(projectKey, set)
+    }
+    for (const id of ids) {
+      set.add(id)
+    }
+  }
+  const directByProject = new Map<string, Set<string>>()
+  for (const p of projects) {
+    const key = projectClasspathKey({
+      name: p.name,
+      namespace: p.group,
+      subprojectDir: p.dir,
+    })
+    let set = directByProject.get(key)
+    if (!set) {
+      set = new Set()
+      directByProject.set(key, set)
+    }
+    for (const id of idsByProjectKey.get(p.projectKey) ?? []) {
+      set.add(id)
+    }
+  }
+  return new Map(
+    [...directByProject].map(({ 0: key, 1: ids }) => [key, [...ids].sort()]),
+  )
+}
+
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
+  directByRoot: Map<string, Set<string>>,
   projectsByGav: Map<string, RawProject>,
   perRoot: Map<string, PerRoot>,
   fileExists: (path: string) => boolean,
@@ -432,6 +607,11 @@ function buildArtifactPaths(
     sourcesByCoord,
     coords,
     classpathByProject: buildClasspathByProject(projects, perRoot),
+    directDependenciesByProject: buildDirectDependenciesByProject(
+      projects,
+      directByRoot,
+      perRoot,
+    ),
   }
 }
 

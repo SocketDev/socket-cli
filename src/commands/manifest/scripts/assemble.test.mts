@@ -4,7 +4,28 @@ import { assembleFacts } from './assemble.mts'
 import { parseRecords } from './records.mts'
 import { accumulateSidecar, serializeSidecar } from './sidecar.mts'
 
+import type { SocketFactsSbom } from './facts.mts'
 import type { SidecarAccumulator } from './sidecar.mts'
+
+// Each project's tree, written out with component ids; a repeat on the current
+// path (a cycle) is written without its children.
+function trees(facts: SocketFactsSbom): Record<string, string[]> {
+  const deps = facts.dependencies ?? []
+  const render = (i: number, path: number[]): string => {
+    const id = facts.components[deps[i]!.component]!.id
+    const children = deps[i]!.children ?? []
+    if (path.includes(i) || !children.length) {
+      return id
+    }
+    return `${id}(${children.map(c => render(c, [...path, i])).join(', ')})`
+  }
+  return Object.fromEntries(
+    (facts.projects ?? []).map(p => [
+      p.name,
+      p.children.map(i => render(i, [])),
+    ]),
+  )
+}
 
 // Minimal line-protocol records for a one-module Gradle build (--with-files):
 // - first-party module `:app` (a project, NOT a dependency node) with source +
@@ -22,6 +43,33 @@ const RECORDS = [
   'file\tr1\tcom.example:lib:jar:1.0\t/abs/lib.jar',
   'scanned\truntimeClasspath',
 ].join('\n')
+
+function chain(root: string, project: string, version: string): string[] {
+  return [
+    `root\t${root}\t${project}\tcompile\t1`,
+    `node\t${root}\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1`,
+    `node\t${root}\tg:mid:jar:1\tg\tmid\t1\tjar\t\t0`,
+    `node\t${root}\tg:dep:jar:${version}\tg\tdep\t${version}\tjar\t\t0`,
+    `edge\t${root}\tg:lib:jar:1\tg:mid:jar:1`,
+    `edge\t${root}\tg:mid:jar:1\tg:dep:jar:${version}`,
+  ]
+}
+
+function cycle(root: string, project: string, extra: boolean): string[] {
+  return [
+    `root\t${root}\t${project}\tcompile\t1`,
+    `node\t${root}\tg:x:jar:1\tg\tx\t1\tjar\t\t1`,
+    `node\t${root}\tg:y:jar:1\tg\ty\t1\tjar\t\t0`,
+    `edge\t${root}\tg:x:jar:1\tg:y:jar:1`,
+    `edge\t${root}\tg:y:jar:1\tg:x:jar:1`,
+    ...(extra
+      ? [
+          `node\t${root}\tg:z:jar:1\tg\tz\t1\tjar\t\t0`,
+          `edge\t${root}\tg:y:jar:1\tg:z:jar:1`,
+        ]
+      : []),
+  ]
+}
 
 describe('records → assemble → sidecar', () => {
   it('carries first-party project paths, external jars, and artifactless BOMs', () => {
@@ -69,7 +117,7 @@ describe('records → assemble → sidecar', () => {
     expect(bom?.targets).toEqual([])
     expect(bom?.sources).toEqual([])
   })
-  it('merges a coordinate with divergent subtrees into one component and scopes classpaths per project', () => {
+  it('keeps a coordinate with divergent subtrees as one component with a dependency entry per subtree', () => {
     // :a and :b both depend on `lib`, which pulls a different `dep` version in
     // each subproject.
     const records = [
@@ -97,22 +145,138 @@ describe('records → assemble → sidecar', () => {
       'g:junit:jar:4',
       'g:lib:jar:1',
     ])
-    expect(
-      facts.components.find(c => c.id === 'g:lib:jar:1')?.dependencies,
-    ).toEqual(['g:dep:jar:1', 'g:dep:jar:2'])
+    expect(facts.components[3]).not.toHaveProperty('dependencies')
+    expect(facts.dependencies).toEqual([
+      { component: 0 },
+      { component: 3, children: [0] },
+      { component: 2 },
+      { component: 1 },
+      { component: 3, children: [3] },
+    ])
+    expect(trees(facts)).toEqual({
+      a: ['g:lib:jar:1(g:dep:jar:1)'],
+      b: ['g:junit:jar:4', 'g:lib:jar:1(g:dep:jar:2)'],
+    })
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
     const byName = new Map(
       serializeSidecar(acc)['/abs/.socket.facts.json']!.projects.map(p => [
         p.name,
-        p.classpath,
+        p,
       ]),
     )
-    expect(byName.get('a')).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
-    expect(byName.get('b')).toEqual([
+    expect(byName.get('a')?.classpath).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
+    expect(byName.get('b')?.classpath).toEqual([
       'g:dep:jar:2',
       'g:junit:jar:4',
+      'g:lib:jar:1',
+    ])
+    expect(byName.get('b')?.dependencies).toEqual([
+      'g:junit:jar:4',
+      'g:lib:jar:1',
+    ])
+    expect(byName.get('b')).not.toHaveProperty('children')
+  })
+  it('shares one dependency entry between identical subtrees across subprojects', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\ta\tg\ta\t1\ta',
+      'project\tb\tg\tb\t1\tb',
+      'root\tr1\ta\tcompile\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+      'edge\tr1\tg:lib:jar:1\tg:dep:jar:1',
+      'root\tr2\tb\tcompile\t1',
+      'node\tr2\tg:other:jar:1\tg\tother\t1\tjar\t\t1',
+      'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t0',
+      'node\tr2\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+      'edge\tr2\tg:other:jar:1\tg:lib:jar:1',
+      'edge\tr2\tg:lib:jar:1\tg:dep:jar:1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(facts.dependencies).toHaveLength(3)
+    expect(trees(facts)).toEqual({
+      a: ['g:lib:jar:1(g:dep:jar:1)'],
+      b: ['g:other:jar:1(g:lib:jar:1(g:dep:jar:1))'],
+    })
+  })
+  it('tells apart subtrees that differ only further down', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\ta\tg\ta\t1\ta',
+      'project\tb\tg\tb\t1\tb',
+      ...chain('r1', 'a', '1'),
+      ...chain('r2', 'b', '2'),
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(trees(facts)).toEqual({
+      a: ['g:lib:jar:1(g:mid:jar:1(g:dep:jar:1))'],
+      b: ['g:lib:jar:1(g:mid:jar:1(g:dep:jar:2))'],
+    })
+  })
+  it('merges the configurations of a subproject into one tree', () => {
+    const records = [
+      'meta\tgradle\t8.0\t17',
+      'project\t:a\tg\ta\t1\ta',
+      'root\tr1\t:a\tcompileClasspath\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:api:jar:1\tg\tapi\t1\tjar\t\t0',
+      'edge\tr1\tg:lib:jar:1\tg:api:jar:1',
+      'root\tr2\t:a\truntimeClasspath\t1',
+      'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr2\tg:api:jar:1\tg\tapi\t1\tjar\t\t0',
+      'node\tr2\tg:impl:jar:1\tg\timpl\t1\tjar\t\t0',
+      'edge\tr2\tg:lib:jar:1\tg:api:jar:1',
+      'edge\tr2\tg:lib:jar:1\tg:impl:jar:1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(trees(facts)).toEqual({
+      a: ['g:lib:jar:1(g:api:jar:1, g:impl:jar:1)'],
+    })
+  })
+  it('merges equal cycles and keeps different ones apart', () => {
+    const records = [
+      'meta\tsbt\t1.10.7\t17',
+      'project\ta\tg\ta\t1\ta',
+      'project\tb\tg\tb\t1\tb',
+      'project\tc\tg\tc\t1\tc',
+      ...cycle('r1', 'a', false),
+      ...cycle('r2', 'b', false),
+      ...cycle('r3', 'c', true),
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    // x and y once for a and b together, and once more for c, plus z.
+    expect(facts.dependencies).toHaveLength(5)
+    const [a, b, c] = facts.projects!
+    expect(a!.children).toEqual(b!.children)
+    expect(c!.children).not.toEqual(a!.children)
+    expect(trees(facts)).toEqual({
+      a: ['g:x:jar:1(g:y:jar:1(g:x:jar:1))'],
+      b: ['g:x:jar:1(g:y:jar:1(g:x:jar:1))'],
+      c: ['g:x:jar:1(g:y:jar:1(g:z:jar:1, g:x:jar:1))'],
+    })
+  })
+  it('roots a resolved dependency that no direct dependency reaches', () => {
+    const records = [
+      'meta\tsbt\t1.10.7\t17',
+      'project\ta\tg\ta\t1\ta',
+      'root\tr1\ta\tcompile\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:loose:jar:1\tg\tloose\t1\tjar\t\t0',
+      'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+      'edge\tr1\tg:loose:jar:1\tg:dep:jar:1',
+    ].join('\n')
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
+
+    expect(trees(facts)).toEqual({
+      a: ['g:lib:jar:1', 'g:loose:jar:1(g:dep:jar:1)'],
+    })
+    expect(artifactPaths.directDependenciesByProject.get('a g:a')).toEqual([
       'g:lib:jar:1',
     ])
   })
