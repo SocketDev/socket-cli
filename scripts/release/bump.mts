@@ -1,24 +1,18 @@
 #!/usr/bin/env node
 /**
  * @file The CI bump stage. Derives the next version from the commits landed
- *   since the last release, writes package.json + CHANGELOG.md, and commits the
- *   pair via the release App onto a throwaway `npm-publish-v<version>` branch.
- *
- *   Nothing here is hand-run. The publish-npm workflow calls it between install
- *   and build, so the tarballs it packs carry the derived version and the commit
- *   they claim to be built from. `promote.mts` lands or deletes the branch once
- *   the run is decided.
+ *   since the last release and writes package.json + CHANGELOG.md into the
+ *   working tree. `open-release-pr.mts` commits the pair and opens the release
+ *   PR from a separate job that never installs dependencies.
  *
  *   Usage:
  *     node scripts/release/bump.mts [--dry-run] [--release-as major|minor|patch]
  */
 
-import { execFile as execFileCallback } from 'node:child_process'
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 
 import {
   changelogHeading,
@@ -26,22 +20,13 @@ import {
   promoteChangelog,
   repoBaseUrl,
 } from './changelog.mts'
-import { commitViaGithubApi } from './github-api.mts'
 import { readReleaseCommits, readReleaseHistory } from './history.mts'
 import { readPublishedVersion } from './registry.mts'
-import {
-  discardReleaseBranch,
-  openReleaseBranch,
-  resolveReleaseEnv,
-} from './release-branch.mts'
 import { deriveNextVersion, parseConventionalCommits } from './version.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 
-import type { ReleaseBranch } from './release-branch.mts'
 import type { ScriptMeta } from '../lib/run-main.mts'
-
-const execFile = promisify(execFileCallback)
 
 const rootPath = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -59,14 +44,6 @@ interface PackageJsonShape {
 
 function log(message: string): void {
   process.stdout.write(`[bump] ${message}\n`)
-}
-
-async function git(args: readonly string[]): Promise<string> {
-  const { stdout } = await execFile('git', [...args], {
-    cwd: rootPath,
-    maxBuffer: 64 * 1024 * 1024,
-  })
-  return stdout
 }
 
 function readPackageJson(): { parsed: PackageJsonShape; raw: string } {
@@ -179,77 +156,27 @@ async function main(): Promise<void> {
     return
   }
 
-  const env = resolveReleaseEnv()
   writeFileSync(
     path.join(rootPath, 'package.json'),
     writeManifestVersion(manifest.raw, derived.version),
   )
   writeFileSync(changelogPath, promoted.changelog)
-
-  const parentSha = (await git(['rev-parse', 'HEAD'])).trim()
-  const baseTreeSha = (await git(['rev-parse', 'HEAD^{tree}'])).trim()
-  const files = ['CHANGELOG.md', 'package.json'].map(relPath => ({
-    content: readFileSync(path.join(rootPath, relPath), 'utf8'),
-    path: relPath,
-  }))
-  const releaseBranch: ReleaseBranch = await openReleaseBranch({
-    env,
-    parentSha,
-    version: derived.version,
-  })
-  // Past this point any failure must nuke the branch, otherwise a leftover
-  // npm-publish-v<version> accumulates. The release line is never touched here,
-  // so the no-version-creep invariant holds either way.
-  try {
-    const sha = await commitViaGithubApi({
-      baseTreeSha,
-      branch: releaseBranch.branch,
-      files,
-      message: `chore(release): ${derived.version}`,
-      parentSha,
-      repo: env.repo,
-      token: env.token,
-    })
-    // The checkout runs with persist-credentials off, so the fetch carries the
-    // App token inline rather than writing it into .git/config.
-    const auth = Buffer.from(`x-access-token:${env.token}`).toString('base64')
-    await git([
-      '-c',
-      `http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}`,
-      'fetch',
-      '--no-tags',
-      'origin',
-      `refs/heads/${releaseBranch.branch}`,
-    ])
-    await git(['reset', '--hard', sha])
-    log(
-      `${derived.version} committed ${sha.slice(0, 7)} on ${releaseBranch.branch} ` +
-        'via the release App.',
-    )
-    emitOutputs({
-      'release-branch': releaseBranch.branch,
-      sha,
-      version: derived.version,
-    })
-  } catch (e) {
-    await discardReleaseBranch(releaseBranch)
-    throw e
-  }
+  log(`wrote ${derived.version} to package.json and CHANGELOG.md.`)
+  emitOutputs({ version: derived.version })
 }
 
 const SCRIPT_META: ScriptMeta = {
   describe:
-    'derives the next release version from the landed commits and commits package.json + CHANGELOG.md via the release App',
+    'derives the next release version from the landed commits and writes package.json + CHANGELOG.md',
   help: `Usage: node scripts/release/bump.mts [flags]
 
-  --dry-run                       derive and print the version without opening
-                                  a release branch or committing anything
+  --dry-run                       derive and print the version without writing
+                                  package.json or CHANGELOG.md
   --release-as major|minor|patch  force the bump level instead of deriving it
                                   from the conventional commits
 
-  The publish-npm workflow runs this between install and build. It is not a
-  hand-run script: it needs RELEASE_APP_TOKEN and the GitHub Actions
-  environment to reach the release App.`,
+  The publish-npm workflow runs this in its release-pr mode. It only edits
+  the working tree, so a local run is safe to inspect and discard.`,
 }
 
 if (isMainModule(import.meta.url)) {
