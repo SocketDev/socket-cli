@@ -2,7 +2,8 @@ import { runManifestFacts } from './run-manifest-facts.mts'
 
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
-// Generates `.socket.facts.json` for a Gradle project via the bundled init script.
+// Generates `gradle.socket.facts.json` for a Gradle project via the bundled
+// init script.
 export async function convertGradleToFacts({
   bin,
   cwd,

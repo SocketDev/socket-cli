@@ -1,4 +1,4 @@
-import { mavenCoordinateKey, projectClasspathKey } from './facts.mts'
+import { mavenCoordinateKey } from './facts.mts'
 
 import type {
   AnyPURL,
@@ -29,7 +29,7 @@ export type SidecarProjectEntry = SocketFactsSbomProject & {
 
 // Frozen contract with `coana run --compute-artifacts-sidecar`; change only
 // in sync with the coana consumer. Keyed by the absolute path of the
-// `.socket.facts.json` file whose own projects[]/components[] these entries
+// `*.socket.facts.json` file whose own projects[]/components[] these entries
 // describe - the key IS the scope, so two independent reactors that happen to
 // emit the same purl identity (e.g. a shared internal module name) can never
 // collide: each is only ever looked up within its own key. No cross-reactor
@@ -97,9 +97,8 @@ function sortByPurl<T extends AnyPURL>(entries: T[]): T[] {
 // Emit an entry for every SBOM component AND every first-party project: a
 // top-level module is a project, not a dependency component, yet its source
 // roots are where reachability starts, so the sidecar must carry them.
-// A second call for the same factsFile (a dual-marker directory where two
-// build tools both target it) overwrites rather than merges, matching the
-// existing last-writer-wins convention for that case.
+// Every build writes its own facts file, so a key is accumulated once; a
+// repeated call for the same factsFile (the same build run again) overwrites.
 export function accumulateSidecar(
   acc: SidecarAccumulator,
   facts: SocketFactsSbom,
@@ -114,10 +113,7 @@ export function accumulateSidecar(
     components: facts.components.map(paths),
     projects: (facts.projects ?? []).map(proj => ({
       ...paths(proj),
-      classpath: [
-        ...(artifactPaths.classpathByProject.get(projectClasspathKey(proj)) ??
-          []),
-      ],
+      classpath: [...(artifactPaths.classpathByProject.get(proj.id) ?? [])],
     })),
   })
 }

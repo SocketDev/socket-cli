@@ -4,7 +4,7 @@ import path from 'node:path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
-import { resolveBuildToolBin } from './build-tool.mts'
+import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
@@ -49,6 +49,10 @@ export type ManifestScriptOptions = {
 export type ManifestRunResult = {
   code: number
   facts: SocketFactsSbom
+  // Undefined when the build did not report it.
+  buildRoot: string | undefined
+  // Undefined when a file-addressed build did not report its entry file.
+  factsFileName: string | undefined
   report: ResolutionReport
   artifactPaths: ResolvedArtifactPaths
   // Captured build-tool output (empty when stdio is 'inherit').
@@ -133,16 +137,23 @@ async function writeSbtPlugin(
 }
 
 async function assembleFromRecords(
+  tool: BuildTool,
   out: RunOutput,
   recordsFile: string,
 ): Promise<ManifestRunResult> {
   const text = existsSync(recordsFile)
     ? await fs.readFile(recordsFile, 'utf8')
     : ''
-  const { artifactPaths, facts, report } = assembleFacts(parseRecords(text))
+  const parsed = parseRecords(text)
+  const factsFileName = socketFactsFileName(tool, parsed.entry || undefined)
+  const { artifactPaths, facts, report } = assembleFacts(parsed, {
+    factsFileName,
+  })
   return {
+    buildRoot: parsed.buildRoot || undefined,
     code: out.code,
     facts,
+    factsFileName,
     report,
     artifactPaths,
     stderr: out.stderr,
@@ -247,7 +258,7 @@ async function invokeGradle(
       '--console=plain',
     ]
     const out = await runNeverThrow(bin, args, opts)
-    return await assembleFromRecords(out, recordsFile)
+    return await assembleFromRecords('gradle', out, recordsFile)
   })
 }
 
@@ -310,7 +321,7 @@ async function invokeSbtIn(
     task,
   ]
   const out = await runNeverThrow(bin, args, opts)
-  return await assembleFromRecords(out, recordsFile)
+  return await assembleFromRecords('sbt', out, recordsFile)
 }
 
 async function runSbt(opts: ManifestScriptOptions): Promise<ManifestRunResult> {
@@ -373,7 +384,7 @@ async function invokeMaven(
       'validate',
     ]
     const out = await runNeverThrow(bin, args, opts)
-    return await assembleFromRecords(out, recordsFile)
+    return await assembleFromRecords('maven', out, recordsFile)
   })
 }
 

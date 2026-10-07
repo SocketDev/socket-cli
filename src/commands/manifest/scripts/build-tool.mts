@@ -1,5 +1,7 @@
 import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
+
+import constants from '../../../constants.mts'
 
 export type BuildTool = 'gradle' | 'maven' | 'sbt'
 
@@ -18,6 +20,15 @@ const BUILD_TOOL_WRAPPER = {
   gradle: 'gradlew',
   maven: 'mvnw',
 } as unknown as Partial<Record<BuildTool, string>>
+
+// Gradle (8+) and sbt hold one build per directory; Maven builds are addressed
+// by POM file, so `mvn -f other-pom.xml` puts a second build in the directory.
+const ADDRESSED_BY_FILE: Record<BuildTool, boolean> = {
+  __proto__: null,
+  gradle: false,
+  maven: true,
+  sbt: false,
+} as unknown as Record<BuildTool, boolean>
 
 // sbt happily runs in any directory, synthesizing a default project from its
 // name, so an sbt run outside a build yields a plausible but bogus SBOM. Maven
@@ -42,4 +53,20 @@ export function resolveBuildToolBin(
     return `./${wrapperName}`
   }
   return DEFAULT_BUILD_TOOL_BIN[tool]
+}
+
+// `<entry>.socket.facts.json`, distinct for every build sharing a directory:
+// the entry file's name (`pom.xml`) for a file-addressed build, the tool's
+// name (`gradle`) for a directory-addressed one. Undefined when a
+// file-addressed build did not report its entry file.
+export function socketFactsFileName(
+  tool: BuildTool,
+  entryFile: string | undefined,
+): string | undefined {
+  if (!ADDRESSED_BY_FILE[tool]) {
+    return `${tool}${constants.DOT_SOCKET_DOT_FACTS_JSON}`
+  }
+  return entryFile
+    ? `${basename(entryFile)}${constants.DOT_SOCKET_DOT_FACTS_JSON}`
+    : undefined
 }

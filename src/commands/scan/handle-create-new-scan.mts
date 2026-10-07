@@ -19,6 +19,8 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import {
   compressSocketFactsForUpload,
+  isReachabilityReportPath,
+  isSocketFactsFile,
   snapshotSocketFacts,
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
@@ -197,7 +199,7 @@ async function createNewScan(
 
         if (reach.dynamicSbomInference) {
           // Already generated recursively above; resolving cwd's own build
-          // root a second time would race on the same .socket.facts.json.
+          // root a second time would race on the same facts file.
           detected.gradle = false
           detected.sbt = false
           detected.maven = false
@@ -358,16 +360,17 @@ async function createNewScan(
 
         reachabilityReport = reachResult.data?.reachabilityReport
 
-        // When using only pre-generated SBOMs, build the scan from those inputs —
-        // CycloneDX, SPDX, and Socket facts (`.socket.facts.json`) — matching
-        // Coana's `--use-only-pregenerated-sboms` selection. Otherwise drop any
-        // stray `.socket.facts.json`; coana's fresh reachability report (appended
-        // below) is the authoritative facts file for the scan.
+        // Mirror the SBOM inputs Coana analyzed; otherwise its fresh report
+        // (appended below) supersedes every facts file.
         const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-          ? filterToPregeneratedSboms(packagePaths, supportedFiles)
-          : packagePaths.filter(
-              p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+          ? filterToPregeneratedSboms(packagePaths, supportedFiles).filter(
+              p =>
+                !isReachabilityReportPath(p, {
+                  cwd,
+                  outputPath: constants.DOT_SOCKET_DOT_FACTS_JSON,
+                }),
             )
+          : packagePaths.filter(p => !isSocketFactsFile(p))
 
         // Append coana's reachability report, but not twice: a pre-generated facts
         // input can resolve to the same path coana wrote its report to.
@@ -439,17 +442,8 @@ async function createNewScan(
       )
     }
 
-    // On a successful scan, clean up the `.socket.facts.json` coana wrote at
-    // the path we instructed it to write to (via `--socket-mode`). Failed
-    // scans leave the file in place for debugging. Producer-written files
-    // (e.g. from `socket manifest gradle --facts`) are NOT touched here —
-    // those are user-owned input that the user can clean up themselves; in
-    // the --reach path coana overwrites that file with its enriched output
-    // anyway, so it's the same path that gets removed. `--reach-retain-facts-file`
-    // opts out of this cleanup so the report can be inspected; the user is then
-    // responsible for deleting it before the next full application reachability
-    // scan (a stale file is picked up as pre-generated input and would make those
-    // results unreliable).
+    // A scan without --reach would upload a leftover report as an SBOM with
+    // stale reachability results; a failed scan keeps it for debugging.
     if (
       fullScanCResult.ok &&
       scanId &&

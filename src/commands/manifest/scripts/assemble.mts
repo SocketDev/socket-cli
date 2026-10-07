@@ -8,9 +8,7 @@ import {
   type SocketFactsSbomMetadata,
   type SocketFactsSbomProject,
   mavenCoordinateKey,
-  projectClasspathKey,
 } from './facts.mts'
-import constants from '../../../constants.mts'
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
@@ -25,6 +23,9 @@ export type AssembleResult = {
 
 export type AssembleOptions = {
   emitProjects?: boolean | undefined
+  // Basename the facts file is written under; direct dependencies reference
+  // it. Undefined only when it cannot be named, and so will not be written.
+  factsFileName: string | undefined
   // Injectable for tests; an uncompiled module's output dir is dropped (module
   // stays resolvable via its sources).
   fileExists?: ((path: string) => boolean) | undefined
@@ -49,7 +50,7 @@ type PerRoot = {
 
 export function assembleFacts(
   parsed: ParsedRecords,
-  opts: AssembleOptions = {},
+  opts: AssembleOptions,
 ): AssembleResult {
   const fileExists = opts.fileExists ?? existsSync
   const perRoot = buildPerRoot(parsed)
@@ -63,7 +64,12 @@ export function assembleFacts(
   const components = buildComponents(
     finalNodes,
     projectsByGav,
-    buildManifestFilesByCoord(parsed, directByRoot, perRoot),
+    buildManifestFilesByCoord(
+      parsed,
+      directByRoot,
+      perRoot,
+      opts.factsFileName,
+    ),
   )
   const projects =
     opts.emitProjects === false
@@ -186,6 +192,7 @@ function buildManifestFilesByCoord(
   parsed: ParsedRecords,
   directByRoot: Map<string, Set<string>>,
   perRoot: Map<string, PerRoot>,
+  factsFileName: string | undefined,
 ): Map<string, SocketFactsManifestReference[]> {
   const buildFilesByCoord = new Map<string, Set<string>>()
   for (const [rootId, ids] of directByRoot) {
@@ -205,9 +212,10 @@ function buildManifestFilesByCoord(
   return new Map(
     [...buildFilesByCoord].map(({ 0: id, 1: buildFiles }) => [
       id,
-      [constants.DOT_SOCKET_DOT_FACTS_JSON, ...[...buildFiles].sort()].map(
-        file => ({ file }),
-      ),
+      [
+        ...(factsFileName ? [factsFileName] : []),
+        ...[...buildFiles].sort(),
+      ].map(file => ({ file })),
     ]),
   )
 }
@@ -277,12 +285,16 @@ function buildProjects(
 
   const projects = [...parsed.projects.values()].map(p => {
     const entry: SocketFactsSbomProject = {
+      id: p.projectKey,
       type: PURL_TYPE_MAVEN,
       namespace: p.group,
       name: p.name,
       ...(p.version ? { version: p.version } : {}),
       subprojectDir: p.dir,
       dependencies: [...(directByProject.get(p.projectKey) ?? [])].sort(),
+    }
+    if (p.buildFiles.length) {
+      entry.manifestFiles = [...p.buildFiles].sort().map(file => ({ file }))
     }
     return entry
   })
@@ -331,11 +343,7 @@ function buildClasspathByProject(
   }
   const classpathByProject = new Map<string, Set<string>>()
   for (const p of projects) {
-    const key = projectClasspathKey({
-      name: p.name,
-      namespace: p.group,
-      subprojectDir: p.dir,
-    })
+    const key = p.projectKey
     let set = classpathByProject.get(key)
     if (!set) {
       set = new Set()

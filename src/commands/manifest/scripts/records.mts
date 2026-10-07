@@ -10,6 +10,8 @@ import type {
 //   <tag>\t<field>\t<field>...
 //
 //   meta        tool  toolVersion  javaVersion
+//   buildRoot   path                                     (absolute; the facts file's directory)
+//   entry       path                                     (file-addressed builds; build-root-relative)
 //   project     projectKey  group  name  version  dir
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
@@ -22,6 +24,8 @@ import type {
 //   failure     coord  detail  config
 //   unscannable config  detail
 //
+// `projectKey` is the tool's unique project identity (Maven: GAV; Gradle:
+// project path; sbt: project id), emitted as the project id.
 // A `root` is one (subproject, configuration) resolution root; `coordId` is the
 // coordinate key (`group:name:ext:classifier:version`, empty segments dropped),
 // used opaquely as the per-root node key. Unknown tags are ignored.
@@ -67,6 +71,11 @@ export type ParsedRecords = {
   tool: string
   toolVersion: string
   javaVersion: string
+  // Absolute directory the build is rooted at; the facts file is written there.
+  buildRoot: string
+  // The file the build was invoked on (Maven's top-level POM); empty for a
+  // directory-addressed build.
+  entry: string
   projects: Map<string, RawProject>
   roots: Map<string, RawRoot>
   scannedConfigs: string[]
@@ -100,6 +109,8 @@ export function parseRecords(text: string): ParsedRecords {
     tool: '',
     toolVersion: '',
     javaVersion: '',
+    buildRoot: '',
+    entry: '',
     projects: new Map(),
     roots: new Map(),
     scannedConfigs: [],
@@ -151,6 +162,12 @@ export function parseRecords(text: string): ParsedRecords {
         result.tool = f[1] ?? ''
         result.toolVersion = f[2] ?? ''
         result.javaVersion = f[3] ?? ''
+        break
+      case 'buildRoot':
+        result.buildRoot = f[1] ?? ''
+        break
+      case 'entry':
+        result.entry = f[1] ?? ''
         break
       case 'project': {
         const p = project(f[1] ?? '')

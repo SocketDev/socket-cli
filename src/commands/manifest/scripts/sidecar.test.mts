@@ -49,6 +49,7 @@ describe('compute-artifacts sidecar', () => {
     const facts: SocketFactsSbom = {
       projects: [
         {
+          id: ':app',
           type: 'maven',
           namespace: 'g',
           name: 'app',
@@ -68,7 +69,7 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.classpathByProject.set('app g:app', ['g:a:jar:1'])
+    artifactPaths.classpathByProject.set(':app', ['g:a:jar:1'])
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(
@@ -251,23 +252,24 @@ describe('compute-artifacts sidecar', () => {
     ])
   })
 
-  it('attaches each project its own classpath ids, keyed by subprojectDir and name', () => {
+  it('attaches each project its own classpath ids, keyed by project id even within one directory', () => {
     const project = {
       type: 'maven',
       namespace: 'com.example',
       version: '1.0',
       dependencies: [],
+      subprojectDir: 'x',
     }
     const facts: SocketFactsSbom = {
       components: [],
       projects: [
-        { ...project, name: 'a', subprojectDir: 'a' },
-        { ...project, name: 'b', subprojectDir: 'b' },
+        { ...project, id: 'x/a.xml', name: 'a' },
+        { ...project, id: 'x/b.xml', name: 'b' },
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.classpathByProject.set('a com.example:a', ['g:x:jar:1'])
-    artifactPaths.classpathByProject.set('b com.example:b', ['g:x:jar:2'])
+    artifactPaths.classpathByProject.set('x/a.xml', ['g:x:jar:1'])
+    artifactPaths.classpathByProject.set('x/b.xml', ['g:x:jar:2'])
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(acc, facts, artifactPaths, '/root/.socket.facts.json')

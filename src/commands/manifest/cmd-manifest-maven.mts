@@ -67,8 +67,8 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags)}
 
-    Emits a single \`.socket.facts.json\` describing the resolved dependency
-    graph of your Maven project, using maven (\`mvn\` on PATH by default). It
+    Emits a single \`pom.xml.socket.facts.json\` (named after the POM Maven
+    runs on) describing the resolved dependency graph of your Maven project, using maven (\`mvn\` on PATH by default). It
     reads dependency metadata only and never downloads artifacts; an unresolved
     dependency is a fatal error. You can pass --include-configs /
     --exclude-configs (comma-separated glob patterns) to control which Maven

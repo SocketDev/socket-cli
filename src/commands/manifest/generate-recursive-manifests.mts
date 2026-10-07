@@ -185,10 +185,11 @@ async function runEcosystemCandidates({
       }
 
       covered.add(dir)
+      const buildRoot = path.dirname(result.factsPath)
       // eslint-disable-next-line no-await-in-loop
       const resolvedSubprojectDirs = await Promise.all(
         result.projects.map(project =>
-          realpathOrResolved(path.resolve(dir, project.subprojectDir)),
+          realpathOrResolved(path.resolve(buildRoot, project.subprojectDir)),
         ),
       )
       for (const subprojectDir of resolvedSubprojectDirs) {
@@ -218,7 +219,7 @@ async function runEcosystemCandidates({
   return outcomes
 }
 
-// Generates one .socket.facts.json per independent gradle/sbt/maven build
+// Generates one Socket facts file per independent gradle/sbt/maven build
 // root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
 // own projects[].subprojectDir, not by pruning the whole discovered subtree,
 // so an unrelated nested project a reactor doesn't declare still gets its

@@ -93,6 +93,10 @@ public final class SocketFactsRecordsEngine {
 
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
+    rec(lines, "buildRoot", rootDir.getAbsolutePath());
+    // The POM Maven was invoked on (`-f`, else the default it located), which names the facts file.
+    File entryPom = session.getRequest().getPom();
+    if (entryPom != null) rec(lines, "entry", SocketSupport.relativePath(rootDir.toPath(), entryPom.getAbsoluteFile().toPath()));
 
     for (MavenProject module : reactor) {
       // No basedir: Maven's stand-in project for a directory without a POM. Skipping it lets Maven's
@@ -100,12 +104,13 @@ public final class SocketFactsRecordsEngine {
       if (module.getBasedir() == null) continue;
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
       if (SocketSupport.isExcludedPath(ws, excludes)) continue;
-      rec(lines, "project", ws, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
+      String key = projectKey(module);
+      rec(lines, "project", key, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
       File pom = module.getFile();
-      if (pom != null && pom.isFile()) rec(lines, "projectBuild", ws, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));
+      if (pom != null && pom.isFile()) rec(lines, "projectBuild", key, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));
       if (opts.withFiles) {
-        for (String s : collectSources(module)) rec(lines, "projectSrc", ws, s);
-        for (String t : collectTargets(module)) rec(lines, "projectTgt", ws, t);
+        for (String s : collectSources(module)) rec(lines, "projectSrc", key, s);
+        for (String t : collectTargets(module)) rec(lines, "projectTgt", key, t);
       }
     }
 
@@ -123,12 +128,18 @@ public final class SocketFactsRecordsEngine {
       // Which direct dependencies are prod-scoped: seeds the prod/dev root split (see emitModuleRoots).
       Set<String> directProdIds = new HashSet<>();
       collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, directProdIds, failures);
-      rootIdx = emitModuleRoots(lines, rootIdx, ws, nodes, directIds, directProdIds);
+      rootIdx = emitModuleRoots(lines, rootIdx, projectKey(module), nodes, directIds, directProdIds);
     }
 
     for (Failure f : failures) rec(lines, "failure", f.coord, f.detail, f.config);
 
     write(opts.recordsFile, lines);
+  }
+
+  // Not the directory, which `<module>x/a.xml</module>` and `<module>x/b.xml</module>` share; Maven
+  // rejects a reactor with a duplicate GAV. Surfaces as the facts project id.
+  private static String projectKey(MavenProject module) {
+    return module.getGroupId() + ":" + module.getArtifactId() + ":" + module.getVersion();
   }
 
   // ---- resolution ----

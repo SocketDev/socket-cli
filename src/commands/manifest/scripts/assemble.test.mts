@@ -27,6 +27,7 @@ describe('records → assemble → sidecar', () => {
   it('carries first-party project paths, external jars, and artifactless BOMs', () => {
     // Inject fileExists so the synthetic absolute paths aren't filtered out.
     const { artifactPaths, facts } = assembleFacts(parseRecords(RECORDS), {
+      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
@@ -46,6 +47,7 @@ describe('records → assemble → sidecar', () => {
     // roots reach the sidecar, keyed by its own facts file.
     expect(bucket.projects).toEqual([
       {
+        id: ':app',
         type: 'maven',
         namespace: 'com.example',
         name: 'app',
@@ -88,6 +90,7 @@ describe('records → assemble → sidecar', () => {
       'node\tr3\tg:junit:jar:4\tg\tjunit\t4\tjar\t\t1',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
@@ -129,7 +132,9 @@ describe('records → assemble → sidecar', () => {
       'edge\tr2\tg:a:jar:1.0-SNAPSHOT\tg:ext:jar:2',
       'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1',
     ].join('\n')
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'pom.xml.socket.facts.json',
+    })
 
     expect(facts.components.map(c => [c.id, c.firstParty ?? 'absent'])).toEqual(
       [
@@ -169,21 +174,69 @@ describe('records → assemble → sidecar', () => {
       'root\tr3\tc\truntimeClasspath\t1',
       'node\tr3\tg:solo:jar:1\tg\tsolo\t1\tjar\t\t1',
     ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records))
+    const { facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'pom.xml.socket.facts.json',
+    })
 
     expect(
       Object.fromEntries(
         facts.components.map(c => [c.id, c.manifestFiles ?? 'absent']),
       ),
     ).toEqual({
-      'g:a:jar:1': [{ file: '.socket.facts.json' }, { file: 'b/pom.xml' }],
+      'g:a:jar:1': [
+        { file: 'pom.xml.socket.facts.json' },
+        { file: 'b/pom.xml' },
+      ],
       'g:dep:jar:3': 'absent',
       'g:ext:jar:2': [
-        { file: '.socket.facts.json' },
+        { file: 'pom.xml.socket.facts.json' },
         { file: 'a/pom.xml' },
         { file: 'b/pom.xml' },
       ],
-      'g:solo:jar:1': [{ file: '.socket.facts.json' }],
+      'g:solo:jar:1': [{ file: 'pom.xml.socket.facts.json' }],
     })
+  })
+  it("records each project's own build files, relative to the build root", () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'buildRoot\t/repo/sub',
+      'project\tg:agg:1\tg\tagg\t1\t.',
+      'projectBuild\tg:agg:1\tother-pom.xml',
+      'project\tg:mod-a:1\tg\tmod-a\t1\tmod',
+      'projectBuild\tg:mod-a:1\tmod/a.xml',
+      'project\tg:mod-b:1\tg\tmod-b\t1\tmod',
+      'projectBuild\tg:mod-b:1\tmod/b.xml',
+      'project\tg:bare:1\tg\tbare\t1\tbare',
+    ].join('\n')
+    const parsed = parseRecords(records)
+    const { facts } = assembleFacts(parsed, {
+      factsFileName: 'other-pom.xml.socket.facts.json',
+    })
+
+    expect(parsed.buildRoot).toBe('/repo/sub')
+    expect(
+      Object.fromEntries(
+        facts.projects!.map(p => [p.id, p.manifestFiles ?? 'absent']),
+      ),
+    ).toEqual({
+      'g:agg:1': [{ file: 'other-pom.xml' }],
+      'g:bare:1': 'absent',
+      'g:mod-a:1': [{ file: 'mod/a.xml' }],
+      'g:mod-b:1': [{ file: 'mod/b.xml' }],
+    })
+  })
+  it('omits the facts file reference when the facts file cannot be named', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\ta\tg\ta\t1\t.',
+      'projectBuild\ta\tpom.xml',
+      'root\tr1\ta\truntimeClasspath\t1',
+      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records), {
+      factsFileName: undefined,
+    })
+
+    expect(facts.components[0]?.manifestFiles).toEqual([{ file: 'pom.xml' }])
   })
 })

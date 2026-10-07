@@ -33,6 +33,8 @@ import {
   extractReachabilityErrors,
   extractTier1ReachabilityScanId,
   getFullWorkspacePath,
+  isReachabilityReportPath,
+  isSocketFactsFile,
   snapshotSocketFacts,
 } from './coana.mts'
 
@@ -52,6 +54,44 @@ describe('coana facts-file utils', () => {
     writeFileSync(filePath, JSON.stringify(body))
     return filePath
   }
+
+  describe('isSocketFactsFile', () => {
+    it.each([
+      '.socket.facts.json',
+      'a/pom.xml.socket.facts.json',
+      'gradle.socket.facts.json',
+      'Foo.sln.SOCKET.FACTS.JSON',
+    ])('matches %s', p => {
+      expect(isSocketFactsFile(p)).toBe(true)
+    })
+    it.each([
+      'socket.facts.json',
+      '.socket.facts.json.br',
+      'pom.xml',
+      'a/.socket.facts.json/pom.xml',
+    ])('rejects %s', p => {
+      expect(isSocketFactsFile(p)).toBe(false)
+    })
+  })
+
+  describe('isReachabilityReportPath', () => {
+    const options = { cwd: '/repo', outputPath: 'out/report.json' }
+    it.each([
+      '.socket.facts.json',
+      'a/.SOCKET.FACTS.JSON',
+      '/repo/out/report.json',
+      'out/report.json',
+    ])('matches %s', p => {
+      expect(isReachabilityReportPath(p, options)).toBe(true)
+    })
+    it.each([
+      'pom.xml.socket.facts.json',
+      'gradle.socket.facts.json',
+      'report.json',
+    ])('rejects %s', p => {
+      expect(isReachabilityReportPath(p, options)).toBe(false)
+    })
+  })
 
   describe('compressSocketFactsForUpload', () => {
     it('writes brotli .br as a sibling of the source file', async () => {
@@ -93,6 +133,21 @@ describe('coana facts-file utils', () => {
       const result = await compressSocketFactsForUpload([lock, pkg])
       try {
         expect(result.paths).toEqual([lock, pkg])
+      } finally {
+        await result.cleanup()
+        rmSync(wrapDir, { recursive: true, force: true })
+      }
+    })
+
+    it('uploads a named facts file uncompressed', async () => {
+      const wrapDir = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-'))
+      const facts = path.join(wrapDir, 'pom.xml.socket.facts.json')
+      writeFileSync(facts, '{}')
+
+      const result = await compressSocketFactsForUpload([facts])
+      try {
+        expect(result.paths).toEqual([facts])
+        expect(existsSync(`${facts}.br`)).toBe(false)
       } finally {
         await result.cleanup()
         rmSync(wrapDir, { recursive: true, force: true })
