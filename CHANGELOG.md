@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.6.0) - 2026-10-07
+
+### Added
+- **`manifest`** — attribute direct JVM dependencies to subproject build files (#1581)
+
 ## [1.5.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.5.0) - 2026-10-06
 
 ### Added
