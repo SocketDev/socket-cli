@@ -288,9 +288,9 @@ public final class SocketFactsRecordsEngine {
     if (!visited.add(id)) return id;
 
     Node node = internal
-        ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version)
+        ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version, gav)
         : upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(),
-            type == null ? "" : type, classifier == null ? "" : classifier, version);
+            type == null ? "" : type, classifier == null ? "" : classifier, version, "");
     // Maven wrote each accepted node's resolved file back onto the node; a reactor module reports its
     // own dirs through its `project` record instead of a `file` record.
     if (!internal && opts.withFiles) {
@@ -319,10 +319,11 @@ public final class SocketFactsRecordsEngine {
   }
 
   private static Node upsert(
-      Map<String, Node> nodes, String id, String groupId, String artifactId, String type, String classifier, String version) {
+      Map<String, Node> nodes, String id, String groupId, String artifactId, String type, String classifier, String version,
+      String project) {
     Node node = nodes.get(id);
     if (node == null) {
-      node = new Node(id, groupId, artifactId, type, classifier, version);
+      node = new Node(id, groupId, artifactId, type, classifier, version, project);
       nodes.put(id, node);
     }
     return node;
@@ -375,7 +376,7 @@ public final class SocketFactsRecordsEngine {
     rec(lines, "root", rootId, projectKey, config, prod ? "1" : "0");
     for (Node n : nodeMap.values()) {
       rec(lines, "node", rootId, n.id, n.groupId, n.artifactId, n.version, n.type, n.classifier,
-          directIds.contains(n.id) ? "1" : "0");
+          directIds.contains(n.id) ? "1" : "0", n.project);
       for (String child : n.children) {
         if (nodeMap.containsKey(child)) rec(lines, "edge", rootId, n.id, child);
       }
@@ -531,16 +532,19 @@ public final class SocketFactsRecordsEngine {
     final String type;
     final String classifier;
     final String version;
+    // The reactor module's project key when this is a sibling module, else empty.
+    final String project;
     final TreeSet<String> children = new TreeSet<>();
     final TreeSet<String> files = new TreeSet<>();
 
-    Node(String id, String groupId, String artifactId, String type, String classifier, String version) {
+    Node(String id, String groupId, String artifactId, String type, String classifier, String version, String project) {
       this.id = id;
       this.groupId = groupId;
       this.artifactId = artifactId;
       this.type = type;
       this.classifier = classifier;
       this.version = version;
+      this.project = project;
     }
   }
 }

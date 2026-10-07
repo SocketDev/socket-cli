@@ -13,10 +13,7 @@ import type { SidecarAccumulator } from './sidecar.mts'
 
 function emptyArtifactPaths(): ResolvedArtifactPaths {
   return {
-    targetsByCoord: new Map(),
-    targetsByGav: new Map(),
-    sourcesByCoord: new Map(),
-    coords: new Set(),
+    pathsById: new Map(),
     classpathByProject: new Map(),
   }
 }
@@ -26,7 +23,7 @@ function mkComponentFixture(target: string): {
   paths: ResolvedArtifactPaths
 } {
   const paths = emptyArtifactPaths()
-  paths.targetsByCoord.set('g:a:jar:1', [target])
+  paths.pathsById.set('g:a:jar:1', { sources: [], targets: [target] })
   return {
     facts: {
       components: [
@@ -102,12 +99,10 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.targetsByCoord.set('com.example:lib:jar:da517db', [
-      '/abs/lib.jar',
-    ])
-    artifactPaths.sourcesByCoord.set('com.example:lib:jar:da517db', [
-      '/abs/lib/src/main/java',
-    ])
+    artifactPaths.pathsById.set('com.example:lib:jar:da517db', {
+      sources: ['/abs/lib/src/main/java'],
+      targets: ['/abs/lib.jar'],
+    })
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(acc, facts, artifactPaths, '/root/.socket.facts.json')
@@ -159,23 +154,49 @@ describe('compute-artifacts sidecar', () => {
     expect(entry.sources).toEqual([])
   })
 
-  it('leaves targets/sources undefined (not []) when the entry has no computable coordinate at all', () => {
+  it("gives each sibling project's component that project's own paths, even when they share a coordinate", () => {
+    const util = {
+      type: 'maven',
+      namespace: 'ex',
+      name: 'util',
+      version: '1',
+      dependencies: [],
+    }
     const facts: SocketFactsSbom = {
       components: [
-        { type: 'maven', namespace: '', name: '', id: 'degenerate' },
+        { ...util, id: ':a:util', firstParty: true },
+        { ...util, id: ':b:util', firstParty: true },
+      ],
+      projects: [
+        { ...util, id: ':a:util', subprojectDir: 'a/util' },
+        { ...util, id: ':b:util', subprojectDir: 'b/util' },
       ],
     }
+    const artifactPaths = emptyArtifactPaths()
+    artifactPaths.pathsById.set(':a:util', {
+      sources: ['/abs/a/util/src'],
+      targets: ['/abs/a/util/classes'],
+    })
+    artifactPaths.pathsById.set(':b:util', {
+      sources: ['/abs/b/util/src'],
+      targets: ['/abs/b/util/classes'],
+    })
+
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(
       acc,
       facts,
-      emptyArtifactPaths(),
-      '/root/.socket.facts.json',
+      artifactPaths,
+      '/root/gradle.socket.facts.json',
     )
-    const entry =
-      serializeSidecar(acc)['/root/.socket.facts.json']!.components[0]!
-    expect(entry.targets).toBeUndefined()
-    expect(entry.sources).toBeUndefined()
+    const entry = serializeSidecar(acc)['/root/gradle.socket.facts.json']!
+
+    for (const entries of [entry.components, entry.projects]) {
+      expect(Object.fromEntries(entries.map(e => [e.id, e.sources]))).toEqual({
+        ':a:util': ['/abs/a/util/src'],
+        ':b:util': ['/abs/b/util/src'],
+      })
+    }
   })
 
   it('preserves the original component fields (id, qualifiers) untouched', () => {
@@ -215,6 +236,7 @@ describe('compute-artifacts sidecar', () => {
       components: [],
       projects: [
         {
+          id: 'com.example:app:1.0',
           type: 'maven',
           namespace: 'com.example',
           name: 'app',
@@ -225,12 +247,10 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.sourcesByCoord.set('com.example:app:1.0', [
-      '/abs/app/src/main/java',
-    ])
-    artifactPaths.targetsByCoord.set('com.example:app:1.0', [
-      '/abs/app/build/classes',
-    ])
+    artifactPaths.pathsById.set('com.example:app:1.0', {
+      sources: ['/abs/app/src/main/java'],
+      targets: ['/abs/app/build/classes'],
+    })
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(acc, facts, artifactPaths, '/root/app/.socket.facts.json')
@@ -239,6 +259,7 @@ describe('compute-artifacts sidecar', () => {
     expect(resolved['/root/app/.socket.facts.json']!.components).toEqual([])
     expect(resolved['/root/app/.socket.facts.json']!.projects).toEqual([
       {
+        id: 'com.example:app:1.0',
         type: 'maven',
         namespace: 'com.example',
         name: 'app',
@@ -302,6 +323,7 @@ describe('compute-artifacts sidecar', () => {
       components: [],
       projects: [
         {
+          id: 'com.example:shared:1.0',
           type: 'maven',
           namespace: 'com.example',
           name: 'shared',
@@ -312,13 +334,15 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const pathsA = emptyArtifactPaths()
-    pathsA.sourcesByCoord.set('com.example:shared:1.0', [
-      '/root-a/src/main/java',
-    ])
+    pathsA.pathsById.set('com.example:shared:1.0', {
+      sources: ['/root-a/src/main/java'],
+      targets: [],
+    })
     const pathsB = emptyArtifactPaths()
-    pathsB.sourcesByCoord.set('com.example:shared:1.0', [
-      '/root-b/src/main/java',
-    ])
+    pathsB.pathsById.set('com.example:shared:1.0', {
+      sources: ['/root-b/src/main/java'],
+      targets: [],
+    })
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(

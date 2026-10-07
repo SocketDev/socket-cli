@@ -119,41 +119,96 @@ describe('records → assemble → sidecar', () => {
       'g:lib:jar:1',
     ])
   })
-  it('marks only components with the exact coordinate of a build module as firstParty', () => {
+  it("gives a dependency on a build project that project's id, and marks only it firstParty", () => {
     const records = [
-      'meta\tmaven\t3.9.6\t17',
+      'meta\tgradle\t8.0\t17',
       'project\t:a\tg\ta\t1.0-SNAPSHOT\ta',
       'project\t:b\tg\tb\t1.0-SNAPSHOT\tb',
       'root\tr1\t:a\truntimeClasspath\t1',
-      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t1',
+      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t1\t',
       'root\tr2\t:b\truntimeClasspath\t1',
-      'node\tr2\tg:a:jar:1.0-SNAPSHOT\tg\ta\t1.0-SNAPSHOT\tjar\t\t1',
-      'node\tr2\tg:ext:jar:2\tg\text\t2\tjar\t\t0',
+      'node\tr2\tg:a:jar:1.0-SNAPSHOT\tg\ta\t1.0-SNAPSHOT\tjar\t\t1\t:a',
+      'node\tr2\tg:ext:jar:2\tg\text\t2\tjar\t\t0\t',
       'edge\tr2\tg:a:jar:1.0-SNAPSHOT\tg:ext:jar:2',
-      'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1',
+      // Same name as a build project, but a published artifact, not the project.
+      'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1\t',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
-      factsFileName: 'pom.xml.socket.facts.json',
+      factsFileName: 'gradle.socket.facts.json',
     })
 
-    expect(facts.components.map(c => [c.id, c.firstParty ?? 'absent'])).toEqual(
-      [
-        ['g:a:jar:1.0-SNAPSHOT', true],
-        ['g:b:jar:0.9', 'absent'],
-        ['g:ext:jar:2', 'absent'],
-      ],
-    )
+    expect(
+      facts.components.map(c => [
+        c.id,
+        c.firstParty ?? 'absent',
+        c.dependencies,
+      ]),
+    ).toEqual([
+      [':a', true, ['g:ext:jar:2']],
+      ['g:b:jar:0.9', 'absent', undefined],
+      ['g:ext:jar:2', 'absent', undefined],
+    ])
+    expect(facts.projects!.find(p => p.id === ':b')?.dependencies).toEqual([
+      ':a',
+      'g:b:jar:0.9',
+    ])
 
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
-    const bucket = serializeSidecar(acc)['/abs/.socket.facts.json']!
-    expect(
-      bucket.components.find(c => c.id === 'g:a:jar:1.0-SNAPSHOT')?.firstParty,
-    ).toBe(true)
+    accumulateSidecar(
+      acc,
+      facts,
+      artifactPaths,
+      '/abs/gradle.socket.facts.json',
+    )
+    const bucket = serializeSidecar(acc)['/abs/gradle.socket.facts.json']!
+    expect(bucket.components.find(c => c.id === ':a')?.firstParty).toBe(true)
     for (const project of bucket.projects) {
       expect(project).not.toHaveProperty('firstParty')
     }
   })
+
+  it("keeps projects that share a coordinate apart, collapsing each project's variants into it", () => {
+    const records = [
+      'meta\tgradle\t8.0\t17',
+      'project\t:a:util\tex\tutil\t1\ta/util',
+      'projectSrc\t:a:util\t/abs/a/util/src',
+      'project\t:b:util\tex\tutil\t1\tb/util',
+      'projectSrc\t:b:util\t/abs/b/util/src',
+      'project\t:app\tex\tapp\t1\tapp',
+      'root\tr1\t:app\truntimeClasspath\t1',
+      'node\tr1\tex:util:jar:1\tex\tutil\t1\tjar\t\t1\t:b:util',
+      'node\tr1\tex:util:jar:test-fixtures:1\tex\tutil\t1\tjar\ttest-fixtures\t1\t:b:util',
+      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t0\t',
+      'edge\tr1\tex:util:jar:test-fixtures:1\tex:util:jar:1',
+      'edge\tr1\tex:util:jar:1\tg:ext:jar:2',
+      'root\tr2\t:b:util\truntimeClasspath\t1',
+      'node\tr2\tex:util:jar:1\tex\tutil\t1\tjar\t\t1\t:a:util',
+    ].join('\n')
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'gradle.socket.facts.json',
+      fileExists: () => true,
+    })
+
+    expect(
+      facts.components.map(c => [c.id, c.qualifiers, c.dependencies]),
+    ).toEqual([
+      [':a:util', undefined, undefined],
+      [':b:util', undefined, ['g:ext:jar:2']],
+      ['g:ext:jar:2', { ext: 'jar' }, undefined],
+    ])
+    expect(artifactPaths.classpathByProject.get(':app')).toEqual([
+      ':b:util',
+      'g:ext:jar:2',
+    ])
+    expect(artifactPaths.classpathByProject.get(':b:util')).toEqual([':a:util'])
+    expect(artifactPaths.pathsById.get(':a:util')?.sources).toEqual([
+      '/abs/a/util/src',
+    ])
+    expect(artifactPaths.pathsById.get(':b:util')?.sources).toEqual([
+      '/abs/b/util/src',
+    ])
+  })
+
   it('marks direct dependencies with the facts file and the build files of the subprojects they are direct in', () => {
     const records = [
       'meta\tmaven\t3.9.6\t17',
