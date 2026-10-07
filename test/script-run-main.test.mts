@@ -201,7 +201,7 @@ describe('entry scripts', () => {
     'scripts/lint.mts',
     'scripts/update.mts',
     'scripts/release/bump.mts',
-    'scripts/release/promote.mts',
+    'scripts/release/open-release-pr.mts',
   ]
 
   // Bare `node <entry>.mts` needs native type stripping, which landed in
