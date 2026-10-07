@@ -116,7 +116,9 @@ describe('v1 release workflow contract', () => {
     expect(workflow.jobs.verify.environment).toBeUndefined()
     expect(workflow.jobs.verify.permissions['id-token']).toBeUndefined()
     expect(workflow.on.workflow_dispatch.inputs['dry-run']?.default).toBe(true)
-    expect(workflow.jobs.publish.if).toBe('${{ inputs.dry-run == false }}')
+    expect(workflow.jobs.publish.if).toBe(
+      "${{ inputs.mode == 'publish' && inputs.dry-run == false }}",
+    )
   })
 
   it('tags the commit verify built', () => {

@@ -8,9 +8,9 @@ import process from 'node:process'
 
 import {
   GithubApiError,
+  closeSupersededPullRequests,
   createBranchRef,
   deleteBranchRef,
-  updateBranchRef,
   upsertPullRequest,
 } from './github-api.mts'
 
@@ -27,6 +27,8 @@ export interface ReleaseEnv {
 
 export interface ReleaseBranch {
   readonly branch: string
+  // False when the branch already existed, so it may carry an open PR.
+  readonly created: boolean
   readonly env: ReleaseEnv
   readonly version: string
 }
@@ -74,10 +76,9 @@ export interface OpenReleaseBranchConfig {
 }
 
 /**
- * Create `npm-publish-v<version>` at `parentSha`. Idempotent: a leftover branch
- * from an earlier crashed run (create returns 422) is force-reset to
- * `parentSha`, so this run's commit lands on a clean lineage off the current
- * base.
+ * Create `npm-publish-v<version>` at `parentSha`. A branch left by an earlier
+ * run (create returns 422) stays untouched. The caller force-moves it straight
+ * to the new commit, so an open PR never sees a head with no diff.
  */
 export async function openReleaseBranch(
   config: OpenReleaseBranchConfig,
@@ -96,15 +97,9 @@ export async function openReleaseBranch(
     if (!(e instanceof GithubApiError) || e.status !== 422) {
       throw e
     }
-    await updateBranchRef({
-      branch,
-      force: true,
-      repo: env.repo,
-      sha: cfg.parentSha,
-      token: env.token,
-    })
+    return { branch, created: false, env, version: cfg.version }
   }
-  return { branch, env, version: cfg.version }
+  return { branch, created: true, env, version: cfg.version }
 }
 
 /**
@@ -139,6 +134,23 @@ export function releasePullRequestBody(
     '',
     `If ${releaseLine} moves before this merges, re-dispatch with \`mode: release-pr\` to rebuild the bump on the new tip.`,
   ].join('\n')
+}
+
+/**
+ * Close the release PRs for other versions, which a re-dispatch that derives a
+ * different version leaves behind.
+ */
+export async function closeSupersededReleasePullRequests(
+  releaseBranch: ReleaseBranch,
+): Promise<number[]> {
+  const { branch, env } = releaseBranch
+  return await closeSupersededPullRequests({
+    base: env.releaseLine,
+    headPrefix: releaseBranchName(''),
+    keepHead: branch,
+    repo: env.repo,
+    token: env.token,
+  })
 }
 
 /**

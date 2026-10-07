@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { upsertPullRequest } from '../scripts/release/github-api.mts'
+import {
+  closeSupersededPullRequests,
+  upsertPullRequest,
+} from '../scripts/release/github-api.mts'
 import { assertBumpOnly } from '../scripts/release/open-release-pr.mts'
-import { releasePullRequestBody } from '../scripts/release/release-branch.mts'
+import {
+  openReleaseBranch,
+  releasePullRequestBody,
+} from '../scripts/release/release-branch.mts'
 
 const PR_CONFIG = {
   apiUrl: 'https://api.example.test',
@@ -82,6 +88,77 @@ describe('upsertPullRequest', () => {
       'https://api.example.test/repos/fixture/release-cli/pulls/7',
     )
     expect(update[1].method).toBe('PATCH')
+  })
+})
+
+describe('openReleaseBranch', () => {
+  const env = { releaseLine: 'v1.x', repo: 'fixture/release-cli', token: 'x' }
+
+  it('leaves an existing branch where it is', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ message: 'exists' }, 422))
+    vi.stubGlobal('fetch', fetchMock)
+    const branch = await openReleaseBranch({
+      env,
+      parentSha: 'abc',
+      version: '1.5.1',
+    })
+    expect(branch.created).toBe(false)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0]![1].method).toBe('POST')
+  })
+
+  it('reports a freshly created branch', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({}, 201)))
+    const branch = await openReleaseBranch({
+      env,
+      parentSha: 'abc',
+      version: '1.5.1',
+    })
+    expect(branch.created).toBe(true)
+  })
+})
+
+function pr(number: number, ref: string, fullName = 'fixture/release-cli') {
+  return { head: { ref, repo: { full_name: fullName } }, number }
+}
+
+describe('closeSupersededPullRequests', () => {
+  const config = {
+    apiUrl: 'https://api.example.test',
+    base: 'v1.x',
+    headPrefix: 'npm-publish-v',
+    keepHead: 'npm-publish-v1.6.0',
+    repo: 'fixture/release-cli',
+    token: 'placeholder',
+  }
+
+  it('closes other release PRs and leaves everything else open', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse([
+          pr(1, 'npm-publish-v1.5.1'),
+          pr(2, 'npm-publish-v1.6.0'),
+          pr(3, 'feature/unrelated'),
+          pr(4, 'npm-publish-v1.5.2', 'someone/fork'),
+        ]),
+      )
+      .mockImplementation(async () => jsonResponse({}))
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await closeSupersededPullRequests(config)).toEqual([1])
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls[1]![0]).toBe(
+      'https://api.example.test/repos/fixture/release-cli/pulls/1',
+    )
+    expect(JSON.parse(fetchMock.mock.calls[1]![1].body)).toEqual({
+      state: 'closed',
+    })
+    expect(fetchMock.mock.calls[2]![0]).toBe(
+      'https://api.example.test/repos/fixture/release-cli/git/refs/heads/npm-publish-v1.5.1',
+    )
+    expect(fetchMock.mock.calls[2]![1].method).toBe('DELETE')
   })
 })
 

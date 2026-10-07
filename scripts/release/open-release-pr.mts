@@ -18,6 +18,7 @@ import { promisify } from 'node:util'
 
 import { commitViaGithubApi } from './github-api.mts'
 import {
+  closeSupersededReleasePullRequests,
   discardReleaseBranch,
   openReleaseBranch,
   openReleasePullRequest,
@@ -107,16 +108,25 @@ async function main(): Promise<void> {
       baseTreeSha,
       branch: releaseBranch.branch,
       files,
+      force: true,
       message: `chore(release): ${version}`,
       parentSha,
       repo: env.repo,
       token: env.token,
     })
   } catch (e) {
-    await discardReleaseBranch(releaseBranch)
+    if (releaseBranch.created) {
+      await discardReleaseBranch(releaseBranch)
+    }
     throw e
   }
   const pullRequest = await openReleasePullRequest(releaseBranch)
+  const closed = await closeSupersededReleasePullRequests(releaseBranch)
+  if (closed.length) {
+    process.stdout.write(
+      `[open-release-pr] closed superseded release PRs: ${closed.map(n => `#${n}`).join(', ')}\n`,
+    )
+  }
   process.stdout.write(
     `[open-release-pr] committed ${sha.slice(0, 7)} on ${releaseBranch.branch}, ` +
       `release PR: ${pullRequest.html_url}\n`,
