@@ -9,10 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Updated the Coana CLI to v `15.12.2`.
 
+## [1.6.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.6.0) - 2026-10-07
+
+### Added
+- **`manifest`** — attribute direct JVM dependencies to subproject build files (#1581)
+
 ## [1.5.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.5.0) - 2026-10-06
 
 ### Added
 - `socket fix --allow-overrides` fixes a vulnerability that a parent package's version range blocks by writing an override or resolution that forces the fixed version under that parent, in npm, pnpm, Yarn Berry and Rush projects.
+- Socket facts for multi-module Maven, Gradle and sbt builds now attribute each direct dependency to the subproject build files that pull it in, so the dashboard shows which module brought it in.
 
 ### Changed
 - Updated the Coana CLI to v `15.12.1`.

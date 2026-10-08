@@ -101,6 +101,8 @@ public final class SocketFactsRecordsEngine {
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
       if (SocketSupport.isExcludedPath(ws, excludes)) continue;
       rec(lines, "project", ws, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
+      File pom = module.getFile();
+      if (pom != null && pom.isFile()) rec(lines, "projectBuild", ws, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));
       if (opts.withFiles) {
         for (String s : collectSources(module)) rec(lines, "projectSrc", ws, s);
         for (String t : collectTargets(module)) rec(lines, "projectTgt", ws, t);

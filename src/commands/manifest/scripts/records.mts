@@ -13,6 +13,7 @@ import type {
 //   project     projectKey  group  name  version  dir
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
+//   projectBuild  projectKey  path                       (build-root-relative)
 //   root        rootId  projectKey  config  prod(0|1)
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)
 //   edge        rootId  parentCoordId  childCoordId
@@ -58,6 +59,8 @@ export type RawProject = {
   dir: string
   sources: string[]
   targets: string[]
+  // The project's own build files, build-root-relative.
+  buildFiles: string[]
 }
 
 export type ParsedRecords = {
@@ -131,6 +134,7 @@ export function parseRecords(text: string): ParsedRecords {
         dir: '',
         sources: [],
         targets: [],
+        buildFiles: [],
       }
       result.projects.set(key, p)
     }
@@ -164,6 +168,11 @@ export function parseRecords(text: string): ParsedRecords {
       case 'projectTgt':
         if (f[2]) {
           project(f[1] ?? '').targets.push(f[2])
+        }
+        break
+      case 'projectBuild':
+        if (f[2]) {
+          project(f[1] ?? '').buildFiles.push(f[2])
         }
         break
       case 'root': {
