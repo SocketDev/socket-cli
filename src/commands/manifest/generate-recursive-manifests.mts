@@ -185,7 +185,9 @@ async function runEcosystemCandidates({
       }
 
       covered.add(dir)
-      const buildRoot = path.dirname(result.factsPath)
+      // `-f`/`-p` can root the reactor away from `dir`.
+      // eslint-disable-next-line no-await-in-loop
+      const buildRoot = await realpathOrResolved(path.dirname(result.factsPath))
       // eslint-disable-next-line no-await-in-loop
       const resolvedSubprojectDirs = await Promise.all(
         result.projects.map(project =>
@@ -204,7 +206,10 @@ async function runEcosystemCandidates({
         // meaningful data point, not a redundant one. Never suppress its own
         // build-root invocation, regardless of which reactor(s) also
         // incorporate it or the order candidates happen to be discovered in.
-        if (subprojectDir.startsWith(`${dir}${path.sep}`)) {
+        if (
+          subprojectDir === buildRoot ||
+          subprojectDir.startsWith(`${buildRoot}${path.sep}`)
+        ) {
           covered.add(subprojectDir)
         }
       }
