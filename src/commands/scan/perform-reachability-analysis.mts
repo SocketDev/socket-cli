@@ -8,7 +8,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isOmittedReachValue } from './reachability-units.mts'
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
+import {
+  extractTier1ReachabilityScanId,
+  isReachabilityReportPath,
+} from '../../utils/coana.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
@@ -134,17 +137,19 @@ export async function performReachabilityAnalysis(
 
   spinner?.start('Uploading manifests for reachability analysis...')
 
+  const outputFilePath = outputPath || constants.DOT_SOCKET_DOT_FACTS_JSON
+
   // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path
-  // NOTE: previously stripped any `.socket.facts.json` from packagePaths
-  // here to avoid uploading leftover post-reachability output. With the
-  // producer flow (`socket manifest gradle --facts`) those files are
-  // legitimate INPUT to compute-artifacts, so we now upload them. Stale
-  // facts files are cleaned up downstream — see the post-success
-  // deletion in handle-create-new-scan.mts.
   const uploadCResult = await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, packagePaths, {
-      pathsRelativeTo: path.resolve(cwd, analysisTarget),
-    }),
+    sockSdk.uploadManifestFiles(
+      orgSlug,
+      packagePaths.filter(
+        p => !isReachabilityReportPath(p, { cwd, outputPath: outputFilePath }),
+      ),
+      {
+        pathsRelativeTo: path.resolve(cwd, analysisTarget),
+      },
+    ),
     {
       description: 'upload manifests',
       spinner,
@@ -178,8 +183,6 @@ export async function performReachabilityAnalysis(
 
   spinner?.start()
   spinner?.infoAndStop('Running reachability analysis with Coana...')
-
-  const outputFilePath = outputPath || constants.DOT_SOCKET_DOT_FACTS_JSON
 
   // Temp file for --compute-artifacts-sidecar, removed in the finally below.
   // Written even when empty under dynamicSbomInference, since the

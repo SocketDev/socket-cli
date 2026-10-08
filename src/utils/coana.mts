@@ -86,6 +86,8 @@ export async function compressSocketFactsForUpload(
   // remove a `.br` only to have it re-created after we returned.
   const results = await Promise.allSettled(
     scanPaths.map(async p => {
+      // depscan decodes only the bare `.socket.facts.json.br`; a named facts
+      // file is uploaded as plain JSON.
       if (path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON) {
         return p
       }
@@ -117,6 +119,32 @@ export async function compressSocketFactsForUpload(
   }
   const paths = results.map(r => (r as PromiseFulfilledResult<string>).value)
   return { paths, cleanup }
+}
+
+// `.socket.facts.json` or a named `<entry>.socket.facts.json`, matching
+// depscan's case-insensitive `*.socket.facts.json`.
+export function isSocketFactsFile(filepath: string): boolean {
+  return path
+    .basename(filepath)
+    .toLowerCase()
+    .endsWith(DOT_SOCKET_DOT_FACTS_JSON)
+}
+
+// A Coana reachability report, never input to a new analysis: the bare
+// `.socket.facts.json` (Coana's default name; producers name theirs after the
+// build) or the path this run tells Coana to write to.
+export function isReachabilityReportPath(
+  filepath: string,
+  options: { cwd: string; outputPath: string },
+): boolean {
+  const { cwd, outputPath } = { __proto__: null, ...options } as {
+    cwd: string
+    outputPath: string
+  }
+  return (
+    path.basename(filepath).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON ||
+    path.resolve(cwd, filepath) === path.resolve(cwd, outputPath)
+  )
 }
 
 export type ReachabilityError = {
