@@ -295,3 +295,13 @@ describe('records → assemble → sidecar', () => {
     expect(facts.components[0]?.manifestFiles).toEqual([{ file: 'pom.xml' }])
   })
 })
+
+describe('parseRecords', () => {
+  it('reads the build root the build reports', () => {
+    expect(
+      parseRecords(
+        ['meta\tmaven\t3.9.6\t17', 'buildRoot\t/repo/sub'].join('\n'),
+      ).buildRoot,
+    ).toBe('/repo/sub')
+  })
+})
