@@ -9,9 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Socket facts for Maven, Gradle and sbt builds are now written per build — `pom.xml.socket.facts.json` (named after the POM Maven runs on, so `-f other-pom.xml` gets its own), `gradle.socket.facts.json` and `sbt.socket.facts.json` — so builds sharing a directory no longer overwrite each other. Delete any `.socket.facts.json` an earlier run left behind.
 - Reachability scans no longer feed a leftover `.socket.facts.json` report from an earlier run back into the analysis.
-- Socket facts for Maven, Gradle and sbt builds keep projects that share a coordinate or a directory apart, giving each its own id and build files.
 
 ### Fixed
+- Socket facts no longer merge build projects into one: Maven modules sharing a directory and Gradle or sbt projects sharing a coordinate each keep their own dependencies and build files.
 - Socket facts for a Maven or Gradle build pointed elsewhere with `-f` or `-p` are now written into that build's own directory, where their paths resolve.
 
 ## [1.6.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.6.1) - 2026-10-08
