@@ -19,6 +19,7 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import {
   compressSocketFactsForUpload,
+  isSocketFactsFile,
   snapshotSocketFacts,
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
@@ -197,7 +198,7 @@ async function createNewScan(
 
         if (reach.dynamicSbomInference) {
           // Already generated recursively above; resolving cwd's own build
-          // root a second time would race on the same .socket.facts.json.
+          // root a second time would race on the same facts file.
           detected.gradle = false
           detected.sbt = false
           detected.maven = false
@@ -359,15 +360,13 @@ async function createNewScan(
         reachabilityReport = reachResult.data?.reachabilityReport
 
         // When using only pre-generated SBOMs, build the scan from those inputs —
-        // CycloneDX, SPDX, and Socket facts (`.socket.facts.json`) — matching
-        // Coana's `--use-only-pregenerated-sboms` selection. Otherwise drop any
-        // stray `.socket.facts.json`; coana's fresh reachability report (appended
-        // below) is the authoritative facts file for the scan.
+        // CycloneDX, SPDX, and Socket facts — matching Coana's
+        // `--use-only-pregenerated-sboms` selection. Otherwise drop every facts
+        // file; coana's fresh reachability report (appended below) is the
+        // authoritative facts file for the scan.
         const pathsForScan = reach.reachUseOnlyPregeneratedSboms
           ? filterToPregeneratedSboms(packagePaths, supportedFiles)
-          : packagePaths.filter(
-              p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
-            )
+          : packagePaths.filter(p => !isSocketFactsFile(p))
 
         // Append coana's reachability report, but not twice: a pre-generated facts
         // input can resolve to the same path coana wrote its report to.

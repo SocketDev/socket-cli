@@ -22,12 +22,9 @@ import {
 import { generateSocketFactsForFix } from './generated-socket-facts.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import {
-  DOT_SOCKET_DOT_FACTS_JSON,
-  FLAG_DRY_RUN,
-  GQL_PR_STATE_OPEN,
-} from '../../constants.mts'
+import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { isSocketFactsFile } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
@@ -192,10 +189,6 @@ async function discoverGhsaIds(
   } finally {
     await fs.rm(outputFile, { force: true }).catch(() => {})
   }
-}
-
-function isFactsFile(filepath: string): boolean {
-  return path.basename(filepath).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON
 }
 
 type GitWorkingTreeChanges = {
@@ -379,16 +372,15 @@ async function coanaFixWithFacts(
       cwd,
     })
   const scanFilepaths = await findScanFilepaths()
-  // Fail if any .socket.facts.json files are present in the scan folder.
-  // These are analysis artifacts and must be removed before re-running fix.
-  const factsFiles = scanFilepaths.filter(isFactsFile)
+  // Facts files are analysis artifacts and must be removed before re-running fix.
+  const factsFiles = scanFilepaths.filter(isSocketFactsFile)
   if (factsFiles.length) {
     if (!silence) {
       spinner?.stop()
     }
     return {
       ok: false,
-      message: `Found ${DOT_SOCKET_DOT_FACTS_JSON} in manifest files`,
+      message: 'Found Socket facts files in manifest files',
       cause:
         `Delete the following ${pluralize('file', factsFiles.length)} before running socket fix again:\n` +
         factsFiles.map(p => `  - ${p}`).join('\n'),
@@ -409,7 +401,7 @@ async function coanaFixWithFacts(
       })
     } catch (e) {
       // A failed build root aborts inference after others wrote their facts.
-      const partial = (await findScanFilepaths()).filter(isFactsFile)
+      const partial = (await findScanFilepaths()).filter(isSocketFactsFile)
       await Promise.all(partial.map(p => fs.rm(p, { force: true })))
       throw e
     }

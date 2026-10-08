@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -26,6 +26,7 @@ import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { isSocketFactsFile } from '../../utils/coana.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { parseReachEcosystems } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -182,6 +183,14 @@ const generalFlags: MeowFlags = {
     description:
       'Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH.',
   },
+}
+
+function hasSocketFactsFileIn(dir: string): boolean {
+  try {
+    return readdirSync(dir).some(isSocketFactsFile)
+  } catch {
+    return false
+  }
 }
 
 export const cmdScanCreate = {
@@ -472,14 +481,12 @@ async function run(
   }
 
   const detected = await detectManifestActions(sockJson, cwd)
-  // Suppress the --auto-manifest suggestion when a `.socket.facts.json` is
+  // Suppress the --auto-manifest suggestion when a Socket facts file is
   // already present at cwd. That file is the output of `socket manifest auto`
   // (and `--facts` mode of the per-ecosystem manifest commands), so suggesting
   // to regenerate it would be misleading; the manifest data is already there
   // and will be picked up by the scan.
-  const hasFactsFile = existsSync(
-    path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON),
-  )
+  const hasFactsFile = hasSocketFactsFileIn(cwd)
   if (
     detected.count > 0 &&
     !autoManifest &&

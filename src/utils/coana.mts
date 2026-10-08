@@ -86,6 +86,8 @@ export async function compressSocketFactsForUpload(
   // remove a `.br` only to have it re-created after we returned.
   const results = await Promise.allSettled(
     scanPaths.map(async p => {
+      // depscan decodes only the bare `.socket.facts.json.br`; a named facts
+      // file is uploaded as plain JSON.
       if (path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON) {
         return p
       }
@@ -117,6 +119,15 @@ export async function compressSocketFactsForUpload(
   }
   const paths = results.map(r => (r as PromiseFulfilledResult<string>).value)
   return { paths, cleanup }
+}
+
+// `.socket.facts.json` or a named `<entry>.socket.facts.json`, matching
+// depscan's case-insensitive `*.socket.facts.json`.
+export function isSocketFactsFile(filepath: string): boolean {
+  return path
+    .basename(filepath)
+    .toLowerCase()
+    .endsWith(DOT_SOCKET_DOT_FACTS_JSON)
 }
 
 export type ReachabilityError = {
