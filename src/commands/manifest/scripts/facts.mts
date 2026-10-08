@@ -51,9 +51,7 @@ export type SocketFactsSbomProject = AnyPURL & {
   // The subproject's own build files. They need not declare its direct
   // dependencies (e.g. a parent POM does); the facts file itself is implied.
   manifestFiles?: SocketFactsManifestReference[] | undefined
-  // Indices into dependencies[]: the roots of this subproject's dependency
-  // tree, i.e. its direct dependencies plus any resolved dependency they don't
-  // reach.
+  // Indices into dependencies[]: this subproject's direct dependencies.
   children: number[]
 }
 
