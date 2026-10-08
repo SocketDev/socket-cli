@@ -33,7 +33,6 @@ import {
   extractReachabilityErrors,
   extractTier1ReachabilityScanId,
   getFullWorkspacePath,
-  isReachabilityReportPath,
   isSocketFactsFile,
   snapshotSocketFacts,
 } from './coana.mts'
@@ -71,25 +70,6 @@ describe('coana facts-file utils', () => {
       'a/.socket.facts.json/pom.xml',
     ])('rejects %s', p => {
       expect(isSocketFactsFile(p)).toBe(false)
-    })
-  })
-
-  describe('isReachabilityReportPath', () => {
-    const options = { cwd: '/repo', outputPath: 'out/report.json' }
-    it.each([
-      '.socket.facts.json',
-      'a/.SOCKET.FACTS.JSON',
-      '/repo/out/report.json',
-      'out/report.json',
-    ])('matches %s', p => {
-      expect(isReachabilityReportPath(p, options)).toBe(true)
-    })
-    it.each([
-      'pom.xml.socket.facts.json',
-      'gradle.socket.facts.json',
-      'report.json',
-    ])('rejects %s', p => {
-      expect(isReachabilityReportPath(p, options)).toBe(false)
     })
   })
 

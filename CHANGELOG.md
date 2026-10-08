@@ -6,9 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Changed
-- Reachability scans no longer feed a leftover `.socket.facts.json` report from an earlier run back into the analysis.
-
 ### Fixed
 - Socket facts for a Maven or Gradle build pointed elsewhere with `-f` or `-p` are now written into that build's own directory, where their paths resolve.
 
