@@ -49,6 +49,8 @@ export type ManifestScriptOptions = {
 export type ManifestRunResult = {
   code: number
   facts: SocketFactsSbom
+  // Undefined when the build did not report it.
+  buildRoot: string | undefined
   report: ResolutionReport
   artifactPaths: ResolvedArtifactPaths
   // Captured build-tool output (empty when stdio is 'inherit').
@@ -139,8 +141,10 @@ async function assembleFromRecords(
   const text = existsSync(recordsFile)
     ? await fs.readFile(recordsFile, 'utf8')
     : ''
-  const { artifactPaths, facts, report } = assembleFacts(parseRecords(text))
+  const parsed = parseRecords(text)
+  const { artifactPaths, facts, report } = assembleFacts(parsed)
   return {
+    buildRoot: parsed.buildRoot || undefined,
     code: out.code,
     facts,
     report,

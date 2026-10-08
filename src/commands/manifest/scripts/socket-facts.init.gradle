@@ -473,6 +473,7 @@ rootProject { rp ->
   // task actions. The Socket CLI disables the cache for this run, but hoisting is cheap insurance.
   def recordsFileOverride = gradle.socketProp.call(rp, 'socket.recordsFile')?.toString()
   def defaultRecordsFile = new File(rp.projectDir, '.socket.facts.records.tsv').absolutePath
+  def buildRootPath = rp.projectDir.absolutePath
   // `sources`/`targets` are --with-files-only; a plain run emits only the graph fields.
   def withFilesProjects = gradle.socketProp.call(rp, 'socket.withFiles')?.toString()?.toLowerCase() == 'true'
 
@@ -493,6 +494,7 @@ rootProject { rp ->
       def rec = { List fields -> lines << fields.collect { esc(it) }.join('\t') }
 
       rec(['meta', 'gradle', gradle.gradleVersion, System.getProperty('java.version')])
+      rec(['buildRoot', buildRootPath])
 
       // One `project` record per build module (sources/targets only with --with-files).
       def projectsInfo
