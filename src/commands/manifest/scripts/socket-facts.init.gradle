@@ -67,10 +67,8 @@ gradle.ext.socketFactsState = [
   declaredIn         : Collections.synchronizedMap([:]),
 ]
 
-// The in-build script declaring a dependency is the innermost script frame on the stack when it is
-// added. Groovy script frames carry the absolute script path. Kotlin DSL frames carry only the base
-// name; the path is read from the script class loader's scope id (`kotlin-dsl:<path>:`, Gradle 6.9
-// to 9.x), and is absent before Java 9 (no StackWalker). Unresolvable frames are skipped.
+// Kotlin DSL frames carry only the script's base name; its path is read from the script class
+// loader's internal scope id (`kotlin-dsl:<path>:`), which needs StackWalker (Java 9+).
 gradle.ext.socketInitScript = initscript.sourceFile?.canonicalFile
 gradle.ext.socketDeclaringScript = { File rootDir ->
   def rootPath = rootDir.canonicalFile.toPath()

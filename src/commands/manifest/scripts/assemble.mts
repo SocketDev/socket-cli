@@ -202,9 +202,8 @@ function buildManifestFilesById(
         buildFilesByCoord.set(id, set)
       }
       const coord = root?.nodes.get(id)?.coord
-      // A dependency no build script declared (e.g. one a plugin adds) is
-      // attributed to the project's build file, even one absent on disk: its
-      // presence marks the dependency direct for this subproject.
+      // Without a known declaring script, the project's build file, even one
+      // absent on disk: its presence marks the dependency direct here.
       const declared =
         coord && project?.declaredIn.get(`${coord.group}:${coord.name}`)
       const files = declared ?? [
