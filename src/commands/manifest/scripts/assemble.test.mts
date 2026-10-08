@@ -306,6 +306,25 @@ describe('records → assemble → sidecar', () => {
       ':b': ['b/build.gradle.kts'],
     })
   })
+  it('falls back to the configured Gradle build file even when absent', () => {
+    const records = [
+      'meta\tgradle\t9.2.1\t21',
+      'buildRoot\t/repo',
+      'project\t:a\tg\ta\t1\ta',
+      'projectBuild\t:a\ta/build.gradle.kts\tmissing',
+      'root\tr1\t:a\truntimeClasspath\t1',
+      'node\tr1\tx:undeclared:jar:1\tx\tundeclared\t1\tjar\t\t1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(facts.components[0]?.manifestFiles).toEqual([
+      { file: '.socket.facts.json' },
+      { file: 'a/build.gradle.kts' },
+    ])
+    expect(facts.projects![0]?.manifestFiles).toEqual([
+      { file: 'a/build.gradle.kts' },
+    ])
+  })
 })
 
 describe('parseRecords', () => {

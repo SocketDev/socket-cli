@@ -32,7 +32,7 @@ export type SocketFactsSbomComponent = AnyPURL & {
   dependencies?: string[] | undefined
   // Direct dependencies only: the facts file plus, per subproject pulling it in
   // directly, the Gradle script declaring it, else the subproject's build file
-  // (which need not declare it, e.g. a parent POM does).
+  // (which need not declare it, e.g. a parent POM does, nor exist on disk).
   manifestFiles?: SocketFactsManifestReference[] | undefined
 }
 
@@ -48,7 +48,8 @@ export type SocketFactsSbomProject = AnyPURL & {
   subprojectDir: string
   dependencies: string[]
   // The module's own build files, e.g. a POM other than `<subprojectDir>/pom.xml`;
-  // for a Gradle project without one, the scripts declaring its dependencies.
+  // for a Gradle project without one, the scripts declaring its dependencies,
+  // else its configured build file, which may not exist on disk.
   manifestFiles?: SocketFactsManifestReference[] | undefined
 }
 

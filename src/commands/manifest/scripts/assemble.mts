@@ -203,11 +203,14 @@ function buildManifestFilesById(
       }
       const coord = root?.nodes.get(id)?.coord
       // A dependency no build script declared (e.g. one a plugin adds) is
-      // attributed to the project's own build file.
-      const files =
-        (coord && project?.declaredIn.get(`${coord.group}:${coord.name}`)) ||
-        project?.buildFiles ||
-        []
+      // attributed to the project's build file, even one absent on disk: its
+      // presence marks the dependency direct for this subproject.
+      const declared =
+        coord && project?.declaredIn.get(`${coord.group}:${coord.name}`)
+      const files = declared ?? [
+        ...(project?.buildFiles ?? []),
+        ...(project?.missingBuildFiles ?? []),
+      ]
       for (const f of files) {
         set.add(f)
       }
@@ -297,9 +300,12 @@ function buildProjects(
     }
     // A project without a build file of its own is defined by the scripts
     // declaring its dependencies, e.g. the root build script.
+    const declared = [...new Set([...p.declaredIn.values()].flat())]
     const files = p.buildFiles.length
       ? p.buildFiles
-      : [...new Set([...p.declaredIn.values()].flat())]
+      : declared.length
+        ? declared
+        : p.missingBuildFiles
     if (files.length) {
       entry.manifestFiles = [...files].sort().map(file => ({ file }))
     }

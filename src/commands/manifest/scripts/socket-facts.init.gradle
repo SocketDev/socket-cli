@@ -176,12 +176,12 @@ gradle.projectsEvaluated { g ->
         }
       }
     } catch (Exception ignore) {}
-    // `buildFile` is the configured script even when absent on disk (a project configured from the
-    // root or a convention plugin); only a script that exists is the project's own build file.
+    // `buildFile` is the configured script, absent on disk for a project configured from the root or
+    // a convention plugin. Still emitted: a direct dependency's mark must name its subproject.
     def buildFiles = []
     try {
       def bf = p.buildFile
-      if (bf != null && bf.isFile()) buildFiles << rel(bf)
+      if (bf != null) buildFiles << [rel(bf), bf.isFile()]
     } catch (Exception ignore) {}
     g.socketFactsState.projectsInfo.add([
       path   : p.path,
@@ -577,7 +577,7 @@ rootProject { rp ->
       synchronized (state.projectsInfo) { projectsInfo = new ArrayList(state.projectsInfo) }
       projectsInfo.each { pi ->
         rec(['project', pi.path, pi.group ?: '', pi.name, pi.version ?: '', pi.dir])
-        pi.buildFiles.each { f -> rec(['projectBuild', pi.path, f]) }
+        pi.buildFiles.each { f -> rec(['projectBuild', pi.path, f[0]] + (f[1] ? [] : ['missing'])) }
         def byGa
         synchronized (state.declaredIn) { byGa = state.declaredIn.get(pi.path)?.collectEntries { k, v -> [k, new ArrayList(v)] } }
         byGa?.keySet()?.sort()?.each { ga ->
