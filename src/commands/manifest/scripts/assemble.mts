@@ -7,9 +7,8 @@ import {
   type SocketFactsSbomComponent,
   type SocketFactsSbomMetadata,
   type SocketFactsSbomProject,
-  mavenCoordinateKey,
-  projectClasspathKey,
 } from './facts.mts'
+
 import constants from '../../../constants.mts'
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
@@ -35,16 +34,23 @@ type MergedNode = {
   children: Set<string>
   prod: boolean
   direct: boolean
+  // projectKey when this node is a build project, else empty.
+  project: string
   targets: Set<string>
 }
 
 type PerRoot = {
   projectKey: string
   prod: boolean
-  nodes: Map<
-    string,
-    { coord: RawCoord; children: string[]; direct: boolean; targets: string[] }
-  >
+  nodes: Map<string, RootNode>
+}
+
+type RootNode = {
+  coord: RawCoord
+  children: string[]
+  direct: boolean
+  project: string
+  targets: string[]
 }
 
 export function assembleFacts(
@@ -53,17 +59,12 @@ export function assembleFacts(
 ): AssembleResult {
   const fileExists = opts.fileExists ?? existsSync
   const perRoot = buildPerRoot(parsed)
-  const { directByRoot, finalNodes } = mergeByCoordinate(perRoot)
+  const { directByRoot, finalNodes } = mergeById(perRoot)
 
   const tool = (parsed.tool || 'gradle') as SocketFactsSbomMetadata['tool']
-  const projectsByGav = new Map<string, RawProject>()
-  for (const p of parsed.projects.values()) {
-    projectsByGav.set(gav(p.group, p.name, p.version), p)
-  }
   const components = buildComponents(
     finalNodes,
-    projectsByGav,
-    buildManifestFilesByCoord(parsed, directByRoot, perRoot),
+    buildManifestFilesById(parsed, directByRoot, perRoot),
   )
   const projects =
     opts.emitProjects === false
@@ -87,58 +88,60 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
-      projectsByGav,
       perRoot,
       fileExists,
     ),
   }
 }
 
-function gav(group: string, name: string, version: string): string {
-  return `${group}:${name}:${version}`
+// A node resolving to a build project takes that project's id, so projects
+// sharing a coordinate stay apart and the project's variants collapse into it.
+function componentId(coordId: string, project: string): string {
+  return project || coordId
 }
 
 function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
   const out = new Map<string, PerRoot>()
   for (const [rootId, r] of parsed.roots) {
-    const childrenByParent = new Map<string, Set<string>>()
+    const idOf = (coordId: string) =>
+      componentId(coordId, r.nodes.get(coordId)?.project ?? '')
+    const nodes = new Map<string, RootNode>()
+    for (const [coordId, n] of r.nodes) {
+      const id = idOf(coordId)
+      let node = nodes.get(id)
+      if (!node) {
+        node = {
+          coord: n.project ? { ...n.coord, classifier: '', ext: '' } : n.coord,
+          children: [],
+          direct: false,
+          project: n.project,
+          targets: [],
+        }
+        nodes.set(id, node)
+      }
+      node.direct ||= n.direct
+      node.targets.push(...n.targets)
+    }
     for (const [p, c] of r.edges) {
       if (!r.nodes.has(p) || !r.nodes.has(c)) {
         continue
       }
-      let set = childrenByParent.get(p)
-      if (!set) {
-        set = new Set()
-        childrenByParent.set(p, set)
+      const parentId = idOf(p)
+      const childId = idOf(c)
+      const parent = nodes.get(parentId)!
+      if (childId !== parentId && !parent.children.includes(childId)) {
+        parent.children.push(childId)
       }
-      set.add(c)
-    }
-    const nodes = new Map<
-      string,
-      {
-        coord: RawCoord
-        children: string[]
-        direct: boolean
-        targets: string[]
-      }
-    >()
-    for (const [coordId, n] of r.nodes) {
-      nodes.set(coordId, {
-        coord: n.coord,
-        children: [...(childrenByParent.get(coordId) ?? [])],
-        direct: n.direct,
-        targets: n.targets,
-      })
     }
     out.set(rootId, { projectKey: r.projectKey, prod: r.prod, nodes })
   }
   return out
 }
 
-// Components are merged by coordinate across every resolution root; which
-// coordinates belong to which subproject is kept separately (classpathByProject)
-// for reachability, which needs each subproject's exact classpath.
-function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
+// Components are merged by id across every resolution root; which ids belong
+// to which subproject is kept separately (classpathByProject) for
+// reachability, which needs each subproject's exact classpath.
+function mergeById(perRoot: Map<string, PerRoot>): {
   finalNodes: Map<string, MergedNode>
   directByRoot: Map<string, Set<string>>
 } {
@@ -153,6 +156,7 @@ function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
           children: new Set(),
           prod: false,
           direct: false,
+          project: node.project,
           targets: new Set(),
         }
         finalNodes.set(coordId, fn)
@@ -182,7 +186,7 @@ function mergeByCoordinate(perRoot: Map<string, PerRoot>): {
   return { finalNodes, directByRoot }
 }
 
-function buildManifestFilesByCoord(
+function buildManifestFilesById(
   parsed: ParsedRecords,
   directByRoot: Map<string, Set<string>>,
   perRoot: Map<string, PerRoot>,
@@ -214,8 +218,7 @@ function buildManifestFilesByCoord(
 
 function buildComponents(
   finalNodes: Map<string, MergedNode>,
-  projectsByGav: Map<string, RawProject>,
-  manifestFilesByCoord: Map<string, SocketFactsManifestReference[]>,
+  manifestFilesById: Map<string, SocketFactsManifestReference[]>,
 ): SocketFactsSbomComponent[] {
   return [...finalNodes.keys()].sort().map(id => {
     const fn = finalNodes.get(id)!
@@ -243,13 +246,13 @@ function buildComponents(
     if (!fn.prod) {
       comp.dev = true
     }
-    if (projectsByGav.has(gav(c.group, c.name, c.version ?? ''))) {
+    if (fn.project) {
       comp.firstParty = true
     }
     if (fn.children.size) {
       comp.dependencies = [...fn.children].sort()
     }
-    const manifestFiles = manifestFilesByCoord.get(id)
+    const manifestFiles = manifestFilesById.get(id)
     if (manifestFiles) {
       comp.manifestFiles = manifestFiles
     }
@@ -277,12 +280,16 @@ function buildProjects(
 
   const projects = [...parsed.projects.values()].map(p => {
     const entry: SocketFactsSbomProject = {
+      id: p.projectKey,
       type: PURL_TYPE_MAVEN,
       namespace: p.group,
       name: p.name,
       ...(p.version ? { version: p.version } : {}),
       subprojectDir: p.dir,
       dependencies: [...(directByProject.get(p.projectKey) ?? [])].sort(),
+    }
+    if (p.buildFiles.length) {
+      entry.manifestFiles = [...p.buildFiles].sort().map(file => ({ file }))
     }
     return entry
   })
@@ -292,26 +299,6 @@ function buildProjects(
     return ka < kb ? -1 : ka > kb ? 1 : 0
   })
   return projects
-}
-
-function unionInto(
-  map: Map<string, string[]>,
-  key: string,
-  add: string[],
-): void {
-  if (!add.length) {
-    return
-  }
-  const acc = map.get(key)
-  if (acc) {
-    for (const f of add) {
-      if (!acc.includes(f)) {
-        acc.push(f)
-      }
-    }
-  } else {
-    map.set(key, [...add])
-  }
 }
 
 function buildClasspathByProject(
@@ -331,11 +318,7 @@ function buildClasspathByProject(
   }
   const classpathByProject = new Map<string, Set<string>>()
   for (const p of projects) {
-    const key = projectClasspathKey({
-      name: p.name,
-      namespace: p.group,
-      subprojectDir: p.dir,
-    })
+    const key = p.projectKey
     let set = classpathByProject.get(key)
     if (!set) {
       set = new Set()
@@ -353,84 +336,28 @@ function buildClasspathByProject(
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
-  projectsByGav: Map<string, RawProject>,
   perRoot: Map<string, PerRoot>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
-  const targetsByCoord = new Map<string, string[]>()
-  const targetsByGav = new Map<string, string[]>()
-  const sourcesByCoord = new Map<string, string[]>()
-  const coords = new Set<string>()
-  for (const fn of finalNodes.values()) {
-    const c = fn.coord
-    const coordKey = mavenCoordinateKey(
-      c.group,
-      c.name,
-      c.ext,
-      c.classifier,
-      c.version,
-    )
-    if (!coordKey) {
-      continue
-    }
-    coords.add(coordKey)
-    const pi = projectsByGav.get(gav(c.group, c.name, c.version ?? ''))
-    const sources = (pi?.sources ?? []).filter(fileExists).sort()
-    const targets = [...new Set(pi ? pi.targets : fn.targets)]
-      .filter(fileExists)
-      .sort()
-    if (sources.length) {
-      sourcesByCoord.set(coordKey, sources)
-    }
-    if (!targets.length) {
-      continue
-    }
-    targetsByCoord.set(coordKey, targets)
-    const gavKey = mavenCoordinateKey(
-      c.group,
-      c.name,
-      undefined,
-      undefined,
-      c.version,
-    )
-    if (gavKey) {
-      const acc = targetsByGav.get(gavKey)
-      if (acc) {
-        for (const f of targets) {
-          if (!acc.includes(f)) {
-            acc.push(f)
-          }
-        }
-      } else {
-        targetsByGav.set(gavKey, [...targets])
-      }
+  const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
+  for (const [id, fn] of finalNodes) {
+    if (!fn.project) {
+      pathsById.set(id, {
+        sources: [],
+        targets: [...fn.targets].filter(fileExists).sort(),
+      })
     }
   }
-  // A top-level module is a `project` but usually not a dependency node, so its
-  // source roots (where reachability starts) are missed by the node loop above;
-  // emit first-party module paths here.
+  // A project's own component shares its id, so this also covers dependency
+  // edges onto a sibling project.
   for (const p of projects) {
-    const coordKey = mavenCoordinateKey(
-      p.group,
-      p.name,
-      undefined,
-      undefined,
-      p.version,
-    )
-    if (!coordKey) {
-      continue
-    }
-    coords.add(coordKey)
-    unionInto(sourcesByCoord, coordKey, p.sources.filter(fileExists))
-    const targets = p.targets.filter(fileExists)
-    unionInto(targetsByCoord, coordKey, targets)
-    unionInto(targetsByGav, coordKey, targets)
+    pathsById.set(p.projectKey, {
+      sources: [...new Set(p.sources)].filter(fileExists).sort(),
+      targets: [...new Set(p.targets)].filter(fileExists).sort(),
+    })
   }
   return {
-    targetsByCoord,
-    targetsByGav,
-    sourcesByCoord,
-    coords,
+    pathsById,
     classpathByProject: buildClasspathByProject(projects, perRoot),
   }
 }

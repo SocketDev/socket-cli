@@ -1,5 +1,3 @@
-import { mavenCoordinateKey, projectClasspathKey } from './facts.mts'
-
 import type {
   AnyPURL,
   ResolvedArtifactPaths,
@@ -9,10 +7,9 @@ import type {
 } from './facts.mts'
 
 export type SidecarComponentEntry = SocketFactsSbomComponent & {
-  // Classpath entries (jars, or a sibling first-party project's own build
-  // output dirs when this dependency edge resolves to one). `[]`
-  // means resolution was attempted and found nothing (e.g. a pom/BOM);
-  // undefined means resolution couldn't be attempted at all (see attachPaths).
+  // Classpath entries (jars, or a sibling project's own build output dirs
+  // when this component is that project). `[]` means resolved and found
+  // nothing (e.g. a pom/BOM); undefined means paths were not resolved.
   targets?: string[] | undefined
   // First-party source roots; `[]` for a genuinely external dependency (still
   // attempted, nothing to find), not undefined.
@@ -29,7 +26,7 @@ export type SidecarProjectEntry = SocketFactsSbomProject & {
 
 // Frozen contract with `coana run --compute-artifacts-sidecar`; change only
 // in sync with the coana consumer. Keyed by the absolute path of the
-// `.socket.facts.json` file whose own projects[]/components[] these entries
+// `*.socket.facts.json` file whose own projects[]/components[] these entries
 // describe - the key IS the scope, so two independent reactors that happen to
 // emit the same purl identity (e.g. a shared internal module name) can never
 // collide: each is only ever looked up within its own key. No cross-reactor
@@ -54,31 +51,16 @@ export type SidecarAccumulator = Map<
   { projects: SidecarProjectEntry[]; components: SidecarComponentEntry[] }
 >
 
-// `targets`/`sources` present (possibly `[]`) means resolution was attempted
-// for this coordinate - an empty array is a successful resolve that found
-// nothing (e.g. a pom/BOM with no artifact), not a failure. Both fields
-// omitted (undefined) means resolution couldn't even be attempted - the only
-// case here is a degenerate entry with no computable coordinate at all, since
-// every entry reaching this function already came from a resolved graph node
-// (an unresolved dependency lives in the resolution report, not here).
-function attachPaths<T extends AnyPURL>(
+// `[]` means resolved and found nothing (e.g. a pom/BOM with no artifact).
+function attachPaths<T extends { id: string }>(
   entry: T,
   artifactPaths: ResolvedArtifactPaths,
-): T & { targets?: string[] | undefined; sources?: string[] | undefined } {
-  const coordKey = mavenCoordinateKey(
-    entry.namespace,
-    entry.name,
-    entry.qualifiers?.['ext'],
-    entry.qualifiers?.['classifier'],
-    entry.version,
-  )
-  if (!coordKey) {
-    return { ...entry }
-  }
+): T & { targets: string[]; sources: string[] } {
+  const paths = artifactPaths.pathsById.get(entry.id)
   return {
     ...entry,
-    targets: [...(artifactPaths.targetsByCoord.get(coordKey) ?? [])].sort(),
-    sources: [...(artifactPaths.sourcesByCoord.get(coordKey) ?? [])].sort(),
+    targets: [...(paths?.targets ?? [])],
+    sources: [...(paths?.sources ?? [])],
   }
 }
 
@@ -97,9 +79,8 @@ function sortByPurl<T extends AnyPURL>(entries: T[]): T[] {
 // Emit an entry for every SBOM component AND every first-party project: a
 // top-level module is a project, not a dependency component, yet its source
 // roots are where reachability starts, so the sidecar must carry them.
-// A second call for the same factsFile (a dual-marker directory where two
-// build tools both target it) overwrites rather than merges, matching the
-// existing last-writer-wins convention for that case.
+// Every build writes its own facts file, so a key is accumulated once; a
+// repeated call for the same factsFile (the same build run again) overwrites.
 export function accumulateSidecar(
   acc: SidecarAccumulator,
   facts: SocketFactsSbom,
@@ -108,16 +89,13 @@ export function accumulateSidecar(
   // Off when artifact paths were not resolved; entries then omit `targets` and `sources`.
   withPaths = true,
 ): void {
-  const paths = <T extends AnyPURL>(entry: T) =>
+  const paths = <T extends AnyPURL & { id: string }>(entry: T) =>
     withPaths ? attachPaths(entry, artifactPaths) : { ...entry }
   acc.set(factsFile, {
     components: facts.components.map(paths),
     projects: (facts.projects ?? []).map(proj => ({
       ...paths(proj),
-      classpath: [
-        ...(artifactPaths.classpathByProject.get(projectClasspathKey(proj)) ??
-          []),
-      ],
+      classpath: [...(artifactPaths.classpathByProject.get(proj.id) ?? [])],
     })),
   })
 }

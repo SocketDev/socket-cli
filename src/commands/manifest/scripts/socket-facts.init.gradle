@@ -58,9 +58,11 @@ gradle.ext.socketFactsState = [
   paths              : Collections.synchronizedMap([:]),
   perSub             : Collections.synchronizedMap([:]),
   projectsInfo       : Collections.synchronizedList([]),
-  // "group:name" -> the module's real artifact extension (e.g. jar), so an intra-project dep that
+  // Project path -> the module's real artifact extension (e.g. jar), so an intra-project dep that
   // resolves without selecting a published artifact still gets its true coordinate, not ext-less.
   projectArtifactExt : Collections.synchronizedMap([:]),
+  // Project path -> "group:name", to tell this build's projects from an included build's.
+  projectGaByPath    : Collections.synchronizedMap([:]),
 ]
 
 // Capture every project's (group:name) before collectors run so they can filter intra-project
@@ -86,7 +88,8 @@ gradle.projectsEvaluated { g ->
         }
       }
     } catch (Exception ignore) {}
-    g.socketFactsState.projectArtifactExt["${p.group ?: ''}:${p.name}".toString()] = artExt
+    g.socketFactsState.projectArtifactExt[p.path] = artExt
+    g.socketFactsState.projectGaByPath[p.path] = "${p.group ?: ''}:${p.name}".toString()
     // A wholly excluded subproject emits no project record and its configs are never resolved (see the
     // collector). projectKeys/projectArtifactExt above stay populated so a KEPT project depending on it
     // still recognizes it as a first-party module.
@@ -154,6 +157,8 @@ allprojects { project ->
       // visit/upsertNode closures capture them); `failures`/`scannedConfigs` stay shared.
       def nodes = [:]
       def directIds = [] as Set
+      // "group:name:version" -> path of the build project this config resolved it to.
+      def projectByGav = [:]
       def failures = state.failures
       def scannedConfigs = state.scannedConfigs
       def projectKeys = state.projectKeys
@@ -205,21 +210,21 @@ allprojects { project ->
       // A first-party module dep can resolve with no published artifact (classes-dir variant, or
       // variant-ambiguous moduleArtifacts), leaving it ext-less. Stamp the module's real artifact
       // extension so it keeps a full, stable coordinate instead of an ext-less one.
-      def effExt = { String group, String name, String ext ->
-        if ((ext == null || ext.isEmpty()) && isIntraProject(group, name)) {
-          projectArtifactExt["${group ?: ''}:${name}".toString()] ?: ''
+      def effExt = { String projPath, String ext ->
+        if ((ext == null || ext.isEmpty()) && projPath != null) {
+          projectArtifactExt[projPath] ?: ''
         } else {
           ext ?: ''
         }
       }
 
       // A node is created once; its prod flag accumulates (OR) across the configs that reach it.
-      def upsertNode = { Map coord, boolean isProd ->
+      def upsertNode = { Map coord, boolean isProd, String projPath ->
         def id = coordId(coord)
         synchronized (nodes) {
           def node = nodes[id]
           if (node == null) {
-            node = [coord: coord, children: [] as Set, prod: false]
+            node = [coord: coord, children: [] as Set, prod: false, project: projPath]
             nodes[id] = node
           }
           if (isProd) {
@@ -253,18 +258,19 @@ allprojects { project ->
         } catch (Exception e) {
           artifacts = [] as Set
         }
+        def projPath = projectByGav["${dep.moduleGroup ?: ''}:${dep.moduleName}:${dep.moduleVersion ?: ''}".toString()]
         if (artifacts.isEmpty()) {
-          def ext = effExt(dep.moduleGroup, dep.moduleName, '')
+          def ext = effExt(projPath, '')
           // Skip a no-artifact first-party module (aggregator / build root): it builds no archive, so
           // it's fully described by `projects` and is never a real artifact dependency.
-          if (!(ext.isEmpty() && isIntraProject(dep.moduleGroup, dep.moduleName))) {
+          if (!(ext.isEmpty() && projPath != null)) {
             producedIds << upsertNode([
               groupId   : dep.moduleGroup ?: '',
               artifactId: dep.moduleName,
               version   : dep.moduleVersion ?: '',
               classifier: '',
               ext       : ext,
-            ], isProd)
+            ], isProd, projPath)
           }
         } else {
           // Build the GAV scope key only when a scope is set: the no-scope path never reads it and
@@ -281,16 +287,16 @@ allprojects { project ->
           artifacts.each { a ->
             // Directory variants (java-classes-directory etc.) carry no extension; for a first-party
             // module fall back to its real artifact ext (never artifact.type, a Gradle variant attr).
-            def ext = effExt(dep.moduleGroup, dep.moduleName, a.extension)
+            def ext = effExt(projPath, a.extension)
             // Skip a no-artifact first-party module (see the empty-artifacts branch above).
-            if (ext.isEmpty() && isIntraProject(dep.moduleGroup, dep.moduleName)) return
+            if (ext.isEmpty() && projPath != null) return
             def aid = upsertNode([
               groupId   : dep.moduleGroup ?: '',
               artifactId: dep.moduleName,
               version   : dep.moduleVersion ?: '',
               classifier: a.classifier ?: '',
               ext       : ext,
-            ], isProd)
+            ], isProd, projPath)
             producedIds << aid
             // `a.file` downloads the artifact if not already cached, so scoping avoids fetching
             // artifacts the SBOM doesn't reference. Per-artifact try/catch: a single download can
@@ -421,10 +427,21 @@ allprojects { project ->
         nodes = [:]
         directIds = [] as Set
         paths = [:]
+        projectByGav = [:]
         // Per-config try/catch: AGP-style configs can fail variant ambiguity from an init-script
         // context lacking the consumer attributes AGP sets internally.
         try {
           def lenient = cfg.resolvedConfiguration.lenientConfiguration
+          // The resolution graph names a project dependency by project path; within one graph a
+          // module resolves to a single component, so its GAV identifies that project here.
+          cfg.incoming.resolutionResult.allComponents.each { comp ->
+            def cid = comp.id
+            def mv = comp.moduleVersion
+            if (cid instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier && mv != null &&
+                state.projectGaByPath[cid.projectPath] == "${mv.group ?: ''}:${mv.name}".toString()) {
+              projectByGav["${mv.group ?: ''}:${mv.name}:${mv.version ?: ''}".toString()] = cid.projectPath
+            }
+          }
           def cache = [:]
           // No-arg getter only since Gradle 3.3; older Gradle has just the Spec-taking overload.
           def firstLevel
@@ -519,7 +536,7 @@ rootProject { rp ->
         tree.nodes.each { coordId, node ->
           def c = node.coord
           rec(['node', rootId, coordId, c.groupId ?: '', c.artifactId ?: '', c.version ?: '', c.ext ?: '',
-               c.classifier ?: '', tree.direct.contains(coordId) ? '1' : '0'])
+               c.classifier ?: '', tree.direct.contains(coordId) ? '1' : '0', node.project ?: ''])
           node.children.each { childId -> rec(['edge', rootId, coordId, childId]) }
           def fs = tree.paths[coordId]
           if (fs) { (fs as List).sort().each { p -> rec(['file', rootId, coordId, p]) } }

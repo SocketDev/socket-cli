@@ -27,10 +27,7 @@ function okResult(buildRoot: string): ManifestRunResult {
     },
     report: { failures: [], scannedConfigs: [], unscannable: [] },
     artifactPaths: {
-      targetsByCoord: new Map(),
-      targetsByGav: new Map(),
-      sourcesByCoord: new Map(),
-      coords: new Set(),
+      pathsById: new Map(),
       classpathByProject: new Map(),
     },
     stderr: '',

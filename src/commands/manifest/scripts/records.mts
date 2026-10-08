@@ -16,13 +16,16 @@ import type {
 //   projectTgt  projectKey  path                         (--with-files only)
 //   projectBuild  projectKey  path                       (build-root-relative)
 //   root        rootId  projectKey  config  prod(0|1)
-//   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)
+//   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)
 //   scanned     config
 //   failure     coord  detail  config
 //   unscannable config  detail
 //
+// `projectKey` is the tool's unique project identity (Maven: GAV; Gradle:
+// project path; sbt: project id), emitted as the project id; a `node` whose
+// `project` names one resolves to that build project.
 // A `root` is one (subproject, configuration) resolution root; `coordId` is the
 // coordinate key (`group:name:ext:classifier:version`, empty segments dropped),
 // used opaquely as the per-root node key. Unknown tags are ignored.
@@ -39,6 +42,9 @@ export type RawNode = {
   coordId: string
   coord: RawCoord
   direct: boolean
+  // projectKey of the build project this node resolves to; empty for an
+  // external artifact.
+  project: string
   // --with-files only.
   targets: string[]
 }
@@ -202,6 +208,7 @@ export function parseRecords(text: string): ParsedRecords {
             classifier: f[7] ?? '',
           },
           direct: bool(f[8]),
+          project: f[9] ?? '',
           targets: [],
         })
         break
