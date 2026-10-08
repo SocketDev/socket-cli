@@ -55,10 +55,7 @@ export function resolveBuildToolBin(
   return DEFAULT_BUILD_TOOL_BIN[tool]
 }
 
-// `<entry>.socket.facts.json`, distinct for every build sharing a directory:
-// the entry file's name (`pom.xml`) for a file-addressed build, the tool's
-// name (`gradle`) for a directory-addressed one. Undefined when a
-// file-addressed build did not report its entry file.
+// Distinct for every build sharing a directory.
 export function socketFactsFileName(
   tool: BuildTool,
   entryFile: string | undefined,

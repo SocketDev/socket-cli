@@ -372,8 +372,7 @@ async function coanaFixWithFacts(
       cwd,
     })
   const scanFilepaths = await findScanFilepaths()
-  // Fail if any Socket facts files are present in the scan folder.
-  // These are analysis artifacts and must be removed before re-running fix.
+  // Facts files are analysis artifacts and must be removed before re-running fix.
   const factsFiles = scanFilepaths.filter(isSocketFactsFile)
   if (factsFiles.length) {
     if (!silence) {
