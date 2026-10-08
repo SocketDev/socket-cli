@@ -350,21 +350,6 @@ async function coanaFixWithFacts(
       cwd,
     })
   const scanFilepaths = await findScanFilepaths()
-  // Fail if any .socket.facts.json files are present in the scan folder.
-  // These are analysis artifacts and must be removed before re-running fix.
-  const factsFiles = scanFilepaths.filter(isFactsFile)
-  if (factsFiles.length) {
-    if (!silence) {
-      spinner?.stop()
-    }
-    return {
-      ok: false,
-      message: `Found ${DOT_SOCKET_DOT_FACTS_JSON} in manifest files`,
-      cause:
-        `Delete the following ${pluralize('file', factsFiles.length)} before running socket fix again:\n` +
-        factsFiles.map(p => `  - ${p}`).join('\n'),
-    }
-  }
   if (factsSlot) {
     if (!silence) {
       spinner?.stop()
@@ -389,14 +374,7 @@ async function coanaFixWithFacts(
       spinner?.start()
     }
   }
-  const sidecarFile = factsSlot?.generated?.sidecarFile
-  // Discovery only needs which artifacts the facts files resolve; applying
-  // fixes also needs each project's exact classpath from the sidecar.
-  const discoveryFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
-  const factsFlags = [
-    ...discoveryFlags,
-    ...(sidecarFile ? ['--compute-artifacts-sidecar', sidecarFile] : []),
-  ]
+  const factsFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {
       pathsRelativeTo: cwd,
@@ -464,7 +442,7 @@ async function coanaFixWithFacts(
         coanaVersion,
         cwd,
         ecosystems,
-        factsFlags: discoveryFlags,
+        factsFlags,
         packageManagers,
         silence,
         spinner,
@@ -612,7 +590,7 @@ async function coanaFixWithFacts(
         coanaVersion,
         cwd,
         ecosystems,
-        factsFlags: discoveryFlags,
+        factsFlags,
         packageManagers,
         silence,
         spinner,

@@ -124,7 +124,6 @@ describe('socket fix --dynamic-sbom-inference', () => {
   const uploadManifestFiles = vi.fn()
   const generated = {
     paths: [FACTS],
-    sidecarFile: '/tmp/socket-fix-facts/sidecar.json',
     remove: vi.fn(),
     restore: vi.fn(),
   }
@@ -153,9 +152,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     )
     const args = coanaCalls('compute-fixes-and-upgrade-purls')[0]!
     expect(args).toContain('--maven-use-only-socket-facts')
-    expect(args[args.indexOf('--compute-artifacts-sidecar') + 1]).toBe(
-      generated.sidecarFile,
-    )
+    expect(args).not.toContain('--compute-artifacts-sidecar')
     expect(generated.remove).toHaveBeenCalledTimes(1)
   })
 
@@ -177,15 +174,27 @@ describe('socket fix --dynamic-sbom-inference', () => {
     )
   })
 
-  it('still refuses facts files that were already present', async () => {
-    mockGetPackageFilesForScan.mockResolvedValue([
-      '/test/cwd/app/.socket.facts.json',
-    ])
+  it('regenerates facts files that were already present', async () => {
+    mockGetPackageFilesForScan.mockResolvedValue([FACTS])
 
     const result = await coanaFix(baseConfig)
 
-    expect(result.ok).toBe(false)
-    expect(mockGenerateSocketFactsForFix).not.toHaveBeenCalled()
+    expect(result.ok).toBe(true)
+    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledTimes(1)
+  })
+
+  it('uploads facts files that were already present without the flag', async () => {
+    mockGetPackageFilesForScan.mockResolvedValue([FACTS])
+
+    const result = await coanaFix({
+      ...baseConfig,
+      dynamicSbomInference: false,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
+      pathsRelativeTo: '/test/cwd',
+    })
   })
 
   it('does not pass the facts restriction without the flag', async () => {

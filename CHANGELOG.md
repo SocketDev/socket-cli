@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Socket facts for Maven, Gradle and sbt builds now record each subproject's own dependency tree, so a package is attributed only to the subprojects that actually pull it in.
+- `socket fix` now accepts an existing `.socket.facts.json` instead of asking you to delete it first.
 
 ### Fixed
 - Socket facts for sbt builds now match sbt's own classpaths: dependencies pulled in by a version-conflict winner are no longer dropped, and sibling subprojects appear only in the configurations that actually depend on them.
