@@ -7,7 +7,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
-- Reachability scans no longer feed a leftover `.socket.facts.json` report from an earlier run back into the analysis.
 - Socket facts for Maven, Gradle and sbt builds keep projects that share a coordinate or a directory apart, giving each its own id and build files.
 
 ### Fixed

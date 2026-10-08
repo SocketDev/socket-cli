@@ -220,36 +220,6 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
     expect(args[args.indexOf('--manifests-tar-hash') + 1]).toBe(TEST_TAR_HASH)
   })
 
-  it('uploads build facts but not earlier reachability reports', async () => {
-    const uploadManifestFiles = vi.fn()
-    mockSetupSdk.mockResolvedValueOnce({
-      ok: true,
-      data: { uploadManifestFiles },
-    })
-
-    await performReachabilityAnalysis({
-      cwd: scanCwd,
-      orgSlug: TEST_ORG_SLUG,
-      outputPath: 'out/report.json',
-      packagePaths: [
-        'package.json',
-        'pom.xml.socket.facts.json',
-        'gradle.socket.facts.json',
-        '.socket.facts.json',
-        'nested/.socket.facts.json',
-        path.join(scanCwd, 'out/report.json'),
-      ],
-      reachabilityOptions: makeReachabilityOptions(),
-      target: scanCwd,
-    })
-
-    expect(uploadManifestFiles.mock.calls[0]![1]).toEqual([
-      'package.json',
-      'pom.xml.socket.facts.json',
-      'gradle.socket.facts.json',
-    ])
-  })
-
   it('fails without spawning Coana when the upload returns no tar hash', async () => {
     mockHandleApiCall.mockResolvedValueOnce({ ok: true, data: {} } as never)
 

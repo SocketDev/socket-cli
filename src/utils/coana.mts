@@ -130,23 +130,6 @@ export function isSocketFactsFile(filepath: string): boolean {
     .endsWith(DOT_SOCKET_DOT_FACTS_JSON)
 }
 
-// A Coana reachability report, never input to a new analysis: the bare
-// `.socket.facts.json` (Coana's default name; producers name theirs after the
-// build) or the path this run tells Coana to write to.
-export function isReachabilityReportPath(
-  filepath: string,
-  options: { cwd: string; outputPath: string },
-): boolean {
-  const { cwd, outputPath } = { __proto__: null, ...options } as {
-    cwd: string
-    outputPath: string
-  }
-  return (
-    path.basename(filepath).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON ||
-    path.resolve(cwd, filepath) === path.resolve(cwd, outputPath)
-  )
-}
-
 export type ReachabilityError = {
   componentName: string
   componentVersion: string
