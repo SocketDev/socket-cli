@@ -278,9 +278,46 @@ object SocketFactsPlugin extends AutoPlugin {
       moduleExts: Map[String, String]
   ): mutable.LinkedHashMap[String, RootTree] = {
     val perRoot = mutable.LinkedHashMap.empty[String, RootTree]
-    val rootGav = gavKey(rootIdOf(extracted, ref))
+    val rootKey = moduleKey(rootIdOf(extracted, ref))
 
-    def emittable(m: ModuleReport): Boolean = !m.evicted
+    // Build modules come from the build structure instead: lm-coursier lists every inter-project
+    // dependency in every configuration, and cross-versioning can merge distinct ones.
+    def emittable(m: ModuleReport): Boolean =
+      !m.evicted && !moduleExts.contains(gavKey(m.module))
+
+    def confsOf(r: ProjectRef): Seq[Configuration] = extracted.getOpt(ivyConfigurations.in(r)).getOrElse(Nil)
+    val buildDeps = extracted.get(buildDependencies)
+
+    // Classpaths.interSort, recording the (project -> dependency project) edges it follows.
+    def interProjectEdges(conf: Configuration): mutable.LinkedHashSet[(ProjectRef, ProjectRef)] = {
+      val masterConfs = confsOf(ref).map(_.name)
+      val visited = mutable.HashSet.empty[(ProjectRef, String)]
+      val edges = mutable.LinkedHashSet.empty[(ProjectRef, ProjectRef)]
+      def visit(p: ProjectRef, c: Configuration): Unit = {
+        val applicable = Classpaths.allConfigs(c)
+        applicable.foreach(ac => visited += (p -> ac.name))
+        buildDeps.classpath.getOrElse(p, Nil).foreach { d =>
+          val depConfs = confsOf(d.project)
+          val mapping = Classpaths.mapped(d.configuration, masterConfs, depConfs.map(_.name), "compile", "*->compile")
+          for {
+            ac <- applicable
+            depConfName <- mapping(ac.name)
+            depConf <- depConfs.find(_.name == depConfName)
+          } {
+            edges += (p -> d.project)
+            if (!visited((d.project, depConfName))) visit(d.project, depConf)
+          }
+        }
+      }
+      visit(ref, conf)
+      edges
+    }
+
+    def buildModuleCoord(r: ProjectRef): Coord = {
+      val mid = rootIdOf(extracted, r)
+      val ver = if (mid.revision == null) "" else mid.revision
+      Coord(mid.organization, mid.name, ver, moduleExts.getOrElse(gavKey(mid), ""), "")
+    }
 
     def inScope(m: ModuleID): Boolean = populateScope match {
       case None       => true
@@ -293,12 +330,25 @@ object SocketFactsPlugin extends AutoPlugin {
         scannedConfigs += cfg
         val prod = isProdConf(cfg) && !isTestConf(cfg)
         val nodes = mutable.LinkedHashMap.empty[String, Node]
-        // module GAV -> component ids (caller edges are module-level).
+        // org:name -> component ids (caller edges are module-level).
         val midToIds = mutable.HashMap.empty[String, mutable.LinkedHashSet[String]]
+
+        confsOf(ref).find(_.name == cfg).foreach { conf =>
+          def buildModuleNode(r: ProjectRef): Node = {
+            val coord = buildModuleCoord(r)
+            midToIds.getOrElseUpdate(moduleKey(rootIdOf(extracted, r)), mutable.LinkedHashSet.empty[String]) += coord.id
+            nodes.getOrElseUpdate(coord.id, new Node(coord))
+          }
+          interProjectEdges(conf).foreach { case (p, d) =>
+            val child = buildModuleNode(d)
+            if (p == ref) child.direct = true
+            else buildModuleNode(p).children += child.coord.id
+          }
+        }
 
         cr.modules.foreach { m =>
           if (emittable(m)) {
-            val ids = midToIds.getOrElseUpdate(gavKey(m.module), mutable.LinkedHashSet.empty[String])
+            val ids = midToIds.getOrElseUpdate(moduleKey(m.module), mutable.LinkedHashSet.empty[String])
             variantsOf(m, moduleExts).foreach { case (coord, fileOpt) =>
               val node = nodes.getOrElseUpdate(coord.id, new Node(coord))
               ids += coord.id
@@ -310,10 +360,12 @@ object SocketFactsPlugin extends AutoPlugin {
         // Caller edges within this config: a root caller marks the child direct, any other becomes its parent.
         cr.modules.foreach { m =>
           if (emittable(m)) {
-            midToIds.get(gavKey(m.module)).foreach { childIds =>
+            midToIds.get(moduleKey(m.module)).foreach { childIds =>
+              // A caller's revision is lm-coursier's declared version, not the resolved one, so
+              // callers match by org:name (a configuration resolves one version per module).
               m.callers.foreach { c =>
-                val callerKey = gavKey(c.caller)
-                if (callerKey == rootGav) childIds.foreach(cid => nodes(cid).direct = true)
+                val callerKey = moduleKey(c.caller)
+                if (callerKey == rootKey) childIds.foreach(cid => nodes(cid).direct = true)
                 else
                   midToIds.get(callerKey).foreach { parentIds =>
                     // Drop self-edges (test → main resolving to the same coordinate), matching gradle.
@@ -476,6 +528,11 @@ object SocketFactsPlugin extends AutoPlugin {
           } finally src.close()
         }
     }
+  }
+
+  private def moduleKey(m: ModuleID): String = {
+    def s(v: String): String = if (v == null) "" else v
+    s(m.organization) + ":" + s(m.name)
   }
 
   private def gavKey(m: ModuleID): String = {

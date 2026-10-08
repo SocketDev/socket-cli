@@ -261,7 +261,7 @@ describe('records → assemble → sidecar', () => {
       c: ['g:x:jar:1(g:y:jar:1(g:z:jar:1, g:x:jar:1))'],
     })
   })
-  it('roots a resolved dependency that no direct dependency reaches', () => {
+  it('rejects a resolved dependency that no direct dependency reaches', () => {
     const records = [
       'meta\tsbt\t1.10.7\t17',
       'project\ta\tg\ta\t1\ta',
@@ -271,14 +271,10 @@ describe('records → assemble → sidecar', () => {
       'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
       'edge\tr1\tg:loose:jar:1\tg:dep:jar:1',
     ].join('\n')
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
 
-    expect(trees(facts)).toEqual({
-      a: ['g:lib:jar:1', 'g:loose:jar:1(g:dep:jar:1)'],
-    })
-    expect(artifactPaths.directDependenciesByProject.get('a g:a')).toEqual([
-      'g:lib:jar:1',
-    ])
+    expect(() => assembleFacts(parseRecords(records))).toThrow(
+      'Resolved dependencies of a are not reachable from its direct dependencies: g:dep:jar:1, g:loose:jar:1',
+    )
   })
   it('marks only components with the exact coordinate of a build module as firstParty', () => {
     const records = [

@@ -300,7 +300,7 @@ function buildDependencyGraph(
   const projects = [...parsed.projects.values()]
     .map(p => ({
       p,
-      roots: treeRoots(graphs.get(p.projectKey), byComponent),
+      roots: treeRoots(p.projectKey, graphs.get(p.projectKey), byComponent),
     }))
     .sort((a, b) => {
       const ka = `${a.p.dir} ${a.p.group}:${a.p.name}`
@@ -359,39 +359,29 @@ function buildDependencyGraph(
   }
 }
 
-// Unreached nodes become roots too, so every resolved dependency is in the tree.
 function treeRoots(
+  projectKey: string,
   graph: SubprojectGraph | undefined,
   byComponent: (a: string, b: string) => number,
 ): string[] {
   if (!graph) {
     return []
   }
-  const roots: string[] = []
+  const roots = [...graph.direct].sort(byComponent)
   const reached = new Set<string>()
-  const add = (root: string) => {
-    roots.push(root)
-    const stack = [root]
-    while (stack.length) {
-      const id = stack.pop()!
-      if (!reached.has(id)) {
-        reached.add(id)
-        stack.push(...graph.children.get(id)!)
-      }
-    }
-  }
-  for (const id of [...graph.direct].sort(byComponent)) {
-    add(id)
-  }
-  const hasParent = new Set([...graph.children.values()].flatMap(c => [...c]))
-  const rest = [...graph.children.keys()].sort(byComponent)
-  for (const id of [
-    ...rest.filter(id => !hasParent.has(id)),
-    ...rest.filter(id => hasParent.has(id)),
-  ]) {
+  const stack = [...roots]
+  while (stack.length) {
+    const id = stack.pop()!
     if (!reached.has(id)) {
-      add(id)
+      reached.add(id)
+      stack.push(...graph.children.get(id)!)
     }
+  }
+  const unreached = [...graph.children.keys()].filter(id => !reached.has(id))
+  if (unreached.length) {
+    throw new Error(
+      `Resolved dependencies of ${projectKey} are not reachable from its direct dependencies: ${unreached.sort(byComponent).join(', ')}`,
+    )
   }
   return roots
 }
