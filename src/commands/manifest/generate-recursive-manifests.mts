@@ -185,10 +185,13 @@ async function runEcosystemCandidates({
       }
 
       covered.add(dir)
+      // `-f`/`-p` can root the reactor away from `dir`.
+      // eslint-disable-next-line no-await-in-loop
+      const buildRoot = await realpathOrResolved(path.dirname(result.factsPath))
       // eslint-disable-next-line no-await-in-loop
       const resolvedSubprojectDirs = await Promise.all(
         result.projects.map(project =>
-          realpathOrResolved(path.resolve(dir, project.subprojectDir)),
+          realpathOrResolved(path.resolve(buildRoot, project.subprojectDir)),
         ),
       )
       for (const subprojectDir of resolvedSubprojectDirs) {
@@ -203,7 +206,10 @@ async function runEcosystemCandidates({
         // meaningful data point, not a redundant one. Never suppress its own
         // build-root invocation, regardless of which reactor(s) also
         // incorporate it or the order candidates happen to be discovered in.
-        if (subprojectDir.startsWith(`${dir}${path.sep}`)) {
+        if (
+          subprojectDir === buildRoot ||
+          subprojectDir.startsWith(`${buildRoot}${path.sep}`)
+        ) {
           covered.add(subprojectDir)
         }
       }
@@ -218,7 +224,7 @@ async function runEcosystemCandidates({
   return outcomes
 }
 
-// Generates one .socket.facts.json per independent gradle/sbt/maven build
+// Generates one Socket facts file per independent gradle/sbt/maven build
 // root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
 // own projects[].subprojectDir, not by pruning the whole discovered subtree,
 // so an unrelated nested project a reactor doesn't declare still gets its

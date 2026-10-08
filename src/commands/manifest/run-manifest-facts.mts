@@ -79,8 +79,6 @@ export async function runManifestFacts({
   verbose: boolean
   withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome> {
-  const factsPath = path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON)
-
   let resolvedJavaHome: string | undefined
   if (javaHome) {
     const expanded = expandEnvVarRefs(javaHome)
@@ -160,7 +158,8 @@ export async function runManifestFacts({
     )
     return null
   }
-  const { artifactPaths, code, facts, report, stderr, stdout } = result
+  const { artifactPaths, buildRoot, code, facts, report, stderr, stdout } =
+    result
 
   const rendered = renderResolutionErrorReport(
     report.failures,
@@ -229,6 +228,17 @@ export async function runManifestFacts({
     )
     return
   }
+
+  if (!buildRoot) {
+    process.exitCode = 1
+    logger.fail(
+      `The ${ecosystem} build did not report its root directory, so its Socket facts file cannot be placed.`,
+    )
+    return null
+  }
+  // Every path in the facts is relative to the build root, which `-f`/`-p`
+  // can move away from cwd.
+  const factsPath = path.join(buildRoot, constants.DOT_SOCKET_DOT_FACTS_JSON)
 
   const socketCliVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
   if (facts.metadata && socketCliVersion) {

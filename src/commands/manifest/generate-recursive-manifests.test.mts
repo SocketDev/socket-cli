@@ -164,6 +164,59 @@ describe('generateRecursiveManifests', () => {
     },
   )
 
+  it('judges coverage against the reported build root, not the discovery directory', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'relocated-build-root-')),
+    )
+    const buildRoot = path.join(outer, 'build')
+    const member = path.join(buildRoot, 'member')
+    const escaped = path.join(outer, 'escaped')
+    try {
+      for (const dir of [outer, member, escaped]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(dir, { recursive: true })
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
+      }
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+        if (cwd === outer) {
+          return {
+            factsPath: path.join(buildRoot, 'x.xml.socket.facts.json'),
+            projects: [
+              {
+                type: 'maven',
+                name: 'member',
+                subprojectDir: 'member',
+                dependencies: [],
+              },
+              {
+                type: 'maven',
+                name: 'escaped',
+                subprojectDir: '../escaped',
+                dependencies: [],
+              },
+            ],
+          }
+        }
+        return {
+          factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
+          projects: [],
+        }
+      })
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
+
+      const byDir = new Map(outcomes.map(o => [o.dir, o.status]))
+      expect(byDir.get(member)).toBe('skippedCovered')
+      expect(byDir.get(escaped)).toBe('generated')
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
   it("runs both ecosystems unconditionally at a dual-marker directory (matches auto's existing behavior)", async () => {
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),

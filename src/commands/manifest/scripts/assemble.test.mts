@@ -187,3 +187,13 @@ describe('records → assemble → sidecar', () => {
     })
   })
 })
+
+describe('parseRecords', () => {
+  it('reads the build root the build reports', () => {
+    expect(
+      parseRecords(
+        ['meta\tmaven\t3.9.6\t17', 'buildRoot\t/repo/sub'].join('\n'),
+      ).buildRoot,
+    ).toBe('/repo/sub')
+  })
+})

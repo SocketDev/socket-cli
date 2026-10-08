@@ -10,6 +10,7 @@ import type {
 //   <tag>\t<field>\t<field>...
 //
 //   meta        tool  toolVersion  javaVersion
+//   buildRoot   path                                     (absolute; the facts file's directory)
 //   project     projectKey  group  name  version  dir
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
@@ -67,6 +68,8 @@ export type ParsedRecords = {
   tool: string
   toolVersion: string
   javaVersion: string
+  // Absolute directory the build is rooted at; the facts file is written there.
+  buildRoot: string
   projects: Map<string, RawProject>
   roots: Map<string, RawRoot>
   scannedConfigs: string[]
@@ -100,6 +103,7 @@ export function parseRecords(text: string): ParsedRecords {
     tool: '',
     toolVersion: '',
     javaVersion: '',
+    buildRoot: '',
     projects: new Map(),
     roots: new Map(),
     scannedConfigs: [],
@@ -151,6 +155,9 @@ export function parseRecords(text: string): ParsedRecords {
         result.tool = f[1] ?? ''
         result.toolVersion = f[2] ?? ''
         result.javaVersion = f[3] ?? ''
+        break
+      case 'buildRoot':
+        result.buildRoot = f[1] ?? ''
         break
       case 'project': {
         const p = project(f[1] ?? '')

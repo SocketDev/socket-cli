@@ -98,6 +98,7 @@ object SocketFactsPlugin extends AutoPlugin {
       }
 
       rec("meta", "sbt", extracted.getOpt(sbtVersion).getOrElse(""), sys.props.getOrElse("java.version", ""))
+      rec("buildRoot", rootCanonPath.toString)
 
       // One `project` record per build module (sources/targets only with --with-files). Excluded
       // subprojects are omitted (they were also skipped during resolution above).
