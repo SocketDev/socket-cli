@@ -1,4 +1,3 @@
-# <fleet>
 # Managed by socket-wheelhouse. Don't edit locally — edit upstream
 # in scripts/repo/commit-cascade/checks/gitignore-fleet-block.mts and
 # re-cascade via `pnpm run sync`. Project-specific ignores stay
@@ -2705,6 +2704,7 @@ docs/fleet/agents.md/history-rewrites.md
 docs/fleet/agents.md/hook-bundle.md
 docs/fleet/agents.md/hook-registry.md
 docs/fleet/agents.md/human-gates.md
+docs/fleet/agents.md/hybrid-ownership.md
 docs/fleet/agents.md/immutable-references.md
 docs/fleet/agents.md/immutable-releases.md
 docs/fleet/agents.md/inclusive-language.md
@@ -4067,6 +4067,7 @@ scripts/fleet/fs/cascaded-mirrors.mts
 scripts/fleet/fs/file-ownership.mts
 scripts/fleet/fs/fleet-canonical-splice.mts
 scripts/fleet/fs/force.mts
+scripts/fleet/fs/hybrid-cutouts.mts
 scripts/fleet/fs/mirror-lock.mts
 scripts/fleet/fs/mirror/registry.mts
 scripts/fleet/fs/never-walked-entries.mts
@@ -4181,6 +4182,7 @@ scripts/fleet/hooks/dispatch-scan.mts
 scripts/fleet/hooks/guard-block-shape.mts
 scripts/fleet/hooks/snapshot-build-result.mts
 scripts/fleet/hooks/snapshot-hostile-builtins.mts
+scripts/fleet/hooks/sync.mts
 scripts/fleet/hooks/wiring.mts
 scripts/fleet/install-git-hooks.mts
 scripts/fleet/install-sfw.mts
@@ -4376,6 +4378,7 @@ scripts/fleet/npm/native-artifacts.mts
 scripts/fleet/npm/publish-npm.mts
 scripts/fleet/npm/publish/coordinator.mts
 scripts/fleet/npm/publish/journal.mts
+scripts/fleet/npm/publish/release-reservation.mts
 scripts/fleet/npm/publish/run-cli.mts
 scripts/fleet/npm/publish/run.mts
 scripts/fleet/npm/scan.mts
@@ -5162,7 +5165,6 @@ test/fleet/unit/registry/cargo/placeholder.test.mts
 test/fleet/unit/registry/npm/placeholder.test.mts
 test/fleet/unit/setup/lib/pnpm-path.test.mts
 # </fleet-pack>
-# </fleet>
 # <repo>
 # ============================================================================
 # OS-specific files

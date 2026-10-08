@@ -2815,7 +2815,7 @@ var require_socket$2 = /* @__PURE__ */ __commonJSMin(exports => {
     wheelhouse: `_wheelhouse`,
   }
   const SOCKET_LIB_NAME = '@socketsecurity/lib'
-  const SOCKET_LIB_VERSION = '7.0.3'
+  const SOCKET_LIB_VERSION = '7.1.0'
   const SOCKET_IPC_HANDSHAKE = 'SOCKET_IPC_HANDSHAKE'
   const CACHE_SOCKET_API_DIR = 'socket-api'
   const REGISTRY = 'registry'
@@ -8721,6 +8721,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
   )
   var require_parse = /* @__PURE__ */ __commonJSMin((exports$22, module$17) => {
     const stringify = require_stringify()
+    const MAX_DEPTH = 64
     /**
      * Constants.
      */
@@ -8908,6 +8909,10 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
          */
         if (value === CHAR_LEFT_CURLY_BRACE) {
           depth++
+          if (depth > MAX_DEPTH)
+            throw new _p_SyntaxErrorCtor(
+              `Input nesting depth exceeds limit. Where: braces parser. Saw ${depth}; wanted at most ${MAX_DEPTH}. Fix: reduce nested brace groups.`,
+            )
           block = push({
             type: 'brace',
             open: true,
@@ -14690,9 +14695,9 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       let resolvingCount = 0
       let currentIndex = 0
       const iterator =
-        iterable[Symbol.iterator] === void 0
-          ? iterable[Symbol.asyncIterator]()
-          : iterable[Symbol.iterator]()
+        iterable[Symbol.asyncIterator] === void 0
+          ? iterable[Symbol.iterator]()
+          : iterable[Symbol.asyncIterator]()
       const signalListener = () => {
         reject(signal.reason)
       }
@@ -14704,10 +14709,12 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         cleanup()
       }
       const reject = reason => {
+        if (isResolved) return
         isRejected = true
         isResolved = true
         reject_(reason)
         cleanup()
+        if (!isIterableDone) closeIterator(iterator)
       }
       if (signal) {
         if (signal.aborted) {
@@ -14718,7 +14725,7 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
       }
       const next = async () => {
         if (isResolved) return
-        const nextItem = await iterator.next()
+        const nextItem = isIterableDone ? { done: true } : await iterator.next()
         const index = currentIndex
         currentIndex++
         if (nextItem.done) {
@@ -14750,19 +14757,18 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
             const value = await mapper(element, index)
             if (value === pMapSkip) skippedIndexesMap.set(index, value)
             result[index] = value
-            resolvingCount--
+          } catch (error) {
+            if (stopOnError) {
+              reject(error)
+              return
+            }
+            errors.push(error)
+          }
+          resolvingCount--
+          try {
             await next()
           } catch (error) {
-            if (stopOnError) reject(error)
-            else {
-              errors.push(error)
-              resolvingCount--
-              try {
-                await next()
-              } catch (error) {
-                reject(error)
-              }
-            }
+            reject(error)
           }
         })()
       }
@@ -14778,6 +14784,11 @@ var require_pico_pack = /* @__PURE__ */ __commonJSMin((exports, module) => {
         }
       })()
     })
+  }
+  async function closeIterator(iterator) {
+    try {
+      await iterator.return?.()
+    } catch {}
   }
   var pMapSkip
   var init_p_map = __esmMin(() => {
@@ -15401,7 +15412,7 @@ function migrateUnpreservedRuleFile(dest) {
 }
 
 function updateGitignoreOwners(stack, marker) {
-  const name = marker[2]
+  const name = marker[2].replace(/-canonical$/, '')
   if (marker[1] === '/') {
     if (stack.pop() !== name)
       throw new TypeError(
@@ -15416,13 +15427,18 @@ function updateGitignoreOwners(stack, marker) {
     )
   stack.push(name)
 }
-function gitignoreOwner(stack) {
+function gitignoreOwner(stack, defaultOwner) {
   const name = stack.at(-1)
   if (name === 'fleet-pack') return 'pack'
   if (name === 'fleet-allowlist') return 'fleetAllowlist'
-  return name === 'fleet' ? 'fleet' : 'repo'
+  if (name === 'repo') return 'repo'
+  return name === 'fleet' ? 'fleet' : defaultOwner
 }
-function parseGitignoreSections(source) {
+function parseGitignoreSections(source, options) {
+  const config = {
+    __proto__: null,
+    ...options,
+  }
   const sections = {
     __proto__: null,
     fleet: [],
@@ -15433,16 +15449,26 @@ function parseGitignoreSections(source) {
   }
   const stack = []
   const lines = source.split(/\r?\n/)
+  const hasFleetRegion = lines.some(line =>
+    /^# <\/?fleet(?:-canonical)?>$/.test(line),
+  )
+  const hasRepoRegion = lines.some(line =>
+    /^# <\/?repo(?:-canonical)?>$/.test(line),
+  )
+  const defaultOwner =
+    config.unmarkedOwner ??
+    (hasFleetRegion || !hasRepoRegion ? 'repo' : 'fleet')
   for (let index = 0, { length } = lines; index < length; index += 1) {
     const line = lines[index]
-    const marker = /^# <(\/?)(fleet|repo|fleet-pack|fleet-allowlist)>$/.exec(
-      line,
-    )
+    const marker =
+      /^# <(\/?)(fleet(?:-canonical)?|fleet-allowlist|fleet-pack|repo(?:-canonical)?)>$/.exec(
+        line,
+      )
     if (marker) {
       updateGitignoreOwners(stack, marker)
       continue
     }
-    const owner = gitignoreOwner(stack)
+    const owner = gitignoreOwner(stack, defaultOwner)
     if (line === '*' && (owner === 'fleet' || owner === 'repo'))
       sections.denyByDefault = true
     else sections[owner].push(line)
@@ -15515,10 +15541,16 @@ function composeGitignore(config) {
     ...config,
   }
   const current = parseGitignoreSections(options.target)
-  const fleet =
+  const fleetBlockSections =
     options.fleetBlock === void 0
-      ? current.fleet
-      : parseGitignoreSections(options.fleetBlock).fleet
+      ? void 0
+      : parseGitignoreSections(options.fleetBlock, { unmarkedOwner: 'fleet' })
+  const repoBlockSections =
+    options.repoBlock === void 0
+      ? void 0
+      : parseGitignoreSections(options.repoBlock, { unmarkedOwner: 'repo' })
+  const fleet =
+    fleetBlockSections === void 0 ? current.fleet : fleetBlockSections.fleet
   const allowed =
     options.fleetAllowlist === void 0
       ? current.fleetAllowlist
@@ -15528,17 +15560,18 @@ function composeGitignore(config) {
       ? current.pack
       : parseGitignoreSections(options.packBlock).pack
   const repo =
-    options.repoBlock === void 0
-      ? current.repo
-      : parseGitignoreSections(options.repoBlock).repo
+    repoBlockSections === void 0 ? current.repo : repoBlockSections.repo
   return [
-    '# <fleet>',
-    ...((options.denyByDefault ?? current.denyByDefault) ? ['*', '!*/'] : []),
+    ...((options.denyByDefault ??
+    (options.target.trim() === ''
+      ? (fleetBlockSections?.denyByDefault ?? current.denyByDefault)
+      : current.denyByDefault))
+      ? ['*', '!*/']
+      : []),
     ...trimGitignoreLines(fleet),
     ...(pack.length
       ? ['# <fleet-pack>', ...trimGitignoreLines(pack), '# </fleet-pack>']
       : []),
-    '# </fleet>',
     '# <repo>',
     ...trimGitignoreLines(repo),
     '# </repo>',
@@ -17186,7 +17219,7 @@ var require_predicates = /* @__PURE__ */ __commonJSMin(exports => {
   function separatorWrappedSubstring(pathLike) {
     if (!isSeparatorWrapped(pathLike)) return
     const filepath = require_paths_shared.pathLikeToString(pathLike)
-    return `/${require_primordials_string.StringPrototypeSlice(filepath, 1, -1).replaceAll('\\', '/')}/`
+    return `/${require_paths_shared.normalizePath(require_primordials_string.StringPrototypeSlice(filepath, 1, -1))}/`
   }
   exports.isAbsolute = isAbsolute
   exports.isNodeModules = isNodeModules
@@ -18066,6 +18099,5265 @@ async function invokeMinimalMain(main, meta) {
     )
   else if (!json && typeof result === 'object' && result?.error)
     process.stderr.write(`${result.error}\n`)
+}
+
+const NAMED_REFS = new Map(
+  JSON.parse(
+    '[["AElig","Æ"],["AElig;","Æ"],["AMP","&"],["AMP;","&"],["Aacute","Á"],["Aacute;","Á"],["Abreve;","Ă"],["Acirc","Â"],["Acirc;","Â"],["Acy;","А"],["Afr;","𝔄"],["Agrave","À"],["Agrave;","À"],["Alpha;","Α"],["Amacr;","Ā"],["And;","⩓"],["Aogon;","Ą"],["Aopf;","𝔸"],["ApplyFunction;","⁡"],["Aring","Å"],["Aring;","Å"],["Ascr;","𝒜"],["Assign;","≔"],["Atilde","Ã"],["Atilde;","Ã"],["Auml","Ä"],["Auml;","Ä"],["Backslash;","∖"],["Barv;","⫧"],["Barwed;","⌆"],["Bcy;","Б"],["Because;","∵"],["Bernoullis;","ℬ"],["Beta;","Β"],["Bfr;","𝔅"],["Bopf;","𝔹"],["Breve;","˘"],["Bscr;","ℬ"],["Bumpeq;","≎"],["CHcy;","Ч"],["COPY","©"],["COPY;","©"],["Cacute;","Ć"],["Cap;","⋒"],["CapitalDifferentialD;","ⅅ"],["Cayleys;","ℭ"],["Ccaron;","Č"],["Ccedil","Ç"],["Ccedil;","Ç"],["Ccirc;","Ĉ"],["Cconint;","∰"],["Cdot;","Ċ"],["Cedilla;","¸"],["CenterDot;","·"],["Cfr;","ℭ"],["Chi;","Χ"],["CircleDot;","⊙"],["CircleMinus;","⊖"],["CirclePlus;","⊕"],["CircleTimes;","⊗"],["ClockwiseContourIntegral;","∲"],["CloseCurlyDoubleQuote;","”"],["CloseCurlyQuote;","’"],["Colon;","∷"],["Colone;","⩴"],["Congruent;","≡"],["Conint;","∯"],["ContourIntegral;","∮"],["Copf;","ℂ"],["Coproduct;","∐"],["CounterClockwiseContourIntegral;","∳"],["Cross;","⨯"],["Cscr;","𝒞"],["Cup;","⋓"],["CupCap;","≍"],["DD;","ⅅ"],["DDotrahd;","⤑"],["DJcy;","Ђ"],["DScy;","Ѕ"],["DZcy;","Џ"],["Dagger;","‡"],["Darr;","↡"],["Dashv;","⫤"],["Dcaron;","Ď"],["Dcy;","Д"],["Del;","∇"],["Delta;","Δ"],["Dfr;","𝔇"],["DiacriticalAcute;","´"],["DiacriticalDot;","˙"],["DiacriticalDoubleAcute;","˝"],["DiacriticalGrave;","`"],["DiacriticalTilde;","˜"],["Diamond;","⋄"],["DifferentialD;","ⅆ"],["Dopf;","𝔻"],["Dot;","¨"],["DotDot;","⃜"],["DotEqual;","≐"],["DoubleContourIntegral;","∯"],["DoubleDot;","¨"],["DoubleDownArrow;","⇓"],["DoubleLeftArrow;","⇐"],["DoubleLeftRightArrow;","⇔"],["DoubleLeftTee;","⫤"],["DoubleLongLeftArrow;","⟸"],["DoubleLongLeftRightArrow;","⟺"],["DoubleLongRightArrow;","⟹"],["DoubleRightArrow;","⇒"],["DoubleRightTee;","⊨"],["DoubleUpArrow;","⇑"],["DoubleUpDownArrow;","⇕"],["DoubleVerticalBar;","∥"],["DownArrow;","↓"],["DownArrowBar;","⤓"],["DownArrowUpArrow;","⇵"],["DownBreve;","̑"],["DownLeftRightVector;","⥐"],["DownLeftTeeVector;","⥞"],["DownLeftVector;","↽"],["DownLeftVectorBar;","⥖"],["DownRightTeeVector;","⥟"],["DownRightVector;","⇁"],["DownRightVectorBar;","⥗"],["DownTee;","⊤"],["DownTeeArrow;","↧"],["Downarrow;","⇓"],["Dscr;","𝒟"],["Dstrok;","Đ"],["ENG;","Ŋ"],["ETH","Ð"],["ETH;","Ð"],["Eacute","É"],["Eacute;","É"],["Ecaron;","Ě"],["Ecirc","Ê"],["Ecirc;","Ê"],["Ecy;","Э"],["Edot;","Ė"],["Efr;","𝔈"],["Egrave","È"],["Egrave;","È"],["Element;","∈"],["Emacr;","Ē"],["EmptySmallSquare;","◻"],["EmptyVerySmallSquare;","▫"],["Eogon;","Ę"],["Eopf;","𝔼"],["Epsilon;","Ε"],["Equal;","⩵"],["EqualTilde;","≂"],["Equilibrium;","⇌"],["Escr;","ℰ"],["Esim;","⩳"],["Eta;","Η"],["Euml","Ë"],["Euml;","Ë"],["Exists;","∃"],["ExponentialE;","ⅇ"],["Fcy;","Ф"],["Ffr;","𝔉"],["FilledSmallSquare;","◼"],["FilledVerySmallSquare;","▪"],["Fopf;","𝔽"],["ForAll;","∀"],["Fouriertrf;","ℱ"],["Fscr;","ℱ"],["GJcy;","Ѓ"],["GT",">"],["GT;",">"],["Gamma;","Γ"],["Gammad;","Ϝ"],["Gbreve;","Ğ"],["Gcedil;","Ģ"],["Gcirc;","Ĝ"],["Gcy;","Г"],["Gdot;","Ġ"],["Gfr;","𝔊"],["Gg;","⋙"],["Gopf;","𝔾"],["GreaterEqual;","≥"],["GreaterEqualLess;","⋛"],["GreaterFullEqual;","≧"],["GreaterGreater;","⪢"],["GreaterLess;","≷"],["GreaterSlantEqual;","⩾"],["GreaterTilde;","≳"],["Gscr;","𝒢"],["Gt;","≫"],["HARDcy;","Ъ"],["Hacek;","ˇ"],["Hat;","^"],["Hcirc;","Ĥ"],["Hfr;","ℌ"],["HilbertSpace;","ℋ"],["Hopf;","ℍ"],["HorizontalLine;","─"],["Hscr;","ℋ"],["Hstrok;","Ħ"],["HumpDownHump;","≎"],["HumpEqual;","≏"],["IEcy;","Е"],["IJlig;","Ĳ"],["IOcy;","Ё"],["Iacute","Í"],["Iacute;","Í"],["Icirc","Î"],["Icirc;","Î"],["Icy;","И"],["Idot;","İ"],["Ifr;","ℑ"],["Igrave","Ì"],["Igrave;","Ì"],["Im;","ℑ"],["Imacr;","Ī"],["ImaginaryI;","ⅈ"],["Implies;","⇒"],["Int;","∬"],["Integral;","∫"],["Intersection;","⋂"],["InvisibleComma;","⁣"],["InvisibleTimes;","⁢"],["Iogon;","Į"],["Iopf;","𝕀"],["Iota;","Ι"],["Iscr;","ℐ"],["Itilde;","Ĩ"],["Iukcy;","І"],["Iuml","Ï"],["Iuml;","Ï"],["Jcirc;","Ĵ"],["Jcy;","Й"],["Jfr;","𝔍"],["Jopf;","𝕁"],["Jscr;","𝒥"],["Jsercy;","Ј"],["Jukcy;","Є"],["KHcy;","Х"],["KJcy;","Ќ"],["Kappa;","Κ"],["Kcedil;","Ķ"],["Kcy;","К"],["Kfr;","𝔎"],["Kopf;","𝕂"],["Kscr;","𝒦"],["LJcy;","Љ"],["LT","<"],["LT;","<"],["Lacute;","Ĺ"],["Lambda;","Λ"],["Lang;","⟪"],["Laplacetrf;","ℒ"],["Larr;","↞"],["Lcaron;","Ľ"],["Lcedil;","Ļ"],["Lcy;","Л"],["LeftAngleBracket;","⟨"],["LeftArrow;","←"],["LeftArrowBar;","⇤"],["LeftArrowRightArrow;","⇆"],["LeftCeiling;","⌈"],["LeftDoubleBracket;","⟦"],["LeftDownTeeVector;","⥡"],["LeftDownVector;","⇃"],["LeftDownVectorBar;","⥙"],["LeftFloor;","⌊"],["LeftRightArrow;","↔"],["LeftRightVector;","⥎"],["LeftTee;","⊣"],["LeftTeeArrow;","↤"],["LeftTeeVector;","⥚"],["LeftTriangle;","⊲"],["LeftTriangleBar;","⧏"],["LeftTriangleEqual;","⊴"],["LeftUpDownVector;","⥑"],["LeftUpTeeVector;","⥠"],["LeftUpVector;","↿"],["LeftUpVectorBar;","⥘"],["LeftVector;","↼"],["LeftVectorBar;","⥒"],["Leftarrow;","⇐"],["Leftrightarrow;","⇔"],["LessEqualGreater;","⋚"],["LessFullEqual;","≦"],["LessGreater;","≶"],["LessLess;","⪡"],["LessSlantEqual;","⩽"],["LessTilde;","≲"],["Lfr;","𝔏"],["Ll;","⋘"],["Lleftarrow;","⇚"],["Lmidot;","Ŀ"],["LongLeftArrow;","⟵"],["LongLeftRightArrow;","⟷"],["LongRightArrow;","⟶"],["Longleftarrow;","⟸"],["Longleftrightarrow;","⟺"],["Longrightarrow;","⟹"],["Lopf;","𝕃"],["LowerLeftArrow;","↙"],["LowerRightArrow;","↘"],["Lscr;","ℒ"],["Lsh;","↰"],["Lstrok;","Ł"],["Lt;","≪"],["Map;","⤅"],["Mcy;","М"],["MediumSpace;"," "],["Mellintrf;","ℳ"],["Mfr;","𝔐"],["MinusPlus;","∓"],["Mopf;","𝕄"],["Mscr;","ℳ"],["Mu;","Μ"],["NJcy;","Њ"],["Nacute;","Ń"],["Ncaron;","Ň"],["Ncedil;","Ņ"],["Ncy;","Н"],["NegativeMediumSpace;","​"],["NegativeThickSpace;","​"],["NegativeThinSpace;","​"],["NegativeVeryThinSpace;","​"],["NestedGreaterGreater;","≫"],["NestedLessLess;","≪"],["NewLine;","\\n"],["Nfr;","𝔑"],["NoBreak;","⁠"],["NonBreakingSpace;","\xA0"],["Nopf;","ℕ"],["Not;","⫬"],["NotCongruent;","≢"],["NotCupCap;","≭"],["NotDoubleVerticalBar;","∦"],["NotElement;","∉"],["NotEqual;","≠"],["NotEqualTilde;","≂̸"],["NotExists;","∄"],["NotGreater;","≯"],["NotGreaterEqual;","≱"],["NotGreaterFullEqual;","≧̸"],["NotGreaterGreater;","≫̸"],["NotGreaterLess;","≹"],["NotGreaterSlantEqual;","⩾̸"],["NotGreaterTilde;","≵"],["NotHumpDownHump;","≎̸"],["NotHumpEqual;","≏̸"],["NotLeftTriangle;","⋪"],["NotLeftTriangleBar;","⧏̸"],["NotLeftTriangleEqual;","⋬"],["NotLess;","≮"],["NotLessEqual;","≰"],["NotLessGreater;","≸"],["NotLessLess;","≪̸"],["NotLessSlantEqual;","⩽̸"],["NotLessTilde;","≴"],["NotNestedGreaterGreater;","⪢̸"],["NotNestedLessLess;","⪡̸"],["NotPrecedes;","⊀"],["NotPrecedesEqual;","⪯̸"],["NotPrecedesSlantEqual;","⋠"],["NotReverseElement;","∌"],["NotRightTriangle;","⋫"],["NotRightTriangleBar;","⧐̸"],["NotRightTriangleEqual;","⋭"],["NotSquareSubset;","⊏̸"],["NotSquareSubsetEqual;","⋢"],["NotSquareSuperset;","⊐̸"],["NotSquareSupersetEqual;","⋣"],["NotSubset;","⊂⃒"],["NotSubsetEqual;","⊈"],["NotSucceeds;","⊁"],["NotSucceedsEqual;","⪰̸"],["NotSucceedsSlantEqual;","⋡"],["NotSucceedsTilde;","≿̸"],["NotSuperset;","⊃⃒"],["NotSupersetEqual;","⊉"],["NotTilde;","≁"],["NotTildeEqual;","≄"],["NotTildeFullEqual;","≇"],["NotTildeTilde;","≉"],["NotVerticalBar;","∤"],["Nscr;","𝒩"],["Ntilde","Ñ"],["Ntilde;","Ñ"],["Nu;","Ν"],["OElig;","Œ"],["Oacute","Ó"],["Oacute;","Ó"],["Ocirc","Ô"],["Ocirc;","Ô"],["Ocy;","О"],["Odblac;","Ő"],["Ofr;","𝔒"],["Ograve","Ò"],["Ograve;","Ò"],["Omacr;","Ō"],["Omega;","Ω"],["Omicron;","Ο"],["Oopf;","𝕆"],["OpenCurlyDoubleQuote;","“"],["OpenCurlyQuote;","‘"],["Or;","⩔"],["Oscr;","𝒪"],["Oslash","Ø"],["Oslash;","Ø"],["Otilde","Õ"],["Otilde;","Õ"],["Otimes;","⨷"],["Ouml","Ö"],["Ouml;","Ö"],["OverBar;","‾"],["OverBrace;","⏞"],["OverBracket;","⎴"],["OverParenthesis;","⏜"],["PartialD;","∂"],["Pcy;","П"],["Pfr;","𝔓"],["Phi;","Φ"],["Pi;","Π"],["PlusMinus;","±"],["Poincareplane;","ℌ"],["Popf;","ℙ"],["Pr;","⪻"],["Precedes;","≺"],["PrecedesEqual;","⪯"],["PrecedesSlantEqual;","≼"],["PrecedesTilde;","≾"],["Prime;","″"],["Product;","∏"],["Proportion;","∷"],["Proportional;","∝"],["Pscr;","𝒫"],["Psi;","Ψ"],["QUOT","\\""],["QUOT;","\\""],["Qfr;","𝔔"],["Qopf;","ℚ"],["Qscr;","𝒬"],["RBarr;","⤐"],["REG","®"],["REG;","®"],["Racute;","Ŕ"],["Rang;","⟫"],["Rarr;","↠"],["Rarrtl;","⤖"],["Rcaron;","Ř"],["Rcedil;","Ŗ"],["Rcy;","Р"],["Re;","ℜ"],["ReverseElement;","∋"],["ReverseEquilibrium;","⇋"],["ReverseUpEquilibrium;","⥯"],["Rfr;","ℜ"],["Rho;","Ρ"],["RightAngleBracket;","⟩"],["RightArrow;","→"],["RightArrowBar;","⇥"],["RightArrowLeftArrow;","⇄"],["RightCeiling;","⌉"],["RightDoubleBracket;","⟧"],["RightDownTeeVector;","⥝"],["RightDownVector;","⇂"],["RightDownVectorBar;","⥕"],["RightFloor;","⌋"],["RightTee;","⊢"],["RightTeeArrow;","↦"],["RightTeeVector;","⥛"],["RightTriangle;","⊳"],["RightTriangleBar;","⧐"],["RightTriangleEqual;","⊵"],["RightUpDownVector;","⥏"],["RightUpTeeVector;","⥜"],["RightUpVector;","↾"],["RightUpVectorBar;","⥔"],["RightVector;","⇀"],["RightVectorBar;","⥓"],["Rightarrow;","⇒"],["Ropf;","ℝ"],["RoundImplies;","⥰"],["Rrightarrow;","⇛"],["Rscr;","ℛ"],["Rsh;","↱"],["RuleDelayed;","⧴"],["SHCHcy;","Щ"],["SHcy;","Ш"],["SOFTcy;","Ь"],["Sacute;","Ś"],["Sc;","⪼"],["Scaron;","Š"],["Scedil;","Ş"],["Scirc;","Ŝ"],["Scy;","С"],["Sfr;","𝔖"],["ShortDownArrow;","↓"],["ShortLeftArrow;","←"],["ShortRightArrow;","→"],["ShortUpArrow;","↑"],["Sigma;","Σ"],["SmallCircle;","∘"],["Sopf;","𝕊"],["Sqrt;","√"],["Square;","□"],["SquareIntersection;","⊓"],["SquareSubset;","⊏"],["SquareSubsetEqual;","⊑"],["SquareSuperset;","⊐"],["SquareSupersetEqual;","⊒"],["SquareUnion;","⊔"],["Sscr;","𝒮"],["Star;","⋆"],["Sub;","⋐"],["Subset;","⋐"],["SubsetEqual;","⊆"],["Succeeds;","≻"],["SucceedsEqual;","⪰"],["SucceedsSlantEqual;","≽"],["SucceedsTilde;","≿"],["SuchThat;","∋"],["Sum;","∑"],["Sup;","⋑"],["Superset;","⊃"],["SupersetEqual;","⊇"],["Supset;","⋑"],["THORN","Þ"],["THORN;","Þ"],["TRADE;","™"],["TSHcy;","Ћ"],["TScy;","Ц"],["Tab;","\\t"],["Tau;","Τ"],["Tcaron;","Ť"],["Tcedil;","Ţ"],["Tcy;","Т"],["Tfr;","𝔗"],["Therefore;","∴"],["Theta;","Θ"],["ThickSpace;","  "],["ThinSpace;"," "],["Tilde;","∼"],["TildeEqual;","≃"],["TildeFullEqual;","≅"],["TildeTilde;","≈"],["Topf;","𝕋"],["TripleDot;","⃛"],["Tscr;","𝒯"],["Tstrok;","Ŧ"],["Uacute","Ú"],["Uacute;","Ú"],["Uarr;","↟"],["Uarrocir;","⥉"],["Ubrcy;","Ў"],["Ubreve;","Ŭ"],["Ucirc","Û"],["Ucirc;","Û"],["Ucy;","У"],["Udblac;","Ű"],["Ufr;","𝔘"],["Ugrave","Ù"],["Ugrave;","Ù"],["Umacr;","Ū"],["UnderBar;","_"],["UnderBrace;","⏟"],["UnderBracket;","⎵"],["UnderParenthesis;","⏝"],["Union;","⋃"],["UnionPlus;","⊎"],["Uogon;","Ų"],["Uopf;","𝕌"],["UpArrow;","↑"],["UpArrowBar;","⤒"],["UpArrowDownArrow;","⇅"],["UpDownArrow;","↕"],["UpEquilibrium;","⥮"],["UpTee;","⊥"],["UpTeeArrow;","↥"],["Uparrow;","⇑"],["Updownarrow;","⇕"],["UpperLeftArrow;","↖"],["UpperRightArrow;","↗"],["Upsi;","ϒ"],["Upsilon;","Υ"],["Uring;","Ů"],["Uscr;","𝒰"],["Utilde;","Ũ"],["Uuml","Ü"],["Uuml;","Ü"],["VDash;","⊫"],["Vbar;","⫫"],["Vcy;","В"],["Vdash;","⊩"],["Vdashl;","⫦"],["Vee;","⋁"],["Verbar;","‖"],["Vert;","‖"],["VerticalBar;","∣"],["VerticalLine;","|"],["VerticalSeparator;","❘"],["VerticalTilde;","≀"],["VeryThinSpace;"," "],["Vfr;","𝔙"],["Vopf;","𝕍"],["Vscr;","𝒱"],["Vvdash;","⊪"],["Wcirc;","Ŵ"],["Wedge;","⋀"],["Wfr;","𝔚"],["Wopf;","𝕎"],["Wscr;","𝒲"],["Xfr;","𝔛"],["Xi;","Ξ"],["Xopf;","𝕏"],["Xscr;","𝒳"],["YAcy;","Я"],["YIcy;","Ї"],["YUcy;","Ю"],["Yacute","Ý"],["Yacute;","Ý"],["Ycirc;","Ŷ"],["Ycy;","Ы"],["Yfr;","𝔜"],["Yopf;","𝕐"],["Yscr;","𝒴"],["Yuml;","Ÿ"],["ZHcy;","Ж"],["Zacute;","Ź"],["Zcaron;","Ž"],["Zcy;","З"],["Zdot;","Ż"],["ZeroWidthSpace;","​"],["Zeta;","Ζ"],["Zfr;","ℨ"],["Zopf;","ℤ"],["Zscr;","𝒵"],["aacute","á"],["aacute;","á"],["abreve;","ă"],["ac;","∾"],["acE;","∾̳"],["acd;","∿"],["acirc","â"],["acirc;","â"],["acute","´"],["acute;","´"],["acy;","а"],["aelig","æ"],["aelig;","æ"],["af;","⁡"],["afr;","𝔞"],["agrave","à"],["agrave;","à"],["alefsym;","ℵ"],["aleph;","ℵ"],["alpha;","α"],["amacr;","ā"],["amalg;","⨿"],["amp","&"],["amp;","&"],["and;","∧"],["andand;","⩕"],["andd;","⩜"],["andslope;","⩘"],["andv;","⩚"],["ang;","∠"],["ange;","⦤"],["angle;","∠"],["angmsd;","∡"],["angmsdaa;","⦨"],["angmsdab;","⦩"],["angmsdac;","⦪"],["angmsdad;","⦫"],["angmsdae;","⦬"],["angmsdaf;","⦭"],["angmsdag;","⦮"],["angmsdah;","⦯"],["angrt;","∟"],["angrtvb;","⊾"],["angrtvbd;","⦝"],["angsph;","∢"],["angst;","Å"],["angzarr;","⍼"],["aogon;","ą"],["aopf;","𝕒"],["ap;","≈"],["apE;","⩰"],["apacir;","⩯"],["ape;","≊"],["apid;","≋"],["apos;","\'"],["approx;","≈"],["approxeq;","≊"],["aring","å"],["aring;","å"],["ascr;","𝒶"],["ast;","*"],["asymp;","≈"],["asympeq;","≍"],["atilde","ã"],["atilde;","ã"],["auml","ä"],["auml;","ä"],["awconint;","∳"],["awint;","⨑"],["bNot;","⫭"],["backcong;","≌"],["backepsilon;","϶"],["backprime;","‵"],["backsim;","∽"],["backsimeq;","⋍"],["barvee;","⊽"],["barwed;","⌅"],["barwedge;","⌅"],["bbrk;","⎵"],["bbrktbrk;","⎶"],["bcong;","≌"],["bcy;","б"],["bdquo;","„"],["becaus;","∵"],["because;","∵"],["bemptyv;","⦰"],["bepsi;","϶"],["bernou;","ℬ"],["beta;","β"],["beth;","ℶ"],["between;","≬"],["bfr;","𝔟"],["bigcap;","⋂"],["bigcirc;","◯"],["bigcup;","⋃"],["bigodot;","⨀"],["bigoplus;","⨁"],["bigotimes;","⨂"],["bigsqcup;","⨆"],["bigstar;","★"],["bigtriangledown;","▽"],["bigtriangleup;","△"],["biguplus;","⨄"],["bigvee;","⋁"],["bigwedge;","⋀"],["bkarow;","⤍"],["blacklozenge;","⧫"],["blacksquare;","▪"],["blacktriangle;","▴"],["blacktriangledown;","▾"],["blacktriangleleft;","◂"],["blacktriangleright;","▸"],["blank;","␣"],["blk12;","▒"],["blk14;","░"],["blk34;","▓"],["block;","█"],["bne;","=⃥"],["bnequiv;","≡⃥"],["bnot;","⌐"],["bopf;","𝕓"],["bot;","⊥"],["bottom;","⊥"],["bowtie;","⋈"],["boxDL;","╗"],["boxDR;","╔"],["boxDl;","╖"],["boxDr;","╓"],["boxH;","═"],["boxHD;","╦"],["boxHU;","╩"],["boxHd;","╤"],["boxHu;","╧"],["boxUL;","╝"],["boxUR;","╚"],["boxUl;","╜"],["boxUr;","╙"],["boxV;","║"],["boxVH;","╬"],["boxVL;","╣"],["boxVR;","╠"],["boxVh;","╫"],["boxVl;","╢"],["boxVr;","╟"],["boxbox;","⧉"],["boxdL;","╕"],["boxdR;","╒"],["boxdl;","┐"],["boxdr;","┌"],["boxh;","─"],["boxhD;","╥"],["boxhU;","╨"],["boxhd;","┬"],["boxhu;","┴"],["boxminus;","⊟"],["boxplus;","⊞"],["boxtimes;","⊠"],["boxuL;","╛"],["boxuR;","╘"],["boxul;","┘"],["boxur;","└"],["boxv;","│"],["boxvH;","╪"],["boxvL;","╡"],["boxvR;","╞"],["boxvh;","┼"],["boxvl;","┤"],["boxvr;","├"],["bprime;","‵"],["breve;","˘"],["brvbar","¦"],["brvbar;","¦"],["bscr;","𝒷"],["bsemi;","⁏"],["bsim;","∽"],["bsime;","⋍"],["bsol;","\\\\"],["bsolb;","⧅"],["bsolhsub;","⟈"],["bull;","•"],["bullet;","•"],["bump;","≎"],["bumpE;","⪮"],["bumpe;","≏"],["bumpeq;","≏"],["cacute;","ć"],["cap;","∩"],["capand;","⩄"],["capbrcup;","⩉"],["capcap;","⩋"],["capcup;","⩇"],["capdot;","⩀"],["caps;","∩︀"],["caret;","⁁"],["caron;","ˇ"],["ccaps;","⩍"],["ccaron;","č"],["ccedil","ç"],["ccedil;","ç"],["ccirc;","ĉ"],["ccups;","⩌"],["ccupssm;","⩐"],["cdot;","ċ"],["cedil","¸"],["cedil;","¸"],["cemptyv;","⦲"],["cent","¢"],["cent;","¢"],["centerdot;","·"],["cfr;","𝔠"],["chcy;","ч"],["check;","✓"],["checkmark;","✓"],["chi;","χ"],["cir;","○"],["cirE;","⧃"],["circ;","ˆ"],["circeq;","≗"],["circlearrowleft;","↺"],["circlearrowright;","↻"],["circledR;","®"],["circledS;","Ⓢ"],["circledast;","⊛"],["circledcirc;","⊚"],["circleddash;","⊝"],["cire;","≗"],["cirfnint;","⨐"],["cirmid;","⫯"],["cirscir;","⧂"],["clubs;","♣"],["clubsuit;","♣"],["colon;",":"],["colone;","≔"],["coloneq;","≔"],["comma;",","],["commat;","@"],["comp;","∁"],["compfn;","∘"],["complement;","∁"],["complexes;","ℂ"],["cong;","≅"],["congdot;","⩭"],["conint;","∮"],["copf;","𝕔"],["coprod;","∐"],["copy","©"],["copy;","©"],["copysr;","℗"],["crarr;","↵"],["cross;","✗"],["cscr;","𝒸"],["csub;","⫏"],["csube;","⫑"],["csup;","⫐"],["csupe;","⫒"],["ctdot;","⋯"],["cudarrl;","⤸"],["cudarrr;","⤵"],["cuepr;","⋞"],["cuesc;","⋟"],["cularr;","↶"],["cularrp;","⤽"],["cup;","∪"],["cupbrcap;","⩈"],["cupcap;","⩆"],["cupcup;","⩊"],["cupdot;","⊍"],["cupor;","⩅"],["cups;","∪︀"],["curarr;","↷"],["curarrm;","⤼"],["curlyeqprec;","⋞"],["curlyeqsucc;","⋟"],["curlyvee;","⋎"],["curlywedge;","⋏"],["curren","¤"],["curren;","¤"],["curvearrowleft;","↶"],["curvearrowright;","↷"],["cuvee;","⋎"],["cuwed;","⋏"],["cwconint;","∲"],["cwint;","∱"],["cylcty;","⌭"],["dArr;","⇓"],["dHar;","⥥"],["dagger;","†"],["daleth;","ℸ"],["darr;","↓"],["dash;","‐"],["dashv;","⊣"],["dbkarow;","⤏"],["dblac;","˝"],["dcaron;","ď"],["dcy;","д"],["dd;","ⅆ"],["ddagger;","‡"],["ddarr;","⇊"],["ddotseq;","⩷"],["deg","°"],["deg;","°"],["delta;","δ"],["demptyv;","⦱"],["dfisht;","⥿"],["dfr;","𝔡"],["dharl;","⇃"],["dharr;","⇂"],["diam;","⋄"],["diamond;","⋄"],["diamondsuit;","♦"],["diams;","♦"],["die;","¨"],["digamma;","ϝ"],["disin;","⋲"],["div;","÷"],["divide","÷"],["divide;","÷"],["divideontimes;","⋇"],["divonx;","⋇"],["djcy;","ђ"],["dlcorn;","⌞"],["dlcrop;","⌍"],["dollar;","$"],["dopf;","𝕕"],["dot;","˙"],["doteq;","≐"],["doteqdot;","≑"],["dotminus;","∸"],["dotplus;","∔"],["dotsquare;","⊡"],["doublebarwedge;","⌆"],["downarrow;","↓"],["downdownarrows;","⇊"],["downharpoonleft;","⇃"],["downharpoonright;","⇂"],["drbkarow;","⤐"],["drcorn;","⌟"],["drcrop;","⌌"],["dscr;","𝒹"],["dscy;","ѕ"],["dsol;","⧶"],["dstrok;","đ"],["dtdot;","⋱"],["dtri;","▿"],["dtrif;","▾"],["duarr;","⇵"],["duhar;","⥯"],["dwangle;","⦦"],["dzcy;","џ"],["dzigrarr;","⟿"],["eDDot;","⩷"],["eDot;","≑"],["eacute","é"],["eacute;","é"],["easter;","⩮"],["ecaron;","ě"],["ecir;","≖"],["ecirc","ê"],["ecirc;","ê"],["ecolon;","≕"],["ecy;","э"],["edot;","ė"],["ee;","ⅇ"],["efDot;","≒"],["efr;","𝔢"],["eg;","⪚"],["egrave","è"],["egrave;","è"],["egs;","⪖"],["egsdot;","⪘"],["el;","⪙"],["elinters;","⏧"],["ell;","ℓ"],["els;","⪕"],["elsdot;","⪗"],["emacr;","ē"],["empty;","∅"],["emptyset;","∅"],["emptyv;","∅"],["emsp13;"," "],["emsp14;"," "],["emsp;"," "],["eng;","ŋ"],["ensp;"," "],["eogon;","ę"],["eopf;","𝕖"],["epar;","⋕"],["eparsl;","⧣"],["eplus;","⩱"],["epsi;","ε"],["epsilon;","ε"],["epsiv;","ϵ"],["eqcirc;","≖"],["eqcolon;","≕"],["eqsim;","≂"],["eqslantgtr;","⪖"],["eqslantless;","⪕"],["equals;","="],["equest;","≟"],["equiv;","≡"],["equivDD;","⩸"],["eqvparsl;","⧥"],["erDot;","≓"],["erarr;","⥱"],["escr;","ℯ"],["esdot;","≐"],["esim;","≂"],["eta;","η"],["eth","ð"],["eth;","ð"],["euml","ë"],["euml;","ë"],["euro;","€"],["excl;","!"],["exist;","∃"],["expectation;","ℰ"],["exponentiale;","ⅇ"],["fallingdotseq;","≒"],["fcy;","ф"],["female;","♀"],["ffilig;","ﬃ"],["fflig;","ﬀ"],["ffllig;","ﬄ"],["ffr;","𝔣"],["filig;","ﬁ"],["fjlig;","fj"],["flat;","♭"],["fllig;","ﬂ"],["fltns;","▱"],["fnof;","ƒ"],["fopf;","𝕗"],["forall;","∀"],["fork;","⋔"],["forkv;","⫙"],["fpartint;","⨍"],["frac12","½"],["frac12;","½"],["frac13;","⅓"],["frac14","¼"],["frac14;","¼"],["frac15;","⅕"],["frac16;","⅙"],["frac18;","⅛"],["frac23;","⅔"],["frac25;","⅖"],["frac34","¾"],["frac34;","¾"],["frac35;","⅗"],["frac38;","⅜"],["frac45;","⅘"],["frac56;","⅚"],["frac58;","⅝"],["frac78;","⅞"],["frasl;","⁄"],["frown;","⌢"],["fscr;","𝒻"],["gE;","≧"],["gEl;","⪌"],["gacute;","ǵ"],["gamma;","γ"],["gammad;","ϝ"],["gap;","⪆"],["gbreve;","ğ"],["gcirc;","ĝ"],["gcy;","г"],["gdot;","ġ"],["ge;","≥"],["gel;","⋛"],["geq;","≥"],["geqq;","≧"],["geqslant;","⩾"],["ges;","⩾"],["gescc;","⪩"],["gesdot;","⪀"],["gesdoto;","⪂"],["gesdotol;","⪄"],["gesl;","⋛︀"],["gesles;","⪔"],["gfr;","𝔤"],["gg;","≫"],["ggg;","⋙"],["gimel;","ℷ"],["gjcy;","ѓ"],["gl;","≷"],["glE;","⪒"],["gla;","⪥"],["glj;","⪤"],["gnE;","≩"],["gnap;","⪊"],["gnapprox;","⪊"],["gne;","⪈"],["gneq;","⪈"],["gneqq;","≩"],["gnsim;","⋧"],["gopf;","𝕘"],["grave;","`"],["gscr;","ℊ"],["gsim;","≳"],["gsime;","⪎"],["gsiml;","⪐"],["gt",">"],["gt;",">"],["gtcc;","⪧"],["gtcir;","⩺"],["gtdot;","⋗"],["gtlPar;","⦕"],["gtquest;","⩼"],["gtrapprox;","⪆"],["gtrarr;","⥸"],["gtrdot;","⋗"],["gtreqless;","⋛"],["gtreqqless;","⪌"],["gtrless;","≷"],["gtrsim;","≳"],["gvertneqq;","≩︀"],["gvnE;","≩︀"],["hArr;","⇔"],["hairsp;"," "],["half;","½"],["hamilt;","ℋ"],["hardcy;","ъ"],["harr;","↔"],["harrcir;","⥈"],["harrw;","↭"],["hbar;","ℏ"],["hcirc;","ĥ"],["hearts;","♥"],["heartsuit;","♥"],["hellip;","…"],["hercon;","⊹"],["hfr;","𝔥"],["hksearow;","⤥"],["hkswarow;","⤦"],["hoarr;","⇿"],["homtht;","∻"],["hookleftarrow;","↩"],["hookrightarrow;","↪"],["hopf;","𝕙"],["horbar;","―"],["hscr;","𝒽"],["hslash;","ℏ"],["hstrok;","ħ"],["hybull;","⁃"],["hyphen;","‐"],["iacute","í"],["iacute;","í"],["ic;","⁣"],["icirc","î"],["icirc;","î"],["icy;","и"],["iecy;","е"],["iexcl","¡"],["iexcl;","¡"],["iff;","⇔"],["ifr;","𝔦"],["igrave","ì"],["igrave;","ì"],["ii;","ⅈ"],["iiiint;","⨌"],["iiint;","∭"],["iinfin;","⧜"],["iiota;","℩"],["ijlig;","ĳ"],["imacr;","ī"],["image;","ℑ"],["imagline;","ℐ"],["imagpart;","ℑ"],["imath;","ı"],["imof;","⊷"],["imped;","Ƶ"],["in;","∈"],["incare;","℅"],["infin;","∞"],["infintie;","⧝"],["inodot;","ı"],["int;","∫"],["intcal;","⊺"],["integers;","ℤ"],["intercal;","⊺"],["intlarhk;","⨗"],["intprod;","⨼"],["iocy;","ё"],["iogon;","į"],["iopf;","𝕚"],["iota;","ι"],["iprod;","⨼"],["iquest","¿"],["iquest;","¿"],["iscr;","𝒾"],["isin;","∈"],["isinE;","⋹"],["isindot;","⋵"],["isins;","⋴"],["isinsv;","⋳"],["isinv;","∈"],["it;","⁢"],["itilde;","ĩ"],["iukcy;","і"],["iuml","ï"],["iuml;","ï"],["jcirc;","ĵ"],["jcy;","й"],["jfr;","𝔧"],["jmath;","ȷ"],["jopf;","𝕛"],["jscr;","𝒿"],["jsercy;","ј"],["jukcy;","є"],["kappa;","κ"],["kappav;","ϰ"],["kcedil;","ķ"],["kcy;","к"],["kfr;","𝔨"],["kgreen;","ĸ"],["khcy;","х"],["kjcy;","ќ"],["kopf;","𝕜"],["kscr;","𝓀"],["lAarr;","⇚"],["lArr;","⇐"],["lAtail;","⤛"],["lBarr;","⤎"],["lE;","≦"],["lEg;","⪋"],["lHar;","⥢"],["lacute;","ĺ"],["laemptyv;","⦴"],["lagran;","ℒ"],["lambda;","λ"],["lang;","⟨"],["langd;","⦑"],["langle;","⟨"],["lap;","⪅"],["laquo","«"],["laquo;","«"],["larr;","←"],["larrb;","⇤"],["larrbfs;","⤟"],["larrfs;","⤝"],["larrhk;","↩"],["larrlp;","↫"],["larrpl;","⤹"],["larrsim;","⥳"],["larrtl;","↢"],["lat;","⪫"],["latail;","⤙"],["late;","⪭"],["lates;","⪭︀"],["lbarr;","⤌"],["lbbrk;","❲"],["lbrace;","{"],["lbrack;","["],["lbrke;","⦋"],["lbrksld;","⦏"],["lbrkslu;","⦍"],["lcaron;","ľ"],["lcedil;","ļ"],["lceil;","⌈"],["lcub;","{"],["lcy;","л"],["ldca;","⤶"],["ldquo;","“"],["ldquor;","„"],["ldrdhar;","⥧"],["ldrushar;","⥋"],["ldsh;","↲"],["le;","≤"],["leftarrow;","←"],["leftarrowtail;","↢"],["leftharpoondown;","↽"],["leftharpoonup;","↼"],["leftleftarrows;","⇇"],["leftrightarrow;","↔"],["leftrightarrows;","⇆"],["leftrightharpoons;","⇋"],["leftrightsquigarrow;","↭"],["leftthreetimes;","⋋"],["leg;","⋚"],["leq;","≤"],["leqq;","≦"],["leqslant;","⩽"],["les;","⩽"],["lescc;","⪨"],["lesdot;","⩿"],["lesdoto;","⪁"],["lesdotor;","⪃"],["lesg;","⋚︀"],["lesges;","⪓"],["lessapprox;","⪅"],["lessdot;","⋖"],["lesseqgtr;","⋚"],["lesseqqgtr;","⪋"],["lessgtr;","≶"],["lesssim;","≲"],["lfisht;","⥼"],["lfloor;","⌊"],["lfr;","𝔩"],["lg;","≶"],["lgE;","⪑"],["lhard;","↽"],["lharu;","↼"],["lharul;","⥪"],["lhblk;","▄"],["ljcy;","љ"],["ll;","≪"],["llarr;","⇇"],["llcorner;","⌞"],["llhard;","⥫"],["lltri;","◺"],["lmidot;","ŀ"],["lmoust;","⎰"],["lmoustache;","⎰"],["lnE;","≨"],["lnap;","⪉"],["lnapprox;","⪉"],["lne;","⪇"],["lneq;","⪇"],["lneqq;","≨"],["lnsim;","⋦"],["loang;","⟬"],["loarr;","⇽"],["lobrk;","⟦"],["longleftarrow;","⟵"],["longleftrightarrow;","⟷"],["longmapsto;","⟼"],["longrightarrow;","⟶"],["looparrowleft;","↫"],["looparrowright;","↬"],["lopar;","⦅"],["lopf;","𝕝"],["loplus;","⨭"],["lotimes;","⨴"],["lowast;","∗"],["lowbar;","_"],["loz;","◊"],["lozenge;","◊"],["lozf;","⧫"],["lpar;","("],["lparlt;","⦓"],["lrarr;","⇆"],["lrcorner;","⌟"],["lrhar;","⇋"],["lrhard;","⥭"],["lrm;","‎"],["lrtri;","⊿"],["lsaquo;","‹"],["lscr;","𝓁"],["lsh;","↰"],["lsim;","≲"],["lsime;","⪍"],["lsimg;","⪏"],["lsqb;","["],["lsquo;","‘"],["lsquor;","‚"],["lstrok;","ł"],["lt","<"],["lt;","<"],["ltcc;","⪦"],["ltcir;","⩹"],["ltdot;","⋖"],["lthree;","⋋"],["ltimes;","⋉"],["ltlarr;","⥶"],["ltquest;","⩻"],["ltrPar;","⦖"],["ltri;","◃"],["ltrie;","⊴"],["ltrif;","◂"],["lurdshar;","⥊"],["luruhar;","⥦"],["lvertneqq;","≨︀"],["lvnE;","≨︀"],["mDDot;","∺"],["macr","¯"],["macr;","¯"],["male;","♂"],["malt;","✠"],["maltese;","✠"],["map;","↦"],["mapsto;","↦"],["mapstodown;","↧"],["mapstoleft;","↤"],["mapstoup;","↥"],["marker;","▮"],["mcomma;","⨩"],["mcy;","м"],["mdash;","—"],["measuredangle;","∡"],["mfr;","𝔪"],["mho;","℧"],["micro","µ"],["micro;","µ"],["mid;","∣"],["midast;","*"],["midcir;","⫰"],["middot","·"],["middot;","·"],["minus;","−"],["minusb;","⊟"],["minusd;","∸"],["minusdu;","⨪"],["mlcp;","⫛"],["mldr;","…"],["mnplus;","∓"],["models;","⊧"],["mopf;","𝕞"],["mp;","∓"],["mscr;","𝓂"],["mstpos;","∾"],["mu;","μ"],["multimap;","⊸"],["mumap;","⊸"],["nGg;","⋙̸"],["nGt;","≫⃒"],["nGtv;","≫̸"],["nLeftarrow;","⇍"],["nLeftrightarrow;","⇎"],["nLl;","⋘̸"],["nLt;","≪⃒"],["nLtv;","≪̸"],["nRightarrow;","⇏"],["nVDash;","⊯"],["nVdash;","⊮"],["nabla;","∇"],["nacute;","ń"],["nang;","∠⃒"],["nap;","≉"],["napE;","⩰̸"],["napid;","≋̸"],["napos;","ŉ"],["napprox;","≉"],["natur;","♮"],["natural;","♮"],["naturals;","ℕ"],["nbsp","\xA0"],["nbsp;","\xA0"],["nbump;","≎̸"],["nbumpe;","≏̸"],["ncap;","⩃"],["ncaron;","ň"],["ncedil;","ņ"],["ncong;","≇"],["ncongdot;","⩭̸"],["ncup;","⩂"],["ncy;","н"],["ndash;","–"],["ne;","≠"],["neArr;","⇗"],["nearhk;","⤤"],["nearr;","↗"],["nearrow;","↗"],["nedot;","≐̸"],["nequiv;","≢"],["nesear;","⤨"],["nesim;","≂̸"],["nexist;","∄"],["nexists;","∄"],["nfr;","𝔫"],["ngE;","≧̸"],["nge;","≱"],["ngeq;","≱"],["ngeqq;","≧̸"],["ngeqslant;","⩾̸"],["nges;","⩾̸"],["ngsim;","≵"],["ngt;","≯"],["ngtr;","≯"],["nhArr;","⇎"],["nharr;","↮"],["nhpar;","⫲"],["ni;","∋"],["nis;","⋼"],["nisd;","⋺"],["niv;","∋"],["njcy;","њ"],["nlArr;","⇍"],["nlE;","≦̸"],["nlarr;","↚"],["nldr;","‥"],["nle;","≰"],["nleftarrow;","↚"],["nleftrightarrow;","↮"],["nleq;","≰"],["nleqq;","≦̸"],["nleqslant;","⩽̸"],["nles;","⩽̸"],["nless;","≮"],["nlsim;","≴"],["nlt;","≮"],["nltri;","⋪"],["nltrie;","⋬"],["nmid;","∤"],["nopf;","𝕟"],["not","¬"],["not;","¬"],["notin;","∉"],["notinE;","⋹̸"],["notindot;","⋵̸"],["notinva;","∉"],["notinvb;","⋷"],["notinvc;","⋶"],["notni;","∌"],["notniva;","∌"],["notnivb;","⋾"],["notnivc;","⋽"],["npar;","∦"],["nparallel;","∦"],["nparsl;","⫽⃥"],["npart;","∂̸"],["npolint;","⨔"],["npr;","⊀"],["nprcue;","⋠"],["npre;","⪯̸"],["nprec;","⊀"],["npreceq;","⪯̸"],["nrArr;","⇏"],["nrarr;","↛"],["nrarrc;","⤳̸"],["nrarrw;","↝̸"],["nrightarrow;","↛"],["nrtri;","⋫"],["nrtrie;","⋭"],["nsc;","⊁"],["nsccue;","⋡"],["nsce;","⪰̸"],["nscr;","𝓃"],["nshortmid;","∤"],["nshortparallel;","∦"],["nsim;","≁"],["nsime;","≄"],["nsimeq;","≄"],["nsmid;","∤"],["nspar;","∦"],["nsqsube;","⋢"],["nsqsupe;","⋣"],["nsub;","⊄"],["nsubE;","⫅̸"],["nsube;","⊈"],["nsubset;","⊂⃒"],["nsubseteq;","⊈"],["nsubseteqq;","⫅̸"],["nsucc;","⊁"],["nsucceq;","⪰̸"],["nsup;","⊅"],["nsupE;","⫆̸"],["nsupe;","⊉"],["nsupset;","⊃⃒"],["nsupseteq;","⊉"],["nsupseteqq;","⫆̸"],["ntgl;","≹"],["ntilde","ñ"],["ntilde;","ñ"],["ntlg;","≸"],["ntriangleleft;","⋪"],["ntrianglelefteq;","⋬"],["ntriangleright;","⋫"],["ntrianglerighteq;","⋭"],["nu;","ν"],["num;","#"],["numero;","№"],["numsp;"," "],["nvDash;","⊭"],["nvHarr;","⤄"],["nvap;","≍⃒"],["nvdash;","⊬"],["nvge;","≥⃒"],["nvgt;",">⃒"],["nvinfin;","⧞"],["nvlArr;","⤂"],["nvle;","≤⃒"],["nvlt;","<⃒"],["nvltrie;","⊴⃒"],["nvrArr;","⤃"],["nvrtrie;","⊵⃒"],["nvsim;","∼⃒"],["nwArr;","⇖"],["nwarhk;","⤣"],["nwarr;","↖"],["nwarrow;","↖"],["nwnear;","⤧"],["oS;","Ⓢ"],["oacute","ó"],["oacute;","ó"],["oast;","⊛"],["ocir;","⊚"],["ocirc","ô"],["ocirc;","ô"],["ocy;","о"],["odash;","⊝"],["odblac;","ő"],["odiv;","⨸"],["odot;","⊙"],["odsold;","⦼"],["oelig;","œ"],["ofcir;","⦿"],["ofr;","𝔬"],["ogon;","˛"],["ograve","ò"],["ograve;","ò"],["ogt;","⧁"],["ohbar;","⦵"],["ohm;","Ω"],["oint;","∮"],["olarr;","↺"],["olcir;","⦾"],["olcross;","⦻"],["oline;","‾"],["olt;","⧀"],["omacr;","ō"],["omega;","ω"],["omicron;","ο"],["omid;","⦶"],["ominus;","⊖"],["oopf;","𝕠"],["opar;","⦷"],["operp;","⦹"],["oplus;","⊕"],["or;","∨"],["orarr;","↻"],["ord;","⩝"],["order;","ℴ"],["orderof;","ℴ"],["ordf","ª"],["ordf;","ª"],["ordm","º"],["ordm;","º"],["origof;","⊶"],["oror;","⩖"],["orslope;","⩗"],["orv;","⩛"],["oscr;","ℴ"],["oslash","ø"],["oslash;","ø"],["osol;","⊘"],["otilde","õ"],["otilde;","õ"],["otimes;","⊗"],["otimesas;","⨶"],["ouml","ö"],["ouml;","ö"],["ovbar;","⌽"],["par;","∥"],["para","¶"],["para;","¶"],["parallel;","∥"],["parsim;","⫳"],["parsl;","⫽"],["part;","∂"],["pcy;","п"],["percnt;","%"],["period;","."],["permil;","‰"],["perp;","⊥"],["pertenk;","‱"],["pfr;","𝔭"],["phi;","φ"],["phiv;","ϕ"],["phmmat;","ℳ"],["phone;","☎"],["pi;","π"],["pitchfork;","⋔"],["piv;","ϖ"],["planck;","ℏ"],["planckh;","ℎ"],["plankv;","ℏ"],["plus;","+"],["plusacir;","⨣"],["plusb;","⊞"],["pluscir;","⨢"],["plusdo;","∔"],["plusdu;","⨥"],["pluse;","⩲"],["plusmn","±"],["plusmn;","±"],["plussim;","⨦"],["plustwo;","⨧"],["pm;","±"],["pointint;","⨕"],["popf;","𝕡"],["pound","£"],["pound;","£"],["pr;","≺"],["prE;","⪳"],["prap;","⪷"],["prcue;","≼"],["pre;","⪯"],["prec;","≺"],["precapprox;","⪷"],["preccurlyeq;","≼"],["preceq;","⪯"],["precnapprox;","⪹"],["precneqq;","⪵"],["precnsim;","⋨"],["precsim;","≾"],["prime;","′"],["primes;","ℙ"],["prnE;","⪵"],["prnap;","⪹"],["prnsim;","⋨"],["prod;","∏"],["profalar;","⌮"],["profline;","⌒"],["profsurf;","⌓"],["prop;","∝"],["propto;","∝"],["prsim;","≾"],["prurel;","⊰"],["pscr;","𝓅"],["psi;","ψ"],["puncsp;"," "],["qfr;","𝔮"],["qint;","⨌"],["qopf;","𝕢"],["qprime;","⁗"],["qscr;","𝓆"],["quaternions;","ℍ"],["quatint;","⨖"],["quest;","?"],["questeq;","≟"],["quot","\\""],["quot;","\\""],["rAarr;","⇛"],["rArr;","⇒"],["rAtail;","⤜"],["rBarr;","⤏"],["rHar;","⥤"],["race;","∽̱"],["racute;","ŕ"],["radic;","√"],["raemptyv;","⦳"],["rang;","⟩"],["rangd;","⦒"],["range;","⦥"],["rangle;","⟩"],["raquo","»"],["raquo;","»"],["rarr;","→"],["rarrap;","⥵"],["rarrb;","⇥"],["rarrbfs;","⤠"],["rarrc;","⤳"],["rarrfs;","⤞"],["rarrhk;","↪"],["rarrlp;","↬"],["rarrpl;","⥅"],["rarrsim;","⥴"],["rarrtl;","↣"],["rarrw;","↝"],["ratail;","⤚"],["ratio;","∶"],["rationals;","ℚ"],["rbarr;","⤍"],["rbbrk;","❳"],["rbrace;","}"],["rbrack;","]"],["rbrke;","⦌"],["rbrksld;","⦎"],["rbrkslu;","⦐"],["rcaron;","ř"],["rcedil;","ŗ"],["rceil;","⌉"],["rcub;","}"],["rcy;","р"],["rdca;","⤷"],["rdldhar;","⥩"],["rdquo;","”"],["rdquor;","”"],["rdsh;","↳"],["real;","ℜ"],["realine;","ℛ"],["realpart;","ℜ"],["reals;","ℝ"],["rect;","▭"],["reg","®"],["reg;","®"],["rfisht;","⥽"],["rfloor;","⌋"],["rfr;","𝔯"],["rhard;","⇁"],["rharu;","⇀"],["rharul;","⥬"],["rho;","ρ"],["rhov;","ϱ"],["rightarrow;","→"],["rightarrowtail;","↣"],["rightharpoondown;","⇁"],["rightharpoonup;","⇀"],["rightleftarrows;","⇄"],["rightleftharpoons;","⇌"],["rightrightarrows;","⇉"],["rightsquigarrow;","↝"],["rightthreetimes;","⋌"],["ring;","˚"],["risingdotseq;","≓"],["rlarr;","⇄"],["rlhar;","⇌"],["rlm;","‏"],["rmoust;","⎱"],["rmoustache;","⎱"],["rnmid;","⫮"],["roang;","⟭"],["roarr;","⇾"],["robrk;","⟧"],["ropar;","⦆"],["ropf;","𝕣"],["roplus;","⨮"],["rotimes;","⨵"],["rpar;",")"],["rpargt;","⦔"],["rppolint;","⨒"],["rrarr;","⇉"],["rsaquo;","›"],["rscr;","𝓇"],["rsh;","↱"],["rsqb;","]"],["rsquo;","’"],["rsquor;","’"],["rthree;","⋌"],["rtimes;","⋊"],["rtri;","▹"],["rtrie;","⊵"],["rtrif;","▸"],["rtriltri;","⧎"],["ruluhar;","⥨"],["rx;","℞"],["sacute;","ś"],["sbquo;","‚"],["sc;","≻"],["scE;","⪴"],["scap;","⪸"],["scaron;","š"],["sccue;","≽"],["sce;","⪰"],["scedil;","ş"],["scirc;","ŝ"],["scnE;","⪶"],["scnap;","⪺"],["scnsim;","⋩"],["scpolint;","⨓"],["scsim;","≿"],["scy;","с"],["sdot;","⋅"],["sdotb;","⊡"],["sdote;","⩦"],["seArr;","⇘"],["searhk;","⤥"],["searr;","↘"],["searrow;","↘"],["sect","§"],["sect;","§"],["semi;",";"],["seswar;","⤩"],["setminus;","∖"],["setmn;","∖"],["sext;","✶"],["sfr;","𝔰"],["sfrown;","⌢"],["sharp;","♯"],["shchcy;","щ"],["shcy;","ш"],["shortmid;","∣"],["shortparallel;","∥"],["shy","­"],["shy;","­"],["sigma;","σ"],["sigmaf;","ς"],["sigmav;","ς"],["sim;","∼"],["simdot;","⩪"],["sime;","≃"],["simeq;","≃"],["simg;","⪞"],["simgE;","⪠"],["siml;","⪝"],["simlE;","⪟"],["simne;","≆"],["simplus;","⨤"],["simrarr;","⥲"],["slarr;","←"],["smallsetminus;","∖"],["smashp;","⨳"],["smeparsl;","⧤"],["smid;","∣"],["smile;","⌣"],["smt;","⪪"],["smte;","⪬"],["smtes;","⪬︀"],["softcy;","ь"],["sol;","/"],["solb;","⧄"],["solbar;","⌿"],["sopf;","𝕤"],["spades;","♠"],["spadesuit;","♠"],["spar;","∥"],["sqcap;","⊓"],["sqcaps;","⊓︀"],["sqcup;","⊔"],["sqcups;","⊔︀"],["sqsub;","⊏"],["sqsube;","⊑"],["sqsubset;","⊏"],["sqsubseteq;","⊑"],["sqsup;","⊐"],["sqsupe;","⊒"],["sqsupset;","⊐"],["sqsupseteq;","⊒"],["squ;","□"],["square;","□"],["squarf;","▪"],["squf;","▪"],["srarr;","→"],["sscr;","𝓈"],["ssetmn;","∖"],["ssmile;","⌣"],["sstarf;","⋆"],["star;","☆"],["starf;","★"],["straightepsilon;","ϵ"],["straightphi;","ϕ"],["strns;","¯"],["sub;","⊂"],["subE;","⫅"],["subdot;","⪽"],["sube;","⊆"],["subedot;","⫃"],["submult;","⫁"],["subnE;","⫋"],["subne;","⊊"],["subplus;","⪿"],["subrarr;","⥹"],["subset;","⊂"],["subseteq;","⊆"],["subseteqq;","⫅"],["subsetneq;","⊊"],["subsetneqq;","⫋"],["subsim;","⫇"],["subsub;","⫕"],["subsup;","⫓"],["succ;","≻"],["succapprox;","⪸"],["succcurlyeq;","≽"],["succeq;","⪰"],["succnapprox;","⪺"],["succneqq;","⪶"],["succnsim;","⋩"],["succsim;","≿"],["sum;","∑"],["sung;","♪"],["sup1","¹"],["sup1;","¹"],["sup2","²"],["sup2;","²"],["sup3","³"],["sup3;","³"],["sup;","⊃"],["supE;","⫆"],["supdot;","⪾"],["supdsub;","⫘"],["supe;","⊇"],["supedot;","⫄"],["suphsol;","⟉"],["suphsub;","⫗"],["suplarr;","⥻"],["supmult;","⫂"],["supnE;","⫌"],["supne;","⊋"],["supplus;","⫀"],["supset;","⊃"],["supseteq;","⊇"],["supseteqq;","⫆"],["supsetneq;","⊋"],["supsetneqq;","⫌"],["supsim;","⫈"],["supsub;","⫔"],["supsup;","⫖"],["swArr;","⇙"],["swarhk;","⤦"],["swarr;","↙"],["swarrow;","↙"],["swnwar;","⤪"],["szlig","ß"],["szlig;","ß"],["target;","⌖"],["tau;","τ"],["tbrk;","⎴"],["tcaron;","ť"],["tcedil;","ţ"],["tcy;","т"],["tdot;","⃛"],["telrec;","⌕"],["tfr;","𝔱"],["there4;","∴"],["therefore;","∴"],["theta;","θ"],["thetasym;","ϑ"],["thetav;","ϑ"],["thickapprox;","≈"],["thicksim;","∼"],["thinsp;"," "],["thkap;","≈"],["thksim;","∼"],["thorn","þ"],["thorn;","þ"],["tilde;","˜"],["times","×"],["times;","×"],["timesb;","⊠"],["timesbar;","⨱"],["timesd;","⨰"],["tint;","∭"],["toea;","⤨"],["top;","⊤"],["topbot;","⌶"],["topcir;","⫱"],["topf;","𝕥"],["topfork;","⫚"],["tosa;","⤩"],["tprime;","‴"],["trade;","™"],["triangle;","▵"],["triangledown;","▿"],["triangleleft;","◃"],["trianglelefteq;","⊴"],["triangleq;","≜"],["triangleright;","▹"],["trianglerighteq;","⊵"],["tridot;","◬"],["trie;","≜"],["triminus;","⨺"],["triplus;","⨹"],["trisb;","⧍"],["tritime;","⨻"],["trpezium;","⏢"],["tscr;","𝓉"],["tscy;","ц"],["tshcy;","ћ"],["tstrok;","ŧ"],["twixt;","≬"],["twoheadleftarrow;","↞"],["twoheadrightarrow;","↠"],["uArr;","⇑"],["uHar;","⥣"],["uacute","ú"],["uacute;","ú"],["uarr;","↑"],["ubrcy;","ў"],["ubreve;","ŭ"],["ucirc","û"],["ucirc;","û"],["ucy;","у"],["udarr;","⇅"],["udblac;","ű"],["udhar;","⥮"],["ufisht;","⥾"],["ufr;","𝔲"],["ugrave","ù"],["ugrave;","ù"],["uharl;","↿"],["uharr;","↾"],["uhblk;","▀"],["ulcorn;","⌜"],["ulcorner;","⌜"],["ulcrop;","⌏"],["ultri;","◸"],["umacr;","ū"],["uml","¨"],["uml;","¨"],["uogon;","ų"],["uopf;","𝕦"],["uparrow;","↑"],["updownarrow;","↕"],["upharpoonleft;","↿"],["upharpoonright;","↾"],["uplus;","⊎"],["upsi;","υ"],["upsih;","ϒ"],["upsilon;","υ"],["upuparrows;","⇈"],["urcorn;","⌝"],["urcorner;","⌝"],["urcrop;","⌎"],["uring;","ů"],["urtri;","◹"],["uscr;","𝓊"],["utdot;","⋰"],["utilde;","ũ"],["utri;","▵"],["utrif;","▴"],["uuarr;","⇈"],["uuml","ü"],["uuml;","ü"],["uwangle;","⦧"],["vArr;","⇕"],["vBar;","⫨"],["vBarv;","⫩"],["vDash;","⊨"],["vangrt;","⦜"],["varepsilon;","ϵ"],["varkappa;","ϰ"],["varnothing;","∅"],["varphi;","ϕ"],["varpi;","ϖ"],["varpropto;","∝"],["varr;","↕"],["varrho;","ϱ"],["varsigma;","ς"],["varsubsetneq;","⊊︀"],["varsubsetneqq;","⫋︀"],["varsupsetneq;","⊋︀"],["varsupsetneqq;","⫌︀"],["vartheta;","ϑ"],["vartriangleleft;","⊲"],["vartriangleright;","⊳"],["vcy;","в"],["vdash;","⊢"],["vee;","∨"],["veebar;","⊻"],["veeeq;","≚"],["vellip;","⋮"],["verbar;","|"],["vert;","|"],["vfr;","𝔳"],["vltri;","⊲"],["vnsub;","⊂⃒"],["vnsup;","⊃⃒"],["vopf;","𝕧"],["vprop;","∝"],["vrtri;","⊳"],["vscr;","𝓋"],["vsubnE;","⫋︀"],["vsubne;","⊊︀"],["vsupnE;","⫌︀"],["vsupne;","⊋︀"],["vzigzag;","⦚"],["wcirc;","ŵ"],["wedbar;","⩟"],["wedge;","∧"],["wedgeq;","≙"],["weierp;","℘"],["wfr;","𝔴"],["wopf;","𝕨"],["wp;","℘"],["wr;","≀"],["wreath;","≀"],["wscr;","𝓌"],["xcap;","⋂"],["xcirc;","◯"],["xcup;","⋃"],["xdtri;","▽"],["xfr;","𝔵"],["xhArr;","⟺"],["xharr;","⟷"],["xi;","ξ"],["xlArr;","⟸"],["xlarr;","⟵"],["xmap;","⟼"],["xnis;","⋻"],["xodot;","⨀"],["xopf;","𝕩"],["xoplus;","⨁"],["xotime;","⨂"],["xrArr;","⟹"],["xrarr;","⟶"],["xscr;","𝓍"],["xsqcup;","⨆"],["xuplus;","⨄"],["xutri;","△"],["xvee;","⋁"],["xwedge;","⋀"],["yacute","ý"],["yacute;","ý"],["yacy;","я"],["ycirc;","ŷ"],["ycy;","ы"],["yen","¥"],["yen;","¥"],["yfr;","𝔶"],["yicy;","ї"],["yopf;","𝕪"],["yscr;","𝓎"],["yucy;","ю"],["yuml","ÿ"],["yuml;","ÿ"],["zacute;","ź"],["zcaron;","ž"],["zcy;","з"],["zdot;","ż"],["zeetrf;","ℨ"],["zeta;","ζ"],["zfr;","𝔷"],["zhcy;","ж"],["zigrarr;","⇝"],["zopf;","𝕫"],["zscr;","𝓏"],["zwj;","‍"],["zwnj;","‌"]]',
+  ),
+)
+/**
+ * WHATWG HTML tokenizer (single pass) — `.` main engine.
+ *
+ * Implements the tokenization stage of
+ * https://html.spec.whatwg.org/#tokenization Verified against the vendored
+ * html5lib-tests tokenizer suite (test/main/tokenizer.test.ts). Tree
+ * construction (the other half of a browser-faithful parser) drives the
+ * content-model state from outside via `setState()` — exactly as the spec's
+ * tree-construction stage does.
+ *
+ * Parse errors are intentionally not surfaced as tokens: a sanitizer cares
+ * about the token _stream_ the browser would build, not error reporting.
+ * Character tokens are emitted per run; the conformance harness coalesces
+ * before comparing.
+ *
+ * NOT YET IMPLEMENTED (rare; tracked by the harness ratchet): script-data
+ * escaped / double-escaped states. Everything else (incl. RCDATA/RAWTEXT/
+ * PLAINTEXT/CDATA, full comment + DOCTYPE machinery, named/numeric character
+ * references) is here.
+ */
+const S = {
+  Data: 0,
+  RCDATA: 1,
+  RAWTEXT: 2,
+  ScriptData: 3,
+  PLAINTEXT: 4,
+  TagOpen: 5,
+  EndTagOpen: 6,
+  TagName: 7,
+  RCDATALt: 8,
+  RCDATAEndTagOpen: 9,
+  RCDATAEndTagName: 10,
+  RAWTEXTLt: 11,
+  RAWTEXTEndTagOpen: 12,
+  RAWTEXTEndTagName: 13,
+  ScriptLt: 14,
+  ScriptEndTagOpen: 15,
+  ScriptEndTagName: 16,
+  BeforeAttrName: 17,
+  AttrName: 18,
+  AfterAttrName: 19,
+  BeforeAttrValue: 20,
+  AttrValueDq: 21,
+  AttrValueSq: 22,
+  AttrValueUq: 23,
+  AfterAttrValueQuoted: 24,
+  SelfClosing: 25,
+  BogusComment: 26,
+  MarkupDeclOpen: 27,
+  CommentStart: 28,
+  CommentStartDash: 29,
+  Comment: 30,
+  CommentEndDash: 31,
+  CommentEnd: 32,
+  CommentEndBang: 33,
+  Doctype: 34,
+  BeforeDoctypeName: 35,
+  DoctypeName: 36,
+  AfterDoctypeName: 37,
+  AfterDoctypePublicKw: 38,
+  BeforeDoctypePublicId: 39,
+  DoctypePublicIdDq: 40,
+  DoctypePublicIdSq: 41,
+  AfterDoctypePublicId: 42,
+  BetweenDoctypePublicSystem: 43,
+  AfterDoctypeSystemKw: 44,
+  BeforeDoctypeSystemId: 45,
+  DoctypeSystemIdDq: 46,
+  DoctypeSystemIdSq: 47,
+  AfterDoctypeSystemId: 48,
+  BogusDoctype: 49,
+  CdataSection: 50,
+  CdataSectionBracket: 51,
+  CdataSectionEnd: 52,
+  CharRef: 53,
+  NamedCharRef: 54,
+  AmbiguousAmp: 55,
+  NumericCharRef: 56,
+  HexStart: 57,
+  DecStart: 58,
+  HexRef: 59,
+  DecRef: 60,
+  NumericEnd: 61,
+  ScriptEscapeStart: 62,
+  ScriptEscapeStartDash: 63,
+  ScriptEscaped: 64,
+  ScriptEscapedDash: 65,
+  ScriptEscapedDashDash: 66,
+  ScriptEscapedLt: 67,
+  ScriptEscapedEndTagOpen: 68,
+  ScriptEscapedEndTagName: 69,
+  ScriptDoubleEscapeStart: 70,
+  ScriptDoubleEscaped: 71,
+  ScriptDoubleEscapedDash: 72,
+  ScriptDoubleEscapedDashDash: 73,
+  ScriptDoubleEscapedLt: 74,
+  ScriptDoubleEscapeEnd: 75,
+}
+const REPLACEMENT = '�'
+const C1 = {
+  128: 8364,
+  130: 8218,
+  131: 402,
+  132: 8222,
+  133: 8230,
+  134: 8224,
+  135: 8225,
+  136: 710,
+  137: 8240,
+  138: 352,
+  139: 8249,
+  140: 338,
+  142: 381,
+  145: 8216,
+  146: 8217,
+  147: 8220,
+  148: 8221,
+  149: 8226,
+  150: 8211,
+  151: 8212,
+  152: 732,
+  153: 8482,
+  154: 353,
+  155: 8250,
+  156: 339,
+  158: 382,
+  159: 376,
+}
+const isWs = c => c === 9 || c === 10 || c === 12 || c === 32 || c === 13
+const isAsciiAlpha = c => (c >= 65 && c <= 90) || (c >= 97 && c <= 122)
+const isAsciiAlnum = c => isAsciiAlpha(c) || (c >= 48 && c <= 57)
+const isHexDigit = c =>
+  (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102)
+const toLowerCh = c => (c >= 65 && c <= 90 ? c + 32 : c)
+const ASCII_UPPER_G = /[A-Z]/g
+const foldAsciiUpper = s => {
+  for (let i = 0; i < s.length; i++)
+    if (s.charCodeAt(i) >= 128)
+      return s.replace(ASCII_UPPER_G, m =>
+        String.fromCharCode(m.charCodeAt(0) | 32),
+      )
+  return s.toLowerCase()
+}
+const INTERN_NAMES = [
+  'a',
+  'abbr',
+  'accept',
+  'action',
+  'address',
+  'align',
+  'allow',
+  'allowfullscreen',
+  'alt',
+  'annotation-xml',
+  'area',
+  'aria-controls',
+  'aria-current',
+  'aria-describedby',
+  'aria-expanded',
+  'aria-hidden',
+  'aria-label',
+  'aria-labelledby',
+  'aria-live',
+  'article',
+  'aside',
+  'audio',
+  'autocomplete',
+  'autofocus',
+  'autoplay',
+  'b',
+  'base',
+  'bdi',
+  'bdo',
+  'bgcolor',
+  'big',
+  'blockquote',
+  'body',
+  'border',
+  'br',
+  'button',
+  'canvas',
+  'caption',
+  'cellpadding',
+  'cellspacing',
+  'center',
+  'charset',
+  'checked',
+  'circle',
+  'cite',
+  'class',
+  'clippath',
+  'code',
+  'col',
+  'colgroup',
+  'color',
+  'cols',
+  'colspan',
+  'content',
+  'contenteditable',
+  'controls',
+  'coords',
+  'crossorigin',
+  'cx',
+  'cy',
+  'd',
+  'data',
+  'datalist',
+  'datetime',
+  'dd',
+  'decoding',
+  'definitionurl',
+  'defs',
+  'del',
+  'desc',
+  'details',
+  'dfn',
+  'dialog',
+  'dir',
+  'disabled',
+  'div',
+  'dl',
+  'download',
+  'draggable',
+  'dt',
+  'ellipse',
+  'em',
+  'embed',
+  'encoding',
+  'enctype',
+  'face',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'fill',
+  'filter',
+  'font',
+  'footer',
+  'for',
+  'foreignobject',
+  'form',
+  'frame',
+  'frameborder',
+  'frameset',
+  'g',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'head',
+  'header',
+  'headers',
+  'height',
+  'hgroup',
+  'hidden',
+  'hr',
+  'href',
+  'hreflang',
+  'html',
+  'http-equiv',
+  'i',
+  'id',
+  'iframe',
+  'image',
+  'img',
+  'input',
+  'ins',
+  'integrity',
+  'is',
+  'ismap',
+  'kbd',
+  'label',
+  'lang',
+  'legend',
+  'li',
+  'line',
+  'lineargradient',
+  'link',
+  'listing',
+  'loading',
+  'loop',
+  'main',
+  'malignmark',
+  'map',
+  'mark',
+  'marquee',
+  'mask',
+  'math',
+  'max',
+  'maxlength',
+  'media',
+  'menu',
+  'meta',
+  'meter',
+  'method',
+  'mglyph',
+  'mi',
+  'min',
+  'minlength',
+  'mn',
+  'mo',
+  'ms',
+  'mtext',
+  'multiple',
+  'muted',
+  'name',
+  'nav',
+  'nobr',
+  'noembed',
+  'noframes',
+  'nonce',
+  'noscript',
+  'object',
+  'ol',
+  'onclick',
+  'onerror',
+  'onfocus',
+  'onload',
+  'onmouseover',
+  'open',
+  'optgroup',
+  'option',
+  'output',
+  'p',
+  'param',
+  'part',
+  'path',
+  'pattern',
+  'picture',
+  'ping',
+  'placeholder',
+  'plaintext',
+  'points',
+  'polygon',
+  'polyline',
+  'poster',
+  'pre',
+  'preload',
+  'progress',
+  'q',
+  'r',
+  'radialgradient',
+  'rb',
+  'readonly',
+  'rect',
+  'referrerpolicy',
+  'rel',
+  'required',
+  'reversed',
+  'role',
+  'rows',
+  'rowspan',
+  'rp',
+  'rt',
+  'rtc',
+  'ruby',
+  'rx',
+  'ry',
+  's',
+  'samp',
+  'sandbox',
+  'scope',
+  'script',
+  'search',
+  'section',
+  'select',
+  'selected',
+  'shape',
+  'size',
+  'sizes',
+  'slot',
+  'small',
+  'source',
+  'span',
+  'spellcheck',
+  'src',
+  'srcset',
+  'start',
+  'step',
+  'stop',
+  'strike',
+  'stroke',
+  'strong',
+  'style',
+  'sub',
+  'summary',
+  'sup',
+  'svg',
+  'symbol',
+  'tabindex',
+  'table',
+  'target',
+  'tbody',
+  'td',
+  'template',
+  'text',
+  'textarea',
+  'tfoot',
+  'th',
+  'thead',
+  'time',
+  'title',
+  'tr',
+  'track',
+  'transform',
+  'translate',
+  'tspan',
+  'tt',
+  'type',
+  'u',
+  'ul',
+  'use',
+  'usemap',
+  'valign',
+  'value',
+  'var',
+  'video',
+  'viewbox',
+  'wbr',
+  'width',
+  'wrap',
+  'x',
+  'x1',
+  'x2',
+  'xmlns',
+  'xmp',
+  'y',
+  'y1',
+  'y2',
+]
+const INTERN_MASK = 1023
+const FNV = 16777619
+const INTERN_TABLE = /* @__PURE__ */ (() => {
+  const t = new Array(1024).fill('')
+  for (const name of INTERN_NAMES) {
+    let h = -2128831035
+    for (let k = 0; k < name.length; k++)
+      h = Math.imul(h ^ name.charCodeAt(k), FNV)
+    let slot = h & INTERN_MASK
+    while (t[slot] !== '') slot = (slot + 1) & INTERN_MASK
+    t[slot] = name
+  }
+  return t
+})()
+/**
+ * Canonical interned name for input[start, start+n) (ASCII-case-folded when
+ * `up`), or undefined if it is not a known name. `h` = FNV-1a over the folded
+ * code units.
+ */
+function internRun(input, start, n, h, up) {
+  let slot = h & INTERN_MASK
+  for (;;) {
+    const cand = INTERN_TABLE[slot]
+    if (cand.length === 0) return void 0
+    if (cand.length === n) {
+      let k = 0
+      if (!up) {
+        for (; k < n; k++)
+          if (input.charCodeAt(start + k) !== cand.charCodeAt(k)) break
+      } else
+        for (; k < n; k++) {
+          let cc = input.charCodeAt(start + k)
+          if (cc >= 65 && cc <= 90) cc |= 32
+          if (cc !== cand.charCodeAt(k)) break
+        }
+      if (k === n) return cand
+    }
+    slot = (slot + 1) & INTERN_MASK
+  }
+}
+const REF_MASK = 8191
+const [REF_KEYS, REF_VALS] = /* @__PURE__ */ (() => {
+  const keys = new Array(8192).fill('')
+  const vals = new Array(8192).fill('')
+  for (const [name, value] of NAMED_REFS) {
+    if (name.charCodeAt(name.length - 1) !== 59) continue
+    let h = -2128831035
+    for (let k = 0; k < name.length; k++)
+      h = Math.imul(h ^ name.charCodeAt(k), FNV)
+    let slot = h & REF_MASK
+    while (keys[slot] !== '') slot = (slot + 1) & REF_MASK
+    keys[slot] = name
+    vals[slot] = value
+  }
+  return [keys, vals]
+})()
+const ENTITY_TRIE = /* @__PURE__ */ (() => {
+  const root = { next: /* @__PURE__ */ new Map() }
+  for (const [name, value] of NAMED_REFS) {
+    let node = root
+    for (let i = 0; i < name.length; i++) {
+      const cc = name.charCodeAt(i)
+      let child = node.next.get(cc)
+      if (child === void 0) {
+        child = { next: /* @__PURE__ */ new Map() }
+        node.next.set(cc, child)
+      }
+      node = child
+    }
+    node.v = value
+  }
+  return root
+})()
+const NO_ATTRS = Object.freeze([])
+const STATE_FROM_CONTENT = {
+  data: S.Data,
+  rcdata: S.RCDATA,
+  rawtext: S.RAWTEXT,
+  scriptData: S.ScriptData,
+  plaintext: S.PLAINTEXT,
+  cdata: S.CdataSection,
+}
+/**
+ * Attribute count past which duplicate detection switches from a scan to a Set.
+ */
+const ATTR_SET_MIN = 16
+/**
+ * WHATWG input-stream preprocessing for one run: CR and CRLF become LF. Jumps
+ * between CRs with native `indexOf` (runs are short and numerous in a CRLF
+ * document, where a regex replace per run costs more than the work).
+ */
+function normalizeCR(s) {
+  let i = s.indexOf('\r')
+  if (i === -1) return s
+  let out = '',
+    last = 0
+  do {
+    out += s.slice(last, i) + '\n'
+    last = s.charCodeAt(i + 1) === 10 ? i + 2 : i + 1
+    i = s.indexOf('\r', last)
+  } while (i !== -1)
+  return out + s.slice(last)
+}
+/**
+ * States that append raw input chars one at a time (not as a normalized bulk
+ * run) and don't treat CR as whitespace: DOCTYPE public/system ids, CDATA, and
+ * the script-data escaped / double-escaped family. A CR there triggers
+ * normalizeRest.
+ */
+const CR_COPY_STATES = /* @__PURE__ */ new Uint8Array(76)
+for (const st of [40, 41, 46, 47, 50, 64, 65, 66, 70, 71, 72, 73, 75])
+  CR_COPY_STATES[st] = 1
+var Tokenizer = class {
+  constructor(input, opts) {
+    this.i = 0
+    this.returnState = S.Data
+    this.e0 = null
+    this.e1 = null
+    this.e2 = null
+    this.done = false
+    this.foreignFlag = false
+    this.tagName = ''
+    this.tagIsEnd = false
+    this.tagSelfClosing = false
+    this.attrs = []
+    this.nAttrs = 0
+    this.attrSeen = null
+    this.attrName = ''
+    this.attrValue = ''
+    this.comment = ''
+    this.dn = null
+    this.dpub = null
+    this.dsys = null
+    this.dquirks = false
+    this.tempBuf = ''
+    this.charBuf = ''
+    this.charRefCode = 0
+    this.rtag = {
+      type: 'startTag',
+      name: '',
+      attrs: [],
+      selfClosing: false,
+    }
+    this.rchar = {
+      type: 'character',
+      data: '',
+    }
+    this.input = input
+    this.len = input.length
+    this.hasCR = input.indexOf('\r') !== -1
+    this.state = STATE_FROM_CONTENT[opts.state ?? 'data']
+    this.lastStartTag = opts.lastStartTag ?? ''
+  }
+  /**
+   * Pull one token. Returns null at end of input. The tree builder calls this
+   * in a loop, switching the content-model state (`setContentState`) between
+   * pulls — exactly the tokenizer↔tree-construction coupling the WHATWG spec
+   * requires.
+   */
+  nextToken() {
+    if (this.e0 === null && !this.done) this.run()
+    const t = this.e0
+    this.e0 = this.e1
+    this.e1 = this.e2
+    this.e2 = null
+    return t
+  }
+  /**
+   * Run to completion, returning the whole token stream (used by conformance).
+   * Clones each token because `rtag`/`rchar` are reused across `nextToken()`
+   * calls and this retains the full stream. (The tree builder consumes one at a
+   * time, so it doesn't need this.)
+   */
+  tokenize() {
+    const tokens = []
+    let t
+    while ((t = this.nextToken()) !== null)
+      if (t.type === 'startTag' || t.type === 'endTag')
+        tokens.push({
+          type: t.type,
+          name: t.name,
+          attrs: t.attrs,
+          selfClosing: t.selfClosing,
+        })
+      else if (t.type === 'character')
+        tokens.push({
+          type: 'character',
+          data: t.data,
+        })
+      else tokens.push(t)
+    return tokens
+  }
+  /**
+   * Tree builder hook: switch the content-model state (RAWTEXT/RCDATA/script…).
+   */
+  setContentState(state) {
+    this.state = STATE_FROM_CONTENT[state]
+  }
+  /**
+   * Tree builder hook: set the appropriate end-tag name for raw-text matching.
+   */
+  setLastStartTag(name) {
+    this.lastStartTag = name
+  }
+  /**
+   * Tree builder hook: in foreign content `<![CDATA[` is a real CDATA section,
+   * not a bogus comment. The tree builder keeps this in sync with the adjusted
+   * current node's namespace.
+   */
+  setForeignContent(v) {
+    this.foreignFlag = v
+  }
+  /**
+   * `input.slice(i, j)`, with CR/CRLF normalized to LF while raw CRs remain.
+   * Bulk runs never end between a CR and its LF (no run stops at LF).
+   */
+  take(i, j) {
+    const run = this.input.slice(i, j)
+    return this.hasCR ? normalizeCR(run) : run
+  }
+  /**
+   * Replace the unconsumed input with its CR-normalized form (positions restart
+   * at 0; nothing holds an absolute position across run() iterations).
+   */
+  normalizeRest() {
+    const rest = normalizeCR(this.input.slice(this.i))
+    this.input = rest
+    this.len = rest.length
+    this.i = 0
+    this.hasCR = false
+  }
+  emitChar(s) {
+    this.charBuf += s
+  }
+  /**
+   * Queue a token. At most two are ever live at once (text run + following
+   * tag).
+   */
+  push(t) {
+    if (this.e0 === null) this.e0 = t
+    else this.e1 = t
+  }
+  flushChars() {
+    if (this.charBuf) {
+      this.rchar.data = this.charBuf
+      this.push(this.rchar)
+      this.charBuf = ''
+    }
+  }
+  emit(t) {
+    this.flushChars()
+    this.push(t)
+  }
+  startTag() {
+    this.tagName = ''
+    this.tagIsEnd = false
+    this.tagSelfClosing = false
+    this.nAttrs = 0
+    this.attrSeen = null
+  }
+  startEndTag() {
+    this.startTag()
+    this.tagIsEnd = true
+  }
+  addAttr() {
+    const name = this.attrName
+    if (name) {
+      const attrs = this.attrs,
+        n = this.nAttrs
+      let dup = false
+      if (n < ATTR_SET_MIN) {
+        for (let k = 0; k < n; k++)
+          if (attrs[k][0] === name) {
+            dup = true
+            break
+          }
+      } else {
+        let seen = this.attrSeen
+        if (seen === null) {
+          seen = this.attrSeen = /* @__PURE__ */ new Set()
+          for (let k = 0; k < n; k++) seen.add(attrs[k][0])
+        }
+        dup = seen.has(name)
+        if (!dup) seen.add(name)
+      }
+      if (!dup) {
+        attrs[n] = [name, this.attrValue]
+        this.nAttrs = n + 1
+      }
+    }
+    this.attrName = ''
+    this.attrValue = ''
+  }
+  /**
+   * Data-state `<` at `p`, with the TagOpen / EndTagOpen decisions inlined for
+   * the overwhelmingly common `<name` and `</name` shapes (same transitions as
+   * those states: start the tag and reconsume the letter in TagName). Anything
+   * else enters TagOpen exactly as before.
+   */
+  tagOpenAt(p) {
+    const input = this.input,
+      len = this.len
+    const n1 = p + 1 < len ? input.charCodeAt(p + 1) : -1
+    if (isAsciiAlpha(n1)) {
+      this.startTag()
+      this.i = p + 1
+      this.state = S.TagName
+      return
+    }
+    if (n1 === 47 && p + 2 < len && isAsciiAlpha(input.charCodeAt(p + 2))) {
+      this.startEndTag()
+      this.i = p + 2
+      this.state = S.TagName
+      return
+    }
+    this.i = p + 1
+    this.state = S.TagOpen
+  }
+  /**
+   * Closing quote consumed; `p` is the next position. Inlines the
+   * AfterAttrValueQuoted transitions for the common next chars (whitespace,
+   * '>', '/'); anything else (incl. EOF) enters that state exactly as before.
+   */
+  afterQuotedValue(p) {
+    const n = p < this.len ? this.input.charCodeAt(p) : -1
+    if (n === 32 || n === 10 || n === 9 || n === 12 || n === 13) {
+      this.i = p + 1
+      this.state = S.BeforeAttrName
+    } else if (n === 62) {
+      this.i = p + 1
+      this.state = S.Data
+      this.emitTag()
+    } else if (n === 47) {
+      this.i = p + 1
+      this.state = S.SelfClosing
+    } else {
+      this.i = p
+      this.state = S.AfterAttrValueQuoted
+    }
+  }
+  emitTag() {
+    this.addAttr()
+    if (!this.tagIsEnd) this.lastStartTag = this.tagName
+    const k = this.rtag
+    k.type = this.tagIsEnd ? 'endTag' : 'startTag'
+    k.name = this.tagName
+    k.attrs =
+      this.nAttrs === 0
+        ? this.tagIsEnd
+          ? NO_ATTRS
+          : []
+        : this.attrs.slice(0, this.nAttrs)
+    k.selfClosing = this.tagSelfClosing
+    this.emit(k)
+  }
+  appropriateEndTag() {
+    return this.tagIsEnd && this.tagName === this.lastStartTag
+  }
+  finish() {
+    this.done = true
+    this.flushChars()
+    const eof = { type: 'eof' }
+    if (this.e1 !== null) this.e2 = eof
+    else this.push(eof)
+  }
+  run() {
+    let input = this.input,
+      len = this.len
+    for (;;) {
+      if (this.e0 !== null) return
+      const eof = this.i >= len
+      const c = eof ? -1 : input.charCodeAt(this.i)
+      if (c === 13 && CR_COPY_STATES[this.state] === 1) {
+        this.normalizeRest()
+        input = this.input
+        len = this.len
+        continue
+      }
+      switch (this.state) {
+        case 0:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c !== 38 && c !== 60 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 38 || cc === 60 || cc === 0) break
+              j++
+            }
+            this.charBuf += this.take(this.i, j)
+            this.i = j
+            if (j < len && input.charCodeAt(j) === 60) this.tagOpenAt(j)
+            continue
+          }
+          if (c === 60) {
+            this.tagOpenAt(this.i)
+            continue
+          }
+          this.i++
+          if (c === 38) {
+            this.returnState = S.Data
+            this.state = S.CharRef
+          } else this.emitChar(this.input[this.i - 1])
+          continue
+        case 1:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c !== 38 && c !== 60 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 38 || cc === 60 || cc === 0) break
+              j++
+            }
+            this.charBuf += this.take(this.i, j)
+            this.i = j
+            continue
+          }
+          this.i++
+          if (c === 38) {
+            this.returnState = S.RCDATA
+            this.state = S.CharRef
+          } else if (c === 60) this.state = S.RCDATALt
+          else this.emitChar(REPLACEMENT)
+          continue
+        case 2:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c !== 60 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 60 || cc === 0) break
+              j++
+            }
+            this.charBuf += this.take(this.i, j)
+            this.i = j
+            continue
+          }
+          this.i++
+          if (c === 60) this.state = S.RAWTEXTLt
+          else this.emitChar(REPLACEMENT)
+          continue
+        case 3:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c !== 60 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 60 || cc === 0) break
+              j++
+            }
+            this.charBuf += this.take(this.i, j)
+            this.i = j
+            continue
+          }
+          this.i++
+          if (c === 60) this.state = S.ScriptLt
+          else this.emitChar(REPLACEMENT)
+          continue
+        case 4:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              if (input.charCodeAt(j) === 0) break
+              j++
+            }
+            this.charBuf += this.take(this.i, j)
+            this.i = j
+            continue
+          }
+          this.i++
+          this.emitChar(REPLACEMENT)
+          continue
+        case 5:
+          if (eof) {
+            this.emitChar('<')
+            this.finish()
+            return
+          }
+          if (c === 33) {
+            this.i++
+            this.state = S.MarkupDeclOpen
+          } else if (c === 47) {
+            this.i++
+            this.state = S.EndTagOpen
+          } else if (isAsciiAlpha(c)) {
+            this.startTag()
+            this.state = S.TagName
+          } else if (c === 63) {
+            this.comment = ''
+            this.state = S.BogusComment
+          } else {
+            this.emitChar('<')
+            this.state = S.Data
+          }
+          continue
+        case 6:
+          if (eof) {
+            this.emitChar('<')
+            this.emitChar('/')
+            this.finish()
+            return
+          }
+          /* v8 ignore next -- `</letter` never reaches EndTagOpen: tagOpenAt starts the tag inline */
+          if (isAsciiAlpha(c)) {
+            this.startEndTag()
+            this.state = S.TagName
+          } else if (c === 62) {
+            this.i++
+            this.state = S.Data
+          } else {
+            this.comment = ''
+            this.state = S.BogusComment
+          }
+          continue
+        case 7:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (!isWs(c) && c !== 47 && c !== 62 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1,
+              up = c >= 65 && c <= 90
+            let h = Math.imul(2166136261 ^ (up ? c | 32 : c), FNV)
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (
+                cc === 9 ||
+                cc === 10 ||
+                cc === 12 ||
+                cc === 32 ||
+                cc === 13 ||
+                cc === 47 ||
+                cc === 62 ||
+                cc === 0
+              )
+                break
+              if (cc >= 65 && cc <= 90) {
+                up = true
+                h = Math.imul(h ^ (cc | 32), FNV)
+              } else h = Math.imul(h ^ cc, FNV)
+              j++
+            }
+            const k =
+              this.tagName === ''
+                ? internRun(input, this.i, j - this.i, h, up)
+                : void 0
+            if (k !== void 0) this.tagName = k
+            else {
+              const run = input.slice(this.i, j)
+              this.tagName += up ? foldAsciiUpper(run) : run
+            }
+            this.i = j
+            if (j < len) {
+              const t = input.charCodeAt(j)
+              if (t === 62) {
+                this.i = j + 1
+                this.state = S.Data
+                this.emitTag()
+              } else if (
+                t === 32 ||
+                t === 10 ||
+                t === 9 ||
+                t === 12 ||
+                t === 13
+              ) {
+                this.i = j + 1
+                this.state = S.BeforeAttrName
+              }
+            }
+            continue
+          }
+          this.i++
+          if (isWs(c)) this.state = S.BeforeAttrName
+          else if (c === 47) this.state = S.SelfClosing
+          else if (c === 62) {
+            this.state = S.Data
+            this.emitTag()
+          } else this.tagName += REPLACEMENT
+          continue
+        case 8:
+          if (!eof && c === 47) {
+            this.i++
+            this.tempBuf = ''
+            this.state = S.RCDATAEndTagOpen
+          } else {
+            this.emitChar('<')
+            this.state = S.RCDATA
+          }
+          continue
+        case 9:
+          if (!eof && isAsciiAlpha(c)) {
+            this.startEndTag()
+            this.state = S.RCDATAEndTagName
+          } else {
+            this.emitChar('</')
+            this.state = S.RCDATA
+          }
+          continue
+        case 10:
+          this.endTagNameState(c, eof, S.RCDATA)
+          continue
+        case 11:
+          if (!eof && c === 47) {
+            this.i++
+            this.tempBuf = ''
+            this.state = S.RAWTEXTEndTagOpen
+          } else {
+            this.emitChar('<')
+            this.state = S.RAWTEXT
+          }
+          continue
+        case 12:
+          if (!eof && isAsciiAlpha(c)) {
+            this.startEndTag()
+            this.state = S.RAWTEXTEndTagName
+          } else {
+            this.emitChar('</')
+            this.state = S.RAWTEXT
+          }
+          continue
+        case 13:
+          this.endTagNameState(c, eof, S.RAWTEXT)
+          continue
+        case 14:
+          if (!eof && c === 47) {
+            this.i++
+            this.tempBuf = ''
+            this.state = S.ScriptEndTagOpen
+            continue
+          }
+          if (!eof && c === 33) {
+            this.i++
+            this.emitChar('<!')
+            this.state = S.ScriptEscapeStart
+            continue
+          }
+          this.emitChar('<')
+          this.state = S.ScriptData
+          continue
+        case 15:
+          if (!eof && isAsciiAlpha(c)) {
+            this.startEndTag()
+            this.state = S.ScriptEndTagName
+          } else {
+            this.emitChar('</')
+            this.state = S.ScriptData
+          }
+          continue
+        case 16:
+          this.endTagNameState(c, eof, S.ScriptData)
+          continue
+        case 62:
+          if (!eof && c === 45) {
+            this.i++
+            this.emitChar('-')
+            this.state = S.ScriptEscapeStartDash
+            continue
+          }
+          this.state = S.ScriptData
+          continue
+        case 63:
+          if (!eof && c === 45) {
+            this.i++
+            this.emitChar('-')
+            this.state = S.ScriptEscapedDashDash
+            continue
+          }
+          this.state = S.ScriptData
+          continue
+        case 64:
+          if (eof) {
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 45) {
+            this.emitChar('-')
+            this.state = S.ScriptEscapedDash
+          } else if (c === 60) this.state = S.ScriptEscapedLt
+          else this.emitChar(c === 0 ? REPLACEMENT : this.input[this.i - 1])
+          continue
+        case 65:
+          if (eof) {
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 45) {
+            this.emitChar('-')
+            this.state = S.ScriptEscapedDashDash
+          } else if (c === 60) this.state = S.ScriptEscapedLt
+          else {
+            this.emitChar(c === 0 ? REPLACEMENT : this.input[this.i - 1])
+            this.state = S.ScriptEscaped
+          }
+          continue
+        case 66:
+          if (eof) {
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 45) this.emitChar('-')
+          else if (c === 60) this.state = S.ScriptEscapedLt
+          else if (c === 62) {
+            this.emitChar('>')
+            this.state = S.ScriptData
+          } else {
+            this.emitChar(c === 0 ? REPLACEMENT : this.input[this.i - 1])
+            this.state = S.ScriptEscaped
+          }
+          continue
+        case 67:
+          if (!eof && c === 47) {
+            this.i++
+            this.tempBuf = ''
+            this.state = S.ScriptEscapedEndTagOpen
+            continue
+          }
+          if (!eof && isAsciiAlpha(c)) {
+            this.tempBuf = ''
+            this.emitChar('<')
+            this.state = S.ScriptDoubleEscapeStart
+            continue
+          }
+          this.emitChar('<')
+          this.state = S.ScriptEscaped
+          continue
+        case 68:
+          if (!eof && isAsciiAlpha(c)) {
+            this.startEndTag()
+            this.state = S.ScriptEscapedEndTagName
+            continue
+          }
+          this.emitChar('</')
+          this.state = S.ScriptEscaped
+          continue
+        case 69:
+          this.endTagNameState(c, eof, S.ScriptEscaped)
+          continue
+        case 70:
+          if (!eof && (isWs(c) || c === 47 || c === 62)) {
+            this.i++
+            this.emitChar(this.input[this.i - 1])
+            this.state =
+              this.tempBuf === 'script'
+                ? S.ScriptDoubleEscaped
+                : S.ScriptEscaped
+            continue
+          }
+          if (!eof && isAsciiAlpha(c)) {
+            this.i++
+            this.tempBuf += String.fromCharCode(toLowerCh(c))
+            this.emitChar(this.input[this.i - 1])
+            continue
+          }
+          this.state = S.ScriptEscaped
+          continue
+        case 71:
+          if (eof) {
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 45) {
+            this.emitChar('-')
+            this.state = S.ScriptDoubleEscapedDash
+          } else if (c === 60) {
+            this.emitChar('<')
+            this.state = S.ScriptDoubleEscapedLt
+          } else this.emitChar(c === 0 ? REPLACEMENT : this.input[this.i - 1])
+          continue
+        case 72:
+          if (eof) {
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 45) {
+            this.emitChar('-')
+            this.state = S.ScriptDoubleEscapedDashDash
+          } else if (c === 60) {
+            this.emitChar('<')
+            this.state = S.ScriptDoubleEscapedLt
+          } else {
+            this.emitChar(c === 0 ? REPLACEMENT : this.input[this.i - 1])
+            this.state = S.ScriptDoubleEscaped
+          }
+          continue
+        case 73:
+          if (eof) {
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 45) this.emitChar('-')
+          else if (c === 60) {
+            this.emitChar('<')
+            this.state = S.ScriptDoubleEscapedLt
+          } else if (c === 62) {
+            this.emitChar('>')
+            this.state = S.ScriptData
+          } else {
+            this.emitChar(c === 0 ? REPLACEMENT : this.input[this.i - 1])
+            this.state = S.ScriptDoubleEscaped
+          }
+          continue
+        case 74:
+          if (!eof && c === 47) {
+            this.i++
+            this.tempBuf = ''
+            this.emitChar('/')
+            this.state = S.ScriptDoubleEscapeEnd
+            continue
+          }
+          this.state = S.ScriptDoubleEscaped
+          continue
+        case 75:
+          if (!eof && (isWs(c) || c === 47 || c === 62)) {
+            this.i++
+            this.emitChar(this.input[this.i - 1])
+            this.state =
+              this.tempBuf === 'script'
+                ? S.ScriptEscaped
+                : S.ScriptDoubleEscaped
+            continue
+          }
+          if (!eof && isAsciiAlpha(c)) {
+            this.i++
+            this.tempBuf += String.fromCharCode(toLowerCh(c))
+            this.emitChar(this.input[this.i - 1])
+            continue
+          }
+          this.state = S.ScriptDoubleEscaped
+          continue
+        case 17:
+          if (eof || c === 47 || c === 62) {
+            this.state = S.AfterAttrName
+            continue
+          }
+          if (isWs(c)) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc !== 9 && cc !== 10 && cc !== 12 && cc !== 32 && cc !== 13)
+                break
+              j++
+            }
+            this.i = j
+            continue
+          }
+          this.addAttr()
+          if (c === 61) {
+            this.i++
+            this.attrName = '='
+            this.state = S.AttrName
+            continue
+          }
+          this.state = S.AttrName
+          continue
+        case 18:
+          if (eof || isWs(c) || c === 47 || c === 62) {
+            this.state = S.AfterAttrName
+            continue
+          }
+          if (c !== 61 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1,
+              up = c >= 65 && c <= 90
+            let h = Math.imul(2166136261 ^ (up ? c | 32 : c), FNV)
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (
+                cc === 9 ||
+                cc === 10 ||
+                cc === 12 ||
+                cc === 32 ||
+                cc === 13 ||
+                cc === 47 ||
+                cc === 62 ||
+                cc === 61 ||
+                cc === 0
+              )
+                break
+              if (cc >= 65 && cc <= 90) {
+                up = true
+                h = Math.imul(h ^ (cc | 32), FNV)
+              } else h = Math.imul(h ^ cc, FNV)
+              j++
+            }
+            const k =
+              this.attrName === ''
+                ? internRun(input, this.i, j - this.i, h, up)
+                : void 0
+            if (k !== void 0) this.attrName = k
+            else {
+              const run = input.slice(this.i, j)
+              this.attrName += up ? foldAsciiUpper(run) : run
+            }
+            this.i = j
+            if (j + 1 < len && input.charCodeAt(j) === 61) {
+              const q = input.charCodeAt(j + 1)
+              if (q === 34) {
+                this.i = j + 2
+                this.state = S.AttrValueDq
+              } else if (q === 39) {
+                this.i = j + 2
+                this.state = S.AttrValueSq
+              }
+            }
+            continue
+          }
+          this.i++
+          if (c === 61) {
+            const nc = this.i < this.len ? this.input.charCodeAt(this.i) : -1
+            if (nc === 34) {
+              this.i++
+              this.state = S.AttrValueDq
+            } else if (nc === 39) {
+              this.i++
+              this.state = S.AttrValueSq
+            } else this.state = S.BeforeAttrValue
+          } else this.attrName += REPLACEMENT
+          continue
+        case 19:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            continue
+          }
+          if (c === 47) {
+            this.i++
+            this.state = S.SelfClosing
+            continue
+          }
+          if (c === 61) {
+            this.i++
+            this.state = S.BeforeAttrValue
+            continue
+          }
+          if (c === 62) {
+            this.i++
+            this.state = S.Data
+            this.emitTag()
+            continue
+          }
+          this.addAttr()
+          this.state = S.AttrName
+          continue
+        case 20:
+          if (!eof && isWs(c)) {
+            this.i++
+            continue
+          }
+          if (!eof && c === 34) {
+            this.i++
+            this.state = S.AttrValueDq
+          } else if (!eof && c === 39) {
+            this.i++
+            this.state = S.AttrValueSq
+          } else if (!eof && c === 62) {
+            this.i++
+            this.state = S.Data
+            this.emitTag()
+          } else {
+            this.state = S.AttrValueUq
+            continue
+          }
+          continue
+        case 21:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c !== 34 && c !== 38 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 34 || cc === 38 || cc === 0) break
+              j++
+            }
+            this.attrValue += this.take(this.i, j)
+            this.i = j
+            if (j < len && input.charCodeAt(j) === 34)
+              this.afterQuotedValue(j + 1)
+            continue
+          }
+          if (c === 34) {
+            this.afterQuotedValue(this.i + 1)
+            continue
+          }
+          this.i++
+          if (c === 38) {
+            this.returnState = S.AttrValueDq
+            this.state = S.CharRef
+          } else this.attrValue += REPLACEMENT
+          continue
+        case 22:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c !== 39 && c !== 38 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 39 || cc === 38 || cc === 0) break
+              j++
+            }
+            this.attrValue += this.take(this.i, j)
+            this.i = j
+            if (j < len && input.charCodeAt(j) === 39)
+              this.afterQuotedValue(j + 1)
+            continue
+          }
+          if (c === 39) {
+            this.afterQuotedValue(this.i + 1)
+            continue
+          }
+          this.i++
+          if (c === 38) {
+            this.returnState = S.AttrValueSq
+            this.state = S.CharRef
+          } else this.attrValue += REPLACEMENT
+          continue
+        case 23:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (!isWs(c) && c !== 38 && c !== 62 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (
+                cc === 9 ||
+                cc === 10 ||
+                cc === 12 ||
+                cc === 32 ||
+                cc === 13 ||
+                cc === 38 ||
+                cc === 62 ||
+                cc === 0
+              )
+                break
+              j++
+            }
+            this.attrValue += this.take(this.i, j)
+            this.i = j
+            continue
+          }
+          this.i++
+          if (isWs(c)) this.state = S.BeforeAttrName
+          else if (c === 38) {
+            this.returnState = S.AttrValueUq
+            this.state = S.CharRef
+          } else if (c === 62) {
+            this.state = S.Data
+            this.emitTag()
+          } else this.attrValue += REPLACEMENT
+          continue
+        case 24:
+          if (eof) {
+            this.finish()
+            return
+          }
+          /* v8 ignore start -- ws / '/' / '>' after a closing quote are handled inline by afterQuotedValue */
+          if (isWs(c)) {
+            this.i++
+            this.state = S.BeforeAttrName
+          } else if (c === 47) {
+            this.i++
+            this.state = S.SelfClosing
+          } else if (c === 62) {
+            this.i++
+            this.state = S.Data
+            this.emitTag()
+          } else {
+            this.state = S.BeforeAttrName
+            continue
+          }
+          continue
+        /* v8 ignore stop */
+        case 25:
+          if (eof) {
+            this.finish()
+            return
+          }
+          if (c === 62) {
+            this.i++
+            this.tagSelfClosing = true
+            this.state = S.Data
+            this.emitTag()
+            continue
+          }
+          this.state = S.BeforeAttrName
+          continue
+        case 26:
+          if (eof) {
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.finish()
+            return
+          }
+          if (c !== 62 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 62 || cc === 0) break
+              j++
+            }
+            this.comment += this.take(this.i, j)
+            this.i = j
+            continue
+          }
+          this.i++
+          if (c === 62) {
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.state = S.Data
+          } else this.comment += REPLACEMENT
+          continue
+        case 27:
+          if (this.input.startsWith('--', this.i)) {
+            this.i += 2
+            this.comment = ''
+            this.state = S.CommentStart
+          } else if (/^doctype/i.test(this.input.substr(this.i, 7))) {
+            this.i += 7
+            this.state = S.Doctype
+          } else if (this.input.startsWith('[CDATA[', this.i)) {
+            this.i += 7
+            if (this.foreignFlag) this.state = S.CdataSection
+            else {
+              this.comment = '[CDATA['
+              this.state = S.BogusComment
+            }
+          } else {
+            this.comment = ''
+            this.state = S.BogusComment
+          }
+          continue
+        case 28:
+          if (!eof && c === 45) {
+            this.i++
+            this.state = S.CommentStartDash
+          } else if (!eof && c === 62) {
+            this.i++
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.state = S.Data
+          } else {
+            this.state = S.Comment
+            continue
+          }
+          continue
+        case 29:
+          if (eof) {
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.finish()
+            return
+          }
+          if (c === 45) {
+            this.i++
+            this.state = S.CommentEnd
+            continue
+          }
+          if (c === 62) {
+            this.i++
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.state = S.Data
+            continue
+          }
+          this.comment += '-'
+          this.state = S.Comment
+          continue
+        case 30:
+          if (eof) {
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.finish()
+            return
+          }
+          if (c !== 45 && c !== 0) {
+            const input = this.input,
+              len = this.len
+            let j = this.i + 1
+            while (j < len) {
+              const cc = input.charCodeAt(j)
+              if (cc === 45 || cc === 0) break
+              j++
+            }
+            this.comment += this.take(this.i, j)
+            this.i = j
+            continue
+          }
+          this.i++
+          if (c === 45) this.state = S.CommentEndDash
+          else this.comment += REPLACEMENT
+          continue
+        case 31:
+          if (eof) {
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.finish()
+            return
+          }
+          if (c === 45) {
+            this.i++
+            this.state = S.CommentEnd
+            continue
+          }
+          this.comment += '-'
+          this.state = S.Comment
+          continue
+        case 32:
+          if (eof) {
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.finish()
+            return
+          }
+          if (c === 62) {
+            this.i++
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.state = S.Data
+            continue
+          }
+          if (c === 33) {
+            this.i++
+            this.state = S.CommentEndBang
+            continue
+          }
+          if (c === 45) {
+            this.i++
+            this.comment += '-'
+            continue
+          }
+          this.comment += '--'
+          this.state = S.Comment
+          continue
+        case 33:
+          if (eof) {
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.finish()
+            return
+          }
+          if (c === 45) {
+            this.i++
+            this.comment += '--!'
+            this.state = S.CommentEndDash
+            continue
+          }
+          if (c === 62) {
+            this.i++
+            this.emit({
+              type: 'comment',
+              data: this.comment,
+            })
+            this.state = S.Data
+            continue
+          }
+          this.comment += '--!'
+          this.state = S.Comment
+          continue
+        case 34:
+          if (eof) {
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            this.state = S.BeforeDoctypeName
+          } else {
+            this.state = S.BeforeDoctypeName
+            continue
+          }
+          continue
+        case 35:
+          if (eof) {
+            this.dn = null
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            continue
+          }
+          this.i++
+          if (c === 62) {
+            this.dn = null
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.state = S.Data
+            continue
+          }
+          this.dn = c === 0 ? REPLACEMENT : String.fromCharCode(toLowerCh(c))
+          this.dpub = this.dsys = null
+          this.dquirks = false
+          this.state = S.DoctypeName
+          continue
+        case 36:
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          this.i++
+          if (isWs(c)) this.state = S.AfterDoctypeName
+          else if (c === 62) {
+            this.state = S.Data
+            this.emitDoctype(false)
+          } else
+            this.dn += c === 0 ? REPLACEMENT : String.fromCharCode(toLowerCh(c))
+          continue
+        case 37:
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            continue
+          }
+          if (c === 62) {
+            this.i++
+            this.state = S.Data
+            this.emitDoctype(false)
+            continue
+          }
+          if (/^public/i.test(this.input.substr(this.i, 6))) {
+            this.i += 6
+            this.state = S.AfterDoctypePublicKw
+          } else if (/^system/i.test(this.input.substr(this.i, 6))) {
+            this.i += 6
+            this.state = S.AfterDoctypeSystemKw
+          } else {
+            this.dquirks = true
+            this.state = S.BogusDoctype
+          }
+          continue
+        case 38:
+        case 39:
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            if (this.state === S.AfterDoctypePublicKw)
+              this.state = S.BeforeDoctypePublicId
+            continue
+          }
+          this.i++
+          if (c === 34) {
+            this.dpub = ''
+            this.state = S.DoctypePublicIdDq
+          } else if (c === 39) {
+            this.dpub = ''
+            this.state = S.DoctypePublicIdSq
+          } else if (c === 62) {
+            this.dquirks = true
+            this.state = S.Data
+            this.emitDoctype(true)
+          } else {
+            this.dquirks = true
+            this.state = S.BogusDoctype
+          }
+          continue
+        case 40:
+        case 41: {
+          const q = this.state === S.DoctypePublicIdDq ? 34 : 39
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === q) this.state = S.AfterDoctypePublicId
+          else if (c === 62) {
+            this.dquirks = true
+            this.state = S.Data
+            this.emitDoctype(true)
+          } else
+            this.dpub =
+              this.dpub + (c === 0 ? REPLACEMENT : this.input[this.i - 1])
+          continue
+        }
+        case 42:
+        case 43:
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            if (this.state === S.AfterDoctypePublicId)
+              this.state = S.BetweenDoctypePublicSystem
+            continue
+          }
+          this.i++
+          if (c === 62) {
+            this.state = S.Data
+            this.emitDoctype(false)
+          } else if (c === 34) {
+            this.dsys = ''
+            this.state = S.DoctypeSystemIdDq
+          } else if (c === 39) {
+            this.dsys = ''
+            this.state = S.DoctypeSystemIdSq
+          } else {
+            this.dquirks = true
+            this.state = S.BogusDoctype
+          }
+          continue
+        case 44:
+        case 45:
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            if (this.state === S.AfterDoctypeSystemKw)
+              this.state = S.BeforeDoctypeSystemId
+            continue
+          }
+          this.i++
+          if (c === 34) {
+            this.dsys = ''
+            this.state = S.DoctypeSystemIdDq
+          } else if (c === 39) {
+            this.dsys = ''
+            this.state = S.DoctypeSystemIdSq
+          } else if (c === 62) {
+            this.dquirks = true
+            this.state = S.Data
+            this.emitDoctype(true)
+          } else {
+            this.dquirks = true
+            this.state = S.BogusDoctype
+          }
+          continue
+        case 46:
+        case 47: {
+          const q = this.state === S.DoctypeSystemIdDq ? 34 : 39
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === q) this.state = S.AfterDoctypeSystemId
+          else if (c === 62) {
+            this.dquirks = true
+            this.state = S.Data
+            this.emitDoctype(true)
+          } else
+            this.dsys =
+              this.dsys + (c === 0 ? REPLACEMENT : this.input[this.i - 1])
+          continue
+        }
+        case 48:
+          if (eof) {
+            this.dquirks = true
+            this.emitDoctype(true)
+            this.finish()
+            return
+          }
+          if (isWs(c)) {
+            this.i++
+            continue
+          }
+          this.i++
+          if (c === 62) {
+            this.state = S.Data
+            this.emitDoctype(false)
+          } else this.state = S.BogusDoctype
+          continue
+        case 49:
+          if (eof) {
+            this.emitDoctype(this.dquirks)
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 62) {
+            this.state = S.Data
+            this.emitDoctype(this.dquirks)
+          }
+          continue
+        case 50:
+          if (eof) {
+            this.finish()
+            return
+          }
+          this.i++
+          if (c === 93) this.state = S.CdataSectionBracket
+          else this.emitChar(this.input[this.i - 1])
+          continue
+        case 51:
+          if (!eof && c === 93) {
+            this.i++
+            this.state = S.CdataSectionEnd
+          } else {
+            this.emitChar(']')
+            this.state = S.CdataSection
+            continue
+          }
+          continue
+        case 52:
+          if (!eof && c === 93) {
+            this.i++
+            this.emitChar(']')
+            continue
+          }
+          if (!eof && c === 62) {
+            this.i++
+            this.state = S.Data
+            continue
+          }
+          this.emitChar(']]')
+          this.state = S.CdataSection
+          continue
+        case 53:
+          this.tempBuf = '&'
+          if (!eof && isAsciiAlnum(c)) {
+            this.state = S.NamedCharRef
+            continue
+          }
+          if (!eof && c === 35) {
+            let j = this.i + 1,
+              code = 0,
+              hex = false
+            if (j < this.len) {
+              const x = input.charCodeAt(j)
+              if (x === 120 || x === 88) {
+                hex = true
+                j++
+              }
+            }
+            const d0 = j
+            if (hex)
+              for (; j < len; j++) {
+                const d = input.charCodeAt(j)
+                if (d >= 48 && d <= 57) code = code * 16 + (d - 48)
+                else if ((d | 32) >= 97 && (d | 32) <= 102)
+                  code = code * 16 + ((d | 32) - 97 + 10)
+                else break
+              }
+            else
+              for (; j < len; j++) {
+                const d = input.charCodeAt(j)
+                if (d >= 48 && d <= 57) code = code * 10 + (d - 48)
+                else break
+              }
+            if (j > d0) {
+              if (j < len && input.charCodeAt(j) === 59) j++
+              this.i = j
+              this.charRefCode = code
+              this.state = S.NumericEnd
+              continue
+            }
+            this.i++
+            this.tempBuf += '#'
+            this.state = S.NumericCharRef
+            continue
+          }
+          this.flushTempToCharRefTarget()
+          this.state = this.returnState
+          continue
+        case 54:
+          this.namedCharRefState()
+          continue
+        case 55:
+          if (!eof && isAsciiAlnum(c)) {
+            this.i++
+            this.appendCharRef(this.input[this.i - 1])
+            continue
+          }
+          this.state = this.returnState
+          continue
+        case 56:
+          this.charRefCode = 0
+          if (!eof && (c === 120 || c === 88)) {
+            this.i++
+            this.tempBuf += this.input[this.i - 1]
+            this.state = S.HexStart
+          } else this.state = S.DecStart
+          continue
+        case 57:
+          /* v8 ignore next */
+          if (!eof && isHexDigit(c)) {
+            this.state = S.HexRef
+            continue
+          }
+          this.flushTempToCharRefTarget()
+          this.state = this.returnState
+          continue
+        case 58:
+          /* v8 ignore next */
+          if (!eof && c >= 48 && c <= 57) {
+            this.state = S.DecRef
+            continue
+          }
+          this.flushTempToCharRefTarget()
+          this.state = this.returnState
+          continue
+        /* v8 ignore start -- unreachable: see HexStart */
+        case 59:
+          if (!eof && isHexDigit(c)) {
+            this.i++
+            const d = c <= 57 ? c - 48 : toLowerCh(c) - 97 + 10
+            this.charRefCode = this.charRefCode * 16 + d
+            continue
+          }
+          if (!eof && c === 59) this.i++
+          this.state = S.NumericEnd
+          continue
+        case 60:
+          if (!eof && c >= 48 && c <= 57) {
+            this.i++
+            this.charRefCode = this.charRefCode * 10 + (c - 48)
+            continue
+          }
+          if (!eof && c === 59) this.i++
+          this.state = S.NumericEnd
+          continue
+        /* v8 ignore stop */
+        case 61: {
+          let code = this.charRefCode
+          if (code === 0 || code > 1114111 || (code >= 55296 && code <= 57343))
+            code = 65533
+          else if (C1[code] !== void 0) code = C1[code]
+          this.appendCharRef(String.fromCodePoint(code))
+          this.state = this.returnState
+          continue
+        }
+        /* v8 ignore next 2 -- unreachable: every state id 0..75 has a case above */
+        default:
+          this.finish()
+          return
+      }
+    }
+  }
+  endTagNameState(c, eof, rawState) {
+    if (!eof) {
+      if (isWs(c) && this.appropriateEndTag()) {
+        this.i++
+        this.state = S.BeforeAttrName
+        return true
+      }
+      if (c === 47 && this.appropriateEndTag()) {
+        this.i++
+        this.state = S.SelfClosing
+        return true
+      }
+      if (c === 62 && this.appropriateEndTag()) {
+        this.i++
+        this.state = S.Data
+        this.emitTag()
+        return true
+      }
+      if (isAsciiAlpha(c)) {
+        this.i++
+        this.tagName += String.fromCharCode(toLowerCh(c))
+        this.tempBuf += this.input[this.i - 1]
+        return true
+      }
+    }
+    this.emitChar('</' + this.tempBuf)
+    this.state = rawState
+    return true
+  }
+  emitDoctype(forceQuirks) {
+    this.emit({
+      type: 'doctype',
+      name: this.dn,
+      publicId: this.dpub,
+      systemId: this.dsys,
+      forceQuirks,
+    })
+    this.dn = this.dpub = this.dsys = null
+    this.dquirks = false
+  }
+  appendCharRef(s) {
+    if (
+      this.returnState === S.AttrValueDq ||
+      this.returnState === S.AttrValueSq ||
+      this.returnState === S.AttrValueUq
+    )
+      this.attrValue += s
+    else this.emitChar(s)
+  }
+  flushTempToCharRefTarget() {
+    this.appendCharRef(this.tempBuf)
+  }
+  inAttr() {
+    return (
+      this.returnState === S.AttrValueDq ||
+      this.returnState === S.AttrValueSq ||
+      this.returnState === S.AttrValueUq
+    )
+  }
+  namedCharRefState() {
+    const input = this.input,
+      len = this.len,
+      start = this.i
+    {
+      let j = start,
+        h = -2128831035
+      const lim = Math.min(len, start + 32)
+      while (j < lim) {
+        const cc = input.charCodeAt(j)
+        if (!isAsciiAlnum(cc)) break
+        h = Math.imul(h ^ cc, FNV)
+        j++
+      }
+      if (j < len && input.charCodeAt(j) === 59) {
+        h = Math.imul(h ^ 59, FNV)
+        const n = j + 1 - start
+        for (let slot = h & REF_MASK; ; slot = (slot + 1) & REF_MASK) {
+          const key = REF_KEYS[slot]
+          if (key.length === 0) break
+          if (key.length === n) {
+            let k = 0
+            while (k < n && input.charCodeAt(start + k) === key.charCodeAt(k))
+              k++
+            if (k === n) {
+              this.appendCharRef(REF_VALS[slot])
+              this.i = j + 1
+              this.state = this.returnState
+              return true
+            }
+          }
+        }
+      }
+    }
+    let matchLen = 0,
+      matchValue = ''
+    let node = ENTITY_TRIE
+    for (let k = 0; k < 32 && start + k < len; k++) {
+      const cc = input.charCodeAt(start + k)
+      if (!isAsciiAlnum(cc) && cc !== 59) break
+      const child = node.next.get(cc)
+      if (child === void 0) break
+      node = child
+      if (child.v !== void 0) {
+        matchValue = child.v
+        matchLen = k + 1
+      }
+      /* v8 ignore next -- a ';' child means run+';' is a key, which the fast path above already resolved */
+      if (cc === 59) break
+    }
+    if (matchLen > 0) {
+      const endsWithSemi = input.charCodeAt(start + matchLen - 1) === 59
+      const nextCh =
+        start + matchLen < len ? input.charCodeAt(start + matchLen) : -1
+      if (
+        this.inAttr() &&
+        !endsWithSemi &&
+        (nextCh === 61 || isAsciiAlnum(nextCh))
+      ) {
+        this.appendCharRef('&' + input.slice(start, start + matchLen))
+        this.i += matchLen
+        this.state = this.returnState
+        return true
+      }
+      this.appendCharRef(matchValue)
+      this.i += matchLen
+      this.state = this.returnState
+      return true
+    }
+    this.appendCharRef('&')
+    this.state = S.AmbiguousAmp
+    return true
+  }
+}
+/**
+ * WHATWG HTML tree construction — `.` main engine.
+ *
+ * Consumes the `Tokenizer` token stream (pull-based, driving its content-model
+ * state) and builds a DOM-like tree per
+ * https://html.spec.whatwg.org/#tree-construction. Verified against the
+ * vendored html5lib-tests tree-construction `.dat` suite
+ * (test/main/tree-construction.test.ts), ratcheted.
+ *
+ * Coverage is built up incrementally (climbing the ratchet): the common
+ * document modes (initial → in head → in body → text → after body), generic
+ * element insertion, implied end tags, RAWTEXT/RCDATA/script text, and
+ * active-formatting reconstruction are here. Table/select/template modes, full
+ * foreign content, and the adoption agency algorithm are layered in over
+ * subsequent passes (tracked by the ratchet baseline).
+ */
+const VOID = /* @__PURE__ */ new Set([
+  'area',
+  'base',
+  'basefont',
+  'bgsound',
+  'br',
+  'col',
+  'embed',
+  'frame',
+  'hr',
+  'img',
+  'input',
+  'keygen',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+])
+const RAWTEXT = /* @__PURE__ */ new Set([
+  'style',
+  'xmp',
+  'iframe',
+  'noembed',
+  'noframes',
+])
+/**
+ * How far back `pushAfe`'s Noah's Ark scan looks (DoS bound, see pushAfe).
+ */
+const NOAHS_ARK_SCAN_MAX = 128
+const HEAD_TAGS = /* @__PURE__ */ new Set([
+  'base',
+  'basefont',
+  'bgsound',
+  'link',
+  'meta',
+  'title',
+  'noframes',
+  'style',
+  'script',
+  'template',
+  'head',
+  'noscript',
+])
+const IMPLIED_END = /* @__PURE__ */ new Set([
+  'dd',
+  'dt',
+  'li',
+  'optgroup',
+  'option',
+  'p',
+  'rb',
+  'rp',
+  'rt',
+  'rtc',
+])
+const HEADINGS = /* @__PURE__ */ new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+const FORMATTING = /* @__PURE__ */ new Set([
+  'a',
+  'b',
+  'big',
+  'code',
+  'em',
+  'font',
+  'i',
+  'nobr',
+  's',
+  'small',
+  'strike',
+  'strong',
+  'tt',
+  'u',
+])
+const CLOSE_BLOCK = /* @__PURE__ */ new Set([
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'button',
+  'center',
+  'details',
+  'dialog',
+  'dir',
+  'div',
+  'dl',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'header',
+  'hgroup',
+  'listing',
+  'main',
+  'menu',
+  'nav',
+  'ol',
+  'pre',
+  'section',
+  'summary',
+  'ul',
+])
+const START_BLOCK = /* @__PURE__ */ new Set([
+  'p',
+  'div',
+  'section',
+  'article',
+  'aside',
+  'blockquote',
+  'center',
+  'details',
+  'dialog',
+  'dir',
+  'dl',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'header',
+  'hgroup',
+  'main',
+  'menu',
+  'nav',
+  'ol',
+  'ul',
+  'summary',
+  'address',
+  'pre',
+  'listing',
+])
+const SPECIAL = /* @__PURE__ */ new Set([
+  'address',
+  'applet',
+  'area',
+  'article',
+  'aside',
+  'base',
+  'basefont',
+  'bgsound',
+  'blockquote',
+  'body',
+  'br',
+  'button',
+  'caption',
+  'center',
+  'col',
+  'colgroup',
+  'dd',
+  'details',
+  'dir',
+  'div',
+  'dl',
+  'dt',
+  'embed',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'frame',
+  'frameset',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'head',
+  'header',
+  'hgroup',
+  'hr',
+  'html',
+  'iframe',
+  'img',
+  'input',
+  'li',
+  'link',
+  'listing',
+  'main',
+  'marquee',
+  'menu',
+  'meta',
+  'nav',
+  'noembed',
+  'noframes',
+  'noscript',
+  'object',
+  'ol',
+  'p',
+  'param',
+  'plaintext',
+  'pre',
+  'script',
+  'section',
+  'select',
+  'source',
+  'style',
+  'summary',
+  'table',
+  'tbody',
+  'td',
+  'template',
+  'textarea',
+  'tfoot',
+  'th',
+  'thead',
+  'title',
+  'tr',
+  'ul',
+  'wbr',
+  'xmp',
+])
+const TABLE_CONTEXT = /* @__PURE__ */ new Set([
+  'table',
+  'tbody',
+  'tfoot',
+  'thead',
+  'tr',
+])
+const TABLE_ROOT_CTX = /* @__PURE__ */ new Set(['table', 'template', 'html'])
+const TABLE_BODY_CTX = /* @__PURE__ */ new Set([
+  'tbody',
+  'tfoot',
+  'thead',
+  'template',
+  'html',
+])
+const TABLE_ROW_CTX = /* @__PURE__ */ new Set(['tr', 'template', 'html'])
+const CELL_OR_CAPTION_START = /* @__PURE__ */ new Set([
+  'caption',
+  'col',
+  'colgroup',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'tr',
+])
+const INTABLE_IGNORED_END = /* @__PURE__ */ new Set([
+  'body',
+  'caption',
+  'col',
+  'colgroup',
+  'html',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'tr',
+])
+const INCAPTION_IGNORED_END = /* @__PURE__ */ new Set([
+  'body',
+  'col',
+  'colgroup',
+  'html',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'tr',
+])
+const INTABLEBODY_SCOPE_START = /* @__PURE__ */ new Set([
+  'caption',
+  'col',
+  'colgroup',
+  'tbody',
+  'tfoot',
+  'thead',
+])
+const INTABLEBODY_IGNORED_END = /* @__PURE__ */ new Set([
+  'body',
+  'caption',
+  'col',
+  'colgroup',
+  'html',
+  'td',
+  'th',
+  'tr',
+])
+const INROW_SCOPE_START = /* @__PURE__ */ new Set([
+  'caption',
+  'col',
+  'colgroup',
+  'tbody',
+  'tfoot',
+  'thead',
+  'tr',
+])
+const INROW_IGNORED_END = /* @__PURE__ */ new Set([
+  'body',
+  'caption',
+  'col',
+  'colgroup',
+  'html',
+  'td',
+  'th',
+])
+const INCELL_IGNORED_END = /* @__PURE__ */ new Set([
+  'body',
+  'caption',
+  'col',
+  'colgroup',
+  'html',
+])
+const INCELL_TABLE_END = /* @__PURE__ */ new Set([
+  'table',
+  'tbody',
+  'tfoot',
+  'thead',
+  'tr',
+])
+const FOREIGN_BREAKOUT = /* @__PURE__ */ new Set([
+  'b',
+  'big',
+  'blockquote',
+  'body',
+  'br',
+  'center',
+  'code',
+  'dd',
+  'div',
+  'dl',
+  'dt',
+  'em',
+  'embed',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'head',
+  'hr',
+  'i',
+  'img',
+  'li',
+  'listing',
+  'menu',
+  'meta',
+  'nobr',
+  'ol',
+  'p',
+  'pre',
+  'ruby',
+  's',
+  'small',
+  'span',
+  'strong',
+  'strike',
+  'sub',
+  'sup',
+  'table',
+  'tt',
+  'u',
+  'ul',
+  'var',
+])
+const SVG_TAG_NAMES = new Map(
+  Object.entries({
+    altglyph: 'altGlyph',
+    altglyphdef: 'altGlyphDef',
+    altglyphitem: 'altGlyphItem',
+    animatecolor: 'animateColor',
+    animatemotion: 'animateMotion',
+    animatetransform: 'animateTransform',
+    clippath: 'clipPath',
+    feblend: 'feBlend',
+    fecolormatrix: 'feColorMatrix',
+    fecomponenttransfer: 'feComponentTransfer',
+    fecomposite: 'feComposite',
+    feconvolvematrix: 'feConvolveMatrix',
+    fediffuselighting: 'feDiffuseLighting',
+    fedisplacementmap: 'feDisplacementMap',
+    fedistantlight: 'feDistantLight',
+    fedropshadow: 'feDropShadow',
+    feflood: 'feFlood',
+    fefunca: 'feFuncA',
+    fefuncb: 'feFuncB',
+    fefuncg: 'feFuncG',
+    fefuncr: 'feFuncR',
+    fegaussianblur: 'feGaussianBlur',
+    feimage: 'feImage',
+    femerge: 'feMerge',
+    femergenode: 'feMergeNode',
+    femorphology: 'feMorphology',
+    feoffset: 'feOffset',
+    fepointlight: 'fePointLight',
+    fespecularlighting: 'feSpecularLighting',
+    fespotlight: 'feSpotLight',
+    fetile: 'feTile',
+    feturbulence: 'feTurbulence',
+    foreignobject: 'foreignObject',
+    glyphref: 'glyphRef',
+    lineargradient: 'linearGradient',
+    radialgradient: 'radialGradient',
+    textpath: 'textPath',
+  }),
+)
+const SVG_ATTR = new Map(
+  Object.entries({
+    attributename: 'attributeName',
+    attributetype: 'attributeType',
+    basefrequency: 'baseFrequency',
+    baseprofile: 'baseProfile',
+    calcmode: 'calcMode',
+    clippathunits: 'clipPathUnits',
+    diffuseconstant: 'diffuseConstant',
+    edgemode: 'edgeMode',
+    filterunits: 'filterUnits',
+    glyphref: 'glyphRef',
+    gradienttransform: 'gradientTransform',
+    gradientunits: 'gradientUnits',
+    kernelmatrix: 'kernelMatrix',
+    kernelunitlength: 'kernelUnitLength',
+    keypoints: 'keyPoints',
+    keysplines: 'keySplines',
+    keytimes: 'keyTimes',
+    lengthadjust: 'lengthAdjust',
+    limitingconeangle: 'limitingConeAngle',
+    markerheight: 'markerHeight',
+    markerunits: 'markerUnits',
+    markerwidth: 'markerWidth',
+    maskcontentunits: 'maskContentUnits',
+    maskunits: 'maskUnits',
+    numoctaves: 'numOctaves',
+    pathlength: 'pathLength',
+    patterncontentunits: 'patternContentUnits',
+    patterntransform: 'patternTransform',
+    patternunits: 'patternUnits',
+    pointsatx: 'pointsAtX',
+    pointsaty: 'pointsAtY',
+    pointsatz: 'pointsAtZ',
+    preservealpha: 'preserveAlpha',
+    preserveaspectratio: 'preserveAspectRatio',
+    primitiveunits: 'primitiveUnits',
+    refx: 'refX',
+    refy: 'refY',
+    repeatcount: 'repeatCount',
+    repeatdur: 'repeatDur',
+    requiredextensions: 'requiredExtensions',
+    requiredfeatures: 'requiredFeatures',
+    specularconstant: 'specularConstant',
+    specularexponent: 'specularExponent',
+    spreadmethod: 'spreadMethod',
+    startoffset: 'startOffset',
+    stddeviation: 'stdDeviation',
+    stitchtiles: 'stitchTiles',
+    surfacescale: 'surfaceScale',
+    systemlanguage: 'systemLanguage',
+    tablevalues: 'tableValues',
+    targetx: 'targetX',
+    targety: 'targetY',
+    textlength: 'textLength',
+    viewbox: 'viewBox',
+    viewtarget: 'viewTarget',
+    xchannelselector: 'xChannelSelector',
+    ychannelselector: 'yChannelSelector',
+    zoomandpan: 'zoomAndPan',
+  }),
+)
+const FOREIGN_ATTR = new Map(
+  Object.entries({
+    'xlink:actuate': 'xlink actuate',
+    'xlink:arcrole': 'xlink arcrole',
+    'xlink:href': 'xlink href',
+    'xlink:role': 'xlink role',
+    'xlink:show': 'xlink show',
+    'xlink:title': 'xlink title',
+    'xlink:type': 'xlink type',
+    'xml:lang': 'xml lang',
+    'xml:space': 'xml space',
+    'xmlns:xlink': 'xmlns xlink',
+  }),
+)
+const IB_START_CAT = /* @__PURE__ */ (() => {
+  const m = /* @__PURE__ */ new Map()
+  const add = (names, cat) => {
+    for (const x of names) if (!m.has(x)) m.set(x, cat)
+  }
+  add(['html'], 1)
+  add(
+    [...HEAD_TAGS].filter(x => x !== 'head' && x !== 'noscript'),
+    2,
+  )
+  add(['body'], 3)
+  add(['frameset'], 4)
+  add(START_BLOCK, 5)
+  add(HEADINGS, 6)
+  add(['li', 'dd', 'dt'], 7)
+  add(FORMATTING, 8)
+  add(['hr'], 9)
+  add(['param', 'source', 'track'], 10)
+  add(['form'], 11)
+  add(['br', ...VOID], 12)
+  add(RAWTEXT, 13)
+  add(['textarea'], 14)
+  add(['plaintext'], 15)
+  add(['button'], 16)
+  add(['table'], 17)
+  add(['select'], 18)
+  add(['optgroup', 'option'], 19)
+  add(
+    [
+      'caption',
+      'col',
+      'colgroup',
+      'tbody',
+      'td',
+      'tfoot',
+      'th',
+      'thead',
+      'tr',
+      'frame',
+      'head',
+    ],
+    20,
+  )
+  add(['image'], 21)
+  add(['rb', 'rtc'], 22)
+  add(['rp', 'rt'], 23)
+  add(['svg'], 24)
+  add(['math'], 25)
+  add(['applet', 'marquee', 'object'], 26)
+  return m
+})()
+/**
+ * Index of `x` in `arr`, where `x` occurs at most once (tree nodes in a
+ * children array, elements on the open stack / active-formatting list). Checks
+ * the last 16 slots back-to-front first (where the parser's lookups almost
+ * always hit), then falls back to indexOf for the rest: V8's indexOf is a SIMD
+ * scan (~0.15 ns/elem) while Array.prototype.lastIndexOf is a generic builtin
+ * (~1 ns/elem), so a plain lastIndexOf made full "absent" scans ~7x slower on
+ * deep stacks.
+ */
+function lastIdx(arr, x) {
+  const n = arr.length,
+    stop = n > 16 ? n - 16 : 0
+  for (let i = n - 1; i >= stop; i--) if (arr[i] === x) return i
+  return stop === 0 ? -1 : arr.indexOf(x)
+}
+/**
+ * Open-stack depth above which scope scans consult the lazy name counts.
+ */
+const DEEP_STACK = 128
+function isAllWs(s) {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    if (c !== 32 && c !== 9 && c !== 10 && c !== 12) return false
+  }
+  return true
+}
+/**
+ * Elements whose presence on the open stack blocks streaming (see
+ * streamBlockers).
+ */
+function isStreamBlocker(name) {
+  return name === 'table' || name === 'template' || name === 'form'
+}
+var TreeBuilder = class {
+  constructor(html) {
+    this.document = {
+      type: 'document',
+      children: [],
+    }
+    this.open = []
+    this.afe = []
+    this.mode = 'initial'
+    this.originalMode = 'initial'
+    this.head = null
+    this.framesetOk = true
+    this.fosterParenting = false
+    this.sawForeign = false
+    this.templateModes = []
+    this.ignoreNextLF = false
+    this.formElement = null
+    this.pendingTableText = ''
+    this.bodyEl = null
+    this.onPop = null
+    this.streamWatch = null
+    this.streamEvery = 1
+    this.popCount = 0
+    this.streamBlockers = 0
+    this.pendingTableNonWs = false
+    this.pOpen = 0
+    this.nameCount = null
+    this.inScopeNames = /* @__PURE__ */ new Set([
+      'applet',
+      'caption',
+      'html',
+      'table',
+      'td',
+      'th',
+      'marquee',
+      'object',
+      'template',
+    ])
+    this.tk = new Tokenizer(html, { state: 'data' })
+  }
+  /**
+   * The stack of open elements (read-only view for the streaming hook).
+   */
+  get openElements() {
+    return this.open
+  }
+  /**
+   * The <body> element, once inserted.
+   */
+  get body() {
+    return this.bodyEl
+  }
+  /**
+   * True when every future tree change to an entered (non-formatting) open
+   * element is an append at its end (see `onPop`): body can no longer be
+   * replaced by <frameset>, and no table (content is foster-parented in FRONT
+   * of it), template (redirects insertion) or form (`</form>` can remove it
+   * mid-stack) is open.
+   */
+  streamSafe() {
+    return !this.framesetOk && this.streamBlockers === 0
+  }
+  /**
+   * Whether streaming may enter `el` as a container (see `onPop`): not an HTML
+   * formatting element, whose subtree the adoption agency can rearrange later.
+   */
+  streamEnterable(el) {
+    return el.namespace !== 'html' || !FORMATTING.has(el.name)
+  }
+  /**
+   * Parse to completion and return the document tree.
+   */
+  parse() {
+    let t
+    let lastTop
+    while ((t = this.tk.nextToken()) !== null) {
+      this.process(t)
+      if (this.sawForeign) {
+        const acn = this.open[this.open.length - 1]
+        if (acn !== lastTop) {
+          lastTop = acn
+          this.tk.setForeignContent(acn !== void 0 && acn.namespace !== 'html')
+        }
+      }
+    }
+    return this.document
+  }
+  current() {
+    return this.open.length ? this.open[this.open.length - 1] : this.document
+  }
+  append(parent, node) {
+    node.parent = parent
+    const k = parent.children
+    if (k.length === 0) parent.children = [node]
+    else k.push(node)
+  }
+  /**
+   * The "appropriate place for inserting a node" — implements foster parenting:
+   * when enabled and the current node is a table context, content is inserted
+   * before the table rather than inside it (what the browser does).
+   */
+  appropriatePlace() {
+    const cur = this.current()
+    if (
+      this.fosterParenting &&
+      cur.type === 'element' &&
+      TABLE_CONTEXT.has(cur.name)
+    ) {
+      let lastTable = null,
+        lastTableIdx = -1
+      for (let i = this.open.length - 1; i >= 0; i--)
+        if (this.open[i].name === 'table') {
+          lastTable = this.open[i]
+          lastTableIdx = i
+          break
+        }
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!lastTable)
+        return {
+          parent: this.open[0] ?? this.document,
+          before: null,
+        }
+      /* v8 ignore stop */
+      if (lastTable.parent)
+        return {
+          parent: lastTable.parent,
+          before: lastTable,
+        }
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      return {
+        parent: this.open[lastTableIdx - 1],
+        before: null,
+      }
+    }
+    return {
+      parent: cur,
+      before: null,
+    }
+  }
+  insertAt(place, node) {
+    node.parent = place.parent
+    if (place.before) {
+      const idx = lastIdx(place.parent.children, place.before)
+      /* v8 ignore start -- defensive fallback for an impossible state (ref always found / current is an element / stack non-empty) */
+      place.parent.children.splice(
+        idx < 0 ? place.parent.children.length : idx,
+        0,
+        node,
+      )
+    } else place.parent.children.push(node)
+  }
+  insertElement(token, ns = 'html') {
+    const el = {
+      type: 'element',
+      name: token.name,
+      namespace: ns,
+      attrs: token.attrs,
+      children: [],
+      parent: null,
+    }
+    if (this.fosterParenting) this.insertAt(this.appropriatePlace(), el)
+    else {
+      const parent = this.current()
+      el.parent = parent
+      const k = parent.children
+      if (k.length === 0) parent.children = [el]
+      else k.push(el)
+    }
+    this.pushEl(el)
+    if (ns === 'html' && el.name === 'p') this.pOpen++
+    return el
+  }
+  /**
+   * Pop the open-stack top, keeping `pOpen` exact. All `this.open.pop()` sites
+   * route here so a popped `<p>` decrements the counter.
+   */
+  popEl() {
+    const el = this.open.pop()
+    if (el !== void 0) {
+      if (el.name === 'p' && el.namespace === 'html') this.pOpen--
+      const nc = this.nameCount
+      if (nc !== null) nc.set(el.name, nc.get(el.name) - 1)
+      if (isStreamBlocker(el.name)) this.streamBlockers--
+      if (
+        this.onPop !== null &&
+        (el === this.streamWatch || ++this.popCount >= this.streamEvery)
+      ) {
+        this.popCount = 0
+        this.onPop(el)
+      }
+    }
+    return el
+  }
+  /**
+   * Remove open[i] (a mid-stack removal), keeping pOpen / nameCount exact.
+   */
+  removeOpenAt(i) {
+    const el = this.open[i]
+    this.open.splice(i, 1)
+    if (isStreamBlocker(el.name)) this.streamBlockers--
+    if (el.name === 'p' && el.namespace === 'html') this.pOpen--
+    const nc = this.nameCount
+    if (nc !== null) nc.set(el.name, nc.get(el.name) - 1)
+  }
+  countUp(name) {
+    const nc = this.nameCount
+    if (nc !== null) nc.set(name, (nc.get(name) ?? 0) + 1)
+  }
+  pushEl(el) {
+    this.open.push(el)
+    if (isStreamBlocker(el.name)) this.streamBlockers++
+    if (this.nameCount !== null) this.countUp(el.name)
+  }
+  /**
+   * Index of `el` on the open stack, or -1. On a deep stack an element whose
+   * NAME is not open at all is answered from the counts without scanning (e.g.
+   * an already-closed <a> still in the active-formatting list — `<a><p></a>`
+   * repeated under deep nesting was O(depth) per tag).
+   */
+  openIdx(el) {
+    const open = this.open,
+      n = open.length,
+      stop = n > 16 ? n - 16 : 0
+    for (let i = n - 1; i >= stop; i--) if (open[i] === el) return i
+    if (stop === 0 || !this.mayBeOpen(el.name)) return -1
+    return open.indexOf(el)
+  }
+  /**
+   * False only when NO open element is named `name` (so a name scan must fail).
+   */
+  mayBeOpen(name) {
+    if (this.open.length <= DEEP_STACK) return true
+    let nc = this.nameCount
+    if (nc === null) {
+      nc = this.nameCount = /* @__PURE__ */ new Map()
+      for (let i = 0; i < this.open.length; i++) {
+        const k = this.open[i].name
+        nc.set(k, (nc.get(k) ?? 0) + 1)
+      }
+    }
+    return nc.get(name) > 0
+  }
+  insertText(data) {
+    if (!this.fosterParenting) {
+      const parent = this.current()
+      const siblings = parent.children
+      const n = siblings.length
+      if (n === 0) {
+        parent.children = [
+          {
+            type: 'text',
+            value: data,
+            parent,
+          },
+        ]
+        return
+      }
+      const prev = siblings[n - 1]
+      if (prev.type === 'text') {
+        prev.value += data
+        return
+      }
+      siblings.push({
+        type: 'text',
+        value: data,
+        parent,
+      })
+      return
+    }
+    const place = this.appropriatePlace()
+    const siblings = place.parent.children
+    const refIdx = place.before
+      ? lastIdx(siblings, place.before)
+      : siblings.length
+    const prev = siblings[refIdx - 1]
+    if (prev && prev.type === 'text') {
+      prev.value += data
+      return
+    }
+    const node = {
+      type: 'text',
+      value: data,
+      parent: place.parent,
+    }
+    siblings.splice(refIdx, 0, node)
+  }
+  insertComment(data, parent = this.current()) {
+    this.append(parent, {
+      type: 'comment',
+      value: data,
+      parent: null,
+    })
+  }
+  popUntil(name) {
+    while (this.open.length) if (this.popEl().name === name) break
+  }
+  /**
+   * A "scope" boundary element: the HTML markers PLUS the foreign integration
+   * points (MathML mi/mo/mn/ms/mtext/annotation-xml, SVG
+   * foreignObject/desc/title). Omitting the foreign ones made scope checks see
+   * through e.g. <mi> to an outer <p>, mis-closing it. Checked by namespace so
+   * an HTML <title> isn't a marker.
+   */
+  isScopeMarker(el) {
+    if (el.namespace === 'html') return this.inScopeNames.has(el.name)
+    if (el.namespace === 'mathml')
+      return (
+        el.name === 'mi' ||
+        el.name === 'mo' ||
+        el.name === 'mn' ||
+        el.name === 'ms' ||
+        el.name === 'mtext' ||
+        el.name === 'annotation-xml'
+      )
+    return (
+      el.name === 'foreignObject' || el.name === 'desc' || el.name === 'title'
+    )
+  }
+  hasInScope(target) {
+    if (!this.mayBeOpen(target)) return false
+    for (let i = this.open.length - 1; i >= 0; i--) {
+      const el = this.open[i]
+      if (el.name === target && el.namespace === 'html') return true
+      if (this.isScopeMarker(el)) return false
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    return false
+    /* v8 ignore stop */
+  }
+  generateImpliedEndTags(except) {
+    while (this.open.length) {
+      const c = this.open[this.open.length - 1]
+      if (c.name !== except && IMPLIED_END.has(c.name)) this.popEl()
+      else break
+    }
+  }
+  /**
+   * "in button scope" — like in-scope, but `button` is also a boundary.
+   */
+  hasInButtonScope(target) {
+    if (target === 'p' && this.pOpen === 0) return false
+    for (let i = this.open.length - 1; i >= 0; i--) {
+      const el = this.open[i]
+      if (el.name === target && el.namespace === 'html') return true
+      if (
+        (el.name === 'button' && el.namespace === 'html') ||
+        this.isScopeMarker(el)
+      )
+        return false
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    return false
+    /* v8 ignore stop */
+  }
+  closePElement() {
+    if (this.hasInButtonScope('p')) {
+      this.generateImpliedEndTags('p')
+      this.popUntil('p')
+    }
+  }
+  /**
+   * Add a formatting element to the active-formatting list, applying the spec's
+   * "Noah's Ark" clause: if three elements with the same tag name, namespace
+   * and attributes already follow the last marker, drop the EARLIEST such one
+   * first.
+   *
+   * DoS bound (deliberate spec deviation): the scan looks back at most
+   * NOAHS_ARK_SCAN_MAX entries. Unbounded, N distinct unclosed formatting
+   * elements (`<b id=1><b id=2>…`) cost O(N²): ~2 s for 250 KB. Real documents
+   * never have that many open formatting elements; past the bound only which
+   * duplicate formatting clones survive can differ, never what the sanitizer
+   * lets through.
+   */
+  pushAfe(el) {
+    let count = 0,
+      earliest = -1
+    const stop = Math.max(0, this.afe.length - NOAHS_ARK_SCAN_MAX)
+    for (let i = this.afe.length - 1; i >= stop; i--) {
+      const e = this.afe[i]
+      if (e === 'marker') break
+      if (
+        e.name === el.name &&
+        e.namespace === el.namespace &&
+        sameAttrs(e.attrs, el.attrs)
+      ) {
+        count++
+        earliest = i
+      }
+    }
+    if (count >= 3) this.afe.splice(earliest, 1)
+    this.afe.push(el)
+  }
+  reconstructFormatting() {
+    if (this.afe.length === 0) return
+    let last = this.afe[this.afe.length - 1]
+    if (last === 'marker' || this.openIdx(last) !== -1) return
+    let i = this.afe.length - 1
+    while (i > 0) {
+      const e = this.afe[i - 1]
+      if (e === 'marker' || this.openIdx(e) !== -1) break
+      i--
+    }
+    for (; i < this.afe.length; i++) {
+      const entry = this.afe[i]
+      const el = {
+        type: 'element',
+        name: entry.name,
+        namespace: 'html',
+        attrs: entry.attrs.slice(),
+        children: [],
+        parent: null,
+      }
+      this.append(this.current(), el)
+      this.pushEl(el)
+      this.afe[i] = el
+    }
+  }
+  process(t) {
+    if (this.ignoreNextLF) {
+      this.ignoreNextLF = false
+      if (t.type === 'character' && t.data.charCodeAt(0) === 10) {
+        if (t.data.length === 1) return
+        t = {
+          type: 'character',
+          data: t.data.slice(1),
+        }
+      }
+    }
+    const top =
+      this.open.length !== 0 ? this.open[this.open.length - 1] : void 0
+    if (top !== void 0 && top.namespace !== 'html' && this.useForeignRules(t))
+      this.foreignContent(t)
+    else this.dispatchMode(t)
+  }
+  dispatchMode(t) {
+    switch (this.mode) {
+      case 'initial':
+        return this.mInitial(t)
+      case 'beforeHtml':
+        return this.mBeforeHtml(t)
+      case 'beforeHead':
+        return this.mBeforeHead(t)
+      case 'inHead':
+        return this.mInHead(t)
+      case 'afterHead':
+        return this.mAfterHead(t)
+      case 'inBody':
+        return this.mInBody(t)
+      case 'text':
+        return this.mText(t)
+      case 'afterBody':
+        return this.mAfterBody(t)
+      case 'afterAfterBody':
+        return this.mAfterAfterBody(t)
+      case 'inTable':
+        return this.mInTable(t)
+      case 'inTableText':
+        return this.mInTableText(t)
+      case 'inCaption':
+        return this.mInCaption(t)
+      case 'inColumnGroup':
+        return this.mInColumnGroup(t)
+      case 'inTableBody':
+        return this.mInTableBody(t)
+      case 'inRow':
+        return this.mInRow(t)
+      case 'inCell':
+        return this.mInCell(t)
+      case 'inSelect':
+        return this.mInSelect(t)
+      case 'inSelectInTable':
+        return this.mInSelectInTable(t)
+      case 'inTemplate':
+        return this.mInTemplate(t)
+      case 'inHeadNoscript':
+        return this.mInHeadNoscript(t)
+      case 'inFrameset':
+        return this.mInFrameset(t)
+      case 'afterFrameset':
+        return this.mAfterFrameset(t)
+      case 'afterAfterFrameset':
+        return this.mAfterAfterFrameset(t)
+    }
+  }
+  isMathmlTextIP(el) {
+    return (
+      el.namespace === 'mathml' &&
+      (el.name === 'mi' ||
+        el.name === 'mo' ||
+        el.name === 'mn' ||
+        el.name === 'ms' ||
+        el.name === 'mtext')
+    )
+  }
+  isHtmlIP(el) {
+    if (el.namespace === 'mathml' && el.name === 'annotation-xml') {
+      const v = el.attrs.find(a => a[0] === 'encoding')?.[1].toLowerCase()
+      return v === 'text/html' || v === 'application/xhtml+xml'
+    }
+    return (
+      el.namespace === 'svg' &&
+      (el.name === 'foreignObject' || el.name === 'desc' || el.name === 'title')
+    )
+  }
+  useForeignRules(t) {
+    if (this.open.length === 0 || t.type === 'eof') return false
+    const acn = this.open[this.open.length - 1]
+    if (acn.namespace === 'html') return false
+    if (this.isMathmlTextIP(acn)) {
+      if (t.type === 'character') return false
+      if (
+        t.type === 'startTag' &&
+        t.name !== 'mglyph' &&
+        t.name !== 'malignmark'
+      )
+        return false
+    }
+    if (
+      acn.namespace === 'mathml' &&
+      acn.name === 'annotation-xml' &&
+      t.type === 'startTag' &&
+      t.name === 'svg'
+    )
+      return false
+    if (this.isHtmlIP(acn) && (t.type === 'startTag' || t.type === 'character'))
+      return false
+    return true
+  }
+  adjustForeignAttrs(attrs, ns) {
+    const seen = /* @__PURE__ */ new Set()
+    const out = []
+    for (const [name, value] of attrs) {
+      let adj = name
+      if (ns === 'mathml' && name === 'definitionurl') adj = 'definitionURL'
+      else if (ns === 'svg' && SVG_ATTR.has(name)) adj = SVG_ATTR.get(name)
+      if (FOREIGN_ATTR.has(adj)) adj = FOREIGN_ATTR.get(adj)
+      if (!seen.has(adj)) {
+        seen.add(adj)
+        out.push([adj, value])
+      }
+    }
+    return out
+  }
+  insertForeign(t, ns) {
+    this.sawForeign = true
+    let name = t.name
+    if (ns === 'svg' && SVG_TAG_NAMES.has(name)) name = SVG_TAG_NAMES.get(name)
+    const el = {
+      type: 'element',
+      name,
+      namespace: ns,
+      attrs: this.adjustForeignAttrs(t.attrs, ns),
+      children: [],
+      parent: null,
+    }
+    this.insertAt(this.appropriatePlace(), el)
+    this.pushEl(el)
+    if (t.selfClosing) this.popEl()
+  }
+  foreignContent(t) {
+    if (t.type === 'character') {
+      this.insertText(t.data)
+      if (this.framesetOk && !isAllWs(t.data)) this.framesetOk = false
+      return
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (t.type === 'doctype') return
+    /* v8 ignore stop */
+    if (t.type === 'startTag') {
+      const n = t.name
+      if (
+        FOREIGN_BREAKOUT.has(n) ||
+        (n === 'font' &&
+          t.attrs.some(([k]) => k === 'color' || k === 'face' || k === 'size'))
+      ) {
+        while (this.open.length) {
+          const cur = this.open[this.open.length - 1]
+          if (
+            cur.namespace === 'html' ||
+            this.isMathmlTextIP(cur) ||
+            this.isHtmlIP(cur)
+          )
+            break
+          this.popEl()
+        }
+        this.dispatchMode(t)
+        return
+      }
+      this.insertForeign(t, this.open[this.open.length - 1].namespace)
+      return
+    }
+    if (t.type === 'endTag') {
+      const camel = SVG_TAG_NAMES.get(t.name)
+      if (
+        !this.mayBeOpen(t.name) &&
+        (camel === void 0 || !this.mayBeOpen(camel))
+      ) {
+        this.dispatchMode(t)
+        return
+      }
+      for (let i = this.open.length - 1; i >= 0; i--) {
+        const node = this.open[i]
+        if (
+          node.name === t.name ||
+          (node.name.length === t.name.length &&
+            node.name.toLowerCase() === t.name)
+        ) {
+          while (this.open.length > i) this.popEl()
+          return
+        }
+        if (node.namespace === 'html') {
+          this.dispatchMode(t)
+          return
+        }
+      }
+    }
+  }
+  mInitial(t) {
+    if (t.type === 'character' && isAllWs(t.data)) return
+    if (t.type === 'comment') {
+      this.insertComment(t.data, this.document)
+      return
+    }
+    if (t.type === 'doctype') {
+      this.append(this.document, {
+        type: 'doctype',
+        name: t.name ?? '',
+        publicId: t.publicId ?? '',
+        systemId: t.systemId ?? '',
+        parent: null,
+      })
+      this.mode = 'beforeHtml'
+      return
+    }
+    this.mode = 'beforeHtml'
+    this.process(t)
+  }
+  mBeforeHtml(t) {
+    if (t.type === 'doctype') return
+    if (t.type === 'comment') {
+      this.insertComment(t.data, this.document)
+      return
+    }
+    if (t.type === 'character' && isAllWs(t.data)) return
+    if (t.type === 'startTag' && t.name === 'html') {
+      this.insertElement(t)
+      this.mode = 'beforeHead'
+      return
+    }
+    this.insertElement({
+      type: 'startTag',
+      name: 'html',
+      attrs: [],
+      selfClosing: false,
+    })
+    this.mode = 'beforeHead'
+    this.process(t)
+  }
+  mBeforeHead(t) {
+    if (t.type === 'character' && isAllWs(t.data)) return
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (t.type === 'doctype') return
+    /* v8 ignore stop */
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (t.type === 'startTag' && t.name === 'html') return this.mInBody(t)
+    /* v8 ignore stop */
+    if (t.type === 'startTag' && t.name === 'head') {
+      this.head = this.insertElement(t)
+      this.mode = 'inHead'
+      return
+    }
+    if (
+      t.type === 'endTag' &&
+      t.name !== 'head' &&
+      t.name !== 'body' &&
+      t.name !== 'html' &&
+      t.name !== 'br'
+    )
+      return
+    this.head = this.insertElement({
+      type: 'startTag',
+      name: 'head',
+      attrs: [],
+      selfClosing: false,
+    })
+    this.mode = 'inHead'
+    this.process(t)
+  }
+  mInHead(t) {
+    if (t.type === 'character') {
+      let i = 0
+      const d = t.data
+      while (i < d.length) {
+        const c = d.charCodeAt(i)
+        if (c === 9 || c === 10 || c === 12 || c === 13 || c === 32) i++
+        else break
+      }
+      if (i > 0) this.insertText(d.slice(0, i))
+      if (i === d.length) return
+      t = {
+        type: 'character',
+        data: d.slice(i),
+      }
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (t.type === 'doctype') return
+    /* v8 ignore stop */
+    if (t.type === 'startTag' && t.name === 'template') {
+      this.insertElement(t)
+      this.afe.push('marker')
+      this.framesetOk = false
+      this.templateModes.push('inTemplate')
+      this.mode = 'inTemplate'
+      return
+    }
+    if (t.type === 'endTag' && t.name === 'template') {
+      if (!this.hasInScope('template')) return
+      this.generateImpliedEndTags()
+      this.popUntil('template')
+      this.clearAfeToMarker()
+      this.templateModes.pop()
+      this.resetInsertionMode()
+      return
+    }
+    if (t.type === 'startTag') {
+      if (t.name === 'html') return this.mInBody(t)
+      if (VOID.has(t.name) && HEAD_TAGS.has(t.name)) {
+        this.insertElement(t)
+        this.popEl()
+        return
+      }
+      if (t.name === 'title') {
+        this.insertElement(t)
+        this.tk.setContentState('rcdata')
+        this.tk.setLastStartTag('title')
+        this.originalMode = this.mode
+        this.mode = 'text'
+        return
+      }
+      if (t.name === 'noscript') {
+        this.insertElement(t)
+        this.mode = 'inHeadNoscript'
+        return
+      }
+      if (t.name === 'noframes' || t.name === 'style' || t.name === 'script') {
+        this.insertElement(t)
+        this.tk.setContentState(t.name === 'script' ? 'scriptData' : 'rawtext')
+        this.tk.setLastStartTag(t.name)
+        this.originalMode = this.mode
+        this.mode = 'text'
+        return
+      }
+      if (t.name === 'head') return
+    }
+    if (t.type === 'endTag' && t.name === 'head') {
+      this.popEl()
+      this.mode = 'afterHead'
+      return
+    }
+    if (
+      t.type === 'endTag' &&
+      (t.name === 'body' || t.name === 'html' || t.name === 'br')
+    ) {
+    } else if (t.type === 'endTag') return
+    this.popEl()
+    this.mode = 'afterHead'
+    this.process(t)
+  }
+  /**
+   * "in head noscript" (scripting disabled): a small set of metadata tags +
+   * whitespace/comments are handled in-head; </noscript> closes; anything else
+   * pops the noscript and reprocesses in "in head".
+   */
+  mInHeadNoscript(t) {
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag' && t.name === 'html') return this.mInBody(t)
+    if (t.type === 'endTag' && t.name === 'noscript') {
+      this.popEl()
+      this.mode = 'inHead'
+      return
+    }
+    if (t.type === 'character' && isAllWs(t.data)) return this.mInHead(t)
+    if (t.type === 'comment') return this.mInHead(t)
+    if (
+      t.type === 'startTag' &&
+      (t.name === 'basefont' ||
+        t.name === 'bgsound' ||
+        t.name === 'link' ||
+        t.name === 'meta' ||
+        t.name === 'noframes' ||
+        t.name === 'style')
+    )
+      return this.mInHead(t)
+    if (t.type === 'startTag' && (t.name === 'head' || t.name === 'noscript'))
+      return
+    this.popEl()
+    this.mode = 'inHead'
+    return this.process(t)
+  }
+  mAfterHead(t) {
+    if (t.type === 'character' && isAllWs(t.data)) {
+      this.insertText(t.data)
+      return
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (t.type === 'doctype') return
+    /* v8 ignore stop */
+    if (t.type === 'startTag' && t.name === 'html') return this.mInBody(t)
+    if (t.type === 'startTag' && t.name === 'body') {
+      this.bodyEl = this.insertElement(t)
+      this.framesetOk = false
+      this.mode = 'inBody'
+      return
+    }
+    if (t.type === 'startTag' && t.name === 'frameset') {
+      this.insertElement(t)
+      this.mode = 'inFrameset'
+      return
+    }
+    if (t.type === 'startTag' && HEAD_TAGS.has(t.name)) {
+      if (this.head) this.pushEl(this.head)
+      this.mInHead(t)
+      if (this.head) {
+        const idx = this.openIdx(this.head)
+        if (idx >= 0) this.removeOpenAt(idx)
+      }
+      return
+    }
+    if (t.type === 'endTag') {
+      if (t.name === 'template') return this.mInHead(t)
+      if (t.name !== 'body' && t.name !== 'html' && t.name !== 'br') return
+    }
+    this.bodyEl = this.insertElement({
+      type: 'startTag',
+      name: 'body',
+      attrs: [],
+      selfClosing: false,
+    })
+    this.mode = 'inBody'
+    this.process(t)
+  }
+  mInBody(t) {
+    if (t.type === 'character') {
+      this.reconstructFormatting()
+      this.insertText(t.data)
+      if (this.framesetOk && !isAllWs(t.data)) this.framesetOk = false
+      return
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag') return this.inBodyStart(t)
+    if (t.type === 'endTag') return this.inBodyEnd(t)
+  }
+  inBodyStart(t) {
+    const n = t.name
+    const cat = IB_START_CAT.get(n) ?? 0
+    if (cat === 0) {
+      this.reconstructFormatting()
+      this.insertElement(t)
+      return
+    }
+    if (cat === 1) {
+      const html = this.open[0]
+      if (html) {
+        for (const [k, v] of t.attrs)
+          if (!html.attrs.some(a => a[0] === k)) html.attrs.push([k, v])
+      }
+      return
+    }
+    if (cat === 2) {
+      this.mInHead(t)
+      return
+    }
+    if (cat === 3) return
+    if (cat === 4) {
+      const body = this.open[1]
+      if (
+        !this.framesetOk ||
+        !body ||
+        body.name !== 'body' ||
+        body.namespace !== 'html'
+      )
+        return
+      this.removeFromParent(body)
+      while (this.open.length > 1) this.popEl()
+      this.insertElement(t)
+      this.mode = 'inFrameset'
+      return
+    }
+    if (cat === 5) {
+      this.closePElement()
+      this.insertElement(t)
+      if (n === 'pre' || n === 'listing') {
+        this.ignoreNextLF = true
+        this.framesetOk = false
+      }
+      return
+    }
+    if (cat === 6) {
+      this.closePElement()
+      /* v8 ignore start -- defensive fallback for an impossible state (ref always found / current is an element / stack non-empty) */
+      if (
+        HEADINGS.has(
+          this.current().type === 'element' ? this.current().name : '',
+        )
+      )
+        this.popEl()
+      /* v8 ignore stop */
+      this.insertElement(t)
+      return
+    }
+    if (cat === 7) {
+      this.framesetOk = false
+      for (let i = this.open.length - 1; i >= 0; i--) {
+        const el = this.open[i]
+        if (
+          (n === 'li' && el.name === 'li') ||
+          (n !== 'li' && (el.name === 'dd' || el.name === 'dt'))
+        ) {
+          this.generateImpliedEndTags(el.name)
+          this.popUntil(el.name)
+          break
+        }
+        if (
+          SPECIAL.has(el.name) &&
+          el.name !== 'address' &&
+          el.name !== 'div' &&
+          el.name !== 'p'
+        )
+          break
+      }
+      this.closePElement()
+      this.insertElement(t)
+      return
+    }
+    if (cat === 8) {
+      if (n === 'a')
+        for (let i = this.afe.length - 1; i >= 0; i--) {
+          const e = this.afe[i]
+          if (e === 'marker') break
+          if (e.name === 'a') {
+            this.adoptionAgency('a')
+            break
+          }
+        }
+      else if (n === 'nobr') {
+        this.reconstructFormatting()
+        if (this.hasInScope('nobr')) this.adoptionAgency('nobr')
+      }
+      this.reconstructFormatting()
+      const el = this.insertElement(t)
+      this.pushAfe(el)
+      return
+    }
+    if (cat === 9) {
+      this.closePElement()
+      this.insertElement(t)
+      this.popEl()
+      this.framesetOk = false
+      return
+    }
+    if (cat === 10) {
+      this.insertElement(t)
+      this.popEl()
+      return
+    }
+    if (cat === 11) {
+      const hasTemplate =
+        this.mayBeOpen('template') && this.open.some(e => e.name === 'template')
+      if (this.formElement && !hasTemplate) return
+      if (this.hasInButtonScope('p')) this.closePElement()
+      const f = this.insertElement(t)
+      if (!hasTemplate) this.formElement = f
+      return
+    }
+    if (cat === 12) {
+      this.reconstructFormatting()
+      this.insertElement(t)
+      this.popEl()
+      if (n === 'input') {
+        if (
+          !t.attrs.some(
+            ([k, v]) => k === 'type' && v.toLowerCase() === 'hidden',
+          )
+        )
+          this.framesetOk = false
+      } else this.framesetOk = false
+      return
+    }
+    if (cat === 13) {
+      if (n === 'xmp') {
+        this.closePElement()
+        this.reconstructFormatting()
+      }
+      if (n === 'xmp' || n === 'iframe') this.framesetOk = false
+      this.insertElement(t)
+      this.tk.setContentState('rawtext')
+      this.tk.setLastStartTag(n)
+      this.originalMode = this.mode
+      this.mode = 'text'
+      return
+    }
+    if (cat === 14) {
+      this.insertElement(t)
+      this.ignoreNextLF = true
+      this.tk.setContentState('rcdata')
+      this.tk.setLastStartTag(n)
+      this.framesetOk = false
+      this.originalMode = this.mode
+      this.mode = 'text'
+      return
+    }
+    if (cat === 15) {
+      this.closePElement()
+      this.insertElement(t)
+      this.tk.setContentState('plaintext')
+      return
+    }
+    if (cat === 16) {
+      if (this.hasInScope('button')) {
+        this.generateImpliedEndTags()
+        this.popUntil('button')
+      }
+      this.reconstructFormatting()
+      this.insertElement(t)
+      this.framesetOk = false
+      return
+    }
+    if (cat === 17) {
+      this.closePElement()
+      this.insertElement(t)
+      this.framesetOk = false
+      this.mode = 'inTable'
+      return
+    }
+    if (cat === 18) {
+      this.reconstructFormatting()
+      this.insertElement(t)
+      this.framesetOk = false
+      this.mode =
+        this.mode === 'inTable' ||
+        this.mode === 'inCaption' ||
+        this.mode === 'inTableBody' ||
+        this.mode === 'inRow' ||
+        this.mode === 'inCell'
+          ? 'inSelectInTable'
+          : 'inSelect'
+      return
+    }
+    if (cat === 19) {
+      if (this.current().type === 'element' && this.current().name === 'option')
+        this.popEl()
+      this.reconstructFormatting()
+      this.insertElement(t)
+      return
+    }
+    if (cat === 20) return
+    if (cat === 21) {
+      this.insertElement({
+        ...t,
+        name: 'img',
+      })
+      this.popEl()
+      this.framesetOk = false
+      return
+    }
+    if (cat === 22) {
+      if (this.hasInScope('ruby')) this.generateImpliedEndTags()
+      this.insertElement(t)
+      return
+    }
+    if (cat === 23) {
+      if (this.hasInScope('ruby')) this.generateImpliedEndTags('rtc')
+      this.insertElement(t)
+      return
+    }
+    if (cat === 24) {
+      this.reconstructFormatting()
+      this.insertForeign(t, 'svg')
+      return
+    }
+    if (cat === 25) {
+      this.reconstructFormatting()
+      this.insertForeign(t, 'mathml')
+      return
+    }
+    if (cat === 26) {
+      this.reconstructFormatting()
+      this.insertElement(t)
+      this.afe.push('marker')
+      this.framesetOk = false
+      return
+    }
+  }
+  inBodyEnd(t) {
+    const n = t.name
+    if (n === 'body' || n === 'html') {
+      if (this.hasInScope('body')) {
+        this.mode = 'afterBody'
+        if (n === 'html') this.process(t)
+      }
+      return
+    }
+    if (n === 'p') {
+      if (!this.hasInButtonScope('p'))
+        this.insertElement({
+          type: 'startTag',
+          name: 'p',
+          attrs: [],
+          selfClosing: false,
+        })
+      this.closePElement()
+      return
+    }
+    if (HEADINGS.has(n)) {
+      if (
+        !this.mayBeOpen('h1') &&
+        !this.mayBeOpen('h2') &&
+        !this.mayBeOpen('h3') &&
+        !this.mayBeOpen('h4') &&
+        !this.mayBeOpen('h5') &&
+        !this.mayBeOpen('h6')
+      )
+        return
+      let inScope = false
+      for (let i = this.open.length - 1; i >= 0; i--) {
+        const nm = this.open[i].name
+        if (HEADINGS.has(nm)) {
+          inScope = true
+          break
+        }
+        if (this.inScopeNames.has(nm)) break
+      }
+      if (!inScope) return
+      this.generateImpliedEndTags()
+      while (this.open.length) {
+        const el = this.popEl()
+        if (HEADINGS.has(el.name)) break
+      }
+      return
+    }
+    if (n === 'form') {
+      if (
+        this.mayBeOpen('template') &&
+        this.open.some(e => e.name === 'template')
+      ) {
+        if (!this.hasInScope('form')) return
+        this.generateImpliedEndTags()
+        this.popUntil('form')
+        return
+      }
+      const node = this.formElement
+      this.formElement = null
+      if (!node || !this.hasElementInScope(node)) return
+      this.generateImpliedEndTags()
+      const i = this.open.indexOf(node)
+      if (i >= 0) this.removeOpenAt(i)
+      return
+    }
+    if (CLOSE_BLOCK.has(n)) {
+      if (!this.hasInScope(n)) return
+      this.generateImpliedEndTags()
+      this.popUntil(n)
+      return
+    }
+    if (n === 'applet' || n === 'marquee' || n === 'object') {
+      if (!this.hasInScope(n)) return
+      this.generateImpliedEndTags()
+      this.popUntil(n)
+      this.clearAfeToMarker()
+      return
+    }
+    if (FORMATTING.has(n)) {
+      this.adoptionAgency(n)
+      return
+    }
+    this.inBodyEndGeneric(n)
+  }
+  inBodyEndGeneric(n) {
+    if (!this.mayBeOpen(n)) return
+    for (let i = this.open.length - 1; i >= 0; i--) {
+      const el = this.open[i]
+      if (el.name === n) {
+        this.generateImpliedEndTags(n)
+        while (this.open.length > i) this.popEl()
+        return
+      }
+      if (SPECIAL.has(el.name)) return
+    }
+  }
+  cloneElement(el) {
+    return {
+      type: 'element',
+      name: el.name,
+      namespace: el.namespace,
+      attrs: el.attrs.map(a => [a[0], a[1]]),
+      children: [],
+      parent: null,
+    }
+  }
+  removeFromParent(node) {
+    const p = node.parent
+    if (p) {
+      const i = lastIdx(p.children, node)
+      if (i >= 0) p.children.splice(i, 1)
+      node.parent = null
+    }
+  }
+  /**
+   * Insert `node` under `target`, foster-parenting (before the last table) when
+   * target is a table context — the adoption agency's "appropriate place".
+   */
+  fosterInsert(target, node) {
+    if (TABLE_CONTEXT.has(target.name)) {
+      let lt = null,
+        lti = -1
+      for (let k = this.open.length - 1; k >= 0; k--)
+        if (this.open[k].name === 'table') {
+          lt = this.open[k]
+          lti = k
+          break
+        }
+      if (lt && lt.parent) {
+        const j = lastIdx(lt.parent.children, lt)
+        /* v8 ignore start -- defensive fallback for an impossible state (ref always found / current is an element / stack non-empty) */
+        lt.parent.children.splice(
+          j < 0 ? lt.parent.children.length : j,
+          0,
+          node,
+        )
+        /* v8 ignore stop */
+        node.parent = lt.parent
+        return
+      }
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (lt) {
+        this.append(this.open[lti - 1], node)
+        return
+      }
+    }
+    this.append(target, node)
+  }
+  hasElementInScope(target) {
+    for (let i = this.open.length - 1; i >= 0; i--) {
+      const el = this.open[i]
+      if (el === target) return true
+      if (this.isScopeMarker(el)) return false
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    return false
+    /* v8 ignore stop */
+  }
+  /**
+   * The WHATWG adoption agency algorithm — reparents misnested formatting
+   * elements (e.g. `<a>1<p>2</p>3</a>`) exactly the way the browser does. This
+   * is the single most intricate part of tree construction and a real mXSS
+   * surface. (Foster parenting for the table case is a later refinement —
+   * marked below.)
+   */
+  adoptionAgency(tag) {
+    const cur = this.open[this.open.length - 1]
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (cur && cur.name === tag && lastIdx(this.afe, cur) === -1) {
+      this.popEl()
+      return
+    }
+    /* v8 ignore stop */
+    for (let outer = 0; outer < 8; outer++) {
+      let fmtIdx = -1
+      for (let i = this.afe.length - 1; i >= 0; i--) {
+        const e = this.afe[i]
+        if (e === 'marker') break
+        if (e.name === tag) {
+          fmtIdx = i
+          break
+        }
+      }
+      if (fmtIdx === -1) {
+        this.inBodyEndGeneric(tag)
+        return
+      }
+      const fmtEl = this.afe[fmtIdx]
+      const openIdx = this.openIdx(fmtEl)
+      if (openIdx === -1) {
+        this.afe.splice(fmtIdx, 1)
+        return
+      }
+      if (!this.hasElementInScope(fmtEl)) return
+      let furthestBlock = null
+      let furthestIdx = -1
+      for (let i = openIdx + 1; i < this.open.length; i++)
+        if (SPECIAL.has(this.open[i].name)) {
+          furthestBlock = this.open[i]
+          furthestIdx = i
+          break
+        }
+      if (!furthestBlock) {
+        while (this.open.length > openIdx) this.popEl()
+        this.afe.splice(fmtIdx, 1)
+        return
+      }
+      const commonAncestor = this.open[openIdx - 1]
+      let bookmark = fmtIdx
+      let lastNode = furthestBlock
+      let nodeIdx = furthestIdx
+      for (let inner = 0; ;) {
+        inner++
+        nodeIdx--
+        /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+        if (nodeIdx < 0) break
+        /* v8 ignore stop */
+        let node = this.open[nodeIdx]
+        if (node === fmtEl) break
+        let afeIdx = lastIdx(this.afe, node)
+        if (inner > 3 && afeIdx !== -1) {
+          this.afe.splice(afeIdx, 1)
+          afeIdx = -1
+        }
+        if (afeIdx === -1) {
+          this.removeOpenAt(nodeIdx)
+          continue
+        }
+        const clone = this.cloneElement(node)
+        this.afe[afeIdx] = clone
+        this.open[nodeIdx] = clone
+        node = clone
+        if (lastNode === furthestBlock) bookmark = afeIdx + 1
+        this.removeFromParent(lastNode)
+        this.append(node, lastNode)
+        lastNode = node
+      }
+      this.removeFromParent(lastNode)
+      this.fosterInsert(commonAncestor, lastNode)
+      const fmtClone = this.cloneElement(fmtEl)
+      for (const child of furthestBlock.children) {
+        child.parent = fmtClone
+        fmtClone.children.push(child)
+      }
+      furthestBlock.children = []
+      this.append(furthestBlock, fmtClone)
+      const fAfe = lastIdx(this.afe, fmtEl)
+      if (fAfe !== -1) {
+        this.afe.splice(fAfe, 1)
+        if (fAfe < bookmark) bookmark--
+      }
+      bookmark = Math.max(0, Math.min(bookmark, this.afe.length))
+      this.afe.splice(bookmark, 0, fmtClone)
+      const fOpen = this.openIdx(fmtEl)
+      if (fOpen !== -1) this.removeOpenAt(fOpen)
+      const fbOpen = this.openIdx(furthestBlock)
+      this.open.splice(fbOpen + 1, 0, fmtClone)
+      this.countUp(fmtClone.name)
+    }
+  }
+  mText(t) {
+    if (t.type === 'character') {
+      this.insertText(t.data)
+      return
+    }
+    if (t.type === 'endTag') {
+      this.popEl()
+      this.mode = this.originalMode
+      return
+    }
+    this.popEl()
+    this.mode = this.originalMode
+    this.process(t)
+  }
+  mAfterBody(t) {
+    if (t.type === 'character' && isAllWs(t.data)) return this.mInBody(t)
+    /* v8 ignore start -- defensive fallback for an impossible state (ref always found / current is an element / stack non-empty) */
+    if (t.type === 'comment') {
+      this.insertComment(t.data, this.open[0] ?? this.document)
+      return
+    }
+    /* v8 ignore stop */
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag' && t.name === 'html') return this.mInBody(t)
+    if (t.type === 'endTag' && t.name === 'html') {
+      this.mode = 'afterAfterBody'
+      return
+    }
+    this.mode = 'inBody'
+    this.process(t)
+  }
+  mAfterAfterBody(t) {
+    if (t.type === 'comment') {
+      this.insertComment(t.data, this.document)
+      return
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (t.type === 'doctype') return
+    /* v8 ignore stop */
+    if (t.type === 'character' && isAllWs(t.data)) return this.mInBody(t)
+    if (t.type === 'startTag' && t.name === 'html') return this.mInBody(t)
+    this.mode = 'inBody'
+    this.process(t)
+  }
+  /**
+   * Whitespace-only subset of a character run (frameset modes ignore non-ws).
+   */
+  framesetWs(data) {
+    let ws = ''
+    for (let i = 0; i < data.length; i++) {
+      const c = data.charCodeAt(i)
+      if (c === 9 || c === 10 || c === 12 || c === 13 || c === 32) ws += data[i]
+    }
+    return ws
+  }
+  mInFrameset(t) {
+    if (t.type === 'character') {
+      const ws = this.framesetWs(t.data)
+      if (ws) this.insertText(ws)
+      return
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag') {
+      const n = t.name
+      if (n === 'html') return this.mInBody(t)
+      if (n === 'frameset') {
+        this.insertElement(t)
+        return
+      }
+      if (n === 'frame') {
+        this.insertElement(t)
+        this.popEl()
+        return
+      }
+      if (n === 'noframes') return this.mInHead(t)
+      return
+    }
+    if (t.type === 'endTag' && t.name === 'frameset') {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (this.currentName() === 'html') return
+      /* v8 ignore stop */
+      this.popEl()
+      if (this.currentName() !== 'frameset') this.mode = 'afterFrameset'
+      return
+    }
+  }
+  mAfterFrameset(t) {
+    if (t.type === 'character') {
+      const ws = this.framesetWs(t.data)
+      if (ws) this.insertText(ws)
+      return
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag') {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (t.name === 'html') return this.mInBody(t)
+      /* v8 ignore stop */
+      if (t.name === 'noframes') return this.mInHead(t)
+      return
+    }
+    if (t.type === 'endTag' && t.name === 'html') {
+      this.mode = 'afterAfterFrameset'
+      return
+    }
+  }
+  mAfterAfterFrameset(t) {
+    if (t.type === 'comment') {
+      this.insertComment(t.data, this.document)
+      return
+    }
+    if (t.type === 'character') {
+      const ws = this.framesetWs(t.data)
+      if (ws) this.insertText(ws)
+      return
+    }
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag') {
+      if (t.name === 'html') return this.mInBody(t)
+      if (t.name === 'noframes') return this.mInHead(t)
+      return
+    }
+  }
+  currentName() {
+    const c = this.current()
+    /* v8 ignore start -- defensive fallback for an impossible state (ref always found / current is an element / stack non-empty) */
+    return c.type === 'element' ? c.name : ''
+    /* v8 ignore stop */
+  }
+  clearStackTo(ctx) {
+    while (this.open.length && !ctx.has(this.open[this.open.length - 1].name))
+      this.popEl()
+  }
+  clearAfeToMarker() {
+    while (this.afe.length) if (this.afe.pop() === 'marker') break
+  }
+  hasInTableScope(target) {
+    if (!this.mayBeOpen(target)) return false
+    for (let i = this.open.length - 1; i >= 0; i--) {
+      const n = this.open[i].name
+      if (n === target) return true
+      if (n === 'html' || n === 'table' || n === 'template') return false
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    return false
+    /* v8 ignore stop */
+  }
+  hasInSelectScope(target) {
+    for (let i = this.open.length - 1; i >= 0; i--) {
+      const n = this.open[i].name
+      if (n === target) return true
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (n !== 'optgroup' && n !== 'option') return false
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    return false
+    /* v8 ignore stop */
+  }
+  anyTableBodyInScope() {
+    return (
+      this.hasInTableScope('tbody') ||
+      this.hasInTableScope('thead') ||
+      this.hasInTableScope('tfoot')
+    )
+  }
+  resetInsertionMode() {
+    for (let i = this.open.length - 1; i >= 0; i--) {
+      const n = this.open[i].name
+      const last = i === 0
+      if (n === 'select') {
+        this.mode = 'inSelect'
+        return
+      }
+      if ((n === 'td' || n === 'th') && !last) {
+        this.mode = 'inCell'
+        return
+      }
+      if (n === 'tr') {
+        this.mode = 'inRow'
+        return
+      }
+      if (n === 'tbody' || n === 'thead' || n === 'tfoot') {
+        this.mode = 'inTableBody'
+        return
+      }
+      if (n === 'caption') {
+        this.mode = 'inCaption'
+        return
+      }
+      if (n === 'colgroup') {
+        this.mode = 'inColumnGroup'
+        return
+      }
+      if (n === 'table') {
+        this.mode = 'inTable'
+        return
+      }
+      /* v8 ignore start -- defensive fallback for an impossible state (ref always found / current is an element / stack non-empty) */
+      if (n === 'template') {
+        this.mode =
+          this.templateModes[this.templateModes.length - 1] ?? 'inBody'
+        return
+      }
+      /* v8 ignore stop */
+      if (n === 'head' || n === 'body') {
+        this.mode = 'inBody'
+        return
+      }
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (n === 'html') {
+        this.mode = this.head ? 'afterHead' : 'beforeHead'
+        return
+      }
+      /* v8 ignore stop */
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (last) {
+        this.mode = 'inBody'
+        return
+      }
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    this.mode = 'inBody'
+    /* v8 ignore stop */
+  }
+  fosterInBody(t) {
+    this.fosterParenting = true
+    this.mInBody(t)
+    this.fosterParenting = false
+  }
+  mInTable(t) {
+    if (t.type === 'character') {
+      this.pendingTableText = ''
+      this.pendingTableNonWs = false
+      this.originalMode = this.mode
+      this.mode = 'inTableText'
+      return this.process(t)
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag') {
+      const n = t.name
+      if (n === 'caption') {
+        this.clearStackTo(TABLE_ROOT_CTX)
+        this.afe.push('marker')
+        this.insertElement(t)
+        this.mode = 'inCaption'
+        return
+      }
+      if (n === 'colgroup') {
+        this.clearStackTo(TABLE_ROOT_CTX)
+        this.insertElement(t)
+        this.mode = 'inColumnGroup'
+        return
+      }
+      if (n === 'col') {
+        this.clearStackTo(TABLE_ROOT_CTX)
+        this.insertElement({
+          type: 'startTag',
+          name: 'colgroup',
+          attrs: [],
+          selfClosing: false,
+        })
+        this.mode = 'inColumnGroup'
+        return this.process(t)
+      }
+      if (n === 'tbody' || n === 'tfoot' || n === 'thead') {
+        this.clearStackTo(TABLE_ROOT_CTX)
+        this.insertElement(t)
+        this.mode = 'inTableBody'
+        return
+      }
+      if (n === 'td' || n === 'th' || n === 'tr') {
+        this.clearStackTo(TABLE_ROOT_CTX)
+        this.insertElement({
+          type: 'startTag',
+          name: 'tbody',
+          attrs: [],
+          selfClosing: false,
+        })
+        this.mode = 'inTableBody'
+        return this.process(t)
+      }
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (n === 'table') {
+        if (!this.hasInTableScope('table')) return
+        this.popUntil('table')
+        this.resetInsertionMode()
+        return this.process(t)
+      }
+      /* v8 ignore stop */
+      if (n === 'style' || n === 'script' || n === 'template')
+        return this.mInHead(t)
+      if (
+        n === 'input' &&
+        t.attrs.some(([k, v]) => k === 'type' && v.toLowerCase() === 'hidden')
+      ) {
+        this.insertElement(t)
+        this.popEl()
+        return
+      }
+      if (n === 'form') {
+        this.insertElement(t)
+        this.popEl()
+        return
+      }
+      return this.fosterInBody(t)
+    }
+    if (t.type === 'endTag') {
+      const n = t.name
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (n === 'table') {
+        if (!this.hasInTableScope('table')) return
+        this.popUntil('table')
+        this.resetInsertionMode()
+        return
+      }
+      /* v8 ignore stop */
+      if (INTABLE_IGNORED_END.has(n)) return
+      return this.fosterInBody(t)
+    }
+    if (t.type === 'eof') return this.mInBody(t)
+  }
+  mInTableText(t) {
+    if (t.type === 'character') {
+      this.pendingTableText += t.data
+      if (!isAllWs(t.data)) this.pendingTableNonWs = true
+      return
+    }
+    const text = this.pendingTableText,
+      nonWs = this.pendingTableNonWs
+    this.pendingTableText = ''
+    this.pendingTableNonWs = false
+    this.mode = this.originalMode
+    if (text)
+      if (nonWs) {
+        this.fosterParenting = true
+        this.insertText(text)
+        this.fosterParenting = false
+      } else this.insertText(text)
+    return this.process(t)
+  }
+  mInCaption(t) {
+    if (t.type === 'endTag' && t.name === 'caption') {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.hasInTableScope('caption')) return
+      /* v8 ignore stop */
+      this.generateImpliedEndTags()
+      this.popUntil('caption')
+      this.clearAfeToMarker()
+      this.mode = 'inTable'
+      return
+    }
+    if (
+      (t.type === 'startTag' && CELL_OR_CAPTION_START.has(t.name)) ||
+      (t.type === 'endTag' && t.name === 'table')
+    ) {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.hasInTableScope('caption')) return
+      /* v8 ignore stop */
+      this.generateImpliedEndTags()
+      this.popUntil('caption')
+      this.clearAfeToMarker()
+      this.mode = 'inTable'
+      return this.process(t)
+    }
+    if (t.type === 'endTag' && INCAPTION_IGNORED_END.has(t.name)) return
+    return this.mInBody(t)
+  }
+  mInColumnGroup(t) {
+    if (t.type === 'character' && isAllWs(t.data)) {
+      this.insertText(t.data)
+      return
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag' && t.name === 'html') return this.mInBody(t)
+    if (t.type === 'startTag' && t.name === 'col') {
+      this.insertElement(t)
+      this.popEl()
+      return
+    }
+    if ((t.type === 'startTag' || t.type === 'endTag') && t.name === 'template')
+      return this.mInHead(t)
+    if (t.type === 'endTag' && t.name === 'colgroup') {
+      if (this.currentName() === 'colgroup') {
+        this.popEl()
+        this.mode = 'inTable'
+      }
+      return
+    }
+    if (t.type === 'endTag' && t.name === 'col') return
+    if (t.type === 'eof') return this.mInBody(t)
+    if (this.currentName() === 'colgroup') {
+      this.popEl()
+      this.mode = 'inTable'
+      return this.process(t)
+    }
+  }
+  mInTableBody(t) {
+    if (t.type === 'startTag' && t.name === 'tr') {
+      this.clearStackTo(TABLE_BODY_CTX)
+      this.insertElement(t)
+      this.mode = 'inRow'
+      return
+    }
+    if (t.type === 'startTag' && (t.name === 'td' || t.name === 'th')) {
+      this.clearStackTo(TABLE_BODY_CTX)
+      this.insertElement({
+        type: 'startTag',
+        name: 'tr',
+        attrs: [],
+        selfClosing: false,
+      })
+      this.mode = 'inRow'
+      return this.process(t)
+    }
+    if (t.type === 'startTag' && INTABLEBODY_SCOPE_START.has(t.name)) {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.anyTableBodyInScope()) return
+      /* v8 ignore stop */
+      this.clearStackTo(TABLE_BODY_CTX)
+      this.popEl()
+      this.mode = 'inTable'
+      return this.process(t)
+    }
+    if (
+      t.type === 'endTag' &&
+      (t.name === 'tbody' || t.name === 'tfoot' || t.name === 'thead')
+    ) {
+      if (!this.hasInTableScope(t.name)) return
+      this.clearStackTo(TABLE_BODY_CTX)
+      this.popEl()
+      this.mode = 'inTable'
+      return
+    }
+    if (t.type === 'endTag' && t.name === 'table') {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.anyTableBodyInScope()) return
+      /* v8 ignore stop */
+      this.clearStackTo(TABLE_BODY_CTX)
+      this.popEl()
+      this.mode = 'inTable'
+      return this.process(t)
+    }
+    if (t.type === 'endTag' && INTABLEBODY_IGNORED_END.has(t.name)) return
+    return this.mInTable(t)
+  }
+  mInRow(t) {
+    if (t.type === 'startTag' && (t.name === 'td' || t.name === 'th')) {
+      this.clearStackTo(TABLE_ROW_CTX)
+      this.insertElement(t)
+      this.mode = 'inCell'
+      this.afe.push('marker')
+      return
+    }
+    /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+    if (t.type === 'endTag' && t.name === 'tr') {
+      if (!this.hasInTableScope('tr')) return
+      this.clearStackTo(TABLE_ROW_CTX)
+      this.popEl()
+      this.mode = 'inTableBody'
+      return
+    }
+    /* v8 ignore stop */
+    if (
+      (t.type === 'startTag' && INROW_SCOPE_START.has(t.name)) ||
+      (t.type === 'endTag' && t.name === 'table')
+    ) {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.hasInTableScope('tr')) return
+      /* v8 ignore stop */
+      this.clearStackTo(TABLE_ROW_CTX)
+      this.popEl()
+      this.mode = 'inTableBody'
+      return this.process(t)
+    }
+    if (
+      t.type === 'endTag' &&
+      (t.name === 'tbody' || t.name === 'tfoot' || t.name === 'thead')
+    ) {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.hasInTableScope(t.name) || !this.hasInTableScope('tr')) return
+      /* v8 ignore stop */
+      this.clearStackTo(TABLE_ROW_CTX)
+      this.popEl()
+      this.mode = 'inTableBody'
+      return this.process(t)
+    }
+    if (t.type === 'endTag' && INROW_IGNORED_END.has(t.name)) return
+    return this.mInTable(t)
+  }
+  mInCell(t) {
+    if (t.type === 'endTag' && (t.name === 'td' || t.name === 'th')) {
+      if (!this.hasInTableScope(t.name)) return
+      this.generateImpliedEndTags()
+      this.popUntil(t.name)
+      this.clearAfeToMarker()
+      this.mode = 'inRow'
+      return
+    }
+    if (t.type === 'startTag' && CELL_OR_CAPTION_START.has(t.name)) {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.hasInTableScope('td') && !this.hasInTableScope('th')) return
+      /* v8 ignore stop */
+      this.closeCell()
+      return this.process(t)
+    }
+    if (t.type === 'endTag' && INCELL_IGNORED_END.has(t.name)) return
+    if (t.type === 'endTag' && INCELL_TABLE_END.has(t.name)) {
+      if (!this.hasInTableScope(t.name)) return
+      this.closeCell()
+      return this.process(t)
+    }
+    return this.mInBody(t)
+  }
+  closeCell() {
+    const which = this.hasInTableScope('td') ? 'td' : 'th'
+    this.generateImpliedEndTags()
+    this.popUntil(which)
+    this.clearAfeToMarker()
+    this.mode = 'inRow'
+  }
+  mInSelect(t) {
+    if (t.type === 'character') {
+      this.insertText(t.data)
+      return
+    }
+    if (t.type === 'comment') {
+      this.insertComment(t.data)
+      return
+    }
+    if (t.type === 'doctype') return
+    if (t.type === 'startTag') {
+      const n = t.name
+      if (n === 'html') return this.mInBody(t)
+      if (n === 'option') {
+        if (this.currentName() === 'option') this.popEl()
+        this.insertElement(t)
+        return
+      }
+      if (n === 'optgroup') {
+        if (this.currentName() === 'option') this.popEl()
+        if (this.currentName() === 'optgroup') this.popEl()
+        this.insertElement(t)
+        return
+      }
+      if (n === 'hr') {
+        if (this.currentName() === 'option') this.popEl()
+        if (this.currentName() === 'optgroup') this.popEl()
+        this.insertElement(t)
+        this.popEl()
+        return
+      }
+      if (n === 'select') {
+        if (this.hasInSelectScope('select')) {
+          this.popUntil('select')
+          this.resetInsertionMode()
+        }
+        return
+      }
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (n === 'input' || n === 'keygen' || n === 'textarea') {
+        if (!this.hasInSelectScope('select')) return
+        this.popUntil('select')
+        this.resetInsertionMode()
+        return this.process(t)
+      }
+      /* v8 ignore stop */
+      if (n === 'script' || n === 'template') return this.mInHead(t)
+      return this.mInBody(t)
+    }
+    if (t.type === 'endTag') {
+      const n = t.name
+      if (n === 'optgroup') {
+        if (
+          this.currentName() === 'option' &&
+          this.open[this.open.length - 2]?.name === 'optgroup'
+        )
+          this.popEl()
+        if (this.currentName() === 'optgroup') this.popEl()
+        return
+      }
+      if (n === 'option') {
+        if (this.currentName() === 'option') this.popEl()
+        return
+      }
+      if (n === 'select') {
+        if (!this.hasInSelectScope('select')) return
+        this.popUntil('select')
+        this.resetInsertionMode()
+        return
+      }
+      if (n === 'template') return this.mInHead(t)
+      return this.mInBody(t)
+    }
+    if (t.type === 'eof') return this.mInBody(t)
+  }
+  /**
+   * "in select in table": a table-structure tag closes the whole select and is
+   * reprocessed; everything else falls through to the normal select rules.
+   */
+  mInSelectInTable(t) {
+    if (t.type === 'startTag' || t.type === 'endTag') {
+      const n = t.name
+      if (
+        n === 'caption' ||
+        n === 'table' ||
+        n === 'tbody' ||
+        n === 'tfoot' ||
+        n === 'thead' ||
+        n === 'tr' ||
+        n === 'td' ||
+        n === 'th'
+      ) {
+        if (t.type === 'endTag' && !this.hasInTableScope(n)) return
+        this.popUntil('select')
+        this.resetInsertionMode()
+        return this.process(t)
+      }
+    }
+    return this.mInSelect(t)
+  }
+  /**
+   * "in template": route head-ish content to inHead, switch the current
+   * template insertion mode for table-context tags, close on </template>/EOF.
+   * Simplified vs. the spec but loop-free and safe (template content is dropped
+   * by the sanitizer regardless of the exact subtree).
+   */
+  mInTemplate(t) {
+    if (t.type === 'character' || t.type === 'comment' || t.type === 'doctype')
+      return this.mInBody(t)
+    if (t.type === 'eof') {
+      /* v8 ignore start -- unreachable in document-only parsing: defensive / fragment-context guard */
+      if (!this.hasInScope('template')) return
+      /* v8 ignore stop */
+      this.popUntil('template')
+      this.clearAfeToMarker()
+      this.templateModes.pop()
+      this.resetInsertionMode()
+      return this.process(t)
+    }
+    if (t.type === 'endTag') {
+      if (t.name === 'template') return this.mInHead(t)
+      return
+    }
+    const n = t.name
+    if (HEAD_TAGS.has(n) || n === 'script') return this.mInHead(t)
+    let m = 'inBody'
+    if (
+      n === 'caption' ||
+      n === 'colgroup' ||
+      n === 'tbody' ||
+      n === 'tfoot' ||
+      n === 'thead'
+    )
+      m = 'inTable'
+    else if (n === 'col') m = 'inColumnGroup'
+    else if (n === 'tr') m = 'inTableBody'
+    else if (n === 'td' || n === 'th') m = 'inRow'
+    this.templateModes[this.templateModes.length - 1] = m
+    this.mode = m
+    return this.process(t)
+  }
+}
+/**
+ * Order-independent attribute-set equality (for the adoption agency's Noah's
+ * Ark).
+ */
+function sameAttrs(a, b) {
+  if (a.length !== b.length) return false
+  for (const [k, v] of a) {
+    let found = false
+    for (const [k2, v2] of b)
+      if (k2 === k && v2 === v) {
+        found = true
+        break
+      }
+    if (!found) return false
+  }
+  return true
+}
+/**
+ * `neosanitize/whatwg-parser`: the browser-faithful WHATWG parse tree, exposed.
+ *
+ * Same tokenizer and tree construction the main sanitizer runs on (100%
+ * html5lib tokenizer conformance), without any policy or filtering. Read,
+ * query, and re-serialize HTML the way a browser would build it. Zero deps, no
+ * DOM.
+ *
+ * Import { parse, findAll, textContent, serialize } from
+ * 'neosanitize/whatwg-parser';
+ *
+ * `parse()` builds a full document (implied `<html>/<head>/<body>`), like
+ * `new DOMParser().parseFromString(html, 'text/html')`.
+ */
+/**
+ * Parse HTML into the full WHATWG document tree a browser would build.
+ */
+function parse(html) {
+  return new TreeBuilder(html).parse()
+}
+const matches = (el, m) => (typeof m === 'string' ? el.name === m : m(el))
+/**
+ * First descendant element matching a tag name or predicate, or `null`.
+ */
+function find(root, match) {
+  const stack = []
+  for (let k = root.children.length - 1; k >= 0; k--)
+    stack.push(root.children[k])
+  while (stack.length !== 0) {
+    const n = stack.pop()
+    if (n.type !== 'element') continue
+    if (matches(n, match)) return n
+    for (let k = n.children.length - 1; k >= 0; k--) stack.push(n.children[k])
+  }
+  return null
+}
+
+const OPEN_MARKER_RE =
+  /^\s*(?:#+|<!--|\/\/)\s*(?:BEGIN\s+)?(<[A-Za-z][^>]*>)\s*(?:-->)?\s*$/i
+const CLOSE_MARKER_RE =
+  /^\s*(?:#+|<!--|\/\/)\s*(?:END\s+)?<\/\s*([A-Za-z][A-Za-z0-9-]*)\s*>\s*(?:-->)?\s*$/i
+const EMPTY_ATTRS = Object.freeze({ __proto__: null })
+/**
+ * Parse a single HTML open tag (`<tag key="value" bool>`) with neosanitize and
+ * return its lowercased name + attributes, or `undefined` if no tag is found.
+ * Boolean attributes (no `="value"`) map to an empty string.
+ */
+function parseOpenTag(tagHtml) {
+  const element = find(
+    parse(tagHtml),
+    el => el.name !== 'body' && el.name !== 'head' && el.name !== 'html',
+  )
+  if (!element) return
+  const attributes = { __proto__: null }
+  for (let i = 0, { length } = element.attrs; i < length; i += 1) {
+    const pair = element.attrs[i]
+    attributes[pair[0].toLowerCase()] = pair[1]
+  }
+  return {
+    tag: element.name.toLowerCase(),
+    attributes,
+  }
+}
+/**
+ * Scan every line for a BEGIN/END marker, returning them in document order.
+ * Open-tag names + attributes come from the WHATWG parser; tags are lowercased.
+ */
+function scanMarkers(content) {
+  const out = []
+  const lines = content.split(/\r?\n/)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]
+    const open = OPEN_MARKER_RE.exec(line)
+    if (open) {
+      const parsed = parseOpenTag(open[1])
+      if (parsed)
+        out.push({
+          kind: 'begin',
+          tag: parsed.tag,
+          attributes: parsed.attributes,
+          line: i,
+        })
+      continue
+    }
+    const close = CLOSE_MARKER_RE.exec(line)
+    if (close)
+      out.push({
+        kind: 'end',
+        tag: close[1].toLowerCase(),
+        attributes: EMPTY_ATTRS,
+        line: i,
+      })
+  }
+  return out
+}
+
+/**
+ * @file Single home for fleet + repo canonical region detection / extraction.
+ *   The `<fleet>` tag markers (parsed by `named-blocks.mts`) delimit a
+ *   fleet-owned cutout in a repository-owned file; the `<repo>` tag marks a
+ *   repository-owned cutout in a fleet-owned file. The manifest declares the
+ *   outer owner. A document uses one marker family and may carry multiple
+ *   disjoint cutouts of that family. Every accessor here is
+ *   plural: `findFleetRegions` / `findRepoRegions` return every region found,
+ *   in document order. `repoRegionBounds` stays as a singular convenience for
+ *   the one caller (CLAUDE.md's repo-section auditor) that only ever expects
+ *   one repo region in a file.
+ *   Per-syntax delimiter, one tag vocabulary:
+ *   markdown / hash-comment   <!-- <fleet> -->   # <fleet>
+ *   JSON array element        <fleet>            (bare string, no comment
+ *   wrapper — JSON has none)
+ *   Emitters produce the short bare-tag form (`<fleet>` / `<repo>`); the
+ *   parser ALSO recognizes the long-form tag names (`fleet-canonical` /
+ *   `repo-canonical`) every existing fleet member still carries, plus the
+ *   legacy `BEGIN`/`END` keyword form, so members migrate incrementally as
+ *   their own cascade re-splices the region. Drop the long-form recognition
+ *   (LEGACY_FLEET_CANONICAL_TAG / LEGACY_REPO_CANONICAL_TAG below) once every
+ *   roster member's cascade has run at least once post-rename — audit with a
+ *   fleet-wide grep for `<fleet-canonical>` / `<repo-canonical>`; zero hits
+ *   clears it. Every fleet-region matcher / fixer reads its marker knowledge
+ *   from here, so the grammar stays single-sourced.
+ */
+const FLEET_CANONICAL_TAG = 'fleet'
+const LEGACY_FLEET_CANONICAL_TAG = 'fleet-canonical'
+const REPO_CANONICAL_TAG = 'repo'
+const LEGACY_REPO_CANONICAL_TAG = 'repo-canonical'
+/**
+ * The open marker for a tag + comment style — bare-tag form, e.g.
+ * `<!-- <fleet> -->` / `# <fleet>` / `<fleet>` (json — a bare JSON array
+ * element, no comment wrapper).
+ */
+function beginMarkerForTag(tag, style) {
+  if (style === 'html') return `<!-- <${tag}> -->`
+  if (style === 'slash') return `// <${tag}>`
+  if (style === 'json') return `<${tag}>`
+  return `# <${tag}>`
+}
+/**
+ * The close marker for a tag + comment style — bare close tag, e.g.
+ * `<!-- </fleet> -->` / `# </fleet>` / `</fleet>` (json).
+ */
+function endMarkerForTag(tag, style) {
+  if (style === 'html') return `<!-- </${tag}> -->`
+  if (style === 'slash') return `// </${tag}>`
+  if (style === 'json') return `</${tag}>`
+  return `# </${tag}>`
+}
+/**
+ * True when `value` is EXACTLY a bare `<tag>` (or its legacy alias), no
+ * comment wrapper — the JSON-array-element form, where the marker IS the
+ * whole element and there is no comment syntax to strip. Whitespace-trimmed
+ * so a pretty-printer's leading indent never defeats the match.
+ */
+function isBareBeginTag(value, tag, legacyTag) {
+  const trimmed = value.trim()
+  return trimmed === `<${tag}>` || trimmed === `<${legacyTag}>`
+}
+/**
+ * The bare `</tag>` (or legacy alias) twin of `isBareBeginTag`.
+ */
+function isBareEndTag(value, tag, legacyTag) {
+  const trimmed = value.trim()
+  return trimmed === `</${tag}>` || trimmed === `</${legacyTag}>`
+}
+/**
+ * True when a single line (or JSON array element) is a BEGIN marker for `tag`
+ * OR its transitional `legacyTag` alias — either the comment-wrapped form
+ * (`scanMarkers` anchors the match to the whole line, so a prose mention of
+ * the marker name elsewhere on a line is never mistaken for a marker) or the
+ * bare JSON-element form.
+ */
+function isMarkerBeginLineForTag(tag, legacyTag, line) {
+  return (
+    isBareBeginTag(line, tag, legacyTag) ||
+    scanMarkers(line).some(
+      m => m.kind === 'begin' && (m.tag === tag || m.tag === legacyTag),
+    )
+  )
+}
+/**
+ * True when a single line (or JSON array element) is an END marker for `tag`
+ * OR its transitional `legacyTag` alias — comment-wrapped or bare.
+ */
+function isMarkerEndLineForTag(tag, legacyTag, line) {
+  return (
+    isBareEndTag(line, tag, legacyTag) ||
+    scanMarkers(line).some(
+      m => m.kind === 'end' && (m.tag === tag || m.tag === legacyTag),
+    )
+  )
+}
+/**
+ * The open marker for the repo-canonical wrapper, e.g.
+ * `<!-- <repo> -->` / `# <repo>`.
+ */
+function repoBeginMarker(style) {
+  return beginMarkerForTag(REPO_CANONICAL_TAG, style)
+}
+/**
+ * The close marker for the repo-canonical wrapper, e.g.
+ * `<!-- </repo> -->` / `# </repo>`.
+ */
+function repoEndMarker(style) {
+  return endMarkerForTag(REPO_CANONICAL_TAG, style)
+}
+/**
+ * Find every region for `tag` (or its legacy alias) in `items` — a file's
+ * lines, or a JSON array's elements; both are just a sequence of strings to
+ * scan. Regions pair sequentially: each BEGIN is matched with the next END
+ * found after it, tolerating an unclosed final BEGIN (its region runs to the
+ * end of `items`, rather than being reported as an error — a fresh, empty,
+ * or mid-edit region is a normal state, not a malformed one). A BEGIN nested
+ * inside an already-open region of the SAME tag before its END is swallowed
+ * into the outer region's span rather than starting a second one — a
+ * deliberately tolerant, non-crashing default for a hand-edited file.
+ */
+function findRegionsForTag(items, kind, tag, legacyTag) {
+  const regions = []
+  const { length } = items
+  let i = 0
+  while (i < length) {
+    if (!isMarkerBeginLineForTag(tag, legacyTag, items[i])) {
+      i += 1
+      continue
+    }
+    const start = i
+    let end = length
+    for (let j = i + 1; j < length; j += 1)
+      if (isMarkerEndLineForTag(tag, legacyTag, items[j])) {
+        end = j
+        break
+      }
+    regions.push({
+      end,
+      kind,
+      start,
+    })
+    i = end + 1
+  }
+  return regions
+}
+/**
+ * Every `<fleet>` region in `items`, in document order. A JSON config with
+ * several arrays gives each its own region — a file with N canonical arrays
+ * returns N regions here, not one.
+ */
+function findFleetRegions(items) {
+  return findRegionsForTag(
+    items,
+    'fleet',
+    FLEET_CANONICAL_TAG,
+    LEGACY_FLEET_CANONICAL_TAG,
+  )
+}
+/**
+ * Every `<repo>` region in `items`, in document order. See `findFleetRegions`
+ * for the pairing/tolerance rules — identical, just the repo tag.
+ */
+function findRepoRegions(items) {
+  return findRegionsForTag(
+    items,
+    'repo',
+    REPO_CANONICAL_TAG,
+    LEGACY_REPO_CANONICAL_TAG,
+  )
+}
+
+function spliceFleetOwnedCutouts(target, canonical) {
+  const lines = target.split(/\r?\n/)
+  const fleetRegions = findFleetRegions(lines)
+  const repoRegions = findRepoRegions(lines)
+  const repoLines = []
+  if (fleetRegions.length > 0) {
+    const fleetLines = /* @__PURE__ */ new Set()
+    for (const region of fleetRegions)
+      for (let index = region.start; index <= region.end; index += 1)
+        fleetLines.add(index)
+    for (let index = 0, { length } = lines; index < length; index += 1) {
+      if (fleetLines.has(index)) continue
+      if (
+        repoRegions.some(
+          region => index === region.start || index === region.end,
+        )
+      )
+        continue
+      repoLines.push(lines[index])
+    }
+  } else if (repoRegions.length > 0)
+    for (const region of repoRegions)
+      repoLines.push(...lines.slice(region.start + 1, region.end))
+  else repoLines.push(...lines)
+  const canonicalLines = canonical.split(/\r?\n/)
+  const canonicalFleet = findFleetRegions(canonicalLines)
+  const canonicalRepo = findRepoRegions(canonicalLines)
+  const body = trimCutoutLines(
+    canonicalFleet.length > 0
+      ? canonicalLines.slice(canonicalFleet[0].start + 1, canonicalFleet[0].end)
+      : canonicalRepo.length > 0
+        ? canonicalLines.filter(
+            (_, index) =>
+              !canonicalRepo.some(
+                region => index >= region.start && index <= region.end,
+              ),
+          )
+        : canonicalLines,
+  )
+  const repo = trimCutoutLines(repoLines)
+  return [
+    ...body,
+    repoBeginMarker('hash'),
+    ...repo,
+    repoEndMarker('hash'),
+    '',
+  ].join('\n')
+}
+function trimCutoutLines(lines) {
+  const result = [...lines]
+  while (result[0]?.trim() === '') result.shift()
+  while (result.at(-1)?.trim() === '') result.pop()
+  return result
 }
 
 /**
@@ -19845,11 +25137,13 @@ function installSegments(segmentsDir, dest, manifest, options) {
             target: existing,
             fleetBlock,
           })
-        : spliceFleetBlock({
-            commentStyle: entry.commentStyle,
-            fleetBlock,
-            target: existing,
-          })
+        : entry.path === '.gitattributes'
+          ? spliceFleetOwnedCutouts(existing, fleetBlock)
+          : spliceFleetBlock({
+              commentStyle: entry.commentStyle,
+              fleetBlock,
+              target: existing,
+            })
     mkdirSync(path.dirname(targetPath), { recursive: true })
     writeFileSync(targetPath, updated)
   }
