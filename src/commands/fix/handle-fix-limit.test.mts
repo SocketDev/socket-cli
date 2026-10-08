@@ -1,4 +1,6 @@
 import { promises as fs } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -101,6 +103,25 @@ function mockDiscoveryEnvelope(envelope: {
       return { ok: true, data: '' }
     }
     return { ok: true, data: 'fix applied' }
+  })
+}
+
+function mockFixOutput(
+  output: Record<string, unknown>,
+  exitCode: number | undefined,
+) {
+  mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+    await fs.writeFile(
+      args[args.indexOf('--output-file') + 1]!,
+      JSON.stringify(output),
+    )
+    return exitCode === undefined
+      ? { ok: true, data: '' }
+      : {
+          ok: false,
+          data: { code: exitCode },
+          message: `Coana command failed (exit code ${exitCode})`,
+        }
   })
 }
 
@@ -564,6 +585,108 @@ describe('socket fix --pr-limit behavior verification', () => {
       } finally {
         warnSpy.mockRestore()
       }
+    })
+  })
+
+  describe('fixes Coana did not apply', () => {
+    const notApplied = [
+      {
+        ghsa: 'GHSA-1111-1111-1111',
+        purl: 'pkg:npm/lodash@4.17.20',
+        fixedVersion: '4.17.21',
+        reason:
+          'Skipping upgrade for this directory: no supported lockfile found (.)',
+      },
+    ]
+
+    it('fails with the not-applied fixes when Coana applied none', async () => {
+      mockFixOutput({ type: 'no-fixes-applied', notApplied }, 5)
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result).toEqual({
+        ok: false,
+        message: 'No computed fixes were applied',
+        cause: expect.stringContaining('no supported lockfile found'),
+        data: {
+          fixedAll: false,
+          ghsaDetails: [{ type: 'no-fixes-applied', notApplied }],
+        },
+      })
+    })
+
+    it('fails and still writes --output-file when only some fixes were applied', async () => {
+      const output = {
+        type: 'applied-fixes',
+        fixes: {
+          'GHSA-2222-2222-2222': [
+            { purl: 'pkg:npm/qs@6.5.2', fixedVersion: '6.5.3' },
+          ],
+        },
+        notApplied,
+        modifiedFiles: ['package-lock.json'],
+      }
+      mockFixOutput(output, 5)
+      const outputFile = path.join(
+        os.tmpdir(),
+        `socket-fix-not-applied-${Date.now()}.json`,
+      )
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111', 'GHSA-2222-2222-2222'],
+        outputFile,
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toBe('Some computed fixes were not applied')
+      expect(result.data).toEqual({ fixedAll: false, ghsaDetails: [output] })
+      expect(JSON.parse(await fs.readFile(outputFile, 'utf8'))).toEqual(output)
+      await fs.rm(outputFile, { force: true })
+    })
+
+    it('reports fixedAll when every computed fix was applied', async () => {
+      const output = {
+        type: 'applied-fixes',
+        fixes: {
+          'GHSA-1111-1111-1111': [
+            { purl: 'pkg:npm/lodash@4.17.20', fixedVersion: '4.17.21' },
+          ],
+        },
+        modifiedFiles: ['package-lock.json'],
+      }
+      mockFixOutput(output, undefined)
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result).toEqual({
+        ok: true,
+        data: { fixedAll: true, ghsaDetails: [output] },
+      })
+    })
+
+    it('keeps other Coana failures as errors', async () => {
+      mockSpawnCoanaDlx.mockResolvedValue({
+        ok: false,
+        data: { code: 2 },
+        message: 'Coana command failed (exit code 2)',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result).toMatchObject({
+        ok: false,
+        message: 'Coana command failed (exit code 2)',
+      })
     })
   })
 
