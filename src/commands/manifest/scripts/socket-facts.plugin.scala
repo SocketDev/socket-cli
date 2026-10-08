@@ -62,11 +62,18 @@ object SocketFactsPlugin extends AutoPlugin {
 
       // Real artifact ext per build module, so an ext-less inter-project dep gets its true coordinate.
       val moduleExts = buildModuleExts(allRefs, extracted)
+      val projectIdsByGav: Map[String, Seq[String]] =
+        allRefs.groupBy(r => gavKey(rootIdOf(extracted, r))).map { case (k, rs) => k -> rs.map(_.project) }
 
       allRefs.foreach { ref =>
         if (!isExcludedRef(ref)) {
+          // The update report names an inter-project dependency only by module ID; the projects this
+          // one reaches through `dependsOn` say which build project that ID is.
+          val reachable = dependsOnClosure(ref, extracted)
+          val projectsOf = (gav: String) => projectIdsByGav.getOrElse(gav, Nil).filter(reachable)
           runUpdateResilient(updateTaskName, ref, extracted, st, failures).foreach { report =>
-            foldReport(report, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts).foreach {
+            foldReport(report, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts,
+              projectsOf, failures).foreach {
               case (rootKey, tree) => perSub(rootKey) = tree
             }
           }
@@ -129,7 +136,8 @@ object SocketFactsPlugin extends AutoPlugin {
           tree.nodes.foreach {
             case (coordId, node) =>
               val c = node.coord
-              rec("node", rootId, coordId, c.org, c.name, c.version, c.ext, c.classifier, if (node.direct) "1" else "0")
+              rec("node", rootId, coordId, c.org, c.name, c.version, c.ext, c.classifier, if (node.direct) "1" else "0",
+                node.project)
               node.children.foreach(ch => rec("edge", rootId, coordId, ch))
               node.targets.foreach(p => rec("file", rootId, coordId, p))
           }
@@ -150,6 +158,16 @@ object SocketFactsPlugin extends AutoPlugin {
   )
 
   // ---- resolution ---------------------------------------------------------
+
+  private def dependsOnClosure(ref: ProjectRef, extracted: Extracted): Set[String] = {
+    val seen = mutable.LinkedHashSet.empty[ProjectRef]
+    def walk(r: ProjectRef): Unit =
+      extracted.getOpt(thisProject.in(r)).toList.flatMap(_.dependencies).map(_.project).foreach { d =>
+        if (seen.add(d)) walk(d)
+      }
+    walk(ref)
+    seen.map(_.project).toSet
+  }
 
   private def rootIdOf(extracted: Extracted, ref: ProjectRef): ModuleID = {
     val sv = extracted.get(scalaVersion.in(ref))
@@ -276,7 +294,9 @@ object SocketFactsPlugin extends AutoPlugin {
       scannedConfigs: mutable.LinkedHashSet[String],
       withFiles: Boolean,
       populateScope: Option[Set[String]],
-      moduleExts: Map[String, String]
+      moduleExts: Map[String, String],
+      projectsOf: String => Seq[String],
+      failures: mutable.LinkedHashSet[Failure]
   ): mutable.LinkedHashMap[String, RootTree] = {
     val perRoot = mutable.LinkedHashMap.empty[String, RootTree]
     val rootGav = gavKey(rootIdOf(extracted, ref))
@@ -300,8 +320,12 @@ object SocketFactsPlugin extends AutoPlugin {
         cr.modules.foreach { m =>
           if (emittable(m)) {
             val ids = midToIds.getOrElseUpdate(gavKey(m.module), mutable.LinkedHashSet.empty[String])
+            val projects = projectsOf(gavKey(m.module))
+            if (projects.size > 1)
+              failures += Failure(coordOf(m.module), "ambiguous inter-project dependency: " + projects.mkString(", "), cfg)
             variantsOf(m, moduleExts).foreach { case (coord, fileOpt) =>
               val node = nodes.getOrElseUpdate(coord.id, new Node(coord))
+              if (projects.size == 1) node.project = projects.head
               ids += coord.id
               if (withFiles && inScope(m.module)) fileOpt.foreach(f => node.targets += f.getAbsolutePath)
             }
@@ -518,6 +542,8 @@ object SocketFactsPlugin extends AutoPlugin {
   private final class Node(val coord: Coord) {
     val children = mutable.TreeSet.empty[String]
     var direct = false
+    // Id of the build project this node is, when it is one.
+    var project = ""
     // External artifact's resolved jar(s); --with-files only.
     val targets = mutable.TreeSet.empty[String]
   }
