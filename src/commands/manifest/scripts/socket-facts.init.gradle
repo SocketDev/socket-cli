@@ -63,7 +63,66 @@ gradle.ext.socketFactsState = [
   projectArtifactExt : Collections.synchronizedMap([:]),
   // Project path -> "group:name", to tell this build's projects from an included build's.
   projectGaByPath    : Collections.synchronizedMap([:]),
+  // Project path -> "group:name" -> build-root-relative scripts that declared that dependency.
+  declaredIn         : Collections.synchronizedMap([:]),
 ]
+
+// The in-build script declaring a dependency is the innermost script frame on the stack when it is
+// added. Groovy script frames carry the absolute script path. Kotlin DSL frames carry only the base
+// name; the path is read from the script class loader's scope id (`kotlin-dsl:<path>:`, Gradle 6.9
+// to 9.x), and is absent before Java 9 (no StackWalker). Unresolvable frames are skipped.
+gradle.ext.socketInitScript = initscript.sourceFile?.canonicalFile
+gradle.ext.socketDeclaringScript = { File rootDir ->
+  def rootPath = rootDir.canonicalFile.toPath()
+  def frames = []
+  try {
+    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).forEach { f ->
+      frames << [f.fileName, f.fileName?.endsWith('.kts') ? f.declaringClass.classLoader?.toString() : null]
+    }
+  } catch (Throwable ignore) {
+    frames = new Throwable().stackTrace.collect { f -> [f.fileName, null] }
+  }
+  for (fr in frames) {
+    def path = fr[0]
+    if (path == null) continue
+    if (fr[1] != null) {
+      def m = (fr[1] =~ ('kotlin-dsl:(.+?[\\\\/]' + java.util.regex.Pattern.quote(path) + '):'))
+      path = m.find() ? m.group(1) : null
+      if (path == null) continue
+    }
+    def f = new File(path)
+    if (!f.isAbsolute() || !f.isFile()) continue
+    def c = f.canonicalFile
+    if (c == gradle.ext.socketInitScript || !c.toPath().startsWith(rootPath)) continue
+    return rootPath.relativize(c.toPath()).toString().replace(File.separator, '/')
+  }
+  null
+}
+
+allprojects { p ->
+  p.configurations.all { c ->
+    c.dependencies.whenObjectAdded { d ->
+      if (d.group == null || d.name == null) return
+      def script = gradle.ext.socketDeclaringScript.call(p.rootDir)
+      if (script == null) return
+      def byGa
+      synchronized (gradle.socketFactsState.declaredIn) {
+        byGa = gradle.socketFactsState.declaredIn.get(p.path)
+        if (byGa == null) {
+          byGa = [:]
+          gradle.socketFactsState.declaredIn.put(p.path, byGa)
+        }
+        def ga = "${d.group}:${d.name}".toString()
+        def set = byGa.get(ga)
+        if (set == null) {
+          set = [] as Set
+          byGa.put(ga, set)
+        }
+        set << script
+      }
+    }
+  }
+}
 
 // Capture every project's (group:name) before collectors run so they can filter intra-project
 // deps without an ordering dependency on other subprojects.
@@ -519,6 +578,12 @@ rootProject { rp ->
       projectsInfo.each { pi ->
         rec(['project', pi.path, pi.group ?: '', pi.name, pi.version ?: '', pi.dir])
         pi.buildFiles.each { f -> rec(['projectBuild', pi.path, f]) }
+        def byGa
+        synchronized (state.declaredIn) { byGa = state.declaredIn.get(pi.path)?.collectEntries { k, v -> [k, new ArrayList(v)] } }
+        byGa?.keySet()?.sort()?.each { ga ->
+          def parts = ga.split(':', 2)
+          byGa[ga].sort().each { f -> rec(['declared', pi.path, parts[0], parts[1], f]) }
+        }
         if (withFilesProjects) {
           pi.sources.each { s -> rec(['projectSrc', pi.path, s]) }
           pi.targets.each { t -> rec(['projectTgt', pi.path, t]) }

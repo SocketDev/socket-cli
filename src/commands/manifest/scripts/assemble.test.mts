@@ -263,6 +263,49 @@ describe('records → assemble → sidecar', () => {
       'g:mod-b:1': [{ file: 'mod/b.xml' }],
     })
   })
+  it('attributes Gradle direct dependencies to the script declaring them', () => {
+    const records = [
+      'meta\tgradle\t9.2.1\t21',
+      'buildRoot\t/repo',
+      'project\t:\tg\troot\t1\t.',
+      'projectBuild\t:\tbuild.gradle.kts',
+      'project\t:a\tg\ta\t1\ta',
+      'declared\t:a\tx\tfrom-root\tbuild.gradle.kts',
+      'project\t:b\tg\tb\t1\tb',
+      'projectBuild\t:b\tb/build.gradle.kts',
+      'declared\t:b\tx\tfrom-root\tbuild.gradle.kts',
+      'declared\t:b\tx\town\tb/build.gradle.kts',
+      'root\tr1\t:a\truntimeClasspath\t1',
+      'node\tr1\tx:from-root:jar:1\tx\tfrom-root\t1\tjar\t\t1',
+      'root\tr2\t:b\truntimeClasspath\t1',
+      'node\tr2\tx:from-root:jar:1\tx\tfrom-root\t1\tjar\t\t1',
+      'node\tr2\tx:own:jar:1\tx\town\t1\tjar\t\t1',
+      'node\tr2\tx:by-plugin:jar:1\tx\tby-plugin\t1\tjar\t\t1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(
+      Object.fromEntries(
+        facts.components.map(c => [
+          c.id,
+          c.manifestFiles?.map(m => m.file).slice(1),
+        ]),
+      ),
+    ).toEqual({
+      'x:by-plugin:jar:1': ['b/build.gradle.kts'],
+      'x:from-root:jar:1': ['build.gradle.kts'],
+      'x:own:jar:1': ['b/build.gradle.kts'],
+    })
+    expect(
+      Object.fromEntries(
+        facts.projects!.map(p => [p.id, p.manifestFiles?.map(m => m.file)]),
+      ),
+    ).toEqual({
+      ':': ['build.gradle.kts'],
+      ':a': ['build.gradle.kts'],
+      ':b': ['b/build.gradle.kts'],
+    })
+  })
 })
 
 describe('parseRecords', () => {
