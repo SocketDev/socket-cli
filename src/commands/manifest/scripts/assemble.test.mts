@@ -27,6 +27,7 @@ describe('records → assemble → sidecar', () => {
   it('carries first-party project paths, external jars, and artifactless BOMs', () => {
     // Inject fileExists so the synthetic absolute paths aren't filtered out.
     const { artifactPaths, facts } = assembleFacts(parseRecords(RECORDS), {
+      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
@@ -89,6 +90,7 @@ describe('records → assemble → sidecar', () => {
       'node\tr3\tg:junit:jar:4\tg\tjunit\t4\tjar\t\t1',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
@@ -131,7 +133,9 @@ describe('records → assemble → sidecar', () => {
       // Same name as a build project, but a published artifact, not the project.
       'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1\t',
     ].join('\n')
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'gradle.socket.facts.json',
+    })
 
     expect(
       facts.components.map(c => [
@@ -150,8 +154,13 @@ describe('records → assemble → sidecar', () => {
     ])
 
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
-    const bucket = serializeSidecar(acc)['/abs/.socket.facts.json']!
+    accumulateSidecar(
+      acc,
+      facts,
+      artifactPaths,
+      '/abs/gradle.socket.facts.json',
+    )
+    const bucket = serializeSidecar(acc)['/abs/gradle.socket.facts.json']!
     expect(bucket.components.find(c => c.id === ':a')?.firstParty).toBe(true)
     for (const project of bucket.projects) {
       expect(project).not.toHaveProperty('firstParty')
@@ -176,6 +185,7 @@ describe('records → assemble → sidecar', () => {
       'node\tr2\tex:util:jar:1\tex\tutil\t1\tjar\t\t1\t:a:util',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
@@ -219,21 +229,26 @@ describe('records → assemble → sidecar', () => {
       'root\tr3\tc\truntimeClasspath\t1',
       'node\tr3\tg:solo:jar:1\tg\tsolo\t1\tjar\t\t1',
     ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records))
+    const { facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'pom.xml.socket.facts.json',
+    })
 
     expect(
       Object.fromEntries(
         facts.components.map(c => [c.id, c.manifestFiles ?? 'absent']),
       ),
     ).toEqual({
-      'g:a:jar:1': [{ file: '.socket.facts.json' }, { file: 'b/pom.xml' }],
+      'g:a:jar:1': [
+        { file: 'pom.xml.socket.facts.json' },
+        { file: 'b/pom.xml' },
+      ],
       'g:dep:jar:3': 'absent',
       'g:ext:jar:2': [
-        { file: '.socket.facts.json' },
+        { file: 'pom.xml.socket.facts.json' },
         { file: 'a/pom.xml' },
         { file: 'b/pom.xml' },
       ],
-      'g:solo:jar:1': [{ file: '.socket.facts.json' }],
+      'g:solo:jar:1': [{ file: 'pom.xml.socket.facts.json' }],
     })
   })
   it("records each project's own build files, relative to the build root", () => {
@@ -249,7 +264,9 @@ describe('records → assemble → sidecar', () => {
       'project\tg:bare:1\tg\tbare\t1\tbare',
     ].join('\n')
     const parsed = parseRecords(records)
-    const { facts } = assembleFacts(parsed)
+    const { facts } = assembleFacts(parsed, {
+      factsFileName: 'other-pom.xml.socket.facts.json',
+    })
 
     expect(parsed.buildRoot).toBe('/repo/sub')
     expect(
@@ -262,6 +279,20 @@ describe('records → assemble → sidecar', () => {
       'g:mod-a:1': [{ file: 'mod/a.xml' }],
       'g:mod-b:1': [{ file: 'mod/b.xml' }],
     })
+  })
+  it('omits the facts file reference when the facts file cannot be named', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\ta\tg\ta\t1\t.',
+      'projectBuild\ta\tpom.xml',
+      'root\tr1\ta\truntimeClasspath\t1',
+      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records), {
+      factsFileName: undefined,
+    })
+
+    expect(facts.components[0]?.manifestFiles).toEqual([{ file: 'pom.xml' }])
   })
   it('attributes Gradle direct dependencies to the script declaring them', () => {
     const records = [
@@ -282,7 +313,9 @@ describe('records → assemble → sidecar', () => {
       'node\tr2\tx:own:jar:1\tx\town\t1\tjar\t\t1',
       'node\tr2\tx:by-plugin:jar:1\tx\tby-plugin\t1\tjar\t\t1',
     ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records))
+    const { facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'gradle.socket.facts.json',
+    })
 
     expect(
       Object.fromEntries(
@@ -315,10 +348,12 @@ describe('records → assemble → sidecar', () => {
       'root\tr1\t:a\truntimeClasspath\t1',
       'node\tr1\tx:undeclared:jar:1\tx\tundeclared\t1\tjar\t\t1',
     ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records))
+    const { facts } = assembleFacts(parseRecords(records), {
+      factsFileName: 'gradle.socket.facts.json',
+    })
 
     expect(facts.components[0]?.manifestFiles).toEqual([
-      { file: '.socket.facts.json' },
+      { file: 'gradle.socket.facts.json' },
       { file: 'a/build.gradle.kts' },
     ])
     expect(facts.projects![0]?.manifestFiles).toEqual([

@@ -94,6 +94,9 @@ public final class SocketFactsRecordsEngine {
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
     rec(lines, "buildRoot", rootDir.getAbsolutePath());
+    // The POM Maven was invoked on (`-f`, else the default it located), which names the facts file.
+    File entryPom = session.getRequest().getPom();
+    if (entryPom != null) rec(lines, "entry", SocketSupport.relativePath(rootDir.toPath(), entryPom.getAbsoluteFile().toPath()));
 
     for (MavenProject module : reactor) {
       // No basedir: Maven's stand-in project for a directory without a POM. Skipping it lets Maven's

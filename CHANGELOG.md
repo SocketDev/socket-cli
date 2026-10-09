@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- Socket facts for Maven, Gradle and sbt builds are now written per build — `pom.xml.socket.facts.json` (named after the POM Maven runs on, so `-f other-pom.xml` gets its own), `gradle.socket.facts.json` and `sbt.socket.facts.json` — so builds sharing a directory no longer overwrite each other. Delete any `.socket.facts.json` an earlier run left behind.
+- Reachability scans no longer feed a leftover `.socket.facts.json` report from an earlier run back into the analysis.
 - Updated the Coana CLI to v `15.12.4`.
 
 ## [1.6.2](https://github.com/SocketDev/socket-cli/releases/tag/v1.6.2) - 2026-10-09

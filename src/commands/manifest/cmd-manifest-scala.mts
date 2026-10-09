@@ -37,12 +37,12 @@ const config: CliCommandConfig = {
     facts: {
       type: 'boolean',
       description:
-        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph. This is the default; pass `--pom` to generate `pom.xml` files instead',
+        'Emit a Socket facts JSON file (`sbt.socket.facts.json`) describing the resolved dependency graph. This is the default; pass `--pom` to generate `pom.xml` files instead',
     },
     pom: {
       type: 'boolean',
       description:
-        'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`.socket.facts.json`)',
+        'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`sbt.socket.facts.json`)',
     },
     includeConfigs: {
       type: 'string',
@@ -63,7 +63,7 @@ const config: CliCommandConfig = {
     out: {
       type: 'string',
       description:
-        'Only with --pom: path of the output `pom.xml`, see also --stdout. Does not apply when generating Socket facts (always written to the project root as `.socket.facts.json`)',
+        'Only with --pom: path of the output `pom.xml`, see also --stdout. Does not apply when generating Socket facts (always written to the project root as `sbt.socket.facts.json`)',
     },
     stdout: {
       type: 'boolean',
@@ -86,8 +86,8 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags)}
 
-    By default, emits a single \`.socket.facts.json\` describing the resolved
-    dependency graph of the whole build. It reads dependency metadata only and
+    By default, emits a single \`sbt.socket.facts.json\` describing the
+    resolved dependency graph of the whole build. It reads dependency metadata only and
     never downloads artifacts; an unresolved dependency is a fatal error. You
     can pass --include-configs / --exclude-configs (comma-separated glob
     patterns) to control which sbt configurations are resolved (e.g.
@@ -304,7 +304,7 @@ async function run(
   //       would the file name be?
 
   // --out / --stdout only affect the pom path. Socket facts are always written
-  // to the project root as `.socket.facts.json` so that `socket scan create`
+  // to the project root as `sbt.socket.facts.json` so that `socket scan create`
   // picks them up, so reject these flags in facts mode rather than silently
   // ignoring an explicitly-passed output location.
   const wasValidInput = checkCommandInput(
@@ -322,7 +322,7 @@ async function run(
         (cli.flags['out'] !== undefined || cli.flags['stdout'] !== undefined)
       ),
       message:
-        'The `--out` and `--stdout` options only apply with `--pom`; Socket facts are always written to the project root as `.socket.facts.json`',
+        'The `--out` and `--stdout` options only apply with `--pom`; Socket facts are always written to the project root as `sbt.socket.facts.json`',
       fail: 'remove --out/--stdout, or pass --pom',
     },
   )

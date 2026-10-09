@@ -38,12 +38,12 @@ const config: CliCommandConfig = {
     facts: {
       type: 'boolean',
       description:
-        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph. This is the default; pass `--pom` to generate `pom.xml` files instead',
+        'Emit a Socket facts JSON file (`gradle.socket.facts.json`) describing the resolved dependency graph. This is the default; pass `--pom` to generate `pom.xml` files instead',
     },
     pom: {
       type: 'boolean',
       description:
-        'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`.socket.facts.json`)',
+        'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`gradle.socket.facts.json`)',
     },
     includeConfigs: {
       type: 'string',
@@ -78,9 +78,9 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags)}
 
-    By default, emits a single \`.socket.facts.json\` describing the resolved
-    dependency graph of the whole build, using gradle (preferably your local
-    \`gradlew\`). An unresolved dependency is a fatal error. You can pass
+    By default, emits a single \`gradle.socket.facts.json\` describing the
+    resolved dependency graph of the whole build, using gradle (preferably your
+    local \`gradlew\`). An unresolved dependency is a fatal error. You can pass
     --include-configs / --exclude-configs (comma-separated glob patterns) to
     control which configurations are resolved (e.g.
     --include-configs=\`*CompileClasspath,*RuntimeClasspath\`), and

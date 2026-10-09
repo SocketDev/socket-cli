@@ -183,8 +183,13 @@ describe('compute-artifacts sidecar', () => {
     })
 
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths, '/root/.socket.facts.json')
-    const entry = serializeSidecar(acc)['/root/.socket.facts.json']!
+    accumulateSidecar(
+      acc,
+      facts,
+      artifactPaths,
+      '/root/gradle.socket.facts.json',
+    )
+    const entry = serializeSidecar(acc)['/root/gradle.socket.facts.json']!
 
     for (const entries of [entry.components, entry.projects]) {
       expect(Object.fromEntries(entries.map(e => [e.id, e.sources]))).toEqual({

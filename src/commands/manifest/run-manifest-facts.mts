@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -44,8 +44,9 @@ function tailBuildOutput(stdout: string, stderr: string): string {
 export type RunManifestFactsOutcome = RunManifestFactsResult | null | undefined
 
 // Runs the bundled build-tool resolution script for a JVM project and writes
-// `.socket.facts.json`. `withFiles` (reachability only) additionally folds
-// resolved artifact paths into `sidecarAcc`. A blocking resolution failure sets
+// its `<entry>.socket.facts.json` (see socketFactsFileName). `withFiles`
+// (reachability only) additionally folds resolved artifact paths into
+// `sidecarAcc`. A blocking resolution failure sets
 // a non-zero exit code and returns (matching the `--pom` generator) unless
 // `ignoreUnresolved`; a crashed build — a process failure, not an unresolved
 // dependency — always fails.
@@ -158,8 +159,16 @@ export async function runManifestFacts({
     )
     return null
   }
-  const { artifactPaths, buildRoot, code, facts, report, stderr, stdout } =
-    result
+  const {
+    artifactPaths,
+    buildRoot,
+    code,
+    facts,
+    factsFileName,
+    report,
+    stderr,
+    stdout,
+  } = result
 
   const rendered = renderResolutionErrorReport(
     report.failures,
@@ -229,16 +238,27 @@ export async function runManifestFacts({
     return
   }
 
-  if (!buildRoot) {
+  if (!buildRoot || !factsFileName) {
     process.exitCode = 1
     logger.fail(
-      `The ${ecosystem} build did not report its root directory, so its Socket facts file cannot be placed.`,
+      `The ${ecosystem} build did not report its ${buildRoot ? 'entry build file' : 'root directory'}, so its Socket facts file cannot be placed.`,
     )
     return null
   }
   // Every path in the facts is relative to the build root, which `-f`/`-p`
   // can move away from cwd.
-  const factsPath = path.join(buildRoot, constants.DOT_SOCKET_DOT_FACTS_JSON)
+  const factsPath = path.join(buildRoot, factsFileName)
+  // Not a name producers write, so a copy here is stale and would be uploaded
+  // alongside the new file.
+  const legacyFactsPath = path.join(
+    buildRoot,
+    constants.DOT_SOCKET_DOT_FACTS_JSON,
+  )
+  if (existsSync(legacyFactsPath)) {
+    logger.warn(
+      `Found \`${legacyFactsPath}\`, which is uploaded alongside \`${factsFileName}\`. Delete it if an earlier \`socket manifest\` run left it behind.`,
+    )
+  }
 
   const socketCliVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
   if (facts.metadata && socketCliVersion) {

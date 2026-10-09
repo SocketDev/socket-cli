@@ -9,8 +9,6 @@ import {
   type SocketFactsSbomProject,
 } from './facts.mts'
 
-import constants from '../../../constants.mts'
-
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 
@@ -24,6 +22,9 @@ export type AssembleResult = {
 
 export type AssembleOptions = {
   emitProjects?: boolean | undefined
+  // Basename the facts file is written under; direct dependencies reference
+  // it. Undefined only when it cannot be named, and so will not be written.
+  factsFileName: string | undefined
   // Injectable for tests; an uncompiled module's output dir is dropped (module
   // stays resolvable via its sources).
   fileExists?: ((path: string) => boolean) | undefined
@@ -55,7 +56,7 @@ type RootNode = {
 
 export function assembleFacts(
   parsed: ParsedRecords,
-  opts: AssembleOptions = {},
+  opts: AssembleOptions,
 ): AssembleResult {
   const fileExists = opts.fileExists ?? existsSync
   const perRoot = buildPerRoot(parsed)
@@ -64,7 +65,7 @@ export function assembleFacts(
   const tool = (parsed.tool || 'gradle') as SocketFactsSbomMetadata['tool']
   const components = buildComponents(
     finalNodes,
-    buildManifestFilesById(parsed, directByRoot, perRoot),
+    buildManifestFilesById(parsed, directByRoot, perRoot, opts.factsFileName),
   )
   const projects =
     opts.emitProjects === false
@@ -190,6 +191,7 @@ function buildManifestFilesById(
   parsed: ParsedRecords,
   directByRoot: Map<string, Set<string>>,
   perRoot: Map<string, PerRoot>,
+  factsFileName: string | undefined,
 ): Map<string, SocketFactsManifestReference[]> {
   const buildFilesByCoord = new Map<string, Set<string>>()
   for (const [rootId, ids] of directByRoot) {
@@ -218,9 +220,10 @@ function buildManifestFilesById(
   return new Map(
     [...buildFilesByCoord].map(({ 0: id, 1: buildFiles }) => [
       id,
-      [constants.DOT_SOCKET_DOT_FACTS_JSON, ...[...buildFiles].sort()].map(
-        file => ({ file }),
-      ),
+      [
+        ...(factsFileName ? [factsFileName] : []),
+        ...[...buildFiles].sort(),
+      ].map(file => ({ file })),
     ]),
   )
 }
