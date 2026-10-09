@@ -15,7 +15,8 @@ import type {
 //   project     projectKey  group  name  version  dir
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
-//   projectBuild  projectKey  path                       (build-root-relative)
+//   projectBuild  projectKey  path  [missing]            (build-root-relative; `missing`: configured, absent on disk)
+//   declared    projectKey  group  name  path            (script declaring the dependency; build-root-relative)
 //   root        rootId  projectKey  config  prod(0|1)
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
@@ -69,6 +70,10 @@ export type RawProject = {
   targets: string[]
   // The project's own build files, build-root-relative.
   buildFiles: string[]
+  // Build files the tool configures for the project but absent on disk.
+  missingBuildFiles: string[]
+  // "group:name" -> the scripts that declared that dependency on this project.
+  declaredIn: Map<string, string[]>
 }
 
 export type ParsedRecords = {
@@ -150,6 +155,8 @@ export function parseRecords(text: string): ParsedRecords {
         sources: [],
         targets: [],
         buildFiles: [],
+        missingBuildFiles: [],
+        declaredIn: new Map(),
       }
       result.projects.set(key, p)
     }
@@ -193,7 +200,15 @@ export function parseRecords(text: string): ParsedRecords {
         break
       case 'projectBuild':
         if (f[2]) {
-          project(f[1] ?? '').buildFiles.push(f[2])
+          const p = project(f[1] ?? '')
+          ;(f[3] === 'missing' ? p.missingBuildFiles : p.buildFiles).push(f[2])
+        }
+        break
+      case 'declared':
+        if (f[4]) {
+          const { declaredIn } = project(f[1] ?? '')
+          const ga = `${f[2] ?? ''}:${f[3] ?? ''}`
+          declaredIn.set(ga, [...(declaredIn.get(ga) ?? []), f[4]])
         }
         break
       case 'root': {

@@ -195,15 +195,24 @@ function buildManifestFilesById(
 ): Map<string, SocketFactsManifestReference[]> {
   const buildFilesByCoord = new Map<string, Set<string>>()
   for (const [rootId, ids] of directByRoot) {
-    const projectKey = perRoot.get(rootId)?.projectKey ?? ''
-    const buildFiles = parsed.projects.get(projectKey)?.buildFiles ?? []
+    const root = perRoot.get(rootId)
+    const project = parsed.projects.get(root?.projectKey ?? '')
     for (const id of ids) {
       let set = buildFilesByCoord.get(id)
       if (!set) {
         set = new Set()
         buildFilesByCoord.set(id, set)
       }
-      for (const f of buildFiles) {
+      const coord = root?.nodes.get(id)?.coord
+      // Without a known declaring script, the project's build file, even one
+      // absent on disk: its presence marks the dependency direct here.
+      const declared =
+        coord && project?.declaredIn.get(`${coord.group}:${coord.name}`)
+      const files = declared ?? [
+        ...(project?.buildFiles ?? []),
+        ...(project?.missingBuildFiles ?? []),
+      ]
+      for (const f of files) {
         set.add(f)
       }
     }
@@ -291,8 +300,16 @@ function buildProjects(
       subprojectDir: p.dir,
       dependencies: [...(directByProject.get(p.projectKey) ?? [])].sort(),
     }
-    if (p.buildFiles.length) {
-      entry.manifestFiles = [...p.buildFiles].sort().map(file => ({ file }))
+    // A project without a build file of its own is defined by the scripts
+    // declaring its dependencies, e.g. the root build script.
+    const declared = [...new Set([...p.declaredIn.values()].flat())]
+    const files = p.buildFiles.length
+      ? p.buildFiles
+      : declared.length
+        ? declared
+        : p.missingBuildFiles
+    if (files.length) {
+      entry.manifestFiles = [...files].sort().map(file => ({ file }))
     }
     return entry
   })
