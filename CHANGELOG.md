@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Updated the Coana CLI to v `15.12.3`.
+
 ### Fixed
 - Socket facts no longer merge build projects into one: Maven modules sharing a directory and Gradle or sbt projects sharing a coordinate each keep their own dependencies and build files.
 - Socket facts for a Maven or Gradle build pointed elsewhere with `-f` or `-p` are now written into that build's own directory, where their paths resolve.
