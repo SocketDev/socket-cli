@@ -53,11 +53,18 @@ export async function clearOAuthSession(): Promise<void> {
     )
     if (config) {
       await deleteSocketOAuthCredential(config)
-      await strictDelete(oauthRefreshMarker(config))
+      await deleteOAuthRefreshMarker(config)
     }
     updateConfigValue('oauthSession', undefined)
     await new Promise<void>(resolve => process.nextTick(resolve))
   })
+}
+
+export async function deleteOAuthRefreshMarker(
+  config: SocketOAuthCredentialOptions,
+): Promise<void> {
+  const marker = oauthRefreshMarker(config)
+  await strictDelete(marker, { allowedDirs: [path.dirname(marker)] })
 }
 
 export async function hasPendingOAuthRefresh(marker: string): Promise<boolean> {
@@ -133,7 +140,7 @@ export async function readOAuthSession(
     const pending = await hasPendingOAuthRefresh(marker)
     if (pending) {
       await deleteSocketOAuthCredential(config)
-      await strictDelete(marker)
+      await deleteOAuthRefreshMarker(config)
       throw new Error(
         'Socket token rotation was interrupted. Run socket login.',
       )
@@ -152,10 +159,10 @@ export async function readOAuthSession(
           return await refreshCliOAuthTokens(config, refreshToken, proxy)
         },
       )
-      await strictDelete(marker)
+      await deleteOAuthRefreshMarker(config)
     } catch {
       await deleteSocketOAuthCredential(config)
-      await strictDelete(marker)
+      await deleteOAuthRefreshMarker(config)
       throw new Error(
         'Socket session could not be refreshed. Check your connection and credential store, then run socket login.',
       )
@@ -191,7 +198,7 @@ export async function saveOAuthSession(
     })
     updateConfigValue('apiToken', undefined)
     await new Promise<void>(resolve => process.nextTick(resolve))
-    await strictDelete(marker)
+    await deleteOAuthRefreshMarker(config)
   })
 }
 
