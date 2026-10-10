@@ -14,6 +14,7 @@ import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { isUrl } from '@socketsecurity/lib-stable/url/predicates'
 
 import { applyLogin } from './apply-login.mts'
+import { createDeviceAuthorizationRequest } from './device-authorization-request.mts'
 import {
   API_V1_OAUTH_URL,
   SOCKET_CLI_OAUTH_CLIENT_ID,
@@ -35,18 +36,6 @@ const logger = getDefaultLogger()
 // RFC 8628 3.2: the server SHOULD return interval; when it omits one, the
 // client MUST default to 5 seconds.
 const DEFAULT_POLL_INTERVAL_SECONDS = 5
-
-// Reasonable default read scopes for a first-party CLI session. The exact
-// set should be confirmed against depscan's scope catalog by whoever
-// registers the `socket-cli` OAuth client.
-const DEFAULT_DEVICE_LOGIN_SCOPES = [
-  'alerts:list',
-  'dependencies:list',
-  'full-scans:list',
-  'diff-scans:list',
-  'packages:list',
-  'repo:list',
-].join(' ')
 
 export interface DeviceAuthorizationResponse {
   device_code: string
@@ -87,14 +76,19 @@ export async function attemptDeviceLogin(
   const oauthBaseUrl = resolveOauthBaseUrl()
   const clientId = resolveOauthClientId()
 
-  let deviceAuthorizationUrl: URL
+  let deviceAuthorizationRequest: ReturnType<
+    typeof createDeviceAuthorizationRequest
+  >
   let tokenUrl: URL
   try {
     const base = assertSafeEndpointUrl(oauthBaseUrl, {
       label: 'Socket OAuth base URL',
       source: 'SOCKET_CLI_OAUTH_BASE_URL or the built-in default',
     })
-    deviceAuthorizationUrl = new URL('device-authorization', base)
+    deviceAuthorizationRequest = createDeviceAuthorizationRequest(
+      base,
+      clientId,
+    )
     tokenUrl = new URL('token', base)
   } catch (e) {
     const result: CResult<void> = {
@@ -113,11 +107,8 @@ export async function attemptDeviceLogin(
   try {
     spinner?.start('Requesting a device code from Socket…')
     deviceAuth = await postForm(
-      deviceAuthorizationUrl,
-      new URLSearchParams({
-        client_id: clientId,
-        scope: DEFAULT_DEVICE_LOGIN_SCOPES,
-      }),
+      deviceAuthorizationRequest.url,
+      deviceAuthorizationRequest.body,
       parseDeviceAuthorizationResponse,
       effectiveApiProxy,
     )
