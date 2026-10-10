@@ -3,6 +3,7 @@ import { access, mkdir, open } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
+import { isErrnoException } from '@socketsecurity/lib-stable/errors/predicates'
 import { getSocketCliApiProxy } from '@socketsecurity/lib-stable/env/socket-cli'
 import { refreshCliOAuthTokens } from './oauth-refresh.mts'
 import { processLock } from '@socketsecurity/lib-stable/process/lock-instance'
@@ -57,6 +58,18 @@ export async function clearOAuthSession(): Promise<void> {
     updateConfigValue('oauthSession', undefined)
     await new Promise<void>(resolve => process.nextTick(resolve))
   })
+}
+
+export async function hasPendingOAuthRefresh(marker: string): Promise<boolean> {
+  return await access(marker).then(
+    () => true,
+    error => {
+      if (isErrnoException(error) && error.code === 'ENOENT') {
+        return false
+      }
+      throw error
+    },
+  )
 }
 
 export function oauthRefreshMarker(
@@ -117,10 +130,7 @@ export async function readOAuthSession(
     const proxy =
       getSocketCliApiProxy() || getConfigValueOrUndef('apiProxy') || undefined
     const marker = oauthRefreshMarker(config)
-    const pending = await access(marker).then(
-      () => true,
-      () => false,
-    )
+    const pending = await hasPendingOAuthRefresh(marker)
     if (pending) {
       await deleteSocketOAuthCredential(config)
       await strictDelete(marker)
