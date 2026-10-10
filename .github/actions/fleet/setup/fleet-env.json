@@ -30,6 +30,11 @@
       "name": "OTEL_SDK_DISABLED",
       "value": "true",
       "note": "Master OpenTelemetry SDK no-op (spec-defined: the SDK reads this and exports nothing). The skillspector security tool bundles langgraph-api, whose closure ships opentelemetry-sdk + an OTLP exporter; this knob holds that exporter inert on every fleet surface. Value is the string \"true\" — the SDK does NOT treat \"1\" as disabled."
+    },
+    {
+      "name": "SFW_TELEMETRY_DISABLED",
+      "value": "true",
+      "note": "Disables Socket Firewall Enterprise telemetry. The firewall requires the exact string true. Package scanning and TLS verification remain enabled."
     }
   ]
 }

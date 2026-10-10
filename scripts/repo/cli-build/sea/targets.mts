@@ -1,19 +1,13 @@
-export const SEA_TARGETS = [
-  'darwin-arm64',
-  'darwin-x64',
-  'linux-arm64',
-  'linux-arm64-musl',
-  'linux-x64',
-  'linux-x64-musl',
-  'win32-arm64',
-  'win32-x64',
-] as const
+import { PACK_APP_TRIPLETS } from '../../../fleet/util/pack-app-triplets.mts'
+
+export const SEA_TARGETS = PACK_APP_TRIPLETS
 
 export function resolveSeaTarget(
   platform: string,
   arch: string,
-  glibc?: string | undefined,
+  options?: { glibc?: string | undefined } | undefined,
 ): string {
+  const { glibc } = { __proto__: null, ...options }
   const target = `${platform}-${arch}${platform === 'linux' && !glibc ? '-musl' : ''}`
   if (!(SEA_TARGETS as readonly string[]).includes(target)) {
     throw new Error(

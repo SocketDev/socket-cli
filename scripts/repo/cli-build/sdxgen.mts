@@ -122,7 +122,7 @@ export async function ensureSdxgenSource(
     const result = await spawn(
       process.execPath,
       [
-        path.join(root, 'scripts/fleet/git-partial-submodule.mts'),
+        path.join(root, 'scripts/fleet/git/submodule/partial.mts'),
         'clone',
         'upstream/sdxgen',
       ],
@@ -136,7 +136,7 @@ export async function ensureSdxgenSource(
     const sparse = await spawn(
       process.execPath,
       [
-        path.join(root, 'scripts/fleet/git-partial-submodule.mts'),
+        path.join(root, 'scripts/fleet/git/submodule/partial.mts'),
         'restore-sparse',
         'upstream/sdxgen',
       ],

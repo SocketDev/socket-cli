@@ -15,6 +15,11 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
+export type CompletedDiffScan = Extract<
+  SocketSdkSuccessResult<'getDiffScanById'>['data'],
+  { diff_scan: unknown }
+>
+
 export async function handleJson(
   data: CResult<SocketSdkSuccessResult<'getDiffScanById'>['data']>,
   file: string,
@@ -43,9 +48,7 @@ export async function handleJson(
   }
 }
 
-export async function handleMarkdown(
-  data: SocketSdkSuccessResult<'getDiffScanById'>['data'],
-) {
+export async function handleMarkdown(data: CompletedDiffScan) {
   const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
   const diffScan = data.diff_scan
@@ -91,7 +94,7 @@ export async function handleMarkdown(
 
 export function outputDiffArtifactSummary(
   label: string,
-  artifacts: SocketSdkSuccessResult<'getDiffScanById'>['data']['diff_scan']['artifacts']['added'],
+  artifacts: CompletedDiffScan['diff_scan']['artifacts']['added'],
 ): void {
   logger.log(`- ${label} packages: ${artifacts.length}`)
   if (artifacts.length > 0) {
@@ -128,6 +131,15 @@ export async function outputDiffScan(
       return
     }
     logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  if (!('diff_scan' in result.data)) {
+    if (outputKind === 'json' || file) {
+      await handleJson(result, file, '')
+    } else {
+      logger.info(`Diff scan ${result.data.id}: ${result.data.status}.`)
+    }
     return
   }
 
@@ -170,7 +182,7 @@ export async function outputDiffScan(
 }
 
 export function outputDiffScanMetadata(
-  scan: SocketSdkSuccessResult<'getDiffScanById'>['data']['diff_scan']['before_full_scan'],
+  scan: CompletedDiffScan['diff_scan']['before_full_scan'],
 ): void {
   for (const { 0: key, 1: value } of Object.entries(scan)) {
     if (key === 'pull_request' && !value) {

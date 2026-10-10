@@ -6,13 +6,12 @@
  *   `process.report` exposes libc (glibcVersionRuntime is the string "musl" on
  *   musl Node, otherwise a glibc version number). No shelling out. Usage: node
  *   .github/actions/fleet/_shared/platform.mjs Exits non-zero on unsupported
- *   platform/arch.
- *   NOTE: this script outputs `win-x64` / `win-arm64` (the legacy fleet
- *   shell-side shape), NOT `win32-x64` (the external-tools.json `platforms`
- *   keys). The resolver helper (resolve-external-tool-asset.mjs) computes its
- *   own `win32-*` key for schema lookup; do NOT consume this script's output as
- *   a platforms-map key.
- *   Testability: the pure `canonicalPlatform` helper is EXPORTED and the
+ *   platform/arch. NOTE: this script outputs `win-x64` / `win-arm64` (the
+ *   legacy fleet shell-side shape), NOT `win32-x64` (the external-tools.json
+ *   `platforms` keys). The resolver helper
+ *   (resolve-external-tool-asset.generated.mjs) computes its own `win32-*` key
+ *   for schema lookup; do NOT consume this script's output as a platforms-map
+ *   key. Testability: the pure `canonicalPlatform` helper is EXPORTED and the
  *   side-effectful stdout print is guarded by isMainModule(), so unit tests can
  *   import it without triggering a process.exit. Every composite-action _shared
  *   helper follows this pattern (see check-fleet-shared-scripts-are-testable).

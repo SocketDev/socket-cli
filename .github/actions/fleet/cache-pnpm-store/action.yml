@@ -100,7 +100,8 @@ runs:
         # PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY via $GITHUB_ENV (not just
         # step outputs) so the save step in setup-and-install — a different
         # composite scope — can read them.
-        QUERIED_STORE_PATH="$(pnpm store path 2>/dev/null || true)"
+        # This local query needs no sfw network-auth handshake.
+        QUERIED_STORE_PATH="$(SOCKET_SHIM_ACTIVE_PNPM=1 pnpm store path 2>/dev/null || true)"
         export QUERIED_STORE_PATH
         node "${GITHUB_ACTION_PATH}/resolve-store-cache.mjs"
 

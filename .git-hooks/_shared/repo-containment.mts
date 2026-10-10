@@ -1,8 +1,9 @@
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 function repositoryPathSeparators(value: string): string {
-  return value.replaceAll('\\', '/')
+  return normalizePath(value)
 }
 
 export function repositoryPathApi(value: string): typeof path.posix {

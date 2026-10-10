@@ -11,25 +11,25 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { debugCheck } from './check-output.mts'
+import { debugCheck } from '../check-output.mts'
 
-import { readFileForScan, shouldSkipFile } from './file-scan.mts'
-import { gitLines } from './git.mts'
-import { stripTemplateLayer, suppressionFor } from './scan-core.mts'
+import { readFileForScan, shouldSkipFile } from '../file-scan.mts'
+import { gitLines } from '../git.mts'
+import { stripTemplateLayer, suppressionFor } from '../scan-core.mts'
 
-import type { LineHit } from './scan-core.mts'
-import { scanCrossRepoPaths, scanLoggerLeaks } from './scan-code-refs.mts'
+import type { LineHit } from '../scan-core.mts'
+import { scanCrossRepoPaths, scanLoggerLeaks } from '../scan-code-refs.mts'
 import {
   scanAwsKeys,
   scanGitHubTokens,
   scanPersonalPaths,
   scanPrivateKeys,
   scanSocketApiKeys,
-} from './scan-secrets.mts'
+} from '../scan-secrets.mts'
 import {
   scanAiConfigPoison,
   scanProgrammaticClaudeLockdown,
-} from './scan-supply-chain.mts'
+} from '../scan-supply-chain.mts'
 
 const logger = getDefaultLogger()
 

@@ -26,7 +26,7 @@ it('hydrates missing source through the fleet helper and checks its pin', async 
     '/example-checkout/upstream/sdxgen',
   )
   expect(spawn.mock.calls[0]![1]).toEqual([
-    '/example-checkout/scripts/fleet/git-partial-submodule.mts',
+    '/example-checkout/scripts/fleet/git/submodule/partial.mts',
     'clone',
     'upstream/sdxgen',
   ])

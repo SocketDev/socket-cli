@@ -78,7 +78,7 @@ jobs:
   discover:
     cache-mode: none
     name: Discover fuzz targets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       rustTargets: ${{ steps.rust.outputs.targets }}
       hasRust: ${{ steps.markers.outputs.hasRust }}
@@ -155,7 +155,7 @@ jobs:
     name: 'Fuzz Rust (${{ matrix.target }})'
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasRust == 'true'
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -210,32 +210,32 @@ jobs:
           # `cargo install` would build it from source — minutes on a cold
           # cache, and it verifies nothing.
           SHARED=".github/actions/fleet/_shared"
-          # The fleet registry has ONE home. The _shared/ .mjs helpers beside
-          # the composites are code that ships with them; the pins are not.
-          TOOLS_FILE="scripts/fleet/setup/external-tools.json"
-          JQ="$SHARED/jq.mjs"
-          NS="tools"
-          node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
-          PLATFORM="$(node "$SHARED/platform.mjs")"
-          # Upstream ships x86_64 only. On anything else fall back to the
-          # source build rather than failing the run — the fallback is slower
-          # and unverified, so it says so.
-          ASSET=""
-          if TRY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" asset 2>/dev/null)"; then
-            ASSET="$TRY"
-          fi
-          if [ -z "$ASSET" ]; then
-            echo "cargo-fuzz publishes no asset for ${PLATFORM}; building from source (slower, unverified)."
+          TOOLS_FILE=".github/actions/fleet/setup/external-tools.generated.json"
+          PLATFORM_KEY="$(node "$SHARED/platform-key.mjs")"
+          RESOLVER="$SHARED/resolve-external-tool-asset.generated.mjs"
+          # cargo-fuzz publishes x86_64 assets only. Build from source when
+          # the validated catalog has no asset for this runner. Every other
+          # resolver failure stops the job.
+          if PLAN_JSON="$(node "$RESOLVER" --tool cargo-fuzz --tools-file "$TOOLS_FILE" --platform-key "$PLATFORM_KEY")"; then
+            ASSET="$(node "$SHARED/jq.mjs" - asset <<<"$PLAN_JSON")"
+            INTEGRITY="$(node "$SHARED/jq.mjs" - integrity <<<"$PLAN_JSON")"
+            SRC="$(node "$SHARED/jq.mjs" - src 2>/dev/null <<<"$PLAN_JSON" || true)"
+            DATE="$(node "$SHARED/jq.mjs" - date 2>/dev/null <<<"$PLAN_JSON" || true)"
+          else
+            RESOLVER_STATUS=$?
+            if [ "$RESOLVER_STATUS" -ne 42 ]; then
+              exit "$RESOLVER_STATUS"
+            fi
+            echo "cargo-fuzz has no verified $PLATFORM_KEY asset; building from source."
             cargo install cargo-fuzz --locked --version "$CARGO_FUZZ_VERSION"
             exit 0
           fi
-          INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" integrity)"
           DEST="$HOME/.cargo/bin"
           mkdir -p "$DEST"
-          node "$SHARED/install-tool.mjs" \
-            "https://github.com/rust-fuzz/cargo-fuzz/releases/download/${CARGO_FUZZ_VERSION}/${ASSET}" \
-            "$INTEGRITY" \
-            "$DEST"
+          INSTALL_ARGS=("$ASSET" "$INTEGRITY" "$DEST")
+          [[ -n "$SRC" ]] && INSTALL_ARGS+=(--src "$SRC")
+          [[ -n "$DATE" ]] && INSTALL_ARGS+=(--date "$DATE")
+          node "$SHARED/install-tool.mjs" "${INSTALL_ARGS[@]}"
           echo "$DEST" >> "$GITHUB_PATH"
       # The corpus grows across nightly runs because the fuzzer is
       # coverage-guided. Save under a run-unique key and restore the most recent
@@ -310,7 +310,7 @@ jobs:
     name: Fuzz JavaScript
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasJs == 'true'
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       DO_NOT_TRACK: '1'
     steps:
@@ -424,7 +424,7 @@ jobs:
     name: Fuzz Go
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasGo == 'true'
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Bootstrap checkout
         shell: bash
@@ -488,7 +488,7 @@ jobs:
     name: Fuzz C++
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasCpp == 'true'
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Bootstrap checkout
         shell: bash
@@ -550,7 +550,7 @@ jobs:
     # install — the same split every other fleet workflow uses.
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Bootstrap checkout
         shell: bash

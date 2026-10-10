@@ -17,6 +17,11 @@ export interface NodeDistAsset {
 
 export declare function parseNodeVersionSpec(wanted: string): NodeVersionSpec
 
+export declare function selectNodeVersion(
+  wanted: string,
+  nodeVersionFile: string,
+): string
+
 export declare function resolveNodeVersionFrom(
   wanted: string,
   indexVersions: readonly string[],

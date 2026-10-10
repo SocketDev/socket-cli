@@ -9,8 +9,8 @@ import {
   safeMkdirSync,
 } from '@socketsecurity/lib-stable/fs/safe'
 import { isMainModule } from '../../../scripts/fleet/process/is-main-module.mts'
-import { runMain } from '../../../scripts/fleet/process/run-main.mts'
-import type { ScriptMeta } from '../../../scripts/fleet/process/run-main.mts'
+import { runMain } from '../../../scripts/fleet/process/main/run.mts'
+import type { ScriptMeta } from '../../../scripts/fleet/process/main/run.mts'
 
 type SchemaMode = 'check' | 'update'
 interface SchemaProcessConfig {
@@ -105,7 +105,7 @@ export function runSchema(
       `MCP schema tool missing at ${searchPath}; expected one mcp-tada executable. Run pnpm install --frozen-lockfile.`,
     )
   }
-  const cache = path.join(packageRoot, '.cache', 'mcp-schema')
+  const cache = path.join(packageRoot, '.cache', 'repo', 'mcp-schema')
   safeMkdirSync(cache)
   const home = mkdtempSync(path.join(cache, 'home-'))
   try {

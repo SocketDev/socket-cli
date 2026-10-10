@@ -132,8 +132,8 @@ run_pkg_step_bounded() {
 # seconds, and the budget is the hang ceiling that keeps a deadlock (e.g. the
 # Socket Firewall sfw proxy + a worker blocking on each other) from ever hanging
 # the commit past PRECOMMIT_STEP_BUDGET_S. A real lint/test FAILURE (clean
-# non-zero before the budget) still BLOCKS the commit — only a budget-exceeding
-# HANG is skipped, and the pre-push `--all` gate + CI run the full suite. The
+# non-zero, including during timeout cleanup) still BLOCKS the commit — only a
+# budget-exceeding HANG is skipped. The pre-push `--all` gate + CI run the full suite. The
 # ceiling is enforced by scripts/fleet/check/precommit-steps-are-bounded.mts,
 # which fails if a heavy step is invoked un-bounded or the budget drifts above
 # its cap.
@@ -156,7 +156,7 @@ run_step_bounded() {
       return 1
     fi
     set -m
-    { "$@" >"$step_log" 2>&1; } &
+    { exec "$@" >"$step_log" 2>&1; } &
     job=$!
     set +m
   fi
@@ -168,11 +168,29 @@ run_step_bounded() {
   while kill -0 "$job" 2>/dev/null; do
     if [ "$elapsed" -ge "$PRECOMMIT_STEP_BUDGET_S" ]; then
       # Budget blown — a deadlock or an over-broad related-set. Take out the
-      # whole group (sfw wrapper + workers), TERM then KILL, and fail open.
+      # whole group (sfw wrapper + workers), TERM then KILL.
       # The kills run in an stderr-discarded subshell so the shell's
       # "Terminated" job-control notice doesn't leak into the commit output.
-      { kill -- -"$job"; sleep 1; kill -9 -- -"$job"; } 2>/dev/null
-      wait "$job" 2>/dev/null
+      timeout_signalled=false
+      {
+        if kill -- -"$job"; then timeout_signalled=true; fi
+        sleep 1
+        kill -9 -- -"$job"
+      } 2>/dev/null
+      if wait "$job" 2>/dev/null; then
+        status=0
+      else
+        status=$?
+      fi
+      case "$status:$timeout_signalled" in
+        0:*|137:true|143:true) ;;
+        *)
+          show_step_output
+          printf '\n========== pre-commit: %s FAILED (exit %s) ==========\n' "$step_name" "$status"
+          printf '\n========== full log: %s ==========\n' "$step_log"
+          return "$status"
+          ;;
+      esac
       cat "$step_log" 2>/dev/null
       rm -f "$step_log"
       printf '\n========== pre-commit: %s SKIPPED (budget %ss exceeded) ==========\n' \

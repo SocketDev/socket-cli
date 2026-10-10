@@ -20,6 +20,7 @@ import {
 
 export const stripTemplateLayer = (p: string): string =>
   p
+    .replace(/^template\/base\/(?:conditional|universal)\//, 'template/')
     .replace(/^template\/(?:base|mono|solo)\//, 'template/')
     .replace(/^template\/overrides\/[^/]+\//, 'template/')
 

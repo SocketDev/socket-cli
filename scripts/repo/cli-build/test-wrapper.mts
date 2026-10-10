@@ -28,9 +28,9 @@ import { loadEnvFile } from './util/load-env.mts'
 import { resolvePackageTestScope } from './test-lanes.mts'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { isMainModule } from '../../fleet/process/is-main-module.mts'
-import { runMain } from '../../fleet/process/run-main.mts'
+import { runMain } from '../../fleet/process/main/run.mts'
 
-import type { ScriptMeta } from '../../fleet/process/run-main.mts'
+import type { ScriptMeta } from '../../fleet/process/main/run.mts'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

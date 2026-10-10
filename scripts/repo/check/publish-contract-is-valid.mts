@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { loadSocketWheelhouseConfig, PACKAGE_JSON } from '../../fleet/paths.mts'
 import { isMainModule } from '../../fleet/process/is-main-module.mts'
-import { runMain } from '../../fleet/process/run-main.mts'
+import { runMain } from '../../fleet/process/main/run.mts'
 import { cliReleaseSource } from '../bump.mts'
 import {
   checkCliPackageShape,
@@ -34,9 +34,12 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META = {
+  describe: 'validates the Socket CLI npm release contract',
+  help: 'Usage: pnpm run prepublish:check [--reserved]',
+  json: 'result' as const,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe: 'validates the Socket CLI npm release contract',
-    help: 'Usage: pnpm run prepublish:check [--reserved]',
-  })
+  runMain(main, SCRIPT_META)
 }

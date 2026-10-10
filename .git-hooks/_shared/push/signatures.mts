@@ -8,9 +8,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { debugCheck } from './check-output.mts'
+import { debugCheck } from '../check-output.mts'
 
-import { git, gitLines } from './git.mts'
+import { git, gitLines } from '../git.mts'
 
 const logger = getDefaultLogger()
 

@@ -1,28 +1,27 @@
 /**
  * @file Prints the external-tools.json `platforms` KEY for this runner:
  *   linux-x64, linux-arm64, linux-x64-musl, linux-arm64-musl, darwin-x64,
- *   darwin-arm64, win32-x64, win32-arm64.
- *   This is the companion to platform.mjs, which prints the legacy shell-side
- *   shape (`win-x64`, `win-arm64`) for human-facing messages. The two agree
- *   everywhere except Windows, and that one difference silently broke every
- *   real Windows runner: a lookup keyed `win-x64` misses the schema's
- *   `win32-x64` entry, jq.mjs exits non-zero printing NOTHING, and `set -e`
- *   kills the step with an empty log. It read as "pnpm has no Windows build"
- *   when the entry was there all along, and it false-negatived the zizmor
- *   audit into a permanent skip.
- *   So: use THIS for any `platforms <key>` lookup, and platform.mjs only for
- *   prose. The mapping itself is not duplicated here — it is
- *   `canonicalPlatformKey` from resolve-external-tool-asset.mjs, which already
- *   owned it for the Go/Rust/odai resolvers.
- *   Usage: node .github/actions/fleet/_shared/platform-key.mjs
- *   Exits non-zero on an unsupported platform/arch.
+ *   darwin-arm64, win32-x64, win32-arm64. This is the companion to
+ *   platform.mjs, which prints the legacy shell-side shape (`win-x64`,
+ *   `win-arm64`) for human-facing messages. The two agree everywhere except
+ *   Windows, and that one difference silently broke every real Windows runner:
+ *   a lookup keyed `win-x64` misses the schema's `win32-x64` entry, jq.mjs
+ *   exits non-zero printing NOTHING, and `set -e` kills the step with an empty
+ *   log. It read as "pnpm has no Windows build" when the entry was there all
+ *   along, and it false-negatived the zizmor audit into a permanent skip. So:
+ *   use THIS for any `platforms <key>` lookup, and platform.mjs only for prose.
+ *   The mapping itself is not duplicated here — it is `canonicalPlatformKey`
+ *   from resolve-external-tool-asset.generated.mjs, which already owned it for
+ *   the Go/Rust/odai resolvers. Usage: node
+ *   .github/actions/fleet/_shared/platform-key.mjs Exits non-zero on an
+ *   unsupported platform/arch.
  */
 
 import process from 'node:process'
 import { realpathSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
-import { canonicalPlatformKey } from './resolve-external-tool-asset.mjs'
+import { canonicalPlatformKey } from './resolve-external-tool-asset.generated.mjs'
 
 // Re-exported so a caller can reach the key function from the module whose name
 // says "key", and so this file satisfies the exported-helper contract that

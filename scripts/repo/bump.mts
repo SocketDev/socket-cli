@@ -6,7 +6,7 @@ import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { parseVersion } from '@socketsecurity/lib-stable/versions/parse'
 
-import { replaceVersion } from '../fleet/bump/manifest-write.mts'
+import { replaceVersion } from '../fleet/release/bump/manifest-write.mts'
 import {
   COMMIT_LOG_FORMAT,
   parseChangelogCommits,
@@ -15,8 +15,8 @@ import { composeChangelogSectionFromCommits } from '../fleet/changelog/compose.m
 import { insertChangelogVersionSection } from '../fleet/changelog/sections.mts'
 import { PACKAGE_JSON, REPO_ROOT } from '../fleet/paths.mts'
 import { isMainModule } from '../fleet/process/is-main-module.mts'
-import { runMain } from '../fleet/process/run-main.mts'
-import { runCapture } from '../fleet/registry-infra/shared.mts'
+import { runMain } from '../fleet/process/main/run.mts'
+import { runCapture } from '../fleet/registry/shared.mts'
 import { checkCliReleaseVersion } from './check/cli-package-is-single.mts'
 
 const logger = getDefaultLogger()
@@ -119,9 +119,12 @@ export async function main(): Promise<void> {
   writeFileSync(PACKAGE_JSON, replaceVersion(original, source.version))
 }
 
+const SCRIPT_META = {
+  describe: 'generates a source-bound Socket CLI prerelease',
+  help: 'Usage: pnpm run bump --dry-run | --write-only',
+  json: 'result' as const,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe: 'generates a source-bound Socket CLI prerelease',
-    help: 'Usage: pnpm run bump --dry-run | --write-only',
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -1,6 +1,6 @@
 /**
  * @file Behavior coverage for the publish-time README asset pin
- *   (`scripts/fleet/registry-infra/pin-readme.mts`). `pinReadmeAssets` parses
+ *   (`scripts/fleet/registry/pin-readme.mts`). `pinReadmeAssets` parses
  *   the README to a position-tracked GFM mdast tree and derives every edit
  *   from parser-reported byte offsets (raw HTML goes through parse5 with
  *   source locations), so a relative `assets/` ref is pinned wherever it is a
@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { pinReadmeAssets } from '../../../scripts/fleet/registry-infra/pin-readme.mts'
+import { pinReadmeAssets } from '../../../scripts/fleet/registry/pin-readme.mts'
 
 const slug = 'SocketDev/socket-cli'
 const ref = '0123456789abcdef0123456789abcdef01234567'

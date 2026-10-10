@@ -2,9 +2,9 @@ import { getInvocationMode } from './util/cli/invocation-mode.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../scripts/fleet/process/is-main-module.mts'
-import { runMain } from '../scripts/fleet/process/run-main.mts'
+import { runMain } from '../scripts/fleet/process/main/run.mts'
 
-import type { ScriptMeta } from '../scripts/fleet/process/run-main.mts'
+import type { ScriptMeta } from '../scripts/fleet/process/main/run.mts'
 
 const logger = getDefaultLogger()
 
