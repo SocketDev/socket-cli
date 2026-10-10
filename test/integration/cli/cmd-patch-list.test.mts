@@ -1,14 +1,13 @@
 /**
  * Integration tests for `socket patch list` command.
  *
- * Tests listing all patches in the local manifest via socket-patch v2.0.0
- * binary.
+ * Tests listing all patches from the local manifest in-process.
  *
  * Test Coverage: - Help text display and usage examples - Listing patches from
  * manifest - JSON output format.
  *
  * Related Files: - src/command/patch/cmd-patch.mts - Root command that
- * forwards to socket-patch.
+ * dispatches manifest operations.
  */
 
 import path from 'node:path'
@@ -30,7 +29,6 @@ describe('socket patch list', async () => {
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      // socket-patch v2.0.0 shows: "List all patches in the local manifest"
       expect(stdout).toContain('List')
       expect(stdout).toContain('manifest')
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -50,7 +48,6 @@ describe('socket patch list', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      // socket-patch v2.0.0 shows error when no manifest found.
       expect(output).toMatch(/No .socket|manifest|not found/i)
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
@@ -87,7 +84,6 @@ describe('socket patch list', async () => {
     'should output patches in JSON format',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      // socket-patch v2.0.0 outputs JSON when --json flag is used.
       // Verify it's valid JSON.
       let parsed: unknown
       try {

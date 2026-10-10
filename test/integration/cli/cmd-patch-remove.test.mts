@@ -1,18 +1,19 @@
 /**
  * Integration tests for `socket patch remove` command.
  *
- * Tests removing patches from the manifest via socket-patch v2.0.0 binary.
+ * Tests patch removal, including the in-process skip-rollback operation.
  *
- * Note: In socket-patch v2.0.0, the command is `remove` (not `rm`). The
- * `remove` command rolls back files first and then removes from manifest.
+ * The default remove path delegates rollback to socket-patch. The local
+ * `--skip-rollback` path removes only the manifest record.
  *
  * Test Coverage: - Help text display and usage examples - Removing patches by
  * PURL or UUID - Error handling for missing identifiers.
  *
  * Related Files: - src/command/patch/cmd-patch.mts - Root command that
- * forwards to socket-patch.
+ * dispatches local operations and forwards other operations to socket-patch.
  */
 
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { describe, expect } from 'vitest'
@@ -29,7 +30,7 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 describe('socket patch remove', async () => {
   cmdit(
-    ['patch', 'remove', FLAG_HELP, FLAG_CONFIG, '{}'],
+    ['patch', 'remove', FLAG_HELP, '--skip-rollback', FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -40,16 +41,21 @@ describe('socket patch remove', async () => {
   )
 
   cmdit(
-    ['patch', 'remove', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'patch',
+      'remove',
+      '--skip-rollback',
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token"}',
+    ],
     'should show error when identifier is not provided',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: pnpmFixtureDir,
       })
       const output = stdout + stderr
-      // socket-patch v2.0.0 requires an identifier argument.
-      expect(output).toMatch(/required|identifier|argument|missing/i)
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('A patch PURL or UUID is required')
+      expect(code, 'missing identifier should exit with code 2').toBe(2)
     },
   )
 
@@ -58,6 +64,7 @@ describe('socket patch remove', async () => {
       'patch',
       'remove',
       'pkg:npm/nonexistent@1.0.0',
+      '--skip-rollback',
       '--cwd',
       pnpmFixtureDir,
       FLAG_CONFIG,
@@ -67,9 +74,8 @@ describe('socket patch remove', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      // socket-patch v2.0.0 shows error when patch not found.
-      expect(output).toMatch(/not found|no patch|error/i)
-      expect(code, 'should exit with non-zero code').not.toBe(0)
+      expect(output).toContain('No patch found for pkg:npm/nonexistent@1.0.0')
+      expect(code, 'unknown patch should exit with code 1').toBe(1)
     },
   )
 
@@ -86,9 +92,8 @@ describe('socket patch remove', async () => {
     ],
     'should support --skip-rollback flag',
     async cmd => {
-      // `patch remove` deletes the entry from .socket/manifest.json (and GCs
-      // blobs), so run against a temp copy to keep the committed fixture
-      // pristine.
+      // `patch remove --skip-rollback` edits .socket/manifest.json, so run
+      // against a temporary copy to keep the committed fixture pristine.
       const { cleanup, tempDir } = await withTempFixture(pnpmFixtureDir)
       try {
         const isolatedCmd = cmd.map(arg =>
@@ -99,10 +104,14 @@ describe('socket patch remove', async () => {
           isolatedCmd,
         )
         const output = stdout + stderr
-        // With --skip-rollback, socket-patch only updates manifest.
-        // May show removed, not found, or other status.
-        expect(output).toMatch(/removed|not found|manifest|error/i)
-        expect(typeof code).toBe('number')
+        const manifestPath = path.join(tempDir, '.socket', 'manifest.json')
+        const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
+          patches: Record<string, unknown>
+        }
+
+        expect(output).toContain('Removed 1 patch')
+        expect(code).toBe(0)
+        expect(manifest.patches['pkg:npm/on-headers@1.0.2']).toBeUndefined()
       } finally {
         await cleanup()
       }

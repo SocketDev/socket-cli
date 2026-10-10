@@ -49,9 +49,19 @@ describe('socket patch', () => {
     expect(result.stdout).toContain('Manage CVE patches for dependencies')
   })
 
+  it('shows local list help without invoking socket-patch', async () => {
+    const result = await spawnSocketCli(
+      binCliPath,
+      ['patch', 'list', '--help', '--config', '{}', '--no-banner'],
+      { env: { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: fixturePath } },
+    )
+    expect(result.code).toBe(0)
+    expect(result.stdout).toContain('List patches in the local manifest')
+    expect(result.stdout).not.toContain(JSON.stringify(['list', '--help']))
+  })
+
   it.each([
     'scan',
-    'list',
     'apply',
     'get',
     'remove',
