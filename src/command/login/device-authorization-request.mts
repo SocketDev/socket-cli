@@ -1,4 +1,4 @@
-const DEVICE_LOGIN_SCOPES = [
+export const DEVICE_LOGIN_SCOPES = [
   'alerts:list',
   'dependencies:list',
   'diff-scans:list',

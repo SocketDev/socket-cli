@@ -67,13 +67,6 @@ vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
   getDefaultSpinner: mockGetDefaultSpinner,
 }))
 
-// Mock getDefaultApiToken.
-const mockGetDefaultApiToken = vi.hoisted(() => vi.fn())
-vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
-  getDefaultApiToken: mockGetDefaultApiToken,
-  getExtraCaCerts: () => undefined,
-}))
-
 // Mock getNetworkErrorDiagnostics.
 vi.mock(import('../../../../src/util/error/errors.mts'), () => ({
   buildErrorCause: vi.fn(async (code: number) => `Error code: ${code}`),
@@ -118,7 +111,6 @@ describe('api utilities', () => {
     vi.restoreAllMocks()
     vi.unstubAllEnvs()
     mockHttpRequest.mockReset()
-    mockGetDefaultApiToken.mockReset()
   })
 
   describe('getErrorMessageForHttpStatusCode', () => {

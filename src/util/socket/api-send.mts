@@ -19,7 +19,7 @@ import {
   socketHttpRequest,
   tryReadResponseText,
 } from './api-http.mts'
-import { getDefaultApiToken } from './sdk.mts'
+import { requireSocketCredential, socketAuthorizationHeader } from './sdk.mts'
 
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
 
@@ -108,15 +108,11 @@ export async function sendApiRequest<T>(
   method: 'POST' | 'PUT',
   options?: SendApiRequestOptions | undefined,
 ): Promise<CResult<T>> {
-  const apiToken = getDefaultApiToken()
-  if (!apiToken) {
-    return {
-      ok: false,
-      message: 'Authentication Error',
-      cause:
-        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your Socket API token.',
-    }
+  const credentialResult = await requireSocketCredential()
+  if (!credentialResult.ok) {
+    return credentialResult
   }
+  const credential = credentialResult.data
 
   const baseUrl = getDefaultApiBaseUrl()
   /* c8 ignore start - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
@@ -149,7 +145,7 @@ export async function sendApiRequest<T>(
     result = await socketHttpRequest(fullUrl, {
       body: body ? JSON.stringify(body) : undefined,
       headers: {
-        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+        Authorization: socketAuthorizationHeader(credential),
         'Content-Type': 'application/json',
       },
       method,

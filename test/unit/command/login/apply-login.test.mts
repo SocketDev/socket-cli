@@ -1,71 +1,58 @@
-/**
- * Unit tests for login apply utilities.
- *
- * Purpose: Tests the applyLogin function that updates CLI configuration.
- *
- * Test Coverage: - Config value updates - Token storage - Enforced orgs
- * storage.
- *
- * Related Files: - commands/login/apply-login.mts (implementation)
- */
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyLogin } from '../../../../src/command/login/apply-login.mts'
+import {
+  getConfigValues,
+  overrideCachedConfig,
+  resetConfigForTesting,
+} from '../../../../src/util/config.mts'
 
-// Mock dependencies.
-const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
+const apiToken = 'REDACTED_TEST_TOKEN'
 
-vi.mock(import('../../../../src/util/config.mts'), () => ({
-  updateConfigValue: mockUpdateConfigValue,
-}))
+afterEach(() => resetConfigForTesting())
 
-describe('apply-login', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+describe('applyLogin', () => {
+  it('updates credentials and organization configuration together', async () => {
+    overrideCachedConfig('{}')
+    await applyLogin(
+      apiToken,
+      ['example-org'],
+      'https://api.example.com',
+      undefined,
+    )
+    expect(getConfigValues()).toMatchObject({
+      apiToken,
+      enforcedOrgs: ['example-org'],
+      apiBaseUrl: 'https://api.example.com',
+    })
   })
 
-  describe('applyLogin', () => {
-    it('updates all config values', () => {
-      applyLogin(
-        'test-token',
-        ['org1', 'org2'],
-        'https://api.example.com',
-        'http://proxy',
-      )
+  it('clears optional values when a new login omits them', async () => {
+    overrideCachedConfig(
+      JSON.stringify({ apiProxy: 'https://proxy.example.com' }),
+    )
+    await applyLogin(apiToken, [], undefined, undefined)
+    expect(getConfigValues().apiProxy).toBeUndefined()
+    expect(getConfigValues().apiBaseUrl).toBeUndefined()
+    expect(getConfigValues().enforcedOrgs).toEqual([])
+  })
 
-      expect(mockUpdateConfigValue).toHaveBeenCalledTimes(4)
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('enforcedOrgs', [
-        'org1',
-        'org2',
-      ])
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
-        'apiToken',
-        'test-token',
-      )
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
-        'apiBaseUrl',
-        'https://api.example.com',
-      )
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
-        'apiProxy',
-        'http://proxy',
-      )
-    })
-
-    it('handles undefined apiBaseUrl', () => {
-      applyLogin('test-token', ['org1'], undefined, undefined)
-
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith(
-        'apiBaseUrl',
-        undefined,
-      )
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('apiProxy', undefined)
-    })
-
-    it('handles empty enforced orgs', () => {
-      applyLogin('test-token', [], undefined, undefined)
-
-      expect(mockUpdateConfigValue).toHaveBeenCalledWith('enforcedOrgs', [])
-    })
+  it('refuses to persist a device session under a config override', async () => {
+    overrideCachedConfig('{}')
+    await expect(
+      applyLogin(apiToken, [], undefined, undefined, {
+        options: {
+          issuer: 'https://api.example.com/v1/oauth2/',
+          clientId: 'socket-cli',
+        },
+        tokens: {
+          accessToken: apiToken,
+          tokenType: 'Bearer',
+          expiresIn: 900,
+          refreshToken: 'REDACTED_TEST_REFRESH_TOKEN',
+        },
+      }),
+    ).rejects.toThrow()
+    expect(getConfigValues().apiToken).toBeUndefined()
   })
 })

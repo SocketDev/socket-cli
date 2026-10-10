@@ -20,7 +20,8 @@ import {
   socketHttpRequest,
   tryReadResponseText,
 } from './api-http.mts'
-import { getDefaultApiToken } from './sdk.mts'
+import { requireSocketCredential, socketAuthorizationHeader } from './sdk.mts'
+import type { SocketCredential } from './sdk.mts'
 
 import type { CResult } from '../../types.mts'
 
@@ -67,7 +68,11 @@ export async function buildApiQueryFailure(
   }
 }
 
-export async function queryApi(path: string, apiToken: string) {
+export async function queryApi(
+  path: string,
+  apiToken: string,
+  authScheme: SocketCredential['authScheme'] = 'basic',
+) {
   const baseUrl = getDefaultApiBaseUrl()
   /* c8 ignore start - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
   if (!baseUrl) {
@@ -83,7 +88,10 @@ export async function queryApi(path: string, apiToken: string) {
     {
       method: 'GET',
       headers: {
-        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+        Authorization: socketAuthorizationHeader({
+          token: apiToken,
+          authScheme,
+        }),
       },
       timeout: 30_000,
     },
@@ -148,15 +156,11 @@ export async function queryApiSafeTextWithStatus(
   description?: string | undefined,
   commandPath?: string | undefined,
 ): Promise<CResult<ApiTextResult>> {
-  const apiToken = getDefaultApiToken()
-  if (!apiToken) {
-    return {
-      ok: false,
-      message: 'Authentication Error',
-      cause:
-        'User must be authenticated to run this command. Run `socket login` and enter your Socket API token.',
-    }
+  const credentialResult = await requireSocketCredential()
+  if (!credentialResult.ok) {
+    return credentialResult
   }
+  const credential = credentialResult.data
 
   const spinner = getDefaultSpinner()
 
@@ -170,7 +174,7 @@ export async function queryApiSafeTextWithStatus(
   // eslint-disable-next-line typescript-eslint/no-explicit-any -- HTTP response shape (status/ok/headers/text/json/data) is dynamically narrowed below; typing here would require a discriminated union for every status code.
   let result: any
   try {
-    result = await queryApi(path, apiToken)
+    result = await queryApi(path, credential.token, credential.authScheme)
     const durationMs = Date.now() - startTime
     if (description) {
       spinner?.successAndStop(

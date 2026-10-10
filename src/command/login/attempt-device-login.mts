@@ -28,6 +28,10 @@ import { getDefaultProxyUrl, setupSdk } from '../../util/socket/sdk.mts'
 import { assertSafeEndpointUrl } from '../../util/url/safe-endpoint.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
+import type {
+  SocketOAuthCredentialOptions,
+  SocketOAuthTokenSet,
+} from '@socketsecurity/lib-stable/secrets/socket-oauth'
 import type { CResult } from '../../types.mts'
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
 
@@ -163,6 +167,15 @@ export async function attemptDeviceLogin(
   return await verifyDeviceLoginToken(tokenResponse.access_token, {
     apiBaseUrl,
     apiProxy: effectiveApiProxy,
+    oauth: {
+      options: { issuer: oauthBaseUrl, clientId },
+      tokens: {
+        accessToken: tokenResponse.access_token,
+        expiresIn: tokenResponse.expires_in,
+        refreshToken: tokenResponse.refresh_token,
+        tokenType: tokenResponse.token_type,
+      },
+    },
   })
 }
 
@@ -389,13 +402,23 @@ export function resolveOauthClientId(): string {
 
 export async function verifyDeviceLoginToken(
   apiToken: string,
-  config: { apiBaseUrl: string | undefined; apiProxy: string | undefined },
+  config: {
+    apiBaseUrl: string | undefined
+    apiProxy: string | undefined
+    oauth?:
+      | {
+          options: SocketOAuthCredentialOptions
+          tokens: SocketOAuthTokenSet
+        }
+      | undefined
+  },
 ): Promise<CResult<void>> {
   const cfg = { __proto__: null, ...config } as typeof config
   const sockSdkCResult = await setupSdk({
     apiBaseUrl: cfg.apiBaseUrl,
     apiProxy: cfg.apiProxy,
     apiToken,
+    authScheme: 'bearer',
   })
   if (!sockSdkCResult.ok) {
     logger.fail(sockSdkCResult.message)
@@ -438,7 +461,23 @@ export async function verifyDeviceLoginToken(
     updateConfigValue(CONFIG_KEY_DEFAULT_ORG, defaultOrg)
   }
 
-  applyLogin(apiToken, enforcedOrgs, cfg.apiBaseUrl, cfg.apiProxy)
+  try {
+    await applyLogin(
+      apiToken,
+      enforcedOrgs,
+      cfg.apiBaseUrl,
+      cfg.apiProxy,
+      cfg.oauth,
+    )
+  } catch {
+    process.exitCode = 1
+    return {
+      ok: false,
+      message: 'Unable to save Socket login in the OS credential store',
+      cause:
+        'Unlock your credential store and run socket login again. Remove config overrides before saving.',
+    }
+  }
   logger.success('API credentials set')
   if (isConfigFromFlag()) {
     logger.log('')

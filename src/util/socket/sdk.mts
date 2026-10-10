@@ -1,33 +1,3 @@
-/**
- * Socket SDK utilities for Socket CLI. Manages SDK initialization and
- * configuration for API communication.
- *
- * Authentication:
- *
- * - Interactive password prompt for missing tokens
- * - Supports environment variable (SOCKET_CLI_API_TOKEN)
- * - Validates token format and presence
- *
- * Proxy Support:
- *
- * - Automatic proxy agent selection
- * - HTTP/HTTPS proxy configuration
- * - Respects SOCKET_CLI_API_PROXY environment variable
- *
- * SDK Setup:
- *
- * - CreateSocketSdk: Create configured SDK instance
- * - GetDefaultApiToken: Retrieve API token from config/env
- * - GetDefaultProxyUrl: Retrieve proxy URL from config/env
- * - GetPublicApiToken: Get public API token constant
- * - SetupSdk: Initialize Socket SDK with authentication
- *
- * User Agent:
- *
- * - Automatic user agent generation from package.json
- * - Includes CLI version and platform information
- */
-
 import { readFileSync } from 'node:fs'
 import { Agent as HttpsAgent } from 'node:https'
 import { rootCertificates } from 'node:tls'
@@ -64,11 +34,12 @@ import { getCliName } from '../../env/cli-name.mts'
 import { getCliVersion } from '../../env/cli-version.mts'
 import { SOCKET_CLI_DEBUG } from '../../env/socket-cli-debug.mts'
 import { TOKEN_PREFIX_LENGTH } from '../../constants/socket.mts'
-import { getConfigValueOrUndef } from '../config.mts'
+import { getConfigValueOrUndef, isConfigFromFlag } from '../config.mts'
 import { debugApiRequest, debugApiResponse } from '../debug.mts'
 import { trackCliEvent } from '../telemetry/integration.mts'
 
 import { assertSafeSocketApiBaseUrl } from './safe-base-url.mts'
+import { readOAuthSession } from './oauth-session.mts'
 
 import type { CResult } from '../../types.mts'
 import type {
@@ -87,6 +58,31 @@ let extraCaCertsResolved = false
 
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let defaultToken: string | undefined
+
+export function createOAuthCredentialProvider(
+  authScheme: SocketCredential['authScheme'],
+  apiBaseUrl: string | undefined,
+): (() => Promise<SocketCredential>) | undefined {
+  if (authScheme !== 'bearer') {
+    return undefined
+  }
+  const sessionId = getConfigValueOrUndef('oauthSession')?.sessionId
+  return async () => {
+    if (
+      !sessionId ||
+      getConfigValueOrUndef('oauthSession')?.sessionId !== sessionId
+    ) {
+      throw new Error(
+        'Socket login changed during this command. Start the command again.',
+      )
+    }
+    const credential = await readOAuthSession(apiBaseUrl, sessionId)
+    if (!credential || credential.authScheme !== 'bearer') {
+      throw new Error('Socket login was removed. Run socket login.')
+    }
+    return credential
+  }
+}
 
 // The Socket API server that should be used for operations. A value that does
 // not parse as a URL is ignored; a value that parses but resolves to a private
@@ -114,8 +110,7 @@ export function getDefaultApiToken(): string | undefined {
     getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
     defaultToken
 
-  defaultToken = isNonEmptyString(key) ? key : undefined
-  return defaultToken
+  return isNonEmptyString(key) ? key : undefined
 }
 
 // The Socket API server that should be used for operations.
@@ -190,11 +185,33 @@ export function getVisibleTokenPrefix(): string {
 }
 
 export function hasDefaultApiToken(): boolean {
-  return !!getDefaultApiToken()
+  return (
+    !!getDefaultApiToken() ||
+    (!getSocketCliNoApiToken() &&
+      !!getConfigValueOrUndef('oauthSession') &&
+      !isConfigFromFlag())
+  )
 }
 
 export function invalidateDefaultApiToken(): void {
   defaultToken = undefined
+}
+
+export async function requireSocketCredential(): Promise<
+  CResult<SocketCredential>
+> {
+  const result = await resolveSdkCredential({})
+  if (!result.ok) {
+    return result
+  }
+  if (!result.data) {
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause: 'Run socket login before using this command.',
+    }
+  }
+  return { ok: true, data: result.data }
 }
 
 export function resolveSdkApiBaseUrl(
@@ -207,13 +224,56 @@ export function resolveSdkApiBaseUrl(
   return apiBaseUrl
 }
 
+export async function resolveSdkCredential(
+  config: SetupSdkOptions,
+): Promise<CResult<SocketCredential | undefined>> {
+  if (config.apiToken !== undefined) {
+    return {
+      ok: true,
+      data: {
+        token: config.apiToken,
+        authScheme: config.authScheme ?? 'basic',
+      },
+    }
+  }
+  try {
+    return { ok: true, data: await resolveSocketCredential(config.apiBaseUrl) }
+  } catch {
+    return {
+      ok: false,
+      message: 'Socket login could not be refreshed',
+      cause:
+        'Check your connection and credential store, then run socket login.',
+    }
+  }
+}
+
 export function resolveSdkProxyUrl(
   configuredUrl: string | undefined,
 ): string | undefined {
   return isUrl(configuredUrl) ? configuredUrl : getDefaultProxyUrl()
 }
 
+export type SocketCredential = {
+  token: string
+  authScheme: 'basic' | 'bearer'
+}
+
+export async function resolveSocketCredential(
+  apiBaseUrl = getDefaultApiBaseUrl(),
+): Promise<SocketCredential | undefined> {
+  const apiToken = getDefaultApiToken()
+  if (apiToken) {
+    return { token: apiToken, authScheme: 'basic' }
+  }
+  if (getSocketCliNoApiToken()) {
+    return undefined
+  }
+  return await readOAuthSession(apiBaseUrl)
+}
+
 export type SetupSdkOptions = {
+  authScheme?: 'basic' | 'bearer' | undefined
   apiBaseUrl?: string | undefined
   apiProxy?: string | undefined
   apiToken?: string | undefined
@@ -223,7 +283,20 @@ export async function setupSdk(
   options?: SetupSdkOptions | undefined,
 ): Promise<CResult<SocketSdk>> {
   const opts = { __proto__: null, ...options } as SetupSdkOptions
-  let { apiToken = getDefaultApiToken() } = opts
+  const credentialResult = await resolveSdkCredential(opts)
+  if (!credentialResult.ok) {
+    return credentialResult
+  }
+  let apiToken = credentialResult.data?.token
+  const authScheme = credentialResult.data?.authScheme ?? 'basic'
+  if (!supportsOAuthSdk(authScheme)) {
+    return {
+      ok: false,
+      message: 'This CLI build does not include OAuth refresh support',
+      cause:
+        'Install a CLI release with the OAuth-capable Socket SDK before using device login.',
+    }
+  }
 
   /* c8 ignore start - interactive password prompt only fires in TTY mode; tests are non-interactive */
   if (typeof apiToken !== 'string' && isInteractive()) {
@@ -264,7 +337,13 @@ export async function setupSdk(
   // NODE_EXTRA_CA_CERTS was not set at process startup.
   const ca = getExtraCaCerts()
 
+  const authProvider = opts.apiToken
+    ? undefined
+    : createOAuthCredentialProvider(authScheme, apiBaseUrl)
+
   const sdkOptions = {
+    authProvider,
+    authScheme,
     ...getSdkAgentOptions(apiBaseUrl, apiProxy, ca),
     ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
     ...(timeout ? { timeout } : {}),
@@ -375,4 +454,22 @@ export async function setupSdk(
     ok: true,
     data: sdk,
   }
+}
+
+export function socketAuthorizationHeader(
+  credential: SocketCredential,
+): string {
+  return credential.authScheme === 'bearer'
+    ? `Bearer ${credential.token}`
+    : `Basic ${btoa(`${credential.token}:`)}`
+}
+
+export function supportsOAuthSdk(
+  authScheme: SocketCredential['authScheme'],
+): boolean {
+  return (
+    authScheme !== 'bearer' ||
+    ('supportsAuthProvider' in SocketSdk &&
+      SocketSdk.supportsAuthProvider === true)
+  )
 }

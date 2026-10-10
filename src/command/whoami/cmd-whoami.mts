@@ -12,6 +12,7 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 import {
   getDefaultApiToken,
   getVisibleTokenPrefix,
+  resolveSocketCredential,
 } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
@@ -95,12 +96,24 @@ export async function run(
 
   const flags = cli.flags
 
-  const apiToken = getDefaultApiToken()
-  const tokenLocation = getTokenLocation()
+  const configuredToken = getDefaultApiToken()
+  const credential = configuredToken
+    ? { token: configuredToken, authScheme: 'basic' }
+    : getConfigValueOrUndef('oauthSession')
+      ? await resolveSocketCredential()
+      : undefined
+  const apiToken = credential?.token
+  const tokenLocation =
+    credential?.authScheme === 'bearer'
+      ? 'OS credential store (Socket OAuth)'
+      : getTokenLocation()
 
   if (apiToken) {
     const visiblePrefix = getVisibleTokenPrefix()
-    const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}…`
+    const tokenDisplay =
+      credential?.authScheme === 'bearer'
+        ? '[OAuth access token]'
+        : `${TOKEN_PREFIX}${visiblePrefix}…`
 
     if (flags['json']) {
       outputWhoami({

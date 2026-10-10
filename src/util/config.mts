@@ -54,6 +54,9 @@ import type { SocketYml } from './socket-yaml.mts'
 const logger = getDefaultLogger()
 
 export interface LocalConfig {
+  oauthSession?:
+    | { clientId: string; issuer: string; sessionId?: string | undefined }
+    | undefined
   apiBaseUrl?: string | null | undefined
   apiProxy?: string | null | undefined
   apiToken?: string | null | undefined
@@ -69,6 +72,7 @@ const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set([
 ])
 
 const supportedConfig: Map<keyof LocalConfig, string> = new Map([
+  ['oauthSession', 'The selected Socket OAuth issuer and client'],
   [CONFIG_KEY_API_BASE_URL, 'Base URL of the Socket API endpoint'],
   [CONFIG_KEY_API_PROXY, 'A proxy through which to access the Socket API'],
   [
@@ -153,6 +157,10 @@ export function findSocketYmlSync(
     dir = path.join(dir, '..')
   }
   return { ok: true, data: undefined }
+}
+
+export function getConfigDirectory(): string | undefined {
+  return getSocketAppDataPath()
 }
 
 export function getConfigValue<Key extends keyof LocalConfig>(

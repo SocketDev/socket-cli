@@ -116,7 +116,7 @@ export async function attemptLogin(
     }
   }
 
-  finishLogin(apiToken, enforcedOrgs, orgSlugs, { apiBaseUrl, apiProxy })
+  await finishLogin(apiToken, enforcedOrgs, orgSlugs, { apiBaseUrl, apiProxy })
   return undefined
 }
 
@@ -155,12 +155,12 @@ export async function chooseEnforcedOrgs(
   return shouldEnforce && firstChoice.value ? [firstChoice.value] : []
 }
 
-export function finishLogin(
+export async function finishLogin(
   apiToken: string,
   enforcedOrgs: string[],
   orgSlugs: string[],
   config: { apiBaseUrl: string | undefined; apiProxy: string | undefined },
-): void {
+): Promise<void> {
   const cfg = { __proto__: null, ...config } as typeof config
   const defaultOrg = orgSlugs[0]?.trim()
   if (defaultOrg) {
@@ -169,7 +169,7 @@ export function finishLogin(
 
   const previousPersistedToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
   try {
-    applyLogin(apiToken, enforcedOrgs, cfg.apiBaseUrl, cfg.apiProxy)
+    await applyLogin(apiToken, enforcedOrgs, cfg.apiBaseUrl, cfg.apiProxy)
     logger.success(
       `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`,
     )

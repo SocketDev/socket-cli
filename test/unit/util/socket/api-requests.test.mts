@@ -66,13 +66,6 @@ vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
   getDefaultSpinner: mockGetDefaultSpinner,
 }))
 
-// Mock getDefaultApiToken.
-const mockGetDefaultApiToken = vi.hoisted(() => vi.fn())
-vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
-  getDefaultApiToken: mockGetDefaultApiToken,
-  getExtraCaCerts: () => undefined,
-}))
-
 // Mock getNetworkErrorDiagnostics.
 vi.mock(import('../../../../src/util/error/errors.mts'), () => ({
   buildErrorCause: vi.fn(async (code: number) => `Error code: ${code}`),
@@ -117,17 +110,16 @@ describe('api utilities', () => {
     vi.restoreAllMocks()
     vi.unstubAllEnvs()
     mockHttpRequest.mockReset()
-    mockGetDefaultApiToken.mockReset()
   })
 
   describe('queryApiSafeText', () => {
     beforeEach(() => {
       // Reset mock for each test.
-      mockGetDefaultApiToken.mockReturnValue('test-token')
+      overrideCachedConfig(JSON.stringify({ apiToken: 'test-token' }))
     })
 
     it('returns error when not authenticated', async () => {
-      mockGetDefaultApiToken.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await queryApiSafeText('test/path')
 
@@ -214,7 +206,7 @@ describe('api utilities', () => {
 
   describe('queryApiSafeJson', () => {
     beforeEach(() => {
-      mockGetDefaultApiToken.mockReturnValue('test-token')
+      overrideCachedConfig(JSON.stringify({ apiToken: 'test-token' }))
     })
 
     it('parses JSON response successfully', async () => {
@@ -244,7 +236,7 @@ describe('api utilities', () => {
     })
 
     it('propagates authentication errors', async () => {
-      mockGetDefaultApiToken.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await queryApiSafeJson<unknown>('test/path')
 
@@ -257,11 +249,11 @@ describe('api utilities', () => {
 
   describe('sendApiRequest', () => {
     beforeEach(() => {
-      mockGetDefaultApiToken.mockReturnValue('test-token')
+      overrideCachedConfig(JSON.stringify({ apiToken: 'test-token' }))
     })
 
     it('returns error when not authenticated', async () => {
-      mockGetDefaultApiToken.mockReturnValue(undefined)
+      overrideCachedConfig('{}')
 
       const result = await sendApiRequest<unknown>('test/path', 'POST', {})
 

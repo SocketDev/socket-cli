@@ -204,6 +204,18 @@ describe('attemptDeviceLogin', () => {
       [],
       undefined,
       undefined,
+      {
+        options: {
+          clientId: 'socket-cli',
+          issuer: 'https://api.socket.dev/v1/oauth2/',
+        },
+        tokens: {
+          accessToken: 'sktsec_abc',
+          expiresIn: 900,
+          refreshToken: undefined,
+          tokenType: 'Bearer',
+        },
+      },
     )
   })
 
@@ -365,6 +377,18 @@ describe('attemptDeviceLogin', () => {
       ['enterprise-org'],
       undefined,
       undefined,
+      {
+        options: {
+          clientId: 'socket-cli',
+          issuer: 'https://api.socket.dev/v1/oauth2/',
+        },
+        tokens: {
+          accessToken: 'sktsec_abc',
+          expiresIn: 900,
+          refreshToken: undefined,
+          tokenType: 'Bearer',
+        },
+      },
     )
   })
 

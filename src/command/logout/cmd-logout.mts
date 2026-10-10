@@ -11,6 +11,7 @@ import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import { isConfigFromFlag, updateConfigValue } from '../../util/config.mts'
+import { clearOAuthSession } from '../../util/socket/oauth-session.mts'
 import { invalidateDefaultApiToken } from '../../util/socket/sdk.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
@@ -26,7 +27,8 @@ const hidden = false
 
 // Helper functions.
 
-export function applyLogout(): void {
+export async function applyLogout(): Promise<void> {
+  await clearOAuthSession()
   updateConfigValue(CONFIG_KEY_API_TOKEN, undefined)
   updateConfigValue(CONFIG_KEY_API_BASE_URL, undefined)
   updateConfigValue(CONFIG_KEY_API_PROXY, undefined)
@@ -34,9 +36,9 @@ export function applyLogout(): void {
   invalidateDefaultApiToken()
 }
 
-export function attemptLogout(): void {
+export async function attemptLogout(): Promise<void> {
   try {
-    applyLogout()
+    await applyLogout()
     logger.success('Successfully logged out')
     if (isConfigFromFlag()) {
       logger.log('')
@@ -90,7 +92,7 @@ export async function run(
     return
   }
 
-  attemptLogout()
+  await attemptLogout()
 }
 
 // Exported command.
