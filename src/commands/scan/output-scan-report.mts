@@ -2,12 +2,15 @@ import fs from 'node:fs/promises'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { generateReport } from './generate-report.mts'
 import constants, {
   EXT_JSON,
+  FOLD_SETTING_NONE,
   OUTPUT_JSON,
   OUTPUT_TEXT,
+  REPORT_LEVEL_DEFER,
 } from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mapToObject } from '../../utils/map-to-object.mts'
@@ -30,6 +33,76 @@ export type OutputScanReportConfig = {
   fold: FOLD_SETTING
   reportLevel: REPORT_LEVEL
   short: boolean
+}
+
+export type ReportAlertRow = {
+  alertType: string
+  introducedBy: string
+  manifest: string
+  packageName: string
+  policy: string
+  url: string
+}
+
+export function flattenReportAlerts(report: ScanReport): ReportAlertRow[] {
+  return Array.from(walkNestedMap(report.alerts)).map(
+    ({ keys, value }: { keys: string[]; value: ReportLeafNode }) => {
+      const { manifest, policy, type, url } = value
+      return {
+        alertType: type,
+        introducedBy: keys[2] || '<unknown>',
+        manifest: joinAnd(manifest),
+        packageName: keys[1] || '<unknown>',
+        policy,
+        url,
+      }
+    },
+  )
+}
+
+export function formatAlertTable(rows: ReportAlertRow[]): string[] {
+  const headers = [
+    'POLICY',
+    'ALERT TYPE',
+    'PACKAGE',
+    'INTRODUCED BY',
+    'MANIFEST FILE',
+  ]
+  const cells = rows.map(row => [
+    row.policy,
+    row.alertType,
+    row.packageName,
+    row.introducedBy,
+    row.manifest,
+  ])
+  const widths = headers.map(header => header.length)
+  for (const cell of cells) {
+    for (let i = 0, { length } = cell; i < length; i += 1) {
+      widths[i] = Math.max(widths[i] ?? 0, cell[i]?.length ?? 0)
+    }
+  }
+  const toRow = (values: string[]) =>
+    `  ${values
+      .map((value, i) => value.padEnd(widths[i] ?? 0))
+      .join('  ')
+      .trimEnd()}`
+
+  const out = [toRow(headers), toRow(widths.map(width => '-'.repeat(width)))]
+  for (let i = 0, { length } = cells; i < length; i += 1) {
+    out.push(toRow(cells[i]!))
+    const { url } = rows[i]!
+    if (url) {
+      out.push(`    ${url}`)
+    }
+  }
+  return out
+}
+
+export function formatLabelledPairs(pairs: Array<[string, string]>): string[] {
+  const width = Math.max(...pairs.map(pair => pair[0].length))
+  return pairs.map(
+    ([label, value]) => `  ${`${label}:`.padEnd(width + 1)}  ${value}`,
+  )
 }
 
 export async function outputScanReport(
@@ -137,7 +210,9 @@ export async function outputScanReport(
   if (short) {
     logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
   } else {
-    logger.dir(scanReport.data, { depth: null })
+    logger.log(
+      toPlainTextReport(scanReport.data as ScanReport, includeLicensePolicy),
+    )
   }
 }
 
@@ -166,26 +241,21 @@ export function toMarkdownReport(
   const reportLevel = report.options.reportLevel
 
   const alertFolding =
-    report.options.fold === constants.FOLD_SETTING_NONE
+    report.options.fold === FOLD_SETTING_NONE
       ? 'none'
       : `up to ${report.options.fold}`
 
-  const flatData = Array.from(walkNestedMap(report.alerts)).map(
-    ({ keys, value }: { keys: string[]; value: ReportLeafNode }) => {
-      const { manifest, policy, type, url } = value
-      return {
-        'Alert Type': type,
-        Package: keys[1] || '<unknown>',
-        'Introduced by': keys[2] || '<unknown>',
-        url,
-        'Manifest file': joinAnd(manifest),
-        Policy: policy,
-      }
-    },
-  )
+  const flatData = flattenReportAlerts(report).map(row => ({
+    'Alert Type': row.alertType,
+    Package: row.packageName,
+    'Introduced by': row.introducedBy,
+    url: row.url,
+    'Manifest file': row.manifest,
+    Policy: row.policy,
+  }))
 
   const minPolicyLevel =
-    reportLevel === constants.REPORT_LEVEL_DEFER ? 'everything' : reportLevel
+    reportLevel === REPORT_LEVEL_DEFER ? 'everything' : reportLevel
 
   const md =
     `
@@ -235,4 +305,57 @@ ${
   `.trim() + '\n'
 
   return md
+}
+
+export function toPlainTextReport(
+  report: ScanReport,
+  includeLicensePolicy?: boolean | undefined,
+): string {
+  const { reportLevel } = report.options
+  const policyWord = includeLicensePolicy ? 'security and license' : 'security'
+  const alertFolding =
+    report.options.fold === FOLD_SETTING_NONE
+      ? 'none'
+      : `up to ${report.options.fold}`
+  const minPolicyLevel =
+    reportLevel === REPORT_LEVEL_DEFER ? 'everything' : reportLevel
+
+  const lines = [
+    'Socket scan policy report',
+    '',
+    'Health status',
+    report.healthy
+      ? `  PASSES all requirements set by your ${policyWord} policy.`
+      : '  VIOLATES one or more policies set to the "error" level.',
+    '',
+    'Settings',
+    ...formatLabelledPairs([
+      ['Organization', report.orgSlug],
+      ['Scan ID', report.scanId],
+      ['Alert folding', alertFolding],
+      ['Minimum policy level', minPolicyLevel],
+      ['Include license alerts', includeLicensePolicy ? 'yes' : 'no'],
+    ]),
+    '',
+    'Alerts',
+  ]
+
+  const rows = flattenReportAlerts(report)
+  if (!rows.length) {
+    lines.push(
+      `  No alerts with a policy set to at least "${reportLevel}".`,
+      '',
+    )
+    return lines.join('\n')
+  }
+
+  lines.push(
+    `  ${rows.length} ${pluralize('alert', rows.length)} with a policy set to at least "${reportLevel}".`,
+    '',
+  )
+  for (const line of formatAlertTable(rows)) {
+    lines.push(line)
+  }
+  lines.push('')
+  return lines.join('\n')
 }
