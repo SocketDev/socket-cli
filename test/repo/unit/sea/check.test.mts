@@ -54,6 +54,46 @@ describe('SEA package verification', () => {
     expect(fixture.spawn).toHaveBeenCalledTimes(3)
   })
 
+  it('verifies and executes the requested target bytes', async () => {
+    const target = SEA_TARGETS[0]!
+    process.argv.push(`--target=${target}`)
+    try {
+      await main()
+      expect(fixture.spawn).toHaveBeenCalledTimes(3)
+      expect(fixture.spawn).toHaveBeenCalledWith(
+        seaBinaryPath(target),
+        ['--version'],
+        expect.objectContaining({ timeout: 60_000 }),
+      )
+    } finally {
+      process.argv.pop()
+    }
+  })
+
+  it.each(['--target=', '--target=unknown-platform'])(
+    'rejects %s',
+    async arg => {
+      process.argv.push(arg)
+      try {
+        await expect(main()).rejects.toThrow(Error)
+        expect(fixture.spawn).not.toHaveBeenCalled()
+      } finally {
+        process.argv.pop()
+      }
+    },
+  )
+
+  it('rejects combining --host and --target', async () => {
+    process.argv.push(`--target=${SEA_TARGETS[0]!}`, '--host')
+    try {
+      await expect(main()).rejects.toThrow(Error)
+      expect(fixture.spawn).not.toHaveBeenCalled()
+    } finally {
+      process.argv.pop()
+      process.argv.pop()
+    }
+  })
+
   it('rejects a modified binary before executing it', async () => {
     fixture.files.set(
       seaBinaryPath(SEA_TARGETS[0]),

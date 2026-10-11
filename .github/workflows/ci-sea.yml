@@ -14,14 +14,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  native:
-    name: Native sea (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+  build:
+    name: Build sea matrix
+    runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Bootstrap checkout
         shell: bash
@@ -53,9 +49,96 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SDXGEN_GITHUB_TOKEN: ${{ steps.sdxgen-token.outputs.token }}
         run: pnpm run build:cli
-      - name: Build native sea
-        run: pnpm run build:sea --target=host
-      - name: Verify native executable
-        run: pnpm run check:sea-package --host
+      - name: Build all sea targets once
+        run: pnpm run build:sea
+      - name: Pack exact sea build with executable modes
+        run: |
+          mkdir -p .cache/sea
+          tar -czf .cache/sea/sea-build.tar.gz \
+            build/cli.js \
+            dist/socket.js \
+            dist/socket-npm.js \
+            dist/socket-npx.js \
+            dist/socket-pnpm.js \
+            dist/socket-yarn.js \
+            dist/sea
+      - name: Upload immutable sea build
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: sea-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/sea/sea-build.tar.gz
+          if-no-files-found: error
       - name: Test sea tooling
         run: pnpm run test:sea
+
+  qualify:
+    name: Qualify (${{ matrix.target }})
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-15
+          - target: darwin-x64
+            runner: macos-15-intel
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: linux-arm64-musl
+            runner: ubuntu-24.04-arm
+            musl: true
+          - target: linux-x64
+            runner: ubuntu-24.04
+          - target: linux-x64-musl
+            runner: ubuntu-24.04
+            musl: true
+          - target: win32-arm64
+            runner: windows-11-arm
+          - target: win32-x64
+            runner: windows-2025
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          git fetch --no-tags --depth 1 origin "${TRIGGER_REF}"
+          git checkout -q --detach FETCH_HEAD
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - name: Download exact sea build
+        uses: ./.github/actions/fleet/download-artifact
+        with:
+          name: sea-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/sea-artifact
+      - name: Restore exact sea build
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f build/cli.js dist/socket.js dist/socket-npm.js dist/socket-npx.js dist/socket-pnpm.js dist/socket-yarn.js
+          rm -rf dist/sea
+          archive=.cache/sea-artifact/sea-build.tar.gz
+          while IFS= read -r member; do
+            case "$member" in
+              /*|../*|*/../*|*/..|*\\*) echo "Unsafe SEA archive entry: $member" >&2; exit 1 ;;
+              build|build/|dist|dist/|dist/sea|dist/sea/|build/cli.js|dist/socket.js|dist/socket-npm.js|dist/socket-npx.js|dist/socket-pnpm.js|dist/socket-yarn.js|dist/sea/manifest.generated.json|dist/sea/socket-darwin-arm64|dist/sea/socket-darwin-x64|dist/sea/socket-linux-arm64|dist/sea/socket-linux-arm64-musl|dist/sea/socket-linux-x64|dist/sea/socket-linux-x64-musl|dist/sea/socket-win32-arm64.exe|dist/sea/socket-win32-x64.exe) ;;
+              *) echo "Unexpected SEA archive entry: $member" >&2; exit 1 ;;
+            esac
+          done < <(tar -tzf "$archive")
+          tar -xzf "$archive" -C .
+      - name: Install musl runtime
+        if: ${{ matrix.musl }}
+        run: sudo apt-get update && sudo apt-get install --yes musl
+      - name: Verify and execute built target
+        run: pnpm run check:sea-package --target=${{ matrix.target }}

@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { runInNewContext } from 'node:vm'
 import {
+  assertSeaSigningHost,
+  createSeaEntitlements,
   createSeaEntry,
   createSeaLauncher,
+  signSeaBinaryBeforeHash,
 } from '../../../../scripts/repo/build/sea/build.mts'
 
 describe('SEA entrypoints', () => {
@@ -67,5 +70,57 @@ describe('SEA entrypoints', () => {
     expect(args[1]).toEqual(['--help'])
     expect(args[2]).toEqual({ stdio: 'inherit', env: process.env })
     expect(process.exitCode).toBe(7)
+  })
+})
+
+describe('SEA signing build step', () => {
+  it('signs and notarizes before reading bytes for the receipt digest', async () => {
+    const operations: string[] = []
+    const digest = await signSeaBinaryBeforeHash(
+      '/tmp/socket-darwin-arm64',
+      async binary => {
+        operations.push(`sign:${binary}`)
+      },
+      async binary => {
+        operations.push(`read:${binary}`)
+        return Buffer.from('signed bytes')
+      },
+    )
+    expect(operations).toEqual([
+      'sign:/tmp/socket-darwin-arm64',
+      'read:/tmp/socket-darwin-arm64',
+    ])
+    expect(digest).toBe(
+      'd6eade346b42f707c1684aa3d3c029ab0809164b8b878fcccf56fe1d83b3dc1d',
+    )
+  })
+
+  it('does not read binary bytes after signing fails', async () => {
+    const readBinary = vi.fn(async () => Buffer.from('unsigned bytes'))
+    await expect(
+      signSeaBinaryBeforeHash(
+        '/tmp/socket-darwin-arm64',
+        async () => {
+          throw new Error('signing failed')
+        },
+        readBinary,
+      ),
+    ).rejects.toThrow('signing failed')
+    expect(readBinary).not.toHaveBeenCalled()
+  })
+
+  it('includes Node JIT entitlements for signed SEA binaries', () => {
+    const entitlements = createSeaEntitlements()
+    expect(entitlements).toContain('<key>com.apple.security.cs.allow-jit</key>')
+    expect(entitlements).toContain(
+      '<key>com.apple.security.cs.allow-unsigned-executable-memory</key>',
+    )
+  })
+
+  it('rejects --sign on a non-Darwin build host', () => {
+    expect(() => assertSeaSigningHost(true, 'linux')).toThrow(
+      'requires a macOS build host',
+    )
+    expect(() => assertSeaSigningHost(false, 'linux')).not.toThrow()
   })
 })

@@ -40,17 +40,35 @@ export async function main(): Promise<void> {
       )
     }
   }
-  const targets = process.argv.includes('--host')
-    ? [
-        resolveSeaTarget(process.platform, process.arch, {
-          glibc: (
-            process.report.getReport() as {
-              header: { glibcVersionRuntime?: string | undefined }
-            }
-          ).header.glibcVersionRuntime,
-        }),
-      ]
-    : SEA_TARGETS
+  const host = resolveSeaTarget(process.platform, process.arch, {
+    glibc: (
+      process.report.getReport() as {
+        header: { glibcVersionRuntime?: string | undefined }
+      }
+    ).header.glibcVersionRuntime,
+  })
+  const requested = process.argv
+    .find(value => value.startsWith('--target='))
+    ?.slice('--target='.length)
+  if (requested === '') {
+    throw new Error(
+      'Invalid SEA target. Pass a supported target after --target=.',
+    )
+  }
+  if (requested && !(SEA_TARGETS as readonly string[]).includes(requested)) {
+    throw new Error(
+      `Invalid SEA target ${requested}. Use one of ${SEA_TARGETS.join(', ')}.`,
+    )
+  }
+  if (requested && process.argv.includes('--host')) {
+    throw new Error('Use either --host or --target, not both.')
+  }
+  const executionTarget = requested ?? host
+  const targets = requested
+    ? [requested]
+    : process.argv.includes('--host')
+      ? [host]
+      : SEA_TARGETS
   for (const target of targets) {
     const bytes = await readFile(seaBinaryPath(target))
     const actual = crypto.createHash('sha256').update(bytes).digest('hex')
@@ -60,15 +78,8 @@ export async function main(): Promise<void> {
       )
     }
   }
-  const host = resolveSeaTarget(process.platform, process.arch, {
-    glibc: (
-      process.report.getReport() as {
-        header: { glibcVersionRuntime?: string | undefined }
-      }
-    ).header.glibcVersionRuntime,
-  })
   for (const args of [['--version'], ['--help'], ['npm', '--version']]) {
-    const result = await spawn(seaBinaryPath(host), args, {
+    const result = await spawn(seaBinaryPath(executionTarget), args, {
       stdio: 'pipe',
       timeout: 60_000,
     })
@@ -81,14 +92,16 @@ export async function main(): Promise<void> {
   if (process.argv.includes('--json')) {
     logger.stdout.write(JSON.stringify({ ok: true, targets }) + '\n')
   } else {
-    logger.log(`Verified ${targets.length} SEA artifacts and host execution.`)
+    logger.log(
+      `Verified ${targets.length} SEA artifact(s) and executed ${executionTarget}.`,
+    )
   }
 }
 
 const SCRIPT_META = {
   describe: 'verify socket SEA artifact integrity and execution',
   heavyJob: 'test' as const,
-  help: 'Usage: pnpm run check:sea-package [--host]',
+  help: 'Usage: pnpm run check:sea-package [--host|--target=TARGET]',
   json: 'native' as const,
 }
 

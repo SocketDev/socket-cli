@@ -8,6 +8,7 @@ import { runMain } from '../../../fleet/process/main/run.mts'
 import { BINJECT_VERSION, NODE_SMOL_VERSION } from '../constants/sea-assets.mts'
 import { fetchSeaAsset } from './assets.mts'
 import { extractSmolRuntime } from './runtime.mts'
+import { signAndNotarizeSeaBinary } from './sign.mts'
 import {
   SEA_BUILD_DIR,
   SEA_ENTRY_PATH,
@@ -35,6 +36,8 @@ export function createSeaLauncher(): string {
 }
 
 export async function main(): Promise<void> {
+  const signing = process.argv.includes('--sign')
+  assertSeaSigningHost(signing, process.platform)
   await mkdir(SEA_BUILD_DIR, { recursive: true })
   await mkdir(SEA_OUTPUT_DIR, { recursive: true })
   const payload = await readFile(SEA_PAYLOAD_PATH, 'utf8')
@@ -56,6 +59,20 @@ export async function main(): Promise<void> {
     )
   }
   const targets = selected ? [selected] : [...SEA_TARGETS]
+  const signingTargets = signing
+    ? targets.filter(target => target.startsWith('darwin-'))
+    : []
+  if (signing && signingTargets.length === 0) {
+    throw new Error('SEA signing requires at least one Darwin target.')
+  }
+  let entitlementsPath: string | undefined
+  if (signing) {
+    entitlementsPath = path.join(
+      SEA_BUILD_DIR,
+      'sea-entitlements.generated.plist',
+    )
+    await writeFile(entitlementsPath, createSeaEntitlements())
+  }
   const injector = await fetchSeaAsset(
     `binject-${BINJECT_VERSION}`,
     `binject-${host}${process.platform === 'win32' ? '.exe' : ''}`,
@@ -66,7 +83,12 @@ export async function main(): Promise<void> {
   )
   const receipt: Record<string, string> = {}
   for (const target of targets) {
-    receipt[target] = await buildSeaTarget(target, injector, hostBase)
+    receipt[target] = await buildSeaTarget(
+      target,
+      injector,
+      hostBase,
+      signingTargets.includes(target) ? entitlementsPath : undefined,
+    )
   }
   await writeFile(SEA_LAUNCHER_PATH, createSeaLauncher(), { mode: 0o755 })
   for (const mode of ['npm', 'npx', 'pnpm', 'yarn']) {
@@ -103,10 +125,45 @@ export async function main(): Promise<void> {
   }
 }
 
+export function assertSeaSigningHost(signing: boolean, platform: string): void {
+  if (signing && platform !== 'darwin') {
+    throw new Error('SEA signing requires a macOS build host.')
+  }
+}
+
+export function createSeaEntitlements(): string {
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">',
+    '<plist version="1.0">',
+    '<dict>',
+    '<key>com.apple.security.cs.allow-jit</key>',
+    '<true/>',
+    '<key>com.apple.security.cs.allow-unsigned-executable-memory</key>',
+    '<true/>',
+    '</dict>',
+    '</plist>',
+    '',
+  ].join('\n')
+}
+
+export async function signSeaBinaryBeforeHash(
+  binaryPath: string,
+  signBinary: (binary: string) => Promise<void>,
+  readBinary: (binary: string) => Promise<Buffer> = readFile,
+): Promise<string> {
+  await signBinary(binaryPath)
+  return crypto
+    .createHash('sha256')
+    .update(await readBinary(binaryPath))
+    .digest('hex')
+}
+
 async function buildSeaTarget(
   target: string,
   injector: string,
   hostBase: string,
+  entitlementsPath?: string,
 ): Promise<string> {
   const asset = `node-${target.replace('win32-', 'win-')}${target.startsWith('win32-') ? '.exe' : ''}`
   const assetPath = await fetchSeaAsset(`node-smol-${NODE_SMOL_VERSION}`, asset)
@@ -175,16 +232,19 @@ async function buildSeaTarget(
       )
     }
   }
-  return crypto
-    .createHash('sha256')
-    .update(await readFile(output))
-    .digest('hex')
+  if (entitlementsPath) {
+    return signSeaBinaryBeforeHash(
+      output,
+      binary => signAndNotarizeSeaBinary(binary, { entitlementsPath }),
+    )
+  }
+  return crypto.createHash('sha256').update(await readFile(output)).digest('hex')
 }
 
 const SCRIPT_META = {
   describe: 'build the socket package SEA platform matrix',
   heavyJob: 'build' as const,
-  help: 'Usage: pnpm run build:sea [--target=host|TARGET]',
+  help: 'Usage: pnpm run build:sea [--target=host|TARGET] [--sign]',
   json: 'native' as const,
 }
 
