@@ -41,8 +41,15 @@ export async function readWindowsFirewallShim(
       'node_modules',
       ...PACKAGE_MANAGER_ENTRIES[command]!,
     )
-    const normalized = content.replaceAll('\\', '/')
-    if (!normalized.includes(`%dp0%/${expected.split(path.sep).join('/')}`)) {
+    const windowsExpected = path.win32.join(
+      'node_modules',
+      ...PACKAGE_MANAGER_ENTRIES[command]!,
+    )
+    const posixExpected = expected.split(path.sep).join('/')
+    if (
+      !content.includes(`%dp0%\\${windowsExpected}`) &&
+      !content.includes(`%dp0%/${posixExpected}`)
+    ) {
       return undefined
     }
     const entry = await canonicalizePath(
@@ -108,7 +115,6 @@ export async function resolveFirewallExecutable(
   return resolveWindowsFirewallPackageManager(command, {
     env,
     root,
-    searchPath,
   })
 }
 
@@ -117,7 +123,6 @@ export async function resolveWindowsFirewallPackageManager(
   config: {
     env: Readonly<Record<string, string | undefined>>
     root: string
-    searchPath: string
   },
 ): Promise<FirewallExecutable | undefined> {
   const node = await resolveTrustedExecutable('node', config.env, config.root, {
@@ -127,7 +132,7 @@ export async function resolveWindowsFirewallPackageManager(
     return undefined
   }
   const nodeSearchPath = findEnvPathValue(node.environment) ?? ''
-  const directories = config.searchPath.split(path.delimiter).filter(Boolean)
+  const directories = nodeSearchPath.split(path.delimiter).filter(Boolean)
   for (let i = 0, { length } = directories; i < length; i += 1) {
     const directory = directories[i]!
     const shim = await canonicalizePath(path.join(directory, `${command}.cmd`))

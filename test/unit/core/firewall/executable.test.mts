@@ -11,7 +11,10 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { resolveFirewallExecutable } from '../../../../src/core/firewall/executable.mts'
+import {
+  resolveFirewallExecutable,
+  resolveWindowsFirewallPackageManager,
+} from '../../../../src/core/firewall/executable.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 let directory: string
@@ -108,6 +111,25 @@ describe('firewall executable resolution', () => {
       })
     },
   )
+  it('finds Windows package shims through trusted Node when the process anchor is unavailable', async () => {
+    const entry = path.join(trusted, 'node_modules', 'npm', 'bin', 'npm-cli.js')
+    await fixtureFile(entry, 'process.exit(0)')
+    await fixtureFile(path.join(trusted, 'node.exe'))
+    await fixtureFile(
+      path.join(trusted, 'npm.cmd'),
+      '@node "%dp0%\\node_modules\\npm\\bin\\npm-cli.js" %*',
+    )
+    expect(
+      await resolveWindowsFirewallPackageManager('npm', {
+        root: checkout,
+        env: { PATH: trusted },
+      }),
+    ).toEqual({
+      executable: path.join(trusted, 'node.exe'),
+      prefixArgs: [entry],
+      searchPath: trusted,
+    })
+  })
   it('rejects a Windows package entry that links into the checkout', async () => {
     await fixtureFile(path.join(trusted, 'node.exe'))
     await fixtureFile(path.join(checkout, 'npm-cli.js'), 'process.exit(0)')
