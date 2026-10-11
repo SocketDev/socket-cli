@@ -86,9 +86,24 @@ export function formatAlertTable(rows: ReportAlertRow[]): string[] {
     row.introducedBy,
     row.manifest,
   ])
-  const widths = headers.map((header, i) =>
-    Math.max(header.length, ...cells.map(cell => (cell[i] ?? '').length)),
-  )
+  const widths = headers.map(header => header.length)
+  for (
+    let rowIndex = 0, { length: rowCount } = cells;
+    rowIndex < rowCount;
+    rowIndex += 1
+  ) {
+    const cell = cells[rowIndex]!
+    for (
+      let cellIndex = 0, { length: cellLength } = cell;
+      cellIndex < cellLength;
+      cellIndex += 1
+    ) {
+      widths[cellIndex] = Math.max(
+        widths[cellIndex] ?? 0,
+        cell[cellIndex]?.length ?? 0,
+      )
+    }
+  }
   const toRow = (values: string[]) =>
     `  ${values
       .map((value, i) => value.padEnd(widths[i] ?? 0))
@@ -114,6 +129,12 @@ export function formatLabelledPairs(pairs: Array<[string, string]>): string[] {
   return pairs.map(
     ([label, value]) => `  ${`${label}:`.padEnd(width + 1)}  ${value}`,
   )
+}
+
+export function isFullScanReport(
+  report: ScanReport | { healthy: boolean },
+): report is ScanReport {
+  return 'alerts' in report
 }
 
 export async function outputGeneratedScanReport(
@@ -159,10 +180,10 @@ export async function outputGeneratedScanReport(
 
   if (short) {
     logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
+  } else if (isFullScanReport(scanReport.data)) {
+    logger.log(toPlainTextReport(scanReport.data, includeLicensePolicy))
   } else {
-    logger.log(
-      toPlainTextReport(scanReport.data as ScanReport, includeLicensePolicy),
-    )
+    logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
   }
 }
 
@@ -401,8 +422,10 @@ export function toPlainTextReport(
   lines.push(
     `  ${rows.length} ${pluralize('alert', { count: rows.length })} with a policy set to at least "${reportLevel}".`,
     '',
-    ...formatAlertTable(rows),
-    '',
   )
+  for (const line of formatAlertTable(rows)) {
+    lines.push(line)
+  }
+  lines.push('')
   return lines.join('\n')
 }
