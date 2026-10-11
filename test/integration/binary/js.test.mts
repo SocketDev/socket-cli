@@ -1727,21 +1727,22 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should handle patch download --dry-run',
+        'should handle patch get --dry-run',
         async () => {
           if (!binaryExists) {
             return
           }
 
           const result = await executeCliCommand(
-            ['patch', 'download', '--dry-run', '--config', '{}', 'express'],
+            ['patch', 'get', '--dry-run', '--config', '{}', 'express'],
             {
               binPath: BINARY.path,
               isolateConfig: false,
             },
           )
 
-          expect(result.code).toBeGreaterThanOrEqual(0)
+          expect(result.code).toBe(0)
+          expect(result.stderr).toContain('Arguments: get express')
         },
       )
 
