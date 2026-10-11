@@ -95,7 +95,7 @@ export async function main(): Promise<void> {
 
 const SCRIPT_META: ScriptMeta = {
   describe: 'validate the built CLI bundle has no unresolved externals',
-  help: 'Usage: node scripts/repo/cli-build/validate-bundle.mts',
+  help: 'Usage: node scripts/repo/build/validate-bundle.mts',
   json: 'native',
 }
 

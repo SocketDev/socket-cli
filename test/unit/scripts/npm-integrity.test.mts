@@ -6,12 +6,12 @@ import {
   collectNpmToolPins,
   parseDeclaredToolIntegrity,
   readInstalledPackageIntegrity,
-} from '../../../scripts/repo/cli-build/util/npm-integrity.mts'
+} from '../../../scripts/repo/build/util/npm-integrity.mts'
 
 import type {
   HiddenLockfile,
   NpmToolPin,
-} from '../../../scripts/repo/cli-build/util/npm-integrity.mts'
+} from '../../../scripts/repo/build/util/npm-integrity.mts'
 
 const LOCKFILE_PATH = '/tmp/build/node_modules/.package-lock.json'
 

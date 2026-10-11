@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { REPO_CACHE_DIR } from './cli-build/constants/paths.mts'
+import { REPO_CACHE_DIR } from './build/constants/paths.mts'
 import { isMainModule } from '../fleet/process/is-main-module.mts'
 import { runMain } from '../fleet/process/main/run.mts'
 import type { ScriptMeta } from '../fleet/process/main/run.mts'

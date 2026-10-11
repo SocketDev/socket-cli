@@ -1,4 +1,4 @@
-import { sourceIndexPath } from '../../../scripts/repo/cli-build/paths.mts'
+import { sourceIndexPath } from '../../../scripts/repo/build/paths.mts'
 /**
  * Rolldown configuration for the Socket CLI index loader (the entry point that
  * executes the CLI). Replaces the esbuild config.
@@ -11,7 +11,7 @@ import {
   createIndexConfig,
   getInlinedEnvVars,
   runBuild,
-} from '../../../scripts/repo/cli-build/rolldown-utils.mts'
+} from '../../../scripts/repo/build/rolldown-utils.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '../../..')

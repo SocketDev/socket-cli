@@ -1,5 +1,4 @@
 [
-  "test/repo/unit/cli-build-entry.test.mts",
   "test/repo/unit/cli-clean-cache.test.mts",
   "test/repo/unit/cli-package-is-single.test.mts",
   "test/unit/command/ask/word-overlap-match.fuzz.test.mts",

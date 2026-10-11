@@ -13,14 +13,14 @@ vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: fixture.spawn,
 }))
 
-import { main } from '../../../../scripts/repo/cli-build/sea/check.mts'
+import { main } from '../../../../scripts/repo/build/sea/check.mts'
 import {
   SEA_ENTRYPOINT_PATHS,
   SEA_PAYLOAD_PATH,
   SEA_RECEIPT_PATH,
   seaBinaryPath,
-} from '../../../../scripts/repo/cli-build/sea/paths.mts'
-import { SEA_TARGETS } from '../../../../scripts/repo/cli-build/sea/targets.mts'
+} from '../../../../scripts/repo/build/sea/paths.mts'
+import { SEA_TARGETS } from '../../../../scripts/repo/build/sea/targets.mts'
 
 describe('SEA package verification', () => {
   beforeEach(() => {

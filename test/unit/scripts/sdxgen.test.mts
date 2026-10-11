@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 
-import { readSdxgenToolVersions } from '../../../scripts/repo/cli-build/sdxgen.mts'
+import { readSdxgenToolVersions } from '../../../scripts/repo/build/sdxgen.mts'
 
 it('maps configured parser tool versions without admitting unrelated tools', () => {
   expect(

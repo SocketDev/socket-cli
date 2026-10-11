@@ -23,6 +23,6 @@ Source references do not add upstream files to the npm package. The root manifes
 ## Adding a tool
 
 1. Add its source, version, and checksums to `bundle-tools.json`.
-2. Wire the required build metadata in `scripts/repo/cli-build/environment-variables.mts`.
+2. Wire the required build metadata in `scripts/repo/build/environment-variables.mts`.
 3. Add the command's resolver and execution path.
 4. Test successful execution, integrity failures, and command exit status.

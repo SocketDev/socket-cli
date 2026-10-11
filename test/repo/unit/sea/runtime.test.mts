@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createHash } from 'node:crypto'
 import { zstdCompressSync } from 'node:zlib'
-import { extractSmolRuntime } from '../../../../scripts/repo/cli-build/sea/runtime.mts'
+import { extractSmolRuntime } from '../../../../scripts/repo/build/sea/runtime.mts'
 
 describe('node-smol runtime', () => {
   it('extracts a verified PE payload', () => {

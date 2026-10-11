@@ -370,7 +370,7 @@ export async function main(): Promise<void> {
 
 const SCRIPT_META: ScriptMeta = {
   describe: 'refresh bundled-tool checksums from pinned GitHub releases',
-  help: 'Usage: node scripts/repo/cli-build/sync-checksums.mts [--tool=<tool>] [--force] [--dry-run]',
+  help: 'Usage: node scripts/repo/build/sync-checksums.mts [--tool=<tool>] [--force] [--dry-run]',
   json: 'native',
 }
 

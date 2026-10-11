@@ -5,7 +5,7 @@ import {
   buildSchemaArgs,
   createSchemaEnv,
   runSchema,
-} from '../../../scripts/repo/cli-build/mcp-schema.mts'
+} from '../../../scripts/repo/build/mcp-schema.mts'
 
 it('isolates schema discovery from credentials and test-only runtime branches', () => {
   const source = {

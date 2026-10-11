@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 import { scrubSnapshotData, toSnapshotString } from './scrub-snapshot-data.mts'
 
-import { WORKSPACE_ROOT } from '../../scripts/repo/cli-build/paths.mts'
+import { WORKSPACE_ROOT } from '../../scripts/repo/build/paths.mts'
 
 describe('scrubSnapshotData', () => {
   describe('timestamps', () => {

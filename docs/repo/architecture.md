@@ -14,7 +14,7 @@ External source references live under `upstream/` and are declared in `.gitmodul
 
 ## Tooling
 
-Build entrypoints live in `scripts/repo/cli-build/`. Shared build helpers live in `scripts/repo/build-infra/`. Product configurations live in `.config/repo/cli/`.
+Build entrypoints live in `scripts/repo/build/`. Shared build helpers live in `scripts/repo/build-infra/`. Product configurations live in `.config/repo/cli/`.
 
 ## Tests
 

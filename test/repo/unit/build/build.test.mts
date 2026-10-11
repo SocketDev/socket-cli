@@ -4,8 +4,8 @@ import process from 'node:process'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { REPO_ROOT } from '../../../scripts/fleet/paths.mts'
-import { runCliBuild } from '../../../scripts/repo/build.mts'
+import { REPO_ROOT } from '../../../../scripts/fleet/paths.mts'
+import { runCliBuild } from '../../../../scripts/repo/build.mts'
 
 vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: vi.fn(),
@@ -20,7 +20,7 @@ describe('single CLI build entry', () => {
     expect(spawn).toHaveBeenCalledExactlyOnceWith(
       process.execPath,
       [
-        path.join(REPO_ROOT, 'scripts/repo/cli-build/build.mts'),
+        path.join(REPO_ROOT, 'scripts/repo/build/build.mts'),
         '--force',
         '--quiet',
       ],

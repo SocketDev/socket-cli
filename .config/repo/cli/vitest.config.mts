@@ -9,9 +9,9 @@ import { REPO_ROOT } from '../../../scripts/fleet/paths.mts'
 import { vitiatePlugin } from '@vitiate/core/plugin'
 
 import {
-  readPackageTestLanes,
-  selectPackageTestGlobs,
-} from '../../../scripts/repo/cli-build/test-lanes.mts'
+  readCliTestLanes,
+  selectCliTestGlobs,
+} from '../../../scripts/repo/build/test-lanes.mts'
 
 // The vitiate coverage-guided fuzz lane (scripts/repo/fuzz.mts) sets
 // VITIATE_FUZZ=1 and runs `vitest run` against THIS auto-discovered config. In
@@ -104,9 +104,9 @@ export function getMaxThreads(): number {
   return os.cpus().length
 }
 
-const laneGlobs = selectPackageTestGlobs(
+const laneGlobs = selectCliTestGlobs(
   process.env['FLEET_LANE'],
-  readPackageTestLanes(REPO_ROOT, '.'),
+  readCliTestLanes(REPO_ROOT),
 )
 
 const normalConfig = defineConfig({

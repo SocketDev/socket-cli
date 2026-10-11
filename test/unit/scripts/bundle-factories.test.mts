@@ -9,7 +9,7 @@ it.each([
     expected: 'Socket Firewall',
   },
   {
-    entryPath: 'scripts/repo/cli-build/run-dist.mts',
+    entryPath: 'scripts/repo/build/run-dist.mts',
     args: ['--describe'],
     expected: 'run the built Socket CLI with forwarded arguments',
   },

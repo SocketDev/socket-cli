@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createHash } from 'node:crypto'
-import { verifySeaAsset } from '../../../../scripts/repo/cli-build/sea/assets.mts'
+import { verifySeaAsset } from '../../../../scripts/repo/build/sea/assets.mts'
 
 describe('SEA assets', () => {
   it('verifies download bytes before execution', () => {

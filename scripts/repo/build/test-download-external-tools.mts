@@ -255,7 +255,7 @@ export async function main(): Promise<void> {
 
 const SCRIPT_META: ScriptMeta = {
   describe: 'verify bundled security-tool downloads for this platform',
-  help: 'Usage: node scripts/repo/cli-build/test-download-external-tools.mts',
+  help: 'Usage: node scripts/repo/build/test-download-external-tools.mts',
   json: 'native',
 }
 

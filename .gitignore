@@ -5207,6 +5207,8 @@ yarn-error.log*
 **/.type-coverage/
 **/build/
 !docs/build/
+!scripts/repo/build/
+!test/repo/unit/build/
 **/coverage/
 **/dist/
 /external/

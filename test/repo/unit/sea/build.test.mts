@@ -3,7 +3,7 @@ import { runInNewContext } from 'node:vm'
 import {
   createSeaEntry,
   createSeaLauncher,
-} from '../../../../scripts/repo/cli-build/sea/build.mts'
+} from '../../../../scripts/repo/build/sea/build.mts'
 
 describe('SEA entrypoints', () => {
   it('executes the embedded payload and starts the product', () => {

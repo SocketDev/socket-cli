@@ -25,7 +25,7 @@ import { rootNodeModulesBinPath } from './constants/paths.mts'
 import { REPO_ROOT } from '../../fleet/paths.mts'
 import { EnvironmentVariables } from './environment-variables.mts'
 import { loadEnvFile } from './util/load-env.mts'
-import { resolvePackageTestScope } from './test-lanes.mts'
+import { resolveCliTestScope } from './test-lanes.mts'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { isMainModule } from '../../fleet/process/is-main-module.mts'
 import { runMain } from '../../fleet/process/main/run.mts'
@@ -73,7 +73,7 @@ export async function main(): Promise<void> {
       args = args.slice(1)
     }
 
-    const scope = resolvePackageTestScope(args, REPO_ROOT)
+    const scope = resolveCliTestScope(args, REPO_ROOT)
     args = scope.args
 
     // Check for and warn about environment variables that can cause snapshot mismatches.

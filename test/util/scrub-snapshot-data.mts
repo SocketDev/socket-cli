@@ -7,7 +7,7 @@
  * across different systems or time periods.
  */
 
-import { WORKSPACE_ROOT } from '../../scripts/repo/cli-build/paths.mts'
+import { WORKSPACE_ROOT } from '../../scripts/repo/build/paths.mts'
 
 interface ScrubOptions {
   /**

@@ -9,7 +9,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   getInlinedEnvVars,
   runBuild,
-} from '../../../scripts/repo/cli-build/rolldown-utils.mts'
+} from '../../../scripts/repo/build/rolldown-utils.mts'
 import { cliConfig } from './rolldown.cli.mts'
 import { indexConfig } from './rolldown.index.mts'
 

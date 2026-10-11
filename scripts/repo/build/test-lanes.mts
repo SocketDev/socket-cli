@@ -11,10 +11,7 @@ import {
 import type { TestLane } from '../../fleet/constants/test-budget.mts'
 import { extractLane } from '../../fleet/test-runner/cli-args.mts'
 
-export function resolvePackageTestScope(
-  args: readonly string[],
-  repoRoot: string,
-) {
+export function resolveCliTestScope(args: readonly string[], repoRoot: string) {
   const parsed = extractLane(args)
   const all = parsed.rest.includes('--all')
   const rest = parsed.rest.filter(arg => arg !== '--all')
@@ -34,19 +31,11 @@ export function resolvePackageTestScope(
   }
 }
 
-export function packageTestGlobs(
-  globs: readonly string[],
-  packagePath: string,
-): string[] {
-  const normalizedPackage = normalizePath(packagePath).replace(/\/$/u, '')
-  const prefix = normalizedPackage === '.' ? '' : `${normalizedPackage}/`
-  return globs
-    .map(glob => normalizePath(glob))
-    .filter(glob => glob.startsWith(prefix))
-    .map(glob => glob.slice(prefix.length))
+export function normalizeCliTestGlobs(globs: readonly string[]): string[] {
+  return globs.map(glob => normalizePath(glob))
 }
 
-export function readPackageTestLanes(repoRoot: string, packagePath: string) {
+export function readCliTestLanes(repoRoot: string) {
   const settings: {
     vitest?:
       | { lanes?: Partial<Record<TestLane, string[]>> | undefined }
@@ -59,12 +48,12 @@ export function readPackageTestLanes(repoRoot: string, packagePath: string) {
   )
   return {
     __proto__: null,
-    mid: packageTestGlobs(settings.vitest?.lanes?.mid ?? [], packagePath),
-    slow: packageTestGlobs(settings.vitest?.lanes?.slow ?? [], packagePath),
+    mid: normalizeCliTestGlobs(settings.vitest?.lanes?.mid ?? []),
+    slow: normalizeCliTestGlobs(settings.vitest?.lanes?.slow ?? []),
   }
 }
 
-export function selectPackageTestGlobs(
+export function selectCliTestGlobs(
   lane: string | undefined,
   lanes: { mid: string[]; slow: string[] },
 ) {

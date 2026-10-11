@@ -5,13 +5,13 @@ import {
   laneBudgetMs,
 } from '../../../scripts/fleet/constants/test-budget.mts'
 import {
-  packageTestGlobs,
-  resolvePackageTestScope,
-  selectPackageTestGlobs,
-} from '../../../scripts/repo/cli-build/test-lanes.mts'
+  normalizeCliTestGlobs,
+  resolveCliTestScope,
+  selectCliTestGlobs,
+} from '../../../scripts/repo/build/test-lanes.mts'
 
-it('defaults bare package tests to the fast budget', () => {
-  const scope = resolvePackageTestScope([], '/example/repo')
+it('defaults bare CLI tests to the fast budget', () => {
+  const scope = resolveCliTestScope([], '/example/repo')
   expect(scope).toEqual({
     args: [],
     lane: 'fast',
@@ -25,7 +25,7 @@ it('keeps explicit files and all-unit runs outside lane filtering', () => {
     ['test/unit/example.test.mts'],
     ['--coverage'],
   ]) {
-    const scope = resolvePackageTestScope(args, '/example/repo')
+    const scope = resolveCliTestScope(args, '/example/repo')
     expect(scope.lane).toBeUndefined()
     expect(scope.timeout).toBe(coverBudgetMs())
     expect(scope.args).toEqual(args.filter(arg => arg !== '--all'))
@@ -34,17 +34,14 @@ it('keeps explicit files and all-unit runs outside lane filtering', () => {
 
 it('consumes lane flags and preserves Vitest arguments', () => {
   expect(
-    resolvePackageTestScope(
-      ['--lane', 'mid', '--reporter=json'],
-      '/example/repo',
-    ),
+    resolveCliTestScope(['--lane', 'mid', '--reporter=json'], '/example/repo'),
   ).toEqual({
     args: ['--reporter=json'],
     lane: 'mid',
     timeout: laneBudgetMs('mid'),
   })
   expect(
-    resolvePackageTestScope(
+    resolveCliTestScope(
       ['--lane=slow', '--config', 'vitest.integration.config.mts'],
       '/example/repo',
     ),
@@ -54,27 +51,13 @@ it('consumes lane flags and preserves Vitest arguments', () => {
     timeout: laneBudgetMs('slow'),
   })
   expect(() =>
-    resolvePackageTestScope(['--lane=unknown'], '/example/repo'),
+    resolveCliTestScope(['--lane=unknown'], '/example/repo'),
   ).toThrow()
 })
 
-it('normalizes member globs and excludes other packages', () => {
+it('normalizes root-relative test globs', () => {
   expect(
-    packageTestGlobs(
-      [
-        'packages\\cli\\test\\unit\\command\\**',
-        'packages/example-cli/test/unit/meow.test.mts',
-        'packages/other/test/unit/example.test.mts',
-        'packages/example-other/test/unit/example.test.mts',
-      ],
-      'packages\\cli',
-    ),
-  ).toEqual(['test/unit/command/**', 'test/unit/meow.test.mts'])
-})
-
-it('keeps root package test globs after normalization', () => {
-  expect(
-    packageTestGlobs(['test\\unit\\core\\**', 'test/integration/**'], '.'),
+    normalizeCliTestGlobs(['test\\unit\\core\\**', 'test/integration/**']),
   ).toEqual(['test/unit/core/**', 'test/integration/**'])
 })
 
@@ -83,15 +66,15 @@ it('partitions fast and mid while leaving unscoped coverage complete', () => {
     mid: ['test/unit/command/**'],
     slow: ['test/integration/**'],
   }
-  expect(selectPackageTestGlobs('fast', lanes)).toEqual({
+  expect(selectCliTestGlobs('fast', lanes)).toEqual({
     include: ['test/**/*.test.{mts,ts}'],
     exclude: [...lanes.mid, ...lanes.slow],
   })
-  expect(selectPackageTestGlobs('mid', lanes)).toEqual({
+  expect(selectCliTestGlobs('mid', lanes)).toEqual({
     include: ['test/unit/command/**/*.test.{mts,ts}'],
     exclude: [],
   })
-  expect(selectPackageTestGlobs(undefined, lanes)).toEqual({
+  expect(selectCliTestGlobs(undefined, lanes)).toEqual({
     include: ['test/**/*.test.{mts,ts}'],
     exclude: [],
   })

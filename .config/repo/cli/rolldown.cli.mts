@@ -19,7 +19,7 @@ import {
   createBaseConfig,
   getInlinedEnvVars,
   runBuild,
-} from '../../../scripts/repo/cli-build/rolldown-utils.mts'
+} from '../../../scripts/repo/build/rolldown-utils.mts'
 
 import type { Plugin, RolldownOptions } from 'rolldown'
 

@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import {
   ensureSdxgenSource,
   getSdxgenCloneEnvironment,
-} from '../../../scripts/repo/cli-build/sdxgen.mts'
+} from '../../../scripts/repo/build/sdxgen.mts'
 import { withEnv } from '@socketsecurity/lib-stable/env/rewire'
 
 const spawn = vi.hoisted(() => vi.fn())

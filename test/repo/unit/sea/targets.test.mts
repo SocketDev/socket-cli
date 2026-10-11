@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveSeaTarget } from '../../../../scripts/repo/cli-build/sea/targets.mts'
+import { resolveSeaTarget } from '../../../../scripts/repo/build/sea/targets.mts'
 
 describe('SEA targets', () => {
   it.each([

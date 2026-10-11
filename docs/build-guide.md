@@ -18,7 +18,7 @@ The build writes the Node CLI and command wrappers to `dist/`. The root manifest
 
 - `src/command/` provides argument parsing, help, aliases, and dispatch.
 - `src/core/` contains implementations shared by command entries.
-- `scripts/repo/cli-build/` builds and tests the CLI.
+- `scripts/repo/build/` builds and tests the CLI.
 - `scripts/repo/build-infra/` contains build helpers.
 - `.config/repo/cli/` contains product build and test configurations.
 

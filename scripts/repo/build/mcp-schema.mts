@@ -1,4 +1,4 @@
-import { packageNodeModulesBinPath } from './paths.mts'
+import { packageNodeModulesBinPath, REPO_CACHE_DIR } from './paths.mts'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { mkdtempSync } from 'node:fs'
 import path from 'node:path'
@@ -105,7 +105,7 @@ export function runSchema(
       `MCP schema tool missing at ${searchPath}; expected one mcp-tada executable. Run pnpm install --frozen-lockfile.`,
     )
   }
-  const cache = path.join(packageRoot, '.cache', 'repo', 'mcp-schema')
+  const cache = path.join(REPO_CACHE_DIR, 'mcp-schema')
   safeMkdirSync(cache)
   const home = mkdtempSync(path.join(cache, 'home-'))
   try {

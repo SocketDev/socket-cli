@@ -11,7 +11,7 @@ import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/type
 
 import { scrubSnapshotData } from './util/scrub-snapshot-data.mts'
 import { execPath } from '../src/constants/paths.mts'
-import { WORKSPACE_ROOT } from '../scripts/repo/cli-build/paths.mts'
+import { WORKSPACE_ROOT } from '../scripts/repo/build/paths.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
