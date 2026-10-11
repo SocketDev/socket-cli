@@ -380,6 +380,14 @@ jobs:
           }
           fs.appendFileSync(process.env.GITHUB_PATH, `${path.dirname(result.binPath)}\n`)
           NODE
+      - name: Mint sdxgen read token
+        if: github.repository == 'SocketDev/socket-cli'
+        id: sdxgen-token
+        uses: ./.github/actions/fleet/github-payload-app-token
+        with:
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          repositories: sdxgen
       # The vitest-runnable harnesses (`*.fuzz.test.mts` — Tier 1 property,
       # Tier 3 seeded). The ordinary suite EXCLUDES these, so this is the only
       # place they run: FLEET_TEST_FUZZ=1 flips the vitest config's include to
@@ -390,9 +398,14 @@ jobs:
       # without adopting vitiate, and those must still run.
       - name: Run the vitest fuzz harnesses at full budget
         env:
+          GH_TOKEN: ${{ github.token }}
+          SDXGEN_GITHUB_TOKEN: ${{ steps.sdxgen-token.outputs.token }}
           FLEET_TEST_FUZZ: '1'
         run: pnpm run test --all
       - name: Run the JS fuzz campaign
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SDXGEN_GITHUB_TOKEN: ${{ steps.sdxgen-token.outputs.token }}
         run: |
           set -euo pipefail
           # No test:fuzz script means this repo has no vitiate lane, which is
