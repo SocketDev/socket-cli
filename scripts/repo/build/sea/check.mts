@@ -26,7 +26,7 @@ export async function main(): Promise<void> {
     .digest('hex')
   if (receipt.payload !== payload) {
     throw new Error(
-      'SEA payload does not match the CLI build. Run pnpm run build:sea.',
+      'Native binary payload does not match the CLI build. Run pnpm run build:native.',
     )
   }
   for (const [name, file] of Object.entries(SEA_ENTRYPOINT_PATHS)) {
@@ -36,7 +36,7 @@ export async function main(): Promise<void> {
       .digest('hex')
     if (receipt.entrypoints[name] !== actual) {
       throw new Error(
-        `SEA entry point mismatch for ${name}. Run pnpm run build:sea.`,
+        `Native binary entry point mismatch for ${name}. Run pnpm run build:native.`,
       )
     }
   }
@@ -52,12 +52,12 @@ export async function main(): Promise<void> {
     ?.slice('--target='.length)
   if (requested === '') {
     throw new Error(
-      'Invalid SEA target. Pass a supported target after --target=.',
+      'Invalid native target. Pass a supported target after --target=.',
     )
   }
   if (requested && !(SEA_TARGETS as readonly string[]).includes(requested)) {
     throw new Error(
-      `Invalid SEA target ${requested}. Use one of ${SEA_TARGETS.join(', ')}.`,
+      `Invalid native target ${requested}. Use one of ${SEA_TARGETS.join(', ')}.`,
     )
   }
   if (requested && process.argv.includes('--host')) {
@@ -74,7 +74,7 @@ export async function main(): Promise<void> {
     const actual = crypto.createHash('sha256').update(bytes).digest('hex')
     if (actual !== receipt.binaries[target]) {
       throw new Error(
-        `SEA package digest mismatch for ${target}. Run pnpm run build:sea.`,
+        `Native package digest mismatch for ${target}. Run pnpm run build:native.`,
       )
     }
   }
@@ -85,7 +85,7 @@ export async function main(): Promise<void> {
     })
     if (result.code !== 0 || !result.stdout.toString().trim()) {
       throw new Error(
-        `SEA smoke test failed for ${args.join(' ')}: ${result.stderr}. Rebuild the executable.`,
+        `Native binary smoke test failed for ${args.join(' ')}: ${result.stderr}. Rebuild the executable.`,
       )
     }
   }
@@ -93,15 +93,15 @@ export async function main(): Promise<void> {
     logger.stdout.write(JSON.stringify({ ok: true, targets }) + '\n')
   } else {
     logger.log(
-      `Verified ${targets.length} SEA artifact(s) and executed ${executionTarget}.`,
+      `Verified ${targets.length} native artifact(s) and executed ${executionTarget}.`,
     )
   }
 }
 
 const SCRIPT_META = {
-  describe: 'verify socket SEA artifact integrity and execution',
+  describe: 'verify socket native artifact integrity and execution',
   heavyJob: 'test' as const,
-  help: 'Usage: pnpm run check:sea-package [--host|--target=TARGET]',
+  help: 'Usage: pnpm run check:native-package [--host|--target=TARGET]',
   json: 'native' as const,
 }
 

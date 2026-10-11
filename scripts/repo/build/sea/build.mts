@@ -55,7 +55,7 @@ export async function main(): Promise<void> {
   const selected = arg === 'host' ? host : arg
   if (selected && !(SEA_TARGETS as readonly string[]).includes(selected)) {
     throw new Error(
-      `Invalid SEA target ${selected}. Use --target=host or a supported target.`,
+      `Invalid native target ${selected}. Use --target=host or a supported target.`,
     )
   }
   const targets = selected ? [selected] : [...SEA_TARGETS]
@@ -121,7 +121,7 @@ export async function main(): Promise<void> {
   if (process.argv.includes('--json')) {
     logger.stdout.write(JSON.stringify({ ok: true, targets }) + '\n')
   } else {
-    logger.log(`Built ${targets.length} Socket SEA executable(s).`)
+    logger.log(`Built ${targets.length} Socket native executable(s).`)
   }
 }
 
@@ -228,7 +228,7 @@ async function buildSeaTarget(
     )
     if (result.code !== 0) {
       throw new Error(
-        `SEA build failed for ${target}: exit ${result.code}. Inspect binject output.`,
+        `Native build failed for ${target}: exit ${result.code}. Inspect binject output.`,
       )
     }
   }
@@ -242,9 +242,9 @@ async function buildSeaTarget(
 }
 
 const SCRIPT_META = {
-  describe: 'build the socket package SEA platform matrix',
+  describe: 'build the socket package native platform matrix',
   heavyJob: 'build' as const,
-  help: 'Usage: pnpm run build:sea [--target=host|TARGET] [--sign]',
+  help: 'Usage: pnpm run build:native [--target=host|TARGET] [--sign]',
   json: 'native' as const,
 }
 

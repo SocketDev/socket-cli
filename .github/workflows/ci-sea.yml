@@ -1,5 +1,5 @@
-name: 'ci: sea'
-run-name: 'ci: sea'
+name: 'ci: native'
+run-name: 'ci: native'
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build sea matrix
+    name: Build native matrix
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -49,9 +49,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SDXGEN_GITHUB_TOKEN: ${{ steps.sdxgen-token.outputs.token }}
         run: pnpm run build:cli
-      - name: Build all sea targets once
-        run: pnpm run build:sea
-      - name: Pack exact sea build with executable modes
+      - name: Build all native targets once
+        run: pnpm run build:native
+      - name: Pack exact native build with executable modes
         run: |
           mkdir -p .cache/sea
           tar -czf .cache/sea/sea-build.tar.gz \
@@ -62,14 +62,14 @@ jobs:
             dist/socket-pnpm.js \
             dist/socket-yarn.js \
             dist/sea
-      - name: Upload immutable sea build
+      - name: Upload immutable native build
         uses: ./.github/actions/fleet/upload-artifact
         with:
           name: sea-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .cache/sea/sea-build.tar.gz
           if-no-files-found: error
-      - name: Test sea tooling
-        run: pnpm run test:sea
+      - name: Test native tooling
+        run: pnpm run test:native
 
   qualify:
     name: Qualify (${{ matrix.target }})
@@ -117,12 +117,12 @@ jobs:
           payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-      - name: Download exact sea build
+      - name: Download exact native build
         uses: ./.github/actions/fleet/download-artifact
         with:
           name: sea-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .cache/sea-artifact
-      - name: Restore exact sea build
+      - name: Restore exact native build
         shell: bash
         run: |
           set -euo pipefail
@@ -141,4 +141,4 @@ jobs:
         if: ${{ matrix.musl }}
         run: sudo apt-get update && sudo apt-get install --yes musl
       - name: Verify and execute built target
-        run: pnpm run check:sea-package --target=${{ matrix.target }}
+        run: pnpm run check:native-package --target=${{ matrix.target }}
