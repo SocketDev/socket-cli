@@ -95,7 +95,7 @@ export function patchRecordToListEntry(
   purl: string,
   record: PatchManifestRecord,
 ): PatchListEntry {
-  return {
+  const entry = {
     __proto__: null,
     purl,
     uuid: record.uuid,
@@ -115,6 +115,7 @@ export function patchRecordToListEntry(
         description: sanitizePatchText(vulnerability.description),
       })),
   }
+  return entry
 }
 
 export function sanitizePatchText(value: string): string {

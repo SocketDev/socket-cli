@@ -53,6 +53,20 @@ export class PatchManifestError extends Error {
   }
 }
 
+export function assertPatchManifest(
+  value: unknown,
+): asserts value is PatchManifest {
+  if (!isPlainObject(value) || !isPlainObject(value['patches'])) {
+    throw new PatchManifestError('Manifest must contain a patches object')
+  }
+
+  for (const [purl, candidate] of Object.entries(value['patches'])) {
+    if (!isPatchManifestRecord(candidate)) {
+      throw new PatchManifestError(`Manifest patch record is invalid: ${purl}`)
+    }
+  }
+}
+
 export async function ensureManifestTarget(
   manifestPath: string,
 ): Promise<void> {
@@ -175,17 +189,8 @@ export function parsePatchManifest(source: string): PatchManifest {
     )
   }
 
-  if (!isPlainObject(value) || !isPlainObject(value['patches'])) {
-    throw new PatchManifestError('Manifest must contain a patches object')
-  }
-
-  for (const [purl, candidate] of Object.entries(value['patches'])) {
-    if (!isPatchManifestRecord(candidate)) {
-      throw new PatchManifestError(`Manifest patch record is invalid: ${purl}`)
-    }
-  }
-
-  return value as PatchManifest
+  assertPatchManifest(value)
+  return value
 }
 
 export async function readPatchManifest(

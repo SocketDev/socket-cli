@@ -35,12 +35,13 @@ export function parsePatchLocalOptions(
   args: readonly string[],
   command: PatchLocalCommand,
 ): PatchLocalParseResult {
-  const options: PatchLocalParseResult = {
+  const initialOptions = {
     __proto__: null,
     help: false,
     json: false,
     projectRoot: process.cwd(),
   }
+  const options: PatchLocalParseResult = initialOptions
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!
