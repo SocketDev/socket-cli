@@ -12,7 +12,7 @@ import {
   createBaseConfig,
   parseCliBuildMode,
 } from '../../../scripts/repo/build/rolldown-utils.mts'
-import { createCliBundleBuildArgs } from '../../../scripts/repo/build/build.mts'
+import { createCliBundleBuildArgs } from '../../../scripts/repo/build/run.mts'
 import * as rolldownUtils from '../../../scripts/repo/build/rolldown-utils.mts'
 import { runCliRolldownBuild } from '../../../.config/repo/cli/rolldown.build.mts'
 

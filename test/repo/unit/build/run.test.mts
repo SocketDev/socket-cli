@@ -20,7 +20,7 @@ describe('single CLI build entry', () => {
     expect(spawn).toHaveBeenCalledExactlyOnceWith(
       process.execPath,
       [
-        path.join(REPO_ROOT, 'scripts/repo/build/build.mts'),
+        path.join(REPO_ROOT, 'scripts/repo/build/run.mts'),
         '--force',
         '--quiet',
       ],

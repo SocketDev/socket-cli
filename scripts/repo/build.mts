@@ -14,7 +14,7 @@ export async function runCliBuild(
   const args = options.args ?? process.argv.slice(2)
   await spawn(
     process.execPath,
-    [path.join(REPO_ROOT, 'scripts/repo/build/build.mts'), ...args],
+    [path.join(REPO_ROOT, 'scripts/repo/build/run.mts'), ...args],
     {
       cwd: REPO_ROOT,
       stdio: 'inherit',

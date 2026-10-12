@@ -29,7 +29,7 @@
       "scripts/repo/check/cli-types-are-sound.mts",
       "scripts/repo/clean-cache.mts",
       "scripts/repo/build/build-js.mts",
-      "scripts/repo/build/build.mts",
+      "scripts/repo/build/run.mts",
       "scripts/repo/build/e2e.mts",
       "scripts/repo/build/repo/fuzz.mts",
       "scripts/repo/build/run-dist.mts",
