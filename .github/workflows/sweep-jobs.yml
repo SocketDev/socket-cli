@@ -110,11 +110,7 @@ jobs:
             ARGS+=(--dry-run)
           fi
           node scripts/fleet/workflow/runs/prune.mts "${ARGS[@]}"
-      # Same job, not a second one: every job starts on a bare runner and would
-      # need its own copy of the inline bootstrap above, and that bootstrap is
-      # deliberately tri-plicated and lock-step checked. `always()` keeps the
-      # cache sweep independent of the run sweep's result, which is the only
-      # thing a separate job would have bought.
+
       - name: Prune Actions caches
         if: always()
         env:
