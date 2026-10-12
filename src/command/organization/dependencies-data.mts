@@ -1,5 +1,6 @@
 import { handleApiCall } from '../../util/socket/api.mjs'
 import { setupSdk } from '../../util/socket/sdk.mjs'
+import { matchesConfirmedPurls } from './dependencies-filters.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
@@ -8,6 +9,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 export type FetchDependenciesConfig = {
   limit: number
   offset: number
+  purls?: string[] | undefined
 }
 
 export type FetchDependenciesOptions = {
@@ -30,16 +32,32 @@ export async function fetchDependencies(
   }
   const sockSdk = sockSdkCResult.data
 
-  const { limit, offset } = {
-    __proto__: null,
-    ...config,
-  } as FetchDependenciesConfig
+  const { limit, offset, purls } = config
 
-  return await handleApiCall<'searchDependencies'>(
-    sockSdk.searchDependencies({ limit, offset }),
+  const result = await handleApiCall<'searchDependencies'>(
+    sockSdk.searchDependencies({
+      limit,
+      offset,
+      ...(purls === undefined ? {} : { purls }),
+    }),
     {
       commandPath,
       description: 'organization dependencies',
     },
   )
+
+  if (
+    result.ok &&
+    purls !== undefined &&
+    !matchesConfirmedPurls(purls, result.data.purlFilters)
+  ) {
+    return {
+      ok: false,
+      message: 'The server did not confirm every requested PURL filter.',
+      cause:
+        'Review the PURLs and try again. No dependency results were displayed because the filters may not have been applied.',
+    }
+  }
+
+  return result
 }

@@ -12,6 +12,7 @@ import {
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { checkCommandInput } from '../../util/validation/input-check.mts'
+import { parsePurlsOption } from './dependencies-filters.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
@@ -48,7 +49,12 @@ export async function run(
       offset: {
         type: 'number',
         default: 0,
-        description: 'Page number',
+        description: 'Number of dependencies to skip',
+      },
+      purls: {
+        type: 'string',
+        isMultiple: true,
+        description: 'Search for a full PURL; repeat this flag for more PURLs',
       },
       ...outputFlags,
     }),
@@ -65,6 +71,7 @@ export async function run(
     Examples
       ${command}
       ${command} --limit 20 --offset 10
+      ${command} --purls 'pkg:npm/minimist@0.0.4'
   `,
   }
 
@@ -75,7 +82,12 @@ export async function run(
     importMeta,
   })
 
-  const { json, limit, markdown, offset } = cli.flags
+  const { json, limit, markdown, offset, purls: suppliedPurls } = cli.flags
+  const parsedPurls = parsePurlsOption(argv, suppliedPurls)
+  if (!parsedPurls.ok) {
+    throw new InputError(parsedPurls.message)
+  }
+  const { purls } = parsedPurls
 
   const dryRun = cli.flags['dryRun']
 
@@ -110,6 +122,7 @@ export async function run(
     outputDryRunFetch('organization dependencies', {
       limit: validatedLimit || 50,
       offset: validatedOffset,
+      ...(purls ? { purls: JSON.stringify(purls) } : {}),
     })
     return
   }
@@ -128,6 +141,7 @@ export async function run(
   await handleDependencies({
     limit: validatedLimit,
     offset: validatedOffset,
+    purls,
     outputKind,
   })
 }
