@@ -71,6 +71,7 @@
     "build:oxlint-bundle": "node scripts/fleet/build-oxlint-bundle.mts",
     "build:publish": "pnpm run prepublish:check --reserved && pnpm run build:native",
     "build:native": "node scripts/repo/build/sea/build.mts",
+    "build:native:verifier": "node scripts/repo/build/sea/package/build.mts",
     "build:snapshot-launcher": "node scripts/fleet/build-snapshot-launcher.mts",
     "build:test": "node scripts/fleet/commands/run.mts build test",
     "build:update": "node scripts/fleet/commands/run.mts build update",
