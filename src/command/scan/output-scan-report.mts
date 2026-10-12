@@ -36,17 +36,11 @@ export type OutputScanReportConfig = {
   short: boolean
 }
 
-export function isFullScanReport(
-  report: ScanReport | { healthy: boolean },
-): report is ScanReport {
-  return 'alerts' in report
-}
-
 export type ReportAlertRow = {
   alertType: string
-  introducedBy: string
   manifest: string
   packageName: string
+  packageVersion: string
   policy: string
   url: string
 }
@@ -63,9 +57,9 @@ export function flattenReportAlerts(report: ScanReport): ReportAlertRow[] {
       return {
         __proto__: null,
         alertType: type,
-        introducedBy: keys[2] || '<unknown>',
         manifest: joinAnd(manifest),
         packageName: keys[1] || '<unknown>',
+        packageVersion: keys[2] || '<unknown>',
         policy,
         url,
       }
@@ -82,14 +76,14 @@ export function formatAlertTable(rows: ReportAlertRow[]): string[] {
     'POLICY',
     'ALERT TYPE',
     'PACKAGE',
-    'INTRODUCED BY',
+    'VERSION',
     'MANIFEST FILE',
   ]
   const cells = rows.map(row => [
     row.policy,
     row.alertType,
     row.packageName,
-    row.introducedBy,
+    row.packageVersion,
     row.manifest,
   ])
   const widths = headers.map(header => header.length)
@@ -135,6 +129,12 @@ export function formatLabelledPairs(pairs: Array<[string, string]>): string[] {
   return pairs.map(
     ([label, value]) => `  ${`${label}:`.padEnd(width + 1)}  ${value}`,
   )
+}
+
+export function isFullScanReport(
+  report: ScanReport | { healthy: boolean },
+): report is ScanReport {
+  return 'alerts' in report
 }
 
 export async function outputGeneratedScanReport(
@@ -307,7 +307,7 @@ export function toMarkdownReport(
     __proto__: null,
     'Alert Type': row.alertType,
     Package: row.packageName,
-    'Introduced by': row.introducedBy,
+    Version: row.packageVersion,
     url: row.url,
     'Manifest file': row.manifest,
     Policy: row.policy,
@@ -355,7 +355,7 @@ ${
         'Policy',
         'Alert Type',
         'Package',
-        'Introduced by',
+        'Version',
         'url',
         'Manifest file',
       ])
