@@ -5299,6 +5299,14 @@ yarn-error.log*
 !/.claude/output-styles/fleet.md
 !/docs/repo/agents.md/
 !/docs/repo/agents.md/releasing-v1x.md
+!/patches/
+!/patches/repo/
+!/patches/repo/@npmcli__run-script@10.0.4.patch
+!/patches/repo/@sigstore__sign@5.0.0.patch
+!/patches/repo/@sindresorhus__df@5.0.0.patch
+!/patches/repo/mount-point@3.0.0.patch
+!/patches/repo/node-gyp@12.4.0.patch
+!/patches/repo/xdg-trashdir@3.1.0.patch
 
 # vitiate coverage-guided fuzz lane caches (regenerable; never commit)
 /.swc/

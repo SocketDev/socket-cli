@@ -734,29 +734,29 @@ patchedDependencies:
   # Splits the 'node-gyp/bin/node-gyp.js' literal in require.resolve so the
   # CLI's rolldown bundle keeps the lookup at runtime instead of inlining a
   # build-machine path. Consumer: bundled npm shim.
-  '@npmcli/run-script@10.0.4': patches/@npmcli__run-script@10.0.4.patch
+  '@npmcli/run-script@10.0.4': patches/repo/@npmcli__run-script@10.0.4.patch
   # de-http2: inline the HTTP header/status constants in dist/external/fetch.js
   # so @sigstore/sign resolves without the node:http2 builtin, keeping the CLI
   # bundle node:http2-free. Consumer: the CLI's sigstore-backed provenance path.
   # Re-keyed across the 4.1.0 -> 5.0.0 bump.
-  '@sigstore/sign@5.0.0': patches/@sigstore__sign@5.0.0.patch
+  '@sigstore/sign@5.0.0': patches/repo/@sigstore__sign@5.0.0.patch
   # Matches df's declared execa range to the 10.x it resolves to, so the
   # manifest reads as the tree installs. Consumer: the trash chain
   # (trash -> xdg-trashdir -> df), the only df consumer.
-  '@sindresorhus/df@5.0.0': patches/@sindresorhus__df@5.0.0.patch
+  '@sindresorhus/df@5.0.0': patches/repo/@sindresorhus__df@5.0.0.patch
   # df 5 is ESM-only and replaced the callback `df.file` with the promise
   # `diskSpaceForFilesystemOwningPath`, so the require moves to a dynamic
   # import inside the async call and the unused pify/pinkie-promise go away.
   # Consumer: xdg-trashdir, via the trash chain.
-  mount-point@3.0.0: patches/mount-point@3.0.0.patch
+  mount-point@3.0.0: patches/repo/mount-point@3.0.0.patch
   # Drops the bundled Find-VisualStudio.cs source (compiled ad hoc on Windows
   # hosts) so the CLI package payload carries no compilable C# for AV/pack
   # scanners to flag. Consumer: bundled npm tooling.
-  node-gyp@12.4.0: patches/node-gyp@12.4.0.patch
+  node-gyp@12.4.0: patches/repo/node-gyp@12.4.0.patch
   # Same df 5 ESM/named-export move as mount-point: the require becomes a
   # dynamic import inside the already-async `all()`, calling diskSpace()
   # instead of the dropped callable default. Consumer: trash, via this chain.
-  xdg-trashdir@3.1.0: patches/xdg-trashdir@3.1.0.patch
+  xdg-trashdir@3.1.0: patches/repo/xdg-trashdir@3.1.0.patch
   # dedup: callable parser interop (managed by socket-wheelhouse sync):
   # polka requires a callable parser with a raw query string and _parsedUrl
   # cache. sirv requires the named parse export with its modern result shape.
