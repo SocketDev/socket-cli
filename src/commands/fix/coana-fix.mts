@@ -379,19 +379,16 @@ async function coanaFixWithFacts(
         'Generating Socket facts for Gradle, sbt and Maven builds ...',
       )
     }
-    try {
-      factsSlot.generated = await generateSocketFactsForFix({
-        cwd,
-        excludePaths,
-        tmpDir: factsSlot.tmpDir,
-      })
-    } catch (e) {
-      // A failed build root aborts inference after others wrote their facts.
-      const partial = (await findScanFilepaths()).filter(isSocketFactsFile)
-      await Promise.all(partial.map(p => fs.rm(p, { force: true })))
-      throw e
-    }
-    scanFilepaths.push(...factsSlot.generated.paths)
+    factsSlot.generated = await generateSocketFactsForFix({
+      cwd,
+      excludePaths,
+      existingPaths: scanFilepaths.filter(isSocketFactsFile),
+      findFactsPaths: async () =>
+        (await findScanFilepaths()).filter(isSocketFactsFile),
+      tmpDir: factsSlot.tmpDir,
+    })
+    const known = new Set(scanFilepaths)
+    scanFilepaths.push(...factsSlot.generated.paths.filter(p => !known.has(p)))
     if (!silence) {
       spinner?.start()
     }

@@ -174,13 +174,18 @@ describe('socket fix --dynamic-sbom-inference', () => {
     )
   })
 
-  it('regenerates facts files that were already present', async () => {
+  it('regenerates facts files that were already present, uploading each once', async () => {
     mockGetPackageFilesForScan.mockResolvedValue([FACTS])
 
     const result = await coanaFix(baseConfig)
 
     expect(result.ok).toBe(true)
-    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledTimes(1)
+    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledWith(
+      expect.objectContaining({ existingPaths: [FACTS] }),
+    )
+    expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
+      pathsRelativeTo: '/test/cwd',
+    })
   })
 
   it('uploads facts files that were already present without the flag', async () => {

@@ -1,4 +1,4 @@
-import { copyFile, rm } from 'node:fs/promises'
+import { copyFile, mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
@@ -9,39 +9,70 @@ export type GeneratedSocketFacts = {
   restore: () => Promise<void>
 }
 
-// Backed up so each fix attempt sees the pre-fix build after `git clean`.
-export async function generateSocketFactsForFix({
-  cwd,
-  excludePaths,
-  tmpDir,
-}: {
-  cwd: string
-  excludePaths: string[]
-  tmpDir: string
-}): Promise<GeneratedSocketFacts> {
-  const { factsPaths } = await runDynamicSbomInference({
-    cwd,
-    excludePaths,
-    sbtTmpDir: undefined,
-    withFiles: false,
-  })
-  const paths = factsPaths.map(p => path.resolve(cwd, p))
-  const backups = await Promise.all(
-    paths.map(async (source, index) => {
-      const backup = path.join(tmpDir, `${index}.json`)
+type Backup = { backup: string; source: string }
+
+async function backUp(sources: string[], dir: string): Promise<Backup[]> {
+  await mkdir(dir, { recursive: true })
+  return await Promise.all(
+    sources.map(async (source, index) => {
+      const backup = path.join(dir, `${index}.json`)
       await copyFile(source, backup)
       return { backup, source }
     }),
   )
+}
+
+async function restoreAll(backups: Backup[]): Promise<void> {
+  await Promise.all(
+    backups.map(({ backup, source }) => copyFile(backup, source)),
+  )
+}
+
+// Backed up so each fix attempt sees the pre-fix build after `git clean`, and
+// facts files already present are left as they were found.
+export async function generateSocketFactsForFix({
+  cwd,
+  excludePaths,
+  existingPaths,
+  findFactsPaths,
+  tmpDir,
+}: {
+  cwd: string
+  excludePaths: string[]
+  existingPaths: string[]
+  findFactsPaths: () => Promise<string[]>
+  tmpDir: string
+}): Promise<GeneratedSocketFacts> {
+  const originals = await backUp(existingPaths, path.join(tmpDir, 'existing'))
+  const existing = new Set(existingPaths)
+  const reset = async (written: string[]) => {
+    await Promise.all(
+      written.filter(p => !existing.has(p)).map(p => rm(p, { force: true })),
+    )
+    await restoreAll(originals)
+  }
+  let paths: string[]
+  try {
+    const { factsPaths } = await runDynamicSbomInference({
+      cwd,
+      excludePaths,
+      sbtTmpDir: undefined,
+      withFiles: false,
+    })
+    paths = factsPaths.map(p => path.resolve(cwd, p))
+  } catch (e) {
+    // A failed build root aborts inference after others wrote their facts.
+    await reset(await findFactsPaths())
+    throw e
+  }
+  const generated = new Set(paths)
+  const backups = [
+    ...originals.filter(({ source }) => !generated.has(source)),
+    ...(await backUp(paths, path.join(tmpDir, 'generated'))),
+  ]
   return {
     paths,
-    async remove() {
-      await Promise.all(paths.map(p => rm(p, { force: true })))
-    },
-    async restore() {
-      await Promise.all(
-        backups.map(({ backup, source }) => copyFile(backup, source)),
-      )
-    },
+    remove: () => reset(paths),
+    restore: () => restoreAll(backups),
   }
 }
