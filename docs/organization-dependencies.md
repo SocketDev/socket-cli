@@ -35,6 +35,31 @@ artifact can have more than one repository link, so the displayed row count
 can be greater than the limit. Each invocation makes one request; the command
 does not paginate automatically.
 
+## Filter by package
+
+Use `--purls` to find dependency artifacts by package URL (PURL). Supply one
+complete PURL per flag; repeat the flag to search for multiple packages:
+
+```sh
+socket organization dependencies --purls 'pkg:npm/minimist@0.0.4'
+socket organization dependencies \
+  --purls 'pkg:npm/minimist' \
+  --purls 'pkg:pypi/requests@2.32.3' \
+  --json
+```
+
+A PURL can include an exact version or omit the version to match all indexed
+versions of that package. Package type, namespace, and name are matched as
+provided; for example, `pkg:npm/%40types/node` keeps the scoped npm namespace.
+Searches do not support substring, wildcard, or version-range matching.
+Qualifiers and subpaths are rejected because this search endpoint filters only
+package identity and version. If the server does not confirm every requested
+PURL, the CLI reports a failure and does not display dependency rows.
+
+Each request searches one page, so combine `--purls` with `--limit` and
+`--offset` to continue through matching artifacts. The rows include the
+organization repositories and branches currently linked to those artifacts.
+
 ## Choose an output format
 
 The default output and `--markdown` display a text table with ecosystem,
@@ -49,8 +74,10 @@ socket organization dependencies --json > dependencies.json
 ```
 
 On success, the JSON envelope contains `ok` and `data`. Read dependency rows
-from `data.rows`; `data` also includes `end`, `limit`, and `offset`. The
-`--json` and `--markdown` options cannot be used together.
+from `data.rows`; `data` also includes `end`, `limit`, and `offset`. When you
+search with `--purls`, it also includes the server's filter confirmation in
+`data.purlFilters`. The `--json` and `--markdown` options cannot be used
+together.
 
 ## Help and dry run
 
@@ -62,5 +89,5 @@ socket organization dependencies --help
 
 A dry run does not retrieve inventory. It only reports what the command would
 request. On the 2.x prerelease, dry run requires authentication and reports the
-selected limit and offset. On 1.x, it exits before making a request and prints
-a generic dry-run message.
+selected limit, offset, and PURL filters. On 1.x, it exits before making a
+request and prints a generic dry-run message.

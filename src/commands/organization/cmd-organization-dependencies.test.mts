@@ -29,11 +29,13 @@ describe('socket organization dependencies', async () => {
             --json              Output as JSON
             --limit             Maximum number of dependencies returned
             --markdown          Output as Markdown
-            --offset            Page number
+            --offset            Number of dependencies to skip
+            --purls             Search for a full PURL; repeat this flag for more PURLs
 
           Examples
             socket organization dependencies
-            socket organization dependencies --limit 20 --offset 10"
+            socket organization dependencies --limit 20 --offset 10
+            socket organization dependencies --purls 'pkg:npm/minimist@0.0.4'"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -72,6 +74,79 @@ describe('socket organization dependencies', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      '--purls',
+      'pkg:npm/minimist@0.0.4',
+      '--purls',
+      'pkg:pypi/requests',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept repeated PURL filters in a dry run',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBe(0)
+      expect(stdout).toContain('[DryRun]: Bailing now')
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      '--purls',
+      'minimist',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should reject invalid PURLs before dry-run success',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).not.toBe(0)
+      expect(`${stdout}\n${stderr}`).toContain('Invalid PURL "minimist"')
+      expect(stdout).not.toContain('[DryRun]: Bailing now')
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+      '--purls',
+    ],
+    'should reject a bare PURL flag',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).not.toBe(0)
+      expect(stdout).not.toContain('[DryRun]: Bailing now')
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+      '--purls=',
+    ],
+    'should reject an explicitly empty PURL filter',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).not.toBe(0)
+      expect(stdout).not.toContain('[DryRun]: Bailing now')
     },
   )
 })
