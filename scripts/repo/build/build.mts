@@ -14,6 +14,7 @@ import { buildSdxgenBundle } from './sdxgen.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { isMainModule } from '../../fleet/process/is-main-module.mts'
 import { runMain } from '../../fleet/process/main/run.mts'
+import { parseCliBuildMode } from './rolldown-utils.mts'
 
 import type { ScriptMeta } from '../../fleet/process/main/run.mts'
 
@@ -24,10 +25,6 @@ const packageRoot = path.resolve(__dirname, '../../..')
 
 // Node options for memory allocation.
 const NODE_MEMORY_FLAGS = ['--max-old-space-size=8192']
-
-// Simple CLI helpers without registry dependencies.
-const isQuiet = () => process.argv.includes('--quiet')
-const isVerbose = () => process.argv.includes('--verbose')
 
 /**
  * Copy the JVM build-tool resolution assets — the Gradle init scripts, the sbt
@@ -153,10 +150,32 @@ async function runBuildStep(executable: string, args: string[]): Promise<void> {
   }
 }
 
-export async function main(): Promise<void> {
-  const quiet = isQuiet()
-  const verbose = isVerbose()
-  if (process.argv.includes('--force')) {
+export function createCliBundleBuildArgs(args: readonly string[]): {
+  mode: ReturnType<typeof parseCliBuildMode>
+  childArgs: string[]
+} {
+  const mode = parseCliBuildMode(args)
+  const watch = args.includes('--watch')
+  return {
+    mode,
+    childArgs: [
+      ...NODE_MEMORY_FLAGS,
+      watch
+        ? '.config/repo/cli/rolldown.cli.mts'
+        : '.config/repo/cli/rolldown.build.mts',
+      ...(watch ? ['--watch'] : []),
+      `--mode=${mode}`,
+    ],
+  }
+}
+
+export async function main(
+  args: readonly string[] = process.argv.slice(2),
+): Promise<void> {
+  const { childArgs } = createCliBundleBuildArgs(args)
+  const quiet = args.includes('--quiet')
+  const verbose = args.includes('--verbose')
+  if (args.includes('--force')) {
     process.env['SOCKET_CLI_FORCE_BUILD'] = '1'
     await safeDelete([
       path.join(packageRoot, 'build'),
@@ -167,18 +186,11 @@ export async function main(): Promise<void> {
     logger.step('Building Socket CLI')
   }
   await fs.mkdir(path.join(packageRoot, 'dist'), { recursive: true })
-  if (process.argv.includes('--watch')) {
-    await runBuildStep(process.execPath, [
-      ...NODE_MEMORY_FLAGS,
-      '.config/repo/cli/rolldown.cli.mts',
-      '--watch',
-    ])
+  if (args.includes('--watch')) {
+    await runBuildStep(process.execPath, childArgs)
     return
   }
-  await runBuildStep(process.execPath, [
-    ...NODE_MEMORY_FLAGS,
-    '.config/repo/cli/rolldown.build.mts',
-  ])
+  await runBuildStep(process.execPath, childArgs)
   await fixNodeGypStrings(path.join(packageRoot, 'build'), { quiet, verbose })
   copyFileSync(
     path.join(packageRoot, 'build/cli.js'),
@@ -200,7 +212,7 @@ export async function main(): Promise<void> {
 
 const SCRIPT_META: ScriptMeta = {
   describe: 'build the Socket CLI distribution and bundled assets',
-  help: 'Usage: pnpm run build:cli [--quiet] [--verbose] [--force] [--watch]',
+  help: 'Usage: pnpm run build:cli [--quiet] [--verbose] [--force] [--watch] [--mode development|production]',
   json: 'native',
 }
 

@@ -8,14 +8,19 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
   getInlinedEnvVars,
+  parseCliBuildMode,
   runBuild,
 } from '../../../scripts/repo/build/rolldown-utils.mts'
-import { cliConfig } from './rolldown.cli.mts'
+import { createCliBuildConfig } from './rolldown.cli.mts'
 import { indexConfig } from './rolldown.index.mts'
 
 const logger = getDefaultLogger()
 
-async function main(): Promise<void> {
+export async function runCliRolldownBuild(
+  args: readonly string[] = process.argv.slice(2),
+): Promise<void> {
+  const mode = parseCliBuildMode(args)
+  const cliConfig = createCliBuildConfig({ mode })
   const envVars = getInlinedEnvVars()
   const results = await Promise.allSettled([
     runBuild(cliConfig, {
@@ -25,13 +30,14 @@ async function main(): Promise<void> {
     }),
     runBuild(indexConfig, { description: 'CLI entry point', envVars }),
   ])
-  if (results.some(result => result.status === 'rejected')) {
-    process.exitCode = 1
+  const failure = results.find(result => result.status === 'rejected')
+  if (failure?.status === 'rejected') {
+    throw failure.reason
   }
 }
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  main().catch(error => {
+  runCliRolldownBuild().catch(error => {
     logger.error('Build failed:', error)
     process.exitCode = 1
   })

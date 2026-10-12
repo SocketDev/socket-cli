@@ -18,6 +18,7 @@ import { IMPORT_META_URL_BANNER } from '../../../scripts/repo/build-infra/esbuil
 import {
   createBaseConfig,
   getInlinedEnvVars,
+  parseCliBuildMode,
   runBuild,
 } from '../../../scripts/repo/build/rolldown-utils.mts'
 import type { CliBuildMode } from '../../../scripts/repo/build/rolldown-utils.mts'
@@ -300,9 +301,10 @@ export function toRealPath(p: string): string {
 export const cliConfig = createCliBuildConfig()
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
+  const mode = parseCliBuildMode(process.argv.slice(2))
   // The unicode + env-var post-write transforms run here (rolldown can't
   // express them as config), matching the esbuild onEnd plugin order.
-  runBuild(cliConfig, {
+  runBuild(createCliBuildConfig({ mode }), {
     description: 'CLI bundle',
     envVars: inlinedEnvVars,
     unicodeTransform: true,

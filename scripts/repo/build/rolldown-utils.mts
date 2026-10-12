@@ -19,6 +19,28 @@ import type { RolldownOptions } from 'rolldown'
 
 export type CliBuildMode = 'development' | 'production'
 
+export function parseCliBuildMode(
+  args: readonly string[],
+  options: { defaultMode?: CliBuildMode | undefined } = {},
+): CliBuildMode {
+  let mode: CliBuildMode | undefined
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!
+    if (arg === '--mode' || arg.startsWith('--mode=')) {
+      if (mode !== undefined) {
+        throw new Error('CLI build mode can only be specified once.')
+      }
+      const value =
+        arg === '--mode' ? args[++index] : arg.slice('--mode='.length)
+      if (value !== 'development' && value !== 'production') {
+        throw new Error('CLI build mode must be development or production.')
+      }
+      mode = value
+    }
+  }
+  return mode ?? options.defaultMode ?? 'production'
+}
+
 const logger = getDefaultLogger()
 
 /**
