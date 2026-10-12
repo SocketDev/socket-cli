@@ -9,12 +9,19 @@ import process from 'node:process'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
+import { GH_ENV_TOKEN_VARS } from '../../registry/gh-auth.mts'
+import { LONG_LIVED_NPM_TOKEN_ENV_VARS } from '../../registry/npm/auth-posture.mts'
 import { isMainModule } from '../../process/is-main-module.mts'
 import { runMain } from '../../process/main/run.mts'
 import type { ScriptMeta } from '../../process/main/run.mts'
 import type { ScriptResult } from '../../process/script-result.mts'
 import { resolveReleaseSubject } from '../../release/subject.mts'
-import { scanStagedEntryDetailed } from '../../registry/npm/scan/run.mts'
+import { prepareNpmScanArtifactFallback } from './artifact.mts'
+import type { PreparedNpmReleaseArtifact } from '../publish/artifact/prepare.mts'
+import {
+  scanStagedEntryDetailed,
+  SOCKET_TOKEN_ENV_VAR,
+} from '../../registry/npm/scan/run.mts'
 import type { StagedScanVerdict } from '../../registry/npm/scan/run.mts'
 import {
   defaultDownloadStagedTarball,
@@ -27,9 +34,32 @@ import type { NpmRemoteScanReceipt } from './receipt.mts'
 
 const SHA_RE = /^[0-9a-f]{40}$/u
 const STAGE_ID_RE = /^[0-9a-f-]{36}$/u
+const SOURCE_BUILD_CREDENTIAL_ENV_NAMES = new Set(
+  [
+    ...GH_ENV_TOKEN_VARS,
+    ...LONG_LIVED_NPM_TOKEN_ENV_VARS,
+    SOCKET_TOKEN_ENV_VAR,
+    'ACTIONS_ID_TOKEN_REQUEST_TOKEN',
+    'ACTIONS_ID_TOKEN_REQUEST_URL',
+    'ACTIONS_RUNTIME_TOKEN',
+    'COREPACK_NPM_TOKEN',
+    'NPM_CONFIG_GLOBALCONFIG',
+    'NPM_CONFIG_USERCONFIG',
+    'SOCKET_PR_APP_PRIVATE_KEY',
+    'SOCKET_RELEASE_APP_PRIVATE_KEY',
+  ].map(name => name.toUpperCase()),
+)
+// Keep the legacy Socket token alias out of untrusted source build processes.
+const LEGACY_SOCKET_TOKEN_ENV_VAR = `${SOCKET_TOKEN_ENV_VAR.slice(0, -'TOKEN'.length)}KEY`
+// Match Git's environment-injected config count and indexed key/value pairs.
+const GIT_CREDENTIAL_CONFIG_ENV_NAME_RE =
+  /^GIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+)$/u
+// Match npm auth values and config file selectors across registry-specific keys.
+const NPM_CREDENTIAL_CONFIG_ENV_NAME_RE =
+  /^NPM_CONFIG_.*(?:_AUTH(?:TOKEN)?|_GLOBALCONFIG|_PASSWORD|_USERCONFIG|_USERNAME)$/u
 const RECEIPT_PATH = path.join(
   rootPath,
-  '.cache/fleet/npm-socket-staged-scan',
+  '.cache/fleet/npm-scan-staged',
   NPM_SCAN_RECEIPT_FILE,
 )
 
@@ -45,10 +75,33 @@ export interface ScanCiConfig {
   stageSha1: string
 }
 
+export function npmScanSourceBuildEnvironment(
+  env: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const childEnv = { ...env }
+  const childEnvNames = Object.keys(childEnv)
+  for (let index = 0, { length } = childEnvNames; index < length; index += 1) {
+    const name = childEnvNames[index]
+    if (name !== undefined) {
+      const normalizedName = name.toUpperCase()
+      if (
+        SOURCE_BUILD_CREDENTIAL_ENV_NAMES.has(normalizedName) ||
+        normalizedName === LEGACY_SOCKET_TOKEN_ENV_VAR ||
+        GIT_CREDENTIAL_CONFIG_ENV_NAME_RE.test(normalizedName) ||
+        NPM_CREDENTIAL_CONFIG_ENV_NAME_RE.test(normalizedName)
+      ) {
+        childEnv[name] = undefined
+      }
+    }
+  }
+  return childEnv
+}
+
 interface ScanCiDeps {
   headSha: () => Promise<string>
   download: typeof defaultDownloadStagedTarball
   pack: typeof defaultPackTarball
+  cleanupPack?: (() => Promise<void>) | undefined
   scan: typeof scanStagedEntryDetailed
   subject: (root: string) => { name: string; version: string }
   writeReceipt: (receipt: NpmRemoteScanReceipt) => Promise<void>
@@ -135,6 +188,8 @@ function receiptFrom(
     packageName: config.packageName,
     packageVersion: config.packageVersion,
     policy: {
+      gate: 'malware',
+      blockingAlerts: verdict.blockingAlerts,
       errorAlerts: verdict.errorAlerts.length,
       totalAlerts: verdict.totalAlerts,
       warnAlerts: verdict.warnAlerts.length,
@@ -144,7 +199,7 @@ function receiptFrom(
     runAttempt: config.currentRunAttempt,
     runId: config.currentRunId,
     scanId: verdict.scanId,
-    schemaVersion: 1,
+    schemaVersion: 2,
     sourceSha: config.sourceSha,
     stageId: config.stageId,
     stageSha1: config.stageSha1,
@@ -153,18 +208,53 @@ function receiptFrom(
   })
 }
 
-function runtimeDeps(packageName: string): ScanCiDeps {
+async function buildAndPackScanTarball(
+  packageName: string,
+  packageVersion: string,
+): Promise<string | undefined> {
+  const env = npmScanSourceBuildEnvironment(process.env)
+  for (const [command, ...args] of [
+    [process.execPath, 'scripts/fleet/build/production.mts'],
+    ['pnpm', 'run', '--if-present', 'build:publish'],
+  ] as const) {
+    const result = await runCapture(command, args, rootPath, { env })
+    if (result.code !== 0) {
+      throw new Error(
+        `Scan artifact build failed. Where: ${command} ${args.join(' ')}. Saw: exit ${result.code}; wanted 0. Fix: repair the signed release build before scanning staged bytes.`,
+      )
+    }
+  }
+  return await defaultPackTarball(packageName, packageVersion, { env })
+}
+
+function runtimeDeps(config: ScanCiConfig): ScanCiDeps {
+  let preparedArtifact: PreparedNpmReleaseArtifact | undefined
   return {
     headSha: currentHeadSha,
     download: defaultDownloadStagedTarball,
-    pack: defaultPackTarball,
+    async pack(packageName, packageVersion) {
+      preparedArtifact = await prepareNpmScanArtifactFallback(config)
+      if (preparedArtifact) {
+        return await preparedArtifact.packTarball(packageName, packageVersion)
+      }
+      return await buildAndPackScanTarball(packageName, packageVersion)
+    },
+    async cleanupPack() {
+      const artifact = preparedArtifact
+      preparedArtifact = undefined
+      if (artifact) {
+        await artifact.cleanup()
+      }
+    },
     scan: scanStagedEntryDetailed,
     subject(root) {
       const layout = resolveNpmWorkspaceLayout(root)
       if (layout.kind === 'single') {
         return resolveReleaseSubject(root)
       }
-      const member = layout.packages.find(pkg => pkg.name === packageName)
+      const member = layout.packages.find(
+        pkg => pkg.name === config.packageName,
+      )
       if (!member) {
         throw new Error('Scan package is absent from the release workspace.')
       }
@@ -178,7 +268,7 @@ export async function runScanCi(
   config: ScanCiConfig,
   options: { deps?: ScanCiDeps | undefined } = {},
 ): Promise<NpmRemoteScanReceipt> {
-  const deps = options.deps ?? runtimeDeps(config.packageName)
+  const deps = options.deps ?? runtimeDeps(config)
   const headSha = await deps.headSha()
   if (headSha !== config.sourceSha) {
     throw new Error(
@@ -194,15 +284,16 @@ export async function runScanCi(
       `Package mismatch. Where: signed release subject. Saw: ${subject.name}@${subject.version}; wanted ${config.packageName}@${config.packageVersion}. Fix: use the exact signed bump SHA.`,
     )
   }
-  const downloaded = await deps.download(config.stageId)
-  const tarball =
-    downloaded ?? (await deps.pack(config.packageName, config.packageVersion))
-  if (!tarball) {
-    throw new Error(
-      `Staged tarball unavailable. Where: npm stage ${config.stageId}. Saw: neither an authenticated download nor a source-built package; wanted bytes matching ${config.stageSha1}. Fix: restore staged-download authentication or build the signed release source before scanning.`,
-    )
-  }
+  let tarball: string | undefined
   try {
+    const downloaded = await deps.download(config.stageId)
+    tarball =
+      downloaded ?? (await deps.pack(config.packageName, config.packageVersion))
+    if (!tarball) {
+      throw new Error(
+        `Staged tarball unavailable. Where: npm stage ${config.stageId}. Saw: neither an authenticated download nor a source-built package; wanted bytes matching ${config.stageSha1}. Fix: restore staged-download authentication or build the signed release source before scanning.`,
+      )
+    }
     if (!downloaded) {
       const sourcePackSha1 = crypto.hash('sha1', await fs.readFile(tarball))
       if (sourcePackSha1 !== config.stageSha1) {
@@ -222,7 +313,13 @@ export async function runScanCi(
     await deps.writeReceipt(receipt)
     return receipt
   } finally {
-    await safeDelete(tarball)
+    try {
+      if (tarball !== undefined) {
+        await safeDelete(tarball)
+      }
+    } finally {
+      await deps.cleanupPack?.()
+    }
   }
 }
 

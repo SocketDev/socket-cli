@@ -5,12 +5,13 @@
  *   scan refuses before contacting Socket when those bytes differ. Each
  *   verified entry is submitted as a `tmp` full scan (hidden from the dashboard
  *   scan list — a promotion gate, not a tracked branch scan), and gated on the
- *   org's OWN security policy: every alert fails the entry, including warning,
- *   ignored, and monitored findings. Fail-closed by
- *   design: promotion always includes a full scan. Auth is verified ONCE up
- *   front (`preflightSocketScanAuth`) with a cheap quota read; an interactive
- *   run with no token in the environment opens the Socket dashboard in the
- *   browser and prompts for a pasted key (masked — the token never echoes).
+ *   org's OWN security policy: actionable malware and AI-detected malware block
+ *   approval. Ignored, monitored, and other findings remain in the report.
+ *   Fail-closed by design: promotion always includes a full scan. Auth is
+ *   verified ONCE up front (`preflightSocketScanAuth`) with a cheap quota read;
+ *   an interactive run with no token in the environment opens the Socket
+ *   dashboard in the browser and prompts for a pasted key (masked — the token
+ *   never echoes).
  */
 
 import crypto from 'node:crypto'
@@ -36,6 +37,7 @@ import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { sleep } from '@socketsecurity/lib-stable/promises/timers'
+import { pRetry } from '@socketsecurity/lib-stable/promises/retry'
 import { password } from '@socketsecurity/lib-stable/stdio/prompts'
 
 export const SOCKET_TOKEN_ENV_VAR = 'SOCKET_API_TOKEN'
@@ -280,8 +282,20 @@ export interface PolicyAlertSummary {
   warn: PolicyFailingAlert[]
 }
 
-export function hasNoPolicyAlerts(summary: PolicyAlertSummary): boolean {
-  return summary.total === 0
+export function isNpmBlockingMalwareAlert(alert: {
+  type: string
+  action: string
+}): boolean {
+  return (
+    (alert.action === 'error' || alert.action === 'warn') &&
+    (alert.type === 'gptMalware' || alert.type === 'malware')
+  )
+}
+
+export function npmBlockingMalwareAlerts(
+  summary: PolicyAlertSummary,
+): PolicyAlertSummary['alerts'] {
+  return summary.alerts.filter(isNpmBlockingMalwareAlert)
 }
 
 const RESOLVED_ALERT_ACTIONS = new Set(['error', 'ignore', 'monitor', 'warn'])
@@ -408,6 +422,7 @@ export async function scanStagedEntry(
  * run never got that far).
  */
 export interface StagedScanVerdict {
+  blockingAlerts: number
   artifactCount: number
   detail: string
   errorAlerts: PolicyFailingAlert[]
@@ -421,6 +436,7 @@ export interface StagedScanVerdict {
 // a FAILURE here, never a pass. `detail` is what the receipt records.
 function scanRefused(detail: string): StagedScanVerdict {
   return {
+    blockingAlerts: 0,
     artifactCount: 0,
     detail,
     errorAlerts: [],
@@ -545,12 +561,70 @@ async function createStagedArchiveScan(config: {
   return { scanId }
 }
 
-type FullScanAttempt =
+export type FullScanAttempt =
   | FullScanStreamResult
   | { missingStream: true }
   | { readStatus: number | undefined }
 
-async function streamFullScanAttempt(
+export function isTransientNpmScanRead(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+  const record = error as Record<string, unknown>
+  const status = record['status']
+  if (typeof status === 'number') {
+    return status === 408 || status === 429 || (status >= 500 && status <= 599)
+  }
+  return [
+    'EAI_AGAIN',
+    'ECONNRESET',
+    'ECONNREFUSED',
+    'ETIMEDOUT',
+    'UND_ERR_CONNECT_TIMEOUT',
+    'UND_ERR_HEADERS_TIMEOUT',
+    'UND_ERR_SOCKET',
+  ].includes(String(record['code']))
+}
+
+export async function retryNpmScanRead(
+  read: () => Promise<FullScanAttempt>,
+  options: { retry?: typeof pRetry | undefined } = {},
+): Promise<FullScanAttempt> {
+  const { retry = pRetry } = options
+  const result = await retry(
+    async () => {
+      const attempt = await read()
+      if (
+        'readStatus' in attempt &&
+        isTransientNpmScanRead({ status: attempt.readStatus })
+      ) {
+        throw Object.assign(
+          new Error('Socket scan results are temporarily unavailable.'),
+          {
+            status: attempt.readStatus,
+          },
+        )
+      }
+      return attempt
+    },
+    {
+      retries: 5,
+      baseDelayMs: 2000,
+      maxDelayMs: 30_000,
+      backoffFactor: 2,
+      jitter: false,
+      onRetryCancelOnFalse: true,
+      onRetryRethrow: true,
+      onRetry: (...args) => isTransientNpmScanRead(args[1]),
+    },
+  )
+  if (!result) {
+    throw new Error('Socket scan read was interrupted.')
+  }
+  return result
+}
+
+export async function streamFullScanAttempt(
   sdk: SocketSdk,
   orgSlug: string,
   scanId: string,
@@ -600,7 +674,9 @@ async function readFullScanEvidence(config: {
   const deadline = Date.now() + FULL_SCAN_READ_TIMEOUT_MS
   try {
     for (;;) {
-      const streamed = await streamFullScanAttempt(sdk, orgSlug, scanId)
+      const streamed = await retryNpmScanRead(() =>
+        streamFullScanAttempt(sdk, orgSlug, scanId),
+      )
       if ('readStatus' in streamed) {
         const { readStatus: status } = streamed
         const scopeHint =
@@ -764,10 +840,10 @@ export async function scanStagedEntryDetailed(
     const seen =
       `full scan ${scanId} (org ${orgSlug}): ${artifacts.length} artifact(s), ` +
       `${summary.total} alert(s) — ${summary.error.length} error, ${summary.warn.length} warn`
-    if (!hasNoPolicyAlerts(summary)) {
-      const alerts = summary.alerts
+    const alerts = npmBlockingMalwareAlerts(summary)
+    if (alerts.length > 0) {
       logger.fail(
-        `Scan gate: ${summary.total} alert(s) for ${name}@${version}; not approving.`,
+        `Scan gate: ${alerts.length} malware finding(s) for ${name}@${version}; not approving.`,
       )
       for (let i = 0, { length } = alerts; i < length; i += 1) {
         const f = alerts[i]!
@@ -776,6 +852,7 @@ export async function scanStagedEntryDetailed(
         )
       }
       return {
+        blockingAlerts: alerts.length,
         artifactCount: artifacts.length,
         detail: `${seen}; blocking: ${alerts.map(f => `${f.type} (${f.severity}) in ${f.artifact}`).join(', ')}`,
         errorAlerts: summary.error,
@@ -794,9 +871,10 @@ export async function scanStagedEntryDetailed(
       const passed = await runThreatLeg(tarballPath, entry, runThreat)
       if (!passed) {
         return {
+          blockingAlerts: alerts.length,
           artifactCount: artifacts.length,
           detail: `${seen}; the local code-threat leg refused ${name}@${version} (see the gate's log above)`,
-          errorAlerts: [],
+          errorAlerts: summary.error,
           ok: false,
           scanId,
           totalAlerts: summary.total,
@@ -805,22 +883,18 @@ export async function scanStagedEntryDetailed(
       }
     }
     return {
+      blockingAlerts: alerts.length,
       artifactCount: artifacts.length,
       detail: seen,
-      errorAlerts: [],
+      errorAlerts: summary.error,
       ok: true,
       scanId,
       totalAlerts: summary.total,
       warnAlerts: summary.warn,
     }
   } finally {
-    // Clean the tarball when a packTarball provider downloaded it into a temp
-    // dir (the registry-API `stage download` and the browser-read passback
-    // both mkdtemp under os.tmpdir()). A repo-local `pnpm pack` output lands
-    // in the package dir, NOT under tmpdir, so it is never touched —
-    // pnpm/repo hygiene owns that one.
     if (tarballPath.startsWith(tmpRoot + path.sep)) {
-      await safeDelete(path.dirname(tarballPath))
+      await safeDelete(tarballPath)
     }
   }
 }
