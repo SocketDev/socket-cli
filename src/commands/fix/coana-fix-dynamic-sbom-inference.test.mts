@@ -83,7 +83,7 @@ vi.mock('./branch-cleanup.mts', () => ({
   cleanupSuccessfulPrLocalBranch: vi.fn(),
 }))
 
-const FACTS = '/test/cwd/app/.socket.facts.json'
+const FACTS = '/test/cwd/app/gradle.socket.facts.json'
 
 function coanaCalls(command: string): string[][] {
   return mockSpawnCoanaDlx.mock.calls
@@ -204,6 +204,19 @@ describe('socket fix --dynamic-sbom-inference', () => {
     })
   })
 
+  it('does not upload a leftover reachability report', async () => {
+    mockGetPackageFilesForScan.mockResolvedValue([
+      '/test/cwd/.socket.facts.json',
+      FACTS,
+    ])
+
+    await coanaFix({ ...baseConfig, dynamicSbomInference: false })
+
+    expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
+      pathsRelativeTo: '/test/cwd',
+    })
+  })
+
   it('does not pass the facts restriction without the flag', async () => {
     await coanaFix({ ...baseConfig, dynamicSbomInference: false })
 
@@ -284,7 +297,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
         ok: true,
         data: [
           'project/SocketDependencyOverrides.scala',
-          'app/.socket.facts.json',
+          'app/gradle.socket.facts.json',
         ],
       })
 

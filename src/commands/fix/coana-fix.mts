@@ -22,9 +22,16 @@ import {
 import { generateSocketFactsForFix } from './generated-socket-facts.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
+import {
+  DOT_SOCKET_DOT_FACTS_JSON,
+  FLAG_DRY_RUN,
+  GQL_PR_STATE_OPEN,
+} from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { isSocketFactsFile } from '../../utils/coana.mts'
+import {
+  isReachabilityReportPath,
+  isSocketFactsFile,
+} from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
@@ -365,12 +372,20 @@ async function coanaFixWithFacts(
   // sibling manifest's references). --exclude stays separate as a hidden
   // legacy escape hatch for the narrower "fix-application only" semantic.
   const coanaExcludePatterns = [...exclude, ...excludePaths]
-  const findScanFilepaths = () =>
-    getPackageFilesForScan(['.'], supportedFiles, {
-      additionalIgnores,
-      config: socketConfig,
-      cwd,
-    })
+  const findScanFilepaths = async () =>
+    (
+      await getPackageFilesForScan(['.'], supportedFiles, {
+        additionalIgnores,
+        config: socketConfig,
+        cwd,
+      })
+    ).filter(
+      p =>
+        !isReachabilityReportPath(p, {
+          cwd,
+          outputPath: DOT_SOCKET_DOT_FACTS_JSON,
+        }),
+    )
   const scanFilepaths = await findScanFilepaths()
   if (factsSlot) {
     if (!silence) {
