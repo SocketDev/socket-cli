@@ -227,23 +227,14 @@ export async function readFirewallApiResponse(
   if (!response.ok || !response.body) {
     throw createFirewallApiError(response.status)
   }
-  const reader = response.body.getReader()
   const chunks: Uint8Array[] = []
   let bytes = 0
-  try {
-    for (;;) {
-      const result = await reader.read()
-      if (result.done) {
-        break
-      }
-      bytes += result.value.length
-      if (bytes > 4 * 1024 * 1024) {
-        throw new Error('Firewall API response exceeds the size limit.')
-      }
-      chunks.push(result.value)
+  for await (const chunk of response.body) {
+    bytes += chunk.length
+    if (bytes > 4 * 1024 * 1024) {
+      throw new Error('Firewall API response exceeds the size limit.')
     }
-  } finally {
-    await reader.cancel()
+    chunks.push(chunk)
   }
   return Buffer.concat(chunks).toString('utf8')
 }

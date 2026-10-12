@@ -51,6 +51,12 @@ export async function convertPurlToGhsas(
     }
 
     const { name, type: ecosystem, version } = purlObj
+    if (!ecosystem) {
+      return {
+        ok: false,
+        message: `Invalid PURL format: ${purl}`,
+      }
+    }
 
     // Map PURL ecosystem to GitHub ecosystem.
     const githubEcosystem = PURL_TO_GITHUB_ECOSYSTEM_MAPPING.get(ecosystem)

@@ -193,5 +193,5 @@ export function stripTrailingSlash(value: string): string {
 }
 
 export function toPosixPath(value: string): string {
-  return value.replaceAll('\\', '/')
+  return value.length === 0 ? value : normalizePath(value)
 }

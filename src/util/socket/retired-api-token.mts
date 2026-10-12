@@ -32,9 +32,9 @@ export function isRetiredSocketApiToken(value: string | undefined): boolean {
   return digest === RETIRED_SOCKET_API_TOKEN_SHA256
 }
 
-export function retiredSocketApiTokenFailure<T>(
+export function retiredSocketApiTokenFailure(
   error: unknown,
-): CResult<T> | undefined {
+): CResult<never> | undefined {
   if (!(error instanceof RetiredSocketApiTokenError)) {
     return undefined
   }

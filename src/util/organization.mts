@@ -1,14 +1,7 @@
-import type {
-  EnterpriseOrganizations,
-  Organizations,
-} from '../command/organization/fetch-organization-list.mts'
+import type { Organizations } from '../command/organization/fetch-organization-list.mts'
 
-export function getEnterpriseOrgs(
-  orgs: Organizations,
-): EnterpriseOrganizations {
-  return orgs.filter(o =>
-    o.plan.includes('enterprise'),
-  ) as EnterpriseOrganizations
+export function getEnterpriseOrgs(orgs: Organizations): Organizations {
+  return orgs.filter(o => o.plan.includes('enterprise'))
 }
 
 export function getOrgSlugs(orgs: Organizations): string[] {

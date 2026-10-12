@@ -142,7 +142,7 @@ function selectSeaTargets(
       'Invalid native target. Pass a supported target after --target=.',
     )
   }
-  if (requested && !(SEA_TARGETS as readonly string[]).includes(requested)) {
+  if (requested && !SEA_TARGETS.some(target => target === requested)) {
     throw new Error(
       `Invalid native target ${requested}. Use one of ${SEA_TARGETS.join(', ')}.`,
     )

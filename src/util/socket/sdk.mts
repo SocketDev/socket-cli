@@ -260,9 +260,7 @@ export async function resolveSdkCredential(
     }
     return { ok: true, data: await resolveSocketCredential(config.apiBaseUrl) }
   } catch (error) {
-    const retiredFailure = retiredSocketApiTokenFailure<
-      SocketCredential | undefined
-    >(error)
+    const retiredFailure = retiredSocketApiTokenFailure(error)
     if (retiredFailure) {
       return retiredFailure
     }

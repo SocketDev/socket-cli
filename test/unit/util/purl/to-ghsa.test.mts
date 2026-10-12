@@ -47,6 +47,21 @@ describe('convertPurlToGhsas', () => {
     })
   })
 
+  it('returns an invalid PURL result when ecosystem is missing', async () => {
+    mockGetPurlObject.mockReturnValue({
+      name: 'package',
+      type: undefined,
+      version: '1.0.0',
+    })
+
+    const result = await convertPurlToGhsas('pkg:/package@1.0.0')
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Invalid PURL format: pkg:/package@1.0.0',
+    })
+  })
+
   it('returns error for unsupported ecosystem', async () => {
     mockGetPurlObject.mockReturnValue({
       name: 'some-package',

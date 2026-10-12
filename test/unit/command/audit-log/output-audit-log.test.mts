@@ -1,4 +1,19 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+
+import FIXTURE from '../../../../src/command/audit-log/audit-fixture.json' with { type: 'json' }
+import {
+  outputAsJson,
+  outputAsMarkdown,
+  outputAuditLog,
+} from '../../../../src/command/audit-log/output-audit-log.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
 import { parseMarkdownTableRows } from '../../../helpers/markdown-table.mts'
+
 /**
  * Unit tests for audit log output formatting functions.
  *
@@ -32,8 +47,6 @@ import { parseMarkdownTableRows } from '../../../helpers/markdown-table.mts'
  *   functions
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
-
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   log: vi.fn(),
@@ -42,19 +55,6 @@ const mockLogger = vi.hoisted(() => ({
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
-
-import FIXTURE from '../../../../src/command/audit-log/audit-fixture.json' with { type: 'json' }
-import {
-  outputAsJson,
-  outputAsMarkdown,
-  outputAuditLog,
-} from '../../../../src/command/audit-log/output-audit-log.mts'
-import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../helpers/mocks.mts'
-
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type AuditLogs = SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results']
 

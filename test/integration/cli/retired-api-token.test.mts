@@ -145,8 +145,8 @@ async function runProcess(
       timeout: 15_000,
     },
   )
-  const output = String(result.stdout)
-  const errorOutput = String(result.stderr)
+  const output = result.stdout
+  const errorOutput = result.stderr
   return {
     code: result.code,
     outputContainsCredential: /\bsktsec_\w+/u.test(output),

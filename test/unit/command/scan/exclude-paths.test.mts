@@ -13,12 +13,21 @@ import {
   excludePathToProjectIgnorePath,
   pathRelativeToTarget,
   projectIgnorePathsToReachExcludePaths,
+  toPosixPath,
 } from '../../../../src/command/scan/exclude-paths.mts'
 import { InputError } from '../../../../src/util/error/errors.mts'
 
 import type { ReachabilityConfig } from '../../../../src/command/scan/perform-reachability-analysis.mts'
 
 describe('exclude-paths', () => {
+  it.each([
+    ['', ''],
+    ['\\', '/'],
+    ['packages\\example\\tests', 'packages/example/tests'],
+  ])('normalizes path separators for %j', (input, expected) => {
+    expect(toPosixPath(input)).toBe(expected)
+  })
+
   describe('assertNoNegationPatterns', () => {
     it('allows positive patterns', () => {
       expect(() =>

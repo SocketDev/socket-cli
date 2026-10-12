@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   parseFirewallApiDecision,
@@ -142,6 +142,25 @@ describe('firewall API validation', () => {
     await expect(
       readFirewallApiResponse(new Response('example'.repeat(700_000))),
     ).rejects.toThrow()
+  })
+
+  it('cancels an oversized stream and releases its reader', async () => {
+    const cancel = vi.fn()
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(4 * 1024 * 1024 + 1))
+      },
+      cancel,
+    })
+    await expect(readFirewallApiResponse(new Response(body))).rejects.toThrow()
+    expect(cancel).toHaveBeenCalledTimes(1)
+    expect(body.locked).toBe(false)
+  })
+
+  it('reads a complete response body', async () => {
+    expect(await readFirewallApiResponse(new Response('example body'))).toBe(
+      'example body',
+    )
   })
 })
 

@@ -14,6 +14,7 @@ import {
 } from '../../util/config.mts'
 import { mdHeader } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { configValueText } from './value.mts'
 
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
@@ -102,7 +103,7 @@ export function outputConfigText(full: boolean): void {
     if (full || value !== undefined) {
       const displayValue = Array.isArray(value)
         ? value.join(', ') || '<none>'
-        : String(value ?? '<none>')
+        : configValueText(value ?? '<none>')
       logger.log(
         `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${displayValue}`,
       )

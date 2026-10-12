@@ -19,7 +19,6 @@ import { SOCKET_WEBSITE_URL } from '../../constants/socket.mjs'
 import { getPurlObject } from '../purl/parse.mts'
 
 import type { SocketArtifact } from '../alert/artifact.mts'
-import type { PURL_Type } from '../ecosystem/types.mjs'
 import type { PackageURL } from '@socketregistry/packageurl-js-stable'
 
 export function getPkgFullNameFromPurl(
@@ -37,7 +36,7 @@ export function getSocketDevAlertUrl(alertType: string): string {
 }
 
 export function getSocketDevPackageOverviewUrl(
-  ecosystem: PURL_Type,
+  ecosystem: string,
   fullName: string,
   version?: string | undefined,
 ): string {
@@ -51,6 +50,14 @@ export function getSocketDevPackageOverviewUrlFromPurl(
   purl: string | PackageURL | SocketArtifact,
 ): string {
   const purlObj = getPurlObject(purl)
+  if (!purlObj.type) {
+    throw new Error(
+      `PURL ecosystem is missing. ` +
+        `Where: getSocketDevPackageOverviewUrlFromPurl. ` +
+        `Saw no ecosystem; wanted a package URL with an ecosystem. ` +
+        `Fix: provide a PURL with a valid ecosystem type.`,
+    )
+  }
   const fullName = getPkgFullNameFromPurl(purlObj)
   return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
 }

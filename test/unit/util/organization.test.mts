@@ -40,6 +40,18 @@ describe('organization utilities', () => {
       ])
     })
 
+    it('preserves plans that contain enterprise outside the prefix', () => {
+      const orgs = [
+        {
+          slug: 'not-enterprise',
+          name: 'Not Enterprise',
+          plan: 'not-enterprise',
+        },
+      ] as unknown
+
+      expect(getEnterpriseOrgs(orgs)).toEqual(orgs)
+    })
+
     it('returns empty array when no enterprise orgs', () => {
       const nonEnterpriseOrgs = [
         { slug: 'free-org', plan: 'free' },

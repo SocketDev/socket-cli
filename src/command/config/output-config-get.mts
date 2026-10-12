@@ -10,6 +10,7 @@ import { isConfigFromFlag } from '../../util/config.mts'
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { configValueText } from './value.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../util/config.mts'
@@ -38,7 +39,9 @@ export async function outputConfigGet(
   if (outputKind === 'markdown') {
     logger.log(mdHeader('Config Value'))
     logger.log('')
-    logger.log(`Config key '${key}' has value '${String(result.data)}'`)
+    logger.log(
+      `Config key '${key}' has value '${configValueText(result.data)}'`,
+    )
     if (readOnly) {
       logger.log('')
       logger.log(
@@ -46,7 +49,7 @@ export async function outputConfigGet(
       )
     }
   } else {
-    logger.log(`${key}: ${String(result.data)}`)
+    logger.log(`${key}: ${configValueText(result.data)}`)
     if (readOnly) {
       logger.log('')
       logger.log(

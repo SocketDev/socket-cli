@@ -172,5 +172,18 @@ describe('socket-url utilities', () => {
         'https://socket.dev/npm/package/express/overview/4.18.0',
       )
     })
+
+    it('throws when the PURL ecosystem is missing', () => {
+      mockGetPurlObject.mockReturnValue({
+        type: undefined,
+        namespace: undefined,
+        name: 'express',
+        version: '4.18.0',
+      })
+
+      expect(() =>
+        getSocketDevPackageOverviewUrlFromPurl('pkg:/express@4.18.0'),
+      ).toThrow(/PURL ecosystem is missing/u)
+    })
   })
 })

@@ -14,7 +14,7 @@
  * Related Files: - util/purl/parse.mts (implementation)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { PackageURL } from '@socketregistry/packageurl-js-stable'
 
@@ -23,15 +23,6 @@ import {
   getPurlObject,
   normalizePurl,
 } from '../../../../src/util/purl/parse.mts'
-
-// Mock dependencies.
-const mockIsObjectObject = vi.hoisted(() =>
-  vi.fn(obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj)),
-)
-
-vi.mock(import('@socketsecurity/lib-stable/objects/predicates'), () => ({
-  isPlainObject: mockIsObjectObject,
-}))
 
 describe('purl utilities', () => {
   describe('normalizePurl', () => {
@@ -141,6 +132,12 @@ describe('purl utilities', () => {
       expect(purl?.name).toBe('fallback-name')
       expect(purl?.version).toBe('1.0.0')
     })
+
+    it('accepts a valid PURL type outside the SDK ecosystem union', () => {
+      const purl = createPurlObject('acme-custom', { name: 'package' })
+
+      expect(purl.type).toBe('acme-custom')
+    })
   })
 
   describe('getPurlObject', () => {
@@ -163,6 +160,19 @@ describe('purl utilities', () => {
       const input = new PackageURL('npm', undefined, 'lodash', '4.17.21')
       const purl = getPurlObject(input)
       expect(purl).toBe(input)
+    })
+
+    it('parses a valid PURL type outside the SDK ecosystem union', () => {
+      const purl = getPurlObject('pkg:acme-custom/package')
+
+      expect(purl).toBeInstanceOf(PackageURL)
+      expect(purl.type).toBe('acme-custom')
+    })
+
+    it('preserves identity for custom valid PackageURL objects', () => {
+      const input = new PackageURL('acme-custom', undefined, 'package')
+
+      expect(getPurlObject(input)).toBe(input)
     })
 
     it('handles SocketArtifact object', () => {

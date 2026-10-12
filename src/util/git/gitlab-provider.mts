@@ -16,7 +16,6 @@ import type {
   PrResponse,
   UpdatePrConfig,
 } from './provider.mts'
-import type { MergeRequestSchema } from '@gitbeaker/rest'
 
 /**
  * GitLab provider for Merge Request operations.
@@ -26,7 +25,7 @@ import type { MergeRequestSchema } from '@gitbeaker/rest'
  * @gitbeaker/rest.
  */
 export class GitLabProvider implements PrProvider {
-  private gitlab: InstanceType<typeof Gitlab>
+  private gitlab: Gitlab<false>
 
   constructor() {
     const token = getGitLabToken()
@@ -55,8 +54,7 @@ export class GitLabProvider implements PrProvider {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         debugDir({ attempt, base, head, projectId, title })
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Gitbeaker types every field as `T | Camelize<unknown>` to model its camelize option; this client is constructed without camelize, so responses are the snake_case MergeRequestSchema.
-        const mr = (await this.gitlab.MergeRequests.create(
+        const mr = await this.gitlab.MergeRequests.create(
           projectId,
           head,
           base,
@@ -64,7 +62,7 @@ export class GitLabProvider implements PrProvider {
           {
             description: body,
           },
-        )) as MergeRequestSchema
+        )
 
         return {
           number: mr.iid,
@@ -116,11 +114,7 @@ export class GitLabProvider implements PrProvider {
       debug(`mr: updating stale MR !${prNumber}`)
 
       // Check if rebase resulted in conflicts.
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Gitbeaker Camelize-union typing; this client is not camelized (see createPr).
-      const mr = (await this.gitlab.MergeRequests.show(
-        projectId,
-        prNumber,
-      )) as MergeRequestSchema
+      const mr = await this.gitlab.MergeRequests.show(projectId, prNumber)
 
       if (mr.merge_status === 'cannot_be_merged') {
         debug(`mr: MR !${prNumber} has conflicts after rebase`)
@@ -167,15 +161,14 @@ export class GitLabProvider implements PrProvider {
       let hasMore = true
 
       while (hasMore) {
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Gitbeaker Camelize-union typing; this client is not camelized (see createPr).
-        const mrs = (await this.gitlab.MergeRequests.all({
+        const mrs = await this.gitlab.MergeRequests.all({
           maxPages: 1,
           page,
           perPage,
           projectId,
           ...(state ? { state } : {}),
           ...(checkAuthor ? { authorUsername: author } : {}),
-        })) as MergeRequestSchema[]
+        })
 
         for (let i = 0, { length } = mrs; i < length; i += 1) {
           const mr = mrs[i]!

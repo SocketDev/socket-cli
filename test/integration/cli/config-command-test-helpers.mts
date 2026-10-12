@@ -238,7 +238,7 @@ export async function runWriterFixture(scenario: 'writer' | 'read-only') {
     throws: false,
     timeout: 15_000,
   })
-  const parsed: unknown = JSON.parse(String(result.stdout).trim())
+  const parsed: unknown = JSON.parse(result.stdout.trim())
   if (result.code !== 0 || !isFixtureReport(parsed)) {
     throw new Error('Config writer fixture failed without a safe report')
   }

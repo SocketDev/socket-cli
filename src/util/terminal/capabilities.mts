@@ -26,7 +26,7 @@ export interface TerminalCapabilityInput {
 
 export function getTerminalCapabilities(): TerminalCapabilities {
   return resolveTerminalCapabilities({
-    isTTY: process.stderr.isTTY === true,
+    isTTY: process.stderr.isTTY,
     noColor: getEnvValue('NO_COLOR'),
     term: getEnvValue('TERM'),
     colorterm: getEnvValue('COLORTERM'),
@@ -58,14 +58,15 @@ export function renderTerminalColors(
   if (capabilities.mode !== 'native' || !binding) {
     return colorsToAnsi(text, colors)
   }
-  return [...text]
-    .map((character, index) => {
-      const color = colors[index]
-      return color
-        ? `${binding.setFgRgb(...color)}${character}\x1b[0m`
-        : character
-    })
-    .join('')
+  let output = ''
+  let index = 0
+  for (const character of text) {
+    const color = colors[index++]
+    output += color
+      ? `${binding.setFgRgb(...color)}${character}\x1b[0m`
+      : character
+  }
+  return output
 }
 
 export function resolveTerminalCapabilities(
