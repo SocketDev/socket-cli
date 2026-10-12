@@ -198,7 +198,7 @@ const emitBlock = (command: string, err: BlockError): void => {
   process.stderr.write(
     `\n[token-hygiene] Blocked: ${err.rule}\n` +
       `  Command: ${safeCommand}\n` +
-      `  Fix: ${err.suggestion}\n\n`,
+      `  fix: ${err.suggestion}\n\n`,
   );
 };
 

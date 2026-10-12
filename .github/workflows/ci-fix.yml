@@ -20,8 +20,9 @@ concurrency:
 
 jobs:
   repair:
+    cache-mode: none
     name: Repair
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:

@@ -9,7 +9,7 @@ import {
   runChild,
   runWriterFixture,
   syntheticApiToken,
-} from './config-command-test-helpers.mts'
+} from './config-command-util.mts'
 import { FLAG_DRY_RUN, FLAG_JSON } from '../../../src/constants/cli.mts'
 import { retiredSocketApiTokenFixture } from '../../helpers/retired-socket-api-token.mts'
 

@@ -7,8 +7,8 @@ import path from 'node:path'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { logger, prepareBinary, ROOT_DIR } from './helpers.mts'
-import type { BinaryConfig } from './helpers.mts'
+import { logger, prepareBinary, ROOT_DIR } from './util.mts'
+import type { BinaryConfig } from './util.mts'
 import { ENV } from '../../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../../src/util/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'

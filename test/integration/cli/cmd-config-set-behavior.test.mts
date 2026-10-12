@@ -14,7 +14,7 @@ import {
   runChildInHome,
   syntheticApiToken,
   writePersistedConfig,
-} from './config-command-test-helpers.mts'
+} from './config-command-util.mts'
 import { FLAG_DRY_RUN, FLAG_JSON } from '../../../src/constants/cli.mts'
 import {
   CMD_NAME,

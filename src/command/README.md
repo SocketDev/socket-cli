@@ -89,21 +89,21 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 
 All connect via Socket Firewall (sfw) except raw-npm and raw-npx which bypass Socket entirely.
 
-| Command | Module                    | Integrates With         | Subcommands |
-| ------- | ------------------------- | ----------------------- | ----------- |
-| bundler | `bundler/cmd-bundler.mts` | sfw → Bundler (Ruby)    | -           |
-| cargo   | `cargo/cmd-cargo.mts`     | sfw → Cargo (Rust)      | -           |
-| gem     | `gem/cmd-gem.mts`         | sfw → RubyGems          | -           |
-| go      | `go/cmd-go.mts`           | sfw → Go modules        | -           |
-| npm     | `npm/cmd-npm.mts`         | sfw → npm               | -           |
-| npx     | `npx/cmd-npx.mts`         | sfw → npx               | -           | <!-- oxlint-disable-line socket/no-npx-dlx -- names the wrapped package-manager command --> |
-| nuget   | `nuget/cmd-nuget.mts`     | sfw → NuGet (.NET)      | -           |
-| pip     | `pip/cmd-pip.mts`         | sfw → pip/pip3 (Python) | -           |
-| pnpm    | `pnpm/cmd-pnpm.mts`       | sfw → pnpm              | -           |
-| raw-npm | `raw-npm/cmd-raw-npm.mts` | Direct npm (no Socket)  | -           |
-| raw-npx | `raw-npx/cmd-raw-npx.mts` | Direct npx (no Socket)  | -           | <!-- oxlint-disable-line socket/no-npx-dlx -- names the direct package-manager command -->  |
-| uv      | `uv/cmd-uv.mts`           | sfw → uv (Python)       | -           |
-| yarn    | `yarn/cmd-yarn.mts`       | sfw → Yarn              | -           |
+| Command | Module                    | Integrates With         | Subcommands                                                                                   |
+| ------- | ------------------------- | ----------------------- | --------------------------------------------------------------------------------------------- |
+| bundler | `bundler/cmd-bundler.mts` | sfw → Bundler (Ruby)    | -                                                                                             |
+| cargo   | `cargo/cmd-cargo.mts`     | sfw → Cargo (Rust)      | -                                                                                             |
+| gem     | `gem/cmd-gem.mts`         | sfw → RubyGems          | -                                                                                             |
+| go      | `go/cmd-go.mts`           | sfw → Go modules        | -                                                                                             |
+| npm     | `npm/cmd-npm.mts`         | sfw → npm               | -                                                                                             |
+| npx     | `npx/cmd-npx.mts`         | sfw → npx               | - <!-- oxlint-disable-line socket/no-npx-dlx -- names the wrapped package-manager command --> |
+| nuget   | `nuget/cmd-nuget.mts`     | sfw → NuGet (.NET)      | -                                                                                             |
+| pip     | `pip/cmd-pip.mts`         | sfw → pip/pip3 (Python) | -                                                                                             |
+| pnpm    | `pnpm/cmd-pnpm.mts`       | sfw → pnpm              | -                                                                                             |
+| raw-npm | `raw-npm/cmd-raw-npm.mts` | Direct npm (no Socket)  | -                                                                                             |
+| raw-npx | `raw-npx/cmd-raw-npx.mts` | Direct npx (no Socket)  | - <!-- oxlint-disable-line socket/no-npx-dlx -- names the direct package-manager command -->  |
+| uv      | `uv/cmd-uv.mts`           | sfw → uv (Python)       | -                                                                                             |
+| yarn    | `yarn/cmd-yarn.mts`       | sfw → Yarn              | -                                                                                             |
 
 ### Repository Commands (1 parent + 5 subcommands)
 
@@ -179,11 +179,11 @@ src/command/package/
 
 ### Third-Party Tools
 
-| Tool                         | Commands Using It                                             |
-| ---------------------------- | ------------------------------------------------------------- |
-| @coana-tech/cli              | scan reach                                                    |
-| @socketsecurity/socket-patch | patch                                                         |
-| Socket Firewall (sfw)        | bundler, cargo, gem, go, npm, npx, nuget, pip, pnpm, uv, yarn | <!-- oxlint-disable-line socket/no-npx-dlx -- lists supported wrapper command names --> |
+| Tool                         | Commands Using It                                                                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| @coana-tech/cli              | scan reach                                                                                                                                            |
+| @socketsecurity/socket-patch | patch                                                                                                                                                 |
+| Socket Firewall (sfw)        | bundler, cargo, gem, go, npm, npx, nuget, pip, pnpm, uv, yarn <!-- oxlint-disable-line socket/no-npx-dlx -- lists supported wrapper command names --> |
 
 ### System Integrations
 

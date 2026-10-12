@@ -277,7 +277,7 @@
     "update:check": "node scripts/fleet/weekly-update.mts --check-updates",
     "update:chrome": "node scripts/fleet/update/chrome.mts",
     "update:pnpm": "node scripts/fleet/update/pnpm.mts",
-    "upstream": "node scripts/fleet/git-partial-submodule.mts",
+    "upstream": "node scripts/fleet/git/submodule/partial.mts",
     "weekly-update": "node scripts/fleet/weekly-update.mts",
     "weekly-update:ci": "gh workflow run cron-weekly-update.yml",
     "worktree:create": "node scripts/fleet/worktree/create/run.mts",
@@ -450,7 +450,7 @@
     "packageManager": [
       {
         "name": "npm",
-        "version": "^11.19.0 || >=12.0.2",
+        "version": ">=12.2.0",
         "onFail": "error"
       },
       {

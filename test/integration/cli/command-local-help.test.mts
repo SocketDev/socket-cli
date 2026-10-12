@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { cliPath, runChild } from './config-command-test-helpers.mts'
+import { cliPath, runChild } from './config-command-util.mts'
 
 const commandNames = [
   'bundler',
