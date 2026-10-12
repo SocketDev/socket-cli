@@ -1,5 +1,4 @@
 import http from 'node:http'
-import { connect } from 'node:net'
 import { access, mkdtemp, open, readFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -125,6 +124,32 @@ describe('embedded firewall wrapper integration', () => {
       )
       const stdoutPath = path.join(directory, `${scenario.action}-stdout.txt`)
       const stdout = await open(stdoutPath, 'wx', 0o600)
+      const proxyServers: Array<{
+        readonly server: http.Server
+        port?: number | undefined
+        closed: boolean
+      }> = []
+      const createServer = http.createServer.bind(http)
+      const createServerSpy = vi
+        .spyOn(http, 'createServer')
+        .mockImplementation((...args: Parameters<typeof http.createServer>) => {
+          const server = createServer(...args)
+          const observed: (typeof proxyServers)[number] = {
+            server,
+            closed: false,
+          }
+          server.once('listening', () => {
+            const address = server.address()
+            if (address && typeof address !== 'string') {
+              observed.port = address.port
+            }
+          })
+          server.once('close', () => {
+            observed.closed = true
+          })
+          proxyServers.push(observed)
+          return server
+        })
       try {
         const result = await runFirewallCommand(
           [process.execPath, '-e', childSource],
@@ -169,21 +194,14 @@ describe('embedded firewall wrapper integration', () => {
           access(authorityPaths.certificatePath),
         ).resolves.toBeUndefined()
         const proxyUrl = new URL(observation.proxyUrl)
-        const proxyState = await new Promise<string>(resolve => {
-          const socket = connect({
-            host: proxyUrl.hostname,
-            port: Number(proxyUrl.port),
-          })
-          socket.once('connect', () => {
-            socket.destroy()
-            resolve('connected')
-          })
-          socket.once('error', error =>
-            resolve((error as NodeJS.ErrnoException).code ?? 'unknown'),
-          )
-        })
-        expect(proxyState).toBe('ECONNREFUSED')
+        const proxyServer = proxyServers.find(
+          observed => observed.port === Number(proxyUrl.port),
+        )
+        expect(proxyServer).toBeDefined()
+        expect(proxyServer?.closed).toBe(true)
+        expect(proxyServer?.server.listening).toBe(false)
       } finally {
+        createServerSpy.mockRestore()
         await stdout.close()
         await closeFirewallFixture(registry)
       }
