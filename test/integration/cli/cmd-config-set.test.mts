@@ -8,9 +8,9 @@
  * argument validation - Dry-run behavior validation - Error handling (missing
  * arguments)
  *
- * Important Notes: - No validation is performed on values (validation happens
- * at API time) - Use `socket config unset` to restore defaults - Setting a key
- * to "undefined" does NOT restore defaults.
+ * Important Notes: - The CLI checks API tokens locally for one retired token.
+ * Other values may be rejected by the server. - Use `socket config unset` to
+ * restore defaults - Setting a key to "undefined" does NOT restore defaults.
  *
  * Available Config Keys: - apiBaseUrl: Socket API base URL - apiProxy: Proxy
  * for API requests - apiToken: Authentication token - defaultOrg: Default
@@ -55,9 +55,8 @@ describe('socket config get', async () => {
           
               This is a crude way of updating the local configuration for this CLI tool.
           
-              Note that updating a value here is nothing more than updating a key/value
-              store entry. No validation is happening. The server may reject your values
-              in some cases. Use at your own risk.
+              The CLI checks API tokens locally for one retired token. Other values may
+              be rejected by the server. Use at your own risk.
           
               Note: use \`socket config unset\` to restore to defaults. Setting a key
               to \`undefined\` will not allow default values to be set on it.
@@ -71,6 +70,7 @@ describe('socket config get', async () => {
                - apiToken -- The Socket API token required to access most Socket API endpoints
                - defaultOrg -- The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.
                - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+               - oauthSession -- The selected Socket OAuth issuer and client
                - org -- Alias for defaultOrg
                - skipAskToPersistDefaultOrg -- This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively
           

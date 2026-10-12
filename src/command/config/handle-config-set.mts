@@ -1,7 +1,8 @@
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 
 import { outputConfigSet } from './output-config-set.mts'
-import { updateConfigValue } from '../../util/config.mts'
+import { REDACTED } from '../../constants/cli.mts'
+import { isSensitiveConfigKey, updateConfigValue } from '../../util/config.mts'
 import { InputError } from '../../util/error/errors.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -22,8 +23,9 @@ export async function handleConfigSet({
     )
   }
 
-  debug(`Setting config ${key} = ${value}`)
-  debugDir({ key, value, outputKind })
+  const displayedValue = isSensitiveConfigKey(key) ? REDACTED : value
+  debug(`Setting config ${key} = ${displayedValue}`)
+  debugDir({ key, value: displayedValue, outputKind })
 
   const result = updateConfigValue(key, value)
 

@@ -37,6 +37,10 @@ import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 import { debugConfig } from './debug.mts'
 import { parseSocketConfig } from './socket-yaml.mts'
 import {
+  createRetiredSocketApiTokenFailure,
+  isRetiredSocketApiToken,
+} from './socket/retired-api-token.mts'
+import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
@@ -396,11 +400,18 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   configKey: Key,
   value: LocalConfig[Key],
 ): CResult<undefined | string> {
-  const localConfig = getConfigValues()
   const keyResult = normalizeConfigKey(configKey)
   if (!keyResult.ok) {
     return keyResult
   }
+  if (
+    keyResult.data === CONFIG_KEY_API_TOKEN &&
+    typeof value === 'string' &&
+    isRetiredSocketApiToken(value)
+  ) {
+    return createRetiredSocketApiTokenFailure<undefined | string>()
+  }
+  const localConfig = getConfigValues()
   const key: Key = keyResult.data as Key
   // Implicitly deleting when serializing.
   let wasDeleted = value === undefined

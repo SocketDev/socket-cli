@@ -1,9 +1,10 @@
-import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
+import { FLAG_JSON, FLAG_MARKDOWN, REDACTED } from '../../constants/cli.mjs'
 import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getSupportedConfigEntries,
+  isSensitiveConfigKey,
   isSupportedConfigKey,
 } from '../../util/config.mts'
 import { getFlagListOutput } from '../../util/output/formatting.mts'
@@ -145,8 +146,9 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       if (dryRun) {
         // Runtime read so tests that mutate process.env['HOME'] pick up changes.
         const configPath = `${process.env['HOME']}/.config/socket/config.json`
+        const displayedValue = isSensitiveConfigKey(key) ? REDACTED : value
         const changes = spec.needsValue
-          ? [`Set "${key}" to: ${value}`]
+          ? [`Set "${key}" to: ${displayedValue}`]
           : [`Remove "${key}" from config`]
         outputDryRunWrite(
           configPath,
