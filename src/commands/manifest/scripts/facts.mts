@@ -51,10 +51,8 @@ export type SocketFactsSbomProject = AnyPURL & {
   // Maven's GAV, Gradle's project path, sbt's project id.
   id: string
   subprojectDir: string
-  // The module's own build files, e.g. a POM other than `<subprojectDir>/pom.xml`,
-  // which need not declare its direct dependencies; for a Gradle project
-  // without one, the scripts declaring its dependencies, else its configured
-  // build file, which may not exist on disk. The facts file itself is implied.
+  // The build files the tool reports for the project, e.g. a POM other than
+  // `<subprojectDir>/pom.xml`, or a Gradle build file absent on disk.
   manifestFiles?: SocketFactsManifestReference[] | undefined
   // Indices into dependencies[]: this subproject's direct dependencies.
   children: number[]

@@ -368,7 +368,7 @@ object SocketFactsPlugin extends AutoPlugin {
         cr.modules.foreach { m =>
           if (emittable(m)) {
             midToIds.get(moduleKey(m.module)).foreach { childIds =>
-              // A caller's revision is lm-coursier's declared version, not the resolved one, so
+              // lm-coursier gives a declared caller its declared revision, not the resolved one, so
               // callers match by org:name (a configuration resolves one version per module).
               m.callers.foreach { c =>
                 val callerKey = moduleKey(c.caller)
