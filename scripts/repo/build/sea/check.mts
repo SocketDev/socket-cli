@@ -74,11 +74,7 @@ export async function main(): Promise<void> {
   const receipt = await readSeaReceipt()
   await verifySeaPayloadAndEntrypoints(receipt)
   const host = resolveSeaTarget(process.platform, process.arch, {
-    glibc: (
-      process.report.getReport() as {
-        header: { glibcVersionRuntime?: string | undefined }
-      }
-    ).header.glibcVersionRuntime,
+    glibc: process.report.getReport().header.glibcVersionRuntime,
   })
   const { executionTarget, targets } = selectSeaTargets(host, process.argv)
   await verifySeaBinaryDigests(targets, receipt)

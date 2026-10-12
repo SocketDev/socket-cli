@@ -25,7 +25,7 @@ import type {
  * @gitbeaker/rest.
  */
 export class GitLabProvider implements PrProvider {
-  private gitlab: Gitlab<false>
+  private gitlab: Gitlab
 
   constructor() {
     const token = getGitLabToken()

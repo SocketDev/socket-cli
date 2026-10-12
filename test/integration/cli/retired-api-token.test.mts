@@ -73,10 +73,10 @@ function createChildEnvironment(
   }
 }
 
-function isOptionalField<T>(
+function isOptionalField(
   value: object,
   key: string,
-  isExpectedType: (field: unknown) => field is T,
+  isExpectedType: (field: unknown) => boolean,
 ): boolean {
   const field = Object.getOwnPropertyDescriptor(value, key)
   return (
@@ -100,20 +100,16 @@ function isFixtureReport(value: unknown): value is FixtureReport {
     typeof value.ok === 'boolean' &&
     typeof value.requests === 'number' &&
     typeof value.unchangedSettings === 'boolean' &&
-    isOptionalField(
-      value,
-      'code',
-      (field): field is string => typeof field === 'string',
-    ) &&
+    isOptionalField(value, 'code', field => typeof field === 'string') &&
     isOptionalField(
       value,
       'retiredFailure',
-      (field): field is boolean => typeof field === 'boolean',
+      field => typeof field === 'boolean',
     ) &&
     isOptionalField(
       value,
       'basicAuthorization',
-      (field): field is boolean => typeof field === 'boolean',
+      field => typeof field === 'boolean',
     )
   )
 }
