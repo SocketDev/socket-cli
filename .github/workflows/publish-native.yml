@@ -186,17 +186,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive="$ARTIFACT_DIR/package.tgz"
-          tar -tzf "$archive" > "$ARTIFACT_DIR/members.txt"
+          artifact_dir="$ARTIFACT_DIR"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            artifact_dir="$(cygpath -u "$artifact_dir")"
+          fi
+          archive="$artifact_dir/package.tgz"
+          tar -tzf "$archive" > "$artifact_dir/members.txt"
           while IFS= read -r member; do
             case "$member" in
               /*|../*|*/../*|*/..|*\\*|*:*) echo "Unsafe package entry: $member" >&2; exit 1 ;;
               package|package/*) ;;
               *) echo "Unexpected package entry: $member" >&2; exit 1 ;;
             esac
-          done < "$ARTIFACT_DIR/members.txt"
-          mkdir "$ARTIFACT_DIR/extracted"
-          tar -xzf "$archive" -C "$ARTIFACT_DIR/extracted"
+          done < "$artifact_dir/members.txt"
+          mkdir "$artifact_dir/extracted"
+          tar -xzf "$archive" -C "$artifact_dir/extracted"
       - name: Install musl runtime
         if: ${{ matrix.musl }}
         run: sudo apt-get update && sudo apt-get install --yes musl
