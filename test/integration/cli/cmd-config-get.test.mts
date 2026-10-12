@@ -92,7 +92,7 @@ describe('socket config get', async () => {
                - apiToken -- The Socket API token required to access most Socket API endpoints
                - defaultOrg -- The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.
                - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
-                - oauthSession -- The selected Socket OAuth issuer and client
+               - oauthSession -- The selected Socket OAuth issuer and client
                - org -- Alias for defaultOrg
                - skipAskToPersistDefaultOrg -- This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively
           
