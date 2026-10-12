@@ -46,7 +46,7 @@ import {
   stagedIndexIsEmpty,
   stripTemplateLayer,
   suppressionFor,
-} from '../_shared/helpers.mts'
+} from '../_shared/util.mts'
 
 const logger = getDefaultLogger()
 
@@ -63,7 +63,7 @@ function refuseCatastrophicDeletion(): number {
   // excluded before the count, so it needs no bypass either. A surgical
   // `git commit --only <paths>` sees ONLY the named paths, never a foreign
   // deletion staged elsewhere in the working index — see
-  // catastrophicDeletionReason's comment in _shared/helpers.mts for the
+  // catastrophicDeletionReason's comment in _shared/util.mts for the
   // verified GIT_INDEX_FILE scoping this relies on.
   const wipeReason = catastrophicDeletionReason()
   if (wipeReason) {
@@ -851,12 +851,7 @@ const main = (): number => {
     return 1
   }
 
-  // Staged tests are run ONCE, by the shell hook's bounded
-  // `run_pkg_step_bounded test --staged` step (PRECOMMIT_STEP_BUDGET_S) — not
-  // here. Running
-  // them in this security pass too meant the staged delta was tested twice, and
-  // this pass used the old 60s ceiling, which is what blew the ≤10s pre-commit
-  // budget. The single bounded shell step keeps the commit fast.
+  // Quality validation runs after commit through explicit checks and CI.
   debugCheck('All security checks passed!')
   return 0
 }

@@ -1,5 +1,5 @@
 // Logger-leak matcher — shared by the commit-time scanLoggerLeaks
-// (.git-hooks/_shared/helpers.mts) and the edit-time logger-guard
+// (.git-hooks/_shared/util.mts) and the edit-time logger-guard
 // (.claude/hooks/fleet/). Both flag direct `console.*` / `process.std*.write`
 // calls (the fleet rule: use getDefaultLogger()). Previously the commit side
 // used a REGEX and the edit side an AST walk — divergent engines that could

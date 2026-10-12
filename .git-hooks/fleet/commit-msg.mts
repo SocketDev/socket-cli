@@ -14,6 +14,8 @@
 // shim execs this .mts file with the path to the commit message file
 // as argv[2], after the script path itself.
 
+import '../_shared/node-version.mts'
+
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 import path from 'node:path'
@@ -22,16 +24,14 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
-  gitLines,
-  readFileForScan,
-  scanExternalIssueRefs,
   scanGitHubTokens,
-  scanLinearRefs,
   scanSocketApiKeys,
-  shouldSkipFile,
-  stripAiAttribution,
-  stripScanLabels,
-} from '../_shared/helpers.mts'
+} from '../_shared/scan-secrets.mts'
+import { scanLinearRefs, stripScanLabels } from '../_shared/scan-commit-msg.mts'
+import { scanExternalIssueRefs } from '../_shared/external-issue-ref.mts'
+import { readFileForScan, shouldSkipFile } from '../_shared/file-scan.mts'
+import { gitLines } from '../_shared/git.mts'
+import { stripAiAttribution } from '../../.claude/hooks/fleet/_shared/ai-attribution.mts'
 // Canonical shared identity reader (.git-hooks/_shared/). Same source the
 // commit-author-guard PreToolUse hook uses; the DATA is the cascaded
 // .config/fleet|repo/git-authors.json.

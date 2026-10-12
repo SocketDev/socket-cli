@@ -1,5 +1,5 @@
 // Personal-path leak matcher — shared by the commit-time scanPersonalPaths
-// (.git-hooks/_shared/helpers.mts) and the edit-time personal-path-guard
+// (.git-hooks/_shared/util.mts) and the edit-time personal-path-guard
 // (.claude/hooks/fleet/). Both surfaces import THESE regexes + helpers so the
 // two can't drift, which lock-step inline copies cannot promise. Gate-free
 // (no Node-25 hard-exit like helpers.mts) so the Claude hook can import it on

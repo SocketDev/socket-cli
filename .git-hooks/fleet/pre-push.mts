@@ -31,9 +31,9 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 // Import `splitLines` from the barrel, not the scan-core leaf, so the Node-25
-// version gate in `../_shared/helpers.mts` runs at load — every gate below
+// version gate in `../_shared/util.mts` runs at load — every gate below
 // assumes native .mts type stripping.
-import { splitLines } from '../_shared/helpers.mts'
+import { splitLines } from '../_shared/util.mts'
 import { debugCheck } from '../_shared/check-output.mts'
 import { scanCommitMessages } from '../_shared/push/commit-messages.mts'
 import { scanFilesInRange } from '../_shared/push/file-scan.mts'

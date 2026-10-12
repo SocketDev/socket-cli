@@ -4,9 +4,10 @@
 // comment / commit-message / supply-chain scanners, file + git IO, and the
 // staged-state gates. Each hook imports `getDefaultLogger` from
 // `@socketsecurity/lib-stable/logger/default` directly for output; this module
-// stays import-light so the cost of `import '../_shared/helpers.mts'` is bounded.
+// stays import-light so the cost of `import '../_shared/util.mts'` is bounded.
 //
 // Requires Node 24+ for default-on native .mts type-stripping, no flag needed.
+import './node-version.mts'
 //
 // Hooks run *after* `pnpm install`, so `@socketsecurity/lib-stable` is on the
 // resolution path for any caller that imports it.
@@ -133,32 +134,3 @@ export type { ExternalIssueRef } from './external-issue-ref.mts'
 // attribute or fire for that subagent's Bash calls.
 export { scanCanonicalForkPaths } from './canonical/fork-scan.mts'
 export type { CanonicalForkFinding } from './canonical/fork-scan.mts'
-
-// Hard-fail if Node is below 25. This runs at module load — every
-// hook invocation imports _shared/helpers.mts before doing anything, so the
-// version check is the first thing that happens.
-const NODE_MIN_MAJOR = 24
-const nodeMajor = Number.parseInt(
-  process.versions.node.split('.')[0] || '0',
-  10,
-)
-if (nodeMajor < NODE_MIN_MAJOR) {
-  // This import-light shared helper does not own a logger. Use raw
-  // process.stderr with ASCII (no
-  // status-emoji glyph) so the no-status-emoji lint rule stays clean
-  // — the lint rule's recommendation (use logger.fail()) doesn't
-  // apply when the entire branch is the logger-unavailable bail.
-  // Node-floor bail, before any import resolves: raw stderr is the only
-  // channel available here.
-  // oxlint-disable-next-line socket/no-module-eval-side-effects -- floor bail
-  process.stderr.write(
-    `\x1b[0;31mHook requires Node >= ${NODE_MIN_MAJOR}.0.0 (have v${process.versions.node})\x1b[0m\n`,
-  )
-  // Node-floor bail, before any import resolves: raw stderr is the only
-  // channel available here.
-  // oxlint-disable-next-line socket/no-module-eval-side-effects -- floor bail
-  process.stderr.write(
-    'Install Node 24+ — these hooks rely on default-on .mts type stripping.\n',
-  )
-  process.exit(1)
-}

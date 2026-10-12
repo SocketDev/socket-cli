@@ -86,8 +86,8 @@ precommit_gate_summary() {
   fi
   printf '\n========== pre-commit: GATE INCOMPLETE ==========\n'
   printf 'These steps did NOT verify this commit: %s.\n' "$PRECOMMIT_UNGATED_STEPS"
-  printf 'The commit proceeds ungated for them. Before pushing, run\n'
-  printf '`pnpm run lint --all` and `pnpm test` for the real verdict.\n'
+  printf 'The commit proceeds ungated for them. Before pushing, rerun only those steps against the original staged paths.\n'
+  printf 'After committing, pass those paths explicitly; --staged no longer selects them.\n'
   printf '=================================================\n'
 }
 

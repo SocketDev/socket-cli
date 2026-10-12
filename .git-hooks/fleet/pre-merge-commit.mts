@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { gitLines } from '../_shared/helpers.mts'
+import { gitLines } from '../_shared/util.mts'
 // Canonical shared identity reader (.git-hooks/_shared/). Same source the
 // commit-author-guard PreToolUse hook and the commit-msg git-stage backstop
 // use; the DATA is the cascaded .config/fleet|repo/git-authors.json.

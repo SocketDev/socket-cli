@@ -6,7 +6,7 @@
 //                      legitimately tolerate a missing ref (e.g. probing
 //                      remote default-branch HEAD which may not be set up
 //                      locally) and provide their own fallback. Silent
-//                      by design — _shared/helpers.mts can't import the canonical
+//                      by design — _shared/util.mts can't import the canonical
 //                      logger because it runs before the Node-version
 //                      gate has cleared, and a fire-and-forget dynamic
 //                      import races process exit. Callers that need to
