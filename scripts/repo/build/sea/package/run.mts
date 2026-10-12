@@ -13,6 +13,7 @@ const HELP = [
   'Options:',
   '  --package-root PATH  Installed package directory to verify',
   '  --target TARGET      Native package target to verify',
+  '  --gatekeeper         Assess the quarantined binary on its matching macOS host',
   '  --json               Write a machine-readable result',
 ].join('\n')
 const MAX_ERROR_LENGTH = 1200
@@ -30,6 +31,7 @@ export async function main(
       options: {
         'package-root': { type: 'string' },
         target: { type: 'string' },
+        gatekeeper: { type: 'boolean' },
         json: { type: 'boolean' },
       },
       allowPositionals: false,
@@ -42,7 +44,11 @@ export async function main(
     if (!packageRoot || !target) {
       throw new Error('Pass both --package-root PATH and --target TARGET.')
     }
-    const result = await verifyNativePackage({ packageRoot, target })
+    const result = await verifyNativePackage({
+      packageRoot,
+      target,
+      gatekeeper: values.gatekeeper,
+    })
     if (json) {
       process.stdout.write(`${JSON.stringify({ ok: true, ...result })}\n`)
     } else {

@@ -10,6 +10,14 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mocks = vi.hoisted(() => ({ qualifyDarwinPackageArtifact: vi.fn() }))
+
+vi.mock(
+  import('../../../../../scripts/repo/build/sea/package/gatekeeper.mts'),
+  () => ({ qualifyDarwinPackageArtifact: mocks.qualifyDarwinPackageArtifact }),
+)
+
 import {
   type NativePackageProcessResult,
   type NativePackageSpawnProcess,
@@ -112,6 +120,7 @@ describe('packed native package verification', () => {
       path.join(os.tmpdir(), 'socket-native-package-'),
     )
     spawnProcess.mockReset().mockResolvedValue(successfulResult())
+    mocks.qualifyDarwinPackageArtifact.mockReset().mockResolvedValue(undefined)
     await createPackageFixture()
   })
 
@@ -147,6 +156,7 @@ describe('packed native package verification', () => {
       expect.any(Array),
       expect.objectContaining({ cwd: packageRoot, timeoutMs: 60_000 }),
     )
+    expect(mocks.qualifyDarwinPackageArtifact).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -275,6 +285,73 @@ describe('packed native package verification', () => {
         spawnProcess,
       }),
     ).rejects.toThrow()
+    expect(spawnProcess).not.toHaveBeenCalled()
+  })
+
+  it.skipIf(process.platform !== 'darwin')(
+    'checks packaged hashes before gatekeeper qualification',
+    async () => {
+      await writeFile(
+        path.join(packageRoot, 'dist', 'cli.js'),
+        'changed payload',
+      )
+      await expect(
+        verifyNativePackage({
+          packageRoot,
+          target: launcherTarget(),
+          gatekeeper: true,
+          spawnProcess,
+        }),
+      ).rejects.toThrow()
+      expect(mocks.qualifyDarwinPackageArtifact).not.toHaveBeenCalled()
+      expect(spawnProcess).not.toHaveBeenCalled()
+    },
+  )
+
+  it.skipIf(process.platform !== 'darwin')(
+    'stops before binary execution when gatekeeper qualification rejects',
+    async () => {
+      mocks.qualifyDarwinPackageArtifact.mockRejectedValue(
+        new Error('rejected'),
+      )
+
+      await expect(
+        verifyNativePackage({
+          packageRoot,
+          target: launcherTarget(),
+          gatekeeper: true,
+          spawnProcess,
+        }),
+      ).rejects.toThrow(Error)
+      expect(mocks.qualifyDarwinPackageArtifact).toHaveBeenCalledTimes(1)
+      expect(mocks.qualifyDarwinPackageArtifact).toHaveBeenCalledWith({
+        artifactPath: path.join(
+          packageRoot,
+          'dist',
+          'sea',
+          `socket-${launcherTarget()}`,
+        ),
+        spawnProcess,
+      })
+      expect(spawnProcess).not.toHaveBeenCalled()
+    },
+  )
+
+  it('rejects gatekeeper requests for non-Darwin or mismatched targets', async () => {
+    const target =
+      process.platform === 'darwin'
+        ? SEA_TARGETS.find(value => !value.startsWith('darwin-'))!
+        : launcherTarget()
+
+    await expect(
+      verifyNativePackage({
+        packageRoot,
+        target,
+        gatekeeper: true,
+        spawnProcess,
+      }),
+    ).rejects.toThrow(Error)
+    expect(mocks.qualifyDarwinPackageArtifact).not.toHaveBeenCalled()
     expect(spawnProcess).not.toHaveBeenCalled()
   })
 

@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import { lstat, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { spawnNativePackageProcess } from './process.mts'
+import { qualifyDarwinPackageArtifact } from './gatekeeper.mts'
 import type {
   NativePackageProcessResult,
   NativePackageSpawnProcess,
@@ -239,9 +240,23 @@ function verifyNativePackageMetadata(
   }
 }
 
+function assertNativeQualificationTarget(config: {
+  gatekeeper?: boolean | undefined
+  target: string
+  hostTarget: string
+}): void {
+  const { gatekeeper, target, hostTarget } = config
+  if (gatekeeper && (!target.startsWith('darwin-') || target !== hostTarget)) {
+    throw new Error(
+      'Gatekeeper qualification requires the matching macOS host target.',
+    )
+  }
+}
+
 export async function verifyNativePackage(config: {
   packageRoot: string
   target: string
+  gatekeeper?: boolean | undefined
   spawnProcess?: NativePackageSpawnProcess | undefined
 }): Promise<{ requestedTarget: string; launcherTarget: string }> {
   const opts = { __proto__: null, ...config } as typeof config
@@ -259,6 +274,11 @@ export async function verifyNativePackage(config: {
     )
   }
   const hostTarget = launcherTarget()
+  assertNativeQualificationTarget({
+    gatekeeper: opts.gatekeeper,
+    target,
+    hostTarget,
+  })
   const packageJsonBytes = await readPackageFile(packageRoot, 'package.json')
   const packagePayload = await readPackageFile(packageRoot, PACKAGE_PAYLOAD)
   const manifestBytes = await readPackageFile(packageRoot, PACKAGE_MANIFEST)
@@ -310,6 +330,9 @@ export async function verifyNativePackage(config: {
   }
 
   const binary = path.resolve(packageRoot, nativeBinaryRelativePath(target))
+  if (opts.gatekeeper) {
+    await qualifyDarwinPackageArtifact({ artifactPath: binary, spawnProcess })
+  }
   for (const args of [['--version'], ['--help'], ['npm', '--version']]) {
     await runNativePackageCommand(
       spawnProcess,

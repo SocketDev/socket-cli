@@ -208,4 +208,9 @@ jobs:
         shell: bash
         env:
           NATIVE_TARGET: ${{ matrix.target }}
-        run: node "$ARTIFACT_DIR/verifier.generated.mjs" --package-root "$ARTIFACT_DIR/extracted/package" --target "$NATIVE_TARGET" --json
+        run: |
+          qualification_args=()
+          case "$NATIVE_TARGET" in
+            darwin-*) qualification_args+=(--gatekeeper) ;;
+          esac
+          node "$ARTIFACT_DIR/verifier.generated.mjs" --package-root "$ARTIFACT_DIR/extracted/package" --target "$NATIVE_TARGET" "${qualification_args[@]}" --json
