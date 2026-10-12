@@ -40,6 +40,12 @@ import { trackCliEvent } from '../telemetry/integration.mts'
 
 import { assertSafeSocketApiBaseUrl } from './safe-base-url.mts'
 import { readOAuthSession } from './oauth-session.mts'
+import {
+  createRetiredSocketApiTokenFailure,
+  isRetiredSocketApiToken,
+  retiredSocketApiTokenFailure,
+  throwIfRetiredSocketApiToken,
+} from './retired-api-token.mts'
 
 import type { CResult } from '../../types.mts'
 import type {
@@ -110,7 +116,11 @@ export function getDefaultApiToken(): string | undefined {
     getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
     defaultToken
 
-  return isNonEmptyString(key) ? key : undefined
+  if (!isNonEmptyString(key)) {
+    return undefined
+  }
+  throwIfRetiredSocketApiToken(key)
+  return key
 }
 
 // The Socket API server that should be used for operations.
@@ -174,6 +184,16 @@ export function getSdkAgentOptions(
       : {}
 }
 
+export function getSdkAuthProvider(
+  apiToken: string | undefined,
+  authScheme: SocketCredential['authScheme'],
+  apiBaseUrl: string | undefined,
+): (() => Promise<SocketCredential>) | undefined {
+  return apiToken
+    ? undefined
+    : createOAuthCredentialProvider(authScheme, apiBaseUrl)
+}
+
 export function getVisibleTokenPrefix(): string {
   const apiToken = getDefaultApiToken()
   return apiToken
@@ -227,18 +247,25 @@ export function resolveSdkApiBaseUrl(
 export async function resolveSdkCredential(
   config: SetupSdkOptions,
 ): Promise<CResult<SocketCredential | undefined>> {
-  if (config.apiToken !== undefined) {
-    return {
-      ok: true,
-      data: {
-        token: config.apiToken,
-        authScheme: config.authScheme ?? 'basic',
-      },
-    }
-  }
   try {
+    if (config.apiToken !== undefined) {
+      throwIfRetiredSocketApiToken(config.apiToken)
+      return {
+        ok: true,
+        data: {
+          token: config.apiToken,
+          authScheme: config.authScheme ?? 'basic',
+        },
+      }
+    }
     return { ok: true, data: await resolveSocketCredential(config.apiBaseUrl) }
-  } catch {
+  } catch (error) {
+    const retiredFailure = retiredSocketApiTokenFailure<
+      SocketCredential | undefined
+    >(error)
+    if (retiredFailure) {
+      return retiredFailure
+    }
     return {
       ok: false,
       message: 'Socket login could not be refreshed',
@@ -304,6 +331,9 @@ export async function setupSdk(
       message:
         'Enter your Socket.dev API token (not saved, use socket login to persist)',
     })
+    if (isRetiredSocketApiToken(apiToken)) {
+      return createRetiredSocketApiTokenFailure<SocketSdk>()
+    }
     defaultToken = apiToken
   }
   /* c8 ignore stop */
@@ -333,13 +363,9 @@ export async function setupSdk(
 
   const timeout = getSocketCliApiTimeout() || undefined
 
-  // Load extra CA certificates for SSL_CERT_FILE support when
-  // NODE_EXTRA_CA_CERTS was not set at process startup.
   const ca = getExtraCaCerts()
 
-  const authProvider = opts.apiToken
-    ? undefined
-    : createOAuthCredentialProvider(authScheme, apiBaseUrl)
+  const authProvider = getSdkAuthProvider(opts.apiToken, authScheme, apiBaseUrl)
 
   const sdkOptions = {
     authProvider,
@@ -347,7 +373,6 @@ export async function setupSdk(
     ...getSdkAgentOptions(apiBaseUrl, apiProxy, ca),
     ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
     ...(timeout ? { timeout } : {}),
-    // Add HTTP request hooks for telemetry and debugging.
     hooks: {
       onRequest: (info: RequestInfo) => {
         // Skip tracking for telemetry submission endpoints to prevent infinite loop.
@@ -430,7 +455,6 @@ export async function setupSdk(
           'This may occur with Yarn Berry PnP virtual filesystem or pnpm symlinks',
         )
       }
-      // Continue with valid files.
       return { shouldContinue: true }
     },
     userAgent: createUserAgentFromPkgJson({
