@@ -50,9 +50,12 @@ mockDetectAndValidatePackageEnvironment.mockResolvedValue({
   },
 })
 
-vi.mock(import('../../../../src/command/optimize/optimize-command.mts'), () => ({
-  handleOptimize: mockHandleOptimize,
-}))
+vi.mock(
+  import('../../../../src/command/optimize/optimize-command.mts'),
+  () => ({
+    handleOptimize: mockHandleOptimize,
+  }),
+)
 
 vi.mock(import('../../../../src/util/ecosystem/environment.mjs'), () => ({
   detectAndValidatePackageEnvironment: mockDetectAndValidatePackageEnvironment,

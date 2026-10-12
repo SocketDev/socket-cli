@@ -37,9 +37,12 @@ vi.mock(
   },
 )
 
-vi.mock(import('../../../../src/core/optimize/optimization-application.mts'), () => ({
-  applyOptimization: vi.fn(),
-}))
+vi.mock(
+  import('../../../../src/core/optimize/optimization-application.mts'),
+  () => ({
+    applyOptimization: vi.fn(),
+  }),
+)
 vi.mock(
   import('../../../../src/command/optimize/output-optimize-result.mts'),
   () => ({

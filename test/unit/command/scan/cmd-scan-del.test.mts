@@ -39,9 +39,12 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 )
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
 
-vi.mock(import('../../../../src/command/scan/scan-deletion-command.mts'), () => ({
-  handleDeleteScan: mockHandleDeleteScan,
-}))
+vi.mock(
+  import('../../../../src/command/scan/scan-deletion-command.mts'),
+  () => ({
+    handleDeleteScan: mockHandleDeleteScan,
+  }),
+)
 
 vi.mock(import('../../../../src/util/socket/org-slug.mjs'), () => ({
   determineOrgSlug: mockDetermineOrgSlug,
