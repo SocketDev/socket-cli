@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for the `socket manifest` command family. Covers: each
  *   generator subcommand, auto, conda, gradle, kotlin, scala, at help / dry-run

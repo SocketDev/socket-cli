@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for the `socket package` command family. Covers:
  *   shallow / score against representative npm packages — `socket` (the package

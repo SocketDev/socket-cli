@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for Socket CLI's package-manager wrappers. Covers: help /
  *   dry-run paths for each wrapper; the wrapper on/off toggle (scratch-isolated

@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for the `socket organization` command family. Covers:
  *   list / policy security / policy license / quota; --json contract

@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for `socket login`, `socket logout`, and `socket whoami`.
  *   Login is interactive in normal use. Logout mutates the

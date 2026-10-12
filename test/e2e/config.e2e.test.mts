@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for the `socket config` command family. Covers: get /
  *   set / unset / auto at help / dry-run / no-args / valid-key. The tests use

@@ -81,9 +81,11 @@ describe('SEA signing build step', () => {
       async binary => {
         operations.push(`sign:${binary}`)
       },
-      async binary => {
-        operations.push(`read:${binary}`)
-        return Buffer.from('signed bytes')
+      {
+        readBinary: async binary => {
+          operations.push(`read:${binary}`)
+          return Buffer.from('signed bytes')
+        },
       },
     )
     expect(operations).toEqual([
@@ -103,7 +105,7 @@ describe('SEA signing build step', () => {
         async () => {
           throw new Error('signing failed')
         },
-        readBinary,
+        { readBinary },
       ),
     ).rejects.toThrow('signing failed')
     expect(readBinary).not.toHaveBeenCalled()
@@ -118,9 +120,11 @@ describe('SEA signing build step', () => {
   })
 
   it('rejects --sign on a non-Darwin build host', () => {
-    expect(() => assertSeaSigningHost(true, 'linux')).toThrow(
-      'requires a macOS build host',
-    )
-    expect(() => assertSeaSigningHost(false, 'linux')).not.toThrow()
+    expect(() =>
+      assertSeaSigningHost({ signing: true, platform: 'linux' }),
+    ).toThrow('requires a macOS build host')
+    expect(() =>
+      assertSeaSigningHost({ signing: false, platform: 'linux' }),
+    ).not.toThrow()
   })
 })

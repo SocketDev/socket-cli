@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { beforeAll, describe, expect, it } from 'vitest'

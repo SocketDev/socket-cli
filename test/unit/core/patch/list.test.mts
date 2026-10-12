@@ -13,7 +13,7 @@ const manifest: PatchManifest = {
     'pkg:npm/zebra@1.0.0': {
       uuid: '22222222-2222-2222-2222-222222222222',
       exportedAt: '2026-01-01T00:00:00Z',
-      files: { 'lib/z.js': { beforeHash: 'a', afterHash: 'b' } },
+      files: { 'lib/example.js': { beforeHash: 'a', afterHash: 'b' } },
       vulnerabilities: {},
       description: 'second patch',
       license: 'MIT',

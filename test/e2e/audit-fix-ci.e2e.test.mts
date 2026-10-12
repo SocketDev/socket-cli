@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for `socket audit-log`, `socket fix`, and `socket ci`.. These
  *   commands share a shape (help / dry-run / no-args run); audit-log needs

@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for the `socket repos` command family.. Most repos
  *   checks are help / dry-run / read-only and run under the normal

@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for the `socket scan` command family. Exercises help, dry-run,
  *   list/view/metadata/report/diff, and `--json` contract conformance. Every

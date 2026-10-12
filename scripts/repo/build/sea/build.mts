@@ -7,6 +7,7 @@ import { isMainModule } from '../../../fleet/process/is-main-module.mts'
 import { runMain } from '../../../fleet/process/main/run.mts'
 import { BINJECT_VERSION, NODE_SMOL_VERSION } from '../constants/sea-assets.mts'
 import { fetchSeaAsset } from './assets.mts'
+import { relocateDarwinInitializerOffsets } from './initializer-offsets.mts'
 import { extractSmolRuntime } from './runtime.mts'
 import { signAndNotarizeSeaBinary } from './sign.mts'
 import {
@@ -37,7 +38,7 @@ export function createSeaLauncher(): string {
 
 export async function main(): Promise<void> {
   const signing = process.argv.includes('--sign')
-  assertSeaSigningHost(signing, process.platform)
+  assertSeaSigningHost({ signing, platform: process.platform })
   await mkdir(SEA_BUILD_DIR, { recursive: true })
   await mkdir(SEA_OUTPUT_DIR, { recursive: true })
   const payload = await readFile(SEA_PAYLOAD_PATH, 'utf8')
@@ -52,27 +53,8 @@ export async function main(): Promise<void> {
   const arg = process.argv
     .find(value => value.startsWith('--target='))
     ?.slice(9)
-  const selected = arg === 'host' ? host : arg
-  if (selected && !(SEA_TARGETS as readonly string[]).includes(selected)) {
-    throw new Error(
-      `Invalid native target ${selected}. Use --target=host or a supported target.`,
-    )
-  }
-  const targets = selected ? [selected] : [...SEA_TARGETS]
-  const signingTargets = signing
-    ? targets.filter(target => target.startsWith('darwin-'))
-    : []
-  if (signing && signingTargets.length === 0) {
-    throw new Error('SEA signing requires at least one Darwin target.')
-  }
-  let entitlementsPath: string | undefined
-  if (signing) {
-    entitlementsPath = path.join(
-      SEA_BUILD_DIR,
-      'sea-entitlements.generated.plist',
-    )
-    await writeFile(entitlementsPath, createSeaEntitlements())
-  }
+  const { targets, signingTargets, entitlementsPath } =
+    await resolveSeaBuildPlan({ arg, host, signing })
   const injector = await fetchSeaAsset(
     `binject-${BINJECT_VERSION}`,
     `binject-${host}${process.platform === 'win32' ? '.exe' : ''}`,
@@ -125,10 +107,47 @@ export async function main(): Promise<void> {
   }
 }
 
-export function assertSeaSigningHost(signing: boolean, platform: string): void {
+export function assertSeaSigningHost(config: {
+  signing: boolean
+  platform: string
+}): void {
+  const { signing, platform } = config
   if (signing && platform !== 'darwin') {
     throw new Error('SEA signing requires a macOS build host.')
   }
+}
+
+async function resolveSeaBuildPlan(config: {
+  arg: string | undefined
+  host: string
+  signing: boolean
+}): Promise<{
+  targets: string[]
+  signingTargets: string[]
+  entitlementsPath: string | undefined
+}> {
+  const selected = config.arg === 'host' ? config.host : config.arg
+  if (selected && !(SEA_TARGETS as readonly string[]).includes(selected)) {
+    throw new Error(
+      `Invalid native target ${selected}. Use --target=host or a supported target.`,
+    )
+  }
+  const targets = selected ? [selected] : [...SEA_TARGETS]
+  const signingTargets = config.signing
+    ? targets.filter(target => target.startsWith('darwin-'))
+    : []
+  if (config.signing && signingTargets.length === 0) {
+    throw new Error('SEA signing requires at least one Darwin target.')
+  }
+  let entitlementsPath: string | undefined
+  if (config.signing) {
+    entitlementsPath = path.join(
+      SEA_BUILD_DIR,
+      'sea-entitlements.generated.plist',
+    )
+    await writeFile(entitlementsPath, createSeaEntitlements())
+  }
+  return { targets, signingTargets, entitlementsPath }
 }
 
 export function createSeaEntitlements(): string {
@@ -150,12 +169,14 @@ export function createSeaEntitlements(): string {
 export async function signSeaBinaryBeforeHash(
   binaryPath: string,
   signBinary: (binary: string) => Promise<void>,
-  readBinary: (binary: string) => Promise<Buffer> = readFile,
+  options: {
+    readBinary?: ((binaryPath: string) => Promise<Buffer>) | undefined
+  } = {},
 ): Promise<string> {
   await signBinary(binaryPath)
   return crypto
     .createHash('sha256')
-    .update(await readBinary(binaryPath))
+    .update(await (options.readBinary ?? readFile)(binaryPath))
     .digest('hex')
 }
 
@@ -163,7 +184,7 @@ async function buildSeaTarget(
   target: string,
   injector: string,
   hostBase: string,
-  entitlementsPath?: string,
+  entitlementsPath?: string | undefined,
 ): Promise<string> {
   const asset = `node-${target.replace('win32-', 'win-')}${target.startsWith('win32-') ? '.exe' : ''}`
   const assetPath = await fetchSeaAsset(`node-smol-${NODE_SMOL_VERSION}`, asset)
@@ -231,14 +252,23 @@ async function buildSeaTarget(
         `Native build failed for ${target}: exit ${result.code}. Inspect binject output.`,
       )
     }
+    if (target === 'darwin-x64') {
+      const injected = await readFile(output)
+      const relocated = relocateDarwinInitializerOffsets(runtime, injected)
+      if (relocated !== injected) {
+        await writeFile(output, relocated)
+      }
+    }
   }
   if (entitlementsPath) {
-    return signSeaBinaryBeforeHash(
-      output,
-      binary => signAndNotarizeSeaBinary(binary, { entitlementsPath }),
+    return signSeaBinaryBeforeHash(output, binary =>
+      signAndNotarizeSeaBinary(binary, { entitlementsPath }),
     )
   }
-  return crypto.createHash('sha256').update(await readFile(output)).digest('hex')
+  return crypto
+    .createHash('sha256')
+    .update(await readFile(output))
+    .digest('hex')
 }
 
 const SCRIPT_META = {

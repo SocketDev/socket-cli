@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for `socket oops`.. `oops` is a deliberate-failure command
  *   used in regression tests; the no-arg form exits 1 by design. Gated on

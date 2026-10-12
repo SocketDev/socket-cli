@@ -1,3 +1,4 @@
+// runner-collection: opt-in lane — run with `pnpm run test:e2e` after building the CLI.
 /**
  * @file E2E tests for `socket threat-feed`.. threat-feed is interactive by
  *   default. The non-interactive forms drive the tests here. Gated on
