@@ -13,6 +13,7 @@
     "type": "js"
   },
   "release": {
+    "artifactWorkflow": ".github/workflows/publish-native.yml",
     "latestDistTagBranch": "v1.x",
     "publishedPackages": ["socket"]
   },
