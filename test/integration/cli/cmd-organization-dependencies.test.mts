@@ -47,12 +47,14 @@ describe('socket organization dependencies', async () => {
                 --json              Output as JSON
                 --limit             Maximum number of dependencies returned
                 --markdown          Output as Markdown
-                --offset            Page number
+                --offset            Number of dependencies to skip
+                --purls             Search for a full PURL; repeat this flag for more PURLs
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 socket organization dependencies
-                socket organization dependencies --limit 20 --offset 10"
+                socket organization dependencies --limit 20 --offset 10
+                socket organization dependencies --purls 'pkg:npm/minimist@0.0.4'"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -100,6 +102,88 @@ describe('socket organization dependencies', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      '--purls',
+      'pkg:npm/minimist@0.0.4',
+      '--purls',
+      'pkg:pypi/requests',
+      '--purls',
+      'pkg:generic/example.package',
+      '--json',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should preview repeated PURL filters without emitting JSON payload data',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const expectedPurls = JSON.stringify([
+        'pkg:npm/minimist@0.0.4',
+        'pkg:pypi/requests',
+        'pkg:generic/example.package',
+      ])
+      expect(code).toBe(0)
+      expect(stdout).toBe('')
+      expect(stderr).toContain(`purls: ${expectedPurls}`)
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      '--purls',
+      'minimist',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should reject invalid PURLs before dry-run success',
+    async cmd => {
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).not.toBe(0)
+      expect(stderr).toContain('Invalid PURL "minimist"')
+      expect(stderr).not.toContain('Would fetch organization dependencies')
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+      '--purls',
+    ],
+    'should reject a bare PURL flag instead of searching all dependencies',
+    async cmd => {
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).not.toBe(0)
+      expect(stderr).not.toContain('Would fetch organization dependencies')
+    },
+  )
+
+  cmdit(
+    [
+      'organization',
+      'dependencies',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+      '--purls=',
+    ],
+    'should reject an explicitly empty PURL filter',
+    async cmd => {
+      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).not.toBe(0)
+      expect(stderr).not.toContain('Would fetch organization dependencies')
     },
   )
 })
