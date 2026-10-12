@@ -38,7 +38,7 @@ const mockHandleOrganizationList = vi.hoisted(() => vi.fn())
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
 vi.mock(
-  import('../../../../src/command/organization/handle-organization-list.mts'),
+  import('../../../../src/command/organization/organization-list-command.mts'),
   () => ({
     handleOrganizationList: mockHandleOrganizationList,
   }),

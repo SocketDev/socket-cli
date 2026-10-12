@@ -65,7 +65,7 @@ const mockDetectDefaultBranch = vi.hoisted(() =>
 const mockGetRepoName = vi.hoisted(() => vi.fn().mockResolvedValue('test-repo'))
 
 vi.mock(
-  import('../../../../src/command/scan/handle-create-new-scan.mts'),
+  import('../../../../src/command/scan/new-scan-creation-command.mts'),
   () => ({
     handleCreateNewScan: mockHandleCreateNewScan,
   }),
@@ -87,7 +87,7 @@ vi.mock(import('../../../../src/command/scan/suggest_target.mts'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/scan/validate-reachability-target.mts'),
+  import('../../../../src/command/scan/reachability-target-validation.mts'),
   () => ({
     validateReachabilityTarget: mockValidateReachabilityTarget,
   }),

@@ -38,7 +38,7 @@ const mockHandleDependencies = vi.hoisted(() => vi.fn())
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
 vi.mock(
-  import('../../../../src/command/organization/handle-dependencies.mts'),
+  import('../../../../src/command/organization/dependencies-command.mts'),
   () => ({
     handleDependencies: mockHandleDependencies,
   }),

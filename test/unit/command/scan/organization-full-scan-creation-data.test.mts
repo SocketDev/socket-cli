@@ -39,7 +39,7 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
 describe('fetchCreateOrgFullScan', () => {
   it('creates org full scan successfully', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
       'createFullScan',
@@ -85,7 +85,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
@@ -116,7 +116,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles API call failure', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     await setupSdkMockError('createFullScan', 'Failed to create scan', 500)
 
@@ -141,7 +141,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('passes custom SDK options and scan options', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const { mockSdk, mockSetupSdk: scopedMockSetupSdk } =
       await setupSdkMockSuccess('createFullScan', {})
@@ -194,7 +194,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles empty optional config values', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -221,7 +221,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles multiple package paths', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -253,7 +253,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('uses null prototype for config and options', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -275,7 +275,7 @@ describe('fetchCreateOrgFullScan', () => {
 
   it('handles edge cases for different org slugs and repo names', async () => {
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -313,7 +313,7 @@ describe('fetchCreateOrgFullScan', () => {
       id: 'scan-no-opts',
     })
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const config = {
       branchName: '',
@@ -342,7 +342,7 @@ describe('fetchCreateOrgFullScan', () => {
       id: 'scan-with-opts',
     })
     const { fetchCreateOrgFullScan } =
-      await import('../../../../src/command/scan/fetch-create-org-full-scan.mts')
+      await import('../../../../src/command/scan/organization-full-scan-creation-data.mts')
 
     const config = {
       branchName: 'main',

@@ -31,7 +31,7 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
 describe('fetchScanMetadata', () => {
   it('fetches scan metadata successfully', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
       'getFullScanMetadata',
@@ -57,7 +57,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
     const { setupSdkSetupFailure } =
       await import('../../../helpers/sdk-fixtures.mts')
 
@@ -74,7 +74,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles API call failure', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
     const { setupSdkMockError } =
       await import('../../../helpers/sdk-fixtures.mts')
 
@@ -88,7 +88,7 @@ describe('fetchScanMetadata', () => {
 
   it('passes custom SDK options', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
       'getFullScanMetadata',
@@ -113,7 +113,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles different org slugs and scan IDs', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
 
@@ -132,7 +132,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles empty metadata response', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
 
     await setupSdkMockSuccess('getFullScanMetadata', undefined)
 
@@ -144,7 +144,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles pending scan metadata', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
 
     await setupSdkMockSuccess('getFullScanMetadata', {
       id: 'scan-pending',
@@ -161,7 +161,7 @@ describe('fetchScanMetadata', () => {
 
   it('handles special characters in scan IDs', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {
       id: 'scan-with-special-chars',
@@ -179,7 +179,7 @@ describe('fetchScanMetadata', () => {
 
   it('uses null prototype for options', async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/command/scan/fetch-scan-metadata.mts')
+      await import('../../../../src/command/scan/scan-metadata-data.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
 

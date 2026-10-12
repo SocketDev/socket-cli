@@ -38,7 +38,7 @@ const mockHandleQuota = vi.hoisted(() => vi.fn())
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
 vi.mock(
-  import('../../../../src/command/organization/handle-quota.mts'),
+  import('../../../../src/command/organization/quota-command.mts'),
   () => ({
     handleQuota: mockHandleQuota,
   }),

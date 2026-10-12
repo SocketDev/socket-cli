@@ -16,7 +16,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleDiffScan } from '../../../../src/command/scan/handle-diff-scan.mts'
+import { handleDiffScan } from '../../../../src/command/scan/scan-diff-command.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -40,7 +40,7 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   logger: mockLogger,
 }))
 
-vi.mock(import('../../../../src/command/scan/fetch-diff-scan.mts'), () => ({
+vi.mock(import('../../../../src/command/scan/diff-scan-data.mts'), () => ({
   fetchDiffScan: mockFetchDiffScan,
 }))
 

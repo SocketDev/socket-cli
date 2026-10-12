@@ -86,7 +86,7 @@ describe('fetchScanData', () => {
     mockSetupSdk.mockResolvedValue(error)
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -118,7 +118,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -147,7 +147,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -173,7 +173,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -196,7 +196,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -218,7 +218,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     await fetchScanData('test-org', 'scan-123', { includeLicensePolicy: true })
 
@@ -239,7 +239,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -258,7 +258,7 @@ describe('fetchScanData', () => {
     mockHandleApiCallNoSpinner.mockRejectedValue(new Error('Auth failed'))
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -280,7 +280,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     await fetchScanData('test-org', 'scan-123', {
       sdkOpts: { apiToken: 'custom-token' },
@@ -309,7 +309,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 
@@ -336,7 +336,7 @@ describe('fetchScanData', () => {
     })
 
     const { fetchScanData } =
-      await import('../../../../src/command/scan/fetch-report-data.mts')
+      await import('../../../../src/command/scan/scan-report-data.mts')
 
     const result = await fetchScanData('test-org', 'scan-123')
 

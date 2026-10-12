@@ -40,7 +40,7 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
 vi.mock(
-  import('../../../../src/command/organization/handle-security-policy.mts'),
+  import('../../../../src/command/organization/security-policy-command.mts'),
   () => ({
     handleSecurityPolicy: mockHandleSecurityPolicy,
   }),

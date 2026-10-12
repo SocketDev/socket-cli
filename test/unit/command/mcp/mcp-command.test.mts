@@ -23,7 +23,7 @@
  *
  * Related Files:
  *
- * - Src/commands/mcp/handle-mcp.mts - Implementation
+ * - Src/commands/mcp/mcp-command.mts - Implementation
  * - Src/commands/mcp/transport-stdio.mts - Stdio runner (mocked)
  * - Src/commands/mcp/transport-http.mts - HTTP runner (mocked)
  * - Src/util/socket/sdk.mts - getDefaultApiToken (mocked)
@@ -31,7 +31,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleMcp } from '../../../../src/command/mcp/handle-mcp.mts'
+import { handleMcp } from '../../../../src/command/mcp/mcp-command.mts'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 

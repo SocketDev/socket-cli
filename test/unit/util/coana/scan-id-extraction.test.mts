@@ -6,11 +6,11 @@
  * Test Coverage: - Valid scan ID extraction - Missing file handling - Invalid
  * JSON handling - Missing field handling.
  *
- * Related Files: - util/coana/extract-scan-id.mts (implementation)
+ * Related Files: - util/coana/scan-id-extraction.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { extractTier1ReachabilityScanId } from '../../../../src/util/coana/extract-scan-id.mts'
+import { extractTier1ReachabilityScanId } from '../../../../src/util/coana/scan-id-extraction.mts'
 
 // Mock dependencies.
 const mockReadJsonSync = vi.hoisted(() => vi.fn())

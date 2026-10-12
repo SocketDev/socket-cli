@@ -16,7 +16,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleScanReach } from '../../../../src/command/scan/handle-scan-reach.mts'
+import { handleScanReach } from '../../../../src/command/scan/scan-reach-command.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -66,7 +66,7 @@ vi.mock(import('@socketsecurity/lib-stable/words/pluralize'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/scan/fetch-supported-scan-file-names.mts'),
+  import('../../../../src/command/scan/supported-scan-file-names-data.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
   }),

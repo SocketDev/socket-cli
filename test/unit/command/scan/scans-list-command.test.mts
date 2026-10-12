@@ -20,7 +20,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../helpers/mocks.mts'
-import { handleListScans } from '../../../../src/command/scan/handle-list-scans.mts'
+import { handleListScans } from '../../../../src/command/scan/scans-list-command.mts'
 
 // Mock the dependencies.
 const mockFetchOrgFullScanList = vi.hoisted(() => vi.fn())

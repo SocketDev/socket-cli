@@ -21,7 +21,7 @@ import {
   setupSdkMockSuccess,
   setupSdkSetupFailure,
 } from '../../../helpers/sdk-fixtures.mts'
-import { fetchDeleteOrgFullScan } from '../../../../src/command/scan/fetch-delete-org-full-scan.mts'
+import { fetchDeleteOrgFullScan } from '../../../../src/command/scan/organization-full-scan-deletion-data.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())

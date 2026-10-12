@@ -65,7 +65,7 @@ vi.mock(
   }),
 )
 
-vi.mock(import('../../../../src/util/coana/extract-scan-id.mjs'), () => ({
+vi.mock(import('../../../../src/util/coana/scan-id-extraction.mjs'), () => ({
   extractTier1ReachabilityScanId: mockExtractTier1ReachabilityScanId,
 }))
 

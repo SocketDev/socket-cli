@@ -20,7 +20,7 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../helpers/mocks.mts'
-import { handleScanConfig } from '../../../../src/command/scan/handle-scan-config.mts'
+import { handleScanConfig } from '../../../../src/command/scan/scan-configuration-command.mts'
 
 // Mock the dependencies.
 const mockOutputScanConfigResult = vi.hoisted(() => vi.fn())

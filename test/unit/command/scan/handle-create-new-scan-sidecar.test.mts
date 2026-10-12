@@ -8,7 +8,7 @@
  * Testing Approach: Mocks fetch and output functions to isolate handler
  * orchestration logic.
  *
- * Related Files: - src/command/scan/handle-create-new-scan.mts
+ * Related Files: - src/command/scan/new-scan-creation-command.mts
  * (implementation) - test/unit/command/scan/handle-create-new-scan.test.mts,
  * core flow - test/unit/command/scan/handle-create-new-scan-features.test.mts,
  * reachability, report, workspace.
@@ -20,7 +20,7 @@ import { createSuccessResult } from '../../../helpers/mocks.mts'
 import {
   handleCreateNewScan,
   removeGeneratedScanFacts,
-} from '../../../../src/command/scan/handle-create-new-scan.mts'
+} from '../../../../src/command/scan/new-scan-creation-command.mts'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -56,13 +56,13 @@ vi.mock(import('@socketsecurity/lib-stable/words/pluralize'), () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),
 }))
 vi.mock(
-  import('../../../../src/command/scan/fetch-create-org-full-scan.mts'),
+  import('../../../../src/command/scan/organization-full-scan-creation-data.mts'),
   () => ({
     fetchCreateOrgFullScan: mockFetchCreateOrgFullScan,
   }),
 )
 vi.mock(
-  import('../../../../src/command/scan/fetch-supported-scan-file-names.mts'),
+  import('../../../../src/command/scan/supported-scan-file-names-data.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
   }),
@@ -70,7 +70,7 @@ vi.mock(
 vi.mock(import('../../../../src/command/scan/finalize-tier1-scan.mts'), () => ({
   finalizeTier1Scan: mockFinalizeTier1Scan,
 }))
-vi.mock(import('../../../../src/command/scan/handle-scan-report.mts'), () => ({
+vi.mock(import('../../../../src/command/scan/scan-report-command.mts'), () => ({
   handleScanReport: mockHandleScanReport,
 }))
 vi.mock(

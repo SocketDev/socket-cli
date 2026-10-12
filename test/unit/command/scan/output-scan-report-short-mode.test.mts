@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputScanReport } from '../../../../src/command/scan/output-scan-report.mts'
 
-import type * as GenerateReportModule from '../../../../src/command/scan/generate-report.mts'
+import type * as GenerateReportModule from '../../../../src/command/scan/report-generation.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -54,7 +54,7 @@ vi.mock(import('node:fs/promises'), () => ({
 const mockGenerateReport = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/scan/generate-report.mts'),
+  import('../../../../src/command/scan/report-generation.mts'),
   async orig => {
     const actual = await orig<typeof GenerateReportModule>()
     return {

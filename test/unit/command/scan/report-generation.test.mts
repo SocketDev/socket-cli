@@ -7,11 +7,11 @@
  * warn, monitor, ignore, defer) - Fold settings, pkg, version, file - Report
  * level filtering - Health status determination.
  *
- * Related Files: - src/command/scan/generate-report.mts (implementation)
+ * Related Files: - src/command/scan/report-generation.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { generateReport } from '../../../../src/command/scan/generate-report.mts'
+import { generateReport } from '../../../../src/command/scan/report-generation.mts'
 import {
   FOLD_SETTING_FILE,
   FOLD_SETTING_NONE,

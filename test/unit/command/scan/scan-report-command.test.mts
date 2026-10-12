@@ -26,7 +26,7 @@ const mockFetchScanData = vi.hoisted(() => vi.fn())
 const mockOutputScanReport = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock(import('../../../../src/command/scan/fetch-report-data.mts'), () => ({
+vi.mock(import('../../../../src/command/scan/scan-report-data.mts'), () => ({
   fetchScanData: mockFetchScanData,
 }))
 
@@ -45,7 +45,7 @@ describe('handleScanReport', () => {
     vi.clearAllMocks()
     if (!handleScanReport) {
       const module =
-        await import('../../../../src/command/scan/handle-scan-report.mts')
+        await import('../../../../src/command/scan/scan-report-command.mts')
       handleScanReport = module.handleScanReport
     }
   })

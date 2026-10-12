@@ -16,7 +16,7 @@ import {
   toPlainTextReport,
 } from '../../../../src/command/scan/output-scan-report.mts'
 
-import type { ScanReport } from '../../../../src/command/scan/generate-report.mts'
+import type { ScanReport } from '../../../../src/command/scan/report-generation.mts'
 
 // Matches any ANSI escape sequence, the codes that show up as literal noise
 // like "[32m" in a log viewer that does not interpret them.

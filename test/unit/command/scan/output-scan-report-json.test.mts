@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest'
 import { toJsonReport } from '../../../../src/command/scan/output-scan-report.mts'
 import { SOCKET_WEBSITE_URL } from '../../../../src/constants/socket.mts'
 
-import type { ScanReport } from '../../../../src/command/scan/generate-report.mts'
+import type { ScanReport } from '../../../../src/command/scan/report-generation.mts'
 
 describe('output-scan-report', () => {
   describe('toJsonReport', () => {

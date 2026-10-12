@@ -7,7 +7,7 @@
  * Test Coverage: - Single target validation - Multiple targets rejection -
  * Directory vs file detection - Path containment checks.
  *
- * Related Files: - commands/scan/validate-reachability-target.mts
+ * Related Files: - commands/scan/reachability-target-validation.mts
  * (implementation)
  */
 
@@ -16,7 +16,7 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { validateReachabilityTarget } from '../../../../src/command/scan/validate-reachability-target.mts'
+import { validateReachabilityTarget } from '../../../../src/command/scan/reachability-target-validation.mts'
 
 describe('validate-reachability-target', () => {
   describe('validateReachabilityTarget', () => {

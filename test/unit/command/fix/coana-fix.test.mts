@@ -76,7 +76,7 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/scan/fetch-supported-scan-file-names.mts'),
+  import('../../../../src/command/scan/supported-scan-file-names-data.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
   }),

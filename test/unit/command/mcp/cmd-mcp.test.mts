@@ -23,7 +23,7 @@
  * Related Files:
  *
  * - Src/commands/mcp/cmd-mcp.mts - Implementation
- * - Src/commands/mcp/handle-mcp.mts - Dispatcher (mocked)
+ * - Src/commands/mcp/mcp-command.mts - Dispatcher (mocked)
  * - Src/util/cli/with-subcommands.mts - meowOrExit (mocked)
  */
 
@@ -100,7 +100,7 @@ const { mockHandleMcp, mockMeowOrExit } = vi.hoisted(() => ({
   }),
 }))
 
-vi.mock(import('../../../../src/command/mcp/handle-mcp.mts'), () => ({
+vi.mock(import('../../../../src/command/mcp/mcp-command.mts'), () => ({
   handleMcp: mockHandleMcp,
 }))
 

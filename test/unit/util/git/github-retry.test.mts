@@ -5,7 +5,7 @@
  * classification against categorized GitHub errors.
  *
  * Related Files: - src/util/git/github.mts (implementation) -
- * src/command/scan/create-scan-from-github.mts (consumer) -
+ * src/command/scan/github-scan-creation.mts (consumer) -
  * src/util/git/github-provider.mts (consumer)
  */
 

@@ -20,14 +20,14 @@ import {
   createErrorResult,
   createSuccessResult,
 } from '../../../helpers/mocks.mts'
-import { handleDeleteScan } from '../../../../src/command/scan/handle-delete-scan.mts'
+import { handleDeleteScan } from '../../../../src/command/scan/scan-deletion-command.mts'
 
 // Mock the dependencies.
 const mockFetchDeleteOrgFullScan = vi.hoisted(() => vi.fn())
 const mockOutputDeleteScan = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/scan/fetch-delete-org-full-scan.mts'),
+  import('../../../../src/command/scan/organization-full-scan-deletion-data.mts'),
   () => ({
     fetchDeleteOrgFullScan: mockFetchDeleteOrgFullScan,
   }),

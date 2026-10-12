@@ -4,7 +4,7 @@
 import { SemVer } from 'semver'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleOptimize } from '../../../../src/command/optimize/handle-optimize.mts'
+import { handleOptimize } from '../../../../src/command/optimize/optimize-command.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -37,7 +37,7 @@ vi.mock(
   },
 )
 
-vi.mock(import('../../../../src/core/optimize/apply-optimization.mts'), () => ({
+vi.mock(import('../../../../src/core/optimize/optimization-application.mts'), () => ({
   applyOptimization: vi.fn(),
 }))
 vi.mock(
@@ -49,7 +49,7 @@ vi.mock(
 vi.mock(import('../../../../src/core/optimize/pastoralist-audit.mts'), () => ({
   runPastoralistAudit: vi.fn(async () => ({ ok: true })),
 }))
-vi.mock(import('../../../../src/core/optimize/sync-origin-main.mts'), () => ({
+vi.mock(import('../../../../src/core/optimize/origin-main-sync.mts'), () => ({
   syncOriginMain: vi.fn(async () => ({
     ok: true,
     reason: 'already current with origin/main',
@@ -82,7 +82,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
     const { outputOptimizeResult } =
       await import('../../../../src/command/optimize/output-optimize-result.mts')
 
@@ -137,7 +137,7 @@ describe('handleOptimize', () => {
     const { outputOptimizeResult } =
       await import('../../../../src/command/optimize/output-optimize-result.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: false,
@@ -196,7 +196,7 @@ describe('handleOptimize', () => {
     const { outputOptimizeResult } =
       await import('../../../../src/command/optimize/output-optimize-result.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -231,7 +231,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
     const { outputOptimizeResult } =
       await import('../../../../src/command/optimize/output-optimize-result.mts')
 
@@ -275,7 +275,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -316,7 +316,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
@@ -357,7 +357,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: false,
@@ -380,7 +380,7 @@ describe('handleOptimize', () => {
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
-      await import('../../../../src/core/optimize/apply-optimization.mts')
+      await import('../../../../src/core/optimize/optimization-application.mts')
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
