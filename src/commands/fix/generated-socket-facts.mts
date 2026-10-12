@@ -1,10 +1,12 @@
-import { copyFile, mkdir, rm } from 'node:fs/promises'
+import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
 export type GeneratedSocketFacts = {
   paths: string[]
+  // The facts files' per-project classpaths, outside the repository.
+  sidecarFile: string | undefined
   remove: () => Promise<void>
   restore: () => Promise<void>
 }
@@ -51,14 +53,20 @@ export async function generateSocketFactsForFix({
     await restoreAll(originals)
   }
   let paths: string[]
+  let sidecarFile: string | undefined
   try {
-    const { factsPaths } = await runDynamicSbomInference({
+    const { factsPaths, resolvedPathsSidecar } = await runDynamicSbomInference({
       cwd,
       excludePaths,
       sbtTmpDir: undefined,
+      sidecar: true,
       withFiles: false,
     })
     paths = factsPaths.map(p => path.resolve(cwd, p))
+    if (resolvedPathsSidecar) {
+      sidecarFile = path.join(tmpDir, 'sidecar.json')
+      await writeFile(sidecarFile, JSON.stringify(resolvedPathsSidecar))
+    }
   } catch (e) {
     // A failed build root aborts inference after others wrote their facts.
     await reset(await findFactsPaths())
@@ -71,6 +79,7 @@ export async function generateSocketFactsForFix({
   ]
   return {
     paths,
+    sidecarFile,
     remove: () => reset(paths),
     restore: () => restoreAll(backups),
   }

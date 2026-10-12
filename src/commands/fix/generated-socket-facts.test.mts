@@ -62,6 +62,23 @@ describe('generateSocketFactsForFix', () => {
     expect(existsSync(fresh)).toBe(false)
   })
 
+  it('writes the sidecar outside the repository', async () => {
+    mockRunDynamicSbomInference.mockImplementation(async () => {
+      await fs.writeFile(fresh, 'generated')
+      return { factsPaths: [fresh], resolvedPathsSidecar: { [fresh]: {} } }
+    })
+
+    const { sidecarFile } = await generate()
+
+    expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
+      expect.objectContaining({ sidecar: true }),
+    )
+    expect(path.dirname(sidecarFile!)).toBe(tmpDir)
+    expect(JSON.parse(await fs.readFile(sidecarFile!, 'utf8'))).toEqual({
+      [fresh]: {},
+    })
+  })
+
   it('restores an existing facts file that generation does not rewrite', async () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(fresh, 'generated')
