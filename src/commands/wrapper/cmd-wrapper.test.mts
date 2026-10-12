@@ -1,4 +1,8 @@
-import { describe, expect } from 'vitest'
+import { promises as fs } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+import { describe, expect, it } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -9,6 +13,55 @@ import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket wrapper', async () => {
   const { binCliPath } = constants
+
+  it('prints the supported command to disable the wrapper', async () => {
+    const temporaryHome = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'socket-wrapper-'),
+    )
+    const profilePath = path.join(temporaryHome, '.bashrc')
+    const configDirectory = path.join(temporaryHome, 'config')
+    const env = {
+      HOME: temporaryHome,
+      USERPROFILE: temporaryHome,
+      XDG_CONFIG_HOME: configDirectory,
+    }
+
+    try {
+      await fs.mkdir(configDirectory)
+      await fs.writeFile(profilePath, '')
+
+      const enabled = await spawnSocketCli(
+        binCliPath,
+        ['wrapper', 'on', FLAG_CONFIG, '{}'],
+        { env },
+      )
+      expect(enabled.code).toBe(0)
+      expect(`${enabled.stdout}\n${enabled.stderr}`).toContain(
+        '`socket wrapper off`',
+      )
+      expect(`${enabled.stdout}\n${enabled.stderr}`).not.toContain(
+        '`socket wrapper --disable`',
+      )
+      expect(await fs.readFile(profilePath, 'utf8')).toContain(
+        'alias npm="socket npm"',
+      )
+
+      const disabled = await spawnSocketCli(
+        binCliPath,
+        ['wrapper', 'off', FLAG_CONFIG, '{}'],
+        { env },
+      )
+      expect(disabled.code).toBe(0)
+      expect(await fs.readFile(profilePath, 'utf8')).not.toContain(
+        'alias npm="socket npm"',
+      )
+      expect(await fs.readFile(profilePath, 'utf8')).not.toContain(
+        'alias npx="socket npx"',
+      )
+    } finally {
+      await fs.rm(temporaryHome, { force: true, recursive: true })
+    }
+  })
 
   cmdit(
     ['wrapper', FLAG_HELP, FLAG_CONFIG, '{}'],
