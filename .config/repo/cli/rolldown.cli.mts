@@ -20,6 +20,7 @@ import {
   getInlinedEnvVars,
   runBuild,
 } from '../../../scripts/repo/build/rolldown-utils.mts'
+import type { CliBuildMode } from '../../../scripts/repo/build/rolldown-utils.mts'
 
 import type { Plugin, RolldownOptions } from 'rolldown'
 
@@ -30,6 +31,48 @@ const inlinedEnvVars = getInlinedEnvVars()
 
 // Matches ./external/, ../external/, ../../external/, etc. (forward + back slash).
 const socketLibExternalPathRegExp = /^(?:(?:\.\.[/\\])+|\.[/\\])external[/\\]/
+
+export function createCliBuildConfig(
+  options: {
+    mode?: CliBuildMode | undefined
+    outputPath?: string | undefined
+  } = {},
+): RolldownOptions {
+  const {
+    mode = 'production',
+    outputPath = path.join(rootPath, 'build/cli.js'),
+  } = options
+  const baseConfig = createBaseConfig(inlinedEnvVars, { mode })
+  return {
+    ...baseConfig,
+    input: path.join(rootPath, 'src/cli-dispatch.mts'),
+    // .cs files, node-gyp on Windows, resolve to empty.
+    moduleTypes: { '.cs': 'empty' },
+    transform: {
+      ...baseConfig.transform,
+      define: {
+        ...baseConfig.transform?.define,
+        'import.meta.url': '__importMetaUrl',
+      },
+    },
+    plugins: [
+      resolveSocketLibInternalsPlugin(),
+      stubProblematicPackagesPlugin(),
+      ignoreUnsupportedFilesPlugin(),
+    ],
+    output: {
+      file: outputPath,
+      format: 'cjs',
+      minify: false,
+      sourcemap: false,
+      keepNames: true,
+      // Single self-contained CLI file: inline dynamic imports into one chunk so
+      // `output.file` is valid, esbuild emitted one outfile by default.
+      codeSplitting: false,
+      banner: `#!/usr/bin/env node\n"use strict";\n${IMPORT_META_URL_BANNER.js}`,
+    },
+  }
+}
 
 export function findSocketLibPath(importerPath: string): string | undefined {
   // Capture the package root, including the optional stable alias, before a separator.
@@ -254,42 +297,12 @@ export function toRealPath(p: string): string {
   }
 }
 
-const baseConfig = createBaseConfig(inlinedEnvVars)
-
-const config: RolldownOptions = {
-  ...baseConfig,
-  input: path.join(rootPath, 'src/cli-dispatch.mts'),
-  // .cs files, node-gyp on Windows, resolve to empty.
-  moduleTypes: { '.cs': 'empty' },
-  transform: {
-    ...baseConfig.transform,
-    define: {
-      ...baseConfig.transform?.define,
-      'import.meta.url': '__importMetaUrl',
-    },
-  },
-  plugins: [
-    resolveSocketLibInternalsPlugin(),
-    stubProblematicPackagesPlugin(),
-    ignoreUnsupportedFilesPlugin(),
-  ],
-  output: {
-    file: path.join(rootPath, 'build/cli.js'),
-    format: 'cjs',
-    minify: false,
-    sourcemap: false,
-    keepNames: true,
-    // Single self-contained CLI file: inline dynamic imports into one chunk so
-    // `output.file` is valid, esbuild emitted one outfile by default.
-    codeSplitting: false,
-    banner: `#!/usr/bin/env node\n"use strict";\n${IMPORT_META_URL_BANNER.js}`,
-  },
-}
+export const cliConfig = createCliBuildConfig()
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   // The unicode + env-var post-write transforms run here (rolldown can't
   // express them as config), matching the esbuild onEnd plugin order.
-  runBuild(config, {
+  runBuild(cliConfig, {
     description: 'CLI bundle',
     envVars: inlinedEnvVars,
     unicodeTransform: true,
@@ -297,5 +310,3 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     process.exitCode = 1
   })
 }
-
-export { config as cliConfig }

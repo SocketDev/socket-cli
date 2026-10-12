@@ -17,6 +17,8 @@ import { EnvironmentVariables } from './environment-variables.mts'
 
 import type { RolldownOptions } from 'rolldown'
 
+export type CliBuildMode = 'development' | 'production'
+
 const logger = getDefaultLogger()
 
 /**
@@ -31,14 +33,16 @@ const logger = getDefaultLogger()
  */
 export function createBaseConfig(
   inlinedEnvVars: Record<string, string>,
+  options: { mode?: CliBuildMode | undefined } = {},
 ): RolldownOptions {
+  const { mode = 'production' } = options
   return {
     experimental: { attachDebugInfo: 'none' },
     platform: 'node',
     transform: {
       define: {
-        'process.env.NODE_ENV': '"production"',
         ...createDefineEntries(inlinedEnvVars),
+        'process.env.NODE_ENV': JSON.stringify(mode),
       },
     },
   }
