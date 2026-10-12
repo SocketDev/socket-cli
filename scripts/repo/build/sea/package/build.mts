@@ -40,29 +40,29 @@ export async function buildNativePackageVerifier(
   try {
     const generated = await bundle.generate({
       format: 'es',
+      codeSplitting: false,
+      entryFileNames: path.basename(outputPath),
       // oxlint-disable-next-line socket/no-minified-bundler-output -- This standalone CI verifier is a generated transport bundle.
       minify: true,
       sourcemap: false,
     })
-    for (const output of generated.output) {
-      if (output.type === 'chunk') {
-        for (const imported of [...output.imports, ...output.dynamicImports]) {
-          const name = imported.startsWith('node:')
-            ? imported.slice(5)
-            : imported
-          if (!builtinModules.includes(name)) {
-            throw new Error(
-              `Verifier bundle has a non-builtin import: ${imported}`,
-            )
-          }
-        }
-      }
-    }
-    await mkdir(path.dirname(outputPath), { recursive: true })
     const chunk = generated.output.find(output => output.type === 'chunk')
     if (generated.output.length !== 1 || !chunk || !chunk.isEntry) {
       throw new Error('Verifier bundle did not emit an entry chunk.')
     }
+    // Rolldown retains inlined same-chunk dynamic edges in its metadata.
+    const imports = [
+      ...chunk.imports,
+      ...chunk.dynamicImports.filter(imported => imported !== chunk.fileName),
+    ]
+    for (let i = 0, { length } = imports; i < length; i += 1) {
+      const imported = imports[i]!
+      const name = imported.startsWith('node:') ? imported.slice(5) : imported
+      if (!builtinModules.includes(name)) {
+        throw new Error(`Verifier bundle has a non-builtin import: ${imported}`)
+      }
+    }
+    await mkdir(path.dirname(outputPath), { recursive: true })
     await writeFile(outputPath, chunk.code)
     return outputPath
   } finally {

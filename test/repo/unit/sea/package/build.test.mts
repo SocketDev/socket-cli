@@ -25,9 +25,38 @@ describe('native package verifier bundle', () => {
           timeout: 15_000,
         },
       )
-      expect(JSON.parse(result.stdout)).toEqual({
-        name: 'native-package-verifier',
-        describe: 'verify an installed native package',
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        name: 'package-check.generated.mjs',
+        version: '0.0.0',
+        description: 'verify an installed native package',
+      })
+
+      const help = await execFile(process.execPath, [verifier, '--help'], {
+        cwd: directory,
+        timeout: 15_000,
+      })
+      expect(help.stdout).toContain(
+        'Usage: node package-check.generated.mjs --package-root PATH --target TARGET [--json]',
+      )
+
+      let invalidArgsError:
+        | (Error & { code?: number | undefined; stdout?: string | undefined })
+        | undefined
+      try {
+        await execFile(process.execPath, [verifier, '--json'], {
+          cwd: directory,
+          timeout: 15_000,
+        })
+      } catch (error) {
+        invalidArgsError = error as Error & {
+          code?: number | undefined
+          stdout?: string | undefined
+        }
+      }
+      expect(invalidArgsError?.code).toBe(1)
+      expect(JSON.parse(invalidArgsError?.stdout ?? '{}')).toMatchObject({
+        ok: false,
+        error: expect.any(String),
       })
     } finally {
       await rm(directory, { recursive: true, force: true })

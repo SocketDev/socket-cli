@@ -2,6 +2,7 @@ import process from 'node:process'
 import { parseArgs } from 'node:util'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { isMainModule } from '../../../../fleet/process/is-main-module.mts'
+import { runMain } from '../../../../fleet/process/main/run.mts'
 import { redactDiagnosticText } from '../diagnostic/redact.mts'
 import { verifyNativePackage } from './check.mts'
 
@@ -13,14 +14,15 @@ const HELP = [
   '  --package-root PATH  Installed package directory to verify',
   '  --target TARGET      Native package target to verify',
   '  --json               Write a machine-readable result',
-  '  --describe           Describe this verifier',
-  '  --help               Show this help',
 ].join('\n')
 const MAX_ERROR_LENGTH = 1200
 
 export async function main(
-  argv: readonly string[] = process.argv.slice(2),
+  options: {
+    argv?: readonly string[] | undefined
+  } = {},
 ): Promise<void> {
+  const argv = options.argv ?? process.argv.slice(2)
   let json = argv.includes('--json')
   try {
     const parsed = parseArgs({
@@ -29,29 +31,12 @@ export async function main(
         'package-root': { type: 'string' },
         target: { type: 'string' },
         json: { type: 'boolean' },
-        describe: { type: 'boolean' },
-        help: { type: 'boolean', short: 'h' },
       },
       allowPositionals: false,
       strict: true,
     })
     const { values } = parsed
     json = values.json ?? false
-    if (values.help) {
-      process.stdout.write(`${HELP}\n`)
-      return
-    }
-    if (values.describe) {
-      process.stdout.write(
-        values.json
-          ? `${JSON.stringify({
-              name: 'native-package-verifier',
-              describe: DESCRIPTION,
-            })}\n`
-          : `${DESCRIPTION}\n`,
-      )
-      return
-    }
     const packageRoot = values['package-root']
     const target = values.target
     if (!packageRoot || !target) {
@@ -81,6 +66,12 @@ export async function main(
   }
 }
 
+const SCRIPT_META = {
+  describe: DESCRIPTION,
+  help: HELP,
+  json: 'native' as const,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(() => main(), SCRIPT_META)
 }
