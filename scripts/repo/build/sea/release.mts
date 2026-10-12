@@ -260,9 +260,8 @@ export async function main(): Promise<ScriptResult> {
   const certificateBase64 = getRequiredEnvironmentValue(
     'APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12',
   )
-  const p12Password = getRequiredEnvironmentValue(
-    'APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS',
-  )
+  const p12Password =
+    getEnvValue('APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS') ?? ''
   if (!hasNotarizeCredentialsInEnv()) {
     throw new Error(
       'Native release requires complete Apple notarization credentials.',

@@ -147,7 +147,8 @@ beforeEach(async () => {
     ) => {
       expect(config).toEqual({
         certificateBase64: Buffer.from('certificate fixture').toString('base64'),
-        p12Password: 'fixture-pass',
+        p12Password:
+          process.env['APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS'] ?? '',
         identityLabel: 'Developer ID Application: Socket Inc. (A1B2C3D4E5)',
       })
       try {
@@ -229,7 +230,6 @@ it.each([
 
 it.each([
   ['certificate', 'APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12', ''],
-  ['nonblank certificate password', 'APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS', '  '],
 ])('still requires the %s', async (caseLabel, name, value) => {
   expect(caseLabel).toBeTruthy()
   setNativeReleaseEnvironment()
@@ -237,6 +237,31 @@ it.each([
   await expect(main()).rejects.toBeInstanceOf(Error)
   expect(mocks.getIdentityLabel).not.toHaveBeenCalled()
   expect(mocks.withAppleKeychain).not.toHaveBeenCalled()
+})
+
+it.each([
+  ['absent', undefined],
+  ['empty', ''],
+])('imports the certificate when its password is %s', async (caseLabel, password) => {
+  expect(caseLabel).toBeTruthy()
+  setNativeReleaseEnvironment()
+  if (password === undefined) {
+    delete process.env['APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS']
+  } else {
+    vi.stubEnv('APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS', password)
+  }
+  const result = await main()
+  expect(result.exitCode).toBe(0)
+  expect(mocks.withAppleKeychain).toHaveBeenCalledTimes(1)
+})
+
+it('passes a configured certificate password to import without trimming', async () => {
+  setNativeReleaseEnvironment()
+  const password = '  fixture-pass  '
+  vi.stubEnv('APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS', password)
+  const result = await main()
+  expect(result.exitCode).toBe(0)
+  expect(mocks.withAppleKeychain).toHaveBeenCalledTimes(1)
 })
 
 it('builds under the imported signing identity and restores process state', async () => {
