@@ -47,6 +47,9 @@ protection is no longer npm-only.
 Browse the [command index](docs/commands.md) for every command and alias, then
 open a focused guide from its tables.
 
+See the [organization dependency inventory guide](docs/organization-dependencies.md)
+for listing dependencies already known to your organization.
+
 ### MCP connections
 
 For a local stdio connection, run `socket login` once, then configure your MCP
