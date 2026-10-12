@@ -4,7 +4,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../../../fleet/process/is-main-module.mts'
 import { runMain } from '../../../fleet/process/main/run.mts'
-import { redactSecretsFromText } from '../../../../src/util/redact-secrets-from-text.mts'
+import { redactDiagnosticText } from './diagnostic/redact.mts'
 import {
   SEA_ENTRYPOINT_PATHS,
   SEA_PAYLOAD_PATH,
@@ -19,7 +19,7 @@ const DARWIN_DIAGNOSTIC_TIMEOUT_MS = 10_000
 
 export async function collectDarwinCrashDiagnostic(
   binary: string,
-  options: { spawnProcess?: typeof spawn } = {},
+  options: { spawnProcess?: typeof spawn | undefined } = {},
 ): Promise<string> {
   if (process.platform !== 'darwin') {
     return ''
@@ -28,10 +28,11 @@ export async function collectDarwinCrashDiagnostic(
     const result = await (options.spawnProcess ?? spawn)(
       'lldb',
       [
+        '--no-lldbinit',
         '-b',
         '-o',
         'run',
-        '-o',
+        '-k',
         'bt all',
         '-o',
         'quit',
@@ -58,7 +59,7 @@ export function formatNativeSmokeOutput(
   label: string,
   value: string | Buffer,
 ): string {
-  const output = redactSecretsFromText(value.toString()).trim()
+  const output = redactDiagnosticText(value.toString()).trim()
   if (!output) {
     return ''
   }
@@ -70,11 +71,43 @@ export function formatNativeSmokeOutput(
 }
 
 export async function main(): Promise<void> {
-  const receipt = JSON.parse(await readFile(SEA_RECEIPT_PATH, 'utf8')) as {
+  const receipt = await readSeaReceipt()
+  await verifySeaPayloadAndEntrypoints(receipt)
+  const host = resolveSeaTarget(process.platform, process.arch, {
+    glibc: (
+      process.report.getReport() as {
+        header: { glibcVersionRuntime?: string | undefined }
+      }
+    ).header.glibcVersionRuntime,
+  })
+  const { executionTarget, targets } = selectSeaTargets(host, process.argv)
+  await verifySeaBinaryDigests(targets, receipt)
+  await runSeaSmokeTests(executionTarget)
+  if (process.argv.includes('--json')) {
+    logger.stdout.write(JSON.stringify({ ok: true, targets }) + '\n')
+  } else {
+    logger.log(
+      `Verified ${targets.length} native artifact(s) and executed ${executionTarget}.`,
+    )
+  }
+}
+
+async function readSeaReceipt(): Promise<{
+  payload: string
+  binaries: Record<string, string>
+  entrypoints: Record<string, string>
+}> {
+  return JSON.parse(await readFile(SEA_RECEIPT_PATH, 'utf8')) as {
     payload: string
     binaries: Record<string, string>
     entrypoints: Record<string, string>
   }
+}
+
+async function verifySeaPayloadAndEntrypoints(receipt: {
+  payload: string
+  entrypoints: Record<string, string>
+}): Promise<void> {
   const payload = crypto
     .createHash('sha256')
     .update(await readFile(SEA_PAYLOAD_PATH))
@@ -95,14 +128,13 @@ export async function main(): Promise<void> {
       )
     }
   }
-  const host = resolveSeaTarget(process.platform, process.arch, {
-    glibc: (
-      process.report.getReport() as {
-        header: { glibcVersionRuntime?: string | undefined }
-      }
-    ).header.glibcVersionRuntime,
-  })
-  const requested = process.argv
+}
+
+function selectSeaTargets(
+  host: string,
+  args: readonly string[],
+): { executionTarget: string; targets: readonly string[] } {
+  const requested = args
     .find(value => value.startsWith('--target='))
     ?.slice('--target='.length)
   if (requested === '') {
@@ -115,15 +147,22 @@ export async function main(): Promise<void> {
       `Invalid native target ${requested}. Use one of ${SEA_TARGETS.join(', ')}.`,
     )
   }
-  if (requested && process.argv.includes('--host')) {
+  if (requested && args.includes('--host')) {
     throw new Error('Use either --host or --target, not both.')
   }
   const executionTarget = requested ?? host
   const targets = requested
     ? [requested]
-    : process.argv.includes('--host')
+    : args.includes('--host')
       ? [host]
       : SEA_TARGETS
+  return { executionTarget, targets }
+}
+
+async function verifySeaBinaryDigests(
+  targets: readonly string[],
+  receipt: { binaries: Record<string, string> },
+): Promise<void> {
   for (const target of targets) {
     const bytes = await readFile(seaBinaryPath(target))
     const actual = crypto.createHash('sha256').update(bytes).digest('hex')
@@ -133,6 +172,9 @@ export async function main(): Promise<void> {
       )
     }
   }
+}
+
+async function runSeaSmokeTests(executionTarget: string): Promise<void> {
   for (const args of [['--version'], ['--help'], ['npm', '--version']]) {
     const result = await spawn(seaBinaryPath(executionTarget), args, {
       stdio: 'pipe',
@@ -151,13 +193,6 @@ export async function main(): Promise<void> {
           '\nRebuild the executable.',
       )
     }
-  }
-  if (process.argv.includes('--json')) {
-    logger.stdout.write(JSON.stringify({ ok: true, targets }) + '\n')
-  } else {
-    logger.log(
-      `Verified ${targets.length} native artifact(s) and executed ${executionTarget}.`,
-    )
   }
 }
 

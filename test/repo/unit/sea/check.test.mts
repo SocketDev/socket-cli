@@ -153,6 +153,8 @@ describe('SEA package verification', () => {
         stderr: '',
       })
     const platform = process.platform
+    const target = 'darwin-x64'
+    process.argv.push(`--target=${target}`)
     Object.defineProperty(process, 'platform', {
       configurable: true,
       value: 'darwin',
@@ -163,20 +165,22 @@ describe('SEA package verification', () => {
       expect(fixture.spawn).toHaveBeenLastCalledWith(
         'lldb',
         [
+          '--no-lldbinit',
           '-b',
           '-o',
           'run',
-          '-o',
+          '-k',
           'bt all',
           '-o',
           'quit',
           '--',
-          seaBinaryPath(SEA_TARGETS[0]!),
+          seaBinaryPath(target),
           '--version',
         ],
         expect.objectContaining({ timeout: 10_000, throws: false }),
       )
     } finally {
+      process.argv.pop()
       Object.defineProperty(process, 'platform', {
         configurable: true,
         value: platform,
