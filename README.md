@@ -42,7 +42,7 @@ package manager through [Socket Firewall](https://docs.socket.dev), which
 blocks known-malicious packages before they are installed. Install-time
 protection is no longer npm-only.
 
-See [the Socket docs](https://docs.socket.dev) for the full command reference.
+See the [organization dependency inventory guide](docs/organization-dependencies.md) for listing dependencies already known to your organization.
 
 ### MCP connections
 
