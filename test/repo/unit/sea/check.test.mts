@@ -13,7 +13,10 @@ vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: fixture.spawn,
 }))
 
-import { main } from '../../../../scripts/repo/build/sea/check.mts'
+import {
+  formatNativeSmokeOutput,
+  main,
+} from '../../../../scripts/repo/build/sea/check.mts'
 import {
   SEA_ENTRYPOINT_PATHS,
   SEA_PAYLOAD_PATH,
@@ -63,7 +66,7 @@ describe('SEA package verification', () => {
       expect(fixture.spawn).toHaveBeenCalledWith(
         seaBinaryPath(target),
         ['--version'],
-        expect.objectContaining({ timeout: 60_000 }),
+        expect.objectContaining({ throws: false, timeout: 60_000 }),
       )
     } finally {
       process.argv.pop()
@@ -110,5 +113,36 @@ describe('SEA package verification', () => {
       stderr: 'example failure',
     })
     await expect(main()).rejects.toThrow()
+  })
+
+  it('rejects a terminated executable before running more commands', async () => {
+    fixture.spawn.mockResolvedValue({
+      code: null,
+      signal: 'SIGSEGV',
+      stdout: '',
+      stderr: '',
+    })
+    await expect(main()).rejects.toThrow(Error)
+    expect(fixture.spawn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('native smoke output', () => {
+  it('omits empty output', () => {
+    expect(formatNativeSmokeOutput('stdout', ' \n')).toBe('')
+  })
+
+  it('redacts credentials in captured output', () => {
+    const credential = `npm_${'SYNTHETIC00000000000000'}`
+    expect(formatNativeSmokeOutput('stderr', Buffer.from(credential))).toBe(
+      '\nstderr:\n[redacted]',
+    )
+  })
+
+  it('retains a bounded output tail', () => {
+    const output = `${'x'.repeat(5000)}last line`
+    const formatted = formatNativeSmokeOutput('stdout', output)
+    expect(formatted.endsWith(output.slice(-4000))).toBe(true)
+    expect(formatted.length).toBeLessThan(4100)
   })
 })

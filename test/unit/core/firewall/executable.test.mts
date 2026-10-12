@@ -117,7 +117,16 @@ describe('firewall executable resolution', () => {
     await fixtureFile(path.join(trusted, 'node.exe'))
     await fixtureFile(
       path.join(trusted, 'npm.cmd'),
-      '@node "%dp0%\\node_modules\\npm\\bin\\npm-cli.js" %*',
+      [
+        '@ECHO OFF',
+        'SETLOCAL',
+        'SET "NODE_EXE=%~dp0\\node.exe"',
+        'IF NOT EXIST "%NODE_EXE%" (',
+        '  SET "NODE_EXE=node"',
+        ')',
+        'SET "NPM_CLI_JS=%~dp0\\node_modules\\npm\\bin\\npm-cli.js"',
+        '"%NODE_EXE%" "%NPM_CLI_JS%" %*',
+      ].join('\n'),
     )
     expect(
       await resolveWindowsFirewallPackageManager('npm', {
@@ -130,6 +139,70 @@ describe('firewall executable resolution', () => {
       searchPath: trusted,
     })
   })
+  it.each([
+    ['npm', 'npm-cli.js'],
+    ['npx', 'npx-cli.js'],
+  ] as const)(
+    'resolves current Windows %s.cmd with %~dp0 in %s paths',
+    async (command, entryName) => {
+      const entry = path.join(trusted, 'node_modules', 'npm', 'bin', entryName)
+      await fixtureFile(entry, 'process.exit(0)')
+      await fixtureFile(path.join(trusted, 'node.exe'))
+      await fixtureFile(
+        path.join(trusted, `${command}.cmd`),
+        [
+          '@ECHO OFF',
+          'SETLOCAL',
+          'SET "NODE_EXE=%~dp0\\node.exe"',
+          'IF NOT EXIST "%NODE_EXE%" (',
+          '  SET "NODE_EXE=node"',
+          ')',
+          `SET "NPM_CLI_JS=%~dp0\\node_modules\\npm\\bin\\${entryName}"`,
+          '"%NODE_EXE%" "%NPM_CLI_JS%" %*',
+        ].join('\n'),
+      )
+      expect(
+        await resolveFirewallExecutable(command, {
+          cwd: checkout,
+          env: { PATH: trusted },
+          windows: true,
+        }),
+      ).toEqual({
+        executable: path.join(trusted, 'node.exe'),
+        prefixArgs: [entry],
+        searchPath: trusted,
+      })
+    },
+  )
+  it.each([
+    ['%dp0%', '\\', 'npm'],
+    ['%dp0%', '/', 'npx'],
+    ['%~dp0', '\\', 'npm'],
+    ['%~dp0', '/', 'npx'],
+  ] as const)(
+    'recognizes the expected Windows %s%s package-manager entry',
+    async (directoryToken, separator, command) => {
+      const entryName = command === 'npm' ? 'npm-cli.js' : 'npx-cli.js'
+      const entry = path.join(trusted, 'node_modules', 'npm', 'bin', entryName)
+      await fixtureFile(entry, 'process.exit(0)')
+      await fixtureFile(path.join(trusted, 'node.exe'))
+      await fixtureFile(
+        path.join(trusted, `${command}.cmd`),
+        `SET "NPM_CLI_JS=${directoryToken}${separator}node_modules${separator}npm${separator}bin${separator}${entryName}"`,
+      )
+      expect(
+        await resolveFirewallExecutable(command, {
+          cwd: checkout,
+          env: { PATH: trusted },
+          windows: true,
+        }),
+      ).toEqual({
+        executable: path.join(trusted, 'node.exe'),
+        prefixArgs: [entry],
+        searchPath: trusted,
+      })
+    },
+  )
   it('rejects a Windows package entry that links into the checkout', async () => {
     await fixtureFile(path.join(trusted, 'node.exe'))
     await fixtureFile(path.join(checkout, 'npm-cli.js'), 'process.exit(0)')

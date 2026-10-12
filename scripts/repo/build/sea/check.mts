@@ -4,6 +4,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../../../fleet/process/is-main-module.mts'
 import { runMain } from '../../../fleet/process/main/run.mts'
+import { redactSecretsFromText } from '../../../../src/util/redact-secrets-from-text.mts'
 import {
   SEA_ENTRYPOINT_PATHS,
   SEA_PAYLOAD_PATH,
@@ -13,6 +14,22 @@ import {
 import { resolveSeaTarget, SEA_TARGETS } from './targets.mts'
 
 const logger = getDefaultLogger()
+const MAX_SMOKE_OUTPUT_CHARS = 4000
+
+export function formatNativeSmokeOutput(
+  label: string,
+  value: string | Buffer,
+): string {
+  const output = redactSecretsFromText(value.toString()).trim()
+  if (!output) {
+    return ''
+  }
+  const excerpt =
+    output.length > MAX_SMOKE_OUTPUT_CHARS
+      ? `[${output.length - MAX_SMOKE_OUTPUT_CHARS} characters omitted]\n${output.slice(-MAX_SMOKE_OUTPUT_CHARS)}`
+      : output
+  return `\n${label}:\n${excerpt}`
+}
 
 export async function main(): Promise<void> {
   const receipt = JSON.parse(await readFile(SEA_RECEIPT_PATH, 'utf8')) as {
@@ -81,11 +98,15 @@ export async function main(): Promise<void> {
   for (const args of [['--version'], ['--help'], ['npm', '--version']]) {
     const result = await spawn(seaBinaryPath(executionTarget), args, {
       stdio: 'pipe',
+      throws: false,
       timeout: 60_000,
     })
     if (result.code !== 0 || !result.stdout.toString().trim()) {
       throw new Error(
-        `Native binary smoke test failed for ${args.join(' ')}: ${result.stderr}. Rebuild the executable.`,
+        `Native binary smoke test failed for ${executionTarget} ${args.join(' ')} (exit ${result.code}, signal ${result.signal ?? 'none'}).` +
+          formatNativeSmokeOutput('stdout', result.stdout) +
+          formatNativeSmokeOutput('stderr', result.stderr) +
+          '\nRebuild the executable.',
       )
     }
   }

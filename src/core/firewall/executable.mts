@@ -46,10 +46,13 @@ export async function readWindowsFirewallShim(
       ...PACKAGE_MANAGER_ENTRIES[command]!,
     )
     const posixExpected = expected.split(path.sep).join('/')
-    if (
-      !content.includes(`%dp0%\\${windowsExpected}`) &&
-      !content.includes(`%dp0%/${posixExpected}`)
-    ) {
+    const expectedEntries = [
+      `%dp0%\\${windowsExpected}`,
+      `%dp0%/${posixExpected}`,
+      `%~dp0\\${windowsExpected}`,
+      `%~dp0/${posixExpected}`,
+    ]
+    if (!expectedEntries.some(entry => content.includes(entry))) {
       return undefined
     }
     const entry = await canonicalizePath(
