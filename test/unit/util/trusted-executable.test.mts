@@ -35,6 +35,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import {
   defaultProtectedRoot,
+  getTrustedExecutableLookups,
   isPathWithinRoot,
   listExecutableProbes,
   resolveTrustedExecutable,
@@ -263,6 +264,23 @@ describe('trusted-executable', () => {
 
       expect(result).toEqual({ environment: { PATH: '' }, executable: tool })
     })
+
+    it.each(['./scanner', '.\\scanner', 'tools\\scanner'])(
+      'treats %s as a literal path candidate',
+      candidate => {
+        expect(
+          getTrustedExecutableLookups(candidate, ['/bin'], {
+            windows: false,
+          }),
+        ).toEqual([
+          {
+            entry: undefined,
+            runnable: true,
+            target: path.resolve(candidate),
+          },
+        ])
+      },
+    )
 
     it('rejects a literal path candidate inside the protected root', async () => {
       const root = makeTempDir()

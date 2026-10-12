@@ -121,8 +121,8 @@ export function getTrustedExecutableLookups(
 ): Array<{ entry: string | undefined; runnable: boolean; target: string }> {
   const { windows = isWin32() } = { __proto__: null, ...options }
   const probes = listExecutableProbes(candidate, { windows })
-  // A candidate carrying a separator is a literal path, not a PATH lookup, so
-  // it is never attributed to a PATH entry.
+  // Keep lexical command syntax intact before deciding whether PATH applies.
+  // oxlint-disable-next-line socket/paths-are-normalized-before-match-at-edit -- command syntax
   const isPathLike = candidate.includes('/') || candidate.includes('\\')
   const lookups: Array<{
     entry: string | undefined

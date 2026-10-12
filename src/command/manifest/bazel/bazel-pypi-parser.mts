@@ -314,6 +314,8 @@ export function resolveRequirementsLockPath(
   //   //:requirements_lock.txt
   //   //subdir:requirements_lock.txt
   //   :requirements_lock.txt
+  // Bazel labels define `//` as grammar, not a filesystem separator.
+  // oxlint-disable-next-line socket/paths-are-normalized-before-match-at-edit -- Bazel label
   if (label.startsWith('//')) {
     const colon = label.indexOf(':')
     if (colon < 0) {

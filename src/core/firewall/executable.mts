@@ -93,6 +93,8 @@ export async function resolveFirewallExecutable(
   const trusted = await resolveTrustedExecutable(command, env, root, {
     windows,
   })
+  // Keep lexical command syntax intact before deciding whether PATH applies.
+  // oxlint-disable-next-line socket/paths-are-normalized-before-match-at-edit -- command syntax
   const explicit = command.includes('/') || command.includes('\\')
   if (trusted && !explicit) {
     return {
