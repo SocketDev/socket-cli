@@ -33,12 +33,12 @@ vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   spawnDlx: mockSpawnDlx,
 }))
 
-vi.mock(import('../../../../src/util/dlx/resolve-binary.mts'), () => ({
+vi.mock(import('../../../../src/util/dlx/binary-resolution.mts'), () => ({
   resolveCoana: mockResolveCoana,
 }))
 
 vi.mock(
-  import('../../../../src/command/ci/fetch-default-org-slug.mts'),
+  import('../../../../src/command/ci/organization-slug-data.mts'),
   () => ({
     getDefaultOrgSlug: mockGetDefaultOrgSlug,
   }),

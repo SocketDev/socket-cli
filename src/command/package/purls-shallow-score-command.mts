@@ -1,0 +1,33 @@
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+
+import { fetchPurlsShallowScore } from './purls-shallow-score-data.mts'
+import { outputPurlsShallowScore } from './output-purls-shallow-score.mts'
+
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
+
+export async function handlePurlsShallowScore({
+  outputKind,
+  purls,
+}: {
+  outputKind: OutputKind
+  purls: string[]
+}) {
+  debug(`Fetching shallow scores for ${purls.length} packages`)
+  debugDir({ purls, outputKind })
+
+  const packageData = await fetchPurlsShallowScore(purls, {
+    commandPath: 'socket package shallow',
+  })
+
+  debug(
+    `Shallow scores ${packageData.ok ? 'fetched successfully' : 'fetch failed'}`,
+  )
+  debugDir({ packageData })
+
+  outputPurlsShallowScore(
+    purls,
+    packageData as CResult<SocketArtifact[]>,
+    outputKind,
+  )
+}

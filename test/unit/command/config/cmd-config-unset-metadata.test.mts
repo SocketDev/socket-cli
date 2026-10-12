@@ -11,7 +11,7 @@
  * Related Files:
  *
  * - Src/commands/config/cmd-config-unset.mts - Implementation
- * - Src/commands/config/handle-config-unset.mts - Handler
+ * - Src/commands/config/config-unset-command.mts - Handler
  * - Src/commands/config/config-command-factory.mts - Factory
  */
 

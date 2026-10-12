@@ -29,7 +29,7 @@ const mockHandleUninstallCompletion = vi.hoisted(() =>
 const mockOutputDryRunDelete = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/uninstall/handle-uninstall-completion.mts'),
+  import('../../../../src/command/uninstall/completion-uninstall-command.mts'),
   () => ({
     handleUninstallCompletion: mockHandleUninstallCompletion,
   }),

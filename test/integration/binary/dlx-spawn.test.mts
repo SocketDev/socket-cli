@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import { ENV } from '../../../src/constants/env.mts'
 import { spawnDlx } from '../../../src/util/dlx/spawn.mts'
-import { findUp } from '../../../src/util/fs/find-up.mts'
+import { findUp } from '../../../src/util/fs/parent-search.mts'
 import { getDefaultApiToken } from '../../../src/util/socket/sdk.mts'
 
 describe('dlx e2e tests', () => {
@@ -172,7 +172,7 @@ describe('dlx e2e tests', () => {
       async () => {
         const { spawnCoana } = await import('../../../src/util/dlx/spawn.mts')
         const { resolveCoana } =
-          await import('../../../src/util/dlx/resolve-binary.mts')
+          await import('../../../src/util/dlx/binary-resolution.mts')
 
         // Verify the resolution includes correct binary name.
         const resolution = resolveCoana()

@@ -6,7 +6,7 @@ import {
   select,
 } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import { applyLogin } from './apply-login.mts'
+import { applyLogin } from './login-application.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -23,8 +23,8 @@ import { getEnterpriseOrgs, getOrgSlugs } from '../../util/organization.mts'
 import { setupSdk } from '../../util/socket/sdk.mjs'
 import { socketDocsLink } from '../../util/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
-import { fetchOrganization } from '../organization/fetch-organization-list.mts'
-import { classifyLoginTokenInput } from './validate-api-token-input.mts'
+import { fetchOrganization } from '../organization/organization-list-data.mts'
+import { classifyLoginTokenInput } from './api-token-input-validation.mts'
 
 import type { Choice } from '@socketsecurity/lib-stable/stdio/prompts'
 const logger = getDefaultLogger()

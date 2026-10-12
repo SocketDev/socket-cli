@@ -6,7 +6,7 @@
  * exercise the loop body we use `vi.resetModules()` + `vi.doMock()` per test to
  * control what `getManifestData` returns at module-load time.
  *
- * Related Files: - src/core/optimize/add-overrides.mts (implementation)
+ * Related Files: - src/core/optimize/overrides-addition.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -69,13 +69,13 @@ async function loadAddOverrides(opts: {
     isReportSupportedFile: vi.fn(),
   }))
   vi.doMock(
-    import('../../../../src/core/optimize/get-dependency-entries.mts'),
+    import('../../../../src/core/optimize/dependency-entries-lookup.mts'),
     () => ({
       getDependencyEntries: opts.getDependencyEntries ?? vi.fn(() => []),
     }),
   )
   vi.doMock(
-    import('../../../../src/core/optimize/get-overrides-by-agent.mts'),
+    import('../../../../src/core/optimize/agent-overrides-lookup.mts'),
     () => ({
       getOverridesData:
         opts.getOverridesData ?? vi.fn(() => ({ overrides: {}, type: 'npm' })),
@@ -103,7 +103,7 @@ async function loadAddOverrides(opts: {
     listPackages: opts.listPackages ?? vi.fn(async () => ''),
   }))
   vi.doMock(
-    import('../../../../src/core/optimize/update-manifest-by-agent.mts'),
+    import('../../../../src/core/optimize/agent-manifest-update.mts'),
     () => ({
       updateManifest: vi.fn(),
     }),
@@ -130,7 +130,7 @@ async function loadAddOverrides(opts: {
     )
   }
 
-  const mod = await import('../../../../src/core/optimize/add-overrides.mts')
+  const mod = await import('../../../../src/core/optimize/overrides-addition.mts')
   return mod.addOverrides
 }
 

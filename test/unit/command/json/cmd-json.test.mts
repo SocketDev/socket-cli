@@ -16,7 +16,7 @@ import { cmdJson } from '../../../../src/command/json/cmd-json.mts'
 // Mock dependencies.
 const mockHandleCmdJson = vi.hoisted(() => vi.fn())
 
-vi.mock(import('../../../../src/command/json/handle-cmd-json.mts'), () => ({
+vi.mock(import('../../../../src/command/json/cmd-json-command.mts'), () => ({
   handleCmdJson: mockHandleCmdJson,
 }))
 

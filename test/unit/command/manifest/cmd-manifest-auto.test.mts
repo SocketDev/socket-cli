@@ -39,7 +39,7 @@ const mockReadOrDefaultSocketJson = vi.hoisted(() =>
 )
 
 vi.mock(
-  import('../../../../src/command/manifest/detect-manifest-actions.mts'),
+  import('../../../../src/command/manifest/manifest-actions-detection.mts'),
   () => ({
     detectManifestActions: mockDetectManifestActions,
   }),

@@ -4,7 +4,7 @@
  * Covers isStricterPolicy strictness ladder: error > warn > monitor > ignore >
  * defer > {unknown}.
  *
- * Related Files: - src/command/scan/generate-report.mts.
+ * Related Files: - src/command/scan/report-generation.mts.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -16,7 +16,7 @@ import {
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
 } from '../../../../src/constants/reporting.mts'
-import { isStricterPolicy } from '../../../../src/command/scan/generate-report.mts'
+import { isStricterPolicy } from '../../../../src/command/scan/report-generation.mts'
 
 describe('isStricterPolicy', () => {
   it('error is the most strict — never overridden', () => {

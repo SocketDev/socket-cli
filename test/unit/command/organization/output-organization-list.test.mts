@@ -12,7 +12,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { outputOrganizationList } from '../../../../src/command/organization/output-organization-list.mts'
-import type { OrganizationsCResult } from '../../../../src/command/organization/fetch-organization-list.mts'
+import type { OrganizationsCResult } from '../../../../src/command/organization/organization-list-data.mts'
 
 // Mock yoctocolors.
 vi.mock(import('yoctocolors-cjs'), () => ({

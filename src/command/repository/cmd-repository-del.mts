@@ -1,4 +1,4 @@
-import { handleDeleteRepo } from './handle-delete-repo.mts'
+import { handleDeleteRepo } from './repo-deletion-command.mts'
 import { createRepositoryCommand } from './repository-command-factory.mts'
 
 export const CMD_NAME = 'del'

@@ -2,7 +2,7 @@ import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { downloadGitHubReleaseBinary } from '../../util/dlx/spawn.mts'
-import { resolveSocketPatch } from '../../util/dlx/resolve-binary.mjs'
+import { resolveSocketPatch } from '../../util/dlx/binary-resolution.mjs'
 import { resolveNodeRuntime } from '../../util/spawn/node-runtime.mts'
 
 import type { DlxOptions, DlxSpawnResult } from '../../util/dlx/spawn.mts'

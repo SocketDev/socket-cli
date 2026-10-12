@@ -10,7 +10,7 @@
  * Security Features: - Pre-installation security scanning via Socket Firewall.
  *
  * Related Files: - src/command/nuget/cmd-nuget.mts - nuget command
- * implementation - src/util/dlx/resolve-binary.mts - sfw resolution.
+ * implementation - src/util/dlx/binary-resolution.mts - sfw resolution.
  */
 
 import { describe, expect } from 'vitest'

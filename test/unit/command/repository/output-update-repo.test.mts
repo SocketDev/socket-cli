@@ -12,7 +12,7 @@
  * formatted output strings showing what changed during updates.
  *
  * Related Files: - src/command/repository/output-update-repo.mts
- * (implementation) - src/command/repository/handle-update-repo.mts (handler)
+ * (implementation) - src/command/repository/repo-update-command.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

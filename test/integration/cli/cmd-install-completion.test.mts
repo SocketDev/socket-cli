@@ -19,7 +19,7 @@
  * Related Files:
  *
  * - Src/commands/install/cmd-install-completion.mts - Command definition
- * - Src/commands/install/handle-install-completion.mts - Installation logic
+ * - Src/commands/install/completion-install-command.mts - Installation logic
  */
 
 import { describe, expect } from 'vitest'

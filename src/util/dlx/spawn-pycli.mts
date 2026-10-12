@@ -1,7 +1,7 @@
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
-import { resolvePyCli } from './resolve-binary.mjs'
+import { resolvePyCli } from './binary-resolution.mjs'
 
 import { ensureSocketPyCli } from './spawn-pycli-install.mts'
 import { ensurePython } from './spawn-pycli-python.mts'

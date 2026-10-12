@@ -16,7 +16,7 @@
  * - Test argument combinations and defaults.
  *
  * Related Files: - src/command/analytics/cmd-analytics.mts - Implementation -
- * src/command/analytics/handle-analytics.mts - Handler.
+ * src/command/analytics/analytics-command.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -52,7 +52,7 @@ const mockHandleAnalytics = vi.hoisted(() => vi.fn())
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
 
 vi.mock(
-  import('../../../../src/command/analytics/handle-analytics.mts'),
+  import('../../../../src/command/analytics/analytics-command.mts'),
   () => ({
     handleAnalytics: mockHandleAnalytics,
   }),

@@ -16,8 +16,8 @@
  * verify output content and exit code behavior.
  *
  * Related Files: - src/command/organization/output-license-policy.mts - Output
- * formatter - src/command/organization/handle-license-policy.mts - Command
- * handler - src/command/organization/fetch-license-policy.mts - License policy
+ * formatter - src/command/organization/license-policy-command.mts - Command
+ * handler - src/command/organization/license-policy-data.mts - License policy
  * fetcher.
  */
 

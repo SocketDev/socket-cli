@@ -13,7 +13,7 @@
  * Malware detection integration.
  *
  * Related Files: - src/command/uv/cmd-uv.mts - uv command implementation -
- * src/util/dlx/resolve-binary.mjs - sfw resolution -
+ * src/util/dlx/binary-resolution.mjs - sfw resolution -
  * test/integration/cli/cmd-uv-malware.test.mts - Malware tests.
  */
 

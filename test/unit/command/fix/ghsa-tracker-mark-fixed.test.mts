@@ -11,7 +11,7 @@
  * tracker operations without actual file I/O.
  *
  * Related Files: - src/command/fix/ghsa-tracker.mts - GHSA tracker persistence
- * module - src/command/fix/handle-fix.mts - Main fix command using tracker -
+ * module - src/command/fix/fix-command.mts - Main fix command using tracker -
  * src/command/fix/pull-request.mts - PR creation using tracker data.
  */
 

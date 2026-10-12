@@ -12,7 +12,7 @@
  * formatted output strings for destructive operations.
  *
  * Related Files: - src/command/repository/output-delete-repo.mts
- * (implementation) - src/command/repository/handle-delete-repo.mts (handler)
+ * (implementation) - src/command/repository/repo-deletion-command.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

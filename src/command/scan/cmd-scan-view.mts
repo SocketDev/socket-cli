@@ -1,4 +1,4 @@
-import { handleScanView } from './handle-scan-view.mts'
+import { handleScanView } from './scan-view-command.mts'
 import { streamScan } from './stream-scan.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
@@ -12,7 +12,7 @@ import {
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type {
   CliCommandContext,

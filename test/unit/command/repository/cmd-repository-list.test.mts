@@ -40,7 +40,7 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
 vi.mock(
-  import('../../../../src/command/repository/handle-list-repos.mts'),
+  import('../../../../src/command/repository/repositories-list-command.mts'),
   () => ({
     handleListRepos: mockHandleListRepos,
   }),

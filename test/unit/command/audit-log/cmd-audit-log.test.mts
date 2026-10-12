@@ -14,7 +14,7 @@
  * and defaults.
  *
  * Related Files: - src/command/audit-log/cmd-audit-log.mts - Implementation -
- * src/command/audit-log/handle-audit-log.mts - Handler.
+ * src/command/audit-log/audit-log-command.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -53,7 +53,7 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
 
 vi.mock(
-  import('../../../../src/command/audit-log/handle-audit-log.mts'),
+  import('../../../../src/command/audit-log/audit-log-command.mts'),
   () => ({
     handleAuditLog: mockHandleAuditLog,
   }),

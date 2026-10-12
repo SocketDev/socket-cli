@@ -4,7 +4,7 @@
  * Covers non-existent paths, missing/empty API tokens, conflicting output
  * flags, unknown flags, help precedence, and version reporting.
  *
- * Related Files: - src/command/optimize/handle-optimize.mts - Main command
+ * Related Files: - src/command/optimize/optimize-command.mts - Main command
  * handler - test/integration/cli/cmd-optimize.test.mts - Core command
  * integration tests.
  */

@@ -47,7 +47,7 @@ const mockReadOrDefaultSocketJson = vi.hoisted(() =>
 )
 
 vi.mock(
-  import('../../../../src/command/manifest/convert-sbt-to-maven.mts'),
+  import('../../../../src/command/manifest/sbt-to-maven-conversion.mts'),
   () => ({
     convertSbtToMaven: mockConvertSbtToMaven,
   }),
@@ -58,7 +58,7 @@ vi.mock(import('../../../../src/command/manifest/output-manifest.mts'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/manifest/convert-sbt-to-facts.mts'),
+  import('../../../../src/command/manifest/sbt-to-facts-conversion.mts'),
   () => ({
     convertSbtToFacts: mockConvertToFacts,
   }),

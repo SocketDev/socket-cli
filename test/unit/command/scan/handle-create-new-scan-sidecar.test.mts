@@ -92,7 +92,7 @@ vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
     successAndStop: mockSuccessAndStop,
   }),
 }))
-vi.mock(import('../../../../src/util/validation/check-input.mts'), () => ({
+vi.mock(import('../../../../src/util/validation/input-check.mts'), () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
 vi.mock(import('../../../../src/util/fs/path-resolve.mts'), () => ({
@@ -105,7 +105,7 @@ vi.mock(import('../../../../src/util/terminal/link.mts'), () => ({
   socketDocsLink: mockSocketDocsLink,
 }))
 vi.mock(
-  import('../../../../src/command/manifest/detect-manifest-actions.mts'),
+  import('../../../../src/command/manifest/manifest-actions-detection.mts'),
   () => ({
     detectManifestActions: mockDetectManifestActions,
   }),

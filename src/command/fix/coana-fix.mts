@@ -12,7 +12,7 @@ import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'
 import { handleApiCall } from '../../util/socket/api.mjs'
 import { setupSdk } from '../../util/socket/sdk.mjs'
 import { excludePathToProjectIgnorePath } from '../scan/exclude-paths.mts'
-import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
+import { fetchSupportedScanFileNames } from '../scan/supported-scan-file-names-data.mts'
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'

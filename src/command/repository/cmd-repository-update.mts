@@ -1,4 +1,4 @@
-import { handleUpdateRepo } from './handle-update-repo.mts'
+import { handleUpdateRepo } from './repo-update-command.mts'
 import { createRepositoryCommand } from './repository-command-factory.mts'
 import { stringFlagValue } from '../../flags.mts'
 

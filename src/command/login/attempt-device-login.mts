@@ -13,7 +13,7 @@ import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { isUrl } from '@socketsecurity/lib-stable/url/predicates'
 
-import { applyLogin } from './apply-login.mts'
+import { applyLogin } from './login-application.mts'
 import { createDeviceAuthorizationRequest } from './device-authorization-request.mts'
 import {
   API_V1_OAUTH_URL,
@@ -26,7 +26,7 @@ import { getSocketCliOauthClientIdOverride } from '../../env/socket-cli-oauth-cl
 import { getEnterpriseOrgs, getOrgSlugs } from '../../util/organization.mts'
 import { getDefaultProxyUrl, setupSdk } from '../../util/socket/sdk.mts'
 import { assertSafeEndpointUrl } from '../../util/url/safe-endpoint.mts'
-import { fetchOrganization } from '../organization/fetch-organization-list.mts'
+import { fetchOrganization } from '../organization/organization-list-data.mts'
 
 import type {
   SocketOAuthCredentialOptions,

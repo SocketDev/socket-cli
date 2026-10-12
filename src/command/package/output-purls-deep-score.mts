@@ -4,7 +4,7 @@ import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 
-import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
+import type { PurlDataResponse } from './purl-deep-score-data.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 

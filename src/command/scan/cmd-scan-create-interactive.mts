@@ -8,7 +8,7 @@ import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { SOCKET_JSON } from '../../constants.mts'
-import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
+import { detectManifestActions } from '../manifest/manifest-actions-detection.mts'
 
 import type { SocketJson } from '../../util/socket/json.mts'
 import type { OutputKind } from '../../types.mjs'

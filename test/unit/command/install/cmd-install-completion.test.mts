@@ -33,7 +33,7 @@ const mockHandleInstallCompletion = vi.hoisted(() =>
 const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/install/handle-install-completion.mts'),
+  import('../../../../src/command/install/completion-install-command.mts'),
   () => ({
     handleInstallCompletion: mockHandleInstallCompletion,
   }),

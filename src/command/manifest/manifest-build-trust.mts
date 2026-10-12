@@ -17,7 +17,7 @@
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 
-import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { parseBuildToolOpts } from './tool-options-parser.mts'
 import { FLAG_JSON } from '../../constants/cli.mjs'
 import { ENVIRONMENT_YML, REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'

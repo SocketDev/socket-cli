@@ -19,8 +19,8 @@
  * verify output content and exit code behavior.
  *
  * Related Files: - src/command/organization/output-security-policy.mts -
- * Output formatter - src/command/organization/handle-security-policy.mts -
- * Command handler - src/command/organization/fetch-security-policy.mts -
+ * Output formatter - src/command/organization/security-policy-command.mts -
+ * Command handler - src/command/organization/security-policy-data.mts -
  * Security policy fetcher.
  */
 

@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { handleDoctor } from './handle-doctor.mts'
+import { handleDoctor } from './doctor-command.mts'
 import { CMD_NAME as CMD_NAME_FULL } from './shared.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

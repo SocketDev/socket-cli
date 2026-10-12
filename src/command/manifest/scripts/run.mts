@@ -6,11 +6,11 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { assembleFacts } from './assemble.mts'
-import { resolveBuildToolBin } from './build-tool.mts'
+import { resolveBuildToolBin } from './tool-builder.mts'
 import { parseRecords } from './records.mts'
 import { distPath } from '../../../constants/paths.mts'
 
-import type { BuildTool } from './build-tool.mts'
+import type { BuildTool } from './tool-builder.mts'
 import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'

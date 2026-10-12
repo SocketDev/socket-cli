@@ -1,5 +1,5 @@
-import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
-import { handleCi } from './handle-ci.mts'
+import { getDefaultOrgSlug } from './organization-slug-data.mts'
+import { handleCi } from './ci-command.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

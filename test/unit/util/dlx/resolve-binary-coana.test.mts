@@ -4,7 +4,7 @@
  * Purpose: Tests the resolveCoana function's local-path override and dlx
  * fallback behavior.
  *
- * Related Files: - src/util/dlx/resolve-binary.mts (implementation)
+ * Related Files: - src/util/dlx/binary-resolution.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -35,7 +35,7 @@ describe('binary resolution utilities', () => {
   describe('resolveCoana', () => {
     it('returns dlx spec when no local path is set', async () => {
       const { resolveCoana } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
+        await import('../../../../src/util/dlx/binary-resolution.mts')
 
       const result = resolveCoana()
 
@@ -53,7 +53,7 @@ describe('binary resolution utilities', () => {
       mockCoanaLocalPath.SOCKET_CLI_COANA_LOCAL_PATH = '/custom/path/coana'
 
       const { resolveCoana } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
+        await import('../../../../src/util/dlx/binary-resolution.mts')
 
       const result = resolveCoana()
 

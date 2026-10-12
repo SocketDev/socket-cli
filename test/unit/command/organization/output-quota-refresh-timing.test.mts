@@ -9,8 +9,8 @@
  * the logger. Tests verify output content for the rendered refresh duration.
  *
  * Related Files: - src/command/organization/output-quota.mts - Output
- * formatter - src/command/organization/handle-quota.mts - Command handler -
- * src/command/organization/fetch-quota.mts - Quota fetcher.
+ * formatter - src/command/organization/quota-command.mts - Command handler -
+ * src/command/organization/quota-data.mts - Quota fetcher.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -40,12 +40,12 @@ const mockGetDefaultOrgSlug = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ ok: true, data: 'test-org' }),
 )
 
-vi.mock(import('../../../../src/command/fix/handle-fix.mts'), () => ({
+vi.mock(import('../../../../src/command/fix/fix-command.mts'), () => ({
   handleFix: mockHandleFix,
 }))
 
 vi.mock(
-  import('../../../../src/command/ci/fetch-default-org-slug.mts'),
+  import('../../../../src/command/ci/organization-slug-data.mts'),
   () => ({
     getDefaultOrgSlug: mockGetDefaultOrgSlug,
   }),
@@ -62,7 +62,7 @@ describe('cmd-fix', () => {
     const context = { parentName: 'socket' }
 
     describe('misplaced vulnerability identifier detection', () => {
-      // The case matrix handle-fix.mts actually validates downstream:
+      // The case matrix fix-command.mts actually validates downstream:
       //   GHSA: /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/
       //   CVE:  /^CVE-\d{4}-\d{4,}$/
       // Suggestion must be exactly the form that passes those regexes,

@@ -1,6 +1,6 @@
 import { commonFlags } from '../../flags.mjs'
-import { runPatchList } from './handle-list.mts'
-import { runPatchRemove } from './handle-remove.mts'
+import { runPatchList } from './patch-list-command.mts'
+import { runPatchRemove } from './patch-removal-command.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import { spawnSocketPatch } from '../../core/patch/spawn.mts'
 import { outputDryRunExecute } from '../../util/dry-run/output.mjs'

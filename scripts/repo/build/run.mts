@@ -170,8 +170,10 @@ export function createCliBundleBuildArgs(args: readonly string[]): {
 }
 
 export async function main(
-  args: readonly string[] = process.argv.slice(2),
+  options: { args?: readonly string[] | undefined } = {},
 ): Promise<void> {
+  const config = { __proto__: null, ...options }
+  const { args = process.argv.slice(2) } = config
   const { childArgs } = createCliBundleBuildArgs(args)
   const quiet = args.includes('--quiet')
   const verbose = args.includes('--verbose')
@@ -212,10 +214,11 @@ export async function main(
 
 const SCRIPT_META: ScriptMeta = {
   describe: 'build the Socket CLI distribution and bundled assets',
+  heavyJob: 'build',
   help: 'Usage: pnpm run build:cli [--quiet] [--verbose] [--force] [--watch] [--mode development|production]',
   json: 'native',
 }
 
 if (isMainModule(import.meta.url)) {
-  runMain(main, SCRIPT_META)
+  runMain(() => main(), SCRIPT_META)
 }

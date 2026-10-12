@@ -18,7 +18,7 @@
  * Related Files:
  *
  * - Src/commands/config/cmd-config-unset.mts - Implementation
- * - Src/commands/config/handle-config-unset.mts - Handler
+ * - Src/commands/config/config-unset-command.mts - Handler
  * - Src/commands/config/config-command-factory.mts - Factory
  */
 
@@ -33,7 +33,7 @@ import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subco
 const mockHandleConfigUnset = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/config/handle-config-unset.mts'),
+  import('../../../../src/command/config/config-unset-command.mts'),
   () => ({
     handleConfigUnset: mockHandleConfigUnset,
   }),
@@ -69,7 +69,7 @@ vi.mock(import('../../../../src/util/output/mode.mjs'), () => ({
 // Mock validation utilities.
 const mockCheckCommandInput = vi.hoisted(() => vi.fn(() => true))
 
-vi.mock(import('../../../../src/util/validation/check-input.mts'), () => ({
+vi.mock(import('../../../../src/util/validation/input-check.mts'), () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
 

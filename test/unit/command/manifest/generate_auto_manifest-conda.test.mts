@@ -32,19 +32,19 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/manifest/convert-sbt-to-maven.mts'),
+  import('../../../../src/command/manifest/sbt-to-maven-conversion.mts'),
   () => ({
     convertSbtToMaven: mockConvertSbtToMaven,
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/convert-gradle-to-maven.mts'),
+  import('../../../../src/command/manifest/gradle-to-maven-conversion.mts'),
   () => ({
     convertGradleToMaven: mockConvertGradleToMaven,
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/handle-manifest-conda.mts'),
+  import('../../../../src/command/manifest/manifest-conda-command.mts'),
   () => ({
     handleManifestConda: mockHandleManifestConda,
   }),

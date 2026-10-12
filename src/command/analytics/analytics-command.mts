@@ -1,0 +1,56 @@
+import { fetchOrgAnalyticsData } from './org-analytics-data.mts'
+import { fetchRepoAnalyticsData } from './repo-analytics-data.mts'
+import { outputAnalytics } from './output-analytics.mts'
+
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+
+export type HandleAnalyticsConfig = {
+  filepath: string
+  outputKind: OutputKind
+  repo: string
+  scope: string
+  time: number
+}
+
+export async function handleAnalytics({
+  filepath,
+  outputKind,
+  repo,
+  scope,
+  time,
+}: HandleAnalyticsConfig) {
+  let result: CResult<
+    | SocketSdkSuccessResult<'getOrgAnalytics'>['data']
+    | SocketSdkSuccessResult<'getRepoAnalytics'>['data']
+  >
+  if (scope === 'org') {
+    result = await fetchOrgAnalyticsData(time, {
+      commandPath: 'socket analytics',
+    })
+  } else if (repo) {
+    result = await fetchRepoAnalyticsData(repo, time, {
+      commandPath: 'socket analytics',
+    })
+  } else {
+    result = {
+      ok: false,
+      message: 'Missing repository name in command',
+    }
+  }
+  if (result.ok && !result.data.length) {
+    result = {
+      ok: true,
+      message: `The analytics data for this ${scope === 'org' ? 'organization' : 'repository'} is not yet available.`,
+      data: [],
+    }
+  }
+
+  await outputAnalytics(result, {
+    filepath,
+    outputKind,
+    repo,
+    scope,
+    time,
+  })
+}

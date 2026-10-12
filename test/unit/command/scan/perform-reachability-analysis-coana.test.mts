@@ -59,7 +59,7 @@ vi.mock(import('../../../../src/constants/paths.mts'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/organization/fetch-organization-list.mts'),
+  import('../../../../src/command/organization/organization-list-data.mts'),
   () => ({
     fetchOrganization: mockFetchOrganization,
   }),

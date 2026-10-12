@@ -12,7 +12,7 @@
  * formatted output strings for detailed repository views.
  *
  * Related Files: - src/command/repository/output-view-repo.mts
- * (implementation) - src/command/repository/handle-view-repo.mts (handler)
+ * (implementation) - src/command/repository/repo-view-command.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

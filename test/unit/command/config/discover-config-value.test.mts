@@ -16,7 +16,7 @@
  * Related Files: - src/command/config/discover-config-value.mts -
  * Implementation - src/util/config.mts - isSupportedConfigKey (mocked) -
  * src/util/socket/sdk.mts - hasDefaultApiToken (mocked) -
- * src/command/organization/fetch-organization-list.mts - fetchOrganization
+ * src/command/organization/organization-list-data.mts - fetchOrganization
  * (mocked)
  */
 
@@ -43,7 +43,7 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/organization/fetch-organization-list.mts'),
+  import('../../../../src/command/organization/organization-list-data.mts'),
   () => ({
     fetchOrganization: mockFetchOrganization,
   }),

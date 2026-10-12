@@ -45,7 +45,7 @@ vi.mock(import('@socketsecurity/lib-stable/packages/edit'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
 }))
-vi.mock(import('../../../../src/util/fs/find-up.mts'), () => ({
+vi.mock(import('../../../../src/util/fs/parent-search.mts'), () => ({
   findUp: mockFindUp,
 }))
 vi.mock(

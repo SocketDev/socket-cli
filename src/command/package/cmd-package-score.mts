@@ -1,5 +1,5 @@
-import { handlePurlDeepScore } from './handle-purl-deep-score.mts'
-import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
+import { handlePurlDeepScore } from './purl-deep-score-command.mts'
+import { parsePackageSpecifiers } from './package-specifiers-parser.mts'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -10,7 +10,7 @@ import {
 } from '../../util/output/formatting.mts'
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'

@@ -3,7 +3,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { downloadGitHubReleaseBinary } from './spawn.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
-import type { BinaryResolution } from './resolve-binary.mts'
+import type { BinaryResolution } from './binary-resolution.mts'
 
 import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'

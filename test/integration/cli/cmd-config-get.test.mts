@@ -40,7 +40,7 @@
  * Related Files:
  *
  * - Src/commands/config/cmd-config-get.mts - Command definition
- * - Src/commands/config/handle-config-get.mts - Config retrieval logic
+ * - Src/commands/config/config-get-command.mts - Config retrieval logic
  * - Src/util/config.mts - Config management utilities
  */
 

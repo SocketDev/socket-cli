@@ -46,7 +46,7 @@ vi.mock(import('../../../../src/util/socket/sdk.mjs'), () => ({
 
 const mockFetchOrganization = vi.hoisted(() => vi.fn())
 vi.mock(
-  import('../../../../src/command/organization/fetch-organization-list.mts'),
+  import('../../../../src/command/organization/organization-list-data.mts'),
   () => ({
     fetchOrganization: mockFetchOrganization,
   }),
@@ -60,7 +60,7 @@ vi.mock(import('../../../../src/util/organization.mts'), () => ({
 }))
 
 const mockApplyLogin = vi.hoisted(() => vi.fn())
-vi.mock(import('../../../../src/command/login/apply-login.mts'), () => ({
+vi.mock(import('../../../../src/command/login/login-application.mts'), () => ({
   applyLogin: mockApplyLogin,
 }))
 

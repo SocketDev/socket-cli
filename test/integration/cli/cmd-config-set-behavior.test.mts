@@ -21,7 +21,7 @@ import {
   cmdConfigSet,
 } from '../../../src/command/config/cmd-config-set.mts'
 import { createConfigCommand } from '../../../src/command/config/config-command-factory.mts'
-import { handleConfigSet } from '../../../src/command/config/handle-config-set.mts'
+import { handleConfigSet } from '../../../src/command/config/config-set-command.mts'
 describe('config command metadata', () => {
   it('exposes the set command metadata', () => {
     expect(CMD_NAME).toBe('set')

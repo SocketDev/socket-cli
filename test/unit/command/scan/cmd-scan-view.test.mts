@@ -40,7 +40,7 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 )
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
 
-vi.mock(import('../../../../src/command/scan/handle-scan-view.mts'), () => ({
+vi.mock(import('../../../../src/command/scan/scan-view-command.mts'), () => ({
   handleScanView: mockHandleScanView,
 }))
 

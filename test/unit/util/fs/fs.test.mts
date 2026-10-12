@@ -23,7 +23,7 @@ import path from 'node:path'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { findUp } from '../../../../src/util/fs/find-up.mts'
+import { findUp } from '../../../../src/util/fs/parent-search.mts'
 
 describe('fs utilities', () => {
   describe('findUp', () => {

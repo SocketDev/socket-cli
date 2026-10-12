@@ -1,4 +1,4 @@
-import { handleListScans } from './handle-list-scans.mts'
+import { handleListScans } from './scans-list-command.mts'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { InputError } from '../../util/error/errors.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
@@ -13,7 +13,7 @@ import { getOutputKind } from '../../util/output/mode.mjs'
 import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { webLink } from '../../util/terminal/link.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type {
   CliCommandContext,

@@ -15,7 +15,7 @@
  * and defaults.
  *
  * Related Files: - src/command/threat-feed/cmd-threat-feed.mts -
- * Implementation - src/command/threat-feed/handle-threat-feed.mts - Handler.
+ * Implementation - src/command/threat-feed/threat-feed-command.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -54,7 +54,7 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
 
 vi.mock(
-  import('../../../../src/command/threat-feed/handle-threat-feed.mts'),
+  import('../../../../src/command/threat-feed/threat-feed-command.mts'),
   () => ({
     handleThreatFeed: mockHandleThreatFeed,
   }),

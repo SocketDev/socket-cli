@@ -11,7 +11,7 @@
  * Beta Feature: This command is in beta and subject to changes.
  *
  * Related Files: - src/command/threat-feed/cmd-threat-feed.mts - Command
- * definition - src/command/threat-feed/handle-threat-feed.mts - Feed retrieval
+ * definition - src/command/threat-feed/threat-feed-command.mts - Feed retrieval
  * logic - src/command/threat-feed/output-threat-feed.mts - Formatting.
  */
 

@@ -8,7 +8,7 @@
  * (JSON, markdown)
  *
  * Related Files: - src/command/scan/cmd-scan-view.mts - Command definition -
- * src/command/scan/handle-scan-view.mts - View logic -
+ * src/command/scan/scan-view-command.mts - View logic -
  * src/command/scan/output-scan-view.mts - Formatting.
  */
 

@@ -16,7 +16,7 @@
  * is tested via integration tests.
  *
  * Related Files: - src/command/fix/ci-environment.mts - Environment variable
- * helper functions - src/command/fix/handle-fix.mts - Main fix command handler
+ * helper functions - src/command/fix/fix-command.mts - Main fix command handler
  * that uses env helpers.
  */
 

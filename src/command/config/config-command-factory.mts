@@ -9,7 +9,7 @@ import {
 } from '../../util/config.mts'
 import { getFlagListOutput } from '../../util/output/formatting.mts'
 import { getOutputKind } from '../../util/output/mode.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { OutputKind } from '../../types.mjs'

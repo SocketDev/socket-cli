@@ -49,7 +49,7 @@
  * Related Files:
  *
  * - Src/commands/fix/cmd-fix.mts - Command definition
- * - Src/commands/fix/handle-fix.mts - Fix computation and application logic
+ * - Src/commands/fix/fix-command.mts - Fix computation and application logic
  * - Src/commands/fix/output-fix.mts - Output formatting
  * - Test/fixtures/commands/fix/ - Test fixtures, monorepo, vulnerable-deps
  */

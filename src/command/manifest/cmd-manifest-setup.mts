@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { handleManifestSetup } from './handle-manifest-setup.mts'
+import { handleManifestSetup } from './manifest-setup-command.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'

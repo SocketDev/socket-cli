@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
 
-import { handleCreateGithubScan } from './handle-create-github-scan.mts'
+import { handleCreateGithubScan } from './github-scan-creation-command.mts'
 import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { defineFlags } from '../../meow.mts'
@@ -17,7 +17,7 @@ import { getOutputKind } from '../../util/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
 import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'

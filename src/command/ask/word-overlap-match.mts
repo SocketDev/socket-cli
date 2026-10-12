@@ -1,7 +1,7 @@
 /**
  * Word-overlap-based command matching for `socket ask`.
  *
- * Extracted from handle-ask.mts to keep that file under the 1000-line cap. The
+ * Extracted from ask-command.mts to keep that file under the 1000-line cap. The
  * word-overlap matcher is the fast path: ~3KB of pure JavaScript with no ML
  * model. It loads a pre-computed semantic index from disk lazily and scores
  * each command's word list against the query using Jaccard similarity.

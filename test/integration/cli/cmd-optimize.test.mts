@@ -16,7 +16,7 @@
  * resolution limitations. These integration tests provide comprehensive
  * coverage by testing real CLI execution against fixture projects.
  *
- * Related Files: - src/command/optimize/handle-optimize.mts - Main command
+ * Related Files: - src/command/optimize/optimize-command.mts - Main command
  * handler - src/core/optimize/agent-installer.mts - Package manager install
  * logic - test/integration/cli/cmd-optimize-output-and-paths.test.mts - Output
  * format and path handling tests -

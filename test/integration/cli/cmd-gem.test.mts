@@ -10,7 +10,7 @@
  * Security Features: - Pre-installation security scanning via Socket Firewall.
  *
  * Related Files: - src/command/gem/cmd-gem.mts - gem command implementation -
- * src/util/dlx/resolve-binary.mts - sfw resolution.
+ * src/util/dlx/binary-resolution.mts - sfw resolution.
  */
 
 import { describe, expect } from 'vitest'

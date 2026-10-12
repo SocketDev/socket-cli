@@ -96,7 +96,7 @@ vi.mock(import('node:fs'), async () => {
   }
 })
 
-vi.mock(import('../../../../src/util/dlx/resolve-binary.mts'), () => ({
+vi.mock(import('../../../../src/util/dlx/binary-resolution.mts'), () => ({
   resolvePyCli: mockResolvePyCli,
 }))
 

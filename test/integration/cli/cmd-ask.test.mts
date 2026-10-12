@@ -9,7 +9,7 @@
  * for missing query - Banner and exit code validation.
  *
  * Related Files: - src/command/ask/cmd-ask.mts - ask command implementation -
- * src/command/ask/handle-ask.mts - NLP query parsing -
+ * src/command/ask/ask-command.mts - NLP query parsing -
  * src/command/ask/output-ask.mts - Output formatting.
  */
 

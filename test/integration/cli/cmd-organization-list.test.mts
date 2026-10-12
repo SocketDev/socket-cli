@@ -8,7 +8,7 @@
  * validation - Organization listing - Output format support (JSON, markdown)
  *
  * Related Files: - src/command/organization/cmd-organization-list.mts -
- * Command definition - src/command/organization/handle-organization-list.mts -
+ * Command definition - src/command/organization/organization-list-command.mts -
  * Logic - src/command/organization/output-organization-list.mts - Formatting.
  */
 

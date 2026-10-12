@@ -15,7 +15,7 @@
  * dry-run testing.
  *
  * Related Files: - src/command/ci/cmd-ci.mts - Implementation -
- * src/command/ci/handle-ci.mts - Handler.
+ * src/command/ci/ci-command.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -49,7 +49,7 @@ vi.mock(
 // Mock handler.
 const mockHandleCi = vi.hoisted(() => vi.fn())
 
-vi.mock(import('../../../../src/command/ci/handle-ci.mts'), () => ({
+vi.mock(import('../../../../src/command/ci/ci-command.mts'), () => ({
   handleCi: mockHandleCi,
 }))
 
@@ -74,7 +74,7 @@ const mockGetDefaultOrgSlug = vi.hoisted(() =>
 )
 
 vi.mock(
-  import('../../../../src/command/ci/fetch-default-org-slug.mts'),
+  import('../../../../src/command/ci/organization-slug-data.mts'),
   () => ({
     getDefaultOrgSlug: mockGetDefaultOrgSlug,
   }),

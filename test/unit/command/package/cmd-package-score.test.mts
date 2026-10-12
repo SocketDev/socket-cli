@@ -38,7 +38,7 @@ const mockHandlePurlDeepScore = vi.hoisted(() => vi.fn())
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
 vi.mock(
-  import('../../../../src/command/package/handle-purl-deep-score.mts'),
+  import('../../../../src/command/package/purl-deep-score-command.mts'),
   () => ({
     handlePurlDeepScore: mockHandlePurlDeepScore,
   }),

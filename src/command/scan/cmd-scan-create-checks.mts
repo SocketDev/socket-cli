@@ -3,9 +3,9 @@ import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { InputError } from '../../util/error/errors.mts'
 import { getReachabilityEcosystemChoices } from '../../util/ecosystem/types.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
-import type { ReachabilityTargetValidation } from './validate-reachability-target.mts'
+import type { ReachabilityTargetValidation } from './reachability-target-validation.mts'
 import type { PURL_Type } from '../../util/ecosystem/types.mts'
 import type { OutputKind } from '../../types.mjs'
 

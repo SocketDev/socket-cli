@@ -19,7 +19,7 @@ const mockDetectManifestActions = vi.hoisted(() => vi.fn())
 const mockInfo = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/manifest/detect-manifest-actions.mts'),
+  import('../../../../src/command/manifest/manifest-actions-detection.mts'),
   () => ({
     detectManifestActions: mockDetectManifestActions,
   }),

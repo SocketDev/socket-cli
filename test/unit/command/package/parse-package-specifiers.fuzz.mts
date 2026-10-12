@@ -12,7 +12,7 @@
 
 import { fuzz } from '@vitiate/core'
 
-import { parsePackageSpecifiers } from '../../../../src/command/package/parse-package-specifiers.mts'
+import { parsePackageSpecifiers } from '../../../../src/command/package/package-specifiers-parser.mts'
 
 fuzz(
   'parsePackageSpecifiers never throws and returns a well-formed result',

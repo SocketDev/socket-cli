@@ -1,5 +1,5 @@
 import { defineGitHubReleaseSpawn } from './define-tool-spawn.mts'
-import { resolveTrufflehog } from './resolve-binary.mjs'
+import { resolveTrufflehog } from './binary-resolution.mjs'
 
 export const spawnTrufflehog = defineGitHubReleaseSpawn({
   toolName: 'trufflehog',

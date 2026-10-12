@@ -40,7 +40,7 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
 
 vi.mock(
-  import('../../../../src/command/scan/handle-scan-metadata.mts'),
+  import('../../../../src/command/scan/scan-metadata-command.mts'),
   () => ({
     handleOrgScanMetadata: mockHandleOrgScanMetadata,
   }),

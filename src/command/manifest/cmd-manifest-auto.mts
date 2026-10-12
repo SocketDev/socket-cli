@@ -3,7 +3,7 @@ import path from 'node:path'
 import { debugDirNs } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { detectManifestActions } from './detect-manifest-actions.mts'
+import { detectManifestActions } from './manifest-actions-detection.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { outputDryRunExecute } from '../../util/dry-run/output.mts'

@@ -43,7 +43,7 @@ import { parseMarkdownTableRows } from '../../../helpers/markdown-table.mts'
  *
  * - Src/commands/audit-log/output-audit-log.mts - Implementation
  * - Src/commands/audit-log/audit-fixture.json - Test fixture data
- * - Src/commands/audit-log/handle-audit-log.mts - Handler that uses output
+ * - Src/commands/audit-log/audit-log-command.mts - Handler that uses output
  *   functions
  */
 

@@ -1,4 +1,4 @@
-import { handleListRepos } from './handle-list-repos.mts'
+import { handleListRepos } from './repositories-list-command.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
@@ -11,7 +11,7 @@ import {
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { Direction, RepositorySort } from './types.mts'
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'

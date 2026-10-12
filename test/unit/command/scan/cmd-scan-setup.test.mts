@@ -57,7 +57,7 @@ vi.mock(
 // Mock handleScanConfig.
 const mockHandleScanConfig = vi.hoisted(() => vi.fn())
 
-vi.mock(import('../../../../src/command/scan/handle-scan-config.mts'), () => ({
+vi.mock(import('../../../../src/command/scan/scan-configuration-command.mts'), () => ({
   handleScanConfig: mockHandleScanConfig,
 }))
 

@@ -11,7 +11,7 @@
  * invocation with correct parameters.
  *
  * Related Files: - src/command/manifest/cmd-manifest-setup.mts - Command
- * implementation - src/command/manifest/handle-manifest-setup.mts - Setup
+ * implementation - src/command/manifest/manifest-setup-command.mts - Setup
  * logic.
  */
 
@@ -39,7 +39,7 @@ const mockHandleManifestSetup = vi.hoisted(() =>
 )
 
 vi.mock(
-  import('../../../../src/command/manifest/handle-manifest-setup.mts'),
+  import('../../../../src/command/manifest/manifest-setup-command.mts'),
   () => ({
     handleManifestSetup: mockHandleManifestSetup,
   }),

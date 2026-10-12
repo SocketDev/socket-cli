@@ -2,9 +2,9 @@ import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { spawnDlx } from './spawn.mts'
-import { resolveCoana } from './resolve-binary.mjs'
+import { resolveCoana } from './binary-resolution.mjs'
 
-import { getDefaultOrgSlug } from '../../command/ci/fetch-default-org-slug.mjs'
+import { getDefaultOrgSlug } from '../../command/ci/organization-slug-data.mjs'
 import { getCliVersion } from '../../env/cli-version.mts'
 import { getErrorCause } from '../error/errors.mts'
 

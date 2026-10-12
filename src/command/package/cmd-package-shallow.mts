@@ -1,5 +1,5 @@
-import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
-import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
+import { handlePurlsShallowScore } from './purls-shallow-score-command.mts'
+import { parsePackageSpecifiers } from './package-specifiers-parser.mts'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -9,7 +9,7 @@ import {
   getFlagListOutput,
 } from '../../util/output/formatting.mts'
 import { getOutputKind } from '../../util/output/mode.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'

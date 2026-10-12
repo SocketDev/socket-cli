@@ -5,7 +5,7 @@
  * operations are actionable and context-specific, guiding users toward a fix
  * (such as setting GITHUB_TOKEN) rather than a bare failure.
  *
- * Related Files: - src/command/scan/create-scan-from-github.mts
+ * Related Files: - src/command/scan/github-scan-creation.mts
  * (implementation)
  */
 

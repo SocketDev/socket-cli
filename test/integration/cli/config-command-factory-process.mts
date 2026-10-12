@@ -5,8 +5,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { cmdConfigSet } from '../../../src/command/config/cmd-config-set.mts'
 import { createConfigCommand } from '../../../src/command/config/config-command-factory.mts'
-import { handleConfigSet } from '../../../src/command/config/handle-config-set.mts'
-import { handleConfigUnset } from '../../../src/command/config/handle-config-unset.mts'
+import { handleConfigSet } from '../../../src/command/config/config-set-command.mts'
+import { handleConfigUnset } from '../../../src/command/config/config-unset-command.mts'
 import { commonFlags, outputFlags } from '../../../src/flags.mts'
 import { InputError } from '../../../src/util/error/errors.mts'
 

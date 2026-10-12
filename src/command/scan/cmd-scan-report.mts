@@ -1,4 +1,4 @@
-import { handleScanReport } from './handle-scan-report.mts'
+import { handleScanReport } from './scan-report-command.mts'
 import { FOLD_SETTING_NONE } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { REPORT_LEVEL_WARN } from '../../constants/reporting.mts'
@@ -12,7 +12,7 @@ import {
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type {

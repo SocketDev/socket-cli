@@ -29,7 +29,7 @@ import {
 import { dlxPackage } from '@socketsecurity/lib-stable/dlx/package'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 
-import type { GitHubReleaseSpec } from './resolve-binary.mjs'
+import type { GitHubReleaseSpec } from './binary-resolution.mjs'
 import { extractTarball } from './tarball.mts'
 
 import { InputError } from '../error/errors.mts'

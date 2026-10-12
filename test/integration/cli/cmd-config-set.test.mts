@@ -19,7 +19,7 @@
  *
  * Related Files: - src/command/config/cmd-config-set.mts - Command definition.
  *
- * - Src/commands/config/handle-config-set.mts - Config update logic -
+ * - Src/commands/config/config-set-command.mts - Config update logic -
  *   src/util/config.mts - Config management utilities.
  */
 

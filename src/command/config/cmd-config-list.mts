@@ -6,7 +6,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import { getFlagListOutput } from '../../util/output/formatting.mts'
 import { getOutputKind } from '../../util/output/mode.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'

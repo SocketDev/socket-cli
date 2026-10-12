@@ -2,24 +2,24 @@
  * Coverage tests for create-scan-from-github helpers.
  *
  * Purpose: Drives the remaining uncovered branches in
- * create-scan-from-github.mts that the sibling -direct and main test files
+ * github-scan-creation.mts that the sibling -direct and main test files
  * don't exercise. Covers scanOneRepo and the createScanFromGithub
  * interactive selection paths.
  *
  * Why a separate file: The companion -direct file is already at the file-size
  * soft cap; the coverage-only tests would push it past the 1000-line hard cap.
  *
- * Related Files: - src/command/scan/create-scan-from-github.mts
+ * Related Files: - src/command/scan/github-scan-creation.mts
  * (implementation) -
  * test/unit/command/scan/create-scan-from-github-direct.test.mts (direct) -
- * test/unit/command/scan/create-scan-from-github.test.mts (mock-surface) -
+ * test/unit/command/scan/github-scan-creation.test.mts (mock-surface) -
  * test/unit/command/scan/create-scan-from-github-coverage-downloads.test.mts
  * download-path coverage.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as CreateScanFromGithub from '../../../../src/command/scan/create-scan-from-github.mts'
-import { scanOneRepo } from '../../../../src/command/scan/create-scan-from-github.mts'
+import type * as CreateScanFromGithub from '../../../../src/command/scan/github-scan-creation.mts'
+import { scanOneRepo } from '../../../../src/command/scan/github-scan-creation.mts'
 
 const mockOctokit = vi.hoisted(() => ({
   repos: { get: vi.fn(), listCommits: vi.fn(), getContent: vi.fn() },
@@ -68,7 +68,7 @@ vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
 
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
 vi.mock(
-  import('../../../../src/command/scan/fetch-supported-scan-file-names.mts'),
+  import('../../../../src/command/scan/supported-scan-file-names-data.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
   }),
@@ -76,7 +76,7 @@ vi.mock(
 
 const mockHandleCreateNewScan = vi.hoisted(() => vi.fn())
 vi.mock(
-  import('../../../../src/command/scan/handle-create-new-scan.mts'),
+  import('../../../../src/command/scan/new-scan-creation-command.mts'),
   () => ({
     handleCreateNewScan: mockHandleCreateNewScan,
   }),
@@ -84,7 +84,7 @@ vi.mock(
 
 const mockFetchListAllRepos = vi.hoisted(() => vi.fn())
 vi.mock(
-  import('../../../../src/command/repository/fetch-list-all-repos.mts'),
+  import('../../../../src/command/repository/all-repositories-data.mts'),
   () => ({
     fetchListAllRepos: mockFetchListAllRepos,
   }),
@@ -274,7 +274,7 @@ describe('create-scan-from-github (coverage)', () => {
 
     beforeEach(async () => {
       const mod =
-        await import('../../../../src/command/scan/create-scan-from-github.mts')
+        await import('../../../../src/command/scan/github-scan-creation.mts')
       mockCreateScanFromGithub = mod.createScanFromGithub
     })
 

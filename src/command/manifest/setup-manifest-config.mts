@@ -5,7 +5,7 @@ import { debugDirNs } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import { detectManifestActions } from './detect-manifest-actions.mts'
+import { detectManifestActions } from './manifest-actions-detection.mts'
 import {
   askForEnabled,
   askForInputFile,

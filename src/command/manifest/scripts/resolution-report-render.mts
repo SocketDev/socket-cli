@@ -2,7 +2,7 @@ import { GRADLE_DIALECT } from './resolution-report-gradle.mts'
 import { SBT_DIALECT } from './resolution-report-ivy.mts'
 import { MAVEN_DIALECT } from './resolution-report-maven.mts'
 
-import type { BuildTool } from './build-tool.mts'
+import type { BuildTool } from './tool-builder.mts'
 import type {
   ResolutionFailure,
   UnscannableConfig,

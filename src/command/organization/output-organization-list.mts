@@ -10,7 +10,7 @@ import { getVisibleTokenPrefix } from '../../util/socket/sdk.mjs'
 import type {
   Organizations,
   OrganizationsCResult,
-} from './fetch-organization-list.mts'
+} from './organization-list-data.mts'
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 

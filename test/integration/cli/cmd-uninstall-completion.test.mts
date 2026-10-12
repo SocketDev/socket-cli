@@ -7,7 +7,7 @@
  * validation - Completion script removal - Shell configuration cleanup.
  *
  * Related Files: - src/command/uninstall/cmd-uninstall-completion.mts -
- * Command definition - src/command/uninstall/handle-uninstall-completion.mts -
+ * Command definition - src/command/uninstall/completion-uninstall-command.mts -
  * Removal logic.
  */
 

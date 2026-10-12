@@ -16,7 +16,7 @@
  * utilities.
  *
  * Related Files: - src/command/config/cmd-config-get.mts - Implementation -
- * src/command/config/handle-config-get.mts - Handler -
+ * src/command/config/config-get-command.mts - Handler -
  * src/command/config/config-command-factory.mts - Factory.
  */
 
@@ -52,7 +52,7 @@ vi.mock(
 // Mock handler.
 const mockHandleConfigGet = vi.hoisted(() => vi.fn())
 
-vi.mock(import('../../../../src/command/config/handle-config-get.mts'), () => ({
+vi.mock(import('../../../../src/command/config/config-get-command.mts'), () => ({
   handleConfigGet: mockHandleConfigGet,
 }))
 
@@ -93,7 +93,7 @@ vi.mock(import('../../../../src/util/output/mode.mjs'), () => ({
 // Mock validation utilities.
 const mockCheckCommandInput = vi.hoisted(() => vi.fn(() => true))
 
-vi.mock(import('../../../../src/util/validation/check-input.mts'), () => ({
+vi.mock(import('../../../../src/util/validation/input-check.mts'), () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
 

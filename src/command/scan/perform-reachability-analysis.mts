@@ -12,14 +12,14 @@ import {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } from '../../constants/socket.mts'
-import { extractTier1ReachabilityScanId } from '../../util/coana/extract-scan-id.mjs'
+import { extractTier1ReachabilityScanId } from '../../util/coana/scan-id-extraction.mjs'
 import { spawnCoana } from '../../util/dlx/spawn.mjs'
 import { getMachineOutputMode } from '../../util/output/ambient-mode.mts'
 import { hasEnterpriseOrgPlan } from '../../util/organization.mts'
 import { handleApiCall } from '../../util/socket/api.mjs'
 import { setupSdk } from '../../util/socket/sdk.mjs'
 import { socketDevLink } from '../../util/terminal/link.mts'
-import { fetchOrganization } from '../organization/fetch-organization-list.mts'
+import { fetchOrganization } from '../organization/organization-list-data.mts'
 
 import type { StdioOptions } from 'node:child_process'
 import type { CResult } from '../../types.mts'
@@ -240,9 +240,9 @@ export async function performReachabilityAnalysis(
     // compute-artifacts (the auto-manifest facts generators write it), so it
     // uploads with the rest. Coana reads the plain filename out of the
     // manifests tar, so this path stays uncompressed; the full-scan upload in
-    // handle-create-new-scan.mts is where facts files go up brotli-compressed.
+    // new-scan-creation-command.mts is where facts files go up brotli-compressed.
     // Stale facts files are cleaned up downstream — see the post-success
-    // deletion in handle-create-new-scan.mts.
+    // deletion in new-scan-creation-command.mts.
     // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path.
     const uploadCResult = (await handleApiCall(
       sockSdk.uploadManifestFiles(uploadOrgSlug, uploadPackagePaths, {

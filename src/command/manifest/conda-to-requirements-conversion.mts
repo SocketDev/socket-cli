@@ -1,0 +1,185 @@
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { stripAnsi } from '@socketsecurity/lib-stable/term/ansi/strip'
+
+import type { CResult } from '../../types.mts'
+const logger = getDefaultLogger()
+
+// exported call sites span manifest-conda-command.mts and its test suite,
+// outside this fix's scope; an options-object migration needs those call sites
+// updated together.
+// oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
+export async function convertCondaToRequirements(
+  filename: string,
+  cwd: string,
+  verbose: boolean,
+): Promise<CResult<{ content: string; pip: string }>> {
+  let content: string
+  if (filename === '-') {
+    if (verbose) {
+      logger.info('[VERBOSE] reading input from stdin')
+    }
+
+    const strings: string[] = []
+    content = await new Promise((resolve, reject) => {
+      const cleanup = () => {
+        process.stdin.off('data', dataHandler)
+        process.stdin.off('end', endHandler)
+        process.stdin.off('error', errorHandler)
+        process.stdin.off('close', closeHandler)
+      }
+
+      const dataHandler = (chunk: Buffer) => {
+        strings.push(chunk.toString())
+      }
+
+      const endHandler = () => {
+        cleanup()
+        resolve(prepareContent(strings.join('')))
+      }
+
+      const errorHandler = (e: Error) => {
+        cleanup()
+        if (verbose) {
+          logger.error('Unexpected error while reading from stdin:', e)
+        }
+        reject(e)
+      }
+
+      const closeHandler = () => {
+        cleanup()
+        if (strings.length) {
+          if (verbose) {
+            logger.error(
+              'warning: stdin closed explicitly with some data received',
+            )
+          }
+          resolve(prepareContent(strings.join('')))
+        } else {
+          if (verbose) {
+            logger.error('stdin closed explicitly without data received')
+          }
+          reject(new Error('No data received from stdin'))
+        }
+      }
+
+      process.stdin.on('data', dataHandler)
+      process.stdin.on('end', endHandler)
+      process.stdin.on('error', errorHandler)
+      process.stdin.on('close', closeHandler)
+    })
+
+    if (!content) {
+      return {
+        ok: false,
+        message: 'Manifest Generation Failed',
+        cause: 'No data received from stdin',
+      }
+    }
+  } else {
+    // path.resolve, not path.join: callers hand us the absolute path the
+    // socket.json containment check already approved, and path.join would
+    // re-root it under cwd.
+    const filepath = path.resolve(cwd, filename)
+
+    if (verbose) {
+      logger.info(`[VERBOSE] target: ${filepath}`)
+    }
+
+    if (!existsSync(filepath)) {
+      return {
+        ok: false,
+        message: 'Manifest Generation Failed',
+        cause: `The file was not found at ${filepath}`,
+      }
+    }
+
+    content = readFileSync(filepath, 'utf8')
+
+    if (!content) {
+      return {
+        ok: false,
+        message: 'Manifest Generation Failed',
+        cause: `File at ${filepath} is empty`,
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      content,
+      pip: convertCondaToRequirementsFromInput(content),
+    },
+  }
+}
+
+// Just extract the first pip block, if one exists at all.
+export function convertCondaToRequirementsFromInput(input: string): string {
+  let collecting = false
+  let delim = '-'
+  let indent = ''
+  const keeping: string[] = []
+  const lines = input.split(/\r?\n/)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    const trimmed = line.trim()
+    if (!trimmed) {
+      // Ignore empty lines.
+      continue
+    }
+    if (collecting) {
+      if (line.startsWith('#')) {
+        // Ignore comment lines (keep?).
+        continue
+      }
+      if (line.startsWith(delim)) {
+        // In this case we have a line with the same indentation as the
+        // `- pip:` line, so we have reached the end of the pip block.
+        break
+      }
+      if (!indent) {
+        // Store the indentation of the block.
+        if (trimmed.startsWith('-') && line.includes('-')) {
+          const parts = line.split('-')
+          /* c8 ignore start - String.split always returns ≥1 element */
+          if (!parts.length) {
+            break
+          }
+          /* c8 ignore stop */
+          indent = `${parts[0]}-`
+          if (indent.length <= delim.length) {
+            // The first line after the `pip:` line does not indent further
+            // than that so the block is empty?
+            break
+          }
+        }
+      }
+      if (line.startsWith(indent)) {
+        keeping.push(line.slice(indent.length).trim())
+      } else {
+        // Unexpected input. bail.
+        break
+      }
+    }
+    // Note: the line may end with a line comment so don't === it.
+    else if (trimmed.startsWith('- pip:') && line.includes('-')) {
+      const parts = line.split('-')
+      /* c8 ignore start - String.split always returns ≥1 element */
+      if (!parts.length) {
+        continue
+      }
+      /* c8 ignore stop */
+      delim = `${parts[0]}-`
+      collecting = true
+    }
+  }
+
+  return prepareContent(keeping.join('\n'))
+}
+
+export function prepareContent(content: string): string {
+  return stripAnsi(content.trim())
+}

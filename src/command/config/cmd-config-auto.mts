@@ -1,4 +1,4 @@
-import { handleConfigAuto } from './handle-config-auto.mts'
+import { handleConfigAuto } from './config-auto-command.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
@@ -10,7 +10,7 @@ import {
 } from '../../util/config.mts'
 import { getFlagListOutput } from '../../util/output/formatting.mts'
 import { getOutputKind } from '../../util/output/mode.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'

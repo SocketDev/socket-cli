@@ -53,21 +53,21 @@ vi.mock(import('node:fs'), async importOriginal => {
 })
 
 vi.mock(
-  import('../../../../src/command/wrapper/add-socket-wrapper.mts'),
+  import('../../../../src/command/wrapper/socket-wrapper-addition.mts'),
   () => ({
     addSocketWrapper: mockAddSocketWrapper,
   }),
 )
 
 vi.mock(
-  import('../../../../src/command/wrapper/remove-socket-wrapper.mts'),
+  import('../../../../src/command/wrapper/socket-wrapper-removal.mts'),
   () => ({
     removeSocketWrapper: mockRemoveSocketWrapper,
   }),
 )
 
 vi.mock(
-  import('../../../../src/command/wrapper/check-socket-wrapper-setup.mts'),
+  import('../../../../src/command/wrapper/socket-wrapper-setup-check.mts'),
   () => ({
     checkSocketWrapperSetup: mockCheckSocketWrapperSetup,
   }),

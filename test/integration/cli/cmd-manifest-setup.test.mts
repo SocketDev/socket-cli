@@ -7,7 +7,7 @@
  * validation - Tool installation verification.
  *
  * Related Files: - src/command/manifest/cmd-manifest-setup.mts - Command
- * definition - src/command/manifest/handle-manifest-setup.mts - Setup logic.
+ * definition - src/command/manifest/manifest-setup-command.mts - Setup logic.
  */
 
 import { describe, expect } from 'vitest'

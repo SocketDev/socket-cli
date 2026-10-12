@@ -9,7 +9,7 @@
  * - Policy compliance checking.
  *
  * Related Files: - src/command/scan/cmd-scan-report.mts - Command definition -
- * src/command/scan/handle-scan-report.mts - Report generation logic -
+ * src/command/scan/scan-report-command.mts - Report generation logic -
  * src/command/scan/output-scan-report.mts - Formatting.
  */
 

@@ -20,7 +20,7 @@ import { InputError } from '../../../util/error/errors-types.mts'
 import { getFlagListOutput } from '../../../util/output/formatting.mts'
 import { getOutputKind } from '../../../util/output/mode.mjs'
 import { readOrDefaultSocketJson } from '../../../util/socket/json.mts'
-import { checkCommandInput } from '../../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../../util/validation/input-check.mts'
 
 import type { ExtractBazelStatus } from './bazel-maven-types.mts'
 import type { MeowFlags } from '../../../flags.mts'

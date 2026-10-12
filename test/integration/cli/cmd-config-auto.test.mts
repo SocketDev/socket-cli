@@ -14,7 +14,7 @@
  * Related Files: - src/command/config/cmd-config-auto.mts - Command
  * definition.
  *
- * - Src/commands/config/handle-config-auto.mts - Auto-discovery logic -
+ * - Src/commands/config/config-auto-command.mts - Auto-discovery logic -
  *   src/util/config.mts - Config management utilities.
  */
 

@@ -7,12 +7,12 @@
  * explanation generation, NLP normalization, and edge cases.
  *
  * `handleAsk` execution/output behavior and the smaller natural language
- * helper functions live in `handle-ask.test.mts`.
+ * helper functions live in `ask-command.test.mts`.
  */
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { parseIntent } from '../../../../src/command/ask/handle-ask.mts'
+import { parseIntent } from '../../../../src/command/ask/ask-command.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({

@@ -15,7 +15,7 @@
  * failures, skipped in tests.
  *
  * Related Files: - src/command/analytics/cmd-analytics.mts - Command
- * definition - src/command/analytics/handle-analytics.mts - Analytics handler.
+ * definition - src/command/analytics/analytics-command.mts - Analytics handler.
  *
  * - Src/commands/analytics/output-analytics.mts - Output formatting.
  */

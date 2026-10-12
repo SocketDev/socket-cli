@@ -1,4 +1,4 @@
-import { handleAnalytics } from './handle-analytics.mts'
+import { handleAnalytics } from './analytics-command.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
@@ -14,7 +14,7 @@ import {
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { webLink } from '../../util/terminal/link.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 

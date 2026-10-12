@@ -52,7 +52,7 @@ const mockReadOrDefaultSocketJson = vi.hoisted(() =>
 )
 
 vi.mock(
-  import('../../../../src/command/manifest/convert-gradle-to-maven.mts'),
+  import('../../../../src/command/manifest/gradle-to-maven-conversion.mts'),
   () => ({
     convertGradleToMaven: mockConvertGradleToMaven,
   }),
@@ -63,7 +63,7 @@ vi.mock(import('../../../../src/command/manifest/output-manifest.mts'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/manifest/convert-gradle-to-facts.mts'),
+  import('../../../../src/command/manifest/gradle-to-facts-conversion.mts'),
   () => ({
     convertGradleToFacts: mockConvertToFacts,
   }),

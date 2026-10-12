@@ -5,7 +5,7 @@
  * directories without package.json, comprehensive flag combinations, and the
  * basic project fixture.
  *
- * Related Files: - src/command/optimize/handle-optimize.mts - Main command
+ * Related Files: - src/command/optimize/optimize-command.mts - Main command
  * handler - test/integration/cli/cmd-optimize.test.mts - Core command
  * integration tests.
  */

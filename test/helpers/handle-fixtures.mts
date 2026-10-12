@@ -9,7 +9,7 @@
  *   import { describe, expect, it, vi } from 'vitest'
  *
  *   // Setup mocks at module level (before describe)
- *   vi.mock('./fetch-quota.mts', () => ({
+ *   vi.mock('./quota-data.mts', () => ({
  *     fetchQuota: vi.fn(),
  *   }))
  *   vi.mock('./output-quota.mts', () => ({
@@ -18,7 +18,7 @@
  *
  *   describe('handleQuota', () => {
  *     it('fetches and outputs quota', async () => {
- *       const { fetchQuota } = await import('./fetch-quota.mts')
+ *       const { fetchQuota } = await import('./quota-data.mts')
  *       const { outputQuota } = await import('./output-quota.mts')
  *       const mockFetch = vi.mocked(fetchQuota)
  *       const mockOutput = vi.mocked(outputQuota)

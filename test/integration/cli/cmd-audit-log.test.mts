@@ -20,7 +20,7 @@
  * report deletion) - Access control, invitations, transfers, removals.
  *
  * Related Files: - src/command/audit-log/cmd-audit-log.mts - Command
- * definition - src/command/audit-log/handle-audit-log.mts - Audit log handler.
+ * definition - src/command/audit-log/audit-log-command.mts - Audit log handler.
  *
  * - Src/commands/audit-log/output-audit-log.mts - Output formatting.
  */

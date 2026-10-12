@@ -49,7 +49,7 @@ const mockDetermineOrgSlug = vi.hoisted(() =>
 )
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
-vi.mock(import('../../../../src/command/scan/handle-scan-reach.mts'), () => ({
+vi.mock(import('../../../../src/command/scan/scan-reach-command.mts'), () => ({
   handleScanReach: mockHandleScanReach,
 }))
 
@@ -58,7 +58,7 @@ vi.mock(import('../../../../src/command/scan/suggest_target.mts'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/scan/validate-reachability-target.mts'),
+  import('../../../../src/command/scan/reachability-target-validation.mts'),
   () => ({
     validateReachabilityTarget: mockValidateReachabilityTarget,
   }),

@@ -21,7 +21,7 @@
  * logic - src/command/fix/git.mts - PR title and body generation -
  * src/util/git/github.mts - Octokit client factory -
  * src/util/git/provider-factory.mts - Provider abstraction factory -
- * src/command/fix/handle-fix.mts - Main fix command orchestrating PR
+ * src/command/fix/fix-command.mts - Main fix command orchestrating PR
  * workflow.
  */
 

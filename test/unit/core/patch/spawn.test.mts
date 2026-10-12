@@ -18,7 +18,7 @@ vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   downloadGitHubReleaseBinary: mockDownloadGitHubReleaseBinary,
 }))
 
-vi.mock(import('../../../../src/util/dlx/resolve-binary.mts'), () => ({
+vi.mock(import('../../../../src/util/dlx/binary-resolution.mts'), () => ({
   resolveSocketPatch: mockResolveSocketPatch,
 }))
 

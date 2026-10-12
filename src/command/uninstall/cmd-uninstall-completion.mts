@@ -1,4 +1,4 @@
-import { handleUninstallCompletion } from './handle-uninstall-completion.mts'
+import { handleUninstallCompletion } from './completion-uninstall-command.mts'
 import { outputDryRunDelete } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

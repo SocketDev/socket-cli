@@ -19,7 +19,7 @@
  *
  * Related Files: - src/command/fix/pr-lifecycle-logger.mts - PR event logging
  * utility - src/command/fix/pull-request.mts - PR creation and management
- * using logger - src/command/fix/handle-fix.mts - Main fix command
+ * using logger - src/command/fix/fix-command.mts - Main fix command
  * orchestrating PR workflow.
  */
 

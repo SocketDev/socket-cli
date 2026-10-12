@@ -1,7 +1,7 @@
 import { isSupportedConfigKey } from '../../util/config.mts'
 import { getOrgSlugs } from '../../util/organization.mts'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { fetchOrganization } from '../organization/fetch-organization-list.mts'
+import { fetchOrganization } from '../organization/organization-list-data.mts'
 
 import type { CResult } from '../../types.mts'
 

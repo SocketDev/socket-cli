@@ -2,14 +2,14 @@
  * Direct unit tests for create-scan-from-github manifest and scan helpers.
  *
  * Purpose: Tests that import + execute the real source functions (not mocks of
- * them). The companion file `create-scan-from-github.test.mts` only exercises
+ * them). The companion file `github-scan-creation.test.mts` only exercises
  * the Octokit mock surface, which leaves the actual source untouched at
  * runtime.
  *
  * Test Coverage: - testAndDownloadManifestFile / downloadManifestFile /
  * testAndDownloadManifestFiles - scanRepo / scanOneRepo.
  *
- * Related Files: - src/command/scan/create-scan-from-github.mts
+ * Related Files: - src/command/scan/github-scan-creation.mts
  * (implementation)
  */
 
@@ -19,7 +19,7 @@ import {
   scanOneRepo,
   scanRepo,
   testAndDownloadManifestFile,
-} from '../../../../src/command/scan/create-scan-from-github.mts'
+} from '../../../../src/command/scan/github-scan-creation.mts'
 import { testAndDownloadManifestFiles } from '../../../../src/command/scan/github-scan-manifest.mts'
 
 const mockOctokit = vi.hoisted(() => ({
@@ -69,7 +69,7 @@ vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
 
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
 vi.mock(
-  import('../../../../src/command/scan/fetch-supported-scan-file-names.mts'),
+  import('../../../../src/command/scan/supported-scan-file-names-data.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
   }),
@@ -77,14 +77,14 @@ vi.mock(
 
 const mockHandleCreateNewScan = vi.hoisted(() => vi.fn())
 vi.mock(
-  import('../../../../src/command/scan/handle-create-new-scan.mts'),
+  import('../../../../src/command/scan/new-scan-creation-command.mts'),
   () => ({
     handleCreateNewScan: mockHandleCreateNewScan,
   }),
 )
 
 // testAndDownloadManifestFiles (plural) lives in github-scan-manifest.mts and
-// is only re-exported singular from create-scan-from-github.mts, so import it
+// is only re-exported singular from github-scan-creation.mts, so import it
 // from its owning module directly.
 
 describe('create-scan-from-github (direct) - manifest and scan', () => {

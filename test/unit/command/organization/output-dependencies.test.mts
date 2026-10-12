@@ -17,8 +17,8 @@
  * Tests verify output content and exit code behavior.
  *
  * Related Files: - src/command/organization/output-dependencies.mts - Output
- * formatter - src/command/organization/handle-dependencies.mts - Command
- * handler - src/command/organization/fetch-dependencies.mts - Dependencies
+ * formatter - src/command/organization/dependencies-command.mts - Command
+ * handler - src/command/organization/dependencies-data.mts - Dependencies
  * fetcher.
  */
 

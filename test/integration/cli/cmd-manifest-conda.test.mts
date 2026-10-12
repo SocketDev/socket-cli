@@ -7,7 +7,7 @@
  * validation - environment.yml parsing - Dependency resolution.
  *
  * Related Files: - src/command/manifest/cmd-manifest-conda.mts - Command
- * definition - src/command/manifest/handle-manifest-conda.mts - Conda manifest
+ * definition - src/command/manifest/manifest-conda-command.mts - Conda manifest
  * logic.
  */
 

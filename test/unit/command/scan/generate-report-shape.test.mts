@@ -19,9 +19,9 @@ import {
   getScanWithEnvVars,
   getSimpleCleanScan,
 } from '../../../helpers/report-fixtures.mts'
-import { generateReport } from '../../../../src/command/scan/generate-report.mts'
+import { generateReport } from '../../../../src/command/scan/report-generation.mts'
 
-import type { ScanReport } from '../../../../src/command/scan/generate-report.mts'
+import type { ScanReport } from '../../../../src/command/scan/report-generation.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // biome-ignore lint/correctness/noUnusedVariables: Destructuring import for test setup

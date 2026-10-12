@@ -110,7 +110,7 @@ vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
 }))
 
 vi.mock(
-  import('../../../../src/command/manifest/detect-manifest-actions.mts'),
+  import('../../../../src/command/manifest/manifest-actions-detection.mts'),
   () => ({
     detectManifestActions: mockDetectManifestActions,
   }),

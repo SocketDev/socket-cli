@@ -10,7 +10,7 @@ import { getDefaultApiToken } from '../../util/socket/sdk.mts'
 import {
   applyMachineModeIfActive,
   inferSubcommand,
-} from '../../util/spawn/apply-machine-mode.mts'
+} from '../../util/spawn/machine-mode-application.mts'
 import {
   buildSystemToolEnv,
   describeSystemToolFailure,

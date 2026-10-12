@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { handleCmdJson } from './handle-cmd-json.mts'
+import { handleCmdJson } from './cmd-json-command.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

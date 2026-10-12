@@ -9,7 +9,7 @@
  * Test Coverage: getRepoDetails, getRepoBranchTree, getLastCommitDetails, and
  * downloadManifestFile behaviors under success and error conditions.
  *
- * Related Files: - src/command/scan/create-scan-from-github.mts
+ * Related Files: - src/command/scan/github-scan-creation.mts
  * (implementation) - src/util/git/github.mts (GitHub utilities)
  */
 

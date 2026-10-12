@@ -9,7 +9,7 @@
  * Related Files: - src/command/scan/cmd-scan-metadata.mts - Command
  * definition.
  *
- * - Src/commands/scan/handle-scan-metadata.mts - Metadata retrieval logic.
+ * - Src/commands/scan/scan-metadata-command.mts - Metadata retrieval logic.
  */
 
 import { describe, expect } from 'vitest'

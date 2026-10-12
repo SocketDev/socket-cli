@@ -36,7 +36,7 @@ vi.mock(
 const mockHandlePurlsShallowScore = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/package/handle-purls-shallow-score.mts'),
+  import('../../../../src/command/package/purls-shallow-score-command.mts'),
   () => ({
     handlePurlsShallowScore: mockHandlePurlsShallowScore,
   }),

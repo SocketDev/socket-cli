@@ -18,8 +18,8 @@
  * verify output content and exit code behavior.
  *
  * Related Files: - src/command/organization/output-quota.mts - Output
- * formatter - src/command/organization/handle-quota.mts - Command handler -
- * src/command/organization/fetch-quota.mts - Quota fetcher.
+ * formatter - src/command/organization/quota-command.mts - Command handler -
+ * src/command/organization/quota-data.mts - Quota fetcher.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

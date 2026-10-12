@@ -1,5 +1,5 @@
 import { defineGitHubReleaseSpawn } from './define-tool-spawn.mts'
-import { resolveTrivy } from './resolve-binary.mjs'
+import { resolveTrivy } from './binary-resolution.mjs'
 
 export const spawnTrivy = defineGitHubReleaseSpawn({
   toolName: 'trivy',

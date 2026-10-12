@@ -13,7 +13,7 @@
  * formatted output strings for lists with varying sizes.
  *
  * Related Files: - src/command/repository/output-list-repos.mts
- * (implementation) - src/command/repository/handle-list-repos.mts (handler)
+ * (implementation) - src/command/repository/repositories-list-command.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

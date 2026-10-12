@@ -19,7 +19,7 @@
 import fc from 'fast-check'
 import { describe, expect, test } from 'vitest'
 
-import { parsePackageSpecifiers } from '../../../../src/command/package/parse-package-specifiers.mts'
+import { parsePackageSpecifiers } from '../../../../src/command/package/package-specifiers-parser.mts'
 
 // A pure-alpha ecosystem token (matches the /^[a-zA-Z]+$/ fast path).
 const alphaEcosystem = fc

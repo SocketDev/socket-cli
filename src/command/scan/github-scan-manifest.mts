@@ -1,7 +1,7 @@
 /**
  * Manifest file download helpers for `socket scan github`.
  *
- * Extracted from create-scan-from-github.mts to keep that file under the
+ * Extracted from github-scan-creation.mts to keep that file under the
  * 500-line soft cap. These wrap the GitHub content API and a raw fetch
  * stream to pull supported manifest files down into a local scan tmp dir.
  */
@@ -13,7 +13,7 @@ import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { fetchSupportedScanFileNames } from './supported-scan-file-names-data.mts'
 import { strictDelete } from '../../util/fs/strict-delete.mts'
 import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import { isReportSupportedFile } from '../../util/fs/glob.mts'

@@ -17,7 +17,7 @@ import { getOutputKind } from '../../util/output/mode.mjs'
 import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { webLink } from '../../util/terminal/link.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { OutputKind } from '../../types.mjs'

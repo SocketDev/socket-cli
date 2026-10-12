@@ -16,7 +16,7 @@
  * utilities - Mock validation utilities.
  *
  * Related Files: - src/command/config/cmd-config-auto.mts - Implementation -
- * src/command/config/handle-config-auto.mts - Handler.
+ * src/command/config/config-auto-command.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -55,7 +55,7 @@ vi.mock(
 const mockHandleConfigAuto = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/config/handle-config-auto.mts'),
+  import('../../../../src/command/config/config-auto-command.mts'),
   () => ({
     handleConfigAuto: mockHandleConfigAuto,
   }),
@@ -96,7 +96,7 @@ vi.mock(import('../../../../src/util/output/mode.mjs'), () => ({
 // Mock validation utilities.
 const mockCheckCommandInput = vi.hoisted(() => vi.fn(() => true))
 
-vi.mock(import('../../../../src/util/validation/check-input.mts'), () => ({
+vi.mock(import('../../../../src/util/validation/input-check.mts'), () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
 

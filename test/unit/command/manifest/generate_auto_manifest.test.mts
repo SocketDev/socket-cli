@@ -52,37 +52,37 @@ vi.mock(
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/convert-sbt-to-facts.mts'),
+  import('../../../../src/command/manifest/sbt-to-facts-conversion.mts'),
   () => ({
     convertSbtToFacts: mockConvertSbtToFacts,
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/convert-sbt-to-maven.mts'),
+  import('../../../../src/command/manifest/sbt-to-maven-conversion.mts'),
   () => ({
     convertSbtToMaven: mockConvertSbtToMaven,
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/convert-gradle-to-facts.mts'),
+  import('../../../../src/command/manifest/gradle-to-facts-conversion.mts'),
   () => ({
     convertGradleToFacts: mockConvertGradleToFacts,
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/convert-gradle-to-maven.mts'),
+  import('../../../../src/command/manifest/gradle-to-maven-conversion.mts'),
   () => ({
     convertGradleToMaven: mockConvertGradleToMaven,
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/convert-maven-to-facts.mts'),
+  import('../../../../src/command/manifest/maven-to-facts-conversion.mts'),
   () => ({
     convertMavenToFacts: mockConvertMavenToFacts,
   }),
 )
 vi.mock(
-  import('../../../../src/command/manifest/handle-manifest-conda.mts'),
+  import('../../../../src/command/manifest/manifest-conda-command.mts'),
   () => ({
     handleManifestConda: mockHandleManifestConda,
   }),

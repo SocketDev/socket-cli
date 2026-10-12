@@ -4,12 +4,12 @@
  * The pure-string converter is tested next door; this suite covers the I/O
  * wrapper: file existence, empty file, stdin reads, error handling.
  *
- * Related Files: - src/command/manifest/convert-conda-to-requirements.mts.
+ * Related Files: - src/command/manifest/conda-to-requirements-conversion.mts.
  */
 
 import { EventEmitter } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { convertCondaToRequirements } from '../../../../src/command/manifest/convert-conda-to-requirements.mts'
+import { convertCondaToRequirements } from '../../../../src/command/manifest/conda-to-requirements-conversion.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 const mockReadFileSync = vi.hoisted(() => vi.fn())

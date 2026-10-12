@@ -5,7 +5,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
-import { generateReport } from './generate-report.mts'
+import { generateReport } from './report-generation.mts'
 import {
   FOLD_SETTING_NONE,
   OUTPUT_JSON,
@@ -18,7 +18,7 @@ import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 
-import type { ReportLeafNode, ScanReport } from './generate-report.mts'
+import type { ReportLeafNode, ScanReport } from './report-generation.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../util/alert/artifact.mts'

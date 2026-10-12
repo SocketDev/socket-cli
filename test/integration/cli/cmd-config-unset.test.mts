@@ -16,7 +16,7 @@
  * "undefined" using `config set` will NOT achieve the same result.
  *
  * Related Files: - src/command/config/cmd-config-unset.mts - Command
- * definition - src/command/config/handle-config-unset.mts - Config clearing
+ * definition - src/command/config/config-unset-command.mts - Config clearing
  * logic - src/util/config.mts - Config management utilities.
  */
 

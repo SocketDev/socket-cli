@@ -1,5 +1,5 @@
 import { createConfigCommand } from './config-command-factory.mts'
-import { handleConfigGet } from './handle-config-get.mts'
+import { handleConfigGet } from './config-get-command.mts'
 
 export const cmdConfigGet = createConfigCommand({
   commandName: 'get',

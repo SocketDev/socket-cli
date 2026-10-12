@@ -1,4 +1,4 @@
-import { handleDeleteScan } from './handle-delete-scan.mts'
+import { handleDeleteScan } from './scan-deletion-command.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { outputDryRunDelete } from '../../util/dry-run/output.mts'
@@ -10,7 +10,7 @@ import {
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { checkCommandInput } from '../../util/validation/input-check.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'

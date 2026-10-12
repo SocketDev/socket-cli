@@ -1,4 +1,4 @@
-import type { Organizations } from '../command/organization/fetch-organization-list.mts'
+import type { Organizations } from '../command/organization/organization-list-data.mts'
 
 export function getEnterpriseOrgs(orgs: Organizations): Organizations {
   return orgs.filter(o => o.plan.includes('enterprise'))

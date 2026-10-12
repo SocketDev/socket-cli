@@ -1,4 +1,4 @@
-import { handleInstallCompletion } from './handle-install-completion.mts'
+import { handleInstallCompletion } from './completion-install-command.mts'
 import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

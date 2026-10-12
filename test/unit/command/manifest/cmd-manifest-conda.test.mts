@@ -38,7 +38,7 @@ const mockReadOrDefaultSocketJson = vi.hoisted(() =>
 const mockOutputRequirements = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  import('../../../../src/command/manifest/handle-manifest-conda.mts'),
+  import('../../../../src/command/manifest/manifest-conda-command.mts'),
   () => ({
     handleManifestConda: mockHandleManifestConda,
   }),

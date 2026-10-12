@@ -24,7 +24,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
-import { findUp } from '../fs/find-up.mts'
+import { findUp } from '../fs/parent-search.mts'
 
 import type { CResult } from '../../types.mjs'
 const logger = getDefaultLogger()

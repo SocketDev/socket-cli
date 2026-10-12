@@ -1,4 +1,4 @@
-import { handleAsk } from './handle-ask.mts'
+import { handleAsk } from './ask-command.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'

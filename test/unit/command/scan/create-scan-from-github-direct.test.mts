@@ -2,7 +2,7 @@
  * Direct unit tests for create-scan-from-github helpers.
  *
  * Purpose: Tests that import + execute the real source functions (not mocks of
- * them). The companion file `create-scan-from-github.test.mts` only exercises
+ * them). The companion file `github-scan-creation.test.mts` only exercises
  * the Octokit mock surface, which leaves the actual source untouched at
  * runtime.
  *
@@ -10,7 +10,7 @@
  * selectFocus / makeSure, interactive prompt wrappers -
  * streamDownloadWithFetch error path.
  *
- * Related Files: - src/command/scan/create-scan-from-github.mts
+ * Related Files: - src/command/scan/github-scan-creation.mts
  * (implementation)
  */
 
@@ -22,7 +22,7 @@ import {
   makeSure,
   selectFocus,
   streamDownloadWithFetch,
-} from '../../../../src/command/scan/create-scan-from-github.mts'
+} from '../../../../src/command/scan/github-scan-creation.mts'
 
 const mockOctokit = vi.hoisted(() => ({
   repos: { get: vi.fn(), listCommits: vi.fn() },

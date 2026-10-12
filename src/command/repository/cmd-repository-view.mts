@@ -1,4 +1,4 @@
-import { handleViewRepo } from './handle-view-repo.mts'
+import { handleViewRepo } from './repo-view-command.mts'
 import { createRepositoryCommand } from './repository-command-factory.mts'
 
 export const CMD_NAME = 'view'

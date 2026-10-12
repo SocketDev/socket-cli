@@ -44,7 +44,7 @@ vi.mock(import('@socketsecurity/lib-stable/packages/edit'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
 }))
-vi.mock(import('../../../../src/util/fs/find-up.mts'), () => ({
+vi.mock(import('../../../../src/util/fs/parent-search.mts'), () => ({
   findUp: mockFindUp,
 }))
 vi.mock(import('@socketregistry/hyrious__bun.lockb/index.cjs'), () => ({
@@ -96,7 +96,7 @@ describe('detectPackageEnvironment', () => {
   })
 
   it('detects npm environment with package-lock.json', async () => {
-    const { findUp } = await import('../../../../src/util/fs/find-up.mts')
+    const { findUp } = await import('../../../../src/util/fs/parent-search.mts')
     const mockFindUpImported = vi.mocked(findUp)
 
     // Mock finding package-lock.json.
@@ -119,7 +119,7 @@ describe('detectPackageEnvironment', () => {
   })
 
   it('detects pnpm environment with pnpm-lock.yaml', async () => {
-    const { findUp } = await import('../../../../src/util/fs/find-up.mts')
+    const { findUp } = await import('../../../../src/util/fs/parent-search.mts')
     const mockFindUpImported = vi.mocked(findUp)
 
     // Mock finding pnpm-lock.yaml.
@@ -152,7 +152,7 @@ describe('detectPackageEnvironment', () => {
   })
 
   it('detects yarn environment with yarn.lock', async () => {
-    const { findUp } = await import('../../../../src/util/fs/find-up.mts')
+    const { findUp } = await import('../../../../src/util/fs/parent-search.mts')
     const mockFindUpImported = vi.mocked(findUp)
 
     // Mock finding yarn.lock.
@@ -185,7 +185,7 @@ describe('detectPackageEnvironment', () => {
   })
 
   it('detects bun environment with bun.lockb', async () => {
-    const { findUp } = await import('../../../../src/util/fs/find-up.mts')
+    const { findUp } = await import('../../../../src/util/fs/parent-search.mts')
     const mockFindUpImported = vi.mocked(findUp)
 
     // Mock finding bun.lockb.

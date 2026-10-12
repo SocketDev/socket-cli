@@ -62,7 +62,7 @@ const mockReadOrDefaultSocketJson = vi.hoisted(() =>
 )
 
 vi.mock(
-  import('../../../../src/command/scan/handle-create-github-scan.mts'),
+  import('../../../../src/command/scan/github-scan-creation-command.mts'),
   () => ({
     handleCreateGithubScan: mockHandleCreateGithubScan,
   }),

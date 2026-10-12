@@ -1,4 +1,4 @@
-import { handleMcp } from './handle-mcp.mts'
+import { handleMcp } from './mcp-command.mts'
 import { getMcpHttpMode } from '../../env/mcp-http-mode.mts'
 import { getMcpPort } from '../../env/mcp-port.mts'
 import { getSocketOauthIntrospectionClientId } from '../../env/socket-oauth-introspection-client-id.mts'

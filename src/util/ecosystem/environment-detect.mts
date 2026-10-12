@@ -23,7 +23,7 @@ import {
   PACKAGE_JSON,
 } from '../../constants/packages.mts'
 import { VITEST } from '../../env/vitest.mts'
-import { findUp } from '../fs/find-up.mts'
+import { findUp } from '../fs/parent-search.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 import { getAgentExecPath, getAgentVersion } from './environment-agent.mts'
 import { LOCKS, readLockFileByAgent } from './lockfile-readers.mts'

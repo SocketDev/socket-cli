@@ -1,7 +1,7 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import { fetchOrganization } from '../organization/fetch-organization-list.mts'
+import { fetchOrganization } from '../organization/organization-list-data.mts'
 const logger = getDefaultLogger()
 
 export async function suggestOrgSlug(): Promise<string | undefined> {

@@ -13,7 +13,7 @@
  * formatted output strings across different output modes.
  *
  * Related Files: - src/command/repository/output-create-repo.mts
- * (implementation) - src/command/repository/handle-create-repo.mts (handler)
+ * (implementation) - src/command/repository/repo-creation-command.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

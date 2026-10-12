@@ -31,7 +31,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: () => undefined,
 }))
-vi.mock(import('../../../../src/util/spawn/apply-machine-mode.mts'), () => ({
+vi.mock(import('../../../../src/util/spawn/machine-mode-application.mts'), () => ({
   applyMachineModeIfActive: ({ args }: { args: string[] }) => ({
     args,
     env: { EXAMPLE_MODE: 'retained' },

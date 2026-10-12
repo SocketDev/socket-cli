@@ -16,7 +16,7 @@
  * making real API calls or creating actual PRs.
  *
  * Related Files: - src/command/fix/coana-fix.mts - Main fix implementation -
- * src/command/fix/handle-fix.mts - Fix command handler.
+ * src/command/fix/fix-command.mts - Fix command handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

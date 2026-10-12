@@ -16,7 +16,7 @@
  * detected.
  *
  * Related Files: - src/command/ci/cmd-ci.mts - Command definition -
- * src/command/ci/handle-ci.mts - CI handler, delegates to scan create -
+ * src/command/ci/ci-command.mts - CI handler, delegates to scan create -
  * src/command/scan/cmd-scan-create.mts - Underlying scan create command.
  */
 

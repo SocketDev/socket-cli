@@ -19,9 +19,9 @@ import {
   getScanWithEnvVars,
   getScanWithMultiplePackages,
 } from '../../../helpers/report-fixtures.mts'
-import { generateReport } from '../../../../src/command/scan/generate-report.mts'
+import { generateReport } from '../../../../src/command/scan/report-generation.mts'
 
-import type { ScanReport } from '../../../../src/command/scan/generate-report.mts'
+import type { ScanReport } from '../../../../src/command/scan/report-generation.mts'
 
 describe('generate-report - fold functionality', () => {
   describe('fold=none', () => {

@@ -1,5 +1,5 @@
 import { createConfigCommand } from './config-command-factory.mts'
-import { handleConfigSet } from './handle-config-set.mts'
+import { handleConfigSet } from './config-set-command.mts'
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mts'
 import {
   createRetiredSocketApiTokenFailure,

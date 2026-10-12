@@ -82,7 +82,7 @@ vi.mock(import('../../../../src/env/socket-cli-oauth-client-id.mts'), () => ({
 }))
 
 const mockApplyLogin = vi.hoisted(() => vi.fn())
-vi.mock(import('../../../../src/command/login/apply-login.mts'), () => ({
+vi.mock(import('../../../../src/command/login/login-application.mts'), () => ({
   applyLogin: mockApplyLogin,
 }))
 
@@ -102,7 +102,7 @@ vi.mock(import('../../../../src/util/config.mts'), () => ({
 
 const mockFetchOrganization = vi.hoisted(() => vi.fn())
 vi.mock(
-  import('../../../../src/command/organization/fetch-organization-list.mts'),
+  import('../../../../src/command/organization/organization-list-data.mts'),
   () => ({
     fetchOrganization: mockFetchOrganization,
   }),

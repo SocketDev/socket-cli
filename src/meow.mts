@@ -6,7 +6,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { readPackageJsonSync } from '@socketsecurity/lib-stable/packages/read'
 
 import { getPackageJsonPath } from './constants/paths.mts'
-import { parseCliArgs } from './util/cli/parse-args.mts'
+import { parseCliArgs } from './util/cli/args-parser.mts'
 
 import type {
   ParseArgsConfig,

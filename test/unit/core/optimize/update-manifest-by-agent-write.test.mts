@@ -9,7 +9,7 @@
  * pnpm-workspace.yaml integration) - usesPnpmWorkspaceOverrides -
  * getEntryIndexes / getLowestEntryIndex / getHighestEntryIndex.
  *
- * Related Files: - commands/optimize/update-manifest-by-agent.mts
+ * Related Files: - commands/optimize/agent-manifest-update.mts
  * (implementation)
  */
 
@@ -22,7 +22,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   updateManifest,
   usesPnpmWorkspaceOverrides,
-} from '../../../../src/core/optimize/update-manifest-by-agent.mts'
+} from '../../../../src/core/optimize/agent-manifest-update.mts'
 
 import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 
@@ -389,37 +389,37 @@ minimumReleaseAge: 10080
 
     it('getEntryIndexes returns sorted indices for matching keys', async () => {
       const { getEntryIndexes } =
-        await import('../../../../src/core/optimize/update-manifest-by-agent.mts')
+        await import('../../../../src/core/optimize/agent-manifest-update.mts')
       expect(getEntryIndexes(entries, ['exports', 'main'])).toEqual([2, 3])
     })
 
     it('getEntryIndexes filters out keys not present', async () => {
       const { getEntryIndexes } =
-        await import('../../../../src/core/optimize/update-manifest-by-agent.mts')
+        await import('../../../../src/core/optimize/agent-manifest-update.mts')
       expect(getEntryIndexes(entries, ['nope', 'main'])).toEqual([2])
     })
 
     it('getLowestEntryIndex returns -1 when no keys match', async () => {
       const { getLowestEntryIndex } =
-        await import('../../../../src/core/optimize/update-manifest-by-agent.mts')
+        await import('../../../../src/core/optimize/agent-manifest-update.mts')
       expect(getLowestEntryIndex(entries, ['nope'])).toBe(-1)
     })
 
     it('getLowestEntryIndex returns the smallest matching index', async () => {
       const { getLowestEntryIndex } =
-        await import('../../../../src/core/optimize/update-manifest-by-agent.mts')
+        await import('../../../../src/core/optimize/agent-manifest-update.mts')
       expect(getLowestEntryIndex(entries, ['scripts', 'main'])).toBe(2)
     })
 
     it('getHighestEntryIndex returns -1 when no keys match', async () => {
       const { getHighestEntryIndex } =
-        await import('../../../../src/core/optimize/update-manifest-by-agent.mts')
+        await import('../../../../src/core/optimize/agent-manifest-update.mts')
       expect(getHighestEntryIndex(entries, ['nope'])).toBe(-1)
     })
 
     it('getHighestEntryIndex returns the largest matching index', async () => {
       const { getHighestEntryIndex } =
-        await import('../../../../src/core/optimize/update-manifest-by-agent.mts')
+        await import('../../../../src/core/optimize/agent-manifest-update.mts')
       expect(getHighestEntryIndex(entries, ['main', 'scripts'])).toBe(4)
     })
   })

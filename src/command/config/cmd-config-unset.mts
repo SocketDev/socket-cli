@@ -1,5 +1,5 @@
 import { createConfigCommand } from './config-command-factory.mts'
-import { handleConfigUnset } from './handle-config-unset.mts'
+import { handleConfigUnset } from './config-unset-command.mts'
 
 export const CMD_NAME = 'unset'
 

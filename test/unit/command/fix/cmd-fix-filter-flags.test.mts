@@ -36,12 +36,12 @@ const mockGetDefaultOrgSlug = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ ok: true, data: 'test-org' }),
 )
 
-vi.mock(import('../../../../src/command/fix/handle-fix.mts'), () => ({
+vi.mock(import('../../../../src/command/fix/fix-command.mts'), () => ({
   handleFix: mockHandleFix,
 }))
 
 vi.mock(
-  import('../../../../src/command/ci/fetch-default-org-slug.mts'),
+  import('../../../../src/command/ci/organization-slug-data.mts'),
   () => ({
     getDefaultOrgSlug: mockGetDefaultOrgSlug,
   }),

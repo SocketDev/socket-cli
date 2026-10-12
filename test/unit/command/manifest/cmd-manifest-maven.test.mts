@@ -43,7 +43,7 @@ const mockReadOrDefaultSocketJson = vi.hoisted(() =>
 )
 
 vi.mock(
-  import('../../../../src/command/manifest/convert-maven-to-facts.mts'),
+  import('../../../../src/command/manifest/maven-to-facts-conversion.mts'),
   () => ({
     convertMavenToFacts: mockConvertMavenToFacts,
   }),

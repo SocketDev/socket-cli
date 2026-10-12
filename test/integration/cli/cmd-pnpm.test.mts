@@ -15,7 +15,7 @@
  * Related Files: - src/command/pnpm/cmd-pnpm.mts - pnpm command
  * implementation.
  *
- * - Src/pnpm-cli.mts - pnpm CLI entry point - src/util/dlx/resolve-binary.mjs -
+ * - Src/pnpm-cli.mts - pnpm CLI entry point - src/util/dlx/binary-resolution.mjs -
  *   sfw resolution - test/integration/cli/cmd-pnpm-malware.test.mts - Malware
  *   tests.
  */

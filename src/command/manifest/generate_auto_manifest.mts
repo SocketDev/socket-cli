@@ -3,12 +3,12 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { runBazelAutoManifest } from './auto-manifest-bazel.mts'
-import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
-import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
-import { convertMavenToFacts } from './convert-maven-to-facts.mts'
-import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
-import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
-import { handleManifestConda } from './handle-manifest-conda.mts'
+import { convertGradleToFacts } from './gradle-to-facts-conversion.mts'
+import { convertGradleToMaven } from './gradle-to-maven-conversion.mts'
+import { convertMavenToFacts } from './maven-to-facts-conversion.mts'
+import { convertSbtToFacts } from './sbt-to-facts-conversion.mts'
+import { convertSbtToMaven } from './sbt-to-maven-conversion.mts'
+import { handleManifestConda } from './manifest-conda-command.mts'
 import {
   resolveCondaInfile,
   resolveCondaOutfile,
@@ -23,7 +23,7 @@ import { SOCKET_JSON } from '../../constants/socket.mts'
 import { InputError } from '../../util/error/errors-types.mts'
 import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
 
-import type { GeneratableManifests } from './detect-manifest-actions.mts'
+import type { GeneratableManifests } from './manifest-actions-detection.mts'
 import type {
   ResolvedPathsSidecar,
   SidecarAccumulator,
