@@ -64,17 +64,6 @@ describe('cargo firewall integration', () => {
       { stdio: 'inherit' },
     )
   })
-  it('forwards child flags without interpreting them as wrapper flags', async () => {
-    await cmdCargo.run(
-      ['--help', '--version', '--verbose'],
-      import.meta,
-      context,
-    )
-    expect(mocks.run).toHaveBeenCalledWith(
-      ['cargo', '--help', '--version', '--verbose'],
-      { stdio: 'inherit' },
-    )
-  })
   it.each([0, 7])('propagates result %s after cleanup', async code => {
     mocks.run.mockResolvedValue({ code, signal: noChildSignal })
     await cmdCargo.run(['install', 'example-package'], import.meta, context)

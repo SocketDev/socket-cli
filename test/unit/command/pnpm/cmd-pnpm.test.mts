@@ -64,17 +64,6 @@ describe('pnpm firewall integration', () => {
       { stdio: 'inherit' },
     )
   })
-  it('forwards child flags without interpreting them as wrapper flags', async () => {
-    await cmdPnpm.run(
-      ['--help', '--version', '--verbose'],
-      import.meta,
-      context,
-    )
-    expect(mocks.run).toHaveBeenCalledWith(
-      ['pnpm', '--help', '--version', '--verbose'],
-      { stdio: 'inherit' },
-    )
-  })
   it.each([0, 7])('propagates result %s after cleanup', async code => {
     mocks.run.mockResolvedValue({ code, signal: noChildSignal })
     await cmdPnpm.run(['install', 'example-package'], import.meta, context)

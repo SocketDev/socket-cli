@@ -64,13 +64,6 @@ describe('go firewall integration', () => {
       { stdio: 'inherit' },
     )
   })
-  it('forwards child flags without interpreting them as wrapper flags', async () => {
-    await cmdGo.run(['--help', '--version', '--verbose'], import.meta, context)
-    expect(mocks.run).toHaveBeenCalledWith(
-      ['go', '--help', '--version', '--verbose'],
-      { stdio: 'inherit' },
-    )
-  })
   it.each([0, 7])('propagates result %s after cleanup', async code => {
     mocks.run.mockResolvedValue({ code, signal: noChildSignal })
     await cmdGo.run(['install', 'example-package'], import.meta, context)

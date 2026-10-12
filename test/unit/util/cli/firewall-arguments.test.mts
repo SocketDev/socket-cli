@@ -40,6 +40,20 @@ describe('firewall wrapper argument boundaries', () => {
       commandArgs: [],
     })
   })
+  it.each([true, false])(
+    'forwards help and child flags after the separator with dry-run support %s',
+    supportDryRun => {
+      expect(
+        splitFirewallArguments(['--', '--help', '--version', '--verbose'], {
+          explicitCommand: false,
+          supportDryRun,
+        }),
+      ).toEqual({
+        wrapperArgs: [],
+        commandArgs: ['--help', '--version', '--verbose'],
+      })
+    },
+  )
   it.each(['--help', '-h'])(
     'handles handoff help %s with trailing wrapper flags locally',
     flag => {
@@ -53,6 +67,16 @@ describe('firewall wrapper argument boundaries', () => {
       })
     },
   )
+  it('keeps mixed leading help flags in local wrapper arguments', () => {
+    expect(
+      splitFirewallArguments(['--help', '--version', '--verbose'], {
+        explicitCommand: false,
+      }),
+    ).toEqual({
+      wrapperArgs: ['--help', '--version', '--verbose'],
+      commandArgs: [],
+    })
+  })
   it('leaves unsupported wrapper modes for runtime rejection', () => {
     expect(
       splitFirewallArguments(['--service'], { explicitCommand: true }),

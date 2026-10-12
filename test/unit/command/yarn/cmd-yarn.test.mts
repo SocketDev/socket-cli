@@ -64,17 +64,6 @@ describe('yarn firewall integration', () => {
       { stdio: 'inherit' },
     )
   })
-  it('forwards child flags without interpreting them as wrapper flags', async () => {
-    await cmdYarn.run(
-      ['--help', '--version', '--verbose'],
-      import.meta,
-      context,
-    )
-    expect(mocks.run).toHaveBeenCalledWith(
-      ['yarn', '--help', '--version', '--verbose'],
-      { stdio: 'inherit' },
-    )
-  })
   it.each([0, 7])('propagates result %s after cleanup', async code => {
     mocks.run.mockResolvedValue({ code, signal: noChildSignal })
     await cmdYarn.run(['install', 'example-package'], import.meta, context)

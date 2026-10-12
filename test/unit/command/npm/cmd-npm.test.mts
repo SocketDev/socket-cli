@@ -64,13 +64,6 @@ describe('npm firewall integration', () => {
       { stdio: 'inherit' },
     )
   })
-  it('forwards child flags without interpreting them as wrapper flags', async () => {
-    await cmdNpm.run(['--help', '--version', '--verbose'], import.meta, context)
-    expect(mocks.run).toHaveBeenCalledWith(
-      ['npm', '--help', '--version', '--verbose'],
-      { stdio: 'inherit' },
-    )
-  })
   it.each([0, 7])('propagates result %s after cleanup', async code => {
     mocks.run.mockResolvedValue({ code, signal: noChildSignal })
     await cmdNpm.run(['install', 'example-package'], import.meta, context)
