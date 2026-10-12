@@ -1,7 +1,7 @@
 name: PR branch app token
 description: >-
-  Mint a short-lived PR App installation token for owned non-default branch
-  writes. Workflow files are outside this profile.
+  Mint a short-lived PR App installation token for release branches and PRs.
+  Workflow files are outside this profile.
 
 inputs:
   client-id:
@@ -36,7 +36,7 @@ runs:
         APP_PRIVATE_KEY: ${{ inputs.private-key }}
         CLIENT_ID: ${{ inputs.client-id }}
         OWNER: ${{ inputs.owner || github.repository_owner }}
-        PERMISSIONS: '{"contents":"write"}'
+        PERMISSIONS: '{"contents":"write","issues":"write","pull_requests":"write"}'
         REPOSITORIES: ${{ inputs.repositories }}
         GITHUB_ACTION_PATH: ${{ github.action_path }}
       run: node "${GITHUB_ACTION_PATH}/mint-app-installation-token.mjs"

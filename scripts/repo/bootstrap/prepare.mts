@@ -474,7 +474,7 @@ const bootstrapRunner = (function (
    * `main()` actually parses.
    */
   interface ScriptMeta {
-    readonly commandBoundary?: '--exec' | undefined
+    readonly commandBoundary?: '--exec' | 'exec' | undefined
     readonly heavyJob?: 'test' | 'coverage' | 'build' | 'type' | undefined
     readonly json?: 'native' | 'result' | undefined
     readonly describe: string

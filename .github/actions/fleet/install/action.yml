@@ -79,11 +79,11 @@ runs:
         # absent or unparseable.
         FALLBACK_VERSION="1.4.0"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
-        EXTERNAL_TOOLS="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
+        EXTERNAL_TOOLS="${GITHUB_WORKSPACE}/scripts/fleet/setup/security/external-tools.json"
         resolve_version() {
           if [ -f "$EXTERNAL_TOOLS" ]; then
             local purl
-            purl="$(node "$JQ" "$EXTERNAL_TOOLS" agentshield purl 2>/dev/null || true)"
+            purl="$(node "$JQ" "$EXTERNAL_TOOLS" tools agentshield purl 2>/dev/null || true)"
             if [ -n "$purl" ]; then
               echo "${purl##*@}"
               return
@@ -113,8 +113,8 @@ runs:
         # RESOLVE when the consumer IS @socketsecurity/lib itself and its dist/
         # isn't built yet at this setup-time step (chicken-and-egg). AgentShield
         # is a scan convenience, not a build prerequisite — skip with a warning
-        # rather than failing the whole job. A genuine download failure (module
-        # resolved, download threw) still surfaces as an empty binaryPath below.
+        # rather than failing the whole job. A genuine download failure keeps
+        # its stderr and non-zero exit so the job reports the cause directly.
         RESULT_JSON="$(AGENTSHIELD_SPEC="ecc-agentshield@${CLEAN_VERSION}" \
           node --input-type=module -e "
             let mod;
@@ -143,7 +143,7 @@ runs:
               binaryName: 'agentshield',
             });
             process.stdout.write(JSON.stringify({ binaryPath, installed }));
-          " 2>/dev/null || true)"
+          ")"
         SKIP="$(echo "$RESULT_JSON" | node "$JQ" - skip 2>/dev/null || true)"
         if [ -n "$SKIP" ]; then
           echo "⚠ Skipping AgentShield install ($SKIP) — @socketsecurity/lib/dlx/package unavailable at setup time. Scan jobs will run without AgentShield."

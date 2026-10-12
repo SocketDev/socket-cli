@@ -85,7 +85,7 @@ jobs:
     name: Update dependencies
     needs: check-updates
     if: ${{ needs.check-updates.outputs.actionable == 'true' }}
-    runs-on: ${{ vars.ODAI_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ vars.ODAI_RUNNER || 'depot-ubuntu-24.04-4' }}
     timeout-minutes: 45
     permissions:
       contents: read
@@ -128,9 +128,6 @@ jobs:
 
       - name: 'Set up odai'
         uses: ./.github/actions/fleet/setup-odai
-        with:
-          allow-fill: 'true'
-          require-ready: 'true'
         id: odai
 
       - name: 'Mint PR branch token'

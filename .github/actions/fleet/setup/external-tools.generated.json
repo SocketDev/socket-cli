@@ -431,16 +431,16 @@
     },
     "mise": {
       "binaryName": "mise",
-      "description": "mise runtime manager, pinned to publisher checksums and restricted to safe locked operation",
+      "description": "mise runtime manager with verified release assets and safe locked operation",
       "notes": [
-        "Integrity values derive from the minisign-signed SHASUMS256.txt release asset.",
+        "Each platform asset has a SHA-512 integrity value measured from its release download.",
         "Safe mode disables project environment loading, hooks, and plugin scripts."
       ],
       "origin": "gh-asset",
       "repository": "github:jdx/mise",
-      "version": "2026.9.17",
-      "tag": "v2026.9.17",
-      "versionDate": "2026-09-18",
+      "version": "2026.10.7",
+      "tag": "v2026.10.7",
+      "versionDate": "2026-10-09",
       "misePolicy": {
         "autoInstall": false,
         "autoUpdate": false,
@@ -457,45 +457,50 @@
       },
       "platforms": {
         "darwin-arm64": {
-          "asset": "mise-v2026.9.17-macos-arm64.tar.gz",
+          "asset": "mise-v2026.10.7-macos-arm64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha512-KXC8OPlak3jEScYTHA9BRvTFkarcGnsj5ggrhufRDNBsGw7W37t0uareMEEyKH4oGEKS5zXxvo7fpuU8gHsUIQ=="
+          "integrity": "sha512-JBK8ibr5rtHF/KKchcL4thopq0heY8N/8a/L833mw8xol6825j1WXzjpmzfCI1usXn3s04F+PcsN0aV9nkCovQ=="
         },
         "darwin-x64": {
-          "asset": "mise-v2026.9.17-macos-x64.tar.gz",
+          "asset": "mise-v2026.10.7-macos-x64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha512-8EDBpSOF02FRVHagSCZ0huX3jjOXH2foL0DKxOmUntITBCO20w2sM1IjsurXz2Vh6HZOEwgRSBeafykwbrW1Nw=="
+          "integrity": "sha512-zKPmSFjmNadnjEdgAhDEeObomGM+8GInd/P8P3HSE4HcfPTTJEx0RRb9QgArTMHG3lUH25+42zTgnjBJXs+Lmg=="
         },
         "linux-arm64": {
-          "asset": "mise-v2026.9.17-linux-arm64.tar.gz",
+          "asset": "mise-v2026.10.7-linux-arm64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha512-8uwEFpj4x7DpbLuhjqt9ypMmZu39ugLMI7rI5TCqHh2uFhfdFmff6+mssTkdnpjCBlH0daVbzKDOJ7w59kOQ8A=="
+          "integrity": "sha512-usbDMuNyEM564o5Y6rOf1/j71BXiEK1kfwkZ5SynsE06jaSugAGmY+6aNulq+xmVDboIqZ1KRYrQpRgDq1q8kg=="
         },
         "linux-arm64-musl": {
-          "asset": "mise-v2026.9.17-linux-arm64-musl.tar.gz",
+          "asset": "mise-v2026.10.7-linux-arm64-musl.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha512-P+CVCzEMJi3ErOHCKH7VhOQ6uoLcSJwXM44gJ5Dk60SQ2LFj3mEbLuV8yVLMlT/UVz6270Hhy1ZYZKDDYDk3BA=="
+          "integrity": "sha512-J2axJbv4xS33k0IVe4DBRDjtSSaMZev3GeqTgT32JnUim194TgHkYC636UnWdmLyyXaRJ8pOW6P845WjxO+GqQ=="
         },
         "linux-x64": {
-          "asset": "mise-v2026.9.17-linux-x64.tar.gz",
+          "asset": "mise-v2026.10.7-linux-x64.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha512-CXuO3KZ/ZBU1URPr8Y2u0RYbyOfwMEsp0kEkR1OSNORuFXj2uwhHbqPD9zf7rqhrNRR67FsgT/f2huYa/aV44w=="
+          "integrity": "sha512-jkFRnX3mkN4VR79LkoPvs1cQK45YEnDacNdPfsZs/5w1hfJoxS+6UMpa1vbHZBBTMaVQuNbNuHLsPyNwpMmGiA=="
         },
         "linux-x64-musl": {
-          "asset": "mise-v2026.9.17-linux-x64-musl.tar.gz",
+          "asset": "mise-v2026.10.7-linux-x64-musl.tar.gz",
           "binary": "mise/bin/mise",
-          "integrity": "sha512-xWWAqSx+3K2GSJpxfwzxW0KJWylfnam7iXmC207T418wLCRSv7IiX9vSA+meNJRxTak/Jd1amaPoT43IDZwjqg=="
+          "integrity": "sha512-Cp2lQHOcupynS76CZvUEvDILj61EuMvUC1vhr5MMHL2gOCFVx4D+QoxY7H6cyU2V0cMYaNAZrWXsxPeVljbGWA=="
         },
         "win32-arm64": {
-          "asset": "mise-v2026.9.17-windows-arm64.zip",
+          "asset": "mise-v2026.10.7-windows-arm64.zip",
           "binary": "mise/bin/mise.exe",
-          "integrity": "sha512-t+OEw5t8LxDF0zTz1MAhI7XaWyGE1Yx78I8iyDit1YeSKPFXLJXhiiByvZjkNIUE2z3bO2qhYfe+oh5nKRIoVw=="
+          "integrity": "sha512-7kYMeHTj4hOpYY6Tfb3q+VpiojIs9hDsMFoUxBaj7oJREpXyKsmIx9gogdw9yyqc+qSus2tsbGaf1kUTZcMcGw=="
         },
         "win32-x64": {
-          "asset": "mise-v2026.9.17-windows-x64.zip",
+          "asset": "mise-v2026.10.7-windows-x64.zip",
           "binary": "mise/bin/mise.exe",
-          "integrity": "sha512-vhEXFV9E1TMBz1MI5WmnAsUc3ar8yrdU6utanDT2kezSVzI4xKTHEVOLqFUbquN+1hlPJu+mHeOGCbFk5j+WNw=="
+          "integrity": "sha512-bqxT4/JBwKzs+kAvuc6u8/J9CHwPU+Q49bULZ308aJzp6QEpoPZzsbtqYB2pqCw1pu5UFO3vc1gpIE3uedkzmA=="
         }
+      },
+      "soakBypass": {
+        "published": "2026-10-09",
+        "removable": "2026-10-16",
+        "version": "2026.10.7"
       }
     },
     "mold": {
@@ -743,54 +748,54 @@
     },
     "pnpm": {
       "notes": [
-        "Eight supported platforms use native binaries from the pnpm v12.9.1 GitHub release, including darwin-x64.",
+        "Eight supported platforms use native binaries from the pnpm v12.12.0 GitHub release, including darwin-x64.",
         "Linux glibc and musl platforms use distinct assets and integrity values.",
         "Each platform asset has a verified SHA-512 integrity value.",
-        "The dated soak exception expires on 2026-10-10."
+        "The dated soak exception expires on 2026-10-17."
       ],
       "description": "Fast, disk space efficient package manager",
       "repository": "github:pnpm/pnpm",
-      "version": "12.9.1",
-      "tag": "v12.9.1",
+      "version": "12.12.0",
+      "tag": "v12.12.0",
       "platforms": {
         "darwin-arm64": {
           "asset": "pnpm-darwin-arm64.tar.gz",
-          "integrity": "sha512-KBY1efj7bUwzOPymmQAVJCAiSW2OpIiwX9GnuhzB9c66ZEdKT+MxKc3eNQ4t7WxaCmeVasuxnIs3GWmaE2f6xA=="
+          "integrity": "sha512-7VnH+RdUx7PpoxkNv+Lb15REk3XpVj1S94tSSxnhBWn53tah9rFSGaWdoljF+a8+5FtmiLvKkzV3qZ/9+HmVPQ=="
         },
         "darwin-x64": {
           "asset": "pnpm-darwin-x64.tar.gz",
-          "integrity": "sha512-kO4lMv3NTPjDu08ITCz7amdql7XdNIBhsb7GNjB4N46EQbOEIg1jKqFucxc8zFChhksofi5GrRQxQ+ePyOBI2Q=="
+          "integrity": "sha512-zjyoVTj2Bvo2DQuTnOCMaqBIazuMQHFl8Nt7+SZ19SVRemXvvh+Bg8iMzgaBDwJTEikpBx2fYY/Q0lSD36535w=="
         },
         "linux-arm64": {
           "asset": "pnpm-linux-arm64.tar.gz",
-          "integrity": "sha512-jqPz0eakopYiDsgn4hNeNPN1Yfx8rvh0ngGxAUXcuwi0HYNyn2h0/tc0iAbiS4okSWuNKJ00WFtMteELAqHwXg=="
+          "integrity": "sha512-xph5ueHRQX0mX1Lo53g74gJA8rCG9ce9iy48Rm6nSFSfv13y0ZH1o+8k5ai4GM6ZAuud6ZXF5zkU+gQemp6CRA=="
         },
         "linux-arm64-musl": {
           "asset": "pnpm-linux-arm64-musl.tar.gz",
-          "integrity": "sha512-N/fLbCzGzfVpFjHoi5wS0QrDy2NkQnDS4WrZSD4rZQOZfZ6lbzcfy/wVy8jt+NmOUtBEomR3Kkd1YNKe42muYA=="
+          "integrity": "sha512-V/k+2BJszqLgo7SK6vtRIAUrtYEKcieI6aG7SlRURYqPHMzCAL7h6g0+llXRKQFbLOXf9qsRSfWcvsCPaEf5cw=="
         },
         "linux-x64": {
           "asset": "pnpm-linux-x64.tar.gz",
-          "integrity": "sha512-vGKnhv2BjECcBAbTlRooQdrXhYgdRbKEqD4VLL4tML+0rDD7kdyURlL6KD+NxjXvsVB2fekcJX/vKBWdyTEZqQ=="
+          "integrity": "sha512-pKcD9MeYjJ0qy/IOrd7FHmsQMiqoi+wcBG3HGcnodsldG9I9gZ9joj0lCb8uqDCAqY4TnBvpmosJl4UpKJL3mg=="
         },
         "linux-x64-musl": {
           "asset": "pnpm-linux-x64-musl.tar.gz",
-          "integrity": "sha512-e/nbnXVLVcpxXGt+DjpvliW0JS+bElUwePmb3mwfrFDS/tIs7/w2Lxm7/Bz+y1ZZlKXb/oW35BgVXIuAQvbcHA=="
+          "integrity": "sha512-asJz8aBD4IFzXfJ45IhWFB631m+OJJ5Mn6PJOQalM/HM306ahRKoRITA8/a6OKRhx8klu/2uw8JYrQF9eEm+YQ=="
         },
         "win32-arm64": {
           "asset": "pnpm-win32-arm64.zip",
-          "integrity": "sha512-UsILAOi1l8ASIQIiT8i/YL4Q7onj8Wo5XVIhN5KrlCOF86/FGhO+C/nEgeD1OkuY6jc3sYlPIJE4ouvM0h5Ucw=="
+          "integrity": "sha512-i3NLV4gR0qL8jdSI0NbL9frQfXAGwnZu8WSlNJC+0vVUst53cm0JqeT39nWcqcfPsM5mszx5QA8+YZg3sjxvrw=="
         },
         "win32-x64": {
           "asset": "pnpm-win32-x64.zip",
-          "integrity": "sha512-iWK++jwlMf4Mjb61AdXXYp5f8MPnwkNfTQDZaHNb4jf+Gtkt7wJ65wqXcYYuVtO1fh+b3FMTfh4mUJH97PRg+g=="
+          "integrity": "sha512-db9WaY/ydV4uqHUln/GI9pzxXi1MdGlsRZQDQKMr8BO/ktYfV9eeCwGI5ttJBWMWWewClOZQkp3yiAq89YT6dA=="
         }
       },
       "origin": "gh-asset",
       "soakBypass": {
-        "version": "12.9.1",
-        "published": "2026-10-03",
-        "removable": "2026-10-10"
+        "published": "2026-10-10",
+        "removable": "2026-10-17",
+        "version": "12.12.0"
       }
     },
     "rustup": {

@@ -1,6 +1,3 @@
-* text=auto eol=lf
-
-# <fleet>
 # Cascaded from socket-wheelhouse/template/base/universal/. Don't edit locally —
 # edit upstream and re-cascade via commit-cascade. Marked
 # linguist-generated so GitHub PR diffs collapse them by default.
@@ -112,6 +109,8 @@ docs/fleet/fuzzing linguist-generated=true
 docs/fleet/perf linguist-generated=true
 docs/fleet/testing linguist-generated=true
 docs/fleet/workflows linguist-generated=true
+docs/references/fleet/fixtures/package-intelligence-v1 linguist-generated=true
+docs/references/fleet/package-intelligence-v1.md linguist-generated=true
 docs/references/fleet/sfw-local-install.md linguist-generated=true
 patches/fleet/@polka__url@1.0.0-next.29.patch linguist-generated=true
 patches/fleet/brace-expansion@5.0.12.patch linguist-generated=true
@@ -124,6 +123,7 @@ scripts/fleet/npm/scan/receipt.mts linguist-generated=true
 scripts/fleet/npm/scan/staged.mts linguist-generated=true
 scripts/fleet/registry/npm/scan/ndjson.mts linguist-generated=true
 scripts/fleet/registry/npm/scan/run.mts linguist-generated=true
+scripts/fleet/registry/npm/staged.mts linguist-generated=true
 scripts/fleet/setup/bootstrap/zero-dep-packages.mjs linguist-generated=true
 scripts/fleet/setup/lib/check/sfw.mjs linguist-generated=true
 scripts/fleet/setup/lib/error-message.mjs linguist-generated=true
@@ -144,10 +144,11 @@ test/fleet/unit/credentials/otp/bindings.test.mts linguist-generated=true
 test/fleet/unit/fix/plan.test.mts linguist-generated=true
 test/fleet/unit/fix/run.test.mts linguist-generated=true
 test/fleet/unit/lockstep/emit-mirror-globs.test.mts linguist-generated=true
+test/fleet/unit/registry/apple/ci/keychain.test.mts linguist-generated=true
 test/fleet/unit/registry/cargo/placeholder.test.mts linguist-generated=true
 test/fleet/unit/registry/npm/placeholder.test.mts linguist-generated=true
 test/fleet/unit/setup/lib/pnpm-path.test.mts linguist-generated=true
 *.patch whitespace=-blank-at-eol,-space-before-tab
-# </fleet>
 # <repo>
+* text=auto eol=lf
 # </repo>

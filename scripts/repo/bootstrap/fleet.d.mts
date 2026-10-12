@@ -11,7 +11,7 @@ export declare function migrateWorkspaceSettings(dest: string, yaml: string): st
  * `main()` actually parses.
  */
 interface ScriptMeta {
-  readonly commandBoundary?: '--exec' | undefined;
+  readonly commandBoundary?: '--exec' | 'exec' | undefined;
   readonly heavyJob?: 'test' | 'coverage' | 'build' | 'type' | undefined;
   readonly json?: 'native' | 'result' | undefined;
   readonly describe: string;
@@ -845,6 +845,7 @@ export declare function ensureCurrentFleet(config: InstallConfig, dependencies?:
  * Download, verify, and apply the fleet bundle identified by `config.ref`.
  * Returns 0 on success, 1 on any error.
  */
+export declare function shouldDeferLegacyRuleSeed(dest: string, preservedPaths: ReadonlySet<string> | undefined): boolean;
 export declare function installFleet(config: InstallConfig): Promise<number>;
 export declare function isMainModule(): boolean;
 export declare function main(dependencies?: {

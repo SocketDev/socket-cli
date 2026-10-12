@@ -311,10 +311,7 @@ async function main() {
   }
 
   // PREFLIGHT: the installation's own grant must already cover every requested
-  // scope. Runs before the mint and therefore before any publish/promote — the
-  // widened `pull_requests: write` request is only exercised by the promote PR
-  // that follows a successful publish, so without this the shortfall surfaces
-  // as a 403 in the irreversible window.
+  // scope. Runs before the mint and before any release or Actions operation.
   if (permissions !== undefined) {
     const missing = findMissingAppPermissions({
       granted: installation.permissions,
