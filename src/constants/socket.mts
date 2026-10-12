@@ -35,8 +35,6 @@ export const SCAN_TYPE_SOCKET = 'socket'
 export const SCAN_TYPE_SOCKET_TIER1 = 'socket_tier1'
 
 // Token
-export const SOCKET_PUBLIC_API_TOKEN =
-  'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
 export const TOKEN_PREFIX = 'sktsec_'
 export const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
 

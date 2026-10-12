@@ -8,7 +8,7 @@
  *
  * - Core properties (rootPath, distPath, homePath, isWin32 platform flag)
  * - Path properties validation, correct directory structure
- * - URL defaults (API_V0_URL, NPM_REGISTRY_URL, SOCKET_PUBLIC_API_TOKEN)
+ * - URL defaults (API_V0_URL, NPM_REGISTRY_URL)
  * - Environment variable overrides (via ENV object)
  * - Command constants (NPM, NPX, PNPM, YARN, NODE_MODULES, PACKAGE_JSON)
  * - Flag constants (FLAG_QUIET, FLAG_SILENT, FLAG_VERSION, FLAG_HELP, FLAG_JSON,
@@ -66,7 +66,7 @@ describe('constants', () => {
     // Check for URL properties.
     expect(constants).toHaveProperty('API_V0_URL')
     expect(constants).toHaveProperty('NPM_REGISTRY_URL')
-    expect(constants).toHaveProperty('SOCKET_PUBLIC_API_TOKEN')
+    expect(Object.hasOwn(constants, 'SOCKET_PUBLIC_API_TOKEN')).toBe(false)
 
     // Check for environment object.
     expect(constants).toHaveProperty('ENV')
@@ -94,9 +94,6 @@ describe('constants', () => {
 
     expect(constants.API_V0_URL).toBe('https://api.socket.dev/v0/')
     expect(constants.NPM_REGISTRY_URL).toBe('https://registry.npmjs.org')
-    expect(constants.SOCKET_PUBLIC_API_TOKEN).toBe(
-      'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api',
-    )
   })
 
   it('has correct command constants', async () => {

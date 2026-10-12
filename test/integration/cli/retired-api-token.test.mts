@@ -7,7 +7,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn as spawnProcess } from '@socketsecurity/lib-stable/process/spawn/child'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { SOCKET_PUBLIC_API_TOKEN } from '../../../src/constants/socket.mts'
+import { retiredSocketApiTokenFixture } from '../../helpers/retired-socket-api-token.mts'
 
 type FixtureReport = {
   basicAuthorization?: boolean | undefined
@@ -160,9 +160,9 @@ function writeRetiredSettings(home: string): void {
   mkdirSync(configDirectory, { recursive: true })
   writeFileSync(
     path.join(configDirectory, 'config.json'),
-    Buffer.from(JSON.stringify({ apiToken: SOCKET_PUBLIC_API_TOKEN })).toString(
-      'base64',
-    ),
+    Buffer.from(
+      JSON.stringify({ apiToken: retiredSocketApiTokenFixture }),
+    ).toString('base64'),
   )
 }
 
@@ -188,7 +188,7 @@ describe('retired Socket API token rejection', () => {
       result: { ok: false, code: 'SOCKET_RETIRED_API_TOKEN' },
     })
     const environment = await runProcess('environment-retired', {
-      SOCKET_CLI_API_TOKEN: SOCKET_PUBLIC_API_TOKEN,
+      SOCKET_CLI_API_TOKEN: retiredSocketApiTokenFixture,
     })
     expect(environment).toMatchObject({
       code: 0,

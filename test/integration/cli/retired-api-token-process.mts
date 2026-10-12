@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { SOCKET_PUBLIC_API_TOKEN } from '../../../src/constants/socket.mts'
+import { retiredSocketApiTokenFixture } from '../../helpers/retired-socket-api-token.mts'
 import { queryApiSafeText } from '../../../src/util/socket/api-query.mts'
 import {
   getDefaultApiToken,
@@ -102,12 +102,12 @@ function scenarioToken(): string {
     return syntheticApiToken
   }
   if (scenario === 'stored-retired-whitespace') {
-    return ` \t${SOCKET_PUBLIC_API_TOKEN}\n `
+    return ` \t${retiredSocketApiTokenFixture}\n `
   }
   if (scenario === 'no-credentials') {
     return ''
   }
-  return SOCKET_PUBLIC_API_TOKEN
+  return retiredSocketApiTokenFixture
 }
 
 async function startCaptureServer(): Promise<Capture> {
@@ -150,7 +150,7 @@ async function runSetupSdk(
 
 async function runExplicitRetired(originalSettings: Buffer): Promise<void> {
   const result = await resolveSdkCredential({
-    apiToken: SOCKET_PUBLIC_API_TOKEN,
+    apiToken: retiredSocketApiTokenFixture,
   })
   reportAuthResult(result, originalSettings, 0)
 }
