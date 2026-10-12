@@ -349,16 +349,10 @@ function buildDependencyGraph(
           .map(coordId => indexOf(vertex(p.projectKey, coordId)))
           .sort((x, y) => x - y),
       }
-      // A project without a build file of its own is defined by the scripts
-      // declaring its dependencies, e.g. the root build script.
-      const declared = [...new Set([...p.declaredIn.values()].flat())]
-      const files = p.buildFiles.length
-        ? p.buildFiles
-        : declared.length
-          ? declared
-          : p.missingBuildFiles
-      if (files.length) {
-        entry.manifestFiles = [...new Set(files)].sort().map(file => ({ file }))
+      if (p.buildFiles.length) {
+        entry.manifestFiles = [...new Set(p.buildFiles)]
+          .sort()
+          .map(file => ({ file }))
       }
       return entry
     }),

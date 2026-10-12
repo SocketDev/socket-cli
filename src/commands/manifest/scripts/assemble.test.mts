@@ -421,24 +421,17 @@ describe('records → assemble → sidecar', () => {
       'g:mod-b:1': [{ file: 'mod/b.xml' }],
     })
   })
-  it('attributes a Gradle project without a build file of its own to the scripts declaring its dependencies', () => {
+  it('marks each Gradle project with its configured build file, even when absent', () => {
     const records = [
       'meta\tgradle\t9.2.1\t21',
       'buildRoot\t/repo',
       'project\t:\tg\troot\t1\t.',
       'projectBuild\t:\tbuild.gradle.kts',
+      // Configured from the root build, no script of its own.
       'project\t:a\tg\ta\t1\ta',
-      'declared\t:a\tx\tfrom-root\tbuild.gradle.kts',
-      'project\t:b\tg\tb\t1\tb',
-      'projectBuild\t:b\tb/build.gradle.kts',
-      'declared\t:b\tx\tfrom-root\tbuild.gradle.kts',
-      'declared\t:b\tx\town\tb/build.gradle.kts',
+      'projectBuild\t:a\ta/build.gradle.kts',
       'root\tr1\t:a\truntimeClasspath\t1',
       'node\tr1\tx:from-root:jar:1\tx\tfrom-root\t1\tjar\t\t1',
-      'root\tr2\t:b\truntimeClasspath\t1',
-      'node\tr2\tx:from-root:jar:1\tx\tfrom-root\t1\tjar\t\t1',
-      'node\tr2\tx:own:jar:1\tx\town\t1\tjar\t\t1',
-      'node\tr2\tx:by-plugin:jar:1\tx\tby-plugin\t1\tjar\t\t1',
     ].join('\n')
     const { facts } = assembleFacts(parseRecords(records))
 
@@ -448,24 +441,8 @@ describe('records → assemble → sidecar', () => {
       ),
     ).toEqual({
       ':': ['build.gradle.kts'],
-      ':a': ['build.gradle.kts'],
-      ':b': ['b/build.gradle.kts'],
+      ':a': ['a/build.gradle.kts'],
     })
-  })
-  it('falls back to the configured Gradle build file even when absent', () => {
-    const records = [
-      'meta\tgradle\t9.2.1\t21',
-      'buildRoot\t/repo',
-      'project\t:a\tg\ta\t1\ta',
-      'projectBuild\t:a\ta/build.gradle.kts\tmissing',
-      'root\tr1\t:a\truntimeClasspath\t1',
-      'node\tr1\tx:undeclared:jar:1\tx\tundeclared\t1\tjar\t\t1',
-    ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records))
-
-    expect(facts.projects![0]?.manifestFiles).toEqual([
-      { file: 'a/build.gradle.kts' },
-    ])
   })
 })
 
