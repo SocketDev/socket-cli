@@ -15,6 +15,44 @@ import { resolveSeaTarget, SEA_TARGETS } from './targets.mts'
 
 const logger = getDefaultLogger()
 const MAX_SMOKE_OUTPUT_CHARS = 4000
+const DARWIN_DIAGNOSTIC_TIMEOUT_MS = 10_000
+
+export async function collectDarwinCrashDiagnostic(
+  binary: string,
+  options: { spawnProcess?: typeof spawn } = {},
+): Promise<string> {
+  if (process.platform !== 'darwin') {
+    return ''
+  }
+  try {
+    const result = await (options.spawnProcess ?? spawn)(
+      'lldb',
+      [
+        '-b',
+        '-o',
+        'run',
+        '-o',
+        'bt all',
+        '-o',
+        'quit',
+        '--',
+        binary,
+        '--version',
+      ],
+      {
+        stdio: 'pipe',
+        throws: false,
+        timeout: DARWIN_DIAGNOSTIC_TIMEOUT_MS,
+      },
+    )
+    return (
+      formatNativeSmokeOutput('lldb stdout', result.stdout) +
+      formatNativeSmokeOutput('lldb stderr', result.stderr)
+    )
+  } catch {
+    return '\nLLDB diagnostic unavailable.'
+  }
+}
 
 export function formatNativeSmokeOutput(
   label: string,
@@ -102,10 +140,14 @@ export async function main(): Promise<void> {
       timeout: 60_000,
     })
     if (result.code !== 0 || !result.stdout.toString().trim()) {
+      const diagnostic = await collectDarwinCrashDiagnostic(
+        seaBinaryPath(executionTarget),
+      )
       throw new Error(
         `Native binary smoke test failed for ${executionTarget} ${args.join(' ')} (exit ${result.code}, signal ${result.signal ?? 'none'}).` +
           formatNativeSmokeOutput('stdout', result.stdout) +
           formatNativeSmokeOutput('stderr', result.stderr) +
+          diagnostic +
           '\nRebuild the executable.',
       )
     }

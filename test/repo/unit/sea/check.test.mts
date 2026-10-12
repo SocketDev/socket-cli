@@ -14,6 +14,7 @@ vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
 }))
 
 import {
+  collectDarwinCrashDiagnostic,
   formatNativeSmokeOutput,
   main,
 } from '../../../../scripts/repo/build/sea/check.mts'
@@ -116,14 +117,71 @@ describe('SEA package verification', () => {
   })
 
   it('rejects a terminated executable before running more commands', async () => {
+    const platform = process.platform
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      value: 'linux',
+    })
     fixture.spawn.mockResolvedValue({
       code: null,
       signal: 'SIGSEGV',
       stdout: '',
       stderr: '',
     })
-    await expect(main()).rejects.toThrow(Error)
-    expect(fixture.spawn).toHaveBeenCalledTimes(1)
+    try {
+      await expect(main()).rejects.toThrow(Error)
+      expect(fixture.spawn).toHaveBeenCalledTimes(1)
+    } finally {
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        value: platform,
+      })
+    }
+  })
+
+  it('keeps a failed smoke test failed after collecting an lldb trace', async () => {
+    fixture.spawn
+      .mockResolvedValueOnce({
+        code: null,
+        signal: 'SIGSEGV',
+        stdout: '',
+        stderr: '',
+      })
+      .mockResolvedValueOnce({
+        code: 0,
+        stdout: 'frame #0 crash',
+        stderr: '',
+      })
+    const platform = process.platform
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      value: 'darwin',
+    })
+    try {
+      await expect(main()).rejects.toThrow(Error)
+      expect(fixture.spawn).toHaveBeenCalledTimes(2)
+      expect(fixture.spawn).toHaveBeenLastCalledWith(
+        'lldb',
+        [
+          '-b',
+          '-o',
+          'run',
+          '-o',
+          'bt all',
+          '-o',
+          'quit',
+          '--',
+          seaBinaryPath(SEA_TARGETS[0]!),
+          '--version',
+        ],
+        expect.objectContaining({ timeout: 10_000, throws: false }),
+      )
+    } finally {
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        value: platform,
+      })
+    }
   })
 })
 
@@ -144,5 +202,72 @@ describe('native smoke output', () => {
     const formatted = formatNativeSmokeOutput('stdout', output)
     expect(formatted.endsWith(output.slice(-4000))).toBe(true)
     expect(formatted.length).toBeLessThan(4100)
+  })
+
+  it('skips lldb outside Darwin', async () => {
+    const platform = process.platform
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      value: 'linux',
+    })
+    try {
+      await expect(
+        collectDarwinCrashDiagnostic('/tmp/socket', {
+          spawnProcess: fixture.spawn,
+        }),
+      ).resolves.toBe('')
+      expect(fixture.spawn).not.toHaveBeenCalled()
+    } finally {
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        value: platform,
+      })
+    }
+  })
+
+  it('does not throw when lldb cannot start', async () => {
+    const platform = process.platform
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      value: 'darwin',
+    })
+    fixture.spawn.mockRejectedValueOnce(new Error('lldb unavailable'))
+    try {
+      await expect(
+        collectDarwinCrashDiagnostic('/tmp/socket', {
+          spawnProcess: fixture.spawn,
+        }),
+      ).resolves.toBe('\nLLDB diagnostic unavailable.')
+    } finally {
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        value: platform,
+      })
+    }
+  })
+
+  it('includes the bounded lldb output', async () => {
+    const platform = process.platform
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      value: 'darwin',
+    })
+    fixture.spawn.mockResolvedValueOnce({
+      code: 0,
+      stdout: 'frame #0 crash',
+      stderr: '',
+    })
+    try {
+      await expect(
+        collectDarwinCrashDiagnostic('/tmp/socket', {
+          spawnProcess: fixture.spawn,
+        }),
+      ).resolves.toContain('frame #0 crash')
+    } finally {
+      Object.defineProperty(process, 'platform', {
+        configurable: true,
+        value: platform,
+      })
+    }
   })
 })
