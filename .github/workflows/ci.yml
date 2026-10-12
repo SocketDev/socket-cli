@@ -1,0 +1,305 @@
+# Seeded from the socket-wheelhouse CI preset, then owned by this repo:
+# edit it here. Fleet CI runs check + test through the LOCAL composite
+# actions under .github/actions/, inlined, so there is no cross-repo
+# reusable workflow and no first-party `uses:@sha`.
+name: 'ci: native package'
+run-name: 'ci: native package'
+
+# PUSH, never pull_request. The fleet takes no outside contributions and
+# lands on main directly, so a pull_request trigger adds no coverage a push
+# trigger does not already give — and it is the fragile half: GitHub has
+# narrowed pull_request defaults for security, and a silently non-firing
+# trigger reads as a green repo with no CI at all.
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # First step of every job is the third-party actions/checkout (GitHub fetches
+  # it independently) to populate the workspace so the LOCAL `./.github/actions/*`
+  # composites resolve. setup-and-install then re-checks-out — full history
+  # (fetch-depth 0) in the check job, since the commit-history checks it runs
+  # (AI-attribution, release-boundary) read the default branch's history and
+  # refuse a shallow clone rather than false-green; the test matrix stays at
+  # the default depth (25 — covers CI's other git operations) and runs the
+  # zizmor Actions audit (its own `strategy.job-total < 2` skip runs it in the
+  # non-matrix check job, skips it in the test matrix).
+  check:
+    name: Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with an
+      # inline git-fetch, matching release-reconcile.yml's pattern. The full
+      # history this job needs comes from setup-and-install's own
+      # checkout-fetch-depth: '0' re-checkout below, so this bootstrap fetch
+      # stays shallow.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          # Full history: the commit-history checks (AI-attribution,
+          # release-boundary) read the default branch's history and refuse a
+          # shallow clone rather than false-green.
+          checkout-fetch-depth: '0'
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - name: Run checks
+        uses: ./.github/actions/fleet/run-script
+        with:
+          main-script: pnpm run check --all
+
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        # JS/TS tests only need a fast Linux run; cross-platform behavior is
+        # covered by unit tests, not the CI matrix.
+        os: [ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with an
+      # inline git-fetch, matching release-reconcile.yml's pattern.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - name: Mint sdxgen read token
+        id: sdxgen-token
+        uses: ./.github/actions/fleet/github-payload-app-token
+        with:
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          repositories: sdxgen
+      - name: Run checks
+        uses: ./.github/actions/fleet/run-script
+        env:
+          # Authenticate build-time GitHub API reads (release listings,
+          # prebuilt-artifact downloads). Unauthenticated calls share the
+          # hosted runner's IP-scoped rate limit and 403 under load.
+          GH_TOKEN: ${{ github.token }}
+          SDXGEN_GITHUB_TOKEN: ${{ steps.sdxgen-token.outputs.token }}
+        with:
+          setup-script: pnpm run build
+          main-script: pnpm test --ci
+
+  build:
+    name: Build native matrix
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      artifact-name: ${{ steps.pack.outputs.artifact-name }}
+      package-sha256: ${{ steps.pack.outputs.package-sha256 }}
+      verifier-sha256: ${{ steps.pack.outputs.verifier-sha256 }}
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          git fetch --no-tags --depth 1 origin "${TRIGGER_REF}"
+          git checkout -q --detach FETCH_HEAD
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - name: Mint sdxgen read token
+        id: sdxgen-token
+        uses: ./.github/actions/fleet/github-payload-app-token
+        with:
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          repositories: sdxgen
+      - name: Build production CLI payload and all native targets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SDXGEN_GITHUB_TOKEN: ${{ steps.sdxgen-token.outputs.token }}
+        run: pnpm run build:native:prod
+      - name: Build standalone package verifier
+        run: pnpm run build:native:verifier
+      - name: Pack shipping package
+        id: pack
+        shell: bash
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/native-package
+          ARTIFACT_NAME: native-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_DIR"
+          pnpm pack --pack-destination "$ARTIFACT_DIR"
+          mv "$ARTIFACT_DIR"/*.tgz "$ARTIFACT_DIR/package.tgz"
+          cp build/sea/package-check.generated.mjs "$ARTIFACT_DIR/verifier.generated.mjs"
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { appendFileSync, readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          appendFileSync(process.env.GITHUB_OUTPUT, `artifact-name=${process.env.ARTIFACT_NAME}\n`);
+          for (const [name, file] of [['package', 'package.tgz'], ['verifier', 'verifier.generated.mjs']]) {
+            const hash = createHash('sha256').update(readFileSync(join(process.env.ARTIFACT_DIR, file))).digest('hex');
+            appendFileSync(process.env.GITHUB_OUTPUT, `${name}-sha256=${hash}\n`);
+          }
+          NODE
+      - name: Upload immutable native build
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: ${{ steps.pack.outputs.artifact-name }}
+          path: ${{ runner.temp }}/native-package
+          if-no-files-found: error
+      - name: Test native tooling
+        run: pnpm run test:native
+
+  qualify:
+    name: Qualify (${{ matrix.target }})
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    env:
+      ARTIFACT_DIR: ${{ runner.temp }}/native-package
+      DO_NOT_TRACK: '1'
+      GH_TELEMETRY: '0'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-15
+          - target: darwin-x64
+            runner: macos-15-intel
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: linux-arm64-musl
+            runner: ubuntu-24.04-arm
+            musl: true
+          - target: linux-x64
+            runner: ubuntu-24.04
+          - target: linux-x64-musl
+            runner: ubuntu-24.04
+            musl: true
+          - target: win32-arm64
+            runner: windows-11-arm
+          - target: win32-x64
+            runner: windows-2025
+    steps:
+      - name: Download shipping package and verifier
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact-name }}
+        run: |
+          set -euo pipefail
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 20) { throw new Error("Package qualification requires Node 20 or newer"); }'
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$ARTIFACT_NAME" --dir "$ARTIFACT_DIR"
+      - name: Verify transfer and extract package
+        shell: bash
+        env:
+          PACKAGE_SHA256: ${{ needs.build.outputs.package-sha256 }}
+          VERIFIER_SHA256: ${{ needs.build.outputs.verifier-sha256 }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          for (const [expected, file] of [[process.env.PACKAGE_SHA256, 'package.tgz'], [process.env.VERIFIER_SHA256, 'verifier.generated.mjs']]) {
+            const actual = createHash('sha256').update(readFileSync(join(process.env.ARTIFACT_DIR, file))).digest('hex');
+            if (actual !== expected) { throw new Error(`Artifact digest mismatch: ${file}`); }
+          }
+          NODE
+          archive="$ARTIFACT_DIR/package.tgz"
+          tar -tzf "$archive" > "$ARTIFACT_DIR/members.txt"
+          while IFS= read -r member; do
+            case "$member" in
+              /*|../*|*/../*|*/..|*\\*|*:*) echo "Unsafe package entry: $member" >&2; exit 1 ;;
+              package|package/*) ;;
+              *) echo "Unexpected package entry: $member" >&2; exit 1 ;;
+            esac
+          done < "$ARTIFACT_DIR/members.txt"
+          tar -tvzf "$archive" > "$ARTIFACT_DIR/types.txt"
+          while IFS= read -r member; do
+            case "$member" in
+              -*|d*) ;;
+              *) echo 'Package contains a link or special file' >&2; exit 1 ;;
+            esac
+          done < "$ARTIFACT_DIR/types.txt"
+          mkdir "$ARTIFACT_DIR/extracted"
+          tar -xzf "$archive" -C "$ARTIFACT_DIR/extracted"
+      - name: Install musl runtime
+        if: ${{ matrix.musl }}
+        run: sudo apt-get update && sudo apt-get install --yes musl
+      - name: Verify and execute built target
+        shell: bash
+        env:
+          NATIVE_TARGET: ${{ matrix.target }}
+        run: node "$ARTIFACT_DIR/verifier.generated.mjs" --package-root "$ARTIFACT_DIR/extracted/package" --target "$NATIVE_TARGET" --json

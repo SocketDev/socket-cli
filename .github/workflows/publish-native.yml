@@ -1,0 +1,203 @@
+name: 'publish: native'
+run-name: 'publish: native ${{ inputs.dispatch-id }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      source-sha:
+        description: Reserved source commit SHA
+        required: true
+        type: string
+      package-version:
+        description: Reserved package version
+        required: true
+        type: string
+      dispatch-id:
+        description: Unique dispatch identifier
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.dispatch-id }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build signed npm artifact
+    runs-on: macos-15
+    timeout-minutes: 60
+    outputs:
+      artifact-name: ${{ steps.artifact.outputs.name }}
+      package-sha256: ${{ steps.artifact.outputs.package-sha256 }}
+      verifier-sha256: ${{ steps.artifact.outputs.verifier-sha256 }}
+    steps:
+      - name: Validate release tag
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ inputs.package-version }}
+          DISPATCH_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          expected_ref="refs/tags/v${PACKAGE_VERSION}"
+          if [[ "$DISPATCH_REF" != "$expected_ref" ]]; then
+            echo "Expected dispatch ref $expected_ref, saw $DISPATCH_REF" >&2
+            exit 1
+          fi
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          git fetch --no-tags --depth 25 origin "${TRIGGER_REF}"
+          git checkout -q --detach FETCH_HEAD
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          checkout: 'false'
+          checkout-fetch-depth: '0'
+          payload-token-client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - name: Mint sdxgen read token
+        id: sdxgen-token
+        uses: ./.github/actions/fleet/github-payload-app-token
+        with:
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID || vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          repositories: sdxgen
+      - name: Build signed npm artifact
+        shell: bash
+        env:
+          APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12 }}
+          APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID || vars.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID || vars.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          GH_TOKEN: ${{ github.token }}
+          SDXGEN_GITHUB_TOKEN: ${{ steps.sdxgen-token.outputs.token }}
+          SOURCE_SHA: ${{ inputs.source-sha }}
+          PACKAGE_VERSION: ${{ inputs.package-version }}
+          RELEASE_DIR: ${{ runner.temp }}/native-release
+        run: |
+          set -euo pipefail
+          cleanup() { rm -rf "$RELEASE_DIR"; }
+          trap cleanup EXIT
+          pnpm run build:native:release --source-sha "$SOURCE_SHA" --package-version "$PACKAGE_VERSION" --output-directory "$RELEASE_DIR"
+          mkdir -p "$RUNNER_TEMP/native-release-upload"
+          cp "$RELEASE_DIR/package.tgz" "$RELEASE_DIR/verifier.generated.mjs" "$RELEASE_DIR/receipt.json" "$RUNNER_TEMP/native-release-upload/"
+      - name: Set artifact name
+        id: artifact
+        shell: bash
+        env:
+          ARTIFACT_NAME: npm-release-${{ inputs.source-sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          RELEASE_DIR: ${{ runner.temp }}/native-release-upload
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { appendFileSync, readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          appendFileSync(process.env.GITHUB_OUTPUT, `name=${process.env.ARTIFACT_NAME}\n`);
+          for (const [name, file] of [['package', 'package.tgz'], ['verifier', 'verifier.generated.mjs']]) {
+            const digest = createHash('sha256').update(readFileSync(join(process.env.RELEASE_DIR, file))).digest('hex');
+            appendFileSync(process.env.GITHUB_OUTPUT, `${name}-sha256=${digest}\n`);
+          }
+          NODE
+      - name: Upload signed npm artifact
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: ${{ runner.temp }}/native-release-upload
+          if-no-files-found: error
+
+  qualify:
+    name: Qualify (${{ matrix.target }})
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    env:
+      ARTIFACT_DIR: ${{ runner.temp }}/native-release
+      DO_NOT_TRACK: '1'
+      GH_TELEMETRY: '0'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-15
+          - target: darwin-x64
+            runner: macos-15-intel
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: linux-arm64-musl
+            runner: ubuntu-24.04-arm
+            musl: true
+          - target: linux-x64
+            runner: ubuntu-24.04
+          - target: linux-x64-musl
+            runner: ubuntu-24.04
+            musl: true
+          - target: win32-arm64
+            runner: windows-11-arm
+          - target: win32-x64
+            runner: windows-2025
+    steps:
+      - name: Download signed npm artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact-name }}
+          PACKAGE_SHA256: ${{ needs.build.outputs.package-sha256 }}
+          VERIFIER_SHA256: ${{ needs.build.outputs.verifier-sha256 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_DIR"
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$ARTIFACT_NAME" --dir "$ARTIFACT_DIR"
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          for (const [expected, file] of [[process.env.PACKAGE_SHA256, 'package.tgz'], [process.env.VERIFIER_SHA256, 'verifier.generated.mjs']]) {
+            const actual = createHash('sha256').update(readFileSync(join(process.env.ARTIFACT_DIR, file))).digest('hex');
+            if (actual !== expected) { throw new Error(`Artifact digest mismatch: ${file}`); }
+          }
+          const receipt = JSON.parse(readFileSync(join(process.env.ARTIFACT_DIR, 'receipt.json'), 'utf8'));
+          if (receipt.packageSha256 !== process.env.PACKAGE_SHA256 || receipt.verifierSha256 !== process.env.VERIFIER_SHA256) {
+            throw new Error('Artifact receipt digest mismatch.');
+          }
+          NODE
+      - name: Verify transfer and extract package
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$ARTIFACT_DIR/package.tgz"
+          tar -tzf "$archive" > "$ARTIFACT_DIR/members.txt"
+          while IFS= read -r member; do
+            case "$member" in
+              /*|../*|*/../*|*/..|*\\*|*:*) echo "Unsafe package entry: $member" >&2; exit 1 ;;
+              package|package/*) ;;
+              *) echo "Unexpected package entry: $member" >&2; exit 1 ;;
+            esac
+          done < "$ARTIFACT_DIR/members.txt"
+          mkdir "$ARTIFACT_DIR/extracted"
+          tar -xzf "$archive" -C "$ARTIFACT_DIR/extracted"
+      - name: Install musl runtime
+        if: ${{ matrix.musl }}
+        run: sudo apt-get update && sudo apt-get install --yes musl
+      - name: Verify and execute built target
+        shell: bash
+        env:
+          NATIVE_TARGET: ${{ matrix.target }}
+        run: node "$ARTIFACT_DIR/verifier.generated.mjs" --package-root "$ARTIFACT_DIR/extracted/package" --target "$NATIVE_TARGET" --json

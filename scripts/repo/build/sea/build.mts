@@ -11,6 +11,7 @@ import { fetchSeaAsset } from './assets.mts'
 import { relocateDarwinInitializerOffsets } from './initializer-offsets.mts'
 import { extractSmolRuntime } from './runtime.mts'
 import { signAndNotarizeSeaBinary } from './sign.mts'
+import type { SeaSigningReceipt } from './sign.mts'
 import {
   SEA_BUILD_DIR,
   SEA_ENTRY_PATH,
@@ -103,15 +104,19 @@ async function buildNativeArtifacts(mode: CliBuildMode): Promise<void> {
     `node-smol-${NODE_SMOL_VERSION}`,
     `node-${host.replace('win32-', 'win-')}${process.platform === 'win32' ? '.exe' : ''}`,
   )
-  const receipt: Record<string, string> = {}
+  const binaryReceipts: SeaTargetReceipt[] = []
   for (const target of targets) {
-    receipt[target] = await buildSeaTarget(
+    binaryReceipts.push({
       target,
-      injector,
-      hostBase,
-      signingTargets.includes(target) ? entitlementsPath : undefined,
-    )
+      ...(await buildSeaTarget(
+        target,
+        injector,
+        hostBase,
+        signingTargets.includes(target) ? entitlementsPath : undefined,
+      )),
+    })
   }
+  const manifestEvidence = createSeaManifestEvidence(binaryReceipts)
   await writeFile(SEA_LAUNCHER_PATH, createSeaLauncher(), { mode: 0o755 })
   for (const packageManager of ['npm', 'npx', 'pnpm', 'yarn']) {
     await writeFile(
@@ -132,9 +137,11 @@ async function buildNativeArtifacts(mode: CliBuildMode): Promise<void> {
     JSON.stringify(
       {
         mode,
+        ...(await readSeaPackageIdentity()),
         nodeSmol: NODE_SMOL_VERSION,
         payload: crypto.createHash('sha256').update(payload).digest('hex'),
-        binaries: receipt,
+        binaries: manifestEvidence.binaries,
+        darwinSigning: manifestEvidence.darwinSigning,
         entrypoints,
       },
       null,
@@ -146,6 +153,16 @@ async function buildNativeArtifacts(mode: CliBuildMode): Promise<void> {
   } else {
     logger.log(`Built ${targets.length} Socket native executable(s).`)
   }
+}
+
+export async function readSeaPackageIdentity(): Promise<{
+  packageName: string
+  packageVersion: string
+}> {
+  const packageJson = JSON.parse(
+    await readFile(path.join(PACKAGE_ROOT, 'package.json'), 'utf8'),
+  ) as { name: string; version: string }
+  return { packageName: packageJson.name, packageVersion: packageJson.version }
 }
 
 export function assertSeaSigningHost(config: {
@@ -209,16 +226,49 @@ export function createSeaEntitlements(): string {
 
 export async function signSeaBinaryBeforeHash(
   binaryPath: string,
-  signBinary: (binary: string) => Promise<void>,
+  signBinary: (binary: string) => Promise<SeaSigningReceipt>,
   options: {
     readBinary?: ((binaryPath: string) => Promise<Buffer>) | undefined
   } = {},
-): Promise<string> {
-  await signBinary(binaryPath)
-  return crypto
+): Promise<{ sha256: string; signing: SeaSigningReceipt }> {
+  const signing = await signBinary(binaryPath)
+  const sha256 = crypto
     .createHash('sha256')
     .update(await (options.readBinary ?? readFile)(binaryPath))
     .digest('hex')
+  return { sha256, signing }
+}
+
+export interface SeaTargetReceipt {
+  target: string
+  sha256: string
+  signing?: SeaSigningReceipt | undefined
+}
+
+export interface SeaManifestEvidence {
+  binaries: Record<string, string>
+  darwinSigning: Array<{ target: string; sha256: string } & SeaSigningReceipt>
+}
+
+export function createSeaManifestEvidence(
+  receipts: readonly SeaTargetReceipt[],
+): SeaManifestEvidence {
+  const binaries: Record<string, string> = {}
+  const darwinSigning: SeaManifestEvidence['darwinSigning'] = []
+  for (const receipt of receipts) {
+    binaries[receipt.target] = receipt.sha256
+    if (receipt.signing) {
+      if (!receipt.target.startsWith('darwin-')) {
+        throw new Error('SEA signing evidence requires a Darwin target.')
+      }
+      darwinSigning.push({
+        ...receipt.signing,
+        target: receipt.target,
+        sha256: receipt.sha256,
+      })
+    }
+  }
+  return { binaries, darwinSigning }
 }
 
 async function buildSeaTarget(
@@ -226,7 +276,7 @@ async function buildSeaTarget(
   injector: string,
   hostBase: string,
   entitlementsPath?: string | undefined,
-): Promise<string> {
+): Promise<{ sha256: string; signing?: SeaSigningReceipt | undefined }> {
   const asset = `node-${target.replace('win32-', 'win-')}${target.startsWith('win32-') ? '.exe' : ''}`
   const assetPath = await fetchSeaAsset(`node-smol-${NODE_SMOL_VERSION}`, asset)
   const runtime = extractSmolRuntime(await readFile(assetPath), target)
@@ -306,10 +356,12 @@ async function buildSeaTarget(
       signAndNotarizeSeaBinary(binary, { entitlementsPath }),
     )
   }
-  return crypto
-    .createHash('sha256')
-    .update(await readFile(output))
-    .digest('hex')
+  return {
+    sha256: crypto
+      .createHash('sha256')
+      .update(await readFile(output))
+      .digest('hex'),
+  }
 }
 
 const SCRIPT_META = {
