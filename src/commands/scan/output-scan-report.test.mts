@@ -137,12 +137,12 @@ describe('output-scan-report', () => {
 
         All the alerts from the scan with a policy set to at least "warn".
 
-        | ------ | ---------- | ------- | ------------- | ------------------------------------------- | ----------------- |
-        | Policy | Alert Type | Package | Introduced by | url                                         | Manifest file     |
-        | ------ | ---------- | ------- | ------------- | ------------------------------------------- | ----------------- |
-        | error  | envVars    | tslib   | 1.14.1        | https://socket.dev/npm/package/tslib/1.14.1 | package-lock.json |
-        | error  | envVars    | tslib   | 1.14.1        | https://socket.dev/npm/package/tslib/1.14.1 | package-lock.json |
-        | ------ | ---------- | ------- | ------------- | ------------------------------------------- | ----------------- |
+        | ------ | ---------- | ------- | ------- | ------------------------------------------- | ----------------- |
+        | Policy | Alert Type | Package | Version | url                                         | Manifest file     |
+        | ------ | ---------- | ------- | ------- | ------------------------------------------- | ----------------- |
+        | error  | envVars    | tslib   | 1.14.1  | https://socket.dev/npm/package/tslib/1.14.1 | package-lock.json |
+        | error  | envVars    | tslib   | 1.14.1  | https://socket.dev/npm/package/tslib/1.14.1 | package-lock.json |
+        | ------ | ---------- | ------- | ------- | ------------------------------------------- | ----------------- |
         "
       `)
     })
