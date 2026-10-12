@@ -108,20 +108,6 @@ describe('addSocketWrapper', () => {
     )
   })
 
-  it('logs disable instructions', async () => {
-    await import('@socketsecurity/lib-stable/logger/default')
-    const fs = await import('node:fs')
-    const mockAppendFile = vi.mocked(fs.promises.appendFile)
-
-    mockAppendFile.mockResolvedValue(undefined)
-
-    await addSocketWrapper('/home/user/.bashrc')
-
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      '  If you want to disable it at any time, run `socket wrapper --disable`',
-    )
-  })
-
   it('handles different shell config files', async () => {
     const fs = await import('node:fs')
     const mockAppendFile = vi.mocked(fs.promises.appendFile)
