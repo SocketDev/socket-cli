@@ -98,6 +98,7 @@ object SocketFactsPlugin extends AutoPlugin {
       }
 
       rec("meta", "sbt", extracted.getOpt(sbtVersion).getOrElse(""), sys.props.getOrElse("java.version", ""))
+      rec("buildRoot", rootCanonPath.toString)
 
       // One `project` record per build module (sources/targets only with --with-files). Excluded
       // subprojects are omitted (they were also skipped during resolution above).
@@ -128,7 +129,8 @@ object SocketFactsPlugin extends AutoPlugin {
           tree.nodes.foreach {
             case (coordId, node) =>
               val c = node.coord
-              rec("node", rootId, coordId, c.org, c.name, c.version, c.ext, c.classifier, if (node.direct) "1" else "0")
+              rec("node", rootId, coordId, c.org, c.name, c.version, c.ext, c.classifier, if (node.direct) "1" else "0",
+                node.project)
               node.children.foreach(ch => rec("edge", rootId, coordId, ch))
               node.targets.foreach(p => rec("file", rootId, coordId, p))
           }
@@ -334,15 +336,20 @@ object SocketFactsPlugin extends AutoPlugin {
         val midToIds = mutable.HashMap.empty[String, mutable.LinkedHashSet[String]]
 
         confsOf(ref).find(_.name == cfg).foreach { conf =>
-          def buildModuleNode(r: ProjectRef): Node = {
-            val coord = buildModuleCoord(r)
-            midToIds.getOrElseUpdate(moduleKey(rootIdOf(extracted, r)), mutable.LinkedHashSet.empty[String]) += coord.id
-            nodes.getOrElseUpdate(coord.id, new Node(coord))
+          // Keyed by project id, as projects need not have distinct coordinates.
+          def buildModuleNode(r: ProjectRef): String = {
+            midToIds.getOrElseUpdate(moduleKey(rootIdOf(extracted, r)), mutable.LinkedHashSet.empty[String]) += r.project
+            nodes.getOrElseUpdate(r.project, {
+              val node = new Node(buildModuleCoord(r))
+              node.project = r.project
+              node
+            })
+            r.project
           }
           interProjectEdges(conf).foreach { case (p, d) =>
             val child = buildModuleNode(d)
-            if (p == ref) child.direct = true
-            else buildModuleNode(p).children += child.coord.id
+            if (p == ref) nodes(child).direct = true
+            else nodes(buildModuleNode(p)).children += child
           }
         }
 
@@ -574,6 +581,8 @@ object SocketFactsPlugin extends AutoPlugin {
   private final class Node(val coord: Coord) {
     val children = mutable.TreeSet.empty[String]
     var direct = false
+    // Id of the build project this node is, when it is one.
+    var project = ""
     // External artifact's resolved jar(s); --with-files only.
     val targets = mutable.TreeSet.empty[String]
   }

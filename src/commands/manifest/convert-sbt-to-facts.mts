@@ -2,7 +2,7 @@ import { runManifestFacts } from './run-manifest-facts.mts'
 
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
-// Generates `.socket.facts.json` for an sbt project via the bundled sbt plugin.
+// Generates `sbt.socket.facts.json` for an sbt project via the bundled sbt plugin.
 // sbt 0.13/early 1.x can't run on modern JDKs — pass a compatible JDK via
 // `--sbt-opts "--java-home <path>"` or `JAVA_HOME`.
 export async function convertSbtToFacts({

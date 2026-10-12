@@ -52,6 +52,7 @@ for r in rows:
 
 WIDGET = 'demo.scoped:widget:jar:1.0'
 LIBA = 'demo:liba:1.0'
+LIBB = 'demo:libb:1.0'
 errors = []
 
 if failures:
@@ -60,7 +61,7 @@ if failures:
 def roots_for(project_key):
     return {rid for rid, key in roots.items() if key == project_key}
 
-for project_key in ('liba', 'libb'):
+for project_key in (LIBA, LIBB):
     rids = roots_for(project_key)
     if not rids:
         errors.append(f"no root record for module {project_key!r}")
@@ -69,7 +70,7 @@ for project_key in ('liba', 'libb'):
         errors.append(f"{WIDGET} missing from {project_key}'s graph")
 
 # The point of the fixture: libb reaches widget only through the reactor module liba.
-if not any(rid in roots_for('libb') and p == LIBA and c == WIDGET for rid, p, c in edges):
+if not any(rid in roots_for(LIBB) and p == LIBA and c == WIDGET for rid, p, c in edges):
     errors.append(f"no {LIBA} -> {WIDGET} edge in libb's root")
 
 jars = [p for p in files.get(WIDGET, ()) if p.endswith('.jar')]

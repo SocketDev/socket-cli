@@ -24,7 +24,10 @@ describe('socket manifest dynamic-sbom-inference', async () => {
             $ socket manifest dynamic-sbom-inference [options] [CWD=.]
 
           Recursively walks CWD, discovers independent gradle, sbt, and maven build
-          roots, and generates a Socket facts SBOM (.socket.facts.json) for each,
+          roots, and generates a Socket facts SBOM for each
+          (pom.xml.socket.facts.json, gradle.socket.facts.json, or
+          sbt.socket.facts.json, so builds sharing a directory never overwrite each
+          other),
           skipping subproject/reactor-module directories a parent build root already
           covers. Unlike \`socket manifest auto\`, this looks beyond CWD itself.
 

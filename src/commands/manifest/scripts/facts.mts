@@ -47,48 +47,27 @@ export type SocketFactsSbomDependency = {
 }
 
 export type SocketFactsSbomProject = AnyPURL & {
+  // The build tool's own project identity, unique within the facts file:
+  // Maven's GAV, Gradle's project path, sbt's project id.
+  id: string
   subprojectDir: string
-  // The subproject's own build files. They need not declare its direct
-  // dependencies (e.g. a parent POM does); the facts file itself is implied.
+  // The module's own build files, e.g. a POM other than `<subprojectDir>/pom.xml`,
+  // which need not declare its direct dependencies; for a Gradle project
+  // without one, the scripts declaring its dependencies, else its configured
+  // build file, which may not exist on disk. The facts file itself is implied.
   manifestFiles?: SocketFactsManifestReference[] | undefined
   // Indices into dependencies[]: this subproject's direct dependencies.
   children: number[]
 }
 
-// Resolved on-disk paths for a --with-files run, keyed by coordinate. `targets`
-// = classpath entries (jars / module output dirs); `sources` = module source
-// roots.
+// Resolved on-disk paths for a --with-files run, keyed by component or project
+// id (a project and its own component share one). `targets` = classpath
+// entries (jars / module output dirs); `sources` = module source roots.
 export type ResolvedArtifactPaths = {
-  targetsByCoord: Map<string, string[]>
-  // ext/classifier-agnostic, to recover the variant when an ingested ext is
-  // untrustworthy (Gradle lockfile / version-catalog hardcode ext=jar).
-  targetsByGav: Map<string, string[]>
-  sourcesByCoord: Map<string, string[]>
-  coords: Set<string>
+  pathsById: Map<string, { sources: string[]; targets: string[] }>
   // Component ids on each project's resolved classpath (union over its
-  // configurations), keyed by projectClasspathKey.
+  // configurations), keyed by project id.
   classpathByProject: Map<string, string[]>
-  // Component ids of each project's direct dependencies, keyed by
-  // projectClasspathKey.
+  // Component ids of each project's direct dependencies, keyed by project id.
   directDependenciesByProject: Map<string, string[]>
-}
-
-export function projectClasspathKey(
-  project: Pick<SocketFactsSbomProject, 'name' | 'namespace' | 'subprojectDir'>,
-): string {
-  return `${project.subprojectDir} ${project.namespace ?? ''}:${project.name}`
-}
-
-// Coordinate-based (not `id`-based) so it also matches foreign SBOMs like
-// CycloneDX. Empty segments dropped.
-export function mavenCoordinateKey(
-  groupId: string | undefined,
-  artifactId: string | undefined,
-  type: string | undefined,
-  classifier: string | undefined,
-  version: string | undefined,
-): string {
-  return [groupId, artifactId, type, classifier, version]
-    .filter(Boolean)
-    .join(':')
 }

@@ -26,16 +26,16 @@ describe('socket manifest gradle', async () => {
             --bin               Location of the gradle binary to use, default: ./gradlew if present, else gradle on PATH
             --exclude-configs   When generating facts: comma-separated glob patterns; Gradle configurations matching any pattern are skipped (applied after --include-configs)
             --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
-            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
+            --facts             Emit a Socket facts JSON file (\`gradle.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --ignore-unresolved  When generating facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
             --include-configs   When generating facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive; \`*\`, \`?\`, and \`[...]\` wildcards). Only configurations matching at least one pattern are resolved. e.g. \`*CompileClasspath,*RuntimeClasspath\`. Default: every resolvable configuration
-            --pom               Generate \`pom.xml\` manifest file(s) instead of the default Socket facts file (\`.socket.facts.json\`)
+            --pom               Generate \`pom.xml\` manifest file(s) instead of the default Socket facts file (\`gradle.socket.facts.json\`)
             --verbose           Print debug messages
 
-          By default, emits a single \`.socket.facts.json\` describing the resolved
-          dependency graph of the whole build, using gradle (preferably your local
-          \`gradlew\`). An unresolved dependency is a fatal error. You can pass
+          By default, emits a single \`gradle.socket.facts.json\` describing the
+          resolved dependency graph of the whole build, using gradle (preferably your
+          local \`gradlew\`). An unresolved dependency is a fatal error. You can pass
           --include-configs / --exclude-configs (comma-separated glob patterns) to
           control which configurations are resolved (e.g.
           --include-configs=\`*CompileClasspath,*RuntimeClasspath\`), and

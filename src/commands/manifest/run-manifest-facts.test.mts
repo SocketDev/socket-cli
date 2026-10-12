@@ -17,19 +17,18 @@ import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 const ENV_VAR = 'SOCKET_TEST_JAVA_HOME'
 
-function okResult(): ManifestRunResult {
+function okResult(buildRoot: string): ManifestRunResult {
   return {
+    buildRoot,
     code: 0,
     facts: {
       components: [{ id: 'a', type: 'maven', name: 'a' }],
       projects: [],
     },
+    factsFileName: 'pom.xml.socket.facts.json',
     report: { failures: [], scannedConfigs: [], unscannable: [] },
     artifactPaths: {
-      targetsByCoord: new Map(),
-      targetsByGav: new Map(),
-      sourcesByCoord: new Map(),
-      coords: new Set(),
+      pathsById: new Map(),
       classpathByProject: new Map(),
       directDependenciesByProject: new Map(),
     },
@@ -64,7 +63,7 @@ describe('runManifestFacts - javaHome', () => {
   })
 
   it('passes a literal javaHome straight through as JAVA_HOME', async () => {
-    vi.mocked(runManifestScript).mockResolvedValue(okResult())
+    vi.mocked(runManifestScript).mockResolvedValue(okResult(cwd))
     await runManifestFacts({ ...baseArgs, cwd, javaHome: '/opt/jdk-17' })
     const opts = vi.mocked(runManifestScript).mock.calls[0]?.[1]
     expect(opts?.env?.['JAVA_HOME']).toBe('/opt/jdk-17')
@@ -72,7 +71,7 @@ describe('runManifestFacts - javaHome', () => {
 
   it('expands $VAR and ${VAR} references against the CLI process env', async () => {
     process.env[ENV_VAR] = '/opt/jdk-11'
-    vi.mocked(runManifestScript).mockResolvedValue(okResult())
+    vi.mocked(runManifestScript).mockResolvedValue(okResult(cwd))
     await runManifestFacts({
       ...baseArgs,
       cwd,
@@ -83,7 +82,7 @@ describe('runManifestFacts - javaHome', () => {
   })
 
   it('fails closed without invoking the build tool when the referenced var is unset', async () => {
-    vi.mocked(runManifestScript).mockResolvedValue(okResult())
+    vi.mocked(runManifestScript).mockResolvedValue(okResult(cwd))
     const result = await runManifestFacts({
       ...baseArgs,
       cwd,
@@ -95,7 +94,7 @@ describe('runManifestFacts - javaHome', () => {
   })
 
   it('leaves the environment untouched when javaHome is unset', async () => {
-    vi.mocked(runManifestScript).mockResolvedValue(okResult())
+    vi.mocked(runManifestScript).mockResolvedValue(okResult(cwd))
     await runManifestFacts({ ...baseArgs, cwd })
     const opts = vi.mocked(runManifestScript).mock.calls[0]?.[1]
     expect(opts?.env).toBeUndefined()
@@ -116,7 +115,7 @@ describe('runManifestFacts - sidecar', () => {
   })
 
   it('keys the sidecar by the symlink-resolved factsPath, not the raw cwd-joined one', async () => {
-    const result = okResult()
+    const result = okResult(cwd)
     result.facts.projects = [
       {
         type: 'maven',
@@ -133,14 +132,14 @@ describe('runManifestFacts - sidecar', () => {
     await runManifestFacts({ ...baseArgs, cwd, sidecarAcc, withFiles: true })
 
     const expectedFactsFile = await fs.realpath(
-      path.join(cwd, '.socket.facts.json'),
+      path.join(cwd, 'pom.xml.socket.facts.json'),
     )
     expect([...sidecarAcc.keys()]).toEqual([expectedFactsFile])
     const bucket = sidecarAcc.get(expectedFactsFile)
     expect(bucket?.projects.find(m => m.name === 'app')).toBeDefined()
   })
   it('stamps the inlined socket-cli version into the written facts metadata', async () => {
-    const result = okResult()
+    const result = okResult(cwd)
     result.facts.metadata = {
       format: 'socket-facts-sbom',
       tool: 'maven',
@@ -151,13 +150,125 @@ describe('runManifestFacts - sidecar', () => {
     await runManifestFacts({ ...baseArgs, cwd })
 
     const written = JSON.parse(
-      await fs.readFile(path.join(cwd, '.socket.facts.json'), 'utf8'),
+      await fs.readFile(path.join(cwd, 'pom.xml.socket.facts.json'), 'utf8'),
     )
     // Unit tests run unbuilt, where the version isn't inlined; the field is
     // then omitted rather than written empty.
     expect(written.metadata.socketCliVersion).toBe(
       constants.ENV.INLINED_SOCKET_CLI_VERSION || undefined,
     )
+  })
+})
+
+describe('runManifestFacts - facts file naming', () => {
+  let cwd = ''
+
+  beforeEach(async () => {
+    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
+    vi.mocked(runManifestScript).mockReset()
+    process.exitCode = undefined
+  })
+  afterEach(async () => {
+    await fs.rm(cwd, { recursive: true, force: true })
+    process.exitCode = undefined
+  })
+
+  it('gives builds sharing a directory distinct facts files', async () => {
+    const sidecarAcc: SidecarAccumulator = new Map()
+    const outcomes = []
+    for (const factsFileName of [
+      'pom.xml.socket.facts.json',
+      'other-pom.xml.socket.facts.json',
+    ]) {
+      vi.mocked(runManifestScript).mockResolvedValueOnce({
+        ...okResult(cwd),
+        factsFileName,
+      })
+      // eslint-disable-next-line no-await-in-loop
+      outcomes.push(await runManifestFacts({ ...baseArgs, cwd, sidecarAcc }))
+    }
+    vi.mocked(runManifestScript).mockResolvedValueOnce({
+      ...okResult(cwd),
+      factsFileName: 'gradle.socket.facts.json',
+    })
+    outcomes.push(
+      await runManifestFacts({
+        ...baseArgs,
+        cwd,
+        ecosystem: 'gradle',
+        sidecarAcc,
+      }),
+    )
+
+    expect(outcomes.map(o => o && path.basename(o.factsPath))).toEqual([
+      'pom.xml.socket.facts.json',
+      'other-pom.xml.socket.facts.json',
+      'gradle.socket.facts.json',
+    ])
+    expect((await fs.readdir(cwd)).sort()).toEqual([
+      'gradle.socket.facts.json',
+      'other-pom.xml.socket.facts.json',
+      'pom.xml.socket.facts.json',
+    ])
+    expect(sidecarAcc.size).toBe(3)
+  })
+
+  it('writes the facts file into the build root the tool reports', async () => {
+    const buildRoot = path.join(cwd, 'sub')
+    await fs.mkdir(buildRoot)
+    vi.mocked(runManifestScript).mockResolvedValue({
+      ...okResult(buildRoot),
+      factsFileName: 'other-pom.xml.socket.facts.json',
+    })
+
+    const outcome = await runManifestFacts({ ...baseArgs, cwd })
+
+    expect(outcome?.factsPath).toBe(
+      path.join(buildRoot, 'other-pom.xml.socket.facts.json'),
+    )
+    expect(await fs.readdir(buildRoot)).toEqual([
+      'other-pom.xml.socket.facts.json',
+    ])
+  })
+
+  it('fails without writing when the build did not report its root', async () => {
+    vi.mocked(runManifestScript).mockResolvedValue({
+      ...okResult(cwd),
+      buildRoot: undefined,
+    })
+
+    const outcome = await runManifestFacts({ ...baseArgs, cwd })
+
+    expect(outcome).toBeNull()
+    expect(process.exitCode).toBe(1)
+    expect(await fs.readdir(cwd)).toEqual([])
+  })
+
+  it('fails without writing when the build did not report its entry file', async () => {
+    vi.mocked(runManifestScript).mockResolvedValue({
+      ...okResult(cwd),
+      factsFileName: undefined,
+    })
+
+    const outcome = await runManifestFacts({ ...baseArgs, cwd })
+
+    expect(outcome).toBeNull()
+    expect(process.exitCode).toBe(1)
+    expect(await fs.readdir(cwd)).toEqual([])
+  })
+
+  it('leaves a legacy .socket.facts.json in place', async () => {
+    const legacy = path.join(cwd, '.socket.facts.json')
+    await fs.writeFile(legacy, '{}')
+    vi.mocked(runManifestScript).mockResolvedValue(okResult(cwd))
+
+    await runManifestFacts({ ...baseArgs, cwd })
+
+    expect(await fs.readFile(legacy, 'utf8')).toBe('{}')
+    expect((await fs.readdir(cwd)).sort()).toEqual([
+      '.socket.facts.json',
+      'pom.xml.socket.facts.json',
+    ])
   })
 })
 
@@ -185,7 +296,7 @@ describe('runManifestFacts - sbt build detection', () => {
     expect(process.exitCode).toBe(1)
     expect(runManifestScript).not.toHaveBeenCalled()
     await expect(
-      fs.access(path.join(cwd, '.socket.facts.json')),
+      fs.access(path.join(cwd, 'pom.xml.socket.facts.json')),
     ).rejects.toThrow()
   })
 
@@ -197,7 +308,7 @@ describe('runManifestFacts - sbt build detection', () => {
       } else {
         await fs.writeFile(path.join(cwd, marker), '')
       }
-      vi.mocked(runManifestScript).mockResolvedValue(okResult())
+      vi.mocked(runManifestScript).mockResolvedValue(okResult(cwd))
 
       await runManifestFacts({ ...baseArgs, cwd, ecosystem: 'sbt' })
 

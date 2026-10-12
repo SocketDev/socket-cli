@@ -670,7 +670,7 @@ async function askForFactsFlag(
         name: 'Socket facts (default)',
         value: 'yes',
         description:
-          'Generate a .socket.facts.json file describing the resolved dependency graph',
+          'Generate a Socket facts file (*.socket.facts.json) describing the resolved dependency graph',
       },
       {
         name: 'pom.xml',

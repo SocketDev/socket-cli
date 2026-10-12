@@ -10,18 +10,24 @@ import type {
 //   <tag>\t<field>\t<field>...
 //
 //   meta        tool  toolVersion  javaVersion
+//   buildRoot   path                                     (absolute; the facts file's directory)
+//   entry       path                                     (file-addressed builds; build-root-relative)
 //   project     projectKey  group  name  version  dir
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
-//   projectBuild  projectKey  path                       (build-root-relative)
+//   projectBuild  projectKey  path  [missing]            (build-root-relative; `missing`: configured, absent on disk)
+//   declared    projectKey  group  name  path            (script declaring the dependency; build-root-relative)
 //   root        rootId  projectKey  config  prod(0|1)
-//   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)
+//   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)
 //   scanned     config
 //   failure     coord  detail  config
 //   unscannable config  detail
 //
+// `projectKey` is the tool's unique project identity (Maven: GAV; Gradle:
+// project path; sbt: project id), emitted as the project id; a `node` whose
+// `project` names one resolves to that build project.
 // A `root` is one (subproject, configuration) resolution root; `coordId` is the
 // coordinate key (`group:name:ext:classifier:version`, empty segments dropped),
 // used opaquely as the per-root node key. Unknown tags are ignored.
@@ -38,6 +44,9 @@ export type RawNode = {
   coordId: string
   coord: RawCoord
   direct: boolean
+  // projectKey of the build project this node resolves to; empty for an
+  // external artifact.
+  project: string
   // --with-files only.
   targets: string[]
 }
@@ -61,12 +70,21 @@ export type RawProject = {
   targets: string[]
   // The project's own build files, build-root-relative.
   buildFiles: string[]
+  // Build files the tool configures for the project but absent on disk.
+  missingBuildFiles: string[]
+  // "group:name" -> the scripts that declared that dependency on this project.
+  declaredIn: Map<string, string[]>
 }
 
 export type ParsedRecords = {
   tool: string
   toolVersion: string
   javaVersion: string
+  // Absolute directory the build is rooted at; the facts file is written there.
+  buildRoot: string
+  // The file the build was invoked on (Maven's top-level POM); empty for a
+  // directory-addressed build.
+  entry: string
   projects: Map<string, RawProject>
   roots: Map<string, RawRoot>
   scannedConfigs: string[]
@@ -100,6 +118,8 @@ export function parseRecords(text: string): ParsedRecords {
     tool: '',
     toolVersion: '',
     javaVersion: '',
+    buildRoot: '',
+    entry: '',
     projects: new Map(),
     roots: new Map(),
     scannedConfigs: [],
@@ -135,6 +155,8 @@ export function parseRecords(text: string): ParsedRecords {
         sources: [],
         targets: [],
         buildFiles: [],
+        missingBuildFiles: [],
+        declaredIn: new Map(),
       }
       result.projects.set(key, p)
     }
@@ -151,6 +173,12 @@ export function parseRecords(text: string): ParsedRecords {
         result.tool = f[1] ?? ''
         result.toolVersion = f[2] ?? ''
         result.javaVersion = f[3] ?? ''
+        break
+      case 'buildRoot':
+        result.buildRoot = f[1] ?? ''
+        break
+      case 'entry':
+        result.entry = f[1] ?? ''
         break
       case 'project': {
         const p = project(f[1] ?? '')
@@ -172,7 +200,15 @@ export function parseRecords(text: string): ParsedRecords {
         break
       case 'projectBuild':
         if (f[2]) {
-          project(f[1] ?? '').buildFiles.push(f[2])
+          const p = project(f[1] ?? '')
+          ;(f[3] === 'missing' ? p.missingBuildFiles : p.buildFiles).push(f[2])
+        }
+        break
+      case 'declared':
+        if (f[4]) {
+          const { declaredIn } = project(f[1] ?? '')
+          const ga = `${f[2] ?? ''}:${f[3] ?? ''}`
+          declaredIn.set(ga, [...(declaredIn.get(ga) ?? []), f[4]])
         }
         break
       case 'root': {
@@ -195,6 +231,7 @@ export function parseRecords(text: string): ParsedRecords {
             classifier: f[7] ?? '',
           },
           direct: bool(f[8]),
+          project: f[9] ?? '',
           targets: [],
         })
         break

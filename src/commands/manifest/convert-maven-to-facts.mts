@@ -2,7 +2,8 @@ import { runManifestFacts } from './run-manifest-facts.mts'
 
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
-// Generates `.socket.facts.json` for a Maven project via the bundled extension.
+// Generates `pom.xml.socket.facts.json` (named after the POM Maven runs on)
+// for a Maven project via the bundled extension.
 export async function convertMavenToFacts({
   bin,
   cwd,

@@ -22,12 +22,9 @@ import {
 import { generateSocketFactsForFix } from './generated-socket-facts.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import {
-  DOT_SOCKET_DOT_FACTS_JSON,
-  FLAG_DRY_RUN,
-  GQL_PR_STATE_OPEN,
-} from '../../constants.mts'
+import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { isSocketFactsFile } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
@@ -194,10 +191,6 @@ async function discoverGhsaIds(
   }
 }
 
-function isFactsFile(filepath: string): boolean {
-  return path.basename(filepath).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON
-}
-
 type GitWorkingTreeChanges = {
   modified: string[]
   untracked: string[]
@@ -250,6 +243,35 @@ function readWrittenFiles(outputFile: string): Set<string> | undefined {
 }
 
 type CoanaFixResult = CResult<{ fixedAll: boolean; ghsaDetails: unknown[] }>
+
+// Coana exits with this code after writing an --output-file that lists computed fixes it left unapplied.
+const COANA_FIXES_NOT_APPLIED_EXIT_CODE = 5
+
+type NotAppliedFix = {
+  ghsa: string
+  purl: string
+  fixedVersion: string
+  reason: string
+}
+
+function isFixesNotAppliedExit(result: CResult<unknown>): boolean {
+  return (
+    !result.ok &&
+    (result.data as any)?.code === COANA_FIXES_NOT_APPLIED_EXIT_CODE
+  )
+}
+
+function readNotAppliedFixes(fixesResultJson: unknown): NotAppliedFix[] {
+  const notApplied = (fixesResultJson as { notApplied?: unknown } | null)
+    ?.notApplied
+  return Array.isArray(notApplied) ? (notApplied as NotAppliedFix[]) : []
+}
+
+function formatNotAppliedFixes(notApplied: NotAppliedFix[]): string {
+  return notApplied
+    .map(f => `  ${f.ghsa}: ${f.purl} -> ${f.fixedVersion}: ${f.reason}`)
+    .join('\n')
+}
 
 type GeneratedSocketFactsSlot = {
   generated?: GeneratedSocketFacts | undefined
@@ -365,7 +387,7 @@ async function coanaFixWithFacts(
       })
     } catch (e) {
       // A failed build root aborts inference after others wrote their facts.
-      const partial = (await findScanFilepaths()).filter(isFactsFile)
+      const partial = (await findScanFilepaths()).filter(isSocketFactsFile)
       await Promise.all(partial.map(p => fs.rm(p, { force: true })))
       throw e
     }
@@ -520,13 +542,13 @@ async function coanaFixWithFacts(
         spinner?.stop()
       }
 
-      if (!fixCResult.ok) {
+      if (!fixCResult.ok && !isFixesNotAppliedExit(fixCResult)) {
         return fixCResult
       }
 
       // Read the temporary file to get the actual fixes result.
       const fixesResultJson = readJsonSync(tmpFile, { throws: false }) as
-        | { fixes?: Record<string, unknown> }
+        | { type?: string; fixes?: Record<string, unknown> }
         | null
         | undefined
 
@@ -539,12 +561,23 @@ async function coanaFixWithFacts(
         await fs.writeFile(outputFile, tmpContent, 'utf8')
       }
 
+      const ghsaDetails = fixesResultJson ? [fixesResultJson] : []
+      const notApplied = readNotAppliedFixes(fixesResultJson)
+      if (!fixCResult.ok || notApplied.length) {
+        return {
+          ok: false,
+          message:
+            fixesResultJson?.type === 'no-fixes-applied'
+              ? 'No computed fixes were applied'
+              : 'Some computed fixes were not applied',
+          cause: formatNotAppliedFixes(notApplied),
+          data: { fixedAll: false, ghsaDetails },
+        }
+      }
+
       return {
         ok: true,
-        data: {
-          fixedAll: true,
-          ghsaDetails: fixesResultJson ? [fixesResultJson] : [],
-        },
+        data: { fixedAll: true, ghsaDetails },
       }
     } finally {
       // Clean up the temporary file.
@@ -696,7 +729,13 @@ async function coanaFixWithFacts(
       },
     )
 
-    if (!fixCResult.ok) {
+    if (isFixesNotAppliedExit(fixCResult)) {
+      if (!silence) {
+        logger.warn(
+          `Not every fix for ${ghsaId} was applied:\n${formatNotAppliedFixes(readNotAppliedFixes(readJsonSync(tmpFile, { throws: false })))}`,
+        )
+      }
+    } else if (!fixCResult.ok) {
       if (!silence) {
         logger.error(
           `Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`,

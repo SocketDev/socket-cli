@@ -263,6 +263,66 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(cleanup).toHaveBeenCalledOnce()
   })
 
+  it('replaces every facts file input with the reachability report', async () => {
+    const cleanup = vi.fn()
+    const files = [
+      '/repo/pom.xml.socket.facts.json',
+      '/repo/gradle.socket.facts.json',
+      '/repo/service/.socket.facts.json',
+      '/repo/package-lock.json',
+    ]
+    const config = createConfig({
+      generateScanFiles: async () => ({ cleanup, files }),
+    })
+    config.reach.runReachabilityAnalysis = true
+    mockPerformReachabilityAnalysis.mockResolvedValueOnce({
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+      ok: true,
+    })
+    await handleCreateNewScan(config)
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      ['/repo/package-lock.json', '.socket.facts.json'],
+      'fakeOrg',
+      expect.anything(),
+      expect.anything(),
+    )
+  })
+
+  it('keeps build facts but not earlier reports when using only pre-generated SBOMs', async () => {
+    const cleanup = vi.fn()
+    const files = [
+      '/repo/pom.xml.socket.facts.json',
+      '/repo/service/.socket.facts.json',
+      '/repo/package-lock.json',
+    ]
+    const config = createConfig({
+      generateScanFiles: async () => ({ cleanup, files }),
+    })
+    config.reach.runReachabilityAnalysis = true
+    config.reach.reachUseOnlyPregeneratedSboms = true
+    mockFetchSupportedScanFileNames.mockResolvedValueOnce({
+      data: { socket: { facts: { pattern: '*.socket.facts.json' } } },
+      ok: true,
+    })
+    mockPerformReachabilityAnalysis.mockResolvedValueOnce({
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+      ok: true,
+    })
+    await handleCreateNewScan(config)
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      ['/repo/pom.xml.socket.facts.json', '.socket.facts.json'],
+      'fakeOrg',
+      expect.anything(),
+      expect.anything(),
+    )
+  })
+
   it('includes generated auto-manifest files in SCA discovery targets', async () => {
     mockGenerateAutoManifest.mockResolvedValueOnce({
       generatedFiles: ['/repo/.socket-auto-manifest/maven_install.json'],

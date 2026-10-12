@@ -8,10 +8,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Socket facts for Maven, Gradle and sbt builds now record each subproject's own dependency tree, so a package is attributed only to the subprojects that actually pull it in.
-- `socket fix` now accepts an existing `.socket.facts.json` instead of asking you to delete it first.
+- `socket fix` now accepts existing Socket facts files instead of asking you to delete it first.
 
 ### Fixed
 - Socket facts for sbt builds now match sbt's own classpaths: dependencies pulled in by a version-conflict winner are no longer dropped, and sibling subprojects appear only in the configurations that actually depend on them.
+
+## [1.7.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.7.0) - 2026-10-09
+
+### Changed
+- Socket facts for Maven, Gradle and sbt builds are now written per build — `pom.xml.socket.facts.json` (named after the POM Maven runs on, so `-f other-pom.xml` gets its own), `gradle.socket.facts.json` and `sbt.socket.facts.json` — so builds sharing a directory no longer overwrite each other. Delete any `.socket.facts.json` an earlier run left behind.
+- Reachability scans no longer feed a leftover `.socket.facts.json` report from an earlier run back into the analysis.
+- Updated the Coana CLI to v `15.12.4`.
+
+## [1.6.2](https://github.com/SocketDev/socket-cli/releases/tag/v1.6.2) - 2026-10-09
+
+### Changed
+- Updated the Coana CLI to v `15.12.3`.
+
+### Fixed
+- Socket facts no longer merge build projects into one: Maven modules sharing a directory and Gradle or sbt projects sharing a coordinate each keep their own dependencies and build files.
+- Socket facts for a Maven or Gradle build pointed elsewhere with `-f` or `-p` are now written into that build's own directory, where their paths resolve.
+
+## [1.6.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.6.1) - 2026-10-08
+
+### Changed
+- Updated the Coana CLI to v `15.12.2`.
+
+## [1.6.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.6.0) - 2026-10-07
+
+### Added
+- **`manifest`** — attribute direct JVM dependencies to subproject build files (#1581)
 
 ## [1.5.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.5.0) - 2026-10-06
 
