@@ -73,8 +73,20 @@ export function formatNativeSmokeOutput(
 export async function main(): Promise<void> {
   const receipt = await readSeaReceipt()
   await verifySeaPayloadAndEntrypoints(receipt)
+  const report = process.report.getReport()
+  const reportHeader =
+    typeof report === 'object' && report !== null && 'header' in report
+      ? report.header
+      : undefined
+  const glibcVersionRuntime =
+    typeof reportHeader === 'object' &&
+    reportHeader !== null &&
+    'glibcVersionRuntime' in reportHeader &&
+    typeof reportHeader.glibcVersionRuntime === 'string'
+      ? reportHeader.glibcVersionRuntime
+      : undefined
   const host = resolveSeaTarget(process.platform, process.arch, {
-    glibc: process.report.getReport().header.glibcVersionRuntime,
+    glibc: glibcVersionRuntime,
   })
   const { executionTarget, targets } = selectSeaTargets(host, process.argv)
   await verifySeaBinaryDigests(targets, receipt)
@@ -177,7 +189,7 @@ async function runSeaSmokeTests(executionTarget: string): Promise<void> {
       throws: false,
       timeout: 60_000,
     })
-    if (result.code !== 0 || !result.stdout.toString().trim()) {
+    if (result.code !== 0 || !result.stdout.trim()) {
       const diagnostic = await collectDarwinCrashDiagnostic(
         seaBinaryPath(executionTarget),
       )
