@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.8.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.8.0) - 2026-10-12
 
 ### Changed
 - Socket facts for Maven, Gradle and sbt builds now record each subproject's own dependency tree, so a package is attributed only to the subprojects that actually pull it in.
