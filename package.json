@@ -21,6 +21,7 @@
     "socket-yarn": "dist/socket-yarn.js"
   },
   "files": [
+    "CHANGELOG.md",
     "DISCLOSURE",
     "README.md",
     "data/**",
@@ -461,7 +462,7 @@
   },
   "engines": {
     "node": ">=24",
-    "npm": "^11.19.0 || >=12.0.2",
+    "npm": ">=12.2.0",
     "pnpm": ">=12.12.0"
   },
   "allowScripts": {
