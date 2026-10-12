@@ -97,6 +97,30 @@ describe('signAndNotarizeSeaBinary', () => {
     expect(notarize).not.toHaveBeenCalled()
   })
 
+  it('sanitizes signing failures before notarization or verification', async () => {
+    const privateDetail = 'fixture signer credential detail'
+    const sign = vi.fn(async () => {
+      throw new Error(privateDetail)
+    })
+    const notarize = vi.fn(async () => true)
+    const spawnProcess = successfulSpawn()
+    const rejection = await signAndNotarizeSeaBinary('/tmp/socket', {
+      sign,
+      notarize,
+      spawnProcess,
+      platform: 'darwin',
+    }).then(
+      () => undefined,
+      error => error,
+    )
+
+    expect(rejection).toBeInstanceOf(Error)
+    expect(String(rejection)).not.toContain(privateDetail)
+    expect(sign).toHaveBeenCalledTimes(1)
+    expect(notarize).not.toHaveBeenCalled()
+    expect(spawnProcess).not.toHaveBeenCalled()
+  })
+
   it('fails closed when notarization returns false', async () => {
     const sign = vi.fn(async () => true)
     const notarize = vi.fn(async () => false)
@@ -131,6 +155,80 @@ describe('signAndNotarizeSeaBinary', () => {
     ).rejects.toThrow('Strict code signature verification failed')
     expect(notarize).not.toHaveBeenCalled()
   })
+
+  it('verifies after notarization without exposing verifier output', async () => {
+    const steps: string[] = []
+    const sign = vi.fn(async () => {
+      steps.push('sign')
+      return true
+    })
+    const notarize = vi.fn(async () => {
+      steps.push('notarize')
+      return true
+    })
+    const privateStderr = 'fixture private verifier output'
+    let verificationCount = 0
+    const spawnProcess = vi.fn<SeaSignSpawn>(async (command, args) => {
+      verificationCount += 1
+      steps.push('verify')
+      return {
+        code: verificationCount === 1 ? 0 : 1,
+        stdout: '',
+        stderr: verificationCount === 1 ? '' : privateStderr,
+        signal: null,
+        cmd: command,
+        args,
+      }
+    })
+    const rejection = await signAndNotarizeSeaBinary('/tmp/socket', {
+      sign,
+      notarize,
+      spawnProcess,
+      platform: 'darwin',
+    }).then(
+      () => undefined,
+      error => error,
+    )
+
+    expect(rejection).toBeInstanceOf(Error)
+    expect(String(rejection)).not.toContain(privateStderr)
+    expect(steps).toEqual(['sign', 'verify', 'notarize', 'verify'])
+    expect(sign).toHaveBeenCalledTimes(1)
+    expect(notarize).toHaveBeenCalledTimes(1)
+    expect(spawnProcess).toHaveBeenCalledTimes(2)
+    expect(spawnProcess).toHaveBeenNthCalledWith(
+      1,
+      'codesign',
+      ['--verify', '--strict', '/tmp/socket'],
+      { stdio: 'pipe', timeout: 30_000 },
+    )
+    expect(spawnProcess).toHaveBeenNthCalledWith(
+      2,
+      'codesign',
+      ['--verify', '--strict', '/tmp/socket'],
+      { stdio: 'pipe', timeout: 30_000 },
+    )
+  })
+
+  it.each(['', '  ', '\n'])(
+    'rejects an empty or whitespace binary path before dependency calls',
+    async binaryPath => {
+      const sign = vi.fn()
+      const notarize = vi.fn()
+      const spawnProcess = vi.fn<SeaSignSpawn>()
+      await expect(
+        signAndNotarizeSeaBinary(binaryPath, {
+          sign,
+          notarize,
+          spawnProcess,
+          platform: 'darwin',
+        }),
+      ).rejects.toThrow()
+      expect(sign).not.toHaveBeenCalled()
+      expect(notarize).not.toHaveBeenCalled()
+      expect(spawnProcess).not.toHaveBeenCalled()
+    },
+  )
 
   it('sanitizes notarization failures and does not verify afterward', async () => {
     const sign = vi.fn(async () => true)

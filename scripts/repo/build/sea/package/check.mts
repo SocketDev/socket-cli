@@ -29,6 +29,7 @@ const MAX_CAPTURE_BYTES = 16 * 1024
 const MAX_DIAGNOSTIC_CHARS = 2000
 
 type NativePackageManifest = {
+  mode: 'production'
   payload: string
   binaries: Record<string, string>
   entrypoints: Record<string, string>
@@ -131,7 +132,11 @@ function parseNativePackageManifest(bytes: Buffer): NativePackageManifest {
       'Invalid native package manifest: required hashes are missing.',
     )
   }
+  if (!('mode' in value) || value.mode !== 'production') {
+    throw new Error('Invalid native package manifest: mode must be production.')
+  }
   return {
+    mode: 'production',
     payload: value.payload,
     binaries: value.binaries,
     entrypoints: value.entrypoints,

@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../../../fleet/process/is-main-module.mts'
 import { runMain } from '../../../fleet/process/main/run.mts'
@@ -20,7 +21,10 @@ import {
   SEA_RECEIPT_PATH,
   seaBinaryPath,
 } from './paths.mts'
+import { PACKAGE_ROOT } from '../paths.mts'
 import { resolveSeaTarget, SEA_TARGETS } from './targets.mts'
+import { parseCliBuildMode } from '../rolldown-utils.mts'
+import type { CliBuildMode } from '../rolldown-utils.mts'
 
 const logger = getDefaultLogger()
 
@@ -36,9 +40,45 @@ export function createSeaLauncher(): string {
   return `#!/usr/bin/env node\nconst { spawnSync } = require('node:child_process');\nconst path = require('node:path');\nconst target = process.platform + '-' + process.arch + (process.platform === 'linux' && !process.report.getReport().header.glibcVersionRuntime ? '-musl' : '');\nconst binary = path.join(__dirname, 'sea', 'socket-' + target + (process.platform === 'win32' ? '.exe' : ''));\nconst result = spawnSync(binary, process.argv.slice(2), { stdio: 'inherit', env: process.env });\nif (result.error) { console.error('Socket executable failed at ' + binary + ': ' + result.error.message + '. Reinstall socket.'); process.exitCode = 1; }\nelse if (result.signal) process.kill(process.pid, result.signal);\nelse process.exitCode = result.status ?? 1;\n`
 }
 
+export async function buildSeaWithCli(config: {
+  args: readonly string[]
+  buildCli: (mode: CliBuildMode) => Promise<void>
+  buildNative: (mode: CliBuildMode) => Promise<void>
+}): Promise<void> {
+  const mode = parseCliBuildMode(config.args, { defaultMode: 'development' })
+  await config.buildCli(mode)
+  await config.buildNative(mode)
+}
+
 export async function main(): Promise<void> {
-  const signing = process.argv.includes('--sign')
+  const args = process.argv.slice(2)
+  parseCliBuildMode(args, { defaultMode: 'development' })
+  const signing = args.includes('--sign')
   assertSeaSigningHost({ signing, platform: process.platform })
+  await buildSeaWithCli({
+    args,
+    buildCli: async selectedMode => {
+      const result = await spawn(
+        'pnpm',
+        ['run', 'build:cli', `--mode=${selectedMode}`],
+        {
+          cwd: PACKAGE_ROOT,
+          shell: isWin32(),
+          stdio: process.argv.includes('--json') ? 'pipe' : 'inherit',
+        },
+      )
+      if (result.code !== 0) {
+        throw new Error(
+          `CLI build failed before native build: exit ${result.code}.`,
+        )
+      }
+    },
+    buildNative: buildNativeArtifacts,
+  })
+}
+
+async function buildNativeArtifacts(mode: CliBuildMode): Promise<void> {
+  const signing = process.argv.includes('--sign')
   await mkdir(SEA_BUILD_DIR, { recursive: true })
   await mkdir(SEA_OUTPUT_DIR, { recursive: true })
   const payload = await readFile(SEA_PAYLOAD_PATH, 'utf8')
@@ -73,10 +113,10 @@ export async function main(): Promise<void> {
     )
   }
   await writeFile(SEA_LAUNCHER_PATH, createSeaLauncher(), { mode: 0o755 })
-  for (const mode of ['npm', 'npx', 'pnpm', 'yarn']) {
+  for (const packageManager of ['npm', 'npx', 'pnpm', 'yarn']) {
     await writeFile(
-      SEA_ENTRYPOINT_PATHS[`socket-${mode}.js`]!,
-      `#!/usr/bin/env node\nprocess.env.SOCKET_CLI_MODE = ${JSON.stringify(mode)};\nrequire('./socket.js');\n`,
+      SEA_ENTRYPOINT_PATHS[`socket-${packageManager}.js`]!,
+      `#!/usr/bin/env node\nprocess.env.SOCKET_CLI_MODE = ${JSON.stringify(packageManager)};\nrequire('./socket.js');\n`,
       { mode: 0o755 },
     )
   }
@@ -91,6 +131,7 @@ export async function main(): Promise<void> {
     SEA_RECEIPT_PATH,
     JSON.stringify(
       {
+        mode,
         nodeSmol: NODE_SMOL_VERSION,
         payload: crypto.createHash('sha256').update(payload).digest('hex'),
         binaries: receipt,
@@ -274,7 +315,7 @@ async function buildSeaTarget(
 const SCRIPT_META = {
   describe: 'build the socket package native platform matrix',
   heavyJob: 'build' as const,
-  help: 'Usage: pnpm run build:native [--target=host|TARGET] [--sign]',
+  help: 'Usage: pnpm run build:native [--mode=development|production] [--target=host|TARGET] [--sign]',
   json: 'native' as const,
 }
 

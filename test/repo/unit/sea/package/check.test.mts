@@ -79,6 +79,7 @@ async function createPackageFixture(): Promise<void> {
   await writeFile(
     path.join(seaDirectory, 'manifest.generated.json'),
     JSON.stringify({
+      mode: 'production',
       payload: digest(payload),
       binaries: Object.fromEntries(
         Object.entries(binaries).map(([target, binary]) => [
@@ -147,6 +148,40 @@ describe('packed native package verification', () => {
       expect.objectContaining({ cwd: packageRoot, timeoutMs: 60_000 }),
     )
   })
+
+  it.each([
+    { label: 'missing', mode: undefined },
+    { label: 'development', mode: 'development' },
+    { label: 'unknown', mode: 'testing' },
+    { label: 'null', mode: null },
+  ])(
+    'rejects a $label manifest mode before running binaries',
+    async ({ mode }) => {
+      const manifestPath = path.join(
+        packageRoot,
+        'dist',
+        'sea',
+        'manifest.generated.json',
+      )
+      const manifest = JSON.parse(
+        await readFile(manifestPath, 'utf8'),
+      ) as Record<string, unknown>
+      if (mode === undefined) {
+        delete manifest['mode']
+      } else {
+        manifest['mode'] = mode
+      }
+      await writeFile(manifestPath, JSON.stringify(manifest))
+      await expect(
+        verifyNativePackage({
+          packageRoot,
+          target: SEA_TARGETS[0]!,
+          spawnProcess,
+        }),
+      ).rejects.toThrow('mode must be production')
+      expect(spawnProcess).not.toHaveBeenCalled()
+    },
+  )
 
   it('rejects payload, binary, and launcher digest changes before spawning', async () => {
     await writeFile(path.join(packageRoot, 'dist', 'cli.js'), 'changed payload')

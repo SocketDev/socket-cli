@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { runInNewContext } from 'node:vm'
 import {
   assertSeaSigningHost,
+  buildSeaWithCli,
   createSeaEntitlements,
   createSeaEntry,
   createSeaLauncher,
@@ -74,6 +75,55 @@ describe('SEA entrypoints', () => {
 })
 
 describe('SEA signing build step', () => {
+  it.each([
+    { args: [], mode: 'development' },
+    { args: ['--mode=development'], mode: 'development' },
+    { args: ['--mode=production'], mode: 'production' },
+  ])(
+    'builds CLI before native artifacts in $mode mode',
+    async ({ args, mode }) => {
+      const operations: string[] = []
+      await buildSeaWithCli({
+        args,
+        buildCli: async selected => {
+          operations.push(`cli:${selected}`)
+        },
+        buildNative: async selected => {
+          operations.push(`native:${selected}`)
+        },
+      })
+      expect(operations).toEqual([`cli:${mode}`, `native:${mode}`])
+    },
+  )
+
+  it('rejects an invalid mode before building', async () => {
+    const buildCli = vi.fn(async () => {})
+    const buildNative = vi.fn(async () => {})
+    await expect(
+      buildSeaWithCli({
+        args: ['--mode=testing'],
+        buildCli,
+        buildNative,
+      }),
+    ).rejects.toThrow('must be development or production')
+    expect(buildCli).not.toHaveBeenCalled()
+    expect(buildNative).not.toHaveBeenCalled()
+  })
+
+  it('stops after CLI build failure before native artifact work', async () => {
+    const buildNative = vi.fn(async () => {})
+    await expect(
+      buildSeaWithCli({
+        args: [],
+        buildCli: async () => {
+          throw new Error('CLI build failed')
+        },
+        buildNative,
+      }),
+    ).rejects.toThrow('CLI build failed')
+    expect(buildNative).not.toHaveBeenCalled()
+  })
+
   it('signs and notarizes before reading bytes for the receipt digest', async () => {
     const operations: string[] = []
     const digest = await signSeaBinaryBeforeHash(
