@@ -13,7 +13,7 @@ Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), le
 ## Install
 
 ```sh
-pnpm add --global socket@prerelease
+pnpm add --global socket@next
 ```
 
 Then run:
