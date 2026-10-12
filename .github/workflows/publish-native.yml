@@ -128,7 +128,6 @@ jobs:
       actions: read
       contents: read
     env:
-      ARTIFACT_DIR: ${{ runner.temp }}/native-release
       DO_NOT_TRACK: '1'
       GH_TELEMETRY: '0'
     strategy:
@@ -154,6 +153,11 @@ jobs:
           - target: win32-x64
             runner: windows-2025
     steps:
+      - name: Set artifact directory
+        shell: bash
+        env:
+          ARTIFACT_DIR: ${{ runner.temp }}/native-release
+        run: printf 'ARTIFACT_DIR=%s\n' "$ARTIFACT_DIR" >> "$GITHUB_ENV"
       - name: Download signed npm artifact
         shell: bash
         env:
