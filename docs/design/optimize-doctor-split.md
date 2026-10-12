@@ -24,7 +24,7 @@ The split in one line: **doctor enforces time, optimize enforces shape.**
 - `optimize` runs: origin fast-forward (`sync-origin-main.mts`), pastoralist
   override audit (`pastoralist-audit.mts`, spawned bin), the existing
   `@socketregistry` override application, dependency update.
-- `update-pnpm-workspace-yaml.mts` carries `ensurePnpmWorkspaceMinReleaseAge`
+- `pnpm-workspace-yaml-update.mts` carries `ensurePnpmWorkspaceMinReleaseAge`
   (7-day floor, comment-preserving YAML merge). **Not yet wired** - it moves
   to doctor per this split.
 

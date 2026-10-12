@@ -29,6 +29,7 @@
       },
       "bundled": true,
       "origin": "gh-asset",
+      "tag": "v1.16.0",
       "platforms": {
         "darwin-arm64": {
           "asset": "opengrep-core_osx_aarch64.tar.gz",
@@ -151,6 +152,7 @@
       },
       "bundled": true,
       "origin": "gh-asset",
+      "tag": "v2.0.0",
       "platforms": {
         "darwin-arm64": {
           "asset": "socket-patch-aarch64-apple-darwin.tar.gz",
@@ -199,6 +201,7 @@
       },
       "bundled": true,
       "origin": "gh-asset",
+      "tag": "v0.69.2",
       "platforms": {
         "darwin-arm64": {
           "asset": "trivy_0.69.2_macOS-ARM64.tar.gz",
@@ -248,6 +251,7 @@
       },
       "bundled": true,
       "origin": "gh-asset",
+      "tag": "v3.93.1",
       "platforms": {
         "darwin-arm64": {
           "asset": "trufflehog_3.93.1_darwin_arm64.tar.gz",

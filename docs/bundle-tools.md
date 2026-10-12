@@ -10,7 +10,7 @@ Each tool entry declares its distribution source, version, and platform checksum
 
 ## Execution
 
-`src/util/dlx/resolve-binary.mts` resolves tool executables. `src/util/dlx/spawn.mts` handles downloads and execution. The Python tool helpers live in `src/util/basics/`.
+`src/util/dlx/binary-resolution.mts` resolves tool executables. `src/util/dlx/spawn.mts` handles downloads and execution. The Python tool helpers live in `src/util/basics/`.
 
 Tool downloads must retain their integrity checks. A local executable override is an explicit operator choice and must not replace the default verified download path.
 
