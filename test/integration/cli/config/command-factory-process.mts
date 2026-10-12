@@ -3,15 +3,15 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { cmdConfigSet } from '../../../src/command/config/cmd-config-set.mts'
-import { createConfigCommand } from '../../../src/command/config/config-command-factory.mts'
-import { handleConfigSet } from '../../../src/command/config/config-set-command.mts'
-import { handleConfigUnset } from '../../../src/command/config/config-unset-command.mts'
-import { commonFlags, outputFlags } from '../../../src/flags.mts'
-import { InputError } from '../../../src/util/error/errors.mts'
+import { cmdConfigSet } from '../../../../src/command/config/cmd-config-set.mts'
+import { createConfigCommand } from '../../../../src/command/config/config-command-factory.mts'
+import { handleConfigSet } from '../../../../src/command/config/config-set-command.mts'
+import { handleConfigUnset } from '../../../../src/command/config/config-unset-command.mts'
+import { commonFlags, outputFlags } from '../../../../src/flags.mts'
+import { InputError } from '../../../../src/util/error/errors.mts'
 
-import type { ConfigCommandSpec } from '../../../src/command/config/config-command-factory.mts'
-import type { MeowFlags } from '../../../src/flags.mts'
+import type { ConfigCommandSpec } from '../../../../src/command/config/config-command-factory.mts'
+import type { MeowFlags } from '../../../../src/flags.mts'
 
 const logger = getDefaultLogger()
 const context = { parentName: 'socket config' }

@@ -4,7 +4,7 @@ import { registerHooks } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const sourceRoot = realpathSync(
-  fileURLToPath(new URL('../../../src/', import.meta.url)),
+  fileURLToPath(new URL('../../../../src/', import.meta.url)),
 )
 
 function isWithinSourceRoot(filePath: string): boolean {

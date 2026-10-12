@@ -13,9 +13,9 @@ import { fileURLToPath } from 'node:url'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { isPlainObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { REDACTED } from '../../../src/constants/cli.mts'
-import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { retiredSocketApiTokenFixture } from '../../helpers/retired-socket-api-token.mts'
+import { REDACTED } from '../../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../../src/constants/paths.mts'
+import { retiredSocketApiTokenFixture } from '../../../helpers/retired-socket-api-token.mts'
 import { afterEach } from 'vitest'
 
 export type FixtureReport = Record<string, boolean>
@@ -40,13 +40,13 @@ export type ChildRun = {
 }
 
 const processFixturePath = fileURLToPath(
-  new URL('./retired-config-write-process.mts', import.meta.url),
+  new URL('../retired-config-write-process.mts', import.meta.url),
 )
 const sourceResolutionPath = fileURLToPath(
-  new URL('./config-source-resolution.mts', import.meta.url),
+  new URL('./source-resolution.mts', import.meta.url),
 )
 export const factoryFixturePath = fileURLToPath(
-  new URL('./config-command-factory-process.mts', import.meta.url),
+  new URL('./command-factory-process.mts', import.meta.url),
 )
 export const cliPath = getBinCliPath()
 const temporaryHomes: string[] = []
