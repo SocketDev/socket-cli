@@ -6,36 +6,20 @@ import process from 'node:process'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  runCapture: vi.fn(),
-  pack: vi.fn(),
-  buildVerifier: vi.fn(),
-  verifyNativePackage: vi.fn(),
-  inspectPackage: vi.fn(),
-  validateExpectation: vi.fn(),
-  validateReceipt: vi.fn(),
-  withAppleKeychain: vi.fn(),
-  getIdentityLabel: vi.fn(),
-  keychainCleanup: vi.fn(),
-  resolveTarget: vi.fn(),
+  runCapture: vi.fn(), pack: vi.fn(), buildVerifier: vi.fn(),
+  verifyNativePackage: vi.fn(), inspectPackage: vi.fn(),
+  validateExpectation: vi.fn(), validateReceipt: vi.fn(),
+  withAppleKeychain: vi.fn(), getIdentityLabel: vi.fn(),
+  keychainCleanup: vi.fn(), resolveTarget: vi.fn(),
   packageRoot: '',
   receiptPath: '',
 }))
 
-vi.mock(import('../../../../../scripts/fleet/registry/shared.mts'), () => ({
-  runCapture: mocks.runCapture,
-}))
-vi.mock(import('../../../../../scripts/fleet/registry/npm/staged.mts'), () => ({
-  defaultPackTarball: mocks.pack,
-}))
-vi.mock(import('../../../../../scripts/fleet/npm/publish/artifact/package.mts'), () => ({
-  inspectNpmArtifactPackage: mocks.inspectPackage,
-}))
-vi.mock(import('../../../../../scripts/fleet/registry/apple/ci/keychain.mts'), () => ({
-  withTemporaryAppleKeychain: mocks.withAppleKeychain,
-}))
-vi.mock(import('../../../../../scripts/fleet/registry/apple/identity.mts'), () => ({
-  getDeveloperIdIdentityLabel: mocks.getIdentityLabel,
-}))
+vi.mock(import('../../../../../scripts/fleet/registry/shared.mts'), () => ({ runCapture: mocks.runCapture }))
+vi.mock(import('../../../../../scripts/fleet/registry/npm/staged.mts'), () => ({ defaultPackTarball: mocks.pack }))
+vi.mock(import('../../../../../scripts/fleet/npm/publish/artifact/package.mts'), () => ({ inspectNpmArtifactPackage: mocks.inspectPackage }))
+vi.mock(import('../../../../../scripts/fleet/registry/apple/ci/keychain.mts'), () => ({ withTemporaryAppleKeychain: mocks.withAppleKeychain }))
+vi.mock(import('../../../../../scripts/fleet/registry/apple/identity.mts'), () => ({ getDeveloperIdIdentityLabel: mocks.getIdentityLabel }))
 vi.mock(import('../../../../../scripts/fleet/npm/publish/artifact/receipt.mts'), async () => {
   const actual = await vi.importActual<
     typeof import('../../../../../scripts/fleet/npm/publish/artifact/receipt.mts')
@@ -50,15 +34,9 @@ vi.mock(import('../../../../../scripts/fleet/npm/publish/artifact/receipt.mts'),
     validateNpmArtifactReceipt: mocks.validateReceipt,
   }
 })
-vi.mock(import('../../../../../scripts/repo/build/sea/package/build.mts'), () => ({
-  buildNativePackageVerifier: mocks.buildVerifier,
-}))
-vi.mock(import('../../../../../scripts/repo/build/sea/package/check.mts'), () => ({
-  verifyNativePackage: mocks.verifyNativePackage,
-}))
-vi.mock(import('../../../../../scripts/repo/build/sea/targets.mts'), () => ({
-  resolveSeaTarget: mocks.resolveTarget,
-}))
+vi.mock(import('../../../../../scripts/repo/build/sea/package/build.mts'), () => ({ buildNativePackageVerifier: mocks.buildVerifier }))
+vi.mock(import('../../../../../scripts/repo/build/sea/package/check.mts'), () => ({ verifyNativePackage: mocks.verifyNativePackage }))
+vi.mock(import('../../../../../scripts/repo/build/sea/targets.mts'), () => ({ resolveSeaTarget: mocks.resolveTarget }))
 vi.mock(import('../../../../../scripts/repo/build/paths.mts'), () => ({
   get PACKAGE_ROOT() {
     return mocks.packageRoot
@@ -72,6 +50,7 @@ vi.mock(import('../../../../../scripts/repo/build/sea/paths.mts'), () => ({
 
 import {
   createSeaReleaseScriptResult,
+  main,
   produceSeaRelease,
 } from '../../../../../scripts/repo/build/sea/release.mts'
 import { renderScriptResult } from '../../../../../scripts/fleet/process/script-result.mts'
@@ -123,19 +102,10 @@ beforeEach(async () => {
   mocks.verifyNativePackage.mockResolvedValue(undefined)
   mocks.inspectPackage.mockImplementation(() => ({ darwinBinaries }))
   mocks.resolveTarget.mockReturnValue('darwin-arm64')
-  mocks.withAppleKeychain.mockImplementation(
-    async (
-      config: unknown,
-      callback: (identityHash: string) => Promise<unknown>,
-    ) => {
-      expect(config).toBeDefined()
-      try {
-        return await callback('d'.repeat(40))
-      } finally {
-        mocks.keychainCleanup()
-      }
-    },
-  )
+  mocks.withAppleKeychain.mockImplementation(async (config: unknown, callback: (identityHash: string) => Promise<unknown>) => {
+    expect(config).toEqual({ certificateBase64: Buffer.from('certificate fixture').toString('base64'), p12Password: process.env['APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS'] ?? '', identityLabel: 'Developer ID Application: Socket Inc. (A1B2C3D4E5)' })
+    try { return await callback('d'.repeat(40)) } finally { mocks.keychainCleanup() }
+  })
   mocks.getIdentityLabel.mockReturnValue(
     'Developer ID Application: Socket Inc. (A1B2C3D4E5)',
   )
@@ -426,6 +396,103 @@ describe('produceSeaRelease', () => {
     await writeFile(path.join(config.outputDirectory, 'keep.txt'), 'keep')
     await expect(produceSeaRelease(config)).rejects.toBeInstanceOf(Error)
     expect(await readFile(path.join(config.outputDirectory, 'keep.txt'), 'utf8')).toBe('keep')
+  })
+})
+
+describe('native release credentials', () => {
+  function setNativeReleaseEnvironment(): void {
+    for (const [name, value] of Object.entries({
+      GITHUB_REPOSITORY: EXPECTED.repository,
+      GITHUB_RUN_ID: String(EXPECTED.runId),
+      GITHUB_RUN_ATTEMPT: String(EXPECTED.runAttempt),
+      APPLE_TEAM_ID: EXPECTED.appleTeamId,
+      APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12: Buffer.from('certificate fixture').toString('base64'),
+      APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS: 'fixture-pass',
+      APPLE_ASC_KEY_ID: 'fixture-key',
+      APPLE_ASC_ISSUER_ID: 'fixture-issuer',
+      APPLE_ASC_KEY_P8_B64: Buffer.from('private key').toString('base64'),
+    })) vi.stubEnv(name, value)
+    process.argv = [process.execPath, 'release.mts', '--source-sha', EXPECTED.sourceSha, '--package-version', EXPECTED.packageVersion, '--output-directory', path.join(tempRoot, 'main-release')]
+  }
+
+  it('accepts complete Apple ID notarization credentials', async () => {
+    setNativeReleaseEnvironment()
+    vi.stubEnv('APPLE_ASC_KEY_ID', '')
+    vi.stubEnv('APPLE_ASC_ISSUER_ID', '')
+    vi.stubEnv('APPLE_ASC_KEY_P8_B64', '')
+    vi.stubEnv('APPLE_ID', 'release@example.test')
+    vi.stubEnv('APPLE_APP_SPECIFIC_PASSWORD', 'fixture-password')
+    const result = await main()
+    expect(result.exitCode).toBe(0)
+    expect(mocks.withAppleKeychain).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['incomplete App Store Connect credentials', 'APPLE_ASC_KEY_P8_B64'],
+    ['incomplete Apple ID credentials', 'APPLE_APP_SPECIFIC_PASSWORD'],
+  ])('rejects %s when the other mode is incomplete', async (caseLabel, missing) => {
+    expect(caseLabel).toBeTruthy()
+    setNativeReleaseEnvironment()
+    vi.stubEnv('APPLE_ID', '')
+    vi.stubEnv('APPLE_APP_SPECIFIC_PASSWORD', '')
+    if (missing === 'APPLE_APP_SPECIFIC_PASSWORD') {
+      vi.stubEnv('APPLE_ASC_KEY_P8_B64', '')
+      vi.stubEnv('APPLE_ID', 'release@example.test')
+    }
+    vi.stubEnv(missing, '')
+    await expect(main()).rejects.toBeInstanceOf(Error)
+    expect(mocks.getIdentityLabel).not.toHaveBeenCalled()
+    expect(mocks.withAppleKeychain).not.toHaveBeenCalled()
+  })
+
+  it('still requires the certificate', async () => {
+    setNativeReleaseEnvironment()
+    vi.stubEnv('APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12', '')
+    await expect(main()).rejects.toBeInstanceOf(Error)
+    expect(mocks.getIdentityLabel).not.toHaveBeenCalled()
+    expect(mocks.withAppleKeychain).not.toHaveBeenCalled()
+  })
+
+  it.each([['absent', undefined], ['empty', '']])('imports the certificate when its password is %s', async (caseLabel, password) => {
+    expect(caseLabel).toBeTruthy()
+    setNativeReleaseEnvironment()
+    password === undefined
+      ? delete process.env['APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS']
+      : vi.stubEnv('APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS', password)
+    const result = await main()
+    expect(result.exitCode).toBe(0)
+    expect(mocks.withAppleKeychain).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes a configured certificate password to import without trimming', async () => {
+    setNativeReleaseEnvironment()
+    const password = '  fixture-pass  '
+    vi.stubEnv('APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS', password)
+    const result = await main()
+    expect(result.exitCode).toBe(0)
+    expect(mocks.withAppleKeychain).toHaveBeenCalledTimes(1)
+  })
+
+  it('builds under the imported signing identity and restores process state', async () => {
+    setNativeReleaseEnvironment()
+    vi.stubEnv('APPLE_DEVELOPER_ID_IDENTITY', 'original-identity')
+    const result = await main()
+    expect(mocks.withAppleKeychain).toHaveBeenCalledTimes(1)
+    expect(mocks.runCapture).toHaveBeenCalledWith('pnpm', ['run', 'build:native', '--mode=production', '--sign'], packageRoot)
+    expect(process.env['APPLE_DEVELOPER_ID_IDENTITY']).toBe('original-identity')
+    expect(mocks.keychainCleanup).toHaveBeenCalledTimes(1)
+    expect(result.exitCode).toBe(0)
+  })
+
+  it('cleans up the temporary keychain after a production build failure', async () => {
+    setNativeReleaseEnvironment()
+    mocks.runCapture.mockImplementation(async (...call) =>
+      (call[1] as string[]).includes('build:native')
+        ? { stdout: '', code: 1 }
+        : { stdout: `${EXPECTED.sourceSha}\n`, code: 0 },
+    )
+    await expect(main()).rejects.toBeInstanceOf(Error)
+    expect(mocks.keychainCleanup).toHaveBeenCalledTimes(1)
   })
 })
 
