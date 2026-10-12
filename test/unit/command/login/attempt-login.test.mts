@@ -114,17 +114,19 @@ describe('attemptLogin', () => {
     expect(mockLogger.fail).toHaveBeenCalledWith('Canceled by user')
   })
 
-  it('falls back to public API token when password is empty string', async () => {
+  it('rejects blank token input before setting up the SDK', async () => {
     mockPassword.mockResolvedValueOnce('')
 
-    await attemptLogin('https://api.socket.dev', undefined)
+    const result = await attemptLogin('https://api.socket.dev', undefined)
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(
-      expect.objectContaining({
-        apiToken: expect.any(String),
-        apiBaseUrl: 'https://api.socket.dev',
-      }),
-    )
+    expect(result).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('token is required'),
+    })
+    expect(process.exitCode).toBe(1)
+    expect(mockSetupSdk).not.toHaveBeenCalled()
+    expect(mockFetchOrganization).not.toHaveBeenCalled()
+    expect(mockApplyLogin).not.toHaveBeenCalled()
   })
 
   it('fails when SDK setup returns error', async () => {

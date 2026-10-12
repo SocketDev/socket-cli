@@ -1,5 +1,4 @@
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { SOCKET_PUBLIC_API_TOKEN } from '../../constants/socket.mts'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   confirm,
@@ -25,6 +24,7 @@ import { setupSdk } from '../../util/socket/sdk.mjs'
 import { socketDocsLink } from '../../util/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
+import { classifyLoginTokenInput } from './validate-api-token-input.mts'
 
 import type { Choice } from '@socketsecurity/lib-stable/stdio/prompts'
 const logger = getDefaultLogger()
@@ -39,10 +39,11 @@ export async function attemptLogin(
   apiBaseUrl ??= getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ?? undefined
   apiProxy ??= getConfigValueOrUndef(CONFIG_KEY_API_PROXY) ?? undefined
   const apiTokenInput = await password({
-    message: `Enter your ${socketDocsLink('/docs/api-keys', 'Socket.dev API token')} (leave blank to use a limited public token)`,
+    message: `Enter your ${socketDocsLink('/docs/api-keys', 'Socket.dev API token')}`,
   })
 
-  if (apiTokenInput === undefined) {
+  const tokenInput = classifyLoginTokenInput(apiTokenInput)
+  if (tokenInput.kind === 'cancelled') {
     logger.fail('Canceled by user')
     return {
       __proto__: null,
@@ -52,7 +53,20 @@ export async function attemptLogin(
     }
   }
 
-  const apiToken = apiTokenInput || SOCKET_PUBLIC_API_TOKEN
+  if (tokenInput.kind === 'blank') {
+    process.exitCode = 1
+    const message =
+      'An API token is required to log in. Enter a token and try again.'
+    logger.fail(message)
+    return {
+      __proto__: null,
+      ok: false,
+      message,
+      cause: 'An API token is required',
+    }
+  }
+
+  const apiToken = tokenInput.token
 
   const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
   if (!sockSdkCResult.ok) {
