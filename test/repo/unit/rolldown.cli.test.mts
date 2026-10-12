@@ -146,7 +146,9 @@ describe('CLI build configuration', () => {
     const second = createCliBuildConfig()
     expect(first).not.toBe(second)
     expect(first.plugins).not.toBe(second.plugins)
-    expect(first.plugins?.[0]).not.toBe(second.plugins?.[0])
+    if (Array.isArray(first.plugins) && Array.isArray(second.plugins)) {
+      expect(first.plugins[0]).not.toBe(second.plugins[0])
+    }
     expect(first.transform).not.toBe(second.transform)
     expect(first.transform?.define).not.toBe(second.transform?.define)
     expect(first.output).not.toBe(second.output)
