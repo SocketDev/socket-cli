@@ -12,6 +12,7 @@ export type SocketFactsSbom = {
   metadata?: SocketFactsSbomMetadata | undefined
   projects?: SocketFactsSbomProject[] | undefined
   components: SocketFactsSbomComponent[]
+  dependencies?: SocketFactsSbomDependency[] | undefined
 }
 
 export type SocketFactsSbomMetadata = {
@@ -29,11 +30,6 @@ export type SocketFactsSbomComponent = AnyPURL & {
   dev?: boolean | undefined
   // A module of the scanned build itself (same GAV as a projects[] entry).
   firstParty?: true | undefined
-  dependencies?: string[] | undefined
-  // Direct dependencies only: the facts file plus, per subproject pulling it in
-  // directly, the Gradle script declaring it, else the subproject's build file
-  // (which need not declare it, e.g. a parent POM does, nor exist on disk).
-  manifestFiles?: SocketFactsManifestReference[] | undefined
 }
 
 // Relative to the facts file's directory.
@@ -41,16 +37,25 @@ export type SocketFactsManifestReference = {
   file: string
 }
 
+// A component with one exact subtree, shared by every position whose subtree
+// is identical.
+export type SocketFactsSbomDependency = {
+  // Index into components[].
+  component: number
+  // Indices into dependencies[].
+  children?: number[] | undefined
+}
+
 export type SocketFactsSbomProject = AnyPURL & {
   // The build tool's own project identity, unique within the facts file:
   // Maven's GAV, Gradle's project path, sbt's project id.
   id: string
   subprojectDir: string
-  dependencies: string[]
-  // The module's own build files, e.g. a POM other than `<subprojectDir>/pom.xml`;
-  // for a Gradle project without one, the scripts declaring its dependencies,
-  // else its configured build file, which may not exist on disk.
+  // The build files the tool reports for the project, e.g. a POM other than
+  // `<subprojectDir>/pom.xml`, or a Gradle build file absent on disk.
   manifestFiles?: SocketFactsManifestReference[] | undefined
+  // Indices into dependencies[]: this subproject's direct dependencies.
+  children: number[]
 }
 
 // Resolved on-disk paths for a --with-files run, keyed by component or project
@@ -61,4 +66,6 @@ export type ResolvedArtifactPaths = {
   // Component ids on each project's resolved classpath (union over its
   // configurations), keyed by project id.
   classpathByProject: Map<string, string[]>
+  // Component ids of each project's direct dependencies, keyed by project id.
+  directDependenciesByProject: Map<string, string[]>
 }

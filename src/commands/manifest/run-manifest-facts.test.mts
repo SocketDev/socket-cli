@@ -30,6 +30,7 @@ function okResult(buildRoot: string): ManifestRunResult {
     artifactPaths: {
       pathsById: new Map(),
       classpathByProject: new Map(),
+      directDependenciesByProject: new Map(),
     },
     stderr: '',
     stdout: '',
@@ -122,7 +123,7 @@ describe('runManifestFacts - sidecar', () => {
         name: 'app',
         version: '1.0',
         subprojectDir: '.',
-        dependencies: [],
+        children: [],
       },
     ]
     vi.mocked(runManifestScript).mockResolvedValue(result)

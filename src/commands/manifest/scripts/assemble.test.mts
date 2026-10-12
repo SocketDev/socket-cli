@@ -4,7 +4,25 @@ import { assembleFacts } from './assemble.mts'
 import { parseRecords } from './records.mts'
 import { accumulateSidecar, serializeSidecar } from './sidecar.mts'
 
+import type { SocketFactsSbom } from './facts.mts'
 import type { SidecarAccumulator } from './sidecar.mts'
+
+// Each project's tree, written out with component ids; a repeat on the current
+// path (a cycle) is written without its children.
+function trees(facts: SocketFactsSbom): Record<string, string[]> {
+  const deps = facts.dependencies ?? []
+  const render = (i: number, path: number[]): string => {
+    const id = facts.components[deps[i]!.component]!.id
+    const children = deps[i]!.children ?? []
+    if (path.includes(i) || !children.length) {
+      return id
+    }
+    return `${id}(${children.map(c => render(c, [...path, i])).join(', ')})`
+  }
+  return Object.fromEntries(
+    (facts.projects ?? []).map(p => [p.id, p.children.map(i => render(i, []))]),
+  )
+}
 
 // Minimal line-protocol records for a one-module Gradle build (--with-files):
 // - first-party module `:app` (a project, NOT a dependency node) with source +
@@ -23,11 +41,37 @@ const RECORDS = [
   'scanned\truntimeClasspath',
 ].join('\n')
 
+function chain(root: string, project: string, version: string): string[] {
+  return [
+    `root\t${root}\t${project}\tcompile\t1`,
+    `node\t${root}\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1`,
+    `node\t${root}\tg:mid:jar:1\tg\tmid\t1\tjar\t\t0`,
+    `node\t${root}\tg:dep:jar:${version}\tg\tdep\t${version}\tjar\t\t0`,
+    `edge\t${root}\tg:lib:jar:1\tg:mid:jar:1`,
+    `edge\t${root}\tg:mid:jar:1\tg:dep:jar:${version}`,
+  ]
+}
+
+function cycle(root: string, project: string, extra: boolean): string[] {
+  return [
+    `root\t${root}\t${project}\tcompile\t1`,
+    `node\t${root}\tg:x:jar:1\tg\tx\t1\tjar\t\t1`,
+    `node\t${root}\tg:y:jar:1\tg\ty\t1\tjar\t\t0`,
+    `edge\t${root}\tg:x:jar:1\tg:y:jar:1`,
+    `edge\t${root}\tg:y:jar:1\tg:x:jar:1`,
+    ...(extra
+      ? [
+          `node\t${root}\tg:z:jar:1\tg\tz\t1\tjar\t\t0`,
+          `edge\t${root}\tg:y:jar:1\tg:z:jar:1`,
+        ]
+      : []),
+  ]
+}
+
 describe('records → assemble → sidecar', () => {
   it('carries first-party project paths, external jars, and artifactless BOMs', () => {
     // Inject fileExists so the synthetic absolute paths aren't filtered out.
     const { artifactPaths, facts } = assembleFacts(parseRecords(RECORDS), {
-      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
@@ -71,7 +115,7 @@ describe('records → assemble → sidecar', () => {
     expect(bom?.targets).toEqual([])
     expect(bom?.sources).toEqual([])
   })
-  it('merges a coordinate with divergent subtrees into one component and scopes classpaths per project', () => {
+  it('keeps a coordinate with divergent subtrees as one component with a dependency entry per subtree', () => {
     // :a and :b both depend on `lib`, which pulls a different `dep` version in
     // each subproject.
     const records = [
@@ -90,7 +134,6 @@ describe('records → assemble → sidecar', () => {
       'node\tr3\tg:junit:jar:4\tg\tjunit\t4\tjar\t\t1',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
-      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
@@ -100,24 +143,136 @@ describe('records → assemble → sidecar', () => {
       'g:junit:jar:4',
       'g:lib:jar:1',
     ])
-    expect(
-      facts.components.find(c => c.id === 'g:lib:jar:1')?.dependencies,
-    ).toEqual(['g:dep:jar:1', 'g:dep:jar:2'])
+    expect(facts.components[3]).not.toHaveProperty('dependencies')
+    expect(facts.dependencies).toEqual([
+      { component: 0 },
+      { component: 3, children: [0] },
+      { component: 2 },
+      { component: 1 },
+      { component: 3, children: [3] },
+    ])
+    expect(trees(facts)).toEqual({
+      ':a': ['g:lib:jar:1(g:dep:jar:1)'],
+      ':b': ['g:junit:jar:4', 'g:lib:jar:1(g:dep:jar:2)'],
+    })
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
     const byName = new Map(
       serializeSidecar(acc)['/abs/.socket.facts.json']!.projects.map(p => [
         p.name,
-        p.classpath,
+        p,
       ]),
     )
-    expect(byName.get('a')).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
-    expect(byName.get('b')).toEqual([
+    expect(byName.get('a')?.classpath).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
+    expect(byName.get('b')?.classpath).toEqual([
       'g:dep:jar:2',
       'g:junit:jar:4',
       'g:lib:jar:1',
     ])
+    expect(byName.get('b')?.dependencies).toEqual([
+      'g:junit:jar:4',
+      'g:lib:jar:1',
+    ])
+    expect(byName.get('b')).not.toHaveProperty('children')
+  })
+  it('shares one dependency entry between identical subtrees across subprojects', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\ta\tg\ta\t1\ta',
+      'project\tb\tg\tb\t1\tb',
+      'root\tr1\ta\tcompile\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+      'edge\tr1\tg:lib:jar:1\tg:dep:jar:1',
+      'root\tr2\tb\tcompile\t1',
+      'node\tr2\tg:other:jar:1\tg\tother\t1\tjar\t\t1',
+      'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t0',
+      'node\tr2\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+      'edge\tr2\tg:other:jar:1\tg:lib:jar:1',
+      'edge\tr2\tg:lib:jar:1\tg:dep:jar:1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(facts.dependencies).toHaveLength(3)
+    expect(trees(facts)).toEqual({
+      a: ['g:lib:jar:1(g:dep:jar:1)'],
+      b: ['g:other:jar:1(g:lib:jar:1(g:dep:jar:1))'],
+    })
+  })
+  it('tells apart subtrees that differ only further down', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\ta\tg\ta\t1\ta',
+      'project\tb\tg\tb\t1\tb',
+      ...chain('r1', 'a', '1'),
+      ...chain('r2', 'b', '2'),
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(trees(facts)).toEqual({
+      a: ['g:lib:jar:1(g:mid:jar:1(g:dep:jar:1))'],
+      b: ['g:lib:jar:1(g:mid:jar:1(g:dep:jar:2))'],
+    })
+  })
+  it('merges the configurations of a subproject into one tree', () => {
+    const records = [
+      'meta\tgradle\t8.0\t17',
+      'project\t:a\tg\ta\t1\ta',
+      'root\tr1\t:a\tcompileClasspath\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:api:jar:1\tg\tapi\t1\tjar\t\t0',
+      'edge\tr1\tg:lib:jar:1\tg:api:jar:1',
+      'root\tr2\t:a\truntimeClasspath\t1',
+      'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr2\tg:api:jar:1\tg\tapi\t1\tjar\t\t0',
+      'node\tr2\tg:impl:jar:1\tg\timpl\t1\tjar\t\t0',
+      'edge\tr2\tg:lib:jar:1\tg:api:jar:1',
+      'edge\tr2\tg:lib:jar:1\tg:impl:jar:1',
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    expect(trees(facts)).toEqual({
+      ':a': ['g:lib:jar:1(g:api:jar:1, g:impl:jar:1)'],
+    })
+  })
+  it('merges equal cycles and keeps different ones apart', () => {
+    const records = [
+      'meta\tsbt\t1.10.7\t17',
+      'project\ta\tg\ta\t1\ta',
+      'project\tb\tg\tb\t1\tb',
+      'project\tc\tg\tc\t1\tc',
+      ...cycle('r1', 'a', false),
+      ...cycle('r2', 'b', false),
+      ...cycle('r3', 'c', true),
+    ].join('\n')
+    const { facts } = assembleFacts(parseRecords(records))
+
+    // x and y once for a and b together, and once more for c, plus z.
+    expect(facts.dependencies).toHaveLength(5)
+    const [a, b, c] = facts.projects!
+    expect(a!.children).toEqual(b!.children)
+    expect(c!.children).not.toEqual(a!.children)
+    expect(trees(facts)).toEqual({
+      a: ['g:x:jar:1(g:y:jar:1(g:x:jar:1))'],
+      b: ['g:x:jar:1(g:y:jar:1(g:x:jar:1))'],
+      c: ['g:x:jar:1(g:y:jar:1(g:z:jar:1, g:x:jar:1))'],
+    })
+  })
+  it('rejects a resolved dependency that no direct dependency reaches', () => {
+    const records = [
+      'meta\tsbt\t1.10.7\t17',
+      'project\ta\tg\ta\t1\ta',
+      'root\tr1\ta\tcompile\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:loose:jar:1\tg\tloose\t1\tjar\t\t0',
+      'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+      'edge\tr1\tg:loose:jar:1\tg:dep:jar:1',
+    ].join('\n')
+
+    expect(() => assembleFacts(parseRecords(records))).toThrow(
+      'Resolved dependencies of a are not reachable from its direct dependencies: g:dep:jar:1, g:loose:jar:1',
+    )
   })
   it("gives a dependency on a build project that project's id, and marks only it firstParty", () => {
     const records = [
@@ -133,25 +288,19 @@ describe('records → assemble → sidecar', () => {
       // Same name as a build project, but a published artifact, not the project.
       'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1\t',
     ].join('\n')
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
-      factsFileName: 'gradle.socket.facts.json',
-    })
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
 
-    expect(
-      facts.components.map(c => [
-        c.id,
-        c.firstParty ?? 'absent',
-        c.dependencies,
-      ]),
-    ).toEqual([
-      [':a', true, ['g:ext:jar:2']],
-      ['g:b:jar:0.9', 'absent', undefined],
-      ['g:ext:jar:2', 'absent', undefined],
-    ])
-    expect(facts.projects!.find(p => p.id === ':b')?.dependencies).toEqual([
-      ':a',
-      'g:b:jar:0.9',
-    ])
+    expect(facts.components.map(c => [c.id, c.firstParty ?? 'absent'])).toEqual(
+      [
+        [':a', true],
+        ['g:b:jar:0.9', 'absent'],
+        ['g:ext:jar:2', 'absent'],
+      ],
+    )
+    expect(trees(facts)).toEqual({
+      ':a': ['g:ext:jar:2'],
+      ':b': [':a(g:ext:jar:2)', 'g:b:jar:0.9'],
+    })
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(
@@ -166,7 +315,6 @@ describe('records → assemble → sidecar', () => {
       expect(project).not.toHaveProperty('firstParty')
     }
   })
-
   it("keeps projects that share a coordinate apart, collapsing each project's variants into it", () => {
     const records = [
       'meta\tgradle\t8.0\t17',
@@ -185,17 +333,19 @@ describe('records → assemble → sidecar', () => {
       'node\tr2\tex:util:jar:1\tex\tutil\t1\tjar\t\t1\t:a:util',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
-      factsFileName: 'gradle.socket.facts.json',
       fileExists: () => true,
     })
 
-    expect(
-      facts.components.map(c => [c.id, c.qualifiers, c.dependencies]),
-    ).toEqual([
-      [':a:util', undefined, undefined],
-      [':b:util', undefined, ['g:ext:jar:2']],
-      ['g:ext:jar:2', { ext: 'jar' }, undefined],
+    expect(facts.components.map(c => [c.id, c.qualifiers])).toEqual([
+      [':a:util', undefined],
+      [':b:util', undefined],
+      ['g:ext:jar:2', { ext: 'jar' }],
     ])
+    expect(trees(facts)).toEqual({
+      ':a:util': [],
+      ':app': [':b:util(g:ext:jar:2)'],
+      ':b:util': [':a:util'],
+    })
     expect(artifactPaths.classpathByProject.get(':app')).toEqual([
       ':b:util',
       'g:ext:jar:2',
@@ -209,7 +359,7 @@ describe('records → assemble → sidecar', () => {
     ])
   })
 
-  it('marks direct dependencies with the facts file and the build files of the subprojects they are direct in', () => {
+  it('marks each subproject with its own build files and no component with any', () => {
     const records = [
       'meta\tmaven\t3.9.6\t17',
       'project\ta\tg\ta\t1\ta',
@@ -229,27 +379,20 @@ describe('records → assemble → sidecar', () => {
       'root\tr3\tc\truntimeClasspath\t1',
       'node\tr3\tg:solo:jar:1\tg\tsolo\t1\tjar\t\t1',
     ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records), {
-      factsFileName: 'pom.xml.socket.facts.json',
-    })
+    const { facts } = assembleFacts(parseRecords(records))
 
     expect(
       Object.fromEntries(
-        facts.components.map(c => [c.id, c.manifestFiles ?? 'absent']),
+        facts.projects!.map(p => [p.name, p.manifestFiles ?? 'absent']),
       ),
     ).toEqual({
-      'g:a:jar:1': [
-        { file: 'pom.xml.socket.facts.json' },
-        { file: 'b/pom.xml' },
-      ],
-      'g:dep:jar:3': 'absent',
-      'g:ext:jar:2': [
-        { file: 'pom.xml.socket.facts.json' },
-        { file: 'a/pom.xml' },
-        { file: 'b/pom.xml' },
-      ],
-      'g:solo:jar:1': [{ file: 'pom.xml.socket.facts.json' }],
+      a: [{ file: 'a/pom.xml' }],
+      b: [{ file: 'b/pom.xml' }],
+      c: 'absent',
     })
+    for (const c of facts.components) {
+      expect(c).not.toHaveProperty('manifestFiles')
+    }
   })
   it("records each project's own build files, relative to the build root", () => {
     const records = [
@@ -264,9 +407,7 @@ describe('records → assemble → sidecar', () => {
       'project\tg:bare:1\tg\tbare\t1\tbare',
     ].join('\n')
     const parsed = parseRecords(records)
-    const { facts } = assembleFacts(parsed, {
-      factsFileName: 'other-pom.xml.socket.facts.json',
-    })
+    const { facts } = assembleFacts(parsed)
 
     expect(parsed.buildRoot).toBe('/repo/sub')
     expect(
@@ -280,85 +421,28 @@ describe('records → assemble → sidecar', () => {
       'g:mod-b:1': [{ file: 'mod/b.xml' }],
     })
   })
-  it('omits the facts file reference when the facts file cannot be named', () => {
-    const records = [
-      'meta\tmaven\t3.9.6\t17',
-      'project\ta\tg\ta\t1\t.',
-      'projectBuild\ta\tpom.xml',
-      'root\tr1\ta\truntimeClasspath\t1',
-      'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t1',
-    ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records), {
-      factsFileName: undefined,
-    })
-
-    expect(facts.components[0]?.manifestFiles).toEqual([{ file: 'pom.xml' }])
-  })
-  it('attributes Gradle direct dependencies to the script declaring them', () => {
+  it('marks each Gradle project with its configured build file, even when absent', () => {
     const records = [
       'meta\tgradle\t9.2.1\t21',
       'buildRoot\t/repo',
       'project\t:\tg\troot\t1\t.',
       'projectBuild\t:\tbuild.gradle.kts',
+      // Configured from the root build, no script of its own.
       'project\t:a\tg\ta\t1\ta',
-      'declared\t:a\tx\tfrom-root\tbuild.gradle.kts',
-      'project\t:b\tg\tb\t1\tb',
-      'projectBuild\t:b\tb/build.gradle.kts',
-      'declared\t:b\tx\tfrom-root\tbuild.gradle.kts',
-      'declared\t:b\tx\town\tb/build.gradle.kts',
+      'projectBuild\t:a\ta/build.gradle.kts',
       'root\tr1\t:a\truntimeClasspath\t1',
       'node\tr1\tx:from-root:jar:1\tx\tfrom-root\t1\tjar\t\t1',
-      'root\tr2\t:b\truntimeClasspath\t1',
-      'node\tr2\tx:from-root:jar:1\tx\tfrom-root\t1\tjar\t\t1',
-      'node\tr2\tx:own:jar:1\tx\town\t1\tjar\t\t1',
-      'node\tr2\tx:by-plugin:jar:1\tx\tby-plugin\t1\tjar\t\t1',
     ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records), {
-      factsFileName: 'gradle.socket.facts.json',
-    })
+    const { facts } = assembleFacts(parseRecords(records))
 
-    expect(
-      Object.fromEntries(
-        facts.components.map(c => [
-          c.id,
-          c.manifestFiles?.map(m => m.file).slice(1),
-        ]),
-      ),
-    ).toEqual({
-      'x:by-plugin:jar:1': ['b/build.gradle.kts'],
-      'x:from-root:jar:1': ['build.gradle.kts'],
-      'x:own:jar:1': ['b/build.gradle.kts'],
-    })
     expect(
       Object.fromEntries(
         facts.projects!.map(p => [p.id, p.manifestFiles?.map(m => m.file)]),
       ),
     ).toEqual({
       ':': ['build.gradle.kts'],
-      ':a': ['build.gradle.kts'],
-      ':b': ['b/build.gradle.kts'],
+      ':a': ['a/build.gradle.kts'],
     })
-  })
-  it('falls back to the configured Gradle build file even when absent', () => {
-    const records = [
-      'meta\tgradle\t9.2.1\t21',
-      'buildRoot\t/repo',
-      'project\t:a\tg\ta\t1\ta',
-      'projectBuild\t:a\ta/build.gradle.kts\tmissing',
-      'root\tr1\t:a\truntimeClasspath\t1',
-      'node\tr1\tx:undeclared:jar:1\tx\tundeclared\t1\tjar\t\t1',
-    ].join('\n')
-    const { facts } = assembleFacts(parseRecords(records), {
-      factsFileName: 'gradle.socket.facts.json',
-    })
-
-    expect(facts.components[0]?.manifestFiles).toEqual([
-      { file: 'gradle.socket.facts.json' },
-      { file: 'a/build.gradle.kts' },
-    ])
-    expect(facts.projects![0]?.manifestFiles).toEqual([
-      { file: 'a/build.gradle.kts' },
-    ])
   })
 })
 

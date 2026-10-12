@@ -83,7 +83,7 @@ vi.mock('./branch-cleanup.mts', () => ({
   cleanupSuccessfulPrLocalBranch: vi.fn(),
 }))
 
-const FACTS = '/test/cwd/app/.socket.facts.json'
+const FACTS = '/test/cwd/app/gradle.socket.facts.json'
 
 function coanaCalls(command: string): string[][] {
   return mockSpawnCoanaDlx.mock.calls
@@ -153,6 +153,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     )
     const args = coanaCalls('compute-fixes-and-upgrade-purls')[0]!
     expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args).toContain('--compute-artifacts-sidecar')
     expect(args[args.indexOf('--compute-artifacts-sidecar') + 1]).toBe(
       generated.sidecarFile,
     )
@@ -172,20 +173,48 @@ describe('socket fix --dynamic-sbom-inference', () => {
 
     await coanaFix({ ...baseConfig, all: true, ghsas: [] })
 
-    expect(coanaCalls('find-vulnerabilities')[0]).toContain(
-      '--maven-use-only-socket-facts',
-    )
+    const args = coanaCalls('find-vulnerabilities')[0]
+    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args).not.toContain('--compute-artifacts-sidecar')
   })
 
-  it('still refuses facts files that were already present', async () => {
-    mockGetPackageFilesForScan.mockResolvedValue([
-      '/test/cwd/app/.socket.facts.json',
-    ])
+  it('regenerates facts files that were already present, uploading each once', async () => {
+    mockGetPackageFilesForScan.mockResolvedValue([FACTS])
 
     const result = await coanaFix(baseConfig)
 
-    expect(result.ok).toBe(false)
-    expect(mockGenerateSocketFactsForFix).not.toHaveBeenCalled()
+    expect(result.ok).toBe(true)
+    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledTimes(1)
+    expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
+      pathsRelativeTo: '/test/cwd',
+    })
+  })
+
+  it('uploads facts files that were already present without the flag', async () => {
+    mockGetPackageFilesForScan.mockResolvedValue([FACTS])
+
+    const result = await coanaFix({
+      ...baseConfig,
+      dynamicSbomInference: false,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
+      pathsRelativeTo: '/test/cwd',
+    })
+  })
+
+  it('does not upload a leftover reachability report', async () => {
+    mockGetPackageFilesForScan.mockResolvedValue([
+      '/test/cwd/.socket.facts.json',
+      FACTS,
+    ])
+
+    await coanaFix({ ...baseConfig, dynamicSbomInference: false })
+
+    expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
+      pathsRelativeTo: '/test/cwd',
+    })
   })
 
   it('does not pass the facts restriction without the flag', async () => {
@@ -268,7 +297,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
         ok: true,
         data: [
           'project/SocketDependencyOverrides.scala',
-          'app/.socket.facts.json',
+          'app/gradle.socket.facts.json',
         ],
       })
 

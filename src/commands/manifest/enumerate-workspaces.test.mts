@@ -19,7 +19,7 @@ function okResult(): WorkspaceEnumerationResult {
         type: 'maven',
         name: 'root',
         subprojectDir: '.',
-        dependencies: [],
+        children: [],
       },
     ],
     stderr: '',

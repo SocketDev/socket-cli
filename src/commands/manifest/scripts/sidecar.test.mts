@@ -15,6 +15,7 @@ function emptyArtifactPaths(): ResolvedArtifactPaths {
   return {
     pathsById: new Map(),
     classpathByProject: new Map(),
+    directDependenciesByProject: new Map(),
   }
 }
 
@@ -51,7 +52,7 @@ describe('compute-artifacts sidecar', () => {
           namespace: 'g',
           name: 'app',
           subprojectDir: 'app',
-          dependencies: ['g:a:jar:1'],
+          children: [0],
         },
       ],
       components: [
@@ -67,6 +68,7 @@ describe('compute-artifacts sidecar', () => {
     }
     const artifactPaths = emptyArtifactPaths()
     artifactPaths.classpathByProject.set(':app', ['g:a:jar:1'])
+    artifactPaths.directDependenciesByProject.set(':app', ['g:a:jar:1'])
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(
@@ -79,7 +81,12 @@ describe('compute-artifacts sidecar', () => {
     const entry = serializeSidecar(acc)['/root/.socket.facts.json']!
 
     expect(entry.projects[0]).toEqual({
-      ...facts.projects![0],
+      id: ':app',
+      type: 'maven',
+      namespace: 'g',
+      name: 'app',
+      subprojectDir: 'app',
+      dependencies: ['g:a:jar:1'],
       classpath: ['g:a:jar:1'],
     })
     expect(entry.components[0]).toEqual(facts.components[0])
@@ -160,7 +167,7 @@ describe('compute-artifacts sidecar', () => {
       namespace: 'ex',
       name: 'util',
       version: '1',
-      dependencies: [],
+      children: [],
     }
     const facts: SocketFactsSbom = {
       components: [
@@ -210,7 +217,6 @@ describe('compute-artifacts sidecar', () => {
           qualifiers: { ext: 'jar', classifier: 'sources' },
           id: 'g:a:jar:sources:1',
           direct: true,
-          dependencies: ['x'],
         },
       ],
     }
@@ -226,7 +232,6 @@ describe('compute-artifacts sidecar', () => {
     expect(entry.qualifiers?.['classifier']).toBe('sources')
     expect(entry.id).toBe('g:a:jar:sources:1')
     expect(entry.direct).toBe(true)
-    expect(entry.dependencies).toEqual(['x'])
   })
 
   it('carries a first-party module (project, not a component) source/target roots, keyed by its own facts file', () => {
@@ -242,7 +247,7 @@ describe('compute-artifacts sidecar', () => {
           name: 'app',
           version: '1.0',
           subprojectDir: 'app',
-          dependencies: [],
+          children: [],
         },
       ],
     }
@@ -278,7 +283,7 @@ describe('compute-artifacts sidecar', () => {
       type: 'maven',
       namespace: 'com.example',
       version: '1.0',
-      dependencies: [],
+      children: [],
       subprojectDir: 'x',
     }
     const facts: SocketFactsSbom = {
@@ -329,7 +334,7 @@ describe('compute-artifacts sidecar', () => {
           name: 'shared',
           version: '1.0',
           subprojectDir: '.',
-          dependencies: [],
+          children: [],
         },
       ],
     }

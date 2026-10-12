@@ -146,9 +146,7 @@ async function assembleFromRecords(
     : ''
   const parsed = parseRecords(text)
   const factsFileName = socketFactsFileName(tool, parsed.entry || undefined)
-  const { artifactPaths, facts, report } = assembleFacts(parsed, {
-    factsFileName,
-  })
+  const { artifactPaths, facts, report } = assembleFacts(parsed)
   return {
     buildRoot: parsed.buildRoot || undefined,
     code: out.code,

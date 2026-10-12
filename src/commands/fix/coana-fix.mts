@@ -22,9 +22,16 @@ import {
 import { generateSocketFactsForFix } from './generated-socket-facts.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
+import {
+  DOT_SOCKET_DOT_FACTS_JSON,
+  FLAG_DRY_RUN,
+  GQL_PR_STATE_OPEN,
+} from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { isSocketFactsFile } from '../../utils/coana.mts'
+import {
+  isReachabilityReportPath,
+  isSocketFactsFile,
+} from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
@@ -365,27 +372,21 @@ async function coanaFixWithFacts(
   // sibling manifest's references). --exclude stays separate as a hidden
   // legacy escape hatch for the narrower "fix-application only" semantic.
   const coanaExcludePatterns = [...exclude, ...excludePaths]
-  const findScanFilepaths = () =>
-    getPackageFilesForScan(['.'], supportedFiles, {
-      additionalIgnores,
-      config: socketConfig,
-      cwd,
-    })
+  const findScanFilepaths = async () =>
+    (
+      await getPackageFilesForScan(['.'], supportedFiles, {
+        additionalIgnores,
+        config: socketConfig,
+        cwd,
+      })
+    ).filter(
+      p =>
+        !isReachabilityReportPath(p, {
+          cwd,
+          outputPath: DOT_SOCKET_DOT_FACTS_JSON,
+        }),
+    )
   const scanFilepaths = await findScanFilepaths()
-  // Facts files are analysis artifacts and must be removed before re-running fix.
-  const factsFiles = scanFilepaths.filter(isSocketFactsFile)
-  if (factsFiles.length) {
-    if (!silence) {
-      spinner?.stop()
-    }
-    return {
-      ok: false,
-      message: 'Found Socket facts files in manifest files',
-      cause:
-        `Delete the following ${pluralize('file', factsFiles.length)} before running socket fix again:\n` +
-        factsFiles.map(p => `  - ${p}`).join('\n'),
-    }
-  }
   if (factsSlot) {
     if (!silence) {
       spinner?.stop()
@@ -393,26 +394,23 @@ async function coanaFixWithFacts(
         'Generating Socket facts for Gradle, sbt and Maven builds ...',
       )
     }
-    try {
-      factsSlot.generated = await generateSocketFactsForFix({
-        cwd,
-        excludePaths,
-        tmpDir: factsSlot.tmpDir,
-      })
-    } catch (e) {
-      // A failed build root aborts inference after others wrote their facts.
-      const partial = (await findScanFilepaths()).filter(isSocketFactsFile)
-      await Promise.all(partial.map(p => fs.rm(p, { force: true })))
-      throw e
-    }
-    scanFilepaths.push(...factsSlot.generated.paths)
+    factsSlot.generated = await generateSocketFactsForFix({
+      cwd,
+      excludePaths,
+      findFactsPaths: async () =>
+        (await findScanFilepaths()).filter(isSocketFactsFile),
+      tmpDir: factsSlot.tmpDir,
+    })
+    const known = new Set(scanFilepaths)
+    scanFilepaths.push(...factsSlot.generated.paths.filter(p => !known.has(p)))
     if (!silence) {
       spinner?.start()
     }
   }
   const sidecarFile = factsSlot?.generated?.sidecarFile
-  // Discovery only needs which artifacts the facts files resolve; applying
-  // fixes also needs each project's exact classpath from the sidecar.
+  // Discovery only needs which artifacts the facts files resolve. Applying
+  // fixes reads each project's tree; a Coana predating facts trees can only
+  // tell from the sidecar's classpaths which projects resolve an artifact.
   const discoveryFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
   const factsFlags = [
     ...discoveryFlags,
