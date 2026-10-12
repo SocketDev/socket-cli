@@ -36,7 +36,6 @@ describe('generateSocketFactsForFix', () => {
     return await generateSocketFactsForFix({
       cwd,
       excludePaths: [],
-      existingPaths: [existing],
       findFactsPaths: async () => [existing, fresh].filter(p => existsSync(p)),
       tmpDir,
     })

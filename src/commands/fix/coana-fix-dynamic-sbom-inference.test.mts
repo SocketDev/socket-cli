@@ -180,9 +180,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     const result = await coanaFix(baseConfig)
 
     expect(result.ok).toBe(true)
-    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledWith(
-      expect.objectContaining({ existingPaths: [FACTS] }),
-    )
+    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledTimes(1)
     expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
       pathsRelativeTo: '/test/cwd',
     })

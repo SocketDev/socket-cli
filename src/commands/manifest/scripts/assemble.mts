@@ -60,13 +60,14 @@ export function assembleFacts(
 ): AssembleResult {
   const fileExists = opts.fileExists ?? existsSync
   const perRoot = buildPerRoot(parsed)
-  const { directByRoot, finalNodes } = mergeById(perRoot)
+  const finalNodes = mergeById(perRoot)
+  const graphs = buildSubprojectGraphs(perRoot)
 
   const tool = (parsed.tool || 'gradle') as SocketFactsSbomMetadata['tool']
   const components = buildComponents(finalNodes)
   const { dependencies, projects } = buildDependencyGraph(
     parsed,
-    perRoot,
+    graphs,
     components,
   )
 
@@ -87,8 +88,7 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
-      directByRoot,
-      perRoot,
+      graphs,
       fileExists,
     ),
   }
@@ -141,13 +141,9 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
 // Components are merged by id across every resolution root; which ids belong
 // to which subproject is kept separately (classpathByProject) for
 // reachability, which needs each subproject's exact classpath.
-function mergeById(perRoot: Map<string, PerRoot>): {
-  finalNodes: Map<string, MergedNode>
-  directByRoot: Map<string, Set<string>>
-} {
+function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
   const finalNodes = new Map<string, MergedNode>()
-  const directByRoot = new Map<string, Set<string>>()
-  for (const [rootId, { nodes, prod }] of perRoot) {
+  for (const { nodes, prod } of perRoot.values()) {
     for (const [coordId, node] of nodes) {
       let fn = finalNodes.get(coordId)
       if (!fn) {
@@ -169,17 +165,9 @@ function mergeById(perRoot: Map<string, PerRoot>): {
       for (const t of node.targets) {
         fn.targets.add(t)
       }
-      if (node.direct) {
-        let d = directByRoot.get(rootId)
-        if (!d) {
-          d = new Set()
-          directByRoot.set(rootId, d)
-        }
-        d.add(coordId)
-      }
     }
   }
-  return { finalNodes, directByRoot }
+  return finalNodes
 }
 
 function buildComponents(
@@ -218,17 +206,10 @@ function buildComponents(
   })
 }
 
-// Equal subtrees share an entry; partition refinement (coarsest bisimulation)
-// keeps that exact on cycles too.
-function buildDependencyGraph(
-  parsed: ParsedRecords,
+// One graph per subproject, its configurations merged.
+function buildSubprojectGraphs(
   perRoot: Map<string, PerRoot>,
-  components: SocketFactsSbomComponent[],
-): {
-  dependencies: SocketFactsSbomDependency[]
-  projects: SocketFactsSbomProject[]
-} {
-  const componentIndex = new Map(components.map((c, i) => [c.id, i]))
+): Map<string, SubprojectGraph> {
   const graphs = new Map<string, SubprojectGraph>()
   for (const { nodes, projectKey } of perRoot.values()) {
     let g = graphs.get(projectKey)
@@ -250,6 +231,20 @@ function buildDependencyGraph(
       }
     }
   }
+  return graphs
+}
+
+// Equal subtrees share an entry; partition refinement (coarsest bisimulation)
+// keeps that exact on cycles too.
+function buildDependencyGraph(
+  parsed: ParsedRecords,
+  graphs: Map<string, SubprojectGraph>,
+  components: SocketFactsSbomComponent[],
+): {
+  dependencies: SocketFactsSbomDependency[]
+  projects: SocketFactsSbomProject[]
+} {
+  const componentIndex = new Map(components.map((c, i) => [c.id, i]))
 
   const vertexIds = new Map<string, number>()
   const labels: number[] = []
@@ -397,77 +392,23 @@ function treeRoots(
   return roots
 }
 
-function buildClasspathByProject(
+function byProject(
   projects: RawProject[],
-  perRoot: Map<string, PerRoot>,
+  graphs: Map<string, SubprojectGraph>,
+  ids: (graph: SubprojectGraph) => Iterable<string>,
 ): Map<string, string[]> {
-  const idsByProjectKey = new Map<string, Set<string>>()
-  for (const { nodes, projectKey } of perRoot.values()) {
-    let set = idsByProjectKey.get(projectKey)
-    if (!set) {
-      set = new Set()
-      idsByProjectKey.set(projectKey, set)
-    }
-    for (const coordId of nodes.keys()) {
-      set.add(coordId)
-    }
-  }
-  const classpathByProject = new Map<string, Set<string>>()
-  for (const p of projects) {
-    const key = p.projectKey
-    let set = classpathByProject.get(key)
-    if (!set) {
-      set = new Set()
-      classpathByProject.set(key, set)
-    }
-    for (const id of idsByProjectKey.get(p.projectKey) ?? []) {
-      set.add(id)
-    }
-  }
   return new Map(
-    [...classpathByProject].map(({ 0: key, 1: ids }) => [key, [...ids].sort()]),
-  )
-}
-
-function buildDirectDependenciesByProject(
-  projects: RawProject[],
-  directByRoot: Map<string, Set<string>>,
-  perRoot: Map<string, PerRoot>,
-): Map<string, string[]> {
-  const idsByProjectKey = new Map<string, Set<string>>()
-  for (const [rootId, ids] of directByRoot) {
-    const projectKey = perRoot.get(rootId)?.projectKey ?? ''
-    let set = idsByProjectKey.get(projectKey)
-    if (!set) {
-      set = new Set()
-      idsByProjectKey.set(projectKey, set)
-    }
-    for (const id of ids) {
-      set.add(id)
-    }
-  }
-  const directByProject = new Map<string, Set<string>>()
-  for (const p of projects) {
-    const key = p.projectKey
-    let set = directByProject.get(key)
-    if (!set) {
-      set = new Set()
-      directByProject.set(key, set)
-    }
-    for (const id of idsByProjectKey.get(p.projectKey) ?? []) {
-      set.add(id)
-    }
-  }
-  return new Map(
-    [...directByProject].map(({ 0: key, 1: ids }) => [key, [...ids].sort()]),
+    projects.map(p => {
+      const g = graphs.get(p.projectKey)
+      return [p.projectKey, g ? [...ids(g)].sort() : []]
+    }),
   )
 }
 
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
-  directByRoot: Map<string, Set<string>>,
-  perRoot: Map<string, PerRoot>,
+  graphs: Map<string, SubprojectGraph>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
@@ -489,12 +430,8 @@ function buildArtifactPaths(
   }
   return {
     pathsById,
-    classpathByProject: buildClasspathByProject(projects, perRoot),
-    directDependenciesByProject: buildDirectDependenciesByProject(
-      projects,
-      directByRoot,
-      perRoot,
-    ),
+    classpathByProject: byProject(projects, graphs, g => g.children.keys()),
+    directDependenciesByProject: byProject(projects, graphs, g => g.direct),
   }
 }
 

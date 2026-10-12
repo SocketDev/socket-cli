@@ -382,7 +382,6 @@ async function coanaFixWithFacts(
     factsSlot.generated = await generateSocketFactsForFix({
       cwd,
       excludePaths,
-      existingPaths: scanFilepaths.filter(isSocketFactsFile),
       findFactsPaths: async () =>
         (await findScanFilepaths()).filter(isSocketFactsFile),
       tmpDir: factsSlot.tmpDir,

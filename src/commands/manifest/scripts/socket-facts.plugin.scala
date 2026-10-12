@@ -356,7 +356,7 @@ object SocketFactsPlugin extends AutoPlugin {
         cr.modules.foreach { m =>
           if (emittable(m)) {
             val ids = midToIds.getOrElseUpdate(moduleKey(m.module), mutable.LinkedHashSet.empty[String])
-            variantsOf(m, moduleExts).foreach { case (coord, fileOpt) =>
+            variantsOf(m).foreach { case (coord, fileOpt) =>
               val node = nodes.getOrElseUpdate(coord.id, new Node(coord))
               ids += coord.id
               if (withFiles && inScope(m.module)) fileOpt.foreach(f => node.targets += f.getAbsolutePath)
@@ -389,16 +389,15 @@ object SocketFactsPlugin extends AutoPlugin {
     perRoot
   }
 
-  private def variantsOf(m: ModuleReport, moduleExts: Map[String, String]): Seq[(Coord, Option[File])] = {
+  private def variantsOf(m: ModuleReport): Seq[(Coord, Option[File])] = {
     val mid = m.module
     // `mid.revision` is normally set for a resolved module, but normalize null (Coord.id calls
     // `.nonEmpty`, which NPEs on null) to match the other call sites (gavKey, module records).
     val ver = if (mid.revision == null) "" else mid.revision
     val arts = m.artifacts
     if (arts == null || arts.isEmpty)
-      // No resolved artifact (e.g. an inter-project dep): stamp the module's real ext if it's a build
-      // module (matches depscan's ext=jar), else leave ext-less.
-      Seq((Coord(mid.organization, mid.name, ver, moduleExts.getOrElse(gavKey(mid), ""), ""), None))
+      // No resolved artifact (e.g. a pom-only module): leave it ext-less.
+      Seq((Coord(mid.organization, mid.name, ver, "", ""), None))
     else
       arts.toList.map {
         case (art, file) =>
@@ -537,15 +536,11 @@ object SocketFactsPlugin extends AutoPlugin {
     }
   }
 
-  private def moduleKey(m: ModuleID): String = {
-    def s(v: String): String = if (v == null) "" else v
-    s(m.organization) + ":" + s(m.name)
-  }
+  private def orEmpty(v: String): String = if (v == null) "" else v
 
-  private def gavKey(m: ModuleID): String = {
-    def s(v: String): String = if (v == null) "" else v
-    s(m.organization) + ":" + s(m.name) + ":" + s(m.revision)
-  }
+  private def moduleKey(m: ModuleID): String = orEmpty(m.organization) + ":" + orEmpty(m.name)
+
+  private def gavKey(m: ModuleID): String = moduleKey(m) + ":" + orEmpty(m.revision)
 
   private def coordOf(m: ModuleID): String = {
     val rev = m.revision

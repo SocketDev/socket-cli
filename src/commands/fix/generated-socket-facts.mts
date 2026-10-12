@@ -33,16 +33,15 @@ async function restoreAll(backups: Backup[]): Promise<void> {
 export async function generateSocketFactsForFix({
   cwd,
   excludePaths,
-  existingPaths,
   findFactsPaths,
   tmpDir,
 }: {
   cwd: string
   excludePaths: string[]
-  existingPaths: string[]
   findFactsPaths: () => Promise<string[]>
   tmpDir: string
 }): Promise<GeneratedSocketFacts> {
+  const existingPaths = await findFactsPaths()
   const originals = await backUp(existingPaths, path.join(tmpDir, 'existing'))
   const existing = new Set(existingPaths)
   const reset = async (written: string[]) => {
