@@ -14,9 +14,9 @@
  * infinite loop protection that triggers after 100 page requests.
  *
  * Related Files: - src/command/repository/all-repositories-data.mts
- * (implementation) - src/command/repository/repositories-list-command.mts (handler) -
- * src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts (SDK
- * setup)
+ * (implementation) - src/command/repository/repositories-list-command.mts
+ * (handler) - src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts
+ * (SDK setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'

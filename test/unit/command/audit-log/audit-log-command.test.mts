@@ -43,12 +43,9 @@ const mockError = vi.hoisted(() => vi.fn())
 const mockFail = vi.hoisted(() => vi.fn())
 const mockSuccess = vi.hoisted(() => vi.fn())
 
-vi.mock(
-  import('../../../../src/command/audit-log/audit-log-data.mts'),
-  () => ({
-    fetchAuditLog: mockFetchAuditLog,
-  }),
-)
+vi.mock(import('../../../../src/command/audit-log/audit-log-data.mts'), () => ({
+  fetchAuditLog: mockFetchAuditLog,
+}))
 vi.mock(
   import('../../../../src/command/audit-log/output-audit-log.mts'),
   () => ({

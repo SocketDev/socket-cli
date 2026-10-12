@@ -7,7 +7,8 @@
  * Test Coverage: - Successful optimization - Update dependencies failure - npm
  * buggy overrides handling - Spinner behavior.
  *
- * Related Files: - commands/optimize/optimization-application.mts (implementation)
+ * Related Files: - commands/optimize/optimization-application.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

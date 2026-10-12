@@ -130,7 +130,8 @@ async function loadAddOverrides(opts: {
     )
   }
 
-  const mod = await import('../../../../src/core/optimize/overrides-addition.mts')
+  const mod =
+    await import('../../../../src/core/optimize/overrides-addition.mts')
   return mod.addOverrides
 }
 

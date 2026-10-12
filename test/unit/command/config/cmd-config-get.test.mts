@@ -52,9 +52,12 @@ vi.mock(
 // Mock handler.
 const mockHandleConfigGet = vi.hoisted(() => vi.fn())
 
-vi.mock(import('../../../../src/command/config/config-get-command.mts'), () => ({
-  handleConfigGet: mockHandleConfigGet,
-}))
+vi.mock(
+  import('../../../../src/command/config/config-get-command.mts'),
+  () => ({
+    handleConfigGet: mockHandleConfigGet,
+  }),
+)
 
 // Mock config utilities.
 const mockIsSupportedConfigKey = vi.hoisted(() => vi.fn(() => true))

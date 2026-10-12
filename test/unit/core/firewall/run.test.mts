@@ -31,13 +31,16 @@ const mocks = vi.hoisted(() => ({
 vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: () => undefined,
 }))
-vi.mock(import('../../../../src/util/spawn/machine-mode-application.mts'), () => ({
-  applyMachineModeIfActive: ({ args }: { args: string[] }) => ({
-    args,
-    env: { EXAMPLE_MODE: 'retained' },
+vi.mock(
+  import('../../../../src/util/spawn/machine-mode-application.mts'),
+  () => ({
+    applyMachineModeIfActive: ({ args }: { args: string[] }) => ({
+      args,
+      env: { EXAMPLE_MODE: 'retained' },
+    }),
+    inferSubcommand: () => 'install',
   }),
-  inferSubcommand: () => 'install',
-}))
+)
 vi.mock(import('../../../../src/util/spawn/system-tool.mts'), () => ({
   buildSystemToolEnv: (env: object, searchPath: string) => ({
     ...env,

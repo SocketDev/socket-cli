@@ -18,8 +18,8 @@
  *
  * Related Files: - src/command/audit-log/audit-log-data.mts - Implementation.
  *
- * - Src/commands/audit-log/audit-log-command.mts - Handler that calls this fetcher -
- *   test/helpers/sdk-fixtures.mts - SDK mocking utilities.
+ * - Src/commands/audit-log/audit-log-command.mts - Handler that calls this
+ *   fetcher - test/helpers/sdk-fixtures.mts - SDK mocking utilities.
  */
 
 import { describe, expect, it, vi } from 'vitest'
