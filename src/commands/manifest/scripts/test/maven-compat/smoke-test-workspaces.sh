@@ -21,22 +21,33 @@ echo "+ $("$MVN" -v 2>/dev/null | head -1) (workspaces)"
     "-Dsocket.recordsFile=$RECORDS" \
     validate )
 
-python3 - "$RECORDS" <<'PY'
+python3 - "$RECORDS" "$(cd "$PROJECT" && pwd -P)" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 errors = []
 tool = None
+build_root = None
 projects = {}
+build_files = set()
 for r in rows:
     if r[0] == 'meta':
         tool = r[1]
+    elif r[0] == 'buildRoot':
+        build_root = r[1]
     elif r[0] == 'project':
         projects[r[3]] = r  # keyed by artifactId
+    elif r[0] == 'projectBuild':
+        build_files.add(r[2])
     else:
         errors.append(f"unexpected record kind {r[0]!r} - workspaces must never resolve dependencies")
 
 if tool != 'maven':
     errors.append(f"meta tool {tool!r} != 'maven'")
+if build_root != sys.argv[2]:
+    errors.append(f"buildRoot {build_root!r} != {sys.argv[2]!r}")
+expected_build_files = {'pom.xml', 'lib/pom.xml', 'app/pom.xml'}
+if build_files != expected_build_files:
+    errors.append(f"projectBuild files {sorted(build_files)} != {sorted(expected_build_files)}")
 expected = {'root', 'lib', 'app'}
 if set(projects) != expected:
     errors.append(f"expected reactor modules {sorted(expected)}, got {sorted(projects)}")

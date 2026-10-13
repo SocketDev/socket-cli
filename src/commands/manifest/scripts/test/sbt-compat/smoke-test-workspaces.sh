@@ -29,7 +29,7 @@ echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (workspaces)"
 ( cd "$PROJECT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
     -Dsocket.recordsFile="$RECORDS" --batch socketWorkspaces )
 
-python3 - "$RECORDS" "$SCALA_VERSION" <<'PY'
+python3 - "$RECORDS" "$SCALA_VERSION" "$(cd "$PROJECT" && pwd -P)" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 # CrossVersion.apply appends _<binary-version> (major.minor) to the artifact name - the same
@@ -38,17 +38,27 @@ binary_version = '.'.join(sys.argv[2].split('.')[:2])
 expected_name = f"sbt-compat-smoke_{binary_version}"
 errors = []
 tool = None
+build_root = None
 projects = []
+build_files = set()
 for r in rows:
     if r[0] == 'meta':
         tool = r[1]
+    elif r[0] == 'buildRoot':
+        build_root = r[1]
     elif r[0] == 'project':
         projects.append(r)
+    elif r[0] == 'projectBuild':
+        build_files.add(r[2])
     else:
         errors.append(f"unexpected record kind {r[0]!r} - workspaces must never resolve dependencies")
 
 if tool != 'sbt':
     errors.append(f"meta tool {tool!r} != 'sbt'")
+if build_root != sys.argv[3]:
+    errors.append(f"buildRoot {build_root!r} != {sys.argv[3]!r}")
+if build_files != {'build.sbt'}:
+    errors.append(f"projectBuild files {sorted(build_files)} != ['build.sbt']")
 if len(projects) != 1:
     errors.append(f"expected exactly 1 project record, got {len(projects)}: {projects}")
 else:
@@ -61,5 +71,5 @@ if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print("PASS: tool=sbt; 1 project record, no dependency-resolution records")
+print("PASS: tool=sbt; 1 project record with its build file, no dependency-resolution records")
 PY

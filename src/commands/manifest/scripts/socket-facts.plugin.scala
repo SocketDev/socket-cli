@@ -90,7 +90,7 @@ object SocketFactsPlugin extends AutoPlugin {
             }
           }
           .groupBy(_._1)
-          .map { case (ref, pairs) => ref -> pairs.map(_._2).distinct.sorted }
+          .map { case (ref, pairs) => ref -> pairs.map(_._2) }
 
       val sb = new StringBuilder
       def rec(fields: String*): Unit = {
@@ -106,8 +106,10 @@ object SocketFactsPlugin extends AutoPlugin {
         if (!isExcludedRef(ref)) {
           val mid = rootIdOf(extracted, ref)
           val ver = if (mid.revision == null) "" else mid.revision
-          rec("project", ref.project, mid.organization, mid.name, ver, relOf(extracted.get(baseDirectory.in(ref))))
-          buildFilesByRef.getOrElse(ref, Nil).foreach(f => rec("projectBuild", ref.project, f))
+          val baseDir = extracted.get(baseDirectory.in(ref))
+          rec("project", ref.project, mid.organization, mid.name, ver, relOf(baseDir))
+          (buildFilesByRef.getOrElse(ref, Nil) ++ baseBuildSbt(baseDir, rootCanonPath).map(relOf)).distinct.sorted
+            .foreach(f => rec("projectBuild", ref.project, f))
           if (withFiles) {
             moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
               case (sources, targets) =>
@@ -508,6 +510,11 @@ object SocketFactsPlugin extends AutoPlugin {
   }
 
   // ---- misc helpers --------------------------------------------------------
+
+  // sbt loads the `.sbt` files in a project's base directory into that project
+  // (Load.configurationSources), so its build.sbt is the project's even when it sets nothing.
+  private def baseBuildSbt(base: File, rootCanonPath: java.nio.file.Path): Option[File] =
+    Some(new File(base, "build.sbt")).filter(f => f.isFile && f.getCanonicalFile.toPath.startsWith(rootCanonPath))
 
   private def boolProp(name: String): Boolean =
     java.lang.Boolean.parseBoolean(sys.props.getOrElse(name, "false"))

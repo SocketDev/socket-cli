@@ -42,8 +42,9 @@ const config: CliCommandConfig = {
     (pom.xml.socket.facts.json, gradle.socket.facts.json, or
     sbt.socket.facts.json, so builds sharing a directory never overwrite each
     other),
-    skipping subproject/reactor-module directories a parent build root already
-    covers. Unlike \`socket manifest auto\`, this looks beyond CWD itself.
+    skipping build roots whose build file a parent build already reports for
+    one of its subprojects. Unlike \`socket manifest auto\`, this looks beyond
+    CWD itself.
 
     Options
       ${getFlagListOutput(config.flags)}

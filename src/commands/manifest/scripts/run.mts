@@ -70,6 +70,8 @@ const SBT_FACTS_PLUGIN_FILENAME = 'SocketFactsPlugin.scala'
 const SBT_WORKSPACES_PLUGIN_FILENAME = 'SocketWorkspacesPlugin.scala'
 
 export type WorkspaceEnumerationResult = {
+  // Absolute; what each project's subprojectDir and manifestFiles are relative to.
+  buildRoot: string | undefined
   code: number
   projects: SocketFactsSbomProject[]
   stderr: string
@@ -198,6 +200,7 @@ export async function enumerateWorkspaces(
       ? enumerateSbtWorkspaces(opts)
       : enumerateMavenWorkspaces(opts))
   return {
+    buildRoot: result.buildRoot,
     code: result.code,
     projects: result.facts.projects ?? [],
     stderr: result.stderr,

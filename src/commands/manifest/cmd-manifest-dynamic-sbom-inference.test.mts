@@ -28,8 +28,9 @@ describe('socket manifest dynamic-sbom-inference', async () => {
           (pom.xml.socket.facts.json, gradle.socket.facts.json, or
           sbt.socket.facts.json, so builds sharing a directory never overwrite each
           other),
-          skipping subproject/reactor-module directories a parent build root already
-          covers. Unlike \`socket manifest auto\`, this looks beyond CWD itself.
+          skipping build roots whose build file a parent build already reports for
+          one of its subprojects. Unlike \`socket manifest auto\`, this looks beyond
+          CWD itself.
 
           Options
             --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.

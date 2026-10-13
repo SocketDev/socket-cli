@@ -1,14 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 vi.mock('./discover-manifest-roots.mts', async importOriginal => {
   const actual =
     await importOriginal<typeof import('./discover-manifest-roots.mts')>()
   return {
+    ...actual,
     findBuildToolCandidates: vi.fn(),
     // Identity: test dirs are already-absolute plain strings, no symlinks involved.
     realpathOrResolved: vi.fn(async (dir: string) => dir),
-    // Real (pure) implementation - no need to mock it.
-    withoutDisabledFlags: actual.withoutDisabledFlags,
   }
 })
 vi.mock('./enumerate-workspaces.mts', () => ({
@@ -52,7 +63,6 @@ import {
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 
-import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 function emptySockJson(): SocketJson {
@@ -217,8 +227,31 @@ describe('discoverBuildRoots', () => {
 })
 
 describe('markWorkspaceCoverage', () => {
-  const cwd = '/repo'
-  const reactor = '/repo/reactor'
+  // Coverage counts only build files present on disk.
+  let cwd: string
+  let reactor: string
+
+  beforeAll(async () => {
+    cwd = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'workspace-coverage-')),
+    )
+    reactor = path.join(cwd, 'reactor')
+    for (const file of [
+      'reactor/pom.xml',
+      'reactor/moduleA/pom.xml',
+      'reactor/moduleB/alt.xml',
+      'reactor/build/member/pom.xml',
+      'shared-lib/pom.xml',
+    ]) {
+      // eslint-disable-next-line no-await-in-loop
+      await fs.mkdir(path.dirname(path.join(cwd, file)), { recursive: true })
+      // eslint-disable-next-line no-await-in-loop
+      await fs.writeFile(path.join(cwd, file), '<project/>')
+    }
+  })
+  afterAll(async () => {
+    await fs.rm(cwd, { recursive: true, force: true })
+  })
 
   beforeEach(() => {
     vi.mocked(readSocketJsonCascade).mockReset()
@@ -232,70 +265,107 @@ describe('markWorkspaceCoverage', () => {
     vi.mocked(enumerateWorkspaces).mockReset()
   })
 
-  it('marks the candidate itself plus its declared members as covered', async () => {
+  it('marks the build files its projects report as covered', async () => {
     vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      buildRoot: reactor,
       projects: [
+        {
+          type: 'maven',
+          name: 'reactor',
+          subprojectDir: '.',
+          manifestFiles: [{ file: 'pom.xml' }],
+          children: [],
+        },
         {
           type: 'maven',
           name: 'moduleA',
           subprojectDir: 'moduleA',
+          manifestFiles: [{ file: 'moduleA/pom.xml' }],
           children: [],
         },
         {
           type: 'maven',
           name: 'moduleB',
           subprojectDir: 'moduleB',
+          manifestFiles: [{ file: 'moduleB/alt.xml' }],
           children: [],
         },
       ],
     })
-    const coveredByEcosystem = new Map<BuildTool, Set<string>>()
+    const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
       candidate: { dir: reactor, ecosystem: 'maven' },
-      coveredByEcosystem,
+      covered,
       cwd,
       rootSockJson: emptySockJson(),
     })
 
     expect(result).toEqual({ ok: true, data: undefined })
-    expect(coveredByEcosystem.get('maven')).toEqual(
-      new Set([reactor, `${reactor}/moduleA`, `${reactor}/moduleB`]),
+    expect(covered).toEqual(
+      new Set([
+        `${reactor}/pom.xml`,
+        `${reactor}/moduleA/pom.xml`,
+        `${reactor}/moduleB/alt.xml`,
+      ]),
     )
   })
 
-  it('does not mark a sibling subprojectDir that escapes the candidate directory as covered', async () => {
+  it('resolves build files against the reported build root, not the candidate directory', async () => {
     vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      buildRoot: `${reactor}/build`,
+      projects: [
+        {
+          type: 'maven',
+          name: 'member',
+          subprojectDir: 'member',
+          manifestFiles: [{ file: 'member/pom.xml' }],
+          children: [],
+        },
+      ],
+    })
+    const covered = new Set<string>()
+
+    await markWorkspaceCoverage({
+      candidate: { dir: reactor, ecosystem: 'maven' },
+      covered,
+      cwd,
+      rootSockJson: emptySockJson(),
+    })
+
+    expect(covered).toEqual(new Set([`${reactor}/build/member/pom.xml`]))
+  })
+
+  it('does not mark a build file that escapes the build root as covered', async () => {
+    vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      buildRoot: reactor,
       projects: [
         {
           type: 'maven',
           name: 'moduleA',
           subprojectDir: 'moduleA',
+          manifestFiles: [{ file: 'moduleA/pom.xml' }],
           children: [],
         },
         {
           type: 'maven',
           name: 'shared-lib',
           subprojectDir: '../shared-lib',
+          manifestFiles: [{ file: '../shared-lib/pom.xml' }],
           children: [],
         },
       ],
     })
-    const coveredByEcosystem = new Map<BuildTool, Set<string>>()
+    const covered = new Set<string>()
 
     await markWorkspaceCoverage({
       candidate: { dir: reactor, ecosystem: 'maven' },
-      coveredByEcosystem,
+      covered,
       cwd,
       rootSockJson: emptySockJson(),
     })
 
-    expect(coveredByEcosystem.get('maven')).toEqual(
-      new Set([reactor, `${reactor}/moduleA`]),
-    )
-    expect(coveredByEcosystem.get('maven')?.has(`${cwd}/shared-lib`)).toBe(
-      false,
-    )
+    expect(covered).toEqual(new Set([`${reactor}/moduleA/pom.xml`]))
   })
 
   it('does not enumerate, and marks nothing covered, for a disabled candidate', async () => {
@@ -303,42 +373,44 @@ describe('markWorkspaceCoverage', () => {
       version: 1,
       defaults: { manifest: { maven: { disabled: true } } },
     } as SocketJson)
-    const coveredByEcosystem = new Map<BuildTool, Set<string>>()
+    const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
       candidate: { dir: reactor, ecosystem: 'maven' },
-      coveredByEcosystem,
+      covered,
       cwd,
       rootSockJson: emptySockJson(),
     })
 
     expect(result).toEqual({ ok: true, data: undefined })
     expect(enumerateWorkspaces).not.toHaveBeenCalled()
-    expect(coveredByEcosystem.size).toBe(0)
+    expect(covered.size).toBe(0)
   })
 
   it('fails closed - marks nothing covered and reports failure - when enumeration fails', async () => {
     vi.mocked(enumerateWorkspaces).mockResolvedValue(undefined)
-    const coveredByEcosystem = new Map<BuildTool, Set<string>>()
+    const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
       candidate: { dir: reactor, ecosystem: 'maven' },
-      coveredByEcosystem,
+      covered,
       cwd,
       rootSockJson: emptySockJson(),
     })
 
     expect(result.ok).toBe(false)
-    expect(coveredByEcosystem.size).toBe(0)
+    expect(covered.size).toBe(0)
   })
 
   it('forwards --exclude-paths, re-anchored to the candidate dir, so a member excluded specifically to dodge a broken resolution is actually skipped', async () => {
-    vi.mocked(enumerateWorkspaces).mockResolvedValue({ projects: [] })
-    const coveredByEcosystem = new Map<BuildTool, Set<string>>()
+    vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      buildRoot: reactor,
+      projects: [],
+    })
 
     await markWorkspaceCoverage({
       candidate: { dir: reactor, ecosystem: 'maven' },
-      coveredByEcosystem,
+      covered: new Set<string>(),
       cwd,
       excludePaths: ['reactor/moduleB'],
       rootSockJson: emptySockJson(),
@@ -740,7 +812,10 @@ describe('setupRecursiveManifestConfig', () => {
     vi.mocked(enumerateWorkspaces).mockReset()
     // Default: no reactor members declared anywhere - most tests don't care
     // about pruning specifically, so nothing should get collapsed.
-    vi.mocked(enumerateWorkspaces).mockResolvedValue({ projects: [] })
+    vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      buildRoot: cwd,
+      projects: [],
+    })
   })
 
   it('fails closed when the scan finds no build roots anywhere', async () => {
@@ -1147,6 +1222,15 @@ describe('setupRecursiveManifestConfig', () => {
   })
 
   it('seeds coverage from cwd itself, so a reactor rooted exactly at cwd still gets its declared members pruned', async () => {
+    const cwd = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'seed-coverage-')),
+    )
+    for (const member of ['module-a', 'module-b']) {
+      // eslint-disable-next-line no-await-in-loop
+      await fs.mkdir(path.join(cwd, member))
+      // eslint-disable-next-line no-await-in-loop
+      await fs.writeFile(path.join(cwd, member, 'pom.xml'), '<project/>')
+    }
     // cwd IS the maven reactor root (has its own pom.xml) - discoverBuildRoots
     // always excludes cwd from `included` (it already got its own root
     // wizard), so without seeding coverage from cwd specifically, module-a
@@ -1161,22 +1245,25 @@ describe('setupRecursiveManifestConfig', () => {
     vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd: dir }) =>
       dir === cwd
         ? {
+            buildRoot: cwd,
             projects: [
               {
                 type: 'maven',
                 name: 'module-a',
                 subprojectDir: 'module-a',
+                manifestFiles: [{ file: 'module-a/pom.xml' }],
                 children: [],
               },
               {
                 type: 'maven',
                 name: 'module-b',
                 subprojectDir: 'module-b',
+                manifestFiles: [{ file: 'module-b/pom.xml' }],
                 children: [],
               },
             ],
           }
-        : { projects: [] },
+        : { buildRoot: dir, projects: [] },
     )
     const messages: string[] = []
     vi.mocked(select).mockImplementation(async ({ message }) => {
@@ -1190,18 +1277,22 @@ describe('setupRecursiveManifestConfig', () => {
       return 'inherit'
     })
 
-    const result = await setupRecursiveManifestConfig(cwd, false)
+    try {
+      const result = await setupRecursiveManifestConfig(cwd, false)
 
-    expect(result).toEqual({ ok: true, data: { canceled: false } })
-    // Only independent-service is ever asked about - module-a/module-b are
-    // recognized as covered via cwd's own enumeration and never prompted.
-    // cwd itself is a maven project (the reactor root), so the root question
-    // is phrased as this project's own settings, not a nested-project default.
-    expect(messages).toEqual([
-      'Configure Maven settings for this project?',
-      'Configure other build roots found beneath this one, individually?',
-      'independent-service (maven)',
-    ])
+      expect(result).toEqual({ ok: true, data: { canceled: false } })
+      // Only independent-service is ever asked about - module-a/module-b are
+      // recognized as covered via cwd's own enumeration and never prompted.
+      // cwd itself is a maven project (the reactor root), so the root question
+      // is phrased as this project's own settings, not a nested-project default.
+      expect(messages).toEqual([
+        'Configure Maven settings for this project?',
+        'Configure other build roots found beneath this one, individually?',
+        'independent-service (maven)',
+      ])
+    } finally {
+      await fs.rm(cwd, { recursive: true, force: true })
+    }
   })
 
   it("aborts the whole walk (fail-closed) when a candidate's workspace layout cannot be determined", async () => {
@@ -1223,7 +1314,7 @@ describe('setupRecursiveManifestConfig', () => {
     // Simulates a missing $JAVA8_HOME env var reference: enumeration fails
     // for independent-service specifically.
     vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd: dir }) =>
-      dir === independentService ? undefined : { projects: [] },
+      dir === independentService ? undefined : { buildRoot: dir, projects: [] },
     )
 
     const result = await setupRecursiveManifestConfig(cwd, false)

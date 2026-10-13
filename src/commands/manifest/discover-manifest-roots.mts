@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { realpathOrResolved } from '../../utils/fs.mts'
@@ -5,6 +6,7 @@ import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { SocketFactsSbomProject } from './scripts/facts.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 const BUILD_TOOLS: BuildTool[] = ['gradle', 'maven', 'sbt']
@@ -57,6 +59,43 @@ export function withoutDisabledFlags(sockJson: SocketJson): SocketJson {
 
 export { realpathOrResolved }
 
+// Gradle reports a project's build file even when absent, which covers
+// nothing. A sibling outside the build root is independently locatable.
+export async function addCoveredBuildFiles(
+  covered: Set<string>,
+  buildRoot: string,
+  projects: readonly SocketFactsSbomProject[],
+): Promise<void> {
+  const realBuildRoot = await realpathOrResolved(buildRoot)
+  const files = await Promise.all(
+    projects
+      .flatMap(project => project.manifestFiles ?? [])
+      .map(async ({ file }) => {
+        const resolved = path.resolve(buildRoot, file)
+        return path.join(
+          await realpathOrResolved(path.dirname(resolved)),
+          path.basename(resolved),
+        )
+      }),
+  )
+  for (const file of files) {
+    if (file.startsWith(`${realBuildRoot}${path.sep}`) && existsSync(file)) {
+      covered.add(file)
+    }
+  }
+}
+
+// `dir` must be realpath-resolved, as findBuildToolCandidates returns it.
+export function isBuildRootCovered(
+  covered: ReadonlySet<string>,
+  tool: BuildTool,
+  dir: string,
+): boolean {
+  return MARKERS_BY_TOOL[tool].some(marker =>
+    covered.has(path.join(dir, marker)),
+  )
+}
+
 function sortByDepthThenPath(dirs: readonly string[], cwd: string): string[] {
   return [...dirs].sort((a, b) => {
     const relA = path.relative(cwd, a)
@@ -70,9 +109,8 @@ function sortByDepthThenPath(dirs: readonly string[], cwd: string): string[] {
   })
 }
 
-// Depth-sorted (root-most first) so the caller, using each build root's
-// `subprojectDir` facts, visits a reactor root before its own members and can
-// skip subprojects a parent root already covers.
+// Depth-sorted (root-most first) so the caller visits a reactor root before
+// its own members and can skip those whose build files it already covers.
 export async function findBuildToolCandidates({
   cwd,
   excludePaths,
