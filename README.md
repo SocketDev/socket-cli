@@ -25,8 +25,8 @@ socket --help
 ## Usage
 
 ```sh
-# Scan a package
-socket package npm/express@4.18.0
+# Score a package and its transitive dependencies
+socket package score npm express@4.18.0
 
 # Scan your project's dependencies
 socket scan create
@@ -42,7 +42,10 @@ package manager through [Socket Firewall](https://docs.socket.dev), which
 blocks known-malicious packages before they are installed. Install-time
 protection is no longer npm-only.
 
-See the [organization dependency inventory guide](docs/organization-dependencies.md) for listing dependencies already known to your organization.
+### Documentation
+
+Browse the [command index](docs/commands.md) for every command and alias, then
+open a focused guide from its tables.
 
 ### MCP connections
 
