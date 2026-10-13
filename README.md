@@ -83,7 +83,7 @@ bridge transport; a complete browser login remains a separate integration check.
 
 </details>
 
-## Architecture
+### Architecture
 
 CLI entrypoints live in `src/command/`. Shared implementations live in `src/core/`. See the [architecture guide](docs/repo/architecture.md) for the source and test layout.
 
