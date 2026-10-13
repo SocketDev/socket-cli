@@ -201,5 +201,22 @@
         "expires": "2026-10-12"
       }
     }
+  },
+  "docs": {
+    "surfaces": [
+      {
+        "kind": "commands",
+        "hub": "docs/commands.md",
+        "sources": [
+          "src/commands.mts",
+          "src/util/cli/define-subcommand-group.mts",
+          "src/util/cli/with-subcommands.mts",
+          "src/command/patch/cmd-patch.mts",
+          "src/command/sfw/cmd-sfw.mts",
+          "src/command/firewall/ca-command.mts"
+        ],
+        "check": "docs:commands:check"
+      }
+    ]
   }
 }

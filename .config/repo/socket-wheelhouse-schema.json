@@ -1040,6 +1040,63 @@
     "docs": {
       "type": "object",
       "properties": {
+        "surfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "hub"
+            ],
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "api"
+                  },
+                  {
+                    "type": "string",
+                    "const": "commands"
+                  },
+                  {
+                    "type": "string",
+                    "const": "service"
+                  },
+                  {
+                    "type": "string",
+                    "const": "guide"
+                  },
+                  {
+                    "type": "string",
+                    "const": "action"
+                  },
+                  {
+                    "type": "string",
+                    "const": "workflows"
+                  }
+                ]
+              },
+              "hub": {
+                "type": "string",
+                "pattern": "^(https://|docs/)"
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "generate": {
+                "type": "string"
+              },
+              "check": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
         "apiMd": {
           "type": "boolean",
           "description": "Generate `docs/api.md` from the package.json `exports` map via `scripts/fleet/gen/api-md.mts`. Off unless set to true."
@@ -1050,7 +1107,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "Per-repo opt-in for the fleet doc generators. Only a repo with a published export surface sets this; an unset block means neither artifact is generated or gated."
+      "description": "Per-repo public documentation surfaces and opt-ins for fleet doc generators. Surface hubs can be local under docs/ or hosted URLs. Existing apiMd and llmsTxt options keep their export-index behavior."
     },
     "github": {
       "type": "object",
