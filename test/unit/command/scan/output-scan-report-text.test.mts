@@ -16,7 +16,10 @@ import {
   toPlainTextReport,
 } from '../../../../src/command/scan/output-scan-report.mts'
 
-import type { ScanReport } from '../../../../src/command/scan/report-generation.mts'
+import type {
+  ReportLeafNode,
+  ScanReport,
+} from '../../../../src/command/scan/report-generation.mts'
 
 // Matches any ANSI escape sequence, the codes that show up as literal noise
 // like "[32m" in a log viewer that does not interpret them.
@@ -202,6 +205,29 @@ describe('toPlainTextReport', () => {
       .filter(line => !line.trim().startsWith('https://') && line.length > 100)
 
     expect(overlong).toEqual([])
+  })
+
+  it('renders a large alert report without argument-count failures', () => {
+    const alertRow: ReportLeafNode = {
+      manifest: ['package.json'],
+      policy: 'error',
+      type: 'envVars',
+      url: '',
+    }
+    const packages = new Map<string, Map<string, ReportLeafNode>>()
+    const alertCount = 200_000
+    for (let i = 0; i < alertCount; i += 1) {
+      packages.set(
+        `package-${String(i).padStart(6, '0')}`,
+        new Map([['1.0.0', alertRow]]),
+      )
+    }
+    const alerts: ScanReport['alerts'] = new Map([['npm', packages]])
+    const text = toPlainTextReport(buildReport({ alerts, healthy: false }))
+
+    expect(text).toContain('200000 alerts with a policy')
+    expect(text).toContain('package-000000')
+    expect(text).toContain('package-199999')
   })
 
   it('says so plainly when there are no alerts', () => {
