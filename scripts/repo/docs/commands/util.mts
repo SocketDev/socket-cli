@@ -5,6 +5,33 @@ import { parseAst } from 'rolldown/parseAst'
 
 export interface AstNode extends Record<string, unknown> {
   type: string
+  arguments?: unknown | undefined
+  body?: unknown | undefined
+  callee?: unknown | undefined
+  computed?: unknown | undefined
+  consequent?: unknown | undefined
+  declaration?: unknown | undefined
+  declarations?: unknown | undefined
+  elements?: unknown | undefined
+  id?: unknown | undefined
+  imported?: unknown | undefined
+  init?: unknown | undefined
+  key?: unknown | undefined
+  kind?: unknown | undefined
+  left?: unknown | undefined
+  local?: unknown | undefined
+  loc?: unknown | undefined
+  name?: unknown | undefined
+  object?: unknown | undefined
+  operator?: unknown | undefined
+  properties?: unknown | undefined
+  property?: unknown | undefined
+  right?: unknown | undefined
+  source?: unknown | undefined
+  specifiers?: unknown | undefined
+  start?: unknown | undefined
+  test?: unknown | undefined
+  value?: unknown | undefined
 }
 
 export type SourceReader = (sourcePath: string) => string
@@ -20,7 +47,7 @@ export interface ParsedModule {
 export const isRecord = isPlainObject
 
 export function isNode(value: unknown): value is AstNode {
-  return isRecord(value) && typeof value.type === 'string'
+  return isRecord(value) && typeof value['type'] === 'string'
 }
 
 export function nodeArray(value: unknown, message: string): AstNode[] {
@@ -95,8 +122,10 @@ export function sourceError(
   reason: string,
 ): Error {
   const loc =
-    isRecord(node.loc) && isRecord(node.loc.start) ? node.loc.start : undefined
-  const line = loc && typeof loc.line === 'number' ? loc.line : 1
+    isRecord(node.loc) && isRecord(node.loc['start'])
+      ? node.loc['start']
+      : undefined
+  const line = loc && typeof loc['line'] === 'number' ? loc['line'] : 1
   return new Error(`${sourcePath}:${line}: ${reason}`)
 }
 
@@ -165,9 +194,9 @@ function annotateSourceLocations(root: AstNode, source: string): void {
   visitAst(root, node => {
     const loc = isRecord(node.loc) ? node.loc : undefined
     const start =
-      loc !== undefined && isRecord(loc.start) ? loc.start : undefined
+      loc !== undefined && isRecord(loc['start']) ? loc['start'] : undefined
     if (
-      (start !== undefined && typeof start.line === 'number') ||
+      (start !== undefined && typeof start['line'] === 'number') ||
       typeof node.start !== 'number'
     ) {
       return
