@@ -45,13 +45,13 @@
 	verify = none
 
 # no-release-tag: Development reference pins the explicitly selected main commit.
-# socket-patch-main (2026-09-08) sha256:40c6e9c3f5663a32d73eb2f3398be23ec2ea15f356a2a56fadc7749662dd3b49
+# socket-patch-main (2026-09-23) sha256:f557f5cac56056ca409478af4884bfd7de7bc4b37453412d058b5d5669c32fbe
 [submodule "upstream/socket-patch"]
 	ignore = dirty
-	ref = a0b04807d158ae5c0d980370ad31a15fcc9b030e
+	ref = 15a6ba6f416c244e918ff01260a1bc91f67bc945
 	path = upstream/socket-patch
 	url = https://github.com/SocketDev/socket-patch.git
 	branch = main
 	shallow = true
-	sparse-checkout = crates/socket-patch-core/src crates/socket-patch-core/tests crates/socket-patch-cli/src tests
+	sparse-checkout = crates/socket-patch-core/src crates/socket-patch-core/tests crates/socket-patch-cli tests
 	verify = none
