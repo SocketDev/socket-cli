@@ -272,4 +272,62 @@ describe('shadowYarn', () => {
 
     expect(mockGetAlertsMapFromPurls).not.toHaveBeenCalled()
   })
+
+  it('should scan only the package spec for dlx, not the binary arguments', async () => {
+    await shadowYarn([
+      'dlx',
+      '@coana-tech/cli@15.10.55',
+      'run',
+      '.',
+      '--output-dir',
+      '/tmp/out',
+      '--analysis-timeout',
+      '3h',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/@coana-tech/cli@15.10.55'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should scan --package and -p values for dlx', async () => {
+    await shadowYarn([
+      'dlx',
+      '-p',
+      'cowsay@1.6.0',
+      '--quiet',
+      '--package=lodash@4.17.21',
+      '--package',
+      'axios@1.0.0',
+      'cowsay',
+      'hello',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0', 'pkg:npm/lodash@4.17.21', 'pkg:npm/axios@1.0.0'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should use the IPC API token and accept-risks for dlx scans', async () => {
+    await shadowYarn(['dlx', 'cowsay@1.6.0'], {
+      ipc: {
+        SOCKET_CLI_SHADOW_ACCEPT_RISKS: true,
+        SOCKET_CLI_SHADOW_API_TOKEN: 'public-token',
+      },
+    })
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0'],
+      expect.objectContaining({
+        apiToken: 'public-token',
+        filter: { actions: ['error'], blocked: true },
+      }),
+    )
+  })
 })

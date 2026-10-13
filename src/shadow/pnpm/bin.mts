@@ -25,6 +25,7 @@ import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
 import type { IpcObject } from '../../constants.mts'
+import type { DlxFlags } from '../common.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
@@ -40,6 +41,30 @@ export type ShadowPnpmResult = {
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
+
+// pnpm 10's dlx and global options that take a value. pnpm stops parsing
+// options at the first positional after `dlx`.
+const DLX_FLAGS: DlxFlags = {
+  package: new Set(['--package']),
+  withValue: new Set([
+    '--allow-build',
+    '--changed-files-ignore-pattern',
+    '--cpu',
+    '--dir',
+    '--filter',
+    '--filter-prod',
+    '--libc',
+    '--loglevel',
+    '--os',
+    '--prefix',
+    '--reporter',
+    '--test-pattern',
+    '--use-node-version',
+    '--workspace-packages',
+    '-C',
+    '-F',
+  ]),
+}
 
 const INSTALL_COMMANDS = new Set([
   'add',
@@ -79,16 +104,21 @@ export default async function shadowPnpmBin(
   spinner?.start()
 
   if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
-    const acceptRisks = !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+    const acceptRisks =
+      !!ipc?.[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS] ||
+      !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+    const apiToken = ipc?.[constants.SOCKET_CLI_SHADOW_API_TOKEN]
     const viewAllRisks = !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
 
     // Handle add and dlx commands with shared utility.
     if (isDlxCommand || isAddCommand(command)) {
       const scanResult = await scanPackagesAndLogAlerts({
         acceptRisks,
+        apiToken,
         command,
         cwd,
         dlxCommands: DLX_COMMANDS,
+        dlxFlags: DLX_FLAGS,
         installCommands: INSTALL_COMMANDS,
         managerName: PNPM,
         rawArgs: rawPnpmArgs,
@@ -118,6 +148,7 @@ export default async function shadowPnpmBin(
               )
 
               const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
+                apiToken,
                 nothrow: true,
                 filter: acceptRisks
                   ? { actions: ['error'], blocked: true }

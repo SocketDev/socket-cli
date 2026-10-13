@@ -230,4 +230,109 @@ describe('shadowPnpm', () => {
       }),
     )
   })
+
+  it('should scan only the package spec for dlx, not the binary arguments', async () => {
+    await shadowPnpm([
+      'dlx',
+      '@coana-tech/cli@15.10.55',
+      'run',
+      '.',
+      '--output-dir',
+      '/tmp/out',
+      '--analysis-timeout',
+      '3h',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/@coana-tech/cli@15.10.55'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should scan --package values for dlx', async () => {
+    await shadowPnpm([
+      'dlx',
+      '--package',
+      'cowsay@1.6.0',
+      '--package=lodash@4.17.21',
+      'cowsay',
+      'hello',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0', 'pkg:npm/lodash@4.17.21'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should skip dlx option values when picking the package', async () => {
+    await shadowPnpm([
+      'dlx',
+      '--allow-build',
+      'esbuild',
+      '--reporter',
+      'append-only',
+      'vite@6.0.0',
+      '--help',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/vite@6.0.0'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should scan every --package across other dlx options', async () => {
+    await shadowPnpm([
+      'dlx',
+      '--package',
+      'cowsay@1.6.0',
+      '--allow-build',
+      'esbuild',
+      '--package',
+      'lodash@4.17.21',
+      'cowsay',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0', 'pkg:npm/lodash@4.17.21'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should treat -p as a boolean option for dlx', async () => {
+    await shadowPnpm(['dlx', '-p', 'cowsay@1.6.0', 'hello'])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should use the IPC API token and accept-risks for dlx scans', async () => {
+    await shadowPnpm(['dlx', 'cowsay@1.6.0'], {
+      ipc: {
+        SOCKET_CLI_SHADOW_ACCEPT_RISKS: true,
+        SOCKET_CLI_SHADOW_API_TOKEN: 'public-token',
+      },
+    })
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0'],
+      expect.objectContaining({
+        apiToken: 'public-token',
+        filter: { actions: ['error'], blocked: true },
+      }),
+    )
+  })
 })
