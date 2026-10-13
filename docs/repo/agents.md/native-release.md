@@ -36,4 +36,4 @@ The macOS jobs also run Gatekeeper qualification. Treat the artifact as qualifie
 
 ## Stage
 
-Inspect the staged package with `pnpm run npm:staged`. After validation and a clean scan, approve eligible stages with `pnpm stage approve`. The AI Drive/browser path is a fallback when the CLI cannot complete authentication or npm presents a challenge; it is not a separate approval prerequisite.
+Inspect the staged package with `pnpm run npm:staged`. After artifact validation and the configured malware scan pass, approve eligible stages with `pnpm stage approve`. Ignore and monitor findings do not block approval. Use the AI Driver/browser fallback when the CLI cannot complete authentication or npm presents a challenge.
