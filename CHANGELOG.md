@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.8.2](https://github.com/SocketDev/socket-cli/releases/tag/v1.8.2) - 2026-10-13
 
 ### Fixed
 - Reachability scans in pnpm and yarn projects no longer print a 403 from the Socket API when run with a repository-scoped token. The safety check that runs before Coana launches now uses Socket's public token and only looks up the Coana package itself.
