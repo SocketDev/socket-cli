@@ -10,26 +10,18 @@ const state = vi.hoisted(() => ({
   failAt: -1,
   codesignCalls: 0,
   repairFailure: false,
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
+  spawn: vi.fn(),
 }))
 
 vi.mock(import('node:fs/promises'), () => ({
-  readFile: vi.fn(async (_path: string) => {
-    state.calls.push(['read'])
-    return state.bytes
-  }),
-  writeFile: vi.fn(async (_path: string, bytes: Buffer) => {
-    state.calls.push(['write'])
-    state.bytes = bytes
-  }),
+  readFile: state.readFile,
+  writeFile: state.writeFile,
 }))
 
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
-  spawn: vi.fn(async (_command: string, args: string[]) => {
-    const callIndex = state.codesignCalls
-    state.codesignCalls += 1
-    state.calls.push(args)
-    return { code: callIndex === state.failAt ? 1 : 0 }
-  }),
+  spawn: state.spawn,
 }))
 
 vi.mock(import('../../../../../scripts/repo/build/sea/initializer-offsets.mts'), () => ({
@@ -52,6 +44,20 @@ describe('repairDarwinInitializerOffsets', () => {
     state.codesignCalls = 0
     state.repairFailure = false
     vi.clearAllMocks()
+    state.readFile.mockReset().mockImplementation(async () => {
+      state.calls.push(['read'])
+      return state.bytes
+    })
+    state.writeFile.mockReset().mockImplementation(async (_path: unknown, bytes: Buffer) => {
+      state.calls.push(['write'])
+      state.bytes = Buffer.from(bytes)
+    })
+    state.spawn.mockReset().mockImplementation(async (_command: string, args: string[]) => {
+      const callIndex = state.codesignCalls
+      state.codesignCalls += 1
+      state.calls.push(args)
+      return { code: callIndex === state.failAt ? 1 : 0 }
+    })
   })
 
   it('removes, relocates, signs, and verifies in order on Darwin', async () => {
