@@ -293,18 +293,21 @@ describe('shadowYarn', () => {
     )
   })
 
-  it('should scan --package values for dlx', async () => {
+  it('should scan --package and -p values for dlx', async () => {
     await shadowYarn([
       'dlx',
-      '--package',
+      '-p',
       'cowsay@1.6.0',
+      '--quiet',
       '--package=lodash@4.17.21',
+      '--package',
+      'axios@1.0.0',
       'cowsay',
       'hello',
     ])
 
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
-      ['pkg:npm/cowsay@1.6.0', 'pkg:npm/lodash@4.17.21'],
+      ['pkg:npm/cowsay@1.6.0', 'pkg:npm/lodash@4.17.21', 'pkg:npm/axios@1.0.0'],
       expect.objectContaining({
         nothrow: true,
       }),

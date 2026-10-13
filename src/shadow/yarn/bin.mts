@@ -11,6 +11,7 @@ import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
 import type { IpcObject } from '../../constants.mts'
+import type { DlxFlags } from '../common.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
@@ -26,6 +27,11 @@ export type ShadowYarnResult = {
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
+
+const DLX_FLAGS: DlxFlags = {
+  package: new Set(['--package', '-p']),
+  withValue: new Set(),
+}
 
 const INSTALL_COMMANDS = new Set([
   'add',
@@ -66,6 +72,7 @@ export default async function shadowYarnBin(
     command,
     cwd,
     dlxCommands: DLX_COMMANDS,
+    dlxFlags: DLX_FLAGS,
     installCommands: INSTALL_COMMANDS,
     managerName: YARN,
     rawArgs: rawYarnArgs,

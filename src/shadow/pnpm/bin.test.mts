@@ -269,6 +269,56 @@ describe('shadowPnpm', () => {
     )
   })
 
+  it('should skip dlx option values when picking the package', async () => {
+    await shadowPnpm([
+      'dlx',
+      '--allow-build',
+      'esbuild',
+      '--reporter',
+      'append-only',
+      'vite@6.0.0',
+      '--help',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/vite@6.0.0'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should scan every --package across other dlx options', async () => {
+    await shadowPnpm([
+      'dlx',
+      '--package',
+      'cowsay@1.6.0',
+      '--allow-build',
+      'esbuild',
+      '--package',
+      'lodash@4.17.21',
+      'cowsay',
+    ])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0', 'pkg:npm/lodash@4.17.21'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
+  it('should treat -p as a boolean option for dlx', async () => {
+    await shadowPnpm(['dlx', '-p', 'cowsay@1.6.0', 'hello'])
+
+    expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
+      ['pkg:npm/cowsay@1.6.0'],
+      expect.objectContaining({
+        nothrow: true,
+      }),
+    )
+  })
+
   it('should use the IPC API token and accept-risks for dlx scans', async () => {
     await shadowPnpm(['dlx', 'cowsay@1.6.0'], {
       ipc: {

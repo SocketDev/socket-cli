@@ -25,6 +25,7 @@ import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
 import type { IpcObject } from '../../constants.mts'
+import type { DlxFlags } from '../common.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
@@ -40,6 +41,30 @@ export type ShadowPnpmResult = {
 }
 
 const DLX_COMMANDS = new Set(['dlx'])
+
+// pnpm 10's dlx and global options that take a value. pnpm stops parsing
+// options at the first positional after `dlx`.
+const DLX_FLAGS: DlxFlags = {
+  package: new Set(['--package']),
+  withValue: new Set([
+    '--allow-build',
+    '--changed-files-ignore-pattern',
+    '--cpu',
+    '--dir',
+    '--filter',
+    '--filter-prod',
+    '--libc',
+    '--loglevel',
+    '--os',
+    '--prefix',
+    '--reporter',
+    '--test-pattern',
+    '--use-node-version',
+    '--workspace-packages',
+    '-C',
+    '-F',
+  ]),
+}
 
 const INSTALL_COMMANDS = new Set([
   'add',
@@ -93,6 +118,7 @@ export default async function shadowPnpmBin(
         command,
         cwd,
         dlxCommands: DLX_COMMANDS,
+        dlxFlags: DLX_FLAGS,
         installCommands: INSTALL_COMMANDS,
         managerName: PNPM,
         rawArgs: rawPnpmArgs,

@@ -14,17 +14,11 @@ import { logAlertsMap } from '../utils/socket-package-alert.mts'
 import type { AlertsByPurl } from '../utils/socket-package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-/**
- * Extract package PURLs from command arguments for add commands where
- * packages are specified as arguments.
- * Used by: pnpm, yarn.
- */
 function extractPackagePurlsFromCommandArgs(
   rawArgs: string[] | readonly string[],
 ): string[] {
   const packagePurls: string[] = []
 
-  // For 'add package1 package2@version', get packages from args.
   const packageArgs = rawArgs
     .slice(1)
     .filter(a => !a.startsWith('-') && a !== '--')
@@ -39,12 +33,20 @@ function extractPackagePurlsFromCommandArgs(
   return packagePurls
 }
 
+export type DlxFlags = {
+  // Options whose value names a package to download.
+  package: ReadonlySet<string>
+  // Other options that take the next argument as their value.
+  withValue: ReadonlySet<string>
+}
+
 /**
- * Only `--package`/`-p` values, or else the first positional, name packages.
- * Later positionals are arguments for the launched binary.
+ * Package option values, or else the first positional, name packages. Later
+ * positionals are arguments for the launched binary.
  */
 function extractPackagePurlsFromDlxArgs(
   rawArgs: string[] | readonly string[],
+  dlxFlags: DlxFlags,
 ): string[] {
   const pkgSpecs: string[] = []
   const args = rawArgs.slice(1)
@@ -53,19 +55,27 @@ function extractPackagePurlsFromDlxArgs(
     if (arg === '--') {
       break
     }
-    if (arg === '--package' || arg === '-p') {
-      const value = args[i + 1]
-      if (value !== undefined) {
-        pkgSpecs.push(value)
-      }
-      i += 1
-      continue
-    }
-    if (arg.startsWith('--package=')) {
-      pkgSpecs.push(arg.slice('--package='.length))
-      continue
-    }
     if (arg.startsWith('-')) {
+      const eqIndex = arg.indexOf('=')
+      const name = eqIndex === -1 ? arg : arg.slice(0, eqIndex)
+      const isPackageFlag = dlxFlags.package.has(name)
+      if (eqIndex !== -1) {
+        if (isPackageFlag) {
+          pkgSpecs.push(arg.slice(eqIndex + 1))
+        }
+        continue
+      }
+      const value = args[i + 1]
+      if (
+        (isPackageFlag || dlxFlags.withValue.has(name)) &&
+        value !== undefined &&
+        !value.startsWith('-')
+      ) {
+        if (isPackageFlag) {
+          pkgSpecs.push(value)
+        }
+        i += 1
+      }
       continue
     }
     if (!pkgSpecs.length) {
@@ -130,6 +140,7 @@ export type PackageScanOptions = {
   command: string | undefined
   cwd?: string | URL
   dlxCommands?: Set<string>
+  dlxFlags?: DlxFlags | undefined
   installCommands: Set<string>
   managerName: string
   nothrow?: boolean
@@ -154,6 +165,7 @@ export async function scanPackagesAndLogAlerts(
     apiToken,
     command,
     dlxCommands,
+    dlxFlags = { package: new Set(), withValue: new Set() },
     installCommands,
     managerName,
     nothrow = true,
@@ -180,7 +192,7 @@ export async function scanPackagesAndLogAlerts(
   let packagePurls: string[] = []
 
   if (isDlxCommand) {
-    packagePurls = extractPackagePurlsFromDlxArgs(rawArgs)
+    packagePurls = extractPackagePurlsFromDlxArgs(rawArgs, dlxFlags)
   } else if (isAddCommand(command)) {
     packagePurls = extractPackagePurlsFromCommandArgs(rawArgs)
   } else if (isInstallCommand) {
