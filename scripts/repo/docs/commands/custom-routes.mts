@@ -5,13 +5,9 @@ import {
   parseModule,
   stringLiteral,
   visitAst,
-} from './docs-command-inventory-lib.mts'
+} from './util.mts'
 
-import type {
-  AstNode,
-  ParsedModule,
-  SourceReader,
-} from './docs-command-inventory-lib.mts'
+import type { AstNode, ParsedModule, SourceReader } from './util.mts'
 
 export type CustomRouteKind = 'patch' | 'sfw'
 
@@ -256,7 +252,11 @@ function firewallCaModes(sourceReader: SourceReader): string[] {
     ) {
       return
     }
-    if (!isPositionalsFirstFallback(node.arguments[0])) {
+    const argumentsList = node['arguments']
+    if (
+      !Array.isArray(argumentsList) ||
+      !isPositionalsFirstFallback(argumentsList[0])
+    ) {
       return
     }
     allowlistValidated = true
