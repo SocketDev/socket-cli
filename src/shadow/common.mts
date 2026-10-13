@@ -15,7 +15,7 @@ import type { AlertsByPurl } from '../utils/socket-package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 /**
- * Extract package PURLs from command arguments for add/dlx commands where
+ * Extract package PURLs from command arguments for add commands where
  * packages are specified as arguments.
  * Used by: pnpm, yarn.
  */
@@ -24,7 +24,7 @@ function extractPackagePurlsFromCommandArgs(
 ): string[] {
   const packagePurls: string[] = []
 
-  // For 'add package1 package2@version' or 'dlx package', get packages from args.
+  // For 'add package1 package2@version', get packages from args.
   const packageArgs = rawArgs
     .slice(1)
     .filter(a => !a.startsWith('-') && a !== '--')
@@ -36,6 +36,51 @@ function extractPackagePurlsFromCommandArgs(
     }
   }
 
+  return packagePurls
+}
+
+/**
+ * Only `--package`/`-p` values, or else the first positional, name packages.
+ * Later positionals are arguments for the launched binary.
+ */
+function extractPackagePurlsFromDlxArgs(
+  rawArgs: string[] | readonly string[],
+): string[] {
+  const pkgSpecs: string[] = []
+  const args = rawArgs.slice(1)
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const arg = args[i]!
+    if (arg === '--') {
+      break
+    }
+    if (arg === '--package' || arg === '-p') {
+      const value = args[i + 1]
+      if (value !== undefined) {
+        pkgSpecs.push(value)
+      }
+      i += 1
+      continue
+    }
+    if (arg.startsWith('--package=')) {
+      pkgSpecs.push(arg.slice('--package='.length))
+      continue
+    }
+    if (arg.startsWith('-')) {
+      continue
+    }
+    if (!pkgSpecs.length) {
+      pkgSpecs.push(arg)
+    }
+    break
+  }
+
+  const packagePurls: string[] = []
+  for (const pkgSpec of pkgSpecs) {
+    const purl = safeNpmSpecToPurl(pkgSpec)
+    if (purl) {
+      packagePurls.push(purl)
+    }
+  }
   return packagePurls
 }
 
@@ -81,6 +126,7 @@ async function extractPackagePurlsFromPackageJson(
 
 export type PackageScanOptions = {
   acceptRisks: boolean
+  apiToken?: string | undefined
   command: string | undefined
   cwd?: string | URL
   dlxCommands?: Set<string>
@@ -105,6 +151,7 @@ export async function scanPackagesAndLogAlerts(
 ): Promise<PackageScanResult> {
   const {
     acceptRisks,
+    apiToken,
     command,
     dlxCommands,
     installCommands,
@@ -132,7 +179,9 @@ export async function scanPackagesAndLogAlerts(
   // Extract package names from command arguments before any downloads.
   let packagePurls: string[] = []
 
-  if (isDlxCommand || isAddCommand(command)) {
+  if (isDlxCommand) {
+    packagePurls = extractPackagePurlsFromDlxArgs(rawArgs)
+  } else if (isAddCommand(command)) {
     packagePurls = extractPackagePurlsFromCommandArgs(rawArgs)
   } else if (isInstallCommand) {
     // For install/update, scan dependencies from package.json.
@@ -149,6 +198,7 @@ export async function scanPackagesAndLogAlerts(
 
   try {
     const alertsMap = await getAlertsMapFromPurls(packagePurls, {
+      apiToken,
       filter: acceptRisks
         ? { actions: ['error'], blocked: true }
         : { actions: ['error', 'monitor', 'warn'] },

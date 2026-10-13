@@ -79,13 +79,17 @@ export default async function shadowPnpmBin(
   spinner?.start()
 
   if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
-    const acceptRisks = !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+    const acceptRisks =
+      !!ipc?.[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS] ||
+      !!constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+    const apiToken = ipc?.[constants.SOCKET_CLI_SHADOW_API_TOKEN]
     const viewAllRisks = !!constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
 
     // Handle add and dlx commands with shared utility.
     if (isDlxCommand || isAddCommand(command)) {
       const scanResult = await scanPackagesAndLogAlerts({
         acceptRisks,
+        apiToken,
         command,
         cwd,
         dlxCommands: DLX_COMMANDS,
@@ -118,6 +122,7 @@ export default async function shadowPnpmBin(
               )
 
               const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
+                apiToken,
                 nothrow: true,
                 filter: acceptRisks
                   ? { actions: ['error'], blocked: true }
