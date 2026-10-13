@@ -26,7 +26,7 @@ export async function addSocketWrapper(file: string): Promise<void> {
     `The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉`,
   )
   logger.log(
-    '  If you want to disable it at any time, run `socket wrapper --disable`',
+    '  If you want to disable it at any time, run `socket wrapper off`',
   )
   logger.log('')
   logger.info(
