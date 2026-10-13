@@ -364,18 +364,17 @@
     },
     "google-chrome-stable": {
       "notes": [
-        "Google Chrome stable .deb — installed by the setup-odai composite action on Linux runners when google-chrome-stable is not preinstalled. Pinned to 151.0.7922.137-1 (2026-08-18) with the SHA-256 from Google's repo Packages index (https://dl.google.com/linux/chrome/deb/dists/stable/main/binary-amd64/Packages), which is the authoritative checksum source for the .deb.",
-        "origin is `node-dist` (the schema's direct-download-with-per-platform-SRI origin): `asset` is a full URL to the version-pinned pool file under dl.google.com, NOT the floating `google-chrome-stable_current_amd64.deb` the old action used. node-dist is the cleanest existing fit for a direct download with per-platform SRI; a follow-up sweep may rename it to `dist` to drop the Node-specific connotation.",
-        "integrity is the object form ({ value, src, date }) — value is `sha256-<hex>` (the Packages-index checksum), src the Packages index URL, date the pin day. install-tool.mjs downloads + SRI-verifies the .deb (no extraction — .deb is not a recognized archive, so it is left on disk for `apt-get install`), then the action runs `sudo apt-get install -y ./<deb>`.",
-        "Linux x64 ONLY — odai's on-device model runs on ubuntu-latest (x64); other platforms report not-ready and clean-skip, so no other canonical key is pinned here."
+        "Complete Linux x64 Chrome package for the odai image and Linux setup action.",
+        "The version-pinned Google download is verified against the declared integrity before installation.",
+        "The odai image must pass model session creation and offline inference before publication."
       ],
-      "description": "Google Chrome stable .deb — for the odai on-device AI backend (pinned, SHA-256-verified before apt-get install)",
-      "version": "154.0.8037.57-1",
-      "versionDate": "2026-09-22T18:09:00.403193Z",
+      "description": "Google Chrome stable .deb for the odai backend, pinned and integrity-verified before installation",
+      "version": "154.0.8037.97-1",
+      "versionDate": "2026-10-02T00:56:19.827163Z",
       "platforms": {
         "linux-x64": {
-          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_154.0.8037.57-1_amd64.deb",
-          "integrity": "sha512-UDv9rIY53d60TDObN6KVODpadm5HIEsm9OPhG1UJN6HhwbDEHWPDvLvPJnldU6K3MThQZckkX7VQnzPlnP9oZA=="
+          "asset": "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_154.0.8037.97-1_amd64.deb",
+          "integrity": "sha512-mQ8TPxCR0K6kjMC/vMjzA/7oDRKKk/AveRDA4LtGxF7paXGHkDfN4QC7NYmShP/0/lsXKs6bnV5kZdRfMR0a4A=="
         }
       },
       "origin": "node-dist"
