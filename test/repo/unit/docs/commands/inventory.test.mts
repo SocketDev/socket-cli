@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractCommandInventory } from '../../../../scripts/repo/check/docs-command-inventory.mts'
-import { extractCustomRoutes } from '../../../../scripts/repo/check/docs-command-custom-routes.mts'
-import { checkCommandDocumentation } from '../../../../scripts/repo/check/docs-commands.mts'
+import { extractCommandInventory } from '../../../../../scripts/repo/docs/commands/inventory.mts'
+import { extractCustomRoutes } from '../../../../../scripts/repo/docs/commands/custom-routes.mts'
+import { checkCommandDocumentation } from '../../../../../scripts/repo/check/docs-commands-are-complete.mts'
 
 function sourceReader(
   files: Record<string, string>,
