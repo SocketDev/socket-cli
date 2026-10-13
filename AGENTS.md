@@ -15,7 +15,7 @@
 - Check `who_owns`/`list_claims` before non-trivial work. [`claim-before-you-work`](docs/fleet/agents.md/claim-before-you-work.md)
 - Resolve the default branch with `git symbolic-ref`. Fall back from `main` to `master`. [`default-branch-resolution`](docs/fleet/agents.md/default-branch-resolution.md)
 - Write no real customer name, private repo, Linear ref, or Slack thread on a public surface. [`public-surface-hygiene`](docs/fleet/agents.md/public-surface-hygiene.md)
-- Root `README.md` follows the fleet skeleton - 5 level-2 sections in order, every member. [`public-surface-hygiene`](docs/fleet/agents.md/public-surface-hygiene.md)
+- Root `README.md` follows the fleet skeleton - 4 level-2 sections in order, every member. [`public-surface-hygiene`](docs/fleet/agents.md/public-surface-hygiene.md)
 - Fleet repos use Conventional Commits `<type>(<scope>): <description>`, lowercase, with NO AI attribution. [`commit-cadence-format`](docs/fleet/agents.md/commit-cadence-format.md)
 - No fleet commit trailer or branch name carries an AI tool's mark. (`scripts/fleet/check/commits-have-no-ai-attribution.mts`) [`agent-detection-surfaces`](docs/fleet/agents.md/agent-detection-surfaces.md)
 - Run human-facing prose through the `prose` skill before it lands. (`.claude/hooks/fleet/anti-prose-guard/`) [`prose-style-and-doctrine`](docs/fleet/agents.md/prose-style-and-doctrine.md)

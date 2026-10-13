@@ -92,6 +92,8 @@
     "check:hooks": "node scripts/fleet/check.mts --category=hooks",
     "check:native-package": "node scripts/repo/build/sea/check.mts",
     "check:paths": "node scripts/fleet/check/paths-are-valid.mts",
+    "docs:commands:check": "node scripts/repo/check/docs-commands.mts",
+    "docs:commands:test": "node scripts/fleet/test.mts test/repo/unit/check/docs-command-inventory.test.mts test/repo/unit/check/docs-commands.test.mts",
     "check:test": "node scripts/fleet/commands/run.mts check test",
     "check:test-budget-headroom": "node scripts/fleet/check/test-budget-headroom.mts",
     "check:types": "node scripts/fleet/check.mts --category=types",
@@ -120,6 +122,8 @@
     "cover:types": "node scripts/fleet/cover/types/run.mts",
     "cover:update": "node scripts/fleet/commands/run.mts cover update",
     "crates:auth": "node scripts/fleet/registry/cargo/auth.mts",
+    "credentials": "node scripts/fleet/credentials/run.mts",
+    "credentials:gh": "node scripts/fleet/credentials/gh/run.mts",
     "credentials:migrate": "node scripts/fleet/credentials/migrate.mts",
     "depot:auth": "node scripts/fleet/registry/depot/browser-auth.mts",
     "dev": "node src/cli-dispatch.mts",
@@ -201,6 +205,7 @@
     "publish:npm": "node scripts/fleet/npm/publish/run.mts",
     "release:github": "node scripts/fleet/release/github/remote.mts",
     "release:hint": "node scripts/fleet/release/hint.mts",
+    "release:nightly:plan": "node scripts/fleet/release/nightly/cli.mts",
     "review:comments": "node scripts/fleet/comment-review/run.mts",
     "review:pr": "node scripts/fleet/ai/review/jev/run.mts",
     "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
@@ -281,8 +286,7 @@
     "weekly-update": "node scripts/fleet/weekly-update.mts",
     "weekly-update:ci": "gh workflow run cron-weekly-update.yml",
     "worktree:create": "node scripts/fleet/worktree/create/run.mts",
-    "credentials:gh": "node scripts/fleet/credentials/gh/run.mts",
-    "credentials": "node scripts/fleet/credentials/run.mts"
+    "ci:fix:preview": "node scripts/fleet/ci/fix/preview.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

@@ -45,7 +45,7 @@ on:
         type: string
         default: 'latest'
       release-as:
-        description: 'Release target: patch, minor, or an exact non-major X.Y.Z version.'
+        description: 'Release target: patch, minor, exact X.Y.Z, or exact X.Y.Z-beta.N / X.Y.Z-rc.N candidate.'
         type: string
         default: ''
       nightly-version:
