@@ -4,9 +4,9 @@ import sbt._
 import sbt.Keys._
 
 /**
- * Sibling of SocketFactsPlugin (socket-facts.plugin.scala): emits only `meta`/`project`
- * records, no dependency resolution. Kept as a separate plugin so it can't affect that
- * file's already-verified wide sbt-version compatibility (0.13.x+).
+ * Sibling of SocketFactsPlugin (socket-facts.plugin.scala): emits only `meta`/`buildRoot`/
+ * `project`/`projectBuild` records, no dependency resolution. Kept as a separate plugin so it
+ * can't affect that file's already-verified wide sbt-version compatibility (0.13.x+).
  *
  * Must compile on Scala 2.10/sbt 0.13 and Scala 2.12/sbt 1.x, same constraint as the facts plugin.
  */
@@ -45,18 +45,37 @@ object SocketWorkspacesPlugin extends AutoPlugin {
         CrossVersion.apply(sv, sbv)(extracted.get(projectID.in(ref)))
       }
 
+      // Mirrors socket-facts.plugin.scala's projectBuild records.
+      val buildFilesByRef: Map[ProjectRef, Seq[String]] =
+        extracted.structure.settings
+          .flatMap { setting =>
+            (setting.key.scope.project, setting.pos) match {
+              case (Select(ref: ProjectRef), pos: FilePosition) =>
+                val f = new File(pos.path)
+                if (f.isAbsolute && f.isFile && f.getCanonicalFile.toPath.startsWith(rootCanonPath)) Some(ref -> relOf(f))
+                else None
+              case _ => None
+            }
+          }
+          .groupBy(_._1)
+          .map { case (ref, pairs) => ref -> pairs.map(_._2) }
+
       val sb = new StringBuilder
       def rec(fields: String*): Unit = {
         sb.append(fields.map(esc).mkString("\t")); sb.append('\n')
       }
 
       rec("meta", "sbt", extracted.getOpt(sbtVersion).getOrElse(""), sys.props.getOrElse("java.version", ""))
+      rec("buildRoot", rootCanonPath.toString)
 
       allRefs.foreach { ref =>
         if (!isExcludedRef(ref)) {
           val mid = rootIdOf(ref)
           val ver = if (mid.revision == null) "" else mid.revision
-          rec("project", ref.project, mid.organization, mid.name, ver, relOf(extracted.get(baseDirectory.in(ref))))
+          val baseDir = extracted.get(baseDirectory.in(ref))
+          rec("project", ref.project, mid.organization, mid.name, ver, relOf(baseDir))
+          (buildFilesByRef.getOrElse(ref, Nil) ++ baseBuildSbt(baseDir, rootCanonPath).map(relOf)).distinct.sorted
+            .foreach(f => rec("projectBuild", ref.project, f))
         }
       }
 
@@ -103,6 +122,11 @@ object SocketWorkspacesPlugin extends AutoPlugin {
       else patterns.exists(_.matcher(c).matches())
     }
   }
+
+  // sbt loads the `.sbt` files in a project's base directory into that project
+  // (Load.configurationSources), so its build.sbt is the project's even when it sets nothing.
+  private def baseBuildSbt(base: File, rootCanonPath: java.nio.file.Path): Option[File] =
+    Some(new File(base, "build.sbt")).filter(f => f.isFile && f.getCanonicalFile.toPath.startsWith(rootCanonPath))
 
   // Backslash-escape so a value can never break line/field framing (see records.ts unescape).
   private def esc(v: String): String = {

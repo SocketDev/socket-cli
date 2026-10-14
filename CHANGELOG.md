@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Reachability scans in pnpm and yarn projects no longer print a 403 from the Socket API when run with a repository-scoped token. The safety check that runs before Coana launches now uses Socket's public token and only looks up the Coana package itself.
+- `--dynamic-sbom-inference` no longer skips an independent Maven, Gradle or sbt build that shares a directory with a module of another build: only build files another build actually uses count as covered.
 
 ## [1.8.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.8.1) - 2026-10-12
 

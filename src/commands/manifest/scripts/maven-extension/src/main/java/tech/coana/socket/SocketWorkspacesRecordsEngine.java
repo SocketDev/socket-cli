@@ -12,9 +12,10 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Sibling of {@link SocketFactsRecordsEngine} that emits only `meta`/`project` records from the
- * already-populated reactor list, building no dependency graph - cheap workspace discovery for
- * `socket manifest setup --dynamic-sbom-inference` without a full facts-generation build.
+ * Sibling of {@link SocketFactsRecordsEngine} that emits only `meta`/`buildRoot`/`project`/
+ * `projectBuild` records from the already-populated reactor list, building no dependency graph -
+ * cheap workspace discovery for `socket manifest setup --dynamic-sbom-inference` without a full
+ * facts-generation build.
  */
 public final class SocketWorkspacesRecordsEngine {
 
@@ -32,6 +33,7 @@ public final class SocketWorkspacesRecordsEngine {
 
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
+    rec(lines, "buildRoot", rootDir.getAbsolutePath());
 
     for (MavenProject module : reactor) {
       // No basedir: Maven's stand-in project for a directory without a POM. Skipping it lets Maven's
@@ -40,6 +42,8 @@ public final class SocketWorkspacesRecordsEngine {
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
       if (SocketSupport.isExcludedPath(ws, excludes)) continue;
       rec(lines, "project", ws, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
+      File pom = module.getFile();
+      if (pom != null && pom.isFile()) rec(lines, "projectBuild", ws, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));
     }
 
     write(opts.recordsFile, lines);

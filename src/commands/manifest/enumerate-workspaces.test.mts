@@ -13,6 +13,7 @@ const ENV_VAR = 'SOCKET_TEST_ENUMERATE_JAVA_HOME'
 
 function okResult(): WorkspaceEnumerationResult {
   return {
+    buildRoot: '/tmp/some-project',
     code: 0,
     projects: [
       {
@@ -42,9 +43,10 @@ describe('enumerateWorkspaces', () => {
     process.exitCode = undefined
   })
 
-  it('returns the projects from a successful run', async () => {
+  it('returns the build root and projects from a successful run', async () => {
     vi.mocked(enumerateWorkspacesScript).mockResolvedValue(okResult())
     const result = await enumerateWorkspaces(baseArgs)
+    expect(result?.buildRoot).toBe(okResult().buildRoot)
     expect(result?.projects).toEqual(okResult().projects)
   })
 
@@ -84,6 +86,7 @@ describe('enumerateWorkspaces', () => {
 
   it('fails when the build crashed before producing any workspace records', async () => {
     vi.mocked(enumerateWorkspacesScript).mockResolvedValue({
+      buildRoot: undefined,
       code: 1,
       projects: [],
       stderr: '',
@@ -96,10 +99,21 @@ describe('enumerateWorkspaces', () => {
 
   it('fails even on a clean exit if no workspace records were produced - every real run reports at least its own root project', async () => {
     vi.mocked(enumerateWorkspacesScript).mockResolvedValue({
+      buildRoot: undefined,
       code: 0,
       projects: [],
       stderr: '',
       stdout: '',
+    })
+    const result = await enumerateWorkspaces(baseArgs)
+    expect(result).toBeUndefined()
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('fails when the build did not report its build root', async () => {
+    vi.mocked(enumerateWorkspacesScript).mockResolvedValue({
+      ...okResult(),
+      buildRoot: undefined,
     })
     const result = await enumerateWorkspaces(baseArgs)
     expect(result).toBeUndefined()

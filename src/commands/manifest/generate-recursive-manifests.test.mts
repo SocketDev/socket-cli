@@ -60,12 +60,14 @@ describe('generateRecursiveManifests', () => {
                 type: 'maven',
                 name: 'moduleA',
                 subprojectDir: 'moduleA',
+                manifestFiles: [{ file: 'moduleA/pom.xml' }],
                 children: [],
               },
               {
                 type: 'maven',
                 name: 'moduleB',
                 subprojectDir: 'moduleB',
+                manifestFiles: [{ file: 'moduleB/pom.xml' }],
                 children: [],
               },
             ],
@@ -134,6 +136,7 @@ describe('generateRecursiveManifests', () => {
                   type: 'maven',
                   name: 'shared-lib',
                   subprojectDir: `../${sharedLibName}`,
+                  manifestFiles: [{ file: `../${sharedLibName}/pom.xml` }],
                   children: [],
                 },
               ],
@@ -164,6 +167,156 @@ describe('generateRecursiveManifests', () => {
     },
   )
 
+  it('covers only the build files a build reports, so an independent build sharing a member directory still runs', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'co-located-builds-')),
+    )
+    const shared = path.join(outer, 'shared')
+    const gradleMember = path.join(outer, 'gradle-member')
+    try {
+      await fs.mkdir(shared, { recursive: true })
+      await fs.mkdir(gradleMember, { recursive: true })
+      await fs.writeFile(path.join(outer, 'pom.xml'), '<project/>')
+      // The reactor declares `<module>shared/alt.xml</module>`.
+      await fs.writeFile(path.join(shared, 'alt.xml'), '<project/>')
+      await fs.writeFile(path.join(shared, 'pom.xml'), '<project/>')
+      await fs.writeFile(path.join(outer, 'settings.gradle'), '')
+      await fs.writeFile(path.join(gradleMember, 'build.gradle'), '')
+      await fs.writeFile(path.join(gradleMember, 'pom.xml'), '<project/>')
+
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, ecosystem }) => {
+          if (cwd === outer && ecosystem === 'maven') {
+            return {
+              factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
+              projects: [
+                {
+                  type: 'maven',
+                  name: 'shared',
+                  subprojectDir: 'shared',
+                  manifestFiles: [{ file: 'shared/alt.xml' }],
+                  children: [],
+                },
+              ],
+            }
+          }
+          if (cwd === outer && ecosystem === 'gradle') {
+            return {
+              factsPath: path.join(cwd, 'gradle.socket.facts.json'),
+              projects: [
+                {
+                  type: 'maven',
+                  name: 'gradle-member',
+                  subprojectDir: 'gradle-member',
+                  manifestFiles: [{ file: 'gradle-member/build.gradle' }],
+                  children: [],
+                },
+              ],
+            }
+          }
+          return {
+            factsPath: path.join(cwd, `${ecosystem}.socket.facts.json`),
+            projects: [],
+          }
+        },
+      )
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
+
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${o.dir}`, o.status]),
+      )
+      expect(byKey.get(`maven:${shared}`)).toBe('generated')
+      expect(byKey.get(`gradle:${gradleMember}`)).toBe('skippedCovered')
+      expect(byKey.get(`maven:${gradleMember}`)).toBe('generated')
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
+  it('covers a build root through any of its build files, not only the one a build was run on', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'sbt-member-')),
+    )
+    const member = path.join(outer, 'member')
+    try {
+      await fs.mkdir(member, { recursive: true })
+      await fs.writeFile(path.join(outer, 'build.sbt'), '')
+      await fs.writeFile(path.join(member, 'build.sbt'), '')
+
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+        factsPath: path.join(cwd, 'sbt.socket.facts.json'),
+        projects:
+          cwd === outer
+            ? [
+                {
+                  type: 'maven',
+                  name: 'member',
+                  subprojectDir: 'member',
+                  manifestFiles: [
+                    { file: 'build.sbt' },
+                    { file: 'member/build.sbt' },
+                  ],
+                  children: [],
+                },
+              ]
+            : [],
+      }))
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
+
+      const byDir = new Map(outcomes.map(o => [o.dir, o.status]))
+      expect(byDir.get(member)).toBe('skippedCovered')
+      expect(runManifestFacts).toHaveBeenCalledTimes(1)
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
+  it('does not cover a build root through a reported build file that is absent on disk', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'absent-build-file-')),
+    )
+    const tools = path.join(outer, 'tools')
+    try {
+      await fs.mkdir(tools, { recursive: true })
+      await fs.writeFile(path.join(outer, 'settings.gradle'), "include 'tools'")
+      await fs.writeFile(path.join(tools, 'settings.gradle'), '')
+
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+        factsPath: path.join(cwd, 'gradle.socket.facts.json'),
+        projects:
+          cwd === outer
+            ? [
+                {
+                  type: 'maven',
+                  name: 'tools',
+                  subprojectDir: 'tools',
+                  manifestFiles: [{ file: 'tools/build.gradle' }],
+                  children: [],
+                },
+              ]
+            : [],
+      }))
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
+
+      const byDir = new Map(outcomes.map(o => [o.dir, o.status]))
+      expect(byDir.get(tools)).toBe('generated')
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
   it('judges coverage against the reported build root, not the discovery directory', async () => {
     const outer = await fs.realpath(
       await fs.mkdtemp(path.join(tmpdir(), 'relocated-build-root-')),
@@ -187,12 +340,14 @@ describe('generateRecursiveManifests', () => {
                 type: 'maven',
                 name: 'member',
                 subprojectDir: 'member',
+                manifestFiles: [{ file: 'member/pom.xml' }],
                 dependencies: [],
               },
               {
                 type: 'maven',
                 name: 'escaped',
                 subprojectDir: '../escaped',
+                manifestFiles: [{ file: '../escaped/pom.xml' }],
                 dependencies: [],
               },
             ],

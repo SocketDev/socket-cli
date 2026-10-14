@@ -20,22 +20,32 @@ echo "+ $("$GRADLE" --version 2>/dev/null | sed -n 's/^Gradle //p' | head -1) (w
 ( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
     --init-script "$INIT" -Psocket.recordsFile="$RECORDS" socketWorkspaces -q )
 
-python3 - "$RECORDS" <<'PY'
+python3 - "$RECORDS" "$(cd "$PROJECT" && pwd -P)" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 errors = []
 tool = None
+build_root = None
 projects = []
+build_files = set()
 for r in rows:
     if r[0] == 'meta':
         tool = r[1]
+    elif r[0] == 'buildRoot':
+        build_root = r[1]
     elif r[0] == 'project':
         projects.append(r)
+    elif r[0] == 'projectBuild':
+        build_files.add((r[1], r[2]))
     else:
         errors.append(f"unexpected record kind {r[0]!r} - workspaces must never resolve dependencies")
 
 if tool != 'gradle':
     errors.append(f"meta tool {tool!r} != 'gradle'")
+if build_root != sys.argv[2]:
+    errors.append(f"buildRoot {build_root!r} != {sys.argv[2]!r}")
+if build_files != {(':', 'build.gradle')}:
+    errors.append(f"projectBuild records {sorted(build_files)} != [(':', 'build.gradle')]")
 if len(projects) != 1:
     errors.append(f"expected exactly 1 project record, got {len(projects)}: {projects}")
 else:
@@ -49,5 +59,5 @@ if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print("PASS: tool=gradle; 1 project record, no dependency-resolution records")
+print("PASS: tool=gradle; 1 project record with its build file, no dependency-resolution records")
 PY

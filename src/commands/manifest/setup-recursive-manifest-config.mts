@@ -7,7 +7,9 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 
 import {
+  addCoveredBuildFiles,
   findBuildToolCandidates,
+  isBuildRootCovered,
   realpathOrResolved,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
@@ -189,26 +191,17 @@ export async function discoverBuildRoots({
   }
 }
 
-// Enumerates one build root's declared workspace members (see
-// enumerate-workspaces.mts) and folds them into `coveredByEcosystem`, so a
-// later candidate matching one is recognized as a reactor member rather than
-// independent - only a properly nested subprojectDir counts as coverage at
-// all; one that escapes this candidate's own directory still gets its own
-// entry (see the set.add call below). Called per-candidate right after its
-// own prompt, not as a bulk pass, so the build invocation never blocks
-// candidates that don't need it. A disabled candidate is skipped (no point
-// invoking an off build tool); otherwise this fails closed, same reasoning
-// as generateRecursiveManifests - if enumeration fails there's no way to
-// tell covered from independent, so the caller aborts rather than guess.
+// Fails closed: without the members' build files, covered and independent
+// candidates can't be told apart.
 export async function markWorkspaceCoverage({
   candidate,
-  coveredByEcosystem,
+  covered,
   cwd,
   excludePaths,
   rootSockJson,
 }: {
   candidate: Candidate
-  coveredByEcosystem: Map<BuildTool, Set<string>>
+  covered: Set<string>
   cwd: string
   excludePaths?: string[] | undefined
   rootSockJson: SocketJson
@@ -245,25 +238,7 @@ export async function markWorkspaceCoverage({
     }
   }
 
-  const set = coveredByEcosystem.get(candidate.ecosystem) ?? new Set<string>()
-  set.add(candidate.dir)
-  const resolvedSubprojectDirs = await Promise.all(
-    enumResult.projects.map(project =>
-      realpathOrResolved(path.resolve(candidate.dir, project.subprojectDir)),
-    ),
-  )
-  for (const subprojectDir of resolvedSubprojectDirs) {
-    // Only a genuinely nested member (a descendant of this candidate's own
-    // directory) should be skipped as covered by it. A subprojectDir that
-    // escapes this candidate's own tree (a sibling, e.g. Maven's
-    // `<module>../shared-lib</module>` or Gradle's relocated projectDir) is
-    // independently locatable and worth its own socket.json entry - never
-    // mark it covered, regardless of which candidate(s) also incorporate it.
-    if (subprojectDir.startsWith(`${candidate.dir}${path.sep}`)) {
-      set.add(subprojectDir)
-    }
-  }
-  coveredByEcosystem.set(candidate.ecosystem, set)
+  await addCoveredBuildFiles(covered, enumResult.buildRoot, enumResult.projects)
   return { ok: true, data: undefined }
 }
 
@@ -842,7 +817,7 @@ export async function setupRecursiveManifestConfig(
   logger.log('re-run with --exclude-paths instead.')
   logger.log('')
 
-  const coveredByEcosystem = new Map<BuildTool, Set<string>>()
+  const covered = new Set<string>()
   // cwd never appears in `included`, but a reactor root often sits exactly
   // at cwd - seed coverage from it first so its declared members still get
   // recognized.
@@ -850,7 +825,7 @@ export async function setupRecursiveManifestConfig(
     // eslint-disable-next-line no-await-in-loop
     const coverageResult = await markWorkspaceCoverage({
       candidate: { dir: realCwd, ecosystem },
-      coveredByEcosystem,
+      covered,
       cwd: realCwd,
       excludePaths,
       rootSockJson,
@@ -869,8 +844,7 @@ export async function setupRecursiveManifestConfig(
   }
   const orderedIncluded = sortCandidatesForDisplay(included, realCwd)
   for (const candidate of orderedIncluded) {
-    const covered = coveredByEcosystem.get(candidate.ecosystem)
-    if (covered?.has(candidate.dir)) {
+    if (isBuildRootCovered(covered, candidate.ecosystem, candidate.dir)) {
       counts.covered += 1
       continue
     }
@@ -902,7 +876,7 @@ export async function setupRecursiveManifestConfig(
     // eslint-disable-next-line no-await-in-loop
     const coverageResult = await markWorkspaceCoverage({
       candidate,
-      coveredByEcosystem,
+      covered,
       cwd: realCwd,
       excludePaths,
       rootSockJson,

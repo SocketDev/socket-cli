@@ -3,7 +3,9 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
+  addCoveredBuildFiles,
   findBuildToolCandidates,
+  isBuildRootCovered,
   realpathOrResolved,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
@@ -109,12 +111,12 @@ async function runEcosystemCandidates({
   withFiles: boolean | undefined
 }): Promise<RecursiveManifestOutcome[]> {
   const outcomes: RecursiveManifestOutcome[] = []
+  const covered = new Set<string>()
   for (const [ecosystem, dirs] of candidatesByTool) {
-    const covered = new Set<string>()
     const disabledRoots: DisabledRoot[] = []
     for (let dirIndex = 0; dirIndex < dirs.length; dirIndex += 1) {
       const dir = dirs[dirIndex] as string
-      if (covered.has(dir)) {
+      if (isBuildRootCovered(covered, ecosystem, dir)) {
         outcomes.push({ dir, ecosystem, status: 'skippedCovered' })
         continue
       }
@@ -184,35 +186,13 @@ async function runEcosystemCandidates({
         continue
       }
 
-      covered.add(dir)
       // `-f`/`-p` can root the reactor away from `dir`.
       // eslint-disable-next-line no-await-in-loop
-      const buildRoot = await realpathOrResolved(path.dirname(result.factsPath))
-      // eslint-disable-next-line no-await-in-loop
-      const resolvedSubprojectDirs = await Promise.all(
-        result.projects.map(project =>
-          realpathOrResolved(path.resolve(buildRoot, project.subprojectDir)),
-        ),
+      await addCoveredBuildFiles(
+        covered,
+        path.dirname(result.factsPath),
+        result.projects,
       )
-      for (const subprojectDir of resolvedSubprojectDirs) {
-        // Only a genuinely nested member (a descendant of this reactor's own
-        // directory) has no independent existence worth its own standalone
-        // analysis. A subprojectDir that escapes this reactor's own tree (a
-        // sibling, e.g. Maven's `<module>../shared-lib</module>` or Gradle's
-        // relocated projectDir) is independently locatable and potentially
-        // independently consumed or published - its own un-mediated
-        // resolution (e.g. a dependency version this reactor's own
-        // dependency management happens to override) is a distinct,
-        // meaningful data point, not a redundant one. Never suppress its own
-        // build-root invocation, regardless of which reactor(s) also
-        // incorporate it or the order candidates happen to be discovered in.
-        if (
-          subprojectDir === buildRoot ||
-          subprojectDir.startsWith(`${buildRoot}${path.sep}`)
-        ) {
-          covered.add(subprojectDir)
-        }
-      }
       outcomes.push({
         dir,
         ecosystem,
@@ -224,17 +204,8 @@ async function runEcosystemCandidates({
   return outcomes
 }
 
-// Generates one Socket facts file per independent gradle/sbt/maven build
-// root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
-// own projects[].subprojectDir, not by pruning the whole discovered subtree,
-// so an unrelated nested project a reactor doesn't declare still gets its
-// own invocation - and only a properly nested subprojectDir counts as
-// coverage at all; one that escapes its declaring reactor's own directory
-// still gets its own independent invocation too (see the covered.add call
-// below). Fail-closed per ecosystem, not globally: a root whose
-// workspace layout can't be determined aborts only that ecosystem's own
-// remaining walk (marking its untried candidates 'aborted'), since coverage
-// is tracked per ecosystem and an unrelated one has nothing to lose from it.
+// A failed root aborts only its own ecosystem's remaining walk: the build
+// files it would have covered are all its own tool's.
 export async function generateRecursiveManifests({
   cwd,
   excludePaths,

@@ -11,6 +11,7 @@ import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
 
 export type EnumerateWorkspacesResult = {
+  buildRoot: string
   projects: SocketFactsSbomProject[]
 }
 
@@ -82,5 +83,13 @@ export async function enumerateWorkspaces({
     return
   }
 
-  return { projects: result.projects }
+  if (!result.buildRoot) {
+    process.exitCode = 1
+    logger.fail(
+      `The ${ecosystem} build did not report its build root, so its projects' paths cannot be located.`,
+    )
+    return
+  }
+
+  return { buildRoot: result.buildRoot, projects: result.projects }
 }
