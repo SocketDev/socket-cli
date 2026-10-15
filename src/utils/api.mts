@@ -97,6 +97,13 @@ export type ApiFetchInit = {
   body?: string | undefined
   headers?: Record<string, string> | undefined
   method?: string | undefined
+  timeout?: number | undefined
+}
+
+export function resolveConfiguredSocketApiTimeout(
+  timeout: number = constants.ENV.SOCKET_CLI_API_TIMEOUT,
+): number | undefined {
+  return Number.isFinite(timeout) && timeout > 0 ? timeout : undefined
 }
 
 // Internal httpsRequest-based fetch with redirect support.
@@ -108,6 +115,7 @@ function _httpsRequestFetch(
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
     const headers: Record<string, string> = { ...init.headers }
+    let timedOutError: (Error & { code: string }) | undefined
     // Set Content-Length for request bodies to avoid chunked transfer encoding.
     if (init.body) {
       headers['content-length'] = String(Buffer.byteLength(init.body))
@@ -118,6 +126,7 @@ function _httpsRequestFetch(
         method: init.method || 'GET',
         headers,
         agent,
+        ...(init.timeout === undefined ? {} : { timeout: init.timeout }),
       },
       res => {
         const { statusCode } = res
@@ -160,7 +169,11 @@ function _httpsRequestFetch(
               redirectUrl,
               preserveMethod
                 ? { ...init, headers: redirectHeaders }
-                : { headers: redirectHeaders, method: 'GET' },
+                : {
+                    headers: redirectHeaders,
+                    method: 'GET',
+                    timeout: init.timeout,
+                  },
               agent,
               redirectCount + 1,
             ),
@@ -193,6 +206,11 @@ function _httpsRequestFetch(
             res.on('error', (err: Error) => {
               controller.error(err)
             })
+            res.on('aborted', () => {
+              controller.error(
+                timedOutError ?? new Error('Socket API response aborted'),
+              )
+            })
           },
           cancel() {
             res.destroy()
@@ -207,6 +225,15 @@ function _httpsRequestFetch(
         )
       },
     )
+    if (init.timeout !== undefined) {
+      req.on('timeout', () => {
+        timedOutError = Object.assign(
+          new Error(`Socket API request timed out after ${init.timeout} ms`),
+          { code: 'ETIMEDOUT' },
+        )
+        req.destroy(timedOutError)
+      })
+    }
     if (init.body) {
       req.write(init.body)
     }
@@ -506,8 +533,10 @@ async function queryApi(path: string, apiToken: string) {
   }
 
   const url = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
+  const timeout = resolveConfiguredSocketApiTimeout()
   const result = await apiFetch(url, {
     method: 'GET',
+    ...(timeout === undefined ? {} : { timeout }),
     headers: {
       Authorization: `Basic ${btoa(`${apiToken}:`)}`,
       'User-Agent': getCliUserAgent(),
@@ -718,8 +747,10 @@ export async function sendApiRequest<T>(
 
   let result
   try {
+    const timeout = resolveConfiguredSocketApiTimeout()
     const fetchOptions = {
       method,
+      ...(timeout === undefined ? {} : { timeout }),
       headers: {
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'Content-Type': 'application/json',
