@@ -136,7 +136,7 @@ describe('direct Socket API timeout configuration', () => {
   it('times out direct GET query requests using configured timeout', async () => {
     const observedRequest = waitForRequest('/get-timeout')
     const request = apiQuery('get-timeout', 'sktsec_abc123abc123abc123abc123')
-    await expect(request).rejects.toMatchObject({ code: 'ETIMEDOUT' })
+    await expect(request).rejects.toThrow('GET request timed out after 80ms')
     const observed = await observedRequest
     await observed.closed
     expect(observed.method).toBe('GET')
