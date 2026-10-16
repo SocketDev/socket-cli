@@ -252,6 +252,7 @@ function readWrittenFiles(outputFile: string): Set<string> | undefined {
 type CoanaFixResult = CResult<{ fixedAll: boolean; ghsaDetails: unknown[] }>
 
 // Coana exits with this code after writing an --output-file that lists computed fixes it left unapplied.
+// Local mode exits with it too, so automation can tell unapplied fixes from a failed run.
 const COANA_FIXES_NOT_APPLIED_EXIT_CODE = 5
 
 type NotAppliedFix = {
@@ -585,6 +586,7 @@ async function coanaFixWithFacts(
       if (!fixCResult.ok || notApplied.length) {
         return {
           ok: false,
+          code: COANA_FIXES_NOT_APPLIED_EXIT_CODE,
           message:
             fixesResultJson?.type === 'no-fixes-applied'
               ? 'No computed fixes were applied'

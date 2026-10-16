@@ -609,6 +609,7 @@ describe('socket fix --pr-limit behavior verification', () => {
 
       expect(result).toEqual({
         ok: false,
+        code: 5,
         message: 'No computed fixes were applied',
         cause: expect.stringContaining('no supported lockfile found'),
         data: {
@@ -642,6 +643,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(false)
+      expect(result.code).toBe(5)
       expect(result.message).toBe('Some computed fixes were not applied')
       expect(result.data).toEqual({ fixedAll: false, ghsaDetails: [output] })
       expect(JSON.parse(await fs.readFile(outputFile, 'utf8'))).toEqual(output)
