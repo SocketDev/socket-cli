@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - `socket fix` now exits with code 5 when it computed fixes it could not apply, matching the Coana CLI. Automation can tell this apart from a failed run, which still exits with 1. The `--output-file` JSON lists the unapplied fixes under `notApplied`.
+- Updated the Coana CLI to v `15.12.9`.
 
 ## [1.8.3](https://github.com/SocketDev/socket-cli/releases/tag/v1.8.3) - 2026-10-15
 
