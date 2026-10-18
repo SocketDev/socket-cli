@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { checkCommandDocumentation } from '../../../../scripts/repo/check/docs-commands.mts'
+import { checkCommandDocumentation } from '../../../../scripts/repo/check/docs-commands-are-complete.mts'
 
 const inventory = {
   commands: ['alpha', 'alpha child', 'patch list'],

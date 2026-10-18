@@ -6,17 +6,18 @@ import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
 import { gfm } from 'micromark-extension-gfm'
 
-import { extractCommandInventory } from './docs-command-inventory.mts'
+import { extractCommandInventory } from '../docs/commands/inventory.mts'
 import { REPO_ROOT } from '../../fleet/paths.mts'
 import { isMainModule } from '../../fleet/process/is-main-module.mts'
 import { runMain } from '../../fleet/process/main/run.mts'
 
-import type { CommandInventory } from './docs-command-inventory.mts'
+import type { CommandInventory } from '../docs/commands/inventory.mts'
 import type { ScriptMeta } from '../../fleet/process/main/run.mts'
 
 export const SCRIPT_META: ScriptMeta = {
   describe: 'Check the exact CLI command and alias inventory in its reference.',
   help: 'Usage: pnpm run docs:commands:check',
+  json: 'result',
 }
 
 interface MarkdownNode {
@@ -54,14 +55,14 @@ function textContent(node: MarkdownNode): string {
 }
 
 function inlineCode(node: MarkdownNode | undefined): string | undefined {
-  if (
-    node?.type === 'tableCell' &&
-    nodeChildren(node).length === 1 &&
-    nodeChildren(node)[0]?.type === 'inlineCode'
-  ) {
-    return textContent(nodeChildren(node)[0])
+  if (node?.type !== 'tableCell') {
+    return undefined
   }
-  return undefined
+  const children = nodeChildren(node)
+  const child = children[0]
+  return children.length === 1 && child?.type === 'inlineCode'
+    ? textContent(child)
+    : undefined
 }
 
 function linkTarget(node: MarkdownNode | undefined): string | undefined {
@@ -118,6 +119,8 @@ function sectionRows(
   const headerCells = header.children
   if (
     headerCells.length !== 2 ||
+    headerCells[0] === undefined ||
+    headerCells[1] === undefined ||
     textContent(headerCells[0]) !== headers[0] ||
     textContent(headerCells[1]) !== headers[1]
   ) {
@@ -153,7 +156,7 @@ function uniqueRows(
     }
     result.set(row.name, row)
   }
-  return { __proto__: null, rows: result, problems }
+  return { rows: result, problems }
 }
 
 function validGuide(
