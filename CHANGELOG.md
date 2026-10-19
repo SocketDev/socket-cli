@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- The Coana CLI is now downloaded from Socket's servers instead of npm.
 - The Coana CLI is now cached in `$XDG_CACHE_HOME/socket/coana` (`~/.cache/socket/coana` by default).
 
 ### Removed
