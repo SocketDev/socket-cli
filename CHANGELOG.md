@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- The Coana CLI is now downloaded from Socket's servers instead of npm, and is now cached in `$XDG_CACHE_HOME/socket/coana` (`~/.cache/socket/coana` by default).
+
+### Removed
+- The `SOCKET_CLI_COANA_LAUNCHER` environment variable no longer has an effect.
+
 ## [1.8.4](https://github.com/SocketDev/socket-cli/releases/tag/v1.8.4) - 2026-10-16
 
 ### Changed

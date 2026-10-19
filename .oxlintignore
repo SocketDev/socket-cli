@@ -1,3 +1,4 @@
 package-lock.json
 .claude/worktrees/
 .pnpm-store/
+src/vendor/coana-cache.mjs

@@ -11,7 +11,7 @@ import { coanaFix } from './coana-fix.mts'
 import type { FixConfig } from './types.mts'
 
 // Mock all external dependencies.
-const mockSpawnCoanaDlx = vi.hoisted(() => vi.fn())
+const mockSpawnCoana = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
@@ -24,8 +24,8 @@ const mockGitUntrackedFiles = vi.hoisted(() =>
   vi.fn(async () => ({ ok: true, data: [] })),
 )
 
-vi.mock('../../utils/dlx.mts', () => ({
-  spawnCoanaDlx: mockSpawnCoanaDlx,
+vi.mock('../../utils/coana-release.mts', () => ({
+  spawnCoana: mockSpawnCoana,
 }))
 
 vi.mock('../../utils/sdk.mts', () => ({
@@ -88,7 +88,7 @@ function mockDiscoveryEnvelope(envelope: {
   artifactCount?: number
   filteredArtifactCount?: number
 }) {
-  mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+  mockSpawnCoana.mockImplementation(async (args: string[]) => {
     if (args[0] === 'find-vulnerabilities') {
       const idx = args.indexOf('--output-file')
       expect(idx).toBeGreaterThan(-1)
@@ -110,7 +110,7 @@ function mockFixOutput(
   output: Record<string, unknown>,
   exitCode: number | undefined,
 ) {
-  mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+  mockSpawnCoana.mockImplementation(async (args: string[]) => {
     await fs.writeFile(
       args[args.indexOf('--output-file') + 1]!,
       JSON.stringify(output),
@@ -203,7 +203,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       ]
 
       // Mock successful fix result.
-      mockSpawnCoanaDlx.mockResolvedValue({
+      mockSpawnCoana.mockResolvedValue({
         ok: true,
         data: 'fix applied',
       })
@@ -216,9 +216,9 @@ describe('socket fix --pr-limit behavior verification', () => {
 
       expect(result.ok).toBe(true)
 
-      // Verify spawnCoanaDlx was called once with all GHSAs (local mode has no limit).
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      // Verify spawnCoana was called once with all GHSAs (local mode has no limit).
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       expect(callArgs).toContain('--apply-fixes-to')
 
       // Find the index of --apply-fixes-to and check the next arguments.
@@ -240,7 +240,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     it('should process all provided GHSAs in local mode', async () => {
       const ghsas = ['GHSA-1111-1111-1111', 'GHSA-2222-2222-2222']
 
-      mockSpawnCoanaDlx.mockResolvedValue({
+      mockSpawnCoana.mockResolvedValue({
         ok: true,
         data: 'fix applied',
       })
@@ -251,9 +251,9 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
 
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
       const ghsaArgs = callArgs
         .slice(applyFixesIndex + 1)
@@ -274,7 +274,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.data?.fixedAll).toBe(false)
 
       // Only discovery call, no fix call since no GHSAs found.
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
     })
 
     it('should discover vulnerabilities when no GHSAs are provided', async () => {
@@ -290,15 +290,15 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.ok).toBe(true)
 
       // When ghsas is empty, it first discovers vulnerabilities, then applies fixes.
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(2)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(2)
 
       // First call is discovery (no --apply-fixes-to).
-      const discoveryArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      const discoveryArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       expect(discoveryArgs).toContain('find-vulnerabilities')
       expect(discoveryArgs).not.toContain('--apply-fixes-to')
 
       // Second call applies fixes to discovered IDs.
-      const applyArgs = mockSpawnCoanaDlx.mock.calls[1]?.[0] as string[]
+      const applyArgs = mockSpawnCoana.mock.calls[1]?.[0] as string[]
       expect(applyArgs).toContain('--apply-fixes-to')
     })
   })
@@ -347,7 +347,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.ok).toBe(true)
 
       // First call to discover vulnerabilities, then 2 calls for the fixes.
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(3)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(3)
     })
 
     it('should adjust prLimit based on existing open PRs', async () => {
@@ -382,7 +382,7 @@ describe('socket fix --pr-limit behavior verification', () => {
 
       // With prLimit 3 and 1 existing PR, adjusted limit is 2.
       // So: 1 discovery call + 2 fix calls = 3 total.
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(3)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(3)
     })
 
     it('should process no GHSAs when existing open PRs exceed prLimit', async () => {
@@ -405,13 +405,13 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.data?.fixedAll).toBe(false)
 
       // With 5 open PRs and prLimit 3, adjusted limit is 0, so no processing.
-      expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+      expect(mockSpawnCoana).not.toHaveBeenCalled()
     })
   })
 
   describe('GHSA discovery failure propagation', () => {
     it('propagates a failed discovery spawn instead of reporting success', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
+      mockSpawnCoana.mockResolvedValueOnce({
         ok: false,
         message: 'Coana exited with code 1',
         cause:
@@ -426,7 +426,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.ok).toBe(false)
       expect(result.message).toBe('Coana exited with code 1')
       // Discovery failed, so no fix call should follow.
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
     })
 
     it('propagates discovery failures in PR mode', async () => {
@@ -444,7 +444,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
       mockGetSocketFixPrs.mockResolvedValue([])
 
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
+      mockSpawnCoana.mockResolvedValueOnce({
         ok: false,
         message: 'Coana exited with code 1',
       })
@@ -457,7 +457,7 @@ describe('socket fix --pr-limit behavior verification', () => {
 
       expect(result.ok).toBe(false)
       expect(result.message).toBe('Coana exited with code 1')
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -475,11 +475,11 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(2)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(2)
     })
 
     it('fails when Coana does not write the result file', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({ ok: true, data: '' })
+      mockSpawnCoana.mockResolvedValueOnce({ ok: true, data: '' })
 
       const result = await coanaFix({
         ...baseConfig,
@@ -488,11 +488,11 @@ describe('socket fix --pr-limit behavior verification', () => {
 
       expect(result.ok).toBe(false)
       expect(result.message).toMatch(/did not write/i)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
     })
 
     it('fails when the result file is not valid JSON', async () => {
-      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+      mockSpawnCoana.mockImplementation(async (args: string[]) => {
         const idx = args.indexOf('--output-file')
         await fs.writeFile(args[idx + 1]!, 'not json')
         return { ok: true, data: '' }
@@ -508,7 +508,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('fails when ghsaIds in the result file is not a string array', async () => {
-      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+      mockSpawnCoana.mockImplementation(async (args: string[]) => {
         const idx = args.indexOf('--output-file')
         await fs.writeFile(args[idx + 1]!, JSON.stringify({ ghsaIds: [123] }))
         return { ok: true, data: '' }
@@ -526,7 +526,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     it.each(['null', '[1, 2]', '42', '"text"'])(
       'fails cleanly when the result file is %s instead of an object',
       async body => {
-        mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+        mockSpawnCoana.mockImplementation(async (args: string[]) => {
           const idx = args.indexOf('--output-file')
           await fs.writeFile(args[idx + 1]!, body)
           return { ok: true, data: '' }
@@ -544,7 +544,7 @@ describe('socket fix --pr-limit behavior verification', () => {
 
     it('removes the discovery temp file when the spawn fails', async () => {
       let outputFile = ''
-      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+      mockSpawnCoana.mockImplementation(async (args: string[]) => {
         const idx = args.indexOf('--output-file')
         outputFile = args[idx + 1]!
         await fs.writeFile(outputFile, JSON.stringify({ ghsaIds: [] }))
@@ -578,7 +578,7 @@ describe('socket fix --pr-limit behavior verification', () => {
         expect(result.ok).toBe(true)
         expect(result.data?.fixedAll).toBe(false)
         // Discovery succeeded with an empty list, so no fix call follows.
-        expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+        expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
         expect(warnSpy).toHaveBeenCalledWith(
           expect.stringMatching(/0 artifacts/i),
         )
@@ -674,7 +674,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('keeps other Coana failures as errors', async () => {
-      mockSpawnCoanaDlx.mockResolvedValue({
+      mockSpawnCoana.mockResolvedValue({
         ok: false,
         data: { code: 2 },
         message: 'Coana command failed (exit code 2)',
@@ -702,7 +702,7 @@ describe('socket fix --pr-limit behavior verification', () => {
         'GHSA-5555-5555-5555',
       ]
 
-      mockSpawnCoanaDlx.mockResolvedValue({
+      mockSpawnCoana.mockResolvedValue({
         ok: true,
         data: 'fix applied',
       })
@@ -716,8 +716,8 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.ok).toBe(true)
 
       // Should process all 5 GHSAs in local mode (prLimit is ignored).
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
       const ghsaArgs = callArgs
         .slice(applyFixesIndex + 1)
@@ -736,7 +736,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     it('should handle single GHSA ID in local mode', async () => {
       const ghsas = ['GHSA-1111-1111-1111']
 
-      mockSpawnCoanaDlx.mockResolvedValue({
+      mockSpawnCoana.mockResolvedValue({
         ok: true,
         data: 'fix applied',
       })
@@ -747,9 +747,9 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
 
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
       const ghsaArgs = callArgs
         .slice(applyFixesIndex + 1)
@@ -761,7 +761,7 @@ describe('socket fix --pr-limit behavior verification', () => {
 
   describe('--exclude-paths flag', () => {
     it('passes excludePaths to getPackageFilesForScan as anchored ignore patterns', async () => {
-      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+      mockSpawnCoana.mockResolvedValue({ ok: true, data: 'fix applied' })
 
       await coanaFix({
         ...baseConfig,
@@ -782,7 +782,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('omits additionalIgnores when excludePaths is empty', async () => {
-      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+      mockSpawnCoana.mockResolvedValue({ ok: true, data: 'fix applied' })
 
       await coanaFix({
         ...baseConfig,
@@ -796,7 +796,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('forwards excludePaths to coana --exclude alongside --exclude values', async () => {
-      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+      mockSpawnCoana.mockResolvedValue({ ok: true, data: 'fix applied' })
 
       await coanaFix({
         ...baseConfig,
@@ -805,8 +805,8 @@ describe('socket fix --pr-limit behavior verification', () => {
         ghsas: ['GHSA-1111-1111-1111'],
       })
 
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       const excludeIndex = callArgs.indexOf('--exclude')
       expect(excludeIndex).toBeGreaterThan(-1)
       // --exclude is followed by every pattern from both sources, in order:
@@ -820,7 +820,7 @@ describe('socket fix --pr-limit behavior verification', () => {
 
   describe('--allow-overrides flag', () => {
     it('forwards --allow-overrides to coana in local mode', async () => {
-      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+      mockSpawnCoana.mockResolvedValue({ ok: true, data: 'fix applied' })
 
       await coanaFix({
         ...baseConfig,
@@ -828,22 +828,22 @@ describe('socket fix --pr-limit behavior verification', () => {
         ghsas: ['GHSA-1111-1111-1111'],
       })
 
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       expect(callArgs[0]).toBe('compute-fixes-and-upgrade-purls')
       expect(callArgs).toContain('--allow-overrides')
     })
 
     it('omits --allow-overrides when the flag is not set', async () => {
-      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+      mockSpawnCoana.mockResolvedValue({ ok: true, data: 'fix applied' })
 
       await coanaFix({
         ...baseConfig,
         ghsas: ['GHSA-1111-1111-1111'],
       })
 
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       expect(callArgs).not.toContain('--allow-overrides')
     })
 
@@ -862,7 +862,7 @@ describe('socket fix --pr-limit behavior verification', () => {
       })
       mockGetSocketFixPrs.mockResolvedValue([])
       mockFetchGhsaDetails.mockResolvedValue(new Map())
-      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+      mockSpawnCoana.mockResolvedValue({ ok: true, data: 'fix applied' })
 
       await coanaFix({
         ...baseConfig,
@@ -870,8 +870,8 @@ describe('socket fix --pr-limit behavior verification', () => {
         ghsas: ['GHSA-1111-1111-1111'],
       })
 
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoana.mock.calls[0]?.[0] as string[]
       expect(callArgs[0]).toBe('compute-fixes-and-upgrade-purls')
       expect(callArgs).toContain('GHSA-1111-1111-1111')
       expect(callArgs).toContain('--allow-overrides')

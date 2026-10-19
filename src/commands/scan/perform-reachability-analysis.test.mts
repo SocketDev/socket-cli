@@ -35,7 +35,7 @@ const {
   mockHandleApiCall,
   mockHasEnterpriseOrgPlan,
   mockSetupSdk,
-  mockSpawnCoanaDlx,
+  mockSpawnCoana,
 } = vi.hoisted(() => ({
   mockFetchOrganization: vi.fn(),
   mockHandleApiCall: vi.fn(async () => ({
@@ -47,7 +47,7 @@ const {
     ok: true,
     data: { uploadManifestFiles: vi.fn() },
   })),
-  mockSpawnCoanaDlx: vi.fn(),
+  mockSpawnCoana: vi.fn(),
 }))
 
 vi.mock('../organization/fetch-organization-list.mts', () => ({
@@ -58,8 +58,8 @@ vi.mock('../../utils/organization.mts', () => ({
   hasEnterpriseOrgPlan: mockHasEnterpriseOrgPlan,
 }))
 
-vi.mock('../../utils/dlx.mts', () => ({
-  spawnCoanaDlx: mockSpawnCoanaDlx,
+vi.mock('../../utils/coana-release.mts', () => ({
+  spawnCoana: mockSpawnCoana,
 }))
 
 // Stubbed to keep the heavy SDK / API import chains out of the test.
@@ -128,7 +128,7 @@ describe('performReachabilityAnalysis facts-file resolution', () => {
       data: { organizations: {} },
     })
     mockHasEnterpriseOrgPlan.mockReturnValue(true)
-    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    mockSpawnCoana.mockResolvedValue({ ok: true, data: '' })
     // A scan cwd that is intentionally NOT process.cwd().
     scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-rea495-'))
   })
@@ -155,9 +155,9 @@ describe('performReachabilityAnalysis facts-file resolution', () => {
       target: scanCwd,
     })
 
-    expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    expect(mockSpawnCoana).toHaveBeenCalledTimes(1)
     // The Coana spawn must use the scan cwd so its write and our read agree.
-    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({ cwd: scanCwd })
+    expect(mockSpawnCoana.mock.calls[0]![2]).toMatchObject({ cwd: scanCwd })
 
     expect(result.ok).toBe(true)
     expect(result.ok && result.data.tier1ReachabilityScanId).toBe(
@@ -198,7 +198,7 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
       data: { organizations: {} },
     })
     mockHasEnterpriseOrgPlan.mockReturnValue(true)
-    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    mockSpawnCoana.mockResolvedValue({ ok: true, data: '' })
     scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-reatar-'))
   })
 
@@ -215,7 +215,7 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
       target: scanCwd,
     })
 
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
     expect(args).toContain('--run-without-docker')
     expect(args[args.indexOf('--manifests-tar-hash') + 1]).toBe(TEST_TAR_HASH)
   })
@@ -262,7 +262,7 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
     })
 
     expect(result.ok).toBe(false)
-    expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
+    expect(mockSpawnCoana).not.toHaveBeenCalled()
   })
 })
 
@@ -276,7 +276,7 @@ describe('performReachabilityAnalysis timeout/memory forwarding', () => {
       data: { organizations: {} },
     })
     mockHasEnterpriseOrgPlan.mockReturnValue(true)
-    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    mockSpawnCoana.mockResolvedValue({ ok: true, data: '' })
     scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-reaf-'))
   })
 
@@ -294,7 +294,7 @@ describe('performReachabilityAnalysis timeout/memory forwarding', () => {
       reachabilityOptions: { ...makeReachabilityOptions(), ...overrides },
       target: scanCwd,
     })
-    return mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    return mockSpawnCoana.mock.calls[0]![0] as string[]
   }
 
   it('forwards unit-bearing values to Coana verbatim', async () => {
@@ -337,7 +337,7 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
       data: { organizations: {} },
     })
     mockHasEnterpriseOrgPlan.mockReturnValue(true)
-    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    mockSpawnCoana.mockResolvedValue({ ok: true, data: '' })
     scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-reamvomsf-'))
   })
 
@@ -347,7 +347,7 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
 
   it('writes an empty sidecar and still passes both flags when dynamicSbomInference is on but no build root produced one (e.g. none found, or all empty/disabled)', async () => {
     let sidecarContentAtSpawnTime: unknown
-    mockSpawnCoanaDlx.mockImplementationOnce(async (args: string[]) => {
+    mockSpawnCoana.mockImplementationOnce(async (args: string[]) => {
       const sidecarPath = args[args.indexOf('--compute-artifacts-sidecar') + 1]!
       sidecarContentAtSpawnTime = JSON.parse(readFileSync(sidecarPath, 'utf8'))
       return { ok: true, data: '' }
@@ -365,7 +365,7 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
       target: scanCwd,
     })
 
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
     expect(args).toContain('--maven-use-only-socket-facts')
     expect(args).toContain('--compute-artifacts-sidecar')
     expect(sidecarContentAtSpawnTime).toEqual({})
@@ -389,7 +389,7 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
       target: scanCwd,
     })
 
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
     expect(args).toContain('--maven-use-only-socket-facts')
     expect(args).toContain('--compute-artifacts-sidecar')
   })
@@ -412,7 +412,7 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
       target: scanCwd,
     })
 
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
     expect(args).not.toContain('--maven-use-only-socket-facts')
     expect(args).toContain('--compute-artifacts-sidecar')
   })
@@ -428,7 +428,7 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
       data: { organizations: {} },
     })
     mockHasEnterpriseOrgPlan.mockReturnValue(true)
-    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    mockSpawnCoana.mockResolvedValue({ ok: true, data: '' })
     scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-rea-stdio-'))
     writeFileSync(
       path.join(scanCwd, '.socket.facts.json'),
@@ -450,7 +450,7 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
       target: scanCwd,
     })
 
-    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+    expect(mockSpawnCoana.mock.calls[0]![2]).toMatchObject({
       stdio: 'inherit',
     })
   })
@@ -464,7 +464,7 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
       target: scanCwd,
     })
 
-    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+    expect(mockSpawnCoana.mock.calls[0]![2]).toMatchObject({
       stdio: 'inherit',
     })
   })
@@ -479,7 +479,7 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
       target: scanCwd,
     })
 
-    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+    expect(mockSpawnCoana.mock.calls[0]![2]).toMatchObject({
       stdio: ['inherit', 2, 'inherit'],
     })
   })
@@ -494,7 +494,7 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
       target: scanCwd,
     })
 
-    expect(mockSpawnCoanaDlx.mock.calls[0]![2]).toMatchObject({
+    expect(mockSpawnCoana.mock.calls[0]![2]).toMatchObject({
       stdio: ['inherit', 2, 'inherit'],
     })
   })

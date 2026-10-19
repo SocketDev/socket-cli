@@ -28,12 +28,12 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { spawnCoana } from '../../utils/coana-release.mts'
 import {
   isReachabilityReportPath,
   isSocketFactsFile,
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
-import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
@@ -163,7 +163,7 @@ async function discoverGhsaIds(
     `socket-fix-discovery-${Date.now()}.json`,
   )
 
-  const foundCResult = await spawnCoanaDlx(
+  const foundCResult = await spawnCoana(
     [
       'find-vulnerabilities',
       cwd,
@@ -182,8 +182,8 @@ async function discoverGhsaIds(
       cwd,
       spinner: silence ? undefined : spinner,
       coanaVersion: options?.coanaVersion,
+      stdio: 'pipe',
     },
-    { stdio: 'pipe' },
   )
 
   if (!foundCResult.ok) {
@@ -512,7 +512,7 @@ async function coanaFixWithFacts(
     const tmpFile = path.join(tmpDir, `socket-fix-${Date.now()}.json`)
 
     try {
-      const fixCResult = await spawnCoanaDlx(
+      const fixCResult = await spawnCoana(
         [
           'compute-fixes-and-upgrade-purls',
           cwd,
@@ -705,7 +705,7 @@ async function coanaFixWithFacts(
 
     // Apply fix for single GHSA ID.
     // eslint-disable-next-line no-await-in-loop
-    const fixCResult = await spawnCoanaDlx(
+    const fixCResult = await spawnCoana(
       [
         'compute-fixes-and-upgrade-purls',
         cwd,
