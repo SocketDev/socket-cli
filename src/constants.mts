@@ -137,7 +137,6 @@ export type ENV = Remap<
       GITHUB_REPOSITORY: string
       GITHUB_SERVER_URL: string
       GITHUB_TOKEN: string
-      INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: string
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: string
       INLINED_SOCKET_CLI_HOMEPAGE: string
       INLINED_SOCKET_CLI_LEGACY_BUILD: string
@@ -193,6 +192,9 @@ const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
+// The Coana CLI version Socket CLI runs by default. Coana's release workflow
+// rewrites this line in its bump PRs.
+const COANA_CLI_VERSION = '15.12.9'
 const CONFIG_KEY_API_BASE_URL = 'apiBaseUrl'
 const CONFIG_KEY_API_PROXY = 'apiProxy'
 const CONFIG_KEY_API_TOKEN = 'apiToken'
@@ -493,11 +495,6 @@ const LAZY_ENV = () => {
     // workflow.
     // https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#about-the-github_token-secret
     GITHUB_TOKEN,
-    // Comp-time inlined @coana-tech/cli package version.
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']".
-    INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: envAsString(
-      process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'],
-    ),
     // Comp-time inlined @cyclonedx/cdxgen package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']".
     INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: envAsString(
@@ -1145,6 +1142,7 @@ export {
   ALERT_TYPE_MEDIUM_CVE,
   ALERT_TYPE_MILD_CVE,
   API_V0_URL,
+  COANA_CLI_VERSION,
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,

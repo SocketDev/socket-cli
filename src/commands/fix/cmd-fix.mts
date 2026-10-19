@@ -12,6 +12,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
 import constants, {
+  COANA_CLI_VERSION,
   ERROR_UNABLE_RESOLVE_ORG,
   FLAG_ID,
 } from '../../constants.mts'
@@ -73,7 +74,7 @@ const generalFlags: MeowFlags = {
   },
   fixVersion: {
     type: 'string',
-    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
+    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${COANA_CLI_VERSION}.`,
   },
   applyFixes: {
     aliases: ['onlyCompute'],

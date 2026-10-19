@@ -6,7 +6,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { isOmittedReachValue } from './reachability-units.mts'
-import constants from '../../constants.mts'
+import constants, { COANA_CLI_VERSION } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import {
   extractTier1ReachabilityScanId,
@@ -303,9 +303,7 @@ export async function performReachabilityAnalysis(
     }
 
     if (!coanaResult.ok) {
-      const coanaVersion =
-        reachabilityOptions.reachVersion ||
-        constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+      const coanaVersion = reachabilityOptions.reachVersion || COANA_CLI_VERSION
       logger.error(
         `Coana reachability analysis failed. Version: ${coanaVersion}, target: ${analysisTarget}, cwd: ${cwd}`,
       )

@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,18 +6,14 @@ import { it } from 'vitest'
 import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
-import constants, { FLAG_HELP, FLAG_VERSION } from '../src/constants.mts'
+import constants, {
+  COANA_CLI_VERSION,
+  FLAG_HELP,
+  FLAG_VERSION,
+} from '../src/constants.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-// Read Coana version from package.json for test normalization.
-// This is needed because constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
-// is a compile-time value that's empty in the test environment.
-const rootPackageJson = JSON.parse(
-  readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'),
-) as { devDependencies: Record<string, string> }
-const coanaVersion = rootPackageJson.devDependencies['@coana-tech/cli'] ?? ''
 
 // The asciiUnsafeRegexp match characters that are:
 //   * Control characters in the Unicode range:
@@ -57,10 +52,7 @@ function stripZeroWidthSpace(str: string): string {
 
 // Normalize Coana version to a placeholder for stable snapshots.
 function normalizeCoanaVersion(str: string): string {
-  if (!coanaVersion) {
-    return str
-  }
-  return str.replaceAll(coanaVersion, '<coana-version>')
+  return str.replaceAll(COANA_CLI_VERSION, '<coana-version>')
 }
 
 // Normalize CLI banner output for stable snapshots.
