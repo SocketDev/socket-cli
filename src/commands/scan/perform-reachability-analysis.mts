@@ -8,11 +8,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isOmittedReachValue } from './reachability-units.mts'
 import constants, { COANA_CLI_VERSION } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { spawnCoana } from '../../utils/coana-release.mts'
 import {
   extractTier1ReachabilityScanId,
   isReachabilityReportPath,
 } from '../../utils/coana.mts'
-import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
@@ -290,7 +290,7 @@ export async function performReachabilityAnalysis(
 
   try {
     // Run Coana with the manifests tar hash.
-    const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
+    const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
       coanaVersion: reachabilityOptions.reachVersion,
       cwd,
       env: coanaEnv,

@@ -90,6 +90,14 @@ function relativeBlessedPath(filepath) {
   )
 }
 
+// The cache script vendored from coana-package-manager, which coana-release.mts
+// runs with `node`.
+async function copyCoanaCache() {
+  const filepath = path.join(constants.srcPath, 'vendor/coana-cache.mjs')
+  const destPath = path.join(constants.distPath, 'coana-cache.mjs')
+  await fs.copyFile(filepath, destPath)
+}
+
 async function copyInitGradle() {
   const filepath = path.join(constants.srcPath, 'commands/manifest/init.gradle')
   const destPath = path.join(constants.distPath, 'init.gradle')
@@ -534,6 +542,7 @@ export default async () => {
         {
           async writeBundle() {
             await Promise.all([
+              copyCoanaCache(),
               copyInitGradle(),
               copyManifestScripts(),
               copyBashCompletion(),

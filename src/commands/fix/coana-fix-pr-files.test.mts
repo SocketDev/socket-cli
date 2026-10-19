@@ -6,7 +6,7 @@ import { coanaFix } from './coana-fix.mts'
 
 import type { FixConfig } from './types.mts'
 
-const mockSpawnCoanaDlx = vi.hoisted(() => vi.fn())
+const mockSpawnCoana = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
@@ -18,8 +18,8 @@ const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
 const mockGitUntrackedFiles = vi.hoisted(() => vi.fn())
 const mockGitCommit = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/dlx.mts', () => ({
-  spawnCoanaDlx: mockSpawnCoanaDlx,
+vi.mock('../../utils/coana-release.mts', () => ({
+  spawnCoana: mockSpawnCoana,
 }))
 
 vi.mock('../../utils/sdk.mts', () => ({
@@ -117,7 +117,7 @@ describe('socket fix PR mode commits', () => {
     changes: Worktree,
     modifiedFiles: string[] | undefined,
   ): void {
-    mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+    mockSpawnCoana.mockImplementation(async (args: string[]) => {
       worktree = {
         modified: [...new Set([...worktree.modified, ...changes.modified])],
         untracked: [...new Set([...worktree.untracked, ...changes.untracked])],

@@ -16,6 +16,7 @@
       "!**/.vscode",
       "!.claude/worktrees",
       "!**/coverage",
+      "!src/vendor/coana-cache.mjs",
       "!**/package.json",
       "!**/package-lock.json"
     ],

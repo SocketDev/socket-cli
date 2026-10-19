@@ -38,6 +38,13 @@ fi
 2. Find the line `const COANA_CLI_VERSION = '<version>'` and note the version as `CURRENT_VERSION`.
 3. Replace the version on that line with the new one.
 
+Socket CLI downloads that version through the Socket API, so it has to be a
+release Coana published to its GCS bucket, not one that only exists on npm.
+
+Don't edit `src/vendor/coana-cache.mjs`. It is generated in
+coana-package-manager, and Coana's release workflow refreshes it in its own bump
+PRs.
+
 🚨 **Do NOT touch `package.json`'s top-level `version` field.** The release workflow owns it:
 between releases the manifest holds the last released version, and
 `scripts/release/bump.mts` derives and writes the next one in-run. Hand-writing

@@ -8,7 +8,7 @@ import { coanaFix } from './coana-fix.mts'
 
 import type { FixConfig } from './types.mts'
 
-const mockSpawnCoanaDlx = vi.hoisted(() => vi.fn())
+const mockSpawnCoana = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
@@ -23,8 +23,8 @@ const mockGitUntrackedFiles = vi.hoisted(() =>
 const mockGitCommit = vi.hoisted(() => vi.fn())
 const mockGenerateSocketFactsForFix = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/dlx.mts', () => ({
-  spawnCoanaDlx: mockSpawnCoanaDlx,
+vi.mock('../../utils/coana-release.mts', () => ({
+  spawnCoana: mockSpawnCoana,
 }))
 
 vi.mock('../../utils/sdk.mts', () => ({
@@ -86,7 +86,7 @@ vi.mock('./branch-cleanup.mts', () => ({
 const FACTS = '/test/cwd/app/gradle.socket.facts.json'
 
 function coanaCalls(command: string): string[][] {
-  return mockSpawnCoanaDlx.mock.calls
+  return mockSpawnCoana.mock.calls
     .map(call => call[0] as string[])
     .filter(args => args[0] === command)
 }
@@ -139,7 +139,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     mockGetFixEnv.mockResolvedValue({ isCi: false, repoInfo: null })
     mockGitUnstagedModifiedFiles.mockResolvedValue({ ok: true, data: [] })
     mockGitCommit.mockResolvedValue(true)
-    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    mockSpawnCoana.mockResolvedValue({ ok: true, data: '' })
   })
 
   it('uploads the generated facts, restricts Maven artifacts to them and removes them', async () => {
@@ -161,7 +161,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
   })
 
   it('discovers vulnerabilities only through the generated facts', async () => {
-    mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+    mockSpawnCoana.mockImplementation(async (args: string[]) => {
       if (args[0] === 'find-vulnerabilities') {
         await fs.writeFile(
           args[args.indexOf('--output-file') + 1]!,
@@ -249,7 +249,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     })
 
     it('commits the files the fix reports writing', async () => {
-      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+      mockSpawnCoana.mockImplementation(async (args: string[]) => {
         await fs.writeFile(
           args[args.indexOf('--output-file') + 1]!,
           JSON.stringify({
@@ -275,7 +275,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     })
 
     it('commits files the fix creates', async () => {
-      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+      mockSpawnCoana.mockImplementation(async (args: string[]) => {
         await fs.writeFile(
           args[args.indexOf('--output-file') + 1]!,
           JSON.stringify({
