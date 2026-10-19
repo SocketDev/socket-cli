@@ -54,6 +54,25 @@ vi.mock(
   }),
 )
 
+const mockOutputManifest = vi.hoisted(() => vi.fn())
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
+
+vi.mock(
+  import('../../../../../src/command/manifest/output-manifest.mts'),
+  () => ({
+    outputManifest: mockOutputManifest,
+  }),
+)
+vi.mock(
+  import('../../../../../src/util/socket/json.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
+  }),
+)
+
 const importMeta = {
   url: 'file:///cmd-manifest-bazel.test.mts',
 } as ImportMeta
@@ -298,6 +317,49 @@ describe('cmd-manifest-bazel', () => {
       )
       expect(extractBazelToPypi).toHaveBeenCalledTimes(1)
       expect(extractBazelToMaven).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('socket.json trust', () => {
+    const BIN_SOCKET_JSON = {
+      defaults: { manifest: { bazel: { bin: '/socket-json/bazel' } } },
+    }
+
+    it('refuses a socket.json bin without --trust-socket-json', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce(BIN_SOCKET_JSON)
+      await cmdManifestBazel.run(['.'], importMeta, context)
+      expect(extractBazelToMaven).not.toHaveBeenCalled()
+      expect(mockOutputManifest).toHaveBeenCalledWith(
+        expect.objectContaining({ ok: false }),
+        'text',
+        '-',
+      )
+    })
+
+    it('uses a socket.json bin under --trust-socket-json', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce(BIN_SOCKET_JSON)
+      await cmdManifestBazel.run(
+        ['--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
+      expect(mockOutputManifest).not.toHaveBeenCalled()
+      expect(extractBazelToMaven).toHaveBeenCalledWith(
+        expect.objectContaining({ bin: '/socket-json/bazel' }),
+      )
+    })
+
+    it('lets --bazel override a socket.json bin without trust', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce(BIN_SOCKET_JSON)
+      await cmdManifestBazel.run(
+        ['--bazel', '/cli/bazelisk', '.'],
+        importMeta,
+        context,
+      )
+      expect(mockOutputManifest).not.toHaveBeenCalled()
+      expect(extractBazelToMaven).toHaveBeenCalledWith(
+        expect.objectContaining({ bin: '/cli/bazelisk' }),
+      )
     })
   })
 })
