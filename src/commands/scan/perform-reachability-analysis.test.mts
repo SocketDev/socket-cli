@@ -76,9 +76,9 @@ vi.mock('../../utils/terminal-link.mts', () => ({
 }))
 
 vi.mock('../../constants.mts', () => ({
+  COANA_CLI_VERSION: 'test',
   default: {
     DOT_SOCKET_DOT_FACTS_JSON: '.socket.facts.json',
-    ENV: { INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: 'test' },
     HTTP_STATUS_UNAUTHORIZED: 401,
     SOCKET_DEFAULT_BRANCH: 'socket-default-branch',
     SOCKET_DEFAULT_REPOSITORY: 'socket-default-repository',

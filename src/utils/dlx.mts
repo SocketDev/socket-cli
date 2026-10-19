@@ -29,6 +29,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants, {
+  COANA_CLI_VERSION,
   FLAG_QUIET,
   FLAG_SILENT,
   NPM,
@@ -470,8 +471,7 @@ export async function spawnCoanaDlx(
     ...spawnEnv,
   }
 
-  const resolvedVersion =
-    coanaVersion || constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
+  const resolvedVersion = coanaVersion || COANA_CLI_VERSION
 
   // `shadowNpmBase` (the dlx launcher) configures the child's stdio from its
   // `options` arg, NOT from the registry-spawn `extra` arg — the latter only

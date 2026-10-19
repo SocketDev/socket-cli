@@ -1,4 +1,4 @@
-import constants from '../../constants.mts'
+import { COANA_CLI_VERSION } from '../../constants.mts'
 import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
 
 import type { MeowFlags } from '../../flags.mts'
@@ -12,7 +12,7 @@ export const DYNAMIC_SBOM_INFERENCE_DESCRIPTION =
 export const reachabilityFlags: MeowFlags = {
   reachVersion: {
     type: 'string',
-    description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,
+    description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${COANA_CLI_VERSION}.`,
   },
   reachAnalysisMemoryLimit: {
     type: 'string',
