@@ -215,6 +215,26 @@ function _httpsRequestFetch(
   })
 }
 
+/**
+ * The cause for a failed request to `path`, with the explanation the Socket
+ * API gives in its `{ error: { message } }` body when there is one.
+ */
+async function describeApiFailure(
+  response: Response,
+  path: string,
+): Promise<string> {
+  let serverMessage: unknown
+  try {
+    serverMessage = (JSON.parse(await response.text()) as any)?.error?.message
+  } catch {
+    // A body that isn't JSON carries no message.
+  }
+  const reason = await getErrorMessageForHttpStatusCode(response.status)
+  return typeof serverMessage === 'string' && serverMessage
+    ? `${response.statusText}: ${serverMessage} (reason: ${reason}) (path: ${path})`
+    : `${response.statusText} (reason: ${reason}) (path: ${path})`
+}
+
 export async function apiFetch(
   url: string,
   init: ApiFetchInit = {},
@@ -259,7 +279,7 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
 }
 
 // The Socket API server that should be used for operations.
-export function getDefaultApiBaseUrl(): string | undefined {
+export function getDefaultApiBaseUrl(): string {
   const baseUrl =
     constants.ENV.SOCKET_CLI_API_BASE_URL ||
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
@@ -501,10 +521,6 @@ export async function handleApiCallNoSpinner<R extends SocketSdkReturnedResult>(
 
 async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
-  if (!baseUrl) {
-    throw new Error('Socket API base URL is not configured.')
-  }
-
   const url = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`
   const result = await apiFetch(url, {
     method: 'GET',
@@ -601,7 +617,7 @@ export async function queryApiSafeTextWithStatus(
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
+      cause: await describeApiFailure(result, path),
       data: {
         code: status,
       },
@@ -697,14 +713,6 @@ export async function sendApiRequest<T>(
   }
 
   const baseUrl = getDefaultApiBaseUrl()
-  if (!baseUrl) {
-    return {
-      ok: false,
-      message: 'Configuration Error',
-      cause:
-        'Socket API endpoint is not configured. Please check your environment configuration.',
-    }
-  }
 
   const { body, commandPath, description, method } = {
     __proto__: null,
@@ -769,7 +777,7 @@ export async function sendApiRequest<T>(
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
+      cause: await describeApiFailure(result, path),
       data: {
         code: status,
       },
