@@ -9,7 +9,7 @@
  *
  * Package Manager Detection:
  * - Auto-detects npm, pnpm, or yarn based on lockfiles
- * - Supports force-refresh and silent execution modes
+ * - Supports silent execution mode
  *
  * Integration:
  * - Works with shadow binaries for security scanning
@@ -39,7 +39,6 @@ const require = createRequire(import.meta.url)
 const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } = constants
 
 export type DlxOptions = ShadowBinOptions & {
-  force?: boolean | undefined
   agent?: 'npm' | 'pnpm' | 'yarn' | undefined
   silent?: boolean | undefined
 }
@@ -50,15 +49,8 @@ export type DlxPackageSpec = {
 }
 
 /**
- * Regex to check if a version string contains range operators.
- * Matches any version with range operators: ~, ^, >, <, =, x, X, *, spaces, or ||.
- */
-const rangeOperatorsRegExp = /[~^><=xX* ]|\|\|/
-
-/**
  * Spawns a package using dlx-style execution (npx/pnpm dlx/yarn dlx).
  * Automatically detects the appropriate package manager if not specified.
- * Uses force/update flags to ensure the latest version within the range is fetched.
  */
 export async function spawnDlx(
   packageSpec: DlxPackageSpec,
@@ -66,15 +58,7 @@ export async function spawnDlx(
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<ShadowBinResult> {
-  // If version is not pinned exactly, default to force and silent for better UX.
-  const isNotPinned = rangeOperatorsRegExp.test(packageSpec.version)
-
-  const {
-    agent,
-    force = false,
-    silent = isNotPinned,
-    ...shadowOptions
-  } = options ?? {}
+  const { agent, silent = false, ...shadowOptions } = options ?? {}
 
   let finalShadowOptions = shadowOptions
 
@@ -123,18 +107,12 @@ export async function spawnDlx(
     // store, so the project's install hooks are irrelevant to it. pnpm honors
     // this only as a config setting, not as a `dlx` CLI flag, so it must be set
     // via the npm_config_ env var. See: https://pnpm.io/npmrc#settings
-    const pnpmEnv: Record<string, string | undefined> = {
-      ...getOwn(finalShadowOptions, 'env'),
-      npm_config_ignore_pnpmfile: 'true',
-    }
-    if (force) {
-      // Set dlx-cache-max-age to 0 minutes to bypass cache and force a fresh
-      // download. This ensures we always get the latest version within the range.
-      pnpmEnv['npm_config_dlx_cache_max_age'] = '0'
-    }
     finalShadowOptions = {
       ...finalShadowOptions,
-      env: pnpmEnv,
+      env: {
+        ...getOwn(finalShadowOptions, 'env'),
+        npm_config_ignore_pnpmfile: 'true',
+      },
     }
     spawnArgs.push(packageString, ...args)
 
@@ -164,10 +142,6 @@ export async function spawnDlx(
     // Use npm exec/npx.
     // For consistency, we'll use npx which is more commonly used for one-off execution.
     spawnArgs = ['--yes']
-    if (force) {
-      // Use --force to bypass cache and get latest within range.
-      spawnArgs.push('--force')
-    }
     if (silent) {
       spawnArgs.push(FLAG_SILENT)
     }
@@ -192,7 +166,7 @@ export async function spawnCdxgenDlx(
       version: constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
     },
     args,
-    { force: false, silent: true, ...options },
+    { silent: true, ...options },
     spawnExtra,
   )
 }
@@ -211,7 +185,7 @@ export async function spawnSynpDlx(
       version: `${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
     },
     args,
-    { force: false, silent: true, ...options },
+    { silent: true, ...options },
     spawnExtra,
   )
 }

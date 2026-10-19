@@ -106,22 +106,6 @@ describe('utils/dlx', () => {
       expect(spawnArgs[3]).toBe('/some/path')
     })
 
-    it('should default silent to true for pnpm when version is not pinned', async () => {
-      const packageSpec: DlxPackageSpec = {
-        name: '@coana-tech/cli',
-        version: '~1.0.0',
-      }
-
-      await spawnDlx(packageSpec, ['run', '/some/path'], { agent: 'pnpm' })
-
-      expect(mockShadowPnpmBin).toHaveBeenCalledTimes(1)
-      const [spawnArgs] = mockShadowPnpmBin.mock.calls[0]
-
-      // Verify that --silent is automatically added for unpinned versions.
-      expect(spawnArgs[0]).toBe('--silent')
-      expect(spawnArgs[1]).toBe('dlx')
-    })
-
     it('should place --silent after --yes for npm', async () => {
       const packageSpec: DlxPackageSpec = {
         name: '@coana-tech/cli',
@@ -144,32 +128,12 @@ describe('utils/dlx', () => {
       expect(spawnArgs[4]).toBe('/some/path')
     })
 
-    it('should set npm_config_dlx_cache_max_age env var for pnpm when force is true', async () => {
+    it('should set npm_config_ignore_pnpmfile env var for pnpm', async () => {
       const packageSpec: DlxPackageSpec = {
         name: '@coana-tech/cli',
         version: '1.0.0',
       }
 
-      await spawnDlx(packageSpec, ['run', '/some/path'], {
-        agent: 'pnpm',
-        force: true,
-      })
-
-      expect(mockShadowPnpmBin).toHaveBeenCalledTimes(1)
-      const [, options] = mockShadowPnpmBin.mock.calls[0]
-
-      // Verify that the env var is set to force cache bypass.
-      expect(options.env).toBeDefined()
-      expect(options.env.npm_config_dlx_cache_max_age).toBe('0')
-    })
-
-    it('should set npm_config_ignore_pnpmfile env var for pnpm regardless of force', async () => {
-      const packageSpec: DlxPackageSpec = {
-        name: '@coana-tech/cli',
-        version: '1.0.0',
-      }
-
-      // force defaults to false here, exercising the non-force path.
       await spawnDlx(packageSpec, ['run', '/some/path'], { agent: 'pnpm' })
 
       expect(mockShadowPnpmBin).toHaveBeenCalledTimes(1)
@@ -182,7 +146,7 @@ describe('utils/dlx', () => {
       expect(options.env.npm_config_ignore_pnpmfile).toBe('true')
     })
 
-    it('should handle pinned version without silent flag by default', async () => {
+    it('should not add --silent by default', async () => {
       const packageSpec: DlxPackageSpec = {
         name: '@coana-tech/cli',
         version: '1.0.0',
@@ -193,7 +157,6 @@ describe('utils/dlx', () => {
       expect(mockShadowPnpmBin).toHaveBeenCalledTimes(1)
       const [spawnArgs] = mockShadowPnpmBin.mock.calls[0]
 
-      // For pinned versions, silent defaults to false.
       expect(spawnArgs[0]).toBe('dlx')
       expect(spawnArgs[1]).toBe('@coana-tech/cli@1.0.0')
     })
