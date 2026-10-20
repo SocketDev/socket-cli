@@ -194,7 +194,7 @@ const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
 // The Coana CLI version Socket CLI runs by default. Coana's release workflow
 // rewrites this line in its bump PRs.
-const COANA_CLI_VERSION = '15.12.9'
+const COANA_CLI_VERSION = '15.12.10'
 const CONFIG_KEY_API_BASE_URL = 'apiBaseUrl'
 const CONFIG_KEY_API_PROXY = 'apiProxy'
 const CONFIG_KEY_API_TOKEN = 'apiToken'
