@@ -62,7 +62,7 @@ const generalFlags: MeowFlags = {
     type: 'boolean',
     default: false,
     description:
-      "When the only fix for a vulnerability is blocked by a parent package's declared version range, write an override or resolution that forces the fixed version under that parent. This can install a version outside the range the parent declares, so test the parent afterwards. Works for npm, pnpm, Yarn Berry and Rush projects.",
+      "When the only fix for a vulnerability is blocked by a parent package's declared version range, write an override or resolution that forces the fixed version under that parent. This can install a version outside the range the parent declares, so test the parent afterwards. Works for npm, pnpm, Yarn and Rush projects.",
   },
   autopilot: {
     type: 'boolean',
