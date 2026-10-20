@@ -99,14 +99,19 @@ function indexFile(version, component) {
   return join2(cacheRoot(), "versions", versionSegment(version), component);
 }
 async function lookup(version, component) {
-  const sha256 = (await readFile(indexFile(version, component), "utf8").catch(() => "")).trim();
+  const index = indexFile(version, component);
+  const sha256 = (await readFile(index, "utf8").catch(() => "")).trim();
   if (!SHA256.test(sha256)) return void 0;
   const dir = objectDir(sha256);
   const isDirectory = await stat(dir).then(
     (s) => s.isDirectory(),
     () => false
   );
-  return isDirectory ? dir : void 0;
+  if (!isDirectory) return void 0;
+  const now = /* @__PURE__ */ new Date();
+  await utimes(index, now, now).catch(() => writeFileAtomically(index, sha256)).catch(() => {
+  });
+  return dir;
 }
 async function install(version, component, sha256, populate) {
   if (!SHA256.test(sha256)) throw new InvalidCacheKey(`Invalid SHA-256: ${sha256}`);
