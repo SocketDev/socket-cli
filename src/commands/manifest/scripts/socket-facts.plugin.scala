@@ -232,15 +232,15 @@ object SocketFactsPlugin extends AutoPlugin {
             failed.foreach { m =>
               // Absent from the graph: no configuration. Present only in excluded ones: not reported.
               confsByGav.get(gavKey(m)) match {
-                case None        => failures += Failure(coordOf(m), detail, "", ref.project)
-                case Some(confs) => confs.filter(matcher).foreach(c => failures += Failure(coordOf(m), detail, c, ref.project))
+                case None        => failures += Failure(coordOf(m), detailFor(m, detail), "", ref.project)
+                case Some(confs) => confs.filter(matcher).foreach(c => failures += Failure(coordOf(m), detailFor(m, detail), c, ref.project))
               }
             }
             Some((rep, failed.map(gavKey).toSet))
           case Left(_) =>
             // Even a lenient update failed: the whole project is unresolved, but the modules sbt
             // named are still reported.
-            failed.foreach(m => failures += Failure(coordOf(m), detail, "", ref.project))
+            failed.foreach(m => failures += Failure(coordOf(m), detailFor(m, detail), "", ref.project))
             unscannable += Unscannable(detail, ref.project)
             None
         }
@@ -260,6 +260,16 @@ object SocketFactsPlugin extends AutoPlugin {
         }
         copy.invoke(c, args: _*).asInstanceOf[T]
     }
+  }
+
+  // One module's part of a batch resolve message, so records grow with the failure count, not its
+  // square: Coursier writes an indented "Error downloading org:name:rev" block per module, Ivy a line.
+  private def detailFor(m: ModuleID, batch: String): String = {
+    val lines = batch.split("\n").toList
+    val keys = Seq(coordOf(m), s"${orEmpty(m.organization)}#${orEmpty(m.name)};${orEmpty(m.revision)}")
+    val start = lines.indexWhere(l => keys.exists(k => l.contains(k)))
+    if (start < 0) lines.map(_.trim).find(_.nonEmpty).getOrElse(batch)
+    else (lines(start) :: lines.drop(start + 1).takeWhile(l => l.startsWith(" ") || l.startsWith("\t"))).mkString("\n").trim
   }
 
   private def incompleteMessage(inc: sbt.Incomplete): String = {

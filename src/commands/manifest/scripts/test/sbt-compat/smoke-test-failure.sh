@@ -3,7 +3,7 @@
 # rest of the project down with it. ok must still be emitted; every module named in a failure record
 # must be absent from the nodes. Which modules sbt names depends on its resolver: Ivy (sbt 0.13) names
 # the declared dependencies whose parent POM is missing (lib, testlib), coursier (sbt 1.3+) names the
-# missing parent POM itself; both name ghost.
+# missing parent POM itself; both name ghost. Each failure's detail is its own module's message.
 #
 # Usage: smoke-test-failure.sh <sbt-version> <scala-version>
 set -euo pipefail
@@ -54,7 +54,8 @@ python3 - "$RECORDS" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 nodes = {f"{r[3]}:{r[4]}:{r[5]}" for r in rows if r[0] == 'node'}
-failed = {r[1] for r in rows if r[0] == 'failure'}
+failure_rows = [r for r in rows if r[0] == 'failure']
+failed = {r[1] for r in failure_rows}
 unscannable = [r[1:] for r in rows if r[0] == 'unscannable']
 errors = []
 
@@ -67,6 +68,12 @@ if not ({'demo.fail:lib:1.0', 'demo.fail:testlib:1.0'} <= failed or 'demo.fail:m
 emitted = failed & nodes
 if emitted:
     errors.append(f"reported failures must not be emitted as nodes: {sorted(emitted)}")
+# Each failure carries its own module's message, not the whole batch.
+for r in failure_rows:
+    for other in failed - {r[1]}:
+        org, name, rev = other.split(':')
+        if any(k in r[2] for k in (f"{org}:{name}:{rev}", f"{org}#{name};{rev}", f"/{name}/{rev}/")):
+            errors.append(f"{r[1]}'s detail also describes {other}: {r[2][:200]}")
 if unscannable:
     errors.append(f"the failures name their modules, so the project must not be unscannable: {unscannable}")
 
