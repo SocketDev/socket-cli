@@ -464,13 +464,14 @@ allprojects { project ->
               coord : "${sel.group}:${sel.name}${sel.version ? ':' + sel.version : ''}".toString(),
               detail: rawDetail(dep.problem),
               config: cfg.name,
+              project: project.path,
             ]
           }
         } catch (Exception e) {
           // A config-LEVEL resolution failure (a resolutionStrategy/beforeResolve rule that throws,
           // an artifact-transform failure, a broken repository, ...) rather than a per-dep failure.
           // Record it instead of swallowing; the build still exits cleanly and the TS layer surfaces it.
-          state.unscannable << [config: cfg.name, detail: rawDetail(e)]
+          state.unscannable << [config: cfg.name, detail: rawDetail(e), project: project.path]
         }
         // Stash this resolution root's tree; the key only has to be unique per root. Skip empty
         // configs — they'd contribute nothing.
@@ -549,10 +550,10 @@ rootProject { rp ->
       scanned.each { name -> rec(['scanned', name]) }
       def failures
       synchronized (state.failures) { failures = new ArrayList(state.failures) }
-      failures.each { f -> rec(['failure', f.coord, f.detail, f.config]) }
+      failures.each { f -> rec(['failure', f.coord, f.detail, f.config, f.project]) }
       def unscannable
       synchronized (state.unscannable) { unscannable = new ArrayList(state.unscannable) }
-      unscannable.each { u -> rec(['unscannable', u.config, u.detail]) }
+      unscannable.each { u -> rec(['unscannable', u.config, u.detail, u.project]) }
 
       def outFile = new File(recordsFileOverride ?: defaultRecordsFile)
       outFile.parentFile?.mkdirs()

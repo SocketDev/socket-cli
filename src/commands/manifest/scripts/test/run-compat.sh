@@ -86,6 +86,7 @@ run_maven() {
     bash "$HERE/maven-compat/smoke-test-workspaces.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-repo-inheritance.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-duplicate-failure.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-graph-failure.sh" "$dir/bin/mvn" "$jar"
   done
 }
 
@@ -102,6 +103,7 @@ run_sbt() {
     use_jdk "$java"
     bash "$HERE/sbt-compat/smoke-test.sh" "$ver" "$scala"
     bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
+    bash "$HERE/sbt-compat/smoke-test-failure.sh" "$ver" "$scala"
   done
 }
 

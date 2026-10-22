@@ -22,6 +22,7 @@ import {
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
+import { warnSocketJsonOnlyFlags } from './warn-socket-json-only-flags.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -350,6 +351,8 @@ async function run(
   const reachEcosystems = parseReachEcosystems(
     cmdFlagValueToArray(cli.flags['reachEcosystems']),
   )
+
+  warnSocketJsonOnlyFlags(cli.flags, `${parentName} ${CMD_NAME}`)
 
   const dryRun = !!cli.flags['dryRun']
   const uvMembers = !!cli.flags['uvMembers']

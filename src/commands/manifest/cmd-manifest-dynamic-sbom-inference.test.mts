@@ -34,6 +34,7 @@ describe('socket manifest dynamic-sbom-inference', async () => {
 
           Options
             --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
+            --ignore-unresolved  Warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts files); overrides each build's socket.json setting
             --json              Output as JSON
             --markdown          Output as Markdown
             --verbose           Print debug messages

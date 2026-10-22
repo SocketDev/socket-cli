@@ -27,6 +27,11 @@ const config: CliCommandConfig = {
     ...commonFlags,
     ...outputFlags,
     ...excludePathsFlag,
+    ignoreUnresolved: {
+      type: 'boolean',
+      description:
+        "Warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts files); overrides each build's socket.json setting",
+    },
     verbose: {
       type: 'boolean',
       default: false,
@@ -76,11 +81,13 @@ async function run(
 
   const {
     dryRun,
+    ignoreUnresolved,
     json,
     markdown,
     verbose: verboseFlag,
   } = cli.flags as {
     dryRun: boolean
+    ignoreUnresolved: boolean | undefined
     json: boolean
     markdown: boolean
     verbose: boolean | undefined
@@ -134,6 +141,7 @@ async function run(
   await handleManifestDynamicSbomInference({
     cwd,
     excludePaths,
+    ignoreUnresolved,
     outputKind,
     verbose,
   })

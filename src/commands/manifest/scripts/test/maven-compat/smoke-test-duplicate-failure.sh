@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # Regression guard: an unresolvable dependency shared by several reactor modules must be reported as
-# what it is — a per-artifact resolution failure — and must never be reported as a module-level
-# `graph` failure, which would claim the dependency graph itself could not be built.
+# what it is — a per-artifact resolution failure — and must never be reported as a whole-module
+# failure, which would claim the dependency graph itself could not be built.
 #
 # Every module inherits the same missing dependency and the same repository list, so every module's
-# failure carries an identical message. The accumulator is a value-equality set shared across the
-# whole reactor, so those identical failures collapse into one entry — and a fail-closed check that
-# asks "did this module add anything?" by comparing set sizes concludes, wrongly, that the module
-# reported nothing and invents a `graph` failure for it.
+# failure carries an identical message. A fail-closed check that asks "did this module add
+# anything?" by comparing the size of a reactor-wide value-equality set would conclude, wrongly,
+# that the module reported nothing and invent a whole-module failure for it.
 #
 # Runs offline: the missing artifact is never looked for in a remote repository, so this needs no
 # stub repo and never touches the network.

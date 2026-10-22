@@ -3,9 +3,9 @@ import type {
   ResolutionDialect,
 } from './resolution-report-render.mts'
 
-// Maven's resolver (Aether/maven-resolver): no attribute-based variants. Two
-// failure shapes (artifact-resolution miss with config = scope, dependency-graph
-// build failure with config = "graph") both classify off the root-cause message.
+// Maven's resolver (Aether/maven-resolver): no attribute-based variants. Both
+// failure shapes (artifact-resolution miss, dependency-graph build failure)
+// classify off the root-cause message.
 export function classifyMavenFailure(detail: string): FailureCategory {
   const t = (detail || '').toLowerCase()
   if (

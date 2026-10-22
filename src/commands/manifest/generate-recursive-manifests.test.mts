@@ -503,7 +503,10 @@ describe('generateRecursiveManifests', () => {
       projects: [],
     }))
 
-    await generateRecursiveManifests({ cwd: monorepo, verbose: false })
+    await generateRecursiveManifests({
+      cwd: monorepo,
+      verbose: false,
+    })
 
     const javaHomeByCall = new Map(
       vi
@@ -534,7 +537,10 @@ describe('generateRecursiveManifests', () => {
       projects: [],
     }))
 
-    await generateRecursiveManifests({ cwd: monorepo, verbose: false })
+    await generateRecursiveManifests({
+      cwd: monorepo,
+      verbose: false,
+    })
 
     const call = vi
       .mocked(runManifestFacts)
@@ -543,6 +549,97 @@ describe('generateRecursiveManifests', () => {
       )
     expect(call?.[0].excludeConfigs).toBe('')
     expect(call?.[0].javaHome).toBeUndefined()
+  })
+
+  it("honors a build root's own socket.json verbose and points hints at it", async () => {
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, _boundaryDir, fallback) =>
+        dir === dualMarkerDir
+          ? { defaults: { manifest: { maven: { verbose: true } } } }
+          : fallback,
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+
+    await generateRecursiveManifests({ cwd: monorepo, verbose: false })
+
+    const calls = vi.mocked(runManifestFacts).mock.calls.map(([opts]) => opts)
+    const verboseByCall = new Map(
+      calls.map(opts => [`${opts.ecosystem}:${relOf(opts.cwd)}`, opts.verbose]),
+    )
+    expect(verboseByCall.get('maven:dual-marker-dir')).toBe(true)
+    expect(verboseByCall.get('gradle:dual-marker-dir')).toBe(false)
+    const hints = calls.find(
+      opts =>
+        `${opts.ecosystem}:${relOf(opts.cwd)}` === 'maven:dual-marker-dir',
+    )?.hints
+    expect(hints?.flags.size).toBe(0)
+    expect(hints?.socketJson).toBe(
+      path.join(path.relative(process.cwd(), dualMarkerDir), 'socket.json'),
+    )
+  })
+
+  it.each([true, false])(
+    'lets an explicit ignoreUnresolved (%s) override every build root socket.json',
+    async ignoreUnresolved => {
+      vi.mocked(readSocketJsonCascade).mockImplementation(
+        (dir, _boundaryDir, fallback) =>
+          dir === dualMarkerDir
+            ? {
+                defaults: {
+                  manifest: { maven: { ignoreUnresolved: !ignoreUnresolved } },
+                },
+              }
+            : fallback,
+      )
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+        factsPath: path.join(cwd, '.socket.facts.json'),
+        projects: [],
+      }))
+
+      await generateRecursiveManifests({
+        cwd: monorepo,
+        ignoreUnresolved,
+        verbose: false,
+      })
+
+      const calls = vi.mocked(runManifestFacts).mock.calls.map(([opts]) => opts)
+      expect(calls.length).toBeGreaterThan(1)
+      expect(
+        calls.every(opts => opts.ignoreUnresolved === ignoreUnresolved),
+      ).toBe(true)
+    },
+  )
+
+  it("falls back to each build root's socket.json ignoreUnresolved when not overridden", async () => {
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, _boundaryDir, fallback) =>
+        dir === dualMarkerDir
+          ? { defaults: { manifest: { maven: { ignoreUnresolved: true } } } }
+          : fallback,
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+
+    await generateRecursiveManifests({
+      cwd: monorepo,
+      verbose: false,
+    })
+
+    const ignoreByCall = new Map(
+      vi
+        .mocked(runManifestFacts)
+        .mock.calls.map(([opts]) => [
+          `${opts.ecosystem}:${relOf(opts.cwd)}`,
+          opts.ignoreUnresolved,
+        ]),
+    )
+    expect(ignoreByCall.get('maven:dual-marker-dir')).toBe(true)
+    expect(ignoreByCall.get('maven:reactor')).toBe(false)
   })
 
   it('skips (with a warning) a resolved config that sets facts: false, never invoking the build tool', async () => {
@@ -832,7 +929,10 @@ describe('generateRecursiveManifests', () => {
         },
       )
 
-      await generateRecursiveManifests({ cwd: outer, verbose: false })
+      await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
 
       expect(tmpDirsSeen['sbt']).toHaveLength(2)
       expect(tmpDirsSeen['sbt']![0]).toBeDefined()
@@ -853,7 +953,10 @@ describe('generateRecursiveManifests', () => {
         projects: [],
       }))
 
-      await generateRecursiveManifests({ cwd: outer, verbose: false })
+      await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
 
       expect(
         vi.mocked(runManifestFacts).mock.calls[0]?.[0].tmpDir,

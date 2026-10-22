@@ -7,17 +7,21 @@ import type { CResult, OutputKind } from '../../types.mts'
 export async function handleManifestDynamicSbomInference({
   cwd,
   excludePaths,
+  ignoreUnresolved,
   outputKind,
   verbose,
 }: {
   cwd: string
   excludePaths: string[]
+  ignoreUnresolved?: boolean | undefined
   outputKind: OutputKind
   verbose: boolean
 }): Promise<void> {
   const outcomes = await generateRecursiveManifests({
     cwd,
     excludePaths,
+    ignoreUnresolved,
+    optionFlags: new Set(['ignoreUnresolved', 'verbose']),
     verbose,
   })
 

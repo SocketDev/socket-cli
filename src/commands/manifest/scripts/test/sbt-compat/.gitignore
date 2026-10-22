@@ -7,3 +7,8 @@ project/scala-version.sbt
 project/records.tsv
 project/workspaces-records.tsv
 project/target
+failure/localrepo/
+failure/target/
+failure/project/
+failure/scala-version.sbt
+failure/records.tsv

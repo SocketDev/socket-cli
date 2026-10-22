@@ -1,7 +1,4 @@
-import type {
-  ResolutionFailure,
-  UnscannableConfig,
-} from './resolution-report.mts'
+import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 
 // Line-protocol the build-tool scripts emit to a records file (NOT stdout — sbt
 // prints unsilenceable resolution noise there). One record per line, fields
@@ -21,8 +18,8 @@ import type {
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)
 //   scanned     config
-//   failure     coord  detail  config
-//   unscannable config  detail
+//   failure     coord  detail  config  projectKey   (config empty: no configuration)
+//   unscannable config  detail  projectKey          (config empty: whole project)
 //
 // `projectKey` is the tool's unique project identity (Maven: GAV; Gradle:
 // project path; sbt: project id), emitted as the project id; a `node` whose
@@ -84,7 +81,7 @@ export type ParsedRecords = {
   roots: Map<string, RawRoot>
   scannedConfigs: string[]
   failures: ResolutionFailure[]
-  unscannable: UnscannableConfig[]
+  unscannable: Unscannable[]
 }
 
 export function unescapeField(s: string): string {
@@ -247,14 +244,16 @@ export function parseRecords(text: string): ParsedRecords {
             coord: f[1],
             detail: f[2] ?? '',
             config: f[3] ?? '',
+            project: f[4] ?? '',
           })
         }
         break
       case 'unscannable':
-        if (f[1]) {
+        if (f[1] || f[3]) {
           result.unscannable.push({
-            config: f[1],
+            config: f[1] ?? '',
             detail: f[2] ?? '',
+            project: f[3] ?? '',
           })
         }
         break

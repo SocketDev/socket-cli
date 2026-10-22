@@ -432,7 +432,7 @@ function buildArtifactPaths(
 function buildReport(parsed: ParsedRecords): ResolutionReport {
   const seen = new Set<string>()
   const failures = parsed.failures.filter(f => {
-    const key = `${f.coord}|${f.detail}|${f.config}`
+    const key = `${f.coord}|${f.detail}|${f.config}|${f.project}`
     if (seen.has(key)) {
       return false
     }
@@ -441,7 +441,7 @@ function buildReport(parsed: ParsedRecords): ResolutionReport {
   })
   const seenUnscannable = new Set<string>()
   const unscannable = parsed.unscannable.filter(u => {
-    const key = `${u.config}|${u.detail}`
+    const key = `${u.config}|${u.detail}|${u.project}`
     if (seenUnscannable.has(key)) {
       return false
     }

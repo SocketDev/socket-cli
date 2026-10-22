@@ -1,5 +1,6 @@
 import { runManifestFacts } from './run-manifest-facts.mts'
 
+import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 // Generates `sbt.socket.facts.json` for an sbt project via the bundled sbt plugin.
@@ -10,6 +11,7 @@ export async function convertSbtToFacts({
   cwd,
   excludeConfigs,
   excludePaths,
+  hints,
   ignoreUnresolved,
   includeConfigs,
   javaHome,
@@ -23,6 +25,7 @@ export async function convertSbtToFacts({
   cwd: string
   excludeConfigs: string
   excludePaths?: string[] | undefined
+  hints?: BuildOptionHints | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome?: string | undefined
@@ -40,6 +43,7 @@ export async function convertSbtToFacts({
     ecosystem: 'sbt',
     excludeConfigs,
     excludePaths,
+    hints,
     ignoreUnresolved,
     includeConfigs,
     javaHome,

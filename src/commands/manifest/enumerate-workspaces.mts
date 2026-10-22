@@ -67,10 +67,7 @@ export async function enumerateWorkspaces({
   } catch (e) {
     process.exitCode = 1
     logger.fail(
-      `Could not run the ${ecosystem} build tool` +
-        (verbose
-          ? `: ${getErrorMessageOr(e, String(e))}`
-          : ' (run with --verbose for details).'),
+      `Could not run the ${ecosystem} build tool: ${getErrorMessageOr(e, String(e))}`,
     )
     return
   }

@@ -11,6 +11,7 @@ import {
 } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
+import { warnSocketJsonOnlyFlags } from './warn-socket-json-only-flags.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -138,6 +139,8 @@ async function run(
     importMeta,
     parentName,
   })
+
+  warnSocketJsonOnlyFlags(cli.flags, `${parentName} ${CMD_NAME}`)
 
   const {
     cwd: cwdOverride,

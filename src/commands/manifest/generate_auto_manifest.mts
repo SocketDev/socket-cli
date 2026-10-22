@@ -21,11 +21,19 @@ import { InputError } from '../../utils/errors.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
+import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type {
   ResolvedPathsSidecar,
   SidecarAccumulator,
 } from './scripts/sidecar.mts'
 import type { OutputKind } from '../../types.mts'
+
+// Auto-manifest reads every build option from the root socket.json.
+const AUTO_MANIFEST_HINTS: BuildOptionHints = {
+  flags: new Set(),
+  setupCommand: 'socket manifest setup',
+  socketJson: SOCKET_JSON,
+}
 
 export type GenerateAutoManifestResult = {
   generatedFiles: string[]
@@ -111,6 +119,7 @@ export async function generateAutoManifest({
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined,
+        hints: AUTO_MANIFEST_HINTS,
         sidecarAcc,
         tmpDir,
         withFiles: computeArtifactsSidecar,
@@ -157,6 +166,7 @@ export async function generateAutoManifest({
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined,
+        hints: AUTO_MANIFEST_HINTS,
         sidecarAcc,
         withFiles: computeArtifactsSidecar,
       })
@@ -190,6 +200,7 @@ export async function generateAutoManifest({
       mavenOpts: parseBuildToolOpts(
         sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
       ),
+      hints: AUTO_MANIFEST_HINTS,
       sidecarAcc,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
       withFiles: computeArtifactsSidecar,

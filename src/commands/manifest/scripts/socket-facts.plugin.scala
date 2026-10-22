@@ -4,7 +4,6 @@ import sbt._
 import sbt.Keys._
 
 import scala.collection.mutable
-import scala.reflect.ClassTag
 
 /**
  * Emits a flat line-protocol RECORDS file at the build root (NOT the final
@@ -16,7 +15,7 @@ import scala.reflect.ClassTag
  *
  * Must compile on Scala 2.10/sbt 0.13 and Scala 2.12/sbt 1.x (compiled by the sbt
  * meta-build), hence string-named TaskKeys and reflection for version-specific
- * ExclusionRule / ResolveException / ConfigRef shapes.
+ * UpdateConfiguration / ResolveException / ConfigRef shapes.
  */
 object SocketFactsPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -57,6 +56,7 @@ object SocketFactsPlugin extends AutoPlugin {
       // One tree per resolution root (project, config); the TS assembler merges them path-sensitively.
       val perSub = mutable.LinkedHashMap.empty[String, RootTree]
       val failures = mutable.LinkedHashSet.empty[Failure]
+      val unscannable = mutable.LinkedHashSet.empty[Unscannable]
       val scannedConfigs = mutable.LinkedHashSet.empty[String]
       val matcher = buildConfigMatcher()
 
@@ -65,8 +65,8 @@ object SocketFactsPlugin extends AutoPlugin {
 
       allRefs.foreach { ref =>
         if (!isExcludedRef(ref)) {
-          runUpdateResilient(updateTaskName, ref, extracted, st, failures).foreach { report =>
-            foldReport(report, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts).foreach {
+          runUpdateResilient(updateTaskName, ref, extracted, st, matcher, failures, unscannable).foreach { case (report, unresolved) =>
+            foldReport(report, unresolved, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts).foreach {
               case (rootKey, tree) => perSub(rootKey) = tree
             }
           }
@@ -140,7 +140,8 @@ object SocketFactsPlugin extends AutoPlugin {
 
       // Scanned configs + raw failures (Coana owns the abort/warn policy and report rendering).
       scannedConfigs.toList.sorted.foreach(c => rec("scanned", c))
-      failures.foreach(f => rec("failure", f.coord, f.detail, f.config))
+      failures.foreach(f => rec("failure", f.coord, f.detail, f.config, f.project))
+      unscannable.foreach(u => rec("unscannable", "", u.detail, u.project))
 
       val recordsFile = sys.props.get("socket.recordsFile").filter(_.nonEmpty) match {
         case Some(p) => new File(p)
@@ -193,36 +194,78 @@ object SocketFactsPlugin extends AutoPlugin {
     }.toMap
   }
 
-  // On a hard resolve failure, record the failed modules and retry once with them excluded. Never throws.
+  // When a failure names modules, a lenient (missingOk) retry keeps everything else and, where the
+  // resolver still places a failed module, its configurations. Failed modules are reported, not emitted.
   private def runUpdateResilient(
       taskName: String,
       ref: ProjectRef,
       extracted: Extracted,
       state: State,
-      failures: mutable.LinkedHashSet[Failure]
-  ): Option[UpdateReport] = {
+      matcher: String => Boolean,
+      failures: mutable.LinkedHashSet[Failure],
+      unscannable: mutable.LinkedHashSet[Unscannable]
+  ): Option[(UpdateReport, Set[String])] = {
     val key = TaskKey[UpdateReport](taskName)
 
-    def runOn(st: State): Either[Seq[ModuleID], UpdateReport] =
+    def runOn(st: State): Either[(Seq[ModuleID], String), UpdateReport] =
       Project.runTask(key.in(ref).scopedKey, st) match {
         case Some((_, sbt.Value(rep))) => Right(rep)
-        case Some((_, sbt.Inc(inc)))   => Left(extractFailedModules(inc))
-        case _                         => Left(Nil)
+        case Some((_, sbt.Inc(inc)))   => Left((extractFailedModules(inc), incompleteMessage(inc)))
+        case _                         => Left((Nil, s"$taskName did not run"))
       }
 
     runOn(state) match {
-      case Right(rep) => Some(rep)
-      case Left(failed) =>
-        failed.foreach { m =>
-          failures += Failure(coordOf(m), "unresolved dependency", taskName)
+      case Right(rep) => Some((rep, Set.empty[String]))
+      case Left((failed, detail)) if failed.isEmpty =>
+        unscannable += Unscannable(detail, ref.project)
+        None
+      case Left((failed, detail)) =>
+        val lenient = extracted.append(Seq(updateConfiguration.in(ref) ~= (c => withMissingOk(c))), state)
+        runOn(lenient) match {
+          case Right(rep) =>
+            val confsByGav = mutable.HashMap.empty[String, mutable.LinkedHashSet[String]]
+            rep.configurations.foreach { cr =>
+              cr.modules.foreach { r =>
+                if (!r.evicted) confsByGav.getOrElseUpdate(gavKey(r.module), mutable.LinkedHashSet.empty[String]) += confName(cr)
+              }
+            }
+            failed.foreach { m =>
+              // Absent from the graph: no configuration. Present only in excluded ones: not reported.
+              confsByGav.get(gavKey(m)) match {
+                case None        => failures += Failure(coordOf(m), detail, "", ref.project)
+                case Some(confs) => confs.filter(matcher).foreach(c => failures += Failure(coordOf(m), detail, c, ref.project))
+              }
+            }
+            Some((rep, failed.map(gavKey).toSet))
+          case Left(_) =>
+            // Even a lenient update failed: the whole project is unresolved, but the modules sbt
+            // named are still reported.
+            failed.foreach(m => failures += Failure(coordOf(m), detail, "", ref.project))
+            unscannable += Unscannable(detail, ref.project)
+            None
         }
-        if (failed.isEmpty) None
-        else
-          runOn(extracted.append(exclusionSettings(extracted, failed), state)) match {
-            case Right(rep) => Some(rep)
-            case Left(_)    => None
-          }
     }
+  }
+
+  // UpdateConfiguration has `withMissingOk` on sbt 1.x; on 0.13 its only Boolean field is missingOk.
+  private def withMissingOk[T](c: T): T = {
+    val cls = c.getClass
+    try cls.getMethod("withMissingOk", classOf[Boolean]).invoke(c, java.lang.Boolean.TRUE).asInstanceOf[T]
+    catch {
+      case _: NoSuchMethodException =>
+        val copy = cls.getMethods.find(_.getName == "copy").get
+        val args = copy.getParameterTypes.zipWithIndex.map { case (t, i) =>
+          if (t == classOf[Boolean]) java.lang.Boolean.TRUE
+          else cls.getMethod("copy$default$" + (i + 1)).invoke(c)
+        }
+        copy.invoke(c, args: _*).asInstanceOf[T]
+    }
+  }
+
+  private def incompleteMessage(inc: sbt.Incomplete): String = {
+    def first(i: sbt.Incomplete): Option[String] =
+      i.directCause.flatMap(ex => Option(ex.getMessage)).orElse(i.causes.view.flatMap(first).headOption)
+    first(inc).map(_.trim).filter(_.nonEmpty).getOrElse("unresolved dependency")
   }
 
   // Reflection: ResolveException's package and the `failed` accessor differ between sbt 0.13 and 1.x.
@@ -244,35 +287,10 @@ object SocketFactsPlugin extends AutoPlugin {
     out.toList.distinct
   }
 
-  // ExclusionRule constructor shape differs between sbt 0.13 (`sbt.ExclusionRule`) and 1.x (`sbt.SbtExclusionRule`).
-  private def exclusionSettings(extracted: Extracted, failed: Seq[ModuleID]): Seq[Setting[_]] = {
-    val cls: Class[_] =
-      try Class.forName("sbt.SbtExclusionRule")
-      catch { case _: ClassNotFoundException => classOf[sbt.ExclusionRule] }
-
-    def rule(m: ModuleID): Any =
-      if (cls.getName.contains("SbtExclusionRule")) {
-        cls.getConstructors.find(_.getParameterCount == 5) match {
-          case Some(ctor) =>
-            ctor.newInstance(m.organization, m.name, "*", Seq(), sbt.CrossVersion.Disabled)
-          case None =>
-            throw new IllegalStateException("No suitable SbtExclusionRule constructor")
-        }
-      } else ExclusionRule(organization = m.organization, name = m.name)
-
-    def castSeq[T](xs: Seq[Any])(implicit ct: ClassTag[T]): Seq[T] = xs.map(_.asInstanceOf[T])
-
-    extracted.structure.allProjectRefs.map { ref =>
-      excludeDependencies.in(ref) := {
-        val original = excludeDependencies.in(ref).value
-        castSeq(original ++ failed.map(rule))(ClassTag(cls))
-      }
-    }
-  }
-
   // Fold one project's UpdateReport into one tree per configuration (rootKey -> tree), keyed by coordinate.
   private def foldReport(
       report: UpdateReport,
+      unresolved: Set[String],
       ref: ProjectRef,
       extracted: Extracted,
       matcher: String => Boolean,
@@ -287,7 +305,7 @@ object SocketFactsPlugin extends AutoPlugin {
     // Build modules come from the build structure instead: lm-coursier lists every inter-project
     // dependency in every configuration, and cross-versioning can merge distinct ones.
     def emittable(m: ModuleReport): Boolean =
-      !m.evicted && !moduleExts.contains(gavKey(m.module))
+      !m.evicted && !moduleExts.contains(gavKey(m.module)) && !unresolved.contains(gavKey(m.module))
 
     def confsOf(r: ProjectRef): Seq[Configuration] = extracted.getOpt(ivyConfigurations.in(r)).getOrElse(Nil)
     val buildDeps = extracted.get(buildDependencies)
@@ -568,7 +586,10 @@ object SocketFactsPlugin extends AutoPlugin {
     else v.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r")
   }
 
-  private final case class Failure(coord: String, detail: String, config: String)
+  // Empty `config`: the failure belongs to no configuration.
+  private final case class Failure(coord: String, detail: String, config: String, project: String)
+
+  private final case class Unscannable(detail: String, project: String)
 
   private final case class Coord(
       org: String,
