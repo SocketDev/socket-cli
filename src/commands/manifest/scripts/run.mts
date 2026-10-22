@@ -55,7 +55,8 @@ export type ManifestRunResult = {
   factsFileName: string | undefined
   report: ResolutionReport
   artifactPaths: ResolvedArtifactPaths
-  // Captured build-tool output (empty when stdio is 'inherit').
+  // Captured build-tool output (empty when stdio is 'inherit', which streams it
+  // to stderr).
   stderr: string
   stdout: string
 }
@@ -83,6 +84,10 @@ function manifestScriptsPath(...parts: string[]): string {
   return path.join(constants.distPath, 'manifest-scripts', ...parts)
 }
 
+// Streamed build output is a diagnostic: it goes to stderr so the command's own
+// stdout (e.g. --json) stays machine-readable.
+const STREAM_TO_STDERR = ['inherit', 2, 'inherit'] as const
+
 // Don't throw on a non-zero exit: the script emits failure records, so a usable
 // records file still exists. A non-exit spawn error (e.g. missing executable)
 // propagates.
@@ -94,7 +99,7 @@ async function runNeverThrow(
   try {
     const result = await spawn(bin, args, {
       cwd: opts.projectDir,
-      stdio: opts.stdio ?? 'inherit',
+      stdio: opts.stdio === 'pipe' ? 'pipe' : [...STREAM_TO_STDERR],
       ...(opts.env ? { env: opts.env } : {}),
       ...(opts.signal ? { signal: opts.signal } : {}),
     })
