@@ -28,6 +28,8 @@ import type { StdioOptions } from 'node:child_process'
 export type ReachabilityOptions = {
   dynamicSbomInference: boolean
   excludePaths: string[]
+  // GHSA IDs. Empty means all advisories.
+  reachAdvisories: string[]
   reachAnalysisMemoryLimit: string
   reachAnalysisTimeout: string
   reachConcurrency: number
@@ -253,6 +255,9 @@ export async function performReachabilityAnalysis(
     // Empty reachEcosystems implies scanning all ecosystems.
     ...(reachabilityOptions.reachEcosystems.length
       ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
+      : []),
+    ...(reachabilityOptions.reachAdvisories.length
+      ? ['--ghsas', ...reachabilityOptions.reachAdvisories]
       : []),
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]

@@ -14,6 +14,12 @@ export const reachabilityFlags: MeowFlags = {
     type: 'string',
     description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${COANA_CLI_VERSION}.`,
   },
+  reachAdvisories: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'List of advisories to run reachability analysis for, as GHSA or CVE IDs, either as a comma separated value or as multiple flags. CVE IDs are converted to GHSA IDs through the GitHub API. Vulnerabilities from other advisories get unknown reachability. Defaults to all advisories.',
+  },
   reachAnalysisMemoryLimit: {
     type: 'string',
     default: '8192',

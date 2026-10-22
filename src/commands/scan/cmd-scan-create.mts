@@ -10,6 +10,7 @@ import {
 } from './generate-uv-member-sboms.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
+import { resolveReachAdvisories } from './reach-advisories.mts'
 import {
   DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
   excludePathsFlag,
@@ -523,7 +524,11 @@ async function run(
 
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
+  const reachAdvisoriesRaw = cmdFlagValueToArray(cli.flags['reachAdvisories'])
+
   // Validation helpers for better readability.
+  const hasReachAdvisories = reachAdvisoriesRaw.length > 0
+
   const hasReachEcosystems = reachEcosystems.length > 0
 
   const hasReachExcludePaths = reachExcludePaths.length > 0
@@ -559,6 +564,7 @@ async function run(
   )
 
   const isUsingAnyReachabilityFlags =
+    hasReachAdvisories ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
     isUsingAnyBooleanReachFlag ||
@@ -666,6 +672,10 @@ async function run(
     return
   }
 
+  const reachAdvisories = reach
+    ? await resolveReachAdvisories(reachAdvisoriesRaw)
+    : []
+
   await handleCreateNewScan({
     autoManifest: Boolean(autoManifest),
     branchName: branchName as string,
@@ -685,6 +695,7 @@ async function run(
     reach: {
       dynamicSbomInference: Boolean(dynamicSbomInference),
       excludePaths,
+      reachAdvisories,
       reachAnalysisMemoryLimit,
       reachAnalysisTimeout,
       reachConcurrency: Number(reachConcurrency),
