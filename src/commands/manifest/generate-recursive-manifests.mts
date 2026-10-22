@@ -53,6 +53,12 @@ export type EcosystemBuildConfig = {
   verbose: boolean
 }
 
+// Relative to the user's shell when inside it, else absolute.
+function displayPath(file: string): string {
+  const rel = path.relative(process.cwd(), file)
+  return rel.startsWith('..') || path.isAbsolute(rel) ? file : rel
+}
+
 // A cascaded (not just root-level) disabled additionally skips this one build
 // root here, on top of its existing root-only ecosystem-wide meaning for
 // auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
@@ -175,7 +181,7 @@ async function runEcosystemCandidates({
         hints: {
           flags: optionFlags,
           setupCommand: DSI_SETUP_COMMAND,
-          socketJson: path.join(path.relative(process.cwd(), dir), SOCKET_JSON),
+          socketJson: displayPath(path.join(dir, SOCKET_JSON)),
         },
         ignoreUnresolved: ignoreUnresolvedOverride ?? ignoreUnresolved,
         includeConfigs,
@@ -188,10 +194,13 @@ async function runEcosystemCandidates({
 
       if (result === null) {
         outcomes.push({ dir, ecosystem, status: 'failed' })
-        logger.warn(
-          `Aborting ${ecosystem} discovery: ${dir} failed to generate Socket facts, and without them the remaining build roots cannot be safely classified as covered or independent.`,
-        )
-        for (const abortedDir of dirs.slice(dirIndex + 1)) {
+        const abortedDirs = dirs.slice(dirIndex + 1)
+        if (abortedDirs.length) {
+          logger.warn(
+            `Aborting ${ecosystem} discovery: ${dir} failed to generate Socket facts, and without them the remaining build roots cannot be safely classified as covered or independent.`,
+          )
+        }
+        for (const abortedDir of abortedDirs) {
           outcomes.push({ dir: abortedDir, ecosystem, status: 'aborted' })
         }
         break
