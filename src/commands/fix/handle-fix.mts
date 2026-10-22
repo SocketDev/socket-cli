@@ -4,15 +4,16 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
-import { convertCveToGhsa } from '../../utils/cve-to-ghsa.mts'
+import {
+  CVE_FORMAT_REGEXP,
+  GHSA_FORMAT_REGEXP,
+  convertCveToGhsa,
+} from '../../utils/cve-to-ghsa.mts'
 import { convertPurlToGhsas } from '../../utils/purl-to-ghsa.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
-
-const GHSA_FORMAT_REGEXP = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/
-const CVE_FORMAT_REGEXP = /^CVE-\d{4}-\d{4,}$/
 
 export type HandleFixConfig = Remap<
   FixConfig & {

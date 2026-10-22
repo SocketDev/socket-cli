@@ -119,6 +119,7 @@ describe('handleScanReach', () => {
     const reachabilityOptions = {
       dynamicSbomInference: false,
       excludePaths: ['tests', 'packages/*'],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
@@ -171,6 +172,7 @@ describe('handleScanReach', () => {
     const reachabilityOptions = {
       dynamicSbomInference: false,
       excludePaths: ['apps/api/tests', '**/dist'],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
@@ -233,6 +235,7 @@ describe('handleScanReach', () => {
     const reachabilityOptions = {
       dynamicSbomInference: false,
       excludePaths: ['apps/api'],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
@@ -281,6 +284,7 @@ describe('handleScanReach', () => {
     const reachabilityOptions = {
       dynamicSbomInference: false,
       excludePaths: ['tests'],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
@@ -333,6 +337,7 @@ describe('handleScanReach', () => {
     const reachabilityOptions = {
       dynamicSbomInference: false,
       excludePaths: [],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
@@ -370,6 +375,7 @@ describe('handleScanReach', () => {
     const reachabilityOptions = {
       dynamicSbomInference: false,
       excludePaths: [],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
@@ -420,6 +426,7 @@ describe('handleScanReach', () => {
     const reachabilityOptions = {
       dynamicSbomInference: false,
       excludePaths: [],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
@@ -473,6 +480,7 @@ describe('handleScanReach', () => {
     const baseReachabilityOptions = {
       dynamicSbomInference: true,
       excludePaths: ['vendor/**'],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,

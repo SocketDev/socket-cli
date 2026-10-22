@@ -97,6 +97,7 @@ function makeReachabilityOptions(): ReachabilityOptions {
   return {
     dynamicSbomInference: false,
     excludePaths: [],
+    reachAdvisories: [],
     reachAnalysisMemoryLimit: '',
     reachAnalysisTimeout: '',
     reachConcurrency: 0,
@@ -266,7 +267,7 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
   })
 })
 
-describe('performReachabilityAnalysis timeout/memory forwarding', () => {
+describe('performReachabilityAnalysis flag forwarding', () => {
   let scanCwd: string
 
   beforeEach(() => {
@@ -324,6 +325,22 @@ describe('performReachabilityAnalysis timeout/memory forwarding', () => {
     })
     expect(args).not.toContain('--analysis-timeout')
     expect(args).not.toContain('--memory-limit')
+  })
+
+  it('passes --reach-advisories to Coana as --ghsas', async () => {
+    const args = await coanaArgsFor({
+      reachAdvisories: ['GHSA-35jh-r3h4-6jhm', 'GHSA-r5fr-rjxr-66jc'],
+    })
+    const ghsasIndex = args.indexOf('--ghsas')
+    expect(args.slice(ghsasIndex + 1, ghsasIndex + 3)).toEqual([
+      'GHSA-35jh-r3h4-6jhm',
+      'GHSA-r5fr-rjxr-66jc',
+    ])
+  })
+
+  it('omits --ghsas when no advisories are given', async () => {
+    const args = await coanaArgsFor({ reachAdvisories: [] })
+    expect(args).not.toContain('--ghsas')
   })
 })
 
