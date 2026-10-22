@@ -1,5 +1,6 @@
 import { runManifestFacts } from './run-manifest-facts.mts'
 
+import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 // Generates `pom.xml.socket.facts.json` (named after the POM Maven runs on)
@@ -9,6 +10,7 @@ export async function convertMavenToFacts({
   cwd,
   excludeConfigs,
   excludePaths,
+  hints,
   ignoreUnresolved,
   includeConfigs,
   javaHome,
@@ -21,6 +23,7 @@ export async function convertMavenToFacts({
   cwd: string
   excludeConfigs: string
   excludePaths?: string[] | undefined
+  hints?: BuildOptionHints | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome?: string | undefined
@@ -36,6 +39,7 @@ export async function convertMavenToFacts({
     ecosystem: 'maven',
     excludeConfigs,
     excludePaths,
+    hints,
     ignoreUnresolved,
     includeConfigs,
     javaHome,

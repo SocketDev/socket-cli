@@ -36,6 +36,8 @@ use_jdk() {
   local home="${!home_var:-}"
   if [ -n "$home" ]; then
     export JAVA_HOME="$home"
+    # The sbt launcher runs `java` from PATH and ignores JAVA_HOME.
+    export PATH="$home/bin:$PATH"
     echo "  JDK $1: $home"
   else
     echo "  JDK $1 not provided (set $home_var=<jdk-home> for fidelity); using current java"
@@ -86,6 +88,7 @@ run_maven() {
     bash "$HERE/maven-compat/smoke-test-workspaces.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-repo-inheritance.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-duplicate-failure.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-graph-failure.sh" "$dir/bin/mvn" "$jar"
   done
 }
 
@@ -102,6 +105,7 @@ run_sbt() {
     use_jdk "$java"
     bash "$HERE/sbt-compat/smoke-test.sh" "$ver" "$scala"
     bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
+    bash "$HERE/sbt-compat/smoke-test-failure.sh" "$ver" "$scala"
   done
 }
 

@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Regression guard: a dependency that fails while Maven collects the graph must be reported as that
+# dependency, in the module it was collected for, and never emitted as a node. Maven keeps a
+# dependency whose POM failed in the graph (Maven 3.2's resolver leaves it out instead), so it fails
+# in its own scope, and an excluded scope drops it; a dependency the graph lacks (an unsatisfiable
+# range) has no scope. The module itself must never be reported as the failure.
+#
+# Runs offline: the POMs are seeded straight into the local repository, so their missing parent and
+# the absent versions of ranged can only fail to resolve.
+#
+# Usage: smoke-test-graph-failure.sh <path-to-mvn> <path-to-extension-jar>
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+MVN="${1:?usage: smoke-test-graph-failure.sh <mvn> <extension-jar>}"
+JAR="${2:?usage: smoke-test-graph-failure.sh <mvn> <extension-jar>}"
+PROJECT="$HERE/graph-failure"
+RECORDS="$PROJECT/records.tsv"
+# shellcheck source=SCRIPTDIR/../compat-cache.sh
+. "$HERE/../compat-cache.sh"
+M2="$SOCKET_COMPAT_CACHE/m2"
+
+rm -rf "$M2/demo/graphfail"
+for lib in lib testlib; do
+  mkdir -p "$M2/demo/graphfail/$lib/1.0"
+  cat > "$M2/demo/graphfail/$lib/1.0/$lib-1.0.pom" <<POM
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>demo.graphfail</groupId>
+    <artifactId>lib-parent</artifactId>
+    <version>1.0</version>
+  </parent>
+  <artifactId>$lib</artifactId>
+</project>
+POM
+done
+mkdir -p "$M2/demo/graphfail/ok/1.0"
+cat > "$M2/demo/graphfail/ok/1.0/ok-1.0.pom" <<'POM'
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo.graphfail</groupId>
+  <artifactId>ok</artifactId>
+  <version>1.0</version>
+</project>
+POM
+
+run() {
+  rm -f "$RECORDS"
+  ( cd "$PROJECT" && "$MVN" --batch-mode -q -o \
+      "-Dmaven.ext.class.path=$JAR" \
+      -Dcoana.task=socket-facts \
+      "-Dmaven.repo.local=$M2" \
+      "-Dsocket.recordsFile=$RECORDS" \
+      "$@" \
+      validate )
+}
+
+# $1: expected scope per coord (null: excluded) when the failed dependency stays in the graph.
+check() {
+  python3 - "$RECORDS" "$1" "$KEEPS_FAILED" <<'PY'
+import json, sys
+def read(path):
+    return [l.rstrip('\n').split('\t') for l in open(path) if l.strip()]
+rows = read(sys.argv[1])
+expected = json.loads(sys.argv[2])
+keeps_failed = sys.argv[3] == 'true'
+emitted = {f"{r[3]}:{r[4]}:{r[5]}" for r in rows if r[0] == 'node'}
+errors = []
+if 'demo.graphfail:ok:1.0' not in emitted:
+    errors.append(f"ok resolved, so it must be emitted; nodes={sorted(emitted)}")
+failures = [r[1:] for r in rows if r[0] == 'failure']
+unscannable = [r[1:] for r in rows if r[0] == 'unscannable']
+module = 'demo:graph-failure:1.0'
+
+for coord, scope in expected.items():
+    found = [f for f in failures if f[0] == coord]
+    if coord in emitted:
+        errors.append(f"{coord} failed to resolve, so it must not be emitted as a node")
+    if not keeps_failed:
+        scope = ''
+    if scope is None:
+        if found:
+            errors.append(f"{coord} is in an excluded scope and must not be reported, got {found}")
+    elif not found:
+        errors.append(f"{coord} emitted no failure record; failures={failures}")
+    elif any(f[2] != scope or f[3] != module for f in found):
+        errors.append(f"{coord} should fail in scope {scope!r} of {module}, got {found}")
+invented = [f for f in failures if f[0] == module]
+if invented:
+    errors.append(f"the module itself must not be reported as the unresolved dependency: {invented}")
+if unscannable:
+    errors.append(f"each collection error names its artifact, so nothing is unscannable: {unscannable}")
+
+if errors:
+    print("FAIL:")
+    for e in errors:
+        print("  -", e)
+    sys.exit(1)
+print(f"PASS (graph failure): {expected}")
+PY
+}
+
+VERSION="$("$MVN" -v 2>/dev/null | head -1)"
+echo "+ $VERSION (graph failure)"
+case "$VERSION" in
+  *"Maven 3.2."*) KEEPS_FAILED=false ;;
+  *) KEEPS_FAILED=true ;;
+esac
+run
+check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": "test", "demo.graphfail:ranged:[1.0,2.0)": ""}'
+run -Dsocket.excludeConfigs=test
+check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": null, "demo.graphfail:ranged:[1.0,2.0)": ""}'

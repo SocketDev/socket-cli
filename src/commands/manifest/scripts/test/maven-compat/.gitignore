@@ -11,3 +11,5 @@ repo-inheritance/.mirror-settings.xml
 duplicate-failure/records.tsv
 duplicate-failure/target/
 duplicate-failure/*/target/
+graph-failure/records.tsv
+graph-failure/target/

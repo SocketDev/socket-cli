@@ -8,7 +8,11 @@ import {
   formatMissingEnvVarRefs,
 } from './expand-env-var-refs.mts'
 import { looksLikeSbtBuild } from './scripts/build-tool.mts'
-import { renderResolutionErrorReport } from './scripts/resolution-report-render.mts'
+import {
+  FLAG_HINTS,
+  renderResolutionErrorReport,
+  verboseHint,
+} from './scripts/resolution-report-render.mts'
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
@@ -17,6 +21,7 @@ import { realpathOrResolved } from '../../utils/fs.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
+import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
@@ -57,6 +62,7 @@ export async function runManifestFacts({
   ecosystem,
   excludeConfigs,
   excludePaths,
+  hints = FLAG_HINTS,
   ignoreUnresolved,
   includeConfigs,
   javaHome,
@@ -71,6 +77,8 @@ export async function runManifestFacts({
   ecosystem: BuildTool
   excludeConfigs: string
   excludePaths?: string[] | undefined
+  // Where the user sets build options, for remedy hints.
+  hints?: BuildOptionHints | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome?: string | undefined
@@ -132,7 +140,7 @@ export async function runManifestFacts({
       result = await runManifestScript(ecosystem, scriptOpts)
     } else {
       logger.info(
-        `(No live output; pass --verbose to stream the ${ecosystem} build output.)`,
+        `(No live output; to stream the ${ecosystem} build output, ${verboseHint(hints, ecosystem)}.)`,
       )
       spinner.start(`Resolving ${ecosystem} dependencies ...`)
       result = await runManifestScript(ecosystem, scriptOpts)
@@ -152,10 +160,7 @@ export async function runManifestFacts({
     }
     process.exitCode = 1
     logger.fail(
-      `Could not run the ${ecosystem} build tool` +
-        (verbose
-          ? `: ${getErrorMessageOr(e, String(e))}`
-          : ' (run with --verbose for details).'),
+      `Could not run the ${ecosystem} build tool: ${getErrorMessageOr(e, String(e))}`,
     )
     return null
   }
@@ -174,7 +179,7 @@ export async function runManifestFacts({
     report.failures,
     report.scannedConfigs,
     ecosystem,
-    { ignoreUnresolved, unscannable: report.unscannable },
+    { hints, ignoreUnresolved, unscannable: report.unscannable },
   )
 
   if (rendered.hasBlockingFailures) {

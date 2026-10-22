@@ -1,12 +1,11 @@
 import { GRADLE_DIALECT } from './resolution-report-gradle.mts'
 import { SBT_DIALECT } from './resolution-report-ivy.mts'
 import { MAVEN_DIALECT } from './resolution-report-maven.mts'
+import constants from '../../../constants.mts'
+import { camelToKebab } from '../../../utils/strings.mts'
 
 import type { BuildTool } from './build-tool.mts'
-import type {
-  ResolutionFailure,
-  UnscannableConfig,
-} from './resolution-report.mts'
+import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 
 // Recognized from the build tool's message; drives wording AND whether the kind
 // is blocking. An unrecognized message degrades to 'other' (blocking) — safe.
@@ -39,6 +38,32 @@ export type ResolutionDialect = {
   categories: FailureCategorySpec[]
 }
 
+export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
+
+// Where the invoking command lets the user set each build option, so a remedy
+// names something they can actually set.
+export type BuildOptionHints = {
+  // Taken as flags; every other option is set in `socketJson`.
+  flags: ReadonlySet<BuildOption>
+  // Wizard that writes `socketJson`.
+  setupCommand: string
+  socketJson: string
+}
+
+export const DSI_SETUP_COMMAND =
+  'socket manifest setup --dynamic-sbom-inference'
+
+// The single-build manifest commands take every option as a flag.
+export const FLAG_HINTS: BuildOptionHints = {
+  flags: new Set<BuildOption>([
+    'excludeConfigs',
+    'ignoreUnresolved',
+    'verbose',
+  ]),
+  setupCommand: 'socket manifest setup',
+  socketJson: constants.SOCKET_JSON,
+}
+
 export type RenderedResolutionReport = {
   // Failure report for blocking kinds; empty when nothing blocks.
   summary: string
@@ -69,11 +94,6 @@ function dedupCoords(coords: Iterable<string>): string[] {
     .sort()
 }
 
-function fmtList(list: string[], limit: number): string {
-  const shown = list.slice(0, limit).join(', ')
-  return list.length > limit ? `${shown} (+${list.length - limit} more)` : shown
-}
-
 function firstLine(s: string): string {
   return (
     (s || '')
@@ -83,32 +103,101 @@ function firstLine(s: string): string {
   )
 }
 
+function fmtList(list: string[], limit: number): string {
+  const shown = list.slice(0, limit).join(', ')
+  return list.length > limit ? `${shown} (+${list.length - limit} more)` : shown
+}
+
+function flagText(option: BuildOption, value: string | true): string {
+  const flag = `--${camelToKebab(option)}`
+  return value === true ? flag : `${flag} '${value}'`
+}
+
+// Where a failure happened, for builds with several subprojects.
+function inProjects(projects: string | Iterable<string>): string {
+  const list = [...(typeof projects === 'string' ? [projects] : projects)]
+    .filter(Boolean)
+    .sort()
+    .map(p => `\`${p}\``)
+  return list.length ? ` (in ${fmtList(list, 3)})` : ''
+}
+
+// `excludableConfigs` is empty when excluding configurations cannot clear
+// every blocking failure.
+function proceedHint(
+  hints: BuildOptionHints,
+  tool: BuildTool,
+  excludableConfigs: string[],
+): string[] {
+  const options: Array<[BuildOption, string | true]> = [
+    ['ignoreUnresolved', true],
+  ]
+  if (excludableConfigs.length) {
+    options.push(['excludeConfigs', excludableConfigs.join(',')])
+  }
+  const asFlags = options.filter(o => hints.flags.has(o[0]))
+  const inSocketJson = options.filter(o => !hints.flags.has(o[0]))
+  const setup = `\`${hints.setupCommand}\``
+  if (!inSocketJson.length) {
+    return asFlags.length === 1
+      ? [`To proceed, re-run with ${flagText(...asFlags[0]!)}.`]
+      : [
+          'To proceed, re-run with either:',
+          ...asFlags.map(o => `    ${flagText(...o)}`),
+        ]
+  }
+  if (!asFlags.length) {
+    return [
+      `To proceed, set ${options.length > 1 ? 'either of these' : 'this'} under defaults.manifest.${tool} in ${hints.socketJson} (${setup} walks you through it):`,
+      ...options.map(
+        ([option, value]) => `    "${option}": ${JSON.stringify(value)}`,
+      ),
+    ]
+  }
+  return [
+    'To proceed, either:',
+    ...asFlags.map(o => `    re-run with ${flagText(...o)}`),
+    ...inSocketJson.map(
+      ([option, value]) =>
+        `    set defaults.manifest.${tool}.${option} to ${JSON.stringify(value)} in ${hints.socketJson} (${setup})`,
+    ),
+  ]
+}
+
 // Severity is per-kind; the exit-code decision lives in the caller. We do NOT
 // cross-reference what resolved elsewhere: the failed selector carries no
 // classifier/type, so relating a failed and a succeeded dep is unsound.
 export function renderResolutionReport(
   failures: ResolutionFailure[],
   scannedConfigs: string[],
-  dialect: ResolutionDialect,
+  tool: BuildTool,
   opts: {
+    hints?: BuildOptionHints | undefined
     ignoreUnresolved?: boolean | undefined
-    unscannable?: UnscannableConfig[] | undefined
+    unscannable?: Unscannable[] | undefined
   } = {},
 ): RenderedResolutionReport {
+  const dialect = dialectFor(tool)
   const name = dialect.label
+  const hints = opts.hints ?? FLAG_HINTS
   const unscannable = opts.unscannable ?? []
-  const unscannableConfigs = new Set(unscannable.map(u => u.config))
+  const unscannableConfigs = new Set(
+    unscannable.filter(u => u.config).map(u => u.config),
+  )
   const specOf = new Map(dialect.categories.map(c => [c.key, c]))
   const isBlocking = (cat: FailureCategory): boolean =>
     specOf.get(cat)?.blocking ?? true
 
   // Aggregate by (coord, category): one module can fail with different causes
-  // across configs. Keep first-seen detail, union the configs.
+  // across configs. Keep first-seen detail, union the configs and projects.
   type CoordInfo = {
     coord: string
     category: FailureCategory
     detail: string
     configs: Set<string>
+    projects: Set<string>
+    // Some failure of this coord belongs to no configuration.
+    configless: boolean
   }
   const byKey = new Map<string, CoordInfo>()
   const keyOf = (coord: string, category: FailureCategory): string =>
@@ -118,11 +207,23 @@ export function renderResolutionReport(
     const key = keyOf(f.coord, category)
     let info = byKey.get(key)
     if (!info) {
-      info = { coord: f.coord, category, detail: f.detail, configs: new Set() }
+      info = {
+        coord: f.coord,
+        category,
+        detail: f.detail,
+        configs: new Set(),
+        projects: new Set(),
+        configless: false,
+      }
       byKey.set(key, info)
     }
     if (f.config) {
       info.configs.add(f.config)
+    } else {
+      info.configless = true
+    }
+    if (f.project) {
+      info.projects.add(f.project)
     }
   }
   const allInfos = [...byKey.values()]
@@ -135,6 +236,8 @@ export function renderResolutionReport(
   })
   const blockingUnscannable = unscannableInfos.filter(u => u.blocking)
   const nonBlockingUnscannable = unscannableInfos.filter(u => !u.blocking)
+  const blockingUnscannableConfigs = blockingUnscannable.filter(u => u.config)
+  const blockingUnscannableProjects = blockingUnscannable.filter(u => !u.config)
 
   const perDepBlockingConfigs = new Set<string>()
   for (const info of allInfos) {
@@ -146,13 +249,20 @@ export function renderResolutionReport(
   }
   const blockingConfigs = new Set([
     ...perDepBlockingConfigs,
-    ...blockingUnscannable.map(u => u.config),
+    ...blockingUnscannableConfigs.map(u => u.config),
   ])
   const blockingFailed = [...blockingConfigs].sort()
+  // A blocking failure outside any configuration leaves every configuration of
+  // its project incomplete, so none can be reported as succeeded.
+  const hasBlockingConfiglessFailure =
+    blockingUnscannableProjects.length > 0 ||
+    allInfos.some(i => i.configless && isBlocking(i.category))
   // An un-scannable config was attempted but resolved nothing, so it didn't succeed.
-  const succeeded = scannedConfigs
-    .filter(c => !blockingConfigs.has(c) && !unscannableConfigs.has(c))
-    .sort()
+  const succeeded = hasBlockingConfiglessFailure
+    ? []
+    : scannedConfigs
+        .filter(c => !blockingConfigs.has(c) && !unscannableConfigs.has(c))
+        .sort()
 
   const groups = dialect.categories
     .map(spec => ({
@@ -172,10 +282,13 @@ export function renderResolutionReport(
   const out: string[] = []
   if (hasBlockingFailures) {
     if (blockingCount > 0) {
+      const inConfigs = perDepBlockingConfigs.size
+        ? ` in ${perDepBlockingConfigs.size} configuration(s)`
+        : ''
       out.push(
         opts.ignoreUnresolved
-          ? `Ignored ${blockingCount} unresolved dependency(ies) in ${perDepBlockingConfigs.size} configuration(s):`
-          : `Could not resolve ${blockingCount} dependency(ies) in ${perDepBlockingConfigs.size} configuration(s):`,
+          ? `Ignored ${blockingCount} unresolved dependency(ies)${inConfigs}:`
+          : `Could not resolve ${blockingCount} dependency(ies)${inConfigs}:`,
       )
       for (const { infos, spec } of blockingGroups) {
         out.push('')
@@ -183,7 +296,9 @@ export function renderResolutionReport(
         for (const info of infos.slice(0, RESOLUTION_REPORT_ARTIFACT_LIMIT)) {
           const fl = firstLine(info.detail)
           const reasonSuffix = spec.showReason && fl ? `  [${fl}]` : ''
-          out.push(`    - ${info.coord}${reasonSuffix}`)
+          out.push(
+            `    - ${info.coord}${inProjects(info.projects)}${reasonSuffix}`,
+          )
         }
         if (infos.length > RESOLUTION_REPORT_ARTIFACT_LIMIT) {
           out.push(
@@ -192,31 +307,47 @@ export function renderResolutionReport(
         }
       }
     }
-    if (blockingUnscannable.length) {
-      // Separate from the per-dep block above, but only if there is one — otherwise
-      // the summary would lead with a blank line (a dangling ✗ under logger.fail).
+    const pushUnscannable = (
+      items: typeof blockingUnscannable,
+      header: string,
+      label: (u: (typeof blockingUnscannable)[number]) => string,
+    ): void => {
+      if (!items.length) {
+        return
+      }
+      // Separate from the block above, but only if there is one — otherwise the
+      // summary would lead with a blank line (a dangling ✗ under logger.fail).
       if (out.length) {
         out.push('')
       }
-      out.push(
-        opts.ignoreUnresolved
-          ? `Ignored ${blockingUnscannable.length} configuration(s) that could not be scanned:`
-          : `Could not scan ${blockingUnscannable.length} configuration(s) (reason from ${name}):`,
-      )
-      for (const u of blockingUnscannable.slice(
-        0,
-        RESOLUTION_REPORT_CONFIG_LIMIT,
-      )) {
+      out.push(header)
+      for (const u of items.slice(0, RESOLUTION_REPORT_CONFIG_LIMIT)) {
         const fl = firstLine(u.detail)
-        out.push(`    - ${u.config}${fl ? `  [${fl}]` : ''}`)
+        out.push(`    - ${label(u)}${fl ? `  [${fl}]` : ''}`)
       }
-      if (blockingUnscannable.length > RESOLUTION_REPORT_CONFIG_LIMIT) {
+      if (items.length > RESOLUTION_REPORT_CONFIG_LIMIT) {
         out.push(
-          `    … and ${blockingUnscannable.length - RESOLUTION_REPORT_CONFIG_LIMIT} more`,
+          `    … and ${items.length - RESOLUTION_REPORT_CONFIG_LIMIT} more`,
         )
       }
     }
-    out.push('')
+    pushUnscannable(
+      blockingUnscannableConfigs,
+      opts.ignoreUnresolved
+        ? `Ignored ${blockingUnscannableConfigs.length} configuration(s) that could not be scanned:`
+        : `Could not scan ${blockingUnscannableConfigs.length} configuration(s) (reason from ${name}):`,
+      u => `${u.config}${inProjects(u.project)}`,
+    )
+    pushUnscannable(
+      blockingUnscannableProjects,
+      opts.ignoreUnresolved
+        ? `Ignored ${blockingUnscannableProjects.length} project(s) whose dependencies could not be resolved:`
+        : `Could not resolve the dependencies of ${blockingUnscannableProjects.length} project(s) (reason from ${name}):`,
+      u => `\`${u.project}\``,
+    )
+    if (succeeded.length || blockingFailed.length) {
+      out.push('')
+    }
     if (succeeded.length) {
       out.push(
         `Resolution succeeded in: ${fmtList(succeeded, RESOLUTION_REPORT_CONFIG_LIMIT)}`,
@@ -229,14 +360,20 @@ export function renderResolutionReport(
     }
     if (willFail) {
       out.push('')
-      out.push(`To proceed, re-run with either:`)
-      out.push(`    --ignore-unresolved`)
-      if (blockingFailed.length) {
-        out.push(`    --exclude-configs '${blockingFailed.join(',')}'`)
-      }
+      out.push(
+        ...proceedHint(
+          hints,
+          tool,
+          hasBlockingConfiglessFailure ? [] : blockingFailed,
+        ),
+      )
     }
     out.push('')
-    out.push(`Re-run with --verbose for ${name}'s full messages.`)
+    out.push(
+      hints.flags.has('verbose')
+        ? `Re-run with --verbose for ${name}'s full messages.`
+        : `For ${name}'s full messages, ${verboseHint(hints, tool)}.`,
+    )
   }
 
   const notices: string[] = []
@@ -252,7 +389,9 @@ export function renderResolutionReport(
   if (nonBlockingUnscannable.length) {
     const n = new Set(nonBlockingUnscannable.map(u => u.config)).size
     notices.push(
-      `Could not scan ${n} configuration(s) — re-run with --verbose for ${name}'s messages.`,
+      hints.flags.has('verbose')
+        ? `Could not scan ${n} configuration(s) — re-run with --verbose for ${name}'s messages.`
+        : `Could not scan ${n} configuration(s); for ${name}'s messages, ${verboseHint(hints, tool)}.`,
     )
   }
 
@@ -266,10 +405,12 @@ export function renderResolutionReport(
   }
   if (unscannable.length) {
     detailLines.push('')
-    detailLines.push(`${name} configurations that could not be scanned:`)
+    detailLines.push(`${name} resolutions that could not be scanned:`)
     for (const u of unscannable) {
       detailLines.push('')
-      detailLines.push(`  ${u.config}:`)
+      detailLines.push(
+        `  ${u.config || 'all dependencies'}${inProjects(u.project)}:`,
+      )
       for (const line of (u.detail || '(no message)').split('\n')) {
         detailLines.push(`    ${line}`)
       }
@@ -300,14 +441,16 @@ export function renderResolutionErrorReport(
   scannedConfigs: string[] = [],
   tool: BuildTool = 'gradle',
   opts: {
+    hints?: BuildOptionHints | undefined
     ignoreUnresolved?: boolean | undefined
-    unscannable?: UnscannableConfig[] | undefined
+    unscannable?: Unscannable[] | undefined
   } = {},
 ): RenderedResolutionReport {
-  return renderResolutionReport(
-    failures,
-    scannedConfigs,
-    dialectFor(tool),
-    opts,
-  )
+  return renderResolutionReport(failures, scannedConfigs, tool, opts)
+}
+
+export function verboseHint(hints: BuildOptionHints, tool: BuildTool): string {
+  return hints.flags.has('verbose')
+    ? 'pass --verbose'
+    : `set defaults.manifest.${tool}.verbose to true in ${hints.socketJson}`
 }

@@ -12,6 +12,8 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.graph.DependencyNode;
+import org.eclipse.aether.resolution.ArtifactDescriptorException;
+import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -22,8 +24,11 @@ import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -117,6 +122,7 @@ public final class SocketFactsRecordsEngine {
     for (String scope : passingScopes) rec(lines, "scanned", scope);
 
     Set<Failure> failures = new LinkedHashSet<>();
+    Set<Unscannable> unscannable = new LinkedHashSet<>();
     int rootIdx = 0;
     for (MavenProject module : reactor) {
       if (module.getBasedir() == null) continue;
@@ -127,11 +133,12 @@ public final class SocketFactsRecordsEngine {
       Set<String> directIds = new HashSet<>();
       // Which direct dependencies are prod-scoped: seeds the prod/dev root split (see emitModuleRoots).
       Set<String> directProdIds = new HashSet<>();
-      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, directProdIds, failures);
+      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, directProdIds, failures, unscannable);
       rootIdx = emitModuleRoots(lines, rootIdx, projectKey(module), nodes, directIds, directProdIds);
     }
 
-    for (Failure f : failures) rec(lines, "failure", f.coord, f.detail, f.config);
+    for (Failure f : failures) rec(lines, "failure", f.coord, f.detail, f.config, f.project);
+    for (Unscannable u : unscannable) rec(lines, "unscannable", "", u.detail, u.project);
 
     write(opts.recordsFile, lines);
   }
@@ -154,7 +161,8 @@ public final class SocketFactsRecordsEngine {
       Map<String, Node> nodes,
       Set<String> directIds,
       Set<String> directProdIds,
-      Set<Failure> failures) {
+      Set<Failure> failures,
+      Set<Unscannable> unscannable) {
     String moduleCoord = module.getGroupId() + ":" + module.getArtifactId() + ":" + module.getVersion();
     DependencyResolutionResult result;
     DependencyResolutionException thrown = null;
@@ -169,16 +177,31 @@ public final class SocketFactsRecordsEngine {
       thrown = e;
       result = e.getResult();
       if (result == null) {
-        failures.add(new Failure(moduleCoord, rootMessage(e), "graph"));
+        unscannable.add(new Unscannable(rootMessage(e), moduleCoord));
         log.warn("[socket-facts] could not resolve dependencies for " + moduleCoord + ": " + rootMessage(e));
         return;
       }
     }
-    // Tracked per call, not by `failures.size()`: the set is shared across modules and Failure has
-    // value equality, so a sibling module failing on the same dependency absorbs this module's add.
     boolean reported = false;
+    DependencyNode graph = result.getDependencyGraph();
+    // Dependencies whose own resolution failed are reported, not emitted, as Gradle and sbt do.
+    Set<String> unresolved = new HashSet<>();
+    Map<String, Set<String>> scopesByGav = null;
     for (Exception e : result.getCollectionErrors()) {
-      failures.add(new Failure(moduleCoord, rootMessage(e), "graph"));
+      String failed = failedArtifact(e);
+      if (failed == null) {
+        unscannable.add(new Unscannable(rootMessage(e), moduleCoord));
+      } else {
+        // Maven keeps a dependency whose POM failed in the graph, minus its children (Maven 3.2 drops it), so
+        // the failure belongs to the scopes it has there. One absent from the graph has none.
+        if (scopesByGav == null) scopesByGav = scopesByGav(graph);
+        Set<String> scopes = scopesByGav.getOrDefault(failed, Collections.emptySet());
+        if (scopes.isEmpty()) failures.add(new Failure(failed, rootMessage(e), "", moduleCoord));
+        for (String scope : scopes) {
+          if (passingScopes.contains(scope)) failures.add(new Failure(failed, rootMessage(e), scope, moduleCoord));
+        }
+        unresolved.add(failed);
+      }
       log.warn("[socket-facts] could not build dependency graph for " + moduleCoord + ": " + rootMessage(e));
       reported = true;
     }
@@ -187,21 +210,20 @@ public final class SocketFactsRecordsEngine {
       if (artifact == null) continue;
       List<Exception> errors = result.getResolutionErrors(dep);
       failures.add(new Failure(
-          gav(artifact), rootMessage(errors.isEmpty() ? null : errors.get(0)), scopeOf(dep)));
+          gav(artifact), rootMessage(errors.isEmpty() ? null : errors.get(0)), scopeOf(dep), moduleCoord));
       log.debug("[socket-facts] could not materialize " + artifact + " (" + scopeOf(dep) + ")");
       reported = true;
     }
     // Fail closed: a throw whose result named nothing must still surface, or an unresolved dependency
     // would silently leave the reachability analysis blind to whatever that artifact contains.
     if (thrown != null && !reported) {
-      failures.add(new Failure(moduleCoord, rootMessage(thrown), "graph"));
+      unscannable.add(new Unscannable(rootMessage(thrown), moduleCoord));
       log.warn("[socket-facts] could not resolve dependencies for " + moduleCoord + ": " + rootMessage(thrown));
     }
-    DependencyNode root = result.getDependencyGraph();
-    if (root == null) return;
+    if (graph == null) return;
     Set<String> visited = new HashSet<>();
-    for (DependencyNode child : root.getChildren()) {
-      String id = visit(child, passingScopes, reactorGavs, opts, nodes, visited);
+    for (DependencyNode child : graph.getChildren()) {
+      String id = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
       if (id != null) {
         directIds.add(id);
         // A direct dependency's effective scope is its declared scope (Aether's scope selector keeps
@@ -257,6 +279,7 @@ public final class SocketFactsRecordsEngine {
       DependencyNode dn,
       Set<String> passingScopes,
       Set<String> reactorGavs,
+      Set<String> unresolved,
       Options opts,
       Map<String, Node> nodes,
       Set<String> visited) {
@@ -270,6 +293,7 @@ public final class SocketFactsRecordsEngine {
     if (!passingScopes.contains(scope)) return null;
 
     String gav = gav(artifact);
+    if (unresolved.contains(gav)) return null;
     boolean internal = reactorGavs.contains(gav);
     // Maven's `type` rather than aether's file extension, so a test-jar keeps the coordId the
     // assembler and the Gradle/SBT scripts already emit.
@@ -299,7 +323,7 @@ public final class SocketFactsRecordsEngine {
     }
 
     for (DependencyNode child : dn.getChildren()) {
-      String childId = visit(child, passingScopes, reactorGavs, opts, nodes, visited);
+      String childId = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
       if (childId != null) node.children.add(childId);
     }
     return id;
@@ -500,15 +524,53 @@ public final class SocketFactsRecordsEngine {
     return (msg != null ? msg : "unknown resolution failure").trim();
   }
 
+  private static Map<String, Set<String>> scopesByGav(DependencyNode root) {
+    Map<String, Set<String>> scopes = new HashMap<>();
+    if (root == null) return scopes;
+    Set<DependencyNode> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+    Deque<DependencyNode> todo = new ArrayDeque<>(root.getChildren());
+    while (!todo.isEmpty()) {
+      DependencyNode dn = todo.pop();
+      if (!seen.add(dn) || dn.getData().get(NODE_DATA_CONFLICT_WINNER) != null) continue;
+      if (dn.getArtifact() != null) {
+        scopes.computeIfAbsent(gav(dn.getArtifact()), k -> new TreeSet<>()).add(scopeOf(dn.getDependency()));
+      }
+      todo.addAll(dn.getChildren());
+    }
+    return scopes;
+  }
+
+  // The artifact a collection error is about, when the resolver names one.
+  private static String failedArtifact(Throwable t) {
+    Throwable cur = t;
+    int guard = 0;
+    while (cur != null && guard++ < 12) {
+      Artifact artifact = null;
+      if (cur instanceof ArtifactDescriptorException) {
+        ArtifactDescriptorException e = (ArtifactDescriptorException) cur;
+        if (e.getResult() != null) artifact = e.getResult().getRequest().getArtifact();
+      } else if (cur instanceof VersionRangeResolutionException) {
+        VersionRangeResolutionException e = (VersionRangeResolutionException) cur;
+        if (e.getResult() != null) artifact = e.getResult().getRequest().getArtifact();
+      }
+      if (artifact != null) return gav(artifact);
+      cur = cur.getCause();
+    }
+    return null;
+  }
+
   private static final class Failure {
     final String coord;
     final String detail;
+    // Empty when the failure belongs to no scope.
     final String config;
+    final String project;
 
-    Failure(String coord, String detail, String config) {
+    Failure(String coord, String detail, String config, String project) {
       this.coord = coord;
       this.detail = detail;
       this.config = config;
+      this.project = project;
     }
 
     @Override
@@ -516,12 +578,37 @@ public final class SocketFactsRecordsEngine {
       if (this == o) return true;
       if (!(o instanceof Failure)) return false;
       Failure f = (Failure) o;
-      return coord.equals(f.coord) && detail.equals(f.detail) && config.equals(f.config);
+      return coord.equals(f.coord) && detail.equals(f.detail) && config.equals(f.config)
+          && project.equals(f.project);
     }
 
     @Override
     public int hashCode() {
-      return (coord + "|" + detail + "|" + config).hashCode();
+      return (coord + "|" + detail + "|" + config + "|" + project).hashCode();
+    }
+  }
+
+  // A module whose dependencies could not be resolved at all, with no failing artifact to name.
+  private static final class Unscannable {
+    final String detail;
+    final String project;
+
+    Unscannable(String detail, String project) {
+      this.detail = detail;
+      this.project = project;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof Unscannable)) return false;
+      Unscannable u = (Unscannable) o;
+      return detail.equals(u.detail) && project.equals(u.project);
+    }
+
+    @Override
+    public int hashCode() {
+      return (detail + "|" + project).hashCode();
     }
   }
 

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- `socket manifest dynamic-sbom-inference --ignore-unresolved` keeps going past unresolved JVM dependencies in every discovered build.
+
+### Fixed
+- `--dynamic-sbom-inference` honors each build's `verbose` setting in `socket.json`.
+- JVM resolution failures name the dependency that failed, the subproject and scope that needed it, and suggest only options the command you ran accepts, pointing at the failing build's own `socket.json`.
+- Unresolved JVM dependencies are reported and left out of the Socket facts for Maven, Gradle and sbt alike, as far as each build tool identifies them; a Maven dependency in an excluded scope no longer blocks the run.
+- An sbt project with an unresolved dependency keeps the rest of its dependencies instead of silently losing all of them.
+- `socket scan create` and `socket scan reach` warn about `--ignore-unresolved`, `--exclude-configs`, `--include-configs` and `--verbose`, which they read from `socket.json` instead.
+- When a build tool cannot be started, the error says why, for example a missing `mvn`.
+
 ## [1.9.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.9.1) - 2026-10-21
 
 ### Changed

@@ -12,6 +12,8 @@ import {
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import { DSI_SETUP_COMMAND } from './scripts/resolution-report-render.mts'
+import { SOCKET_JSON } from '../../constants.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
   readOrDefaultSocketJson,
@@ -20,6 +22,7 @@ import {
 import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { BuildOption } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
@@ -47,6 +50,13 @@ export type EcosystemBuildConfig = {
   javaHome: string | undefined
   // Set when this build root should be skipped entirely (never invoked).
   skipReason: string | undefined
+  verbose: boolean
+}
+
+// Relative to the user's shell when inside it, else absolute.
+function displayPath(file: string): string {
+  const rel = path.relative(process.cwd(), file)
+  return rel.startsWith('..') || path.isAbsolute(rel) ? file : rel
 }
 
 // A cascaded (not just root-level) disabled additionally skips this one build
@@ -54,14 +64,15 @@ export type EcosystemBuildConfig = {
 // auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
 // so it skips too.
 function getSkipReason(
+  ecosystem: BuildTool,
   disabled: boolean | undefined,
   facts?: boolean | undefined,
 ): string | undefined {
   if (disabled) {
-    return 'defaults.manifest.<ecosystem>.disabled is true'
+    return `defaults.manifest.${ecosystem}.disabled is true`
   }
   if (facts === false) {
-    return 'defaults.manifest.<ecosystem>.facts is false (pom mode)'
+    return `defaults.manifest.${ecosystem}.facts is false (pom mode)`
   }
   return undefined
 }
@@ -90,6 +101,8 @@ function nearestDisabledRoot(
 async function runEcosystemCandidates({
   candidatesByTool,
   excludePaths,
+  ignoreUnresolved: ignoreUnresolvedOverride,
+  optionFlags,
   realCwd,
   rootSockJson,
   sbtTmpDir,
@@ -99,6 +112,8 @@ async function runEcosystemCandidates({
 }: {
   candidatesByTool: Map<BuildTool, string[]>
   excludePaths: string[] | undefined
+  ignoreUnresolved: boolean | undefined
+  optionFlags: ReadonlySet<BuildOption>
   realCwd: string
   rootSockJson: SocketJson
   // sbt only: a shared global base reused across every sbt root in this run,
@@ -133,6 +148,7 @@ async function runEcosystemCandidates({
         includeConfigs,
         javaHome,
         skipReason,
+        verbose: configVerbose,
       } = resolveEcosystemConfig(ecosystem, dir, sockJson)
 
       if (skipReason) {
@@ -162,21 +178,29 @@ async function runEcosystemCandidates({
         ecosystem,
         excludeConfigs,
         excludePaths: excludePathsForRoot,
-        ignoreUnresolved,
+        hints: {
+          flags: optionFlags,
+          setupCommand: DSI_SETUP_COMMAND,
+          socketJson: displayPath(path.join(dir, SOCKET_JSON)),
+        },
+        ignoreUnresolved: ignoreUnresolvedOverride ?? ignoreUnresolved,
         includeConfigs,
         javaHome,
         sidecarAcc,
         tmpDir: ecosystem === 'sbt' ? sbtTmpDir : undefined,
-        verbose,
+        verbose: verbose || configVerbose,
         withFiles,
       })
 
       if (result === null) {
         outcomes.push({ dir, ecosystem, status: 'failed' })
-        logger.warn(
-          `Aborting ${ecosystem} discovery: ${dir}'s workspace layout could not be determined, so its remaining build roots cannot be safely classified as covered or independent.`,
-        )
-        for (const abortedDir of dirs.slice(dirIndex + 1)) {
+        const abortedDirs = dirs.slice(dirIndex + 1)
+        if (abortedDirs.length) {
+          logger.warn(
+            `Aborting ${ecosystem} discovery: ${dir} failed to generate Socket facts, and without them the remaining build roots cannot be safely classified as covered or independent.`,
+          )
+        }
+        for (const abortedDir of abortedDirs) {
           outcomes.push({ dir: abortedDir, ecosystem, status: 'aborted' })
         }
         break
@@ -209,6 +233,8 @@ async function runEcosystemCandidates({
 export async function generateRecursiveManifests({
   cwd,
   excludePaths,
+  ignoreUnresolved,
+  optionFlags = new Set(),
   sbtTmpDir,
   sidecarAcc,
   verbose,
@@ -216,6 +242,11 @@ export async function generateRecursiveManifests({
 }: {
   cwd: string
   excludePaths?: string[] | undefined
+  // When set, overrides every build root's own socket.json setting.
+  ignoreUnresolved?: boolean | undefined
+  // Options the invoking command takes as flags; hints send the rest to each
+  // build root's socket.json.
+  optionFlags?: ReadonlySet<BuildOption> | undefined
   // Reachability path only: caller-supplied directory to use as sbt's shared
   // global base across every sbt root in this run. sbt provisions the Scala
   // toolchain under `<base>/boot`, which withFiles' artifactPaths point into,
@@ -250,6 +281,8 @@ export async function generateRecursiveManifests({
     runEcosystemCandidates({
       candidatesByTool,
       excludePaths,
+      ignoreUnresolved,
+      optionFlags,
       realCwd,
       rootSockJson,
       sbtTmpDir: resolvedSbtTmpDir,
@@ -296,7 +329,8 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      skipReason: getSkipReason(config?.disabled, config?.facts),
+      skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
+      verbose: Boolean(config?.verbose),
     }
   }
   if (ecosystem === 'gradle') {
@@ -309,7 +343,8 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      skipReason: getSkipReason(config?.disabled, config?.facts),
+      skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
+      verbose: Boolean(config?.verbose),
     }
   }
   const config = sockJson.defaults?.manifest?.maven
@@ -321,6 +356,7 @@ export function resolveEcosystemConfig(
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome ?? undefined,
-    skipReason: getSkipReason(config?.disabled),
+    skipReason: getSkipReason(ecosystem, config?.disabled),
+    verbose: Boolean(config?.verbose),
   }
 }

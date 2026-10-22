@@ -1,5 +1,6 @@
 import { runManifestFacts } from './run-manifest-facts.mts'
 
+import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 // Generates `gradle.socket.facts.json` for a Gradle project via the bundled
@@ -10,6 +11,7 @@ export async function convertGradleToFacts({
   excludeConfigs,
   excludePaths,
   gradleOpts,
+  hints,
   ignoreUnresolved,
   includeConfigs,
   javaHome,
@@ -22,6 +24,7 @@ export async function convertGradleToFacts({
   excludeConfigs: string
   excludePaths?: string[] | undefined
   gradleOpts: string[]
+  hints?: BuildOptionHints | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome?: string | undefined
@@ -36,6 +39,7 @@ export async function convertGradleToFacts({
     ecosystem: 'gradle',
     excludeConfigs,
     excludePaths,
+    hints,
     ignoreUnresolved,
     includeConfigs,
     javaHome,
