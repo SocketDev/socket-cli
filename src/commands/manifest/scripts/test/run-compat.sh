@@ -36,6 +36,8 @@ use_jdk() {
   local home="${!home_var:-}"
   if [ -n "$home" ]; then
     export JAVA_HOME="$home"
+    # The sbt launcher runs `java` from PATH and ignores JAVA_HOME.
+    export PATH="$home/bin:$PATH"
     echo "  JDK $1: $home"
   else
     echo "  JDK $1 not provided (set $home_var=<jdk-home> for fidelity); using current java"
