@@ -214,10 +214,8 @@ object SocketFactsPlugin extends AutoPlugin {
     }.toMap
   }
 
-  // On a failed update, a lenient (missingOk) retry keeps everything else and, where the resolver still
-  // places a failed module, its configurations. Failed modules are reported, not emitted. A failure
-  // naming no module (an artifact that could not be fetched) is explained by the lenient report's
-  // missing artifacts; with neither, the project is unscannable.
+  // A failure naming no module is an artifact that could not be fetched, which only the lenient
+  // report's missing artifacts reveal; with neither, the project is unscannable.
   private def runUpdateResilient(
       taskName: String,
       ref: ProjectRef,
@@ -280,11 +278,8 @@ object SocketFactsPlugin extends AutoPlugin {
 
   private final case class IvyArtifact(ext: String, classifier: String, detail: String)
 
-  // sbt's UpdateReport did not reliably list artifacts Ivy failed to download (sbt 0.13 listed none
-  // in testing), so read Ivy's own resolution report per configuration:
-  // `<resolution cache>/reports/<resolveId>-<conf>.xml`. The resolve id is the cached descriptor's
-  // `<organisation>-<module>`, and the descriptor sits below the resolution cache (deeper for sbt plugins).
-  // A non-empty result keeps only configs with failures.
+  // sbt 0.13's UpdateReport omits artifacts Ivy failed to download; Ivy's own report per configuration,
+  // `<resolution cache>/reports/<organisation>-<module>-<conf>.xml`, keeps them.
   private def ivyUnfetchedOf(rep: UpdateReport, projectTarget: File): IvyUnfetched = {
     val descriptor = Option(rep.cachedDescriptor).filter(_.isFile)
     val bound = projectTarget.getCanonicalFile.toPath
@@ -337,9 +332,8 @@ object SocketFactsPlugin extends AutoPlugin {
         val (org, name, rev) = (module.getAttribute("organisation"), module.getAttribute("name"), revision.getAttribute("name"))
         val classifier = a.getAttribute("extra-classifier")
         val file = a.getAttribute("name") + (if (classifier.isEmpty) "" else "-" + classifier) + "." + a.getAttribute("ext")
-        // Ivy's cache manager marks an absent artifact "missing artifact" (sbt 0.13's Ivy was seen to
-        // leave it empty); a failure the resolver chain records itself carries none ("null"); any
-        // other detail is a transfer failure's message.
+        // An absent artifact is "missing artifact" (empty under sbt 0.13's Ivy); one the resolver chain
+        // failed itself has "null"; anything else is a transfer failure's message.
         val details = a.getAttribute("details")
         val cause =
           if (details.isEmpty || details == "missing artifact") "not found"

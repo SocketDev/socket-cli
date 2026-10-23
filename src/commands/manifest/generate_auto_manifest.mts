@@ -43,12 +43,9 @@ export type GenerateAutoManifestResult = {
   resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
 }
 
-// Under --auto-manifest, a manifest generator that failed aborts the whole run:
-// a partial or empty SBOM silently under-reports dependencies. The generator has
-// already logged the specifics. A tolerated resolution failure
-// (ignoreUnresolved) is not a failure, so the run continues. A facts generator
-// reports failure as a null outcome; the others only through the exit code,
-// raised above the value captured before they ran.
+// A failed generator aborts --auto-manifest: a partial SBOM silently
+// under-reports dependencies. Facts generators return null on failure; the
+// others only change the exit code.
 function abortFactsRunIfFailed(
   ecosystem: string,
   outcome: RunManifestFactsOutcome,

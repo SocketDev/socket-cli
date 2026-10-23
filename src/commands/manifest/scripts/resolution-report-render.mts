@@ -194,10 +194,8 @@ function proceedHint(
   ]
 }
 
-// Severity is per-kind; the exit-code decision lives in the caller. What
-// resolved elsewhere is only consulted by module (group:name), to tell whether
-// a non-blocking kind left its module missing: the failed selector carries no
-// classifier/type to relate it to one artifact.
+// What resolved elsewhere is consulted only by module (group:name): a failed
+// selector carries no classifier/type to relate it to one artifact.
 export function renderResolutionReport(
   failures: ResolutionFailure[],
   scannedConfigs: string[],

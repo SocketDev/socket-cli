@@ -230,7 +230,7 @@ public final class SocketFactsRecordsEngine {
     }
     Map<String, String> incompleteDescriptors = observer.incompleteDescriptors();
     // Dependencies whose own resolution failed are reported, not emitted, as Gradle and sbt do. One
-    // whose POM was missing or invalid is still emitted: its own artifact may be fine.
+    // whose POM Maven tolerated as missing or invalid is still emitted: its own artifact may be fine.
     Set<String> unresolved = new HashSet<>();
     Map<String, Set<String>> scopesByGav =
         brokenDescriptors.isEmpty() && incompleteDescriptors.isEmpty() && collectionFailures.isEmpty()
@@ -699,15 +699,8 @@ public final class SocketFactsRecordsEngine {
     return added;
   }
 
-  /**
-   * The scope a failed dependency missing from the final graph would have had, as Maven derives it:
-   * the declared scope for a direct dependency, else the parent's scope combined with the
-   * dependency's own (JavaScopeDeriver). Null when it sits on no classpath: from Maven 3.3 on the
-   * graph keeps a dependency whose POM failed, so one absent from it, or one whose parent is absent,
-   * lost a version conflict. Empty when the position is unknown: Maven before 3.9 traces no collect
-   * step, and Maven 4 derives a transitive scope from its scope manager's widths and manages it from
-   * every ancestor (ManagedScopeDeriver, TransitiveDependencyManager), which this does not model.
-   */
+  // Null: on no classpath (from Maven 3.3 the graph keeps a failed POM's node, so an absent one lost a
+  // conflict). Empty: position unknown (no collect step before 3.9; Maven 4's scope rules not modelled).
   private String absentScope(
       MavenSession session, MavenProject module, FailedRequest failed, Set<DependencyNode> onClasspath) {
     if (failed.descriptor && !collectorDropsFailedNodes) return null;
@@ -861,7 +854,6 @@ public final class SocketFactsRecordsEngine {
     final String project;
     final TreeSet<String> children = new TreeSet<>();
     final TreeSet<String> files = new TreeSet<>();
-    // Its artifact was requested but could not be fetched.
     boolean unfetched;
 
     Node(String id, String groupId, String artifactId, String type, String classifier, String version, String project) {

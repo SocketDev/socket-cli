@@ -92,7 +92,7 @@ gradle.projectsEvaluated { g ->
     g.socketFactsState.projectGaByPath[p.path] = "${p.group ?: ''}:${p.name}".toString()
     g.socketFactsState.projectGavByPath[p.path] = "${p.group ?: ''}:${p.name}:${p.version ?: ''}".toString()
     // A wholly excluded subproject emits no project record and its configs are never resolved (see the
-    // collector). projectArtifactExt/projectGaByPath above stay populated so a KEPT project depending on it
+    // collector). The project maps above stay populated so a KEPT project depending on it
     // still recognizes it as a first-party module, and its paths are kept so it is analysed with its code.
     def excluded = g.ext.socketIsExcluded.call(rel(p.projectDir))
     // Guarded: projects without the java `sourceSets` convention (pure aggregators, AGP-only
@@ -240,7 +240,7 @@ allprojects { project ->
         out
       }
 
-      // Deepest cause's message, in FULL — Coana classifies/templates it, so we don't categorize here.
+      // The deepest cause's full message: the TS report classifies it, so nothing is categorized here.
       def rawDetail = { problem ->
         def messages = causeMessages(problem).findAll { it }
         return (messages ? messages[-1] : 'unknown resolution failure').toString().trim()
@@ -341,7 +341,7 @@ allprojects { project ->
         }
         // A skipped no-artifact first-party module, or a module whose artifacts could not be
         // selected, produced no node, so bubble its resolved children up to the parent (return
-        // childIds) — otherwise the module's transitives orphan (attached to nothing, not bubbled).
+        // childIds); otherwise the module's transitives would be attached to nothing.
         if (producedIds.isEmpty()) {
           cache[dep] = childIds
           return childIds
@@ -444,12 +444,8 @@ allprojects { project ->
         sel.displayName.toString()
       }
 
-      // Gradle verifies checksums/signatures when a configuration's artifacts are read as a set
-      // (artifact views, lenient/resolved configuration files), never through the
-      // `ResolvedArtifact.file` the walk reads; that read fails with every fatal verification
-      // failure of the build so far, not just this config's. Only STRICT mode throws (LENIENT logs),
-      // and only a build with verification metadata verifies at all: the root build's, which
-      // included builds share. The mode exists since Gradle 6.2, which introduced verification.
+      // Gradle verifies only artifact-set reads, never the walk's `ResolvedArtifact.file`, and fails
+      // them with every fatal failure so far; only STRICT throws, from 6.2, with the root build's metadata.
       def rootBuild = gradle
       while (rootBuild.parent != null) {
         rootBuild = rootBuild.parent
@@ -463,9 +459,8 @@ allprojects { project ->
       def verificationMessage = { Throwable e ->
         causeMessages(e).find { it?.startsWith('Dependency verification failed') }
       }
-      // Old Gradle splits a module into one ResolvedDependency per target configuration, of which
-      // only some carry its artifacts (on 1.12, only `master` carried the jar). An artifact-less instance is then the same component, not
-      // an ext-less one: fold it into the module's artifact nodes.
+      // Old Gradle splits a module into one ResolvedDependency per target configuration, of which only
+      // some carry its artifacts: an artifact-less one is the same component, so fold it into them.
       def foldArtifactless = {
         if (!nodes.values().any { n -> !n.coord.ext && n.project == null }) {
           return
@@ -630,7 +625,7 @@ allprojects { project ->
           state.unscannable << [config: cfg.name, detail: rawDetail(e), project: project.path]
         }
         // Stash this resolution root's tree; the key only has to be unique per root. Skip empty
-        // configs — they'd contribute nothing — and a partial walk, which can orphan components.
+        // configs, which contribute nothing, and a partial walk, which can orphan components.
         if (walked && !nodes.isEmpty()) {
           synchronized (state.perSub) {
             state.perSub["${project.path}::${cfg.name}".toString()] =
