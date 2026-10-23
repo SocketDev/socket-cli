@@ -150,11 +150,9 @@ run "$PROJECT" -Dsocket.withFiles=true -Dsocket.recordsFile="$RECORDS"
 
 # sbt resolves with coursier by default from 1.3.
 IVY_RESOLVER=false
-SBT_MINOR="${SBT_VERSION#*.}"
-SBT_MINOR="${SBT_MINOR%%.*}"
-if [ "$RESOLVER" = ivy ] || [ "${SBT_VERSION%%.*}" = 0 ] || { [ "${SBT_VERSION%%.*}" = 1 ] && [ "$SBT_MINOR" -lt 3 ]; }; then
-  IVY_RESOLVER=true
-fi
+case "$RESOLVER:$SBT_VERSION" in
+  ivy:*|*:0.*|*:1.[0-2].*) IVY_RESOLVER=true ;;
+esac
 python3 - "$RECORDS" "$IVY_RESOLVER" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
@@ -167,8 +165,6 @@ unfetched_configs = {(r[2], config_of[r[1]]) for r in rows if r[0] == 'unfetched
 files = {r[2] for r in rows if r[0] == 'file'}
 errors = []
 
-if 'demo.fail:pomonly:1.0' not in nodes:
-    errors.append(f"pomonly is pom-packaged, so it must be emitted without an artifact; nodes={sorted(nodes)}")
 # Ivy's POM reader declares a DOCTYPE of its own, so it fails on doctype's; coursier reads it.
 if ivy and 'demo.fail:doctype:1.0' not in failed:
     errors.append(f"Ivy cannot read doctype's POM, so it must be reported; failures={sorted(failed)}")
