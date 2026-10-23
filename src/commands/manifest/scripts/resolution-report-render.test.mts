@@ -5,6 +5,7 @@ import {
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   renderResolutionErrorReport,
 } from './resolution-report-render.mts'
+import { moduleKey } from './resolution-report.mts'
 
 import type { BuildOptionHints } from './resolution-report-render.mts'
 import type { ResolutionFailure } from './resolution-report.mts'
@@ -47,6 +48,63 @@ describe('resolution failure classification', () => {
     expect(r.hasBlockingFailures).toBe(false)
     expect(r.summary).toBe('')
     expect(r.nonBlockingNotice).toContain('ambiguous variant')
+  })
+
+  it.each([
+    'Found multiple transformation chains that produce a variant of com.example:amb:1.0',
+    'Found multiple transforms that can produce a variant of com.example:amb:1.0',
+  ])(
+    'classifies an ambiguous Gradle artifact transform as variant ambiguity: %s',
+    detail => {
+      const r = renderResolutionErrorReport(
+        [f('com.example:amb:1.0', detail)],
+        ['runtimeClasspath'],
+        'gradle',
+      )
+      expect(r.hasBlockingFailures).toBe(false)
+      expect(r.nonBlockingNotice).toContain('ambiguous variant')
+    },
+  )
+
+  it('treats a checksum missing from Gradle verification metadata as non-blocking, unlike a mismatch', () => {
+    const header =
+      "Dependency verification failed for configuration ':runtimeClasspath':"
+    const missing = renderResolutionErrorReport(
+      [
+        f(
+          'com.example:lib:1.0',
+          `${header}\nOn artifact lib-1.0.jar (com.example:lib:1.0) in repository 'maven': checksum is missing from verification metadata.`,
+        ),
+      ],
+      ['runtimeClasspath'],
+      'gradle',
+      { resolvedModules: new Set([moduleKey(':', 'com.example:lib')]) },
+    )
+    expect(missing.hasBlockingFailures).toBe(false)
+    expect(missing.nonBlockingNotice).toContain('no checksum')
+    const mismatch = renderResolutionErrorReport(
+      [
+        f(
+          'com.example:lib:1.0',
+          `${header}\nOn artifact lib-1.0.jar (com.example:lib:1.0) in repository 'maven': expected a 'sha256' checksum of '00' but was '11'`,
+        ),
+      ],
+      ['runtimeClasspath'],
+      'gradle',
+    )
+    expect(mismatch.hasBlockingFailures).toBe(true)
+    const both = renderResolutionErrorReport(
+      [
+        f(
+          'com.example:lib:1.0',
+          `${header}\nOn artifact lib-1.0.jar (com.example:lib:1.0) in repository 'a': checksum is missing from verification metadata.\nOn artifact lib-1.0.jar (com.example:lib:1.0) in repository 'b': expected a 'sha256' checksum of '00' but was '11'`,
+        ),
+      ],
+      ['runtimeClasspath'],
+      'gradle',
+      { resolvedModules: new Set([moduleKey(':', 'com.example:lib')]) },
+    )
+    expect(both.hasBlockingFailures).toBe(true)
   })
 
   it("classifies Gradle's 'unable to find a matching variant' phrasing as blocking no-matching-variant", () => {

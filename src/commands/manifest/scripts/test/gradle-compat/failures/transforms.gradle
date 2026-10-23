@@ -1,0 +1,25 @@
+// Two transforms producing the same artifact type, so selecting a `foo` artifact is ambiguous even
+// though the graph resolves.
+abstract class IdentityOne implements org.gradle.api.artifacts.transform.TransformAction<org.gradle.api.artifacts.transform.TransformParameters.None> {
+  @org.gradle.api.artifacts.transform.InputArtifact
+  abstract Provider<FileSystemLocation> getInputArtifact()
+  void transform(org.gradle.api.artifacts.transform.TransformOutputs outputs) { outputs.file(inputArtifact.get().asFile) }
+}
+abstract class IdentityTwo implements org.gradle.api.artifacts.transform.TransformAction<org.gradle.api.artifacts.transform.TransformParameters.None> {
+  @org.gradle.api.artifacts.transform.InputArtifact
+  abstract Provider<FileSystemLocation> getInputArtifact()
+  void transform(org.gradle.api.artifacts.transform.TransformOutputs outputs) { outputs.file(inputArtifact.get().asFile) }
+}
+def artifactType = Attribute.of('artifactType', String)
+dependencies {
+  registerTransform(IdentityOne) { from.attribute(artifactType, 'jar'); to.attribute(artifactType, 'foo') }
+  registerTransform(IdentityTwo) { from.attribute(artifactType, 'jar'); to.attribute(artifactType, 'foo') }
+}
+configurations {
+  ambiguous {
+    attributes { attribute(artifactType, 'foo') }
+  }
+}
+dependencies {
+  ambiguous 'demo:a:1.0'
+}

@@ -21,8 +21,25 @@ export function classifyGradleFailure(detail: string): FailureCategory {
   ) {
     return 'no-matching-variant'
   }
-  if (t.includes('cannot choose between')) {
+  // The artifact-level form: several transforms produce the requested variant
+  // ("transformation chains" from Gradle 8.12, "transforms" before it).
+  if (
+    t.includes('cannot choose between') ||
+    t.includes('found multiple transformation chains') ||
+    t.includes('found multiple transforms that can produce a variant')
+  ) {
     return 'variant-ambiguity'
+  }
+  // One line per problem of the artifact; a checksum missing from the
+  // metadata is no evidence against it, unlike any other problem.
+  const problems = t.split('\n').filter(l => l.startsWith('on artifact '))
+  if (
+    problems.length &&
+    problems.every(l =>
+      l.endsWith(': checksum is missing from verification metadata.'),
+    )
+  ) {
+    return 'checksum-missing'
   }
   if (
     t.includes('could not get') ||
@@ -46,7 +63,8 @@ export function classifyGradleFailure(detail: string): FailureCategory {
 // Every kind blocks except variant-ambiguity: the module demonstrably exists
 // and is almost always captured via another configuration, so it's benign for
 // the SBOM (non-blocking, count only). The renderer blocks it anyway when the
-// module resolved in no configuration of its project.
+// module resolved in no configuration of its project. Nor does checksum-missing:
+// teams often record checksums only for what their own tasks resolve.
 export const GRADLE_DIALECT: ResolutionDialect = {
   label: 'Gradle',
   classify: classifyGradleFailure,
@@ -94,6 +112,12 @@ export const GRADLE_DIALECT: ResolutionDialect = {
       blocking: false,
       notice: (n, depCount, configCount) =>
         `Skipped ${depCount} dependency(ies) with ambiguous variant selection in ${configCount} configuration(s) — re-run with --verbose for ${n}'s messages.`,
+    },
+    {
+      key: 'checksum-missing',
+      blocking: false,
+      notice: (n, depCount, configCount) =>
+        `Left ${depCount} dependency(ies) uninstalled in ${configCount} configuration(s): ${n}'s verification metadata has no checksum for their artifacts — re-run with --verbose for ${n}'s messages.`,
     },
   ],
 }

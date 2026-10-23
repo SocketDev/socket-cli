@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Maven dependencies with missing or invalid POMs are reported in every module that uses them, `system`-scope jars reach reachability analysis, and a failing dependency no longer fails scopes that `excludeConfigs` leaves out or the build when it lost a version conflict.
 - Reachability scans that hit unresolved JVM dependencies now point out that ignoring them also needs `--reach-continue-on-install-errors`.
 - A Gradle dependency whose variant is ambiguous in every configuration of its project now fails the run instead of quietly dropping out of the scan.
+- Gradle dependencies that fail dependency verification, or whose jars cannot be fetched, are reported instead of passed on as healthy.
+- Failed Gradle project dependencies are reported instead of silently dropping everything they pull in, and failures name the version that actually failed.
 
 ## [1.10.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.0) - 2026-10-22
 

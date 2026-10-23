@@ -1,0 +1,64 @@
+// Hermetic fixture for ../smoke-test-failures.sh: each configuration fails to resolve in one way,
+// against a generated local Maven repo (see ../../make-stub-repo.sh).
+allprojects {
+  repositories {
+    maven { url rootProject.file('localrepo').toURI() }
+  }
+}
+
+configurations {
+  forced
+  shadowing
+  verified
+  walkAborted
+  quiet
+  unparsed
+}
+configurations.forced.resolutionStrategy.force 'demo:c:9.9'
+
+dependencies {
+  forced 'demo:a:1.0'
+  // Shares the group:name of project :lib, but is an external module.
+  shadowing 'demo:lib:7.7'
+  verified 'demo:a:1.0'
+  verified 'demo:tampered:1.0'
+  verified 'demo:unlisted:1.0'
+  walkAborted 'demo:a:1.0'
+  walkAborted 'demo:boom:1.0'
+  quiet 'demo:quiet:1.0'
+  unparsed 'demo:a:1.0'
+}
+
+// Artifact transforms and dependency verification exist only on newer Gradle.
+if (org.gradle.util.GradleVersion.current() >= org.gradle.util.GradleVersion.version('6.2')) {
+  apply from: 'transforms.gradle'
+}
+
+// No build throws from the walk's own reads on demand, so make two of them throw for one module
+// each: boom's children, and quiet's file with an empty message. unparsed's verification read
+// fails with a message that names no artifact.
+tasks.matching { it.name == 'socketFactsCollect' }.all { t ->
+  t.doFirst {
+    def boom = configurations.walkAborted.resolvedConfiguration.firstLevelModuleDependencies.find { it.moduleName == 'boom' }
+    def depMeta = boom.getClass().metaClass
+    def children = depMeta.getMetaMethod('getChildren', [] as Object[])
+    depMeta.getChildren = { ->
+      if (delegate.moduleName == 'boom') {
+        throw new IllegalStateException('walk aborted by the fixture')
+      }
+      children.invoke(delegate)
+    }
+    def quiet = configurations.quiet.resolvedConfiguration.resolvedArtifacts.find { it.name == 'quiet' }
+    def artifactMeta = quiet.getClass().metaClass
+    def file = artifactMeta.getMetaMethod('getFile', [] as Object[])
+    artifactMeta.getFile = { ->
+      if (delegate.name == 'quiet') {
+        throw new RuntimeException('')
+      }
+      file.invoke(delegate)
+    }
+    configurations.unparsed.incoming.metaClass.artifactView = { Closure spec ->
+      throw new GradleException("Dependency verification failed for configuration ':unparsed'")
+    }
+  }
+}

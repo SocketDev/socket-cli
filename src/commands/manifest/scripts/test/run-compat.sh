@@ -23,7 +23,8 @@ TOOL="${1:-all}"
 CACHE="$SOCKET_COMPAT_CACHE"
 
 # Same matrix as the former CI workflow. Rows: "<ver> <javaMajor> [scala]".
-GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "8.10.2 17" "9.2.1 21")
+# 6.2 is the oldest Gradle with dependency verification.
+GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "6.2.2 8" "8.10.2 17" "9.2.1 21")
 # The Maven rows span the range the extension claims to support (see maven-extension/pom.xml):
 # 3.2.5 is the oldest, 4.x the newest. Resolution goes through Maven's own
 # ProjectDependenciesResolver, so both ends are load-bearing, not decorative.
@@ -62,6 +63,7 @@ run_gradle() {
     fi
     bash "$HERE/gradle-compat/smoke-test.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-workspaces.sh" "$dir/bin/gradle"
+    bash "$HERE/gradle-compat/smoke-test-failures.sh" "$dir/bin/gradle"
   done
 }
 
