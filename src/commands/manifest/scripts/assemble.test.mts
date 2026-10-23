@@ -163,6 +163,33 @@ describe('records → assemble → sidecar', () => {
     expect(byId.get('g:half:jar:1')).not.toHaveProperty('targets')
     expect(byId.get('g:halfgone:jar:1')).not.toHaveProperty('targets')
   })
+  it('keeps the targets of an artifact that another root fetched', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\tg:a:1\tg\ta\t1\ta',
+      'project\tg:b:1\tg\tb\t1\tb',
+      'root\t0\tg:a:1\tcompile\t1',
+      'root\t1\tg:b:1\tcompile\t1',
+      'node\t0\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\t1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\t0\tg:moved:jar:1\tg\tmoved\t1\tjar\t\t1',
+      'node\t1\tg:moved:jar:1\tg\tmoved\t1\tjar\t\t1',
+      'unfetched\t0\tg:lib:jar:1',
+      'file\t1\tg:lib:jar:1\t/abs/lib.jar',
+      'file\t0\tg:moved:jar:1\t/abs/gone.jar',
+      'file\t1\tg:moved:jar:1\t/abs/moved.jar',
+    ].join('\n')
+    const { artifactPaths } = assembleFacts(parseRecords(records), {
+      fileExists: p => p !== '/abs/gone.jar',
+    })
+
+    expect(artifactPaths.pathsById.get('g:lib:jar:1')?.targets).toEqual([
+      '/abs/lib.jar',
+    ])
+    expect(artifactPaths.pathsById.get('g:moved:jar:1')?.targets).toEqual([
+      '/abs/moved.jar',
+    ])
+  })
   it('keeps a coordinate with divergent subtrees as one component with a dependency entry per subtree', () => {
     // :a and :b both depend on `lib`, which pulls a different `dep` version in
     // each subproject.

@@ -32,8 +32,8 @@ type MergedNode = {
   direct: boolean
   // projectKey when this node is a build project, else empty.
   project: string
-  targets: Set<string>
-  unfetched: boolean
+  // One per resolution root that recorded files or failed to fetch them.
+  resolutions: Array<{ targets: string[]; unfetched: boolean }>
 }
 
 type SubprojectGraph = {
@@ -156,8 +156,7 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
           prod: false,
           direct: false,
           project: node.project,
-          targets: new Set(),
-          unfetched: false,
+          resolutions: [],
         }
         finalNodes.set(coordId, fn)
       }
@@ -167,11 +166,11 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
       if (node.direct) {
         fn.direct = true
       }
-      if (node.unfetched) {
-        fn.unfetched = true
-      }
-      for (const t of node.targets) {
-        fn.targets.add(t)
+      if (node.unfetched || node.targets.length) {
+        fn.resolutions.push({
+          targets: node.targets,
+          unfetched: node.unfetched,
+        })
       }
     }
   }
@@ -416,11 +415,20 @@ function buildArtifactPaths(
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
   for (const [id, fn] of finalNodes) {
     if (!fn.project) {
-      const targets = [...fn.targets].filter(fileExists).sort()
-      // An artifact with any file that could not be fetched, or is gone from
-      // disk, has no targets: a partial list would claim it resolved whole.
-      const unresolved = fn.unfetched || targets.length < fn.targets.size
-      pathsById.set(id, unresolved ? { sources: [] } : { sources: [], targets })
+      // Only a root that fetched every file of the artifact, all still on
+      // disk, resolved it: a partial list would claim it resolved whole.
+      const complete = fn.resolutions.filter(
+        r => !r.unfetched && r.targets.every(fileExists),
+      )
+      pathsById.set(
+        id,
+        fn.resolutions.length && !complete.length
+          ? { sources: [] }
+          : {
+              sources: [],
+              targets: [...new Set(complete.flatMap(r => r.targets))].sort(),
+            },
+      )
     }
   }
   // A project's own component shares its id, so this also covers dependency
