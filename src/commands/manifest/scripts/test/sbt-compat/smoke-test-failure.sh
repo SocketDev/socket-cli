@@ -148,8 +148,11 @@ rm -rf "$RECORDS" "$PROJECT/target" "$PROJECT/project/target"
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (failure, with files)"
 run "$PROJECT" -Dsocket.withFiles=true -Dsocket.recordsFile="$RECORDS"
 
+# sbt resolves with coursier by default from 1.3.
 IVY_RESOLVER=false
-if [ "$RESOLVER" = ivy ] || [ "${SBT_VERSION%%.*}" = 0 ]; then
+SBT_MINOR="${SBT_VERSION#*.}"
+SBT_MINOR="${SBT_MINOR%%.*}"
+if [ "$RESOLVER" = ivy ] || [ "${SBT_VERSION%%.*}" = 0 ] || { [ "${SBT_VERSION%%.*}" = 1 ] && [ "$SBT_MINOR" -lt 3 ]; }; then
   IVY_RESOLVER=true
 fi
 python3 - "$RECORDS" "$IVY_RESOLVER" <<'PY'
