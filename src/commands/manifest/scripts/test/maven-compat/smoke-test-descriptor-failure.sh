@@ -7,8 +7,9 @@
 #   is missing too gets no file (nothing).
 # - A system-scope jar gets its file; a missing systemPath fails, under the full coordinate.
 # - A failure absent from the graph fails in the scope it would have had: rangedchild under the
-#   test-scoped testparent is test. Maven before 3.9 traces no collect step, so there the position
-#   is unknown and the failure has no scope. A dependency that lost a version conflict (conflict
+#   test-scoped testparent is test. Maven before 3.9 traces no collect step, and Maven 4 derives
+#   and manages a transitive scope differently, so there the position is unknown and the failure has
+#   no scope. A dependency that lost a version conflict (conflict
 #   1.0) is on no classpath and must not fail; Maven 3.2 drops a failed POM's node from the graph, so
 #   there it cannot be told apart and has no scope.
 #
@@ -135,7 +136,7 @@ VERSION="$("$MVN" -v 2>/dev/null | head -1)"
 echo "+ $VERSION (descriptor failure)"
 case "$VERSION" in
   *"Maven 3.2."*) STEPS=false; KEEPS_FAILED=false ;;
-  *"Maven 3.9."* | *"Maven 4."*) STEPS=true; KEEPS_FAILED=true ;;
+  *"Maven 3.9."*) STEPS=true; KEEPS_FAILED=true ;;
   *) STEPS=false; KEEPS_FAILED=true ;;
 esac
 

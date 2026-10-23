@@ -444,14 +444,19 @@ allprojects { project ->
         sel.displayName.toString()
       }
 
-      // Gradle verifies checksums/signatures only when an artifact file is read through the
-      // artifact-view API, never through the `ResolvedArtifact.file` the walk reads; the read then
-      // fails with every fatal verification failure of the build so far, not just this config's.
-      // Only STRICT mode throws (LENIENT logs), and only a build with verification metadata
-      // verifies at all. The mode exists since Gradle 6.2, which introduced verification.
+      // Gradle verifies checksums/signatures when a configuration's artifacts are read as a set
+      // (artifact views, lenient/resolved configuration files), never through the
+      // `ResolvedArtifact.file` the walk reads; that read fails with every fatal verification
+      // failure of the build so far, not just this config's. Only STRICT mode throws (LENIENT logs),
+      // and only a build with verification metadata verifies at all: the root build's, which
+      // included builds share. The mode exists since Gradle 6.2, which introduced verification.
+      def rootBuild = gradle
+      while (rootBuild.parent != null) {
+        rootBuild = rootBuild.parent
+      }
       def startParameter = gradle.startParameter
       def verifyArtifacts = withFiles &&
-        new File(project.rootDir, 'gradle/verification-metadata.xml').isFile() &&
+        new File(rootBuild.rootProject.rootDir, 'gradle/verification-metadata.xml').isFile() &&
         startParameter.metaClass.respondsTo(startParameter, 'getDependencyVerificationMode') &&
         startParameter.dependencyVerificationMode.toString() == 'STRICT'
       def gavOf = { Map c -> "${c.groupId}:${c.artifactId}:${c.version}".toString() }
@@ -459,7 +464,7 @@ allprojects { project ->
         causeMessages(e).find { it?.startsWith('Dependency verification failed') }
       }
       // Old Gradle splits a module into one ResolvedDependency per target configuration, of which
-      // only some carry its artifacts. An artifact-less instance is then the same component, not
+      // only some carry its artifacts (on 1.12, only `master` carried the jar). An artifact-less instance is then the same component, not
       // an ext-less one: fold it into the module's artifact nodes.
       def foldArtifactless = {
         if (!nodes.values().any { n -> !n.coord.ext && n.project == null }) {
@@ -530,7 +535,8 @@ allprojects { project ->
           return
         }
         // The report names each failed artifact by its identifier's display name,
-        // "<file> (<group>:<module>:<version>)".
+        // "<file> (<group>:<module>:<version>)", whose file part is `<name>-<version>[-<classifier>].<ext>`
+        // rather than the cached file's own name.
         def failed = [:]
         (message =~ /(\S+) \(([^\s():]+):([^\s():]+):([^\s()]+)\)/).each { m ->
           failed.get("${m[2]}:${m[3]}:${m[4]}".toString(), [] as Set) << m[1]
@@ -543,7 +549,11 @@ allprojects { project ->
           // A failed metadata file (pom, module) names none of the module's artifacts: all are suspect.
           // A failed artifact this config did not fetch leaves it untouched.
           def metadataOnly = fileNames.every { it.endsWith('.pom') || it.endsWith('.module') }
-          def matched = ids.findAll { id -> paths[id].any { p -> fileNames.contains(new File(p).name) } }
+          def matched = ids.findAll { id ->
+            def c = nodes[id].coord
+            def named = "${c.artifactId}-${c.version}${c.classifier ? '-' + c.classifier : ''}${c.ext ? '.' + c.ext : ''}"
+            fileNames.contains(named.toString()) || paths[id].any { p -> fileNames.contains(new File(p).name) }
+          }
           def hit = matched ?: (metadataOnly ? ids : [])
           if (!hit.isEmpty()) {
             recordFailure(gav, message)

@@ -83,9 +83,11 @@ public final class SocketFactsRecordsEngine {
   private final String mavenVersion;
   private final CollectionObserver observer;
   private final Logger log;
-  // Maven 3.2's collector (aether 1.0.0) leaves a dependency whose POM failed out of the graph; from
+  // Maven 3.2.5's collector (aether 1.0.0) leaves a dependency whose POM failed out of the graph; from
   // aether 1.0.2 (Maven 3.3) on it stays, minus its children.
   private final boolean collectorDropsFailedNodes;
+  // Maven 3's JavaScopeDeriver and ClassicDependencyManager, which absentScope models.
+  private final boolean maven3ScopeRules;
   // The resolver caches a failed POM build-wide, keyed by artifact alone, so only the first module to
   // reach one sees the failure; every later module gets the node without children and no error.
   // Keyed by GAV.
@@ -100,6 +102,7 @@ public final class SocketFactsRecordsEngine {
     this.observer = observer;
     this.log = log;
     this.collectorDropsFailedNodes = mavenVersion != null && mavenVersion.startsWith("3.2.");
+    this.maven3ScopeRules = mavenVersion == null || mavenVersion.startsWith("3.");
   }
 
   public void run(MavenSession session, List<MavenProject> reactor, File rootDir, Options opts)
@@ -702,7 +705,8 @@ public final class SocketFactsRecordsEngine {
    * dependency's own (JavaScopeDeriver). Null when it sits on no classpath: from Maven 3.3 on the
    * graph keeps a dependency whose POM failed, so one absent from it, or one whose parent is absent,
    * lost a version conflict. Empty when the position is unknown: Maven before 3.9 traces no collect
-   * step.
+   * step, and Maven 4 derives a transitive scope from its scope manager's widths and manages it from
+   * every ancestor (ManagedScopeDeriver, TransitiveDependencyManager), which this does not model.
    */
   private String absentScope(
       MavenSession session, MavenProject module, FailedRequest failed, Set<DependencyNode> onClasspath) {
@@ -712,6 +716,7 @@ public final class SocketFactsRecordsEngine {
     if (parent != null && dependency != null) {
       if (!onClasspath.contains(parent)) return null;
       if (parent.getDependency() == null) return scopeOf(dependency);
+      if (!maven3ScopeRules) return "";
       String managed = managedScope(session, module, dependency.getArtifact());
       return derivedScope(parent.getDependency().getScope(), managed != null ? managed : scopeOf(dependency));
     }

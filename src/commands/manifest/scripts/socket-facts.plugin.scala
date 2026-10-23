@@ -280,8 +280,8 @@ object SocketFactsPlugin extends AutoPlugin {
 
   private final case class IvyArtifact(ext: String, classifier: String, detail: String)
 
-  // sbt 0.13 drops an artifact Ivy failed to download from its UpdateReport, and sbt 1.x keeps it
-  // without its classifier, so read Ivy's own resolution report per configuration:
+  // sbt's UpdateReport did not reliably list artifacts Ivy failed to download (sbt 0.13 listed none
+  // in testing), so read Ivy's own resolution report per configuration:
   // `<resolution cache>/reports/<resolveId>-<conf>.xml`. The resolve id is the cached descriptor's
   // `<organisation>-<module>`, and the descriptor sits below the resolution cache (deeper for sbt plugins).
   // A non-empty result keeps only configs with failures.
@@ -337,11 +337,14 @@ object SocketFactsPlugin extends AutoPlugin {
         val (org, name, rev) = (module.getAttribute("organisation"), module.getAttribute("name"), revision.getAttribute("name"))
         val classifier = a.getAttribute("extra-classifier")
         val file = a.getAttribute("name") + (if (classifier.isEmpty) "" else "-" + classifier) + "." + a.getAttribute("ext")
-        // Behind sbt's resolver chain Ivy leaves `details` empty for an absent artifact; a transfer
-        // failure carries its reason.
+        // Ivy's cache manager marks an absent artifact "missing artifact" (sbt 0.13's Ivy was seen to
+        // leave it empty); a failure the resolver chain records itself carries none ("null"); any
+        // other detail is a transfer failure's message.
         val details = a.getAttribute("details")
         val cause =
-          if (details.isEmpty || details == "missing artifact") "not found" else "download failed (" + details + ")"
+          if (details.isEmpty || details == "missing artifact") "not found"
+          else if (details == "null") "download failed"
+          else "download failed (" + details + ")"
         (org + ":" + name + ":" + rev) -> IvyArtifact(a.getAttribute("ext"), classifier, cause + ": " + org + "#" + name + ";" + rev + "!" + file)
       }
       out.groupBy(_._1).map { case (gav, pairs) => gav -> pairs.map(_._2).distinct }
@@ -556,9 +559,9 @@ object SocketFactsPlugin extends AutoPlugin {
       if (ivy) Nil else Option(m.missingArtifacts).toList.flatten.filterNot(poms.isUnexpectedDefault)
   }
 
-  // Coursier expects the default jar of every Maven module and skips it silently when absent,
-  // whatever the POM's packaging. Only the module's own POM (packaging is not inherited) tells whether
-  // its artifact is a jar; an unreadable POM counts as one.
+  // Coursier requests the default jar of every Maven module and skips it silently when absent unless
+  // the POM declares a jar packaging. Only the module's own POM tells whether its artifact is a jar
+  // (packaging defaults to jar, so a parent's never applies); an unreadable POM counts as one.
   private final class PomPackaging(csrCacheDir: Option[File]) {
     private val memo = mutable.HashMap.empty[String, Boolean]
 
@@ -573,10 +576,10 @@ object SocketFactsPlugin extends AutoPlugin {
     }
   }
 
-  // coursier.maven.MavenAttributes.typeExtensions: the packagings whose artifact is a `.jar`. Any other
-  // packaging (pom, aar, war, ...) publishes its own artifact, listed separately.
+  // coursier.maven.MavenAttributes.typeExtensions (2.1.24, which adds ejb): the packagings whose
+  // artifact is a `.jar`. Any other packaging (pom, aar, war, ...) publishes its own artifact.
   private val JarPackagings = Set("eclipse-plugin", "maven-plugin", "hk2-jar", "orbit", "scala-jar", "jar", "bundle",
-    "doc", "src", "test-jar", "ejb-client")
+    "doc", "src", "test-jar", "ejb-client", "ejb")
 
   // coursier.paths.CachePath.localFile. A repository with credentials is cached under `user@host`,
   // and the update report does not carry the user.

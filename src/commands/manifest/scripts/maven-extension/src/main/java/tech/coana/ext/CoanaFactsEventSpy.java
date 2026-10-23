@@ -10,7 +10,7 @@ import javax.inject.Singleton;
 /**
  * Relays repository events to the facts engine while it collects. Every Maven chains its event
  * spies into the session's repository listener, which an extension cannot replace: the session is
- * read-only from Maven 3.2 on and immutable in Maven 4.
+ * read-only since Maven 3.1 and immutable in Maven 4.
  */
 @Named("coana-facts-events")
 @Singleton

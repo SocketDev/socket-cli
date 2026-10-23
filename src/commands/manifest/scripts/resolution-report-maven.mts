@@ -34,8 +34,8 @@ export function classifyMavenFailure(detail: string): FailureCategory {
     t.includes('could not resolve') ||
     t.includes('no versions available') ||
     t.includes('not found') ||
-    // maven-resolver 2's prefix filter: the repository publishes that it has
-    // no such path.
+    // maven-resolver's remote repository filters (prefixes, groupId): the
+    // repository is known not to serve that path or group.
     t.includes('not allowed from')
   ) {
     return 'not-found'
