@@ -60,9 +60,10 @@ export type SocketFactsSbomProject = AnyPURL & {
 
 // Resolved on-disk paths for a --with-files run, keyed by component or project
 // id (a project and its own component share one). `targets` = classpath
-// entries (jars / module output dirs); `sources` = module source roots.
+// entries (jars / module output dirs), absent when the component's artifact
+// did not resolve; `sources` = module source roots.
 export type ResolvedArtifactPaths = {
-  pathsById: Map<string, { sources: string[]; targets: string[] }>
+  pathsById: Map<string, { sources: string[]; targets?: string[] | undefined }>
   // Component ids on each project's resolved classpath (union over its
   // configurations), keyed by project id.
   classpathByProject: Map<string, string[]>

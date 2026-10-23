@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - With `--dynamic-sbom-inference`, an sbt build that fails before writing its results is reported as failed instead of reusing another build's results.
 - `socket scan create --reach` keeps the private libraries and build modules of Socket facts files in the stored SBOM, with their dependencies under them.
+- JVM dependencies whose jars cannot be fetched, or are gone from disk, no longer reach reachability analysis looking resolved without code.
 
 ## [1.10.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.0) - 2026-10-22
 
