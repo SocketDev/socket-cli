@@ -232,13 +232,22 @@ allprojects { project ->
         id
       }
 
-      // Deepest cause's message, in FULL — Coana classifies/templates it, so we don't categorize here.
-      def rawDetail = { problem ->
-        def deepest = null
+      def causeMessages = { problem ->
+        def out = []
         def t = problem
         int guard = 0
-        while (t != null && guard++ < 12) { if (t.message) { deepest = t.message }; t = t.cause }
-        return (deepest ?: 'unknown resolution failure').toString().trim()
+        while (t != null && guard++ < 12) { out << t.message; t = t.cause }
+        out
+      }
+
+      // Deepest cause's message, in FULL — Coana classifies/templates it, so we don't categorize here.
+      def rawDetail = { problem ->
+        def messages = causeMessages(problem).findAll { it }
+        return (messages ? messages[-1] : 'unknown resolution failure').toString().trim()
+      }
+
+      def recordFailure = { String coord, String detail ->
+        failures << [coord: coord, detail: detail, config: configName, project: project.path]
       }
 
       // Walk a resolved dependency and its transitive closure. We never touch `artifact.file` here —
@@ -261,12 +270,6 @@ allprojects { project ->
         // failure keep walking so one ambiguous artifact can't sink the config.
         def gav = "${dep.moduleGroup ?: ''}:${dep.moduleName}:${dep.moduleVersion ?: ''}".toString()
         def shouldMaterialize = withFiles && (populateGavs == null || populateGavs.contains(gav))
-        // A requested artifact that yields no file is a failure: without one, the dependency would
-        // read as resolved with nothing to analyse.
-        def materializeFailed = { Exception e, String id ->
-          failures << [coord: gav, detail: rawDetail(e), config: configName, project: project.path]
-          synchronized (unfetched) { unfetched << id }
-        }
         def projPath = projectByGav[gav]
         def artifacts
         def artifactsError = null
@@ -279,7 +282,7 @@ allprojects { project ->
         if (artifactsError != null && projPath == null) {
           // No artifact was selected, so there is no coordinate to emit: report the module and
           // bubble its children up (below), as for a skipped first-party module.
-          failures << [coord: gav, detail: rawDetail(artifactsError), config: configName, project: project.path]
+          recordFailure(gav, rawDetail(artifactsError))
         } else if (artifacts.isEmpty()) {
           def ext = effExt(projPath, '')
           // Skip a no-artifact first-party module (aggregator / build root): it builds no archive, so
@@ -321,7 +324,12 @@ allprojects { project ->
                 }
               } catch (Exception e) {
                 println "[socket-facts] could not materialize ${aid}: ${rawDetail(e).readLines().find()}"
-                if (projPath == null) materializeFailed(e, aid)
+                // A requested artifact that yields no file is a failure: without one, the dependency
+                // would read as resolved with nothing to analyse.
+                if (projPath == null) {
+                  recordFailure(gav, rawDetail(e))
+                  unfetched << aid
+                }
               }
             }
           }
@@ -448,20 +456,15 @@ allprojects { project ->
         startParameter.dependencyVerificationMode.toString() == 'STRICT'
       def gavOf = { Map c -> "${c.groupId}:${c.artifactId}:${c.version}".toString() }
       def verificationMessage = { Throwable e ->
-        def t = e
-        int guard = 0
-        while (t != null && guard++ < 12) {
-          if (t.message?.startsWith('Dependency verification failed')) {
-            return t.message
-          }
-          t = t.cause
-        }
-        null
+        causeMessages(e).find { it?.startsWith('Dependency verification failed') }
       }
       // Old Gradle splits a module into one ResolvedDependency per target configuration, of which
       // only some carry its artifacts. An artifact-less instance is then the same component, not
       // an ext-less one: fold it into the module's artifact nodes.
       def foldArtifactless = {
+        if (!nodes.values().any { n -> !n.coord.ext && n.project == null }) {
+          return
+        }
         def withExt = [:]
         nodes.each { id, n ->
           if (n.coord.ext) {
@@ -530,11 +533,7 @@ allprojects { project ->
         // "<file> (<group>:<module>:<version>)".
         def failed = [:]
         (message =~ /(\S+) \(([^\s():]+):([^\s():]+):([^\s()]+)\)/).each { m ->
-          def key = "${m[2]}:${m[3]}:${m[4]}".toString()
-          if (!failed.containsKey(key)) {
-            failed[key] = [] as Set
-          }
-          failed[key] << m[1]
+          failed.get("${m[2]}:${m[3]}:${m[4]}".toString(), [] as Set) << m[1]
         }
         if (failed.isEmpty()) {
           throw new GradleException(message)
@@ -547,7 +546,7 @@ allprojects { project ->
           def matched = ids.findAll { id -> paths[id].any { p -> fileNames.contains(new File(p).name) } }
           def hit = matched ?: (metadataOnly ? ids : [])
           if (!hit.isEmpty()) {
-            failures << [coord: gav, detail: message, config: cfg.name, project: project.path]
+            recordFailure(gav, message)
             hit.each { id ->
               paths.remove(id)
               unfetched << id
@@ -598,12 +597,15 @@ allprojects { project ->
           foldArtifactless()
           // Unresolved deps drive the root aggregator's abort/warn decision but are NOT emitted as
           // nodes — their selector-only coordinates would surface as half-formed phantom artifacts.
-          def reported = [] as Set
-          cfg.incoming.resolutionResult.allDependencies.each { d ->
-            if (d instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
-              def coord = selectorCoord(d.attempted ?: d.requested)
-              if (reported.add(coord)) {
-                failures << [coord: coord, detail: rawDetail(d.failure), config: cfg.name, project: project.path]
+          // hasError() covers every unresolved dependency, project ones included.
+          if (cfg.resolvedConfiguration.hasError()) {
+            def reported = [] as Set
+            cfg.incoming.resolutionResult.allDependencies.each { d ->
+              if (d instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
+                def coord = selectorCoord(d.attempted ?: d.requested)
+                if (reported.add(coord)) {
+                  recordFailure(coord, rawDetail(d.failure))
+                }
               }
             }
           }

@@ -6,43 +6,53 @@ import org.eclipse.aether.collection.CollectStepData;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyNode;
 
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * What the repository events of one module's dependency collection reveal beyond its result: the
- * POMs Maven's default {@code ArtifactDescriptorPolicy} tolerated as missing or invalid (the node
- * stays, its dependencies are lost, and no collection error is raised), and the graph position of
- * each collect step.
+ * What the repository events of dependency collection reveal beyond its result: the POMs Maven's
+ * default {@code ArtifactDescriptorPolicy} tolerated as missing or invalid (the node stays, its
+ * dependencies are lost, and no collection error is raised), build-wide, and the graph position of
+ * each collect step of the current module.
  */
 public final class CollectionObserver {
 
   // CollectStepData is maven-resolver 1.8.1+ (Maven 3.9+); older resolvers trace no collect step.
   private static final boolean COLLECT_STEPS = classExists("org.eclipse.aether.collection.CollectStepData");
 
+  // The resolver caches a tolerated POM build-wide, so only the first module to reach one sees its
+  // event; that module's detail is kept.
   private final Map<String, String> incompleteDescriptors = new LinkedHashMap<>();
+  private final Set<String> incompleteInModule = new HashSet<>();
   private final Map<Object, DependencyNode> stepParents = new IdentityHashMap<>();
 
   public synchronized void onEvent(RepositoryEvent event) {
     if (event.getType() == RepositoryEvent.EventType.ARTIFACT_DESCRIPTOR_MISSING) {
-      incompleteDescriptors.put(
-          gav(event.getArtifact()),
-          "The POM for " + event.getArtifact() + " is missing, no dependency information available: "
-              + SocketFactsRecordsEngine.rootMessage(event.getException()));
+      incomplete(event, "is missing, no dependency information available");
     } else if (event.getType() == RepositoryEvent.EventType.ARTIFACT_DESCRIPTOR_INVALID) {
-      incompleteDescriptors.put(
-          gav(event.getArtifact()),
-          "The POM for " + event.getArtifact() + " is invalid, transitive dependencies (if any) will not be available: "
-              + SocketFactsRecordsEngine.rootMessage(event.getException()));
+      incomplete(event, "is invalid, transitive dependencies (if any) will not be available");
     }
     // The depth-first collector hands each step its live node stack, so the parent is only right now.
     if (COLLECT_STEPS) Steps.recordParent(event.getTrace(), stepParents);
   }
 
+  private void incomplete(RepositoryEvent event, String problem) {
+    String gav = SocketFactsRecordsEngine.gav(event.getArtifact());
+    if (incompleteDescriptors.containsKey(gav) && !incompleteInModule.contains(gav)) return;
+    incompleteInModule.add(gav);
+    incompleteDescriptors.put(
+        gav,
+        "The POM for " + event.getArtifact() + " " + problem + ": "
+            + SocketFactsRecordsEngine.rootMessage(event.getException()));
+  }
+
+  /** Starts the next module's collection. */
   synchronized void reset() {
-    incompleteDescriptors.clear();
+    incompleteInModule.clear();
     stepParents.clear();
   }
 
@@ -59,10 +69,6 @@ public final class CollectionObserver {
   /** The dependency, before management, that the collect step behind {@code trace} was adding. */
   synchronized Dependency dependencyOf(RequestTrace trace) {
     return COLLECT_STEPS ? Steps.dependencyOf(trace) : null;
-  }
-
-  private static String gav(org.eclipse.aether.artifact.Artifact a) {
-    return a.getGroupId() + ":" + a.getArtifactId() + ":" + a.getBaseVersion();
   }
 
   private static boolean classExists(String name) {

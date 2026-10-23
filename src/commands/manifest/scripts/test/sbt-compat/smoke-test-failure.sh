@@ -87,10 +87,15 @@ if [ "$RESOLVER" = ivy ]; then
 fi
 rm -rf "$RECORDS" "$PROJECT/target" "$PROJECT/project/target"
 
+run() {
+  local dir="$1"
+  shift
+  ( cd "$dir" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
+      -Dsbt.ivy.home="$IVY" "$@" --batch socketFacts )
+}
+
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (failure)"
-( cd "$PROJECT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
-    -Dsbt.ivy.home="$IVY" \
-    -Dsocket.recordsFile="$RECORDS" --batch socketFacts )
+run "$PROJECT" -Dsocket.recordsFile="$RECORDS"
 
 python3 - "$RECORDS" <<'PY'
 import sys
@@ -129,9 +134,7 @@ PY
 
 rm -rf "$RECORDS" "$PROJECT/target" "$PROJECT/project/target"
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (failure, with files)"
-( cd "$PROJECT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
-    -Dsbt.ivy.home="$IVY" \
-    -Dsocket.withFiles=true -Dsocket.recordsFile="$RECORDS" --batch socketFacts )
+run "$PROJECT" -Dsocket.withFiles=true -Dsocket.recordsFile="$RECORDS"
 
 python3 - "$RECORDS" <<'PY'
 import sys
@@ -188,9 +191,7 @@ echo "sbt.version=$SBT_VERSION" > "$ARTIFACT/project/build.properties"
 cp "$PROJECT/scala-version.sbt" "$ARTIFACT/scala-version.sbt"
 rm -rf "$ARTIFACT/records.tsv" "$ARTIFACT/target" "$ARTIFACT"/*/target "$ARTIFACT/project/target"
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (artifact failure)"
-( cd "$ARTIFACT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
-    -Dsbt.ivy.home="$IVY" \
-    -Dsocket.recordsFile="$ARTIFACT/records.tsv" --batch socketFacts )
+run "$ARTIFACT" -Dsocket.recordsFile="$ARTIFACT/records.tsv"
 
 python3 - "$ARTIFACT/records.tsv" <<'PY'
 import sys
@@ -212,9 +213,7 @@ PY
 
 rm -rf "$ARTIFACT/records.tsv"
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (artifact failure, with files)"
-( cd "$ARTIFACT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
-    -Dsbt.ivy.home="$IVY" \
-    -Dsocket.withFiles=true -Dsocket.recordsFile="$ARTIFACT/records.tsv" --batch socketFacts )
+run "$ARTIFACT" -Dsocket.withFiles=true -Dsocket.recordsFile="$ARTIFACT/records.tsv"
 
 python3 - "$ARTIFACT/records.tsv" <<'PY'
 import sys

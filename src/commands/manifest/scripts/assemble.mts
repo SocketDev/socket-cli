@@ -8,6 +8,7 @@ import {
   type SocketFactsSbomMetadata,
   type SocketFactsSbomProject,
 } from './facts.mts'
+import { moduleKey } from './resolution-report.mts'
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
@@ -90,6 +91,7 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
+      [...parsed.excludedProjects.values()],
       graphs,
       fileExists,
     ),
@@ -304,7 +306,6 @@ function buildDependencyGraph(
   const byComponent = (a: string, b: string) =>
     componentIndex.get(a)! - componentIndex.get(b)!
   const projects = [...parsed.projects.values()]
-    .filter(p => !p.excluded)
     .map(p => ({
       p,
       roots: treeRoots(p.projectKey, graphs.get(p.projectKey), byComponent),
@@ -411,6 +412,7 @@ function byProject(
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
+  excludedProjects: RawProject[],
   graphs: Map<string, SubprojectGraph>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
@@ -426,17 +428,16 @@ function buildArtifactPaths(
   }
   // A project's own component shares its id, so this also covers dependency
   // edges onto a sibling project.
-  for (const p of projects) {
+  for (const p of [...projects, ...excludedProjects]) {
     pathsById.set(p.projectKey, {
       sources: [...new Set(p.sources)].filter(fileExists).sort(),
       targets: [...new Set(p.targets)].filter(fileExists).sort(),
     })
   }
-  const kept = projects.filter(p => !p.excluded)
   return {
     pathsById,
-    classpathByProject: byProject(kept, graphs, g => g.children.keys()),
-    directDependenciesByProject: byProject(kept, graphs, g => g.direct),
+    classpathByProject: byProject(projects, graphs, g => g.children.keys()),
+    directDependenciesByProject: byProject(projects, graphs, g => g.direct),
   }
 }
 
@@ -460,9 +461,13 @@ function buildReport(parsed: ParsedRecords): ResolutionReport {
     return true
   })
   const resolvedModules = new Set<string>()
-  for (const r of parsed.roots.values()) {
-    for (const n of r.nodes.values()) {
-      resolvedModules.add(`${r.projectKey}\t${n.coord.group}:${n.coord.name}`)
+  if (failures.length) {
+    for (const r of parsed.roots.values()) {
+      for (const n of r.nodes.values()) {
+        resolvedModules.add(
+          moduleKey(r.projectKey, `${n.coord.group}:${n.coord.name}`),
+        )
+      }
     }
   }
   return {

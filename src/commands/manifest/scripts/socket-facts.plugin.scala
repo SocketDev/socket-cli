@@ -63,19 +63,23 @@ object SocketFactsPlugin extends AutoPlugin {
       // Real artifact ext per build module, so an ext-less inter-project dep gets its true coordinate.
       val moduleExts = buildModuleExts(allRefs, extracted)
 
+      // Every project: `update` also runs each upstream project's update, which would fail strictly.
+      lazy val lenientState = extracted.append(allRefs.map(r => updateConfiguration.in(r) ~= (c => withMissingOk(c))), st)
+      val pomsByCache = mutable.HashMap.empty[Option[File], PomPackaging]
+
       allRefs.foreach { ref =>
         if (!isExcludedRef(ref)) {
           // Built-in lm-coursier (sbt 1.3+) and the legacy sbt-coursier plugin name their caches differently.
           val legacyCoursierCache = extracted.getOpt(SettingKey[File]("coursierCache").in(ref))
-          val poms = new PomPackaging(
-            extracted.getOpt(SettingKey[File]("csrCacheDirectory").in(ref)).orElse(legacyCoursierCache))
+          val csrCache = extracted.getOpt(SettingKey[File]("csrCacheDirectory").in(ref)).orElse(legacyCoursierCache)
+          val poms = pomsByCache.getOrElseUpdate(csrCache, new PomPackaging(csrCache))
           // sbt 0.13 has no `useCoursier`: it resolves with Ivy unless the legacy plugin replaces it.
           val ivy = extracted.getOpt(SettingKey[Boolean]("useCoursier").in(ref)) match {
             case Some(useCoursier) => !useCoursier
             case None              => legacyCoursierCache.isEmpty
           }
           val resolver = new Resolver(ivy, poms)
-          runUpdateResilient(updateTaskName, ref, allRefs, extracted, st, matcher, failures, unscannable, resolver)
+          runUpdateResilient(updateTaskName, ref, extracted, st, lenientState, matcher, failures, unscannable, resolver)
             .foreach { case (report, unresolved, ivyUnfetched, updateFailed) =>
             foldReport(report, unresolved, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts,
               resolver, ivyUnfetched, updateFailed, failures).foreach {
@@ -217,9 +221,9 @@ object SocketFactsPlugin extends AutoPlugin {
   private def runUpdateResilient(
       taskName: String,
       ref: ProjectRef,
-      allRefs: Seq[ProjectRef],
       extracted: Extracted,
       state: State,
+      lenient: => State,
       matcher: String => Boolean,
       failures: mutable.LinkedHashSet[Failure],
       unscannable: mutable.LinkedHashSet[Unscannable],
@@ -237,8 +241,6 @@ object SocketFactsPlugin extends AutoPlugin {
     runOn(state) match {
       case Right(rep) => Some((rep, Set.empty[String], Map.empty: IvyUnfetched, false))
       case Left((failed, detail)) =>
-        // Every project: `update` also runs each upstream project's update, which would fail strictly.
-        val lenient = extracted.append(allRefs.map(r => updateConfiguration.in(r) ~= (c => withMissingOk(c))), state)
         val lenientRun = runOn(lenient).right.map { rep =>
           (rep, if (resolver.ivy) ivyUnfetchedOf(rep, extracted.get(target.in(ref))) else Map.empty: IvyUnfetched)
         }
@@ -300,12 +302,16 @@ object SocketFactsPlugin extends AutoPlugin {
     } yield conf -> arts).toMap
   }
 
+  private def parseXml(f: File): org.w3c.dom.Document = {
+    val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+    dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+    dbf.newDocumentBuilder().parse(f)
+  }
+
   // Ivy's ResolveOptions.getDefaultResolveId: `<organisation>-<module>` of the resolved descriptor.
   private def ivyResolveId(descriptor: File): Option[String] =
     try {
-      val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance()
-      dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-      val info = dbf.newDocumentBuilder().parse(descriptor).getElementsByTagName("info")
+      val info = parseXml(descriptor).getElementsByTagName("info")
       if (info.getLength == 0) None
       else {
         val e = info.item(0).asInstanceOf[org.w3c.dom.Element]
@@ -314,36 +320,32 @@ object SocketFactsPlugin extends AutoPlugin {
     } catch { case _: Exception => None }
 
   private def ivyFailedArtifacts(report: File): Map[String, Seq[IvyArtifact]] =
-    if (!report.isFile) Map.empty
-    else
-      try {
-        val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance()
-        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-        val modules = dbf.newDocumentBuilder().parse(report).getElementsByTagName("module")
-        val out = for {
-          mi <- 0 until modules.getLength
-          module = modules.item(mi).asInstanceOf[org.w3c.dom.Element]
-          revisions = module.getElementsByTagName("revision")
-          ri <- 0 until revisions.getLength
-          revision = revisions.item(ri).asInstanceOf[org.w3c.dom.Element]
-          if revision.getAttribute("evicted").isEmpty
-          artifacts = revision.getElementsByTagName("artifact")
-          ai <- 0 until artifacts.getLength
-          a = artifacts.item(ai).asInstanceOf[org.w3c.dom.Element]
-          if a.getAttribute("status") == "failed"
-        } yield {
-          val (org, name, rev) = (module.getAttribute("organisation"), module.getAttribute("name"), revision.getAttribute("name"))
-          val classifier = a.getAttribute("extra-classifier")
-          val file = a.getAttribute("name") + (if (classifier.isEmpty) "" else "-" + classifier) + "." + a.getAttribute("ext")
-          // Behind sbt's resolver chain Ivy leaves `details` empty for an absent artifact; a transfer
-          // failure carries its reason.
-          val details = a.getAttribute("details")
-          val cause =
-            if (details.isEmpty || details == "missing artifact") "not found" else "download failed (" + details + ")"
-          (org + ":" + name + ":" + rev) -> IvyArtifact(a.getAttribute("ext"), classifier, cause + ": " + org + "#" + name + ";" + rev + "!" + file)
-        }
-        out.groupBy(_._1).map { case (gav, pairs) => gav -> pairs.map(_._2).distinct }
-      } catch { case _: Exception => Map.empty }
+    try {
+      val modules = parseXml(report).getElementsByTagName("module")
+      val out = for {
+        mi <- 0 until modules.getLength
+        module = modules.item(mi).asInstanceOf[org.w3c.dom.Element]
+        revisions = module.getElementsByTagName("revision")
+        ri <- 0 until revisions.getLength
+        revision = revisions.item(ri).asInstanceOf[org.w3c.dom.Element]
+        if revision.getAttribute("evicted").isEmpty
+        artifacts = revision.getElementsByTagName("artifact")
+        ai <- 0 until artifacts.getLength
+        a = artifacts.item(ai).asInstanceOf[org.w3c.dom.Element]
+        if a.getAttribute("status") == "failed"
+      } yield {
+        val (org, name, rev) = (module.getAttribute("organisation"), module.getAttribute("name"), revision.getAttribute("name"))
+        val classifier = a.getAttribute("extra-classifier")
+        val file = a.getAttribute("name") + (if (classifier.isEmpty) "" else "-" + classifier) + "." + a.getAttribute("ext")
+        // Behind sbt's resolver chain Ivy leaves `details` empty for an absent artifact; a transfer
+        // failure carries its reason.
+        val details = a.getAttribute("details")
+        val cause =
+          if (details.isEmpty || details == "missing artifact") "not found" else "download failed (" + details + ")"
+        (org + ":" + name + ":" + rev) -> IvyArtifact(a.getAttribute("ext"), classifier, cause + ": " + org + "#" + name + ";" + rev + "!" + file)
+      }
+      out.groupBy(_._1).map { case (gav, pairs) => gav -> pairs.map(_._2).distinct }
+    } catch { case _: Exception => Map.empty }
 
   // UpdateConfiguration has `withMissingOk` on sbt 1.x; on 0.13 its only Boolean field is missingOk.
   private def withMissingOk[T](c: T): T = {
@@ -490,11 +492,13 @@ object SocketFactsPlugin extends AutoPlugin {
         cr.modules.foreach { m =>
           if (emittable(m)) {
             val ids = midToIds.getOrElseUpdate(moduleKey(m.module), mutable.LinkedHashSet.empty[String])
-            val ivyMissing = ivyUnfetched.getOrElse(cfg, Map.empty[String, Seq[IvyArtifact]]).getOrElse(gavKey(m.module), Nil)
+            val ivyMissing =
+              if (ivyUnfetched.isEmpty) Nil
+              else ivyUnfetched.getOrElse(cfg, Map.empty[String, Seq[IvyArtifact]]).getOrElse(gavKey(m.module), Nil)
+            val recordFiles = withFiles && inScope(m.module)
             variantsOf(m, resolver, ivyMissing).foreach { v =>
               val node = nodes.getOrElseUpdate(v.coord.id, new Node(v.coord))
               ids += v.coord.id
-              val recordFiles = withFiles && inScope(m.module)
               if (recordFiles) v.file.foreach(f => node.targets += f.getAbsolutePath)
               v.unfetched.foreach { url =>
                 if (recordFiles) node.unfetched = true
@@ -601,9 +605,7 @@ object SocketFactsPlugin extends AutoPlugin {
   // Maven's default packaging is jar.
   private def pomPackaging(pom: File): Option[String] =
     try {
-      val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance()
-      dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-      val kids = dbf.newDocumentBuilder().parse(pom).getDocumentElement.getChildNodes
+      val kids = parseXml(pom).getDocumentElement.getChildNodes
       val declared = (0 until kids.getLength).map(kids.item).collectFirst {
         case e: org.w3c.dom.Element if e.getNodeName.split(':').last == "packaging" => e.getTextContent.trim
       }

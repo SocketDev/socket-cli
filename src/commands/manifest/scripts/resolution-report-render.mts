@@ -1,6 +1,7 @@
 import { GRADLE_DIALECT } from './resolution-report-gradle.mts'
 import { SBT_DIALECT } from './resolution-report-ivy.mts'
 import { MAVEN_DIALECT } from './resolution-report-maven.mts'
+import { moduleKey } from './resolution-report.mts'
 import constants from '../../../constants.mts'
 import { camelToKebab } from '../../../utils/strings.mts'
 
@@ -95,7 +96,7 @@ function dedupInfos<T extends { coord: string; projects: Set<string> }>(
     const p = i.coord.split(':')
     if (p.length >= 3) {
       for (const project of i.projects) {
-        versioned.add(`${project}\t${p[0]}:${p[1]}`)
+        versioned.add(moduleKey(project, i.coord))
       }
     }
   }
@@ -103,7 +104,7 @@ function dedupInfos<T extends { coord: string; projects: Set<string> }>(
     .filter(
       i =>
         i.coord.split(':').length >= 3 ||
-        ![...i.projects].every(p => versioned.has(`${p}\t${i.coord}`)),
+        ![...i.projects].every(p => versioned.has(moduleKey(p, i.coord))),
     )
     .sort((a, b) => (a.coord < b.coord ? -1 : a.coord > b.coord ? 1 : 0))
 }
@@ -154,17 +155,6 @@ function installErrorsHint(
 // `excludableConfigs` is empty when excluding configurations cannot clear
 // every blocking failure.
 function proceedHint(
-  hints: BuildOptionHints,
-  tool: BuildTool,
-  excludableConfigs: string[],
-): string[] {
-  return [
-    ...proceedOptions(hints, tool, excludableConfigs),
-    ...installErrorsHint(hints, false),
-  ]
-}
-
-function proceedOptions(
   hints: BuildOptionHints,
   tool: BuildTool,
   excludableConfigs: string[],
@@ -271,17 +261,18 @@ export function renderResolutionReport(
   const allInfos = [...byKey.values()]
   // A non-blocking kind is only benign when its module resolved anyway: one
   // that resolved in no configuration of its project is missing from the SBOM.
-  const isInfoBlocking = (info: CoordInfo): boolean => {
-    if (isBlocking(info.category)) {
-      return true
-    }
-    const resolved = opts.resolvedModules
-    if (!resolved) {
-      return false
-    }
-    const module = info.coord.split(':').slice(0, 2).join(':')
-    return ![...info.projects].some(p => resolved.has(`${p}\t${module}`))
-  }
+  const resolved = opts.resolvedModules
+  const blockingInfos = new Set(
+    allInfos.filter(
+      info =>
+        isBlocking(info.category) ||
+        (!!resolved &&
+          ![...info.projects].some(p =>
+            resolved.has(moduleKey(p, info.coord)),
+          )),
+    ),
+  )
+  const isInfoBlocking = (info: CoordInfo): boolean => blockingInfos.has(info)
 
   // A whole-config throw is classified by the same cause rules as a per-dep
   // failure: ambiguity stays lenient, every other cause is fail-closed.
@@ -421,6 +412,7 @@ export function renderResolutionReport(
           tool,
           hasBlockingConfiglessFailure ? [] : blockingFailed,
         ),
+        ...installErrorsHint(hints, false),
       )
     } else if (hints.continueOnInstallErrorsFlag) {
       out.push('', ...installErrorsHint(hints, true))

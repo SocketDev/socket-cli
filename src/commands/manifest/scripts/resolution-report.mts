@@ -18,10 +18,15 @@ export type Unscannable = {
   project: string
 }
 
+// A module (`group:name`, from any longer coordinate) within one project.
+export function moduleKey(project: string, coord: string): string {
+  return `${project}\t${coord.split(':').slice(0, 2).join(':')}`
+}
+
 export type ResolutionReport = {
   failures: ResolutionFailure[]
-  // `<projectKey>\t<group>:<name>` of every external module a project resolved
-  // in some configuration.
+  // moduleKey of every module a project resolved in some configuration; empty
+  // when nothing failed.
   resolvedModules: ReadonlySet<string>
   scannedConfigs: string[]
   unscannable: Unscannable[]

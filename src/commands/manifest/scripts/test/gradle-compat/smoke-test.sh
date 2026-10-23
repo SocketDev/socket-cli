@@ -24,11 +24,15 @@ RECORDS="$PROJECT/records.tsv"
 GUH="$SOCKET_COMPAT_CACHE/gradle-home"   # isolated Gradle user home -> hermetic, no global init scripts
 
 bash "$HERE/../make-stub-repo.sh" "$PROJECT/localrepo" 'demo.lib:foo:1.0' 'demo.test:bar:1.0'
-rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
+
+run() {
+  rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
+  ( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
+      --init-script "$INIT" -Psocket.withFiles=true -Psocket.recordsFile="$RECORDS" "$@" socketFacts -q )
+}
 
 echo "+ $("$GRADLE" --version 2>/dev/null | sed -n 's/^Gradle //p' | head -1)"
-( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
-    --init-script "$INIT" -Psocket.withFiles=true -Psocket.recordsFile="$RECORDS" socketFacts -q )
+run
 
 python3 - "$RECORDS" 'full' <<'PY'
 import sys
@@ -73,9 +77,7 @@ python3 "$HERE/../assert-reachability.py" "$RECORDS"
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
 SCOPE="$HERE/.populate-for.txt"
 printf 'demo.lib:foo:1.0\n' > "$SCOPE"
-rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
-( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
-    --init-script "$INIT" -Psocket.withFiles=true -Psocket.populateFilesFor="$SCOPE" -Psocket.recordsFile="$RECORDS" socketFacts -q )
+run -Psocket.populateFilesFor="$SCOPE"
 rm -f "$SCOPE"
 
 python3 - "$RECORDS" 'scoped' <<'PY'
@@ -101,9 +103,7 @@ python3 "$HERE/../assert-reachability.py" "$RECORDS"
 # Third run: bar's jar is gone from the repository, so it must be reported rather than emitted as
 # resolved with no file.
 find "$PROJECT/localrepo/demo/test/bar" -name '*.jar' -delete
-rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
-( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
-    --init-script "$INIT" -Psocket.withFiles=true -Psocket.recordsFile="$RECORDS" socketFacts -q ) > /dev/null
+run > /dev/null
 
 python3 - "$RECORDS" <<'PY'
 import sys

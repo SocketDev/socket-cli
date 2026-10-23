@@ -69,9 +69,6 @@ export type RawProject = {
   targets: string[]
   // The project's build files, build-root-relative.
   buildFiles: string[]
-  // Excluded from the scan: not a project of its own, but its paths serve the
-  // kept projects depending on it.
-  excluded: boolean
 }
 
 export type ParsedRecords = {
@@ -84,6 +81,9 @@ export type ParsedRecords = {
   // directory-addressed build.
   entry: string
   projects: Map<string, RawProject>
+  // Excluded from the scan: not projects of their own, but their paths serve
+  // the kept projects depending on them.
+  excludedProjects: Map<string, RawProject>
   roots: Map<string, RawRoot>
   scannedConfigs: string[]
   failures: ResolutionFailure[]
@@ -119,12 +119,14 @@ export function parseRecords(text: string): ParsedRecords {
     buildRoot: '',
     entry: '',
     projects: new Map(),
+    excludedProjects: new Map(),
     roots: new Map(),
     scannedConfigs: [],
     failures: [],
     unscannable: [],
   }
   const scanned = new Set<string>()
+  const excluded = new Set<string>()
 
   const root = (id: string): RawRoot => {
     let r = result.roots.get(id)
@@ -153,7 +155,6 @@ export function parseRecords(text: string): ParsedRecords {
         sources: [],
         targets: [],
         buildFiles: [],
-        excluded: false,
       }
       result.projects.set(key, p)
     }
@@ -196,7 +197,7 @@ export function parseRecords(text: string): ParsedRecords {
         }
         break
       case 'excludedProject':
-        project(f[1] ?? '').excluded = true
+        excluded.add(f[1] ?? '')
         break
       case 'projectBuild':
         if (f[2]) {
@@ -277,6 +278,13 @@ export function parseRecords(text: string): ParsedRecords {
         break
       default:
         break
+    }
+  }
+  for (const key of excluded) {
+    const p = result.projects.get(key)
+    if (p) {
+      result.projects.delete(key)
+      result.excludedProjects.set(key, p)
     }
   }
   result.scannedConfigs = [...scanned].sort()
