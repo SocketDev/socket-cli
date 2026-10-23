@@ -8,11 +8,14 @@ import org.apache.maven.project.DependencyResolutionRequest;
 import org.apache.maven.project.DependencyResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
+import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.resolution.ArtifactDescriptorException;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.slf4j.Logger;
 
@@ -72,12 +75,15 @@ public final class SocketFactsRecordsEngine {
   private static final String NODE_DATA_CONFLICT_WINNER = "conflict.winner";
 
   private final ProjectDependenciesResolver dependenciesResolver;
+  private final RepositorySystem repositorySystem;
   private final String mavenVersion;
   private final Logger log;
 
   public SocketFactsRecordsEngine(
-      ProjectDependenciesResolver dependenciesResolver, String mavenVersion, Logger log) {
+      ProjectDependenciesResolver dependenciesResolver, RepositorySystem repositorySystem, String mavenVersion,
+      Logger log) {
     this.dependenciesResolver = dependenciesResolver;
+    this.repositorySystem = repositorySystem;
     this.mavenVersion = mavenVersion;
     this.log = log;
   }
@@ -166,10 +172,11 @@ public final class SocketFactsRecordsEngine {
     String moduleCoord = module.getGroupId() + ":" + module.getArtifactId() + ":" + module.getVersion();
     DependencyResolutionResult result;
     DependencyResolutionException thrown = null;
+    DependencyFilter resolutionFilter = materializationFilter(opts, passingScopes, reactorGavs, populateGavs);
     try {
       DependencyResolutionRequest request =
           new DefaultDependencyResolutionRequest(module, session.getRepositorySession());
-      request.setResolutionFilter(materializationFilter(opts, passingScopes, reactorGavs, populateGavs));
+      request.setResolutionFilter(resolutionFilter);
       result = dependenciesResolver.resolve(request);
     } catch (DependencyResolutionException e) {
       // Maven attaches the partial result — graph plus per-dependency errors — to the exception, so
@@ -205,13 +212,16 @@ public final class SocketFactsRecordsEngine {
       log.warn("[socket-facts] could not build dependency graph for " + moduleCoord + ": " + rootMessage(e));
       reported = true;
     }
+    // Maven throws on a collection error before it fetches any artifact, which would leave every
+    // healthy node of the partial graph without its file.
+    Set<String> unfetched = new HashSet<>();
+    if (!result.getCollectionErrors().isEmpty() && graph != null && opts.withFiles) {
+      materialize(session, graph, resolutionFilter, unresolved, moduleCoord, failures, unfetched);
+    }
     for (Dependency dep : result.getUnresolvedDependencies()) {
       Artifact artifact = dep.getArtifact();
-      if (artifact == null) continue;
-      List<Exception> errors = result.getResolutionErrors(dep);
-      failures.add(new Failure(
-          gav(artifact), rootMessage(errors.isEmpty() ? null : errors.get(0)), scopeOf(dep), moduleCoord));
-      log.debug("[socket-facts] could not materialize " + artifact + " (" + scopeOf(dep) + ")");
+      if (artifact == null || unresolved.contains(gav(artifact))) continue;
+      reportUnfetched(dep, result.getResolutionErrors(dep), moduleCoord, failures, unfetched);
       reported = true;
     }
     // Fail closed: a throw whose result named nothing must still surface, or an unresolved dependency
@@ -232,6 +242,10 @@ public final class SocketFactsRecordsEngine {
         // is prod (or vice versa).
         if (isProd(scopeOf(child.getDependency()))) directProdIds.add(id);
       }
+    }
+    for (String id : unfetched) {
+      Node node = nodes.get(id);
+      if (node != null) node.unfetched = true;
     }
   }
 
@@ -275,6 +289,47 @@ public final class SocketFactsRecordsEngine {
     };
   }
 
+  /**
+   * The artifact step Maven skipped, run on the partial graph the way the resolver's own
+   * {@code resolveDependencies} continues past a collection failure. The failed dependencies are left
+   * out: they are never emitted, and fetching them again would only repeat the failure.
+   */
+  private void materialize(
+      MavenSession session,
+      DependencyNode graph,
+      final DependencyFilter resolutionFilter,
+      final Set<String> unresolved,
+      String moduleCoord,
+      Set<Failure> failures,
+      Set<String> unfetched) {
+    DependencyFilter healthy = new DependencyFilter() {
+      @Override
+      public boolean accept(DependencyNode node, List<DependencyNode> parents) {
+        return resolutionFilter.accept(node, parents) && !unresolved.contains(gav(node.getArtifact()));
+      }
+    };
+    List<ArtifactResult> results;
+    try {
+      results = repositorySystem
+          .resolveDependencies(session.getRepositorySession(), new DependencyRequest(graph, healthy))
+          .getArtifactResults();
+    } catch (org.eclipse.aether.resolution.DependencyResolutionException e) {
+      results = e.getResult().getArtifactResults();
+    }
+    for (ArtifactResult ar : results) {
+      if (ar.isResolved()) continue;
+      reportUnfetched(ar.getRequest().getDependencyNode().getDependency(), ar.getExceptions(), moduleCoord, failures, unfetched);
+    }
+  }
+
+  private void reportUnfetched(
+      Dependency dep, List<Exception> errors, String moduleCoord, Set<Failure> failures, Set<String> unfetched) {
+    String id = externalId(dep.getArtifact());
+    failures.add(new Failure(id, rootMessage(errors.isEmpty() ? null : errors.get(0)), scopeOf(dep), moduleCoord));
+    unfetched.add(id);
+    log.debug("[socket-facts] could not materialize " + dep.getArtifact() + " (" + scopeOf(dep) + ")");
+  }
+
   private String visit(
       DependencyNode dn,
       Set<String> passingScopes,
@@ -295,16 +350,12 @@ public final class SocketFactsRecordsEngine {
     String gav = gav(artifact);
     if (unresolved.contains(gav)) return null;
     boolean internal = reactorGavs.contains(gav);
-    // Maven's `type` rather than aether's file extension, so a test-jar keeps the coordId the
-    // assembler and the Gradle/SBT scripts already emit.
     String type = artifact.getProperty(ARTIFACT_PROPERTY_TYPE, artifact.getExtension());
     String classifier = artifact.getClassifier();
-    // Base version: a resolved remote snapshot's `version` is the timestamped build, which would
-    // put a coordinate in the records that no manifest ever names.
     String version = artifact.getBaseVersion();
     String id = internal
         ? SocketSupport.bareId(artifact.getGroupId(), artifact.getArtifactId(), version)
-        : SocketSupport.coordId(artifact.getGroupId(), artifact.getArtifactId(), type, classifier, version);
+        : externalId(artifact);
 
     // One walk per node per module traversal: a shared subtree reached via another edge is already
     // fully recorded (node, children, resolved file), so hand back the id without re-descending.
@@ -327,6 +378,17 @@ public final class SocketFactsRecordsEngine {
       if (childId != null) node.children.add(childId);
     }
     return id;
+  }
+
+  private static String externalId(Artifact artifact) {
+    // Maven's `type` rather than aether's file extension, so a test-jar keeps the coordId the
+    // assembler and the Gradle/SBT scripts already emit. Base version: a resolved remote snapshot's
+    // `version` is the timestamped build, which would put a coordinate in the records that no
+    // manifest ever names.
+    return SocketSupport.coordId(
+        artifact.getGroupId(), artifact.getArtifactId(),
+        artifact.getProperty(ARTIFACT_PROPERTY_TYPE, artifact.getExtension()), artifact.getClassifier(),
+        artifact.getBaseVersion());
   }
 
   private static String gav(Artifact artifact) {
@@ -405,6 +467,7 @@ public final class SocketFactsRecordsEngine {
         if (nodeMap.containsKey(child)) rec(lines, "edge", rootId, n.id, child);
       }
       for (String f : n.files) rec(lines, "file", rootId, n.id, f);
+      if (n.unfetched) rec(lines, "unfetched", rootId, n.id);
     }
     return rootIdx + 1;
   }
@@ -519,7 +582,11 @@ public final class SocketFactsRecordsEngine {
     int guard = 0;
     while (cur != null && guard++ < 12) {
       if (cur.getMessage() != null) msg = cur.getMessage();
-      cur = cur.getCause();
+      Throwable next = cur.getCause();
+      // Maven 4 batches requests: BatchRequestException carries each failed request as a suppressed
+      // exception, not as its cause.
+      if (next == null && cur.getSuppressed().length > 0) next = cur.getSuppressed()[0];
+      cur = next;
     }
     return (msg != null ? msg : "unknown resolution failure").trim();
   }
@@ -623,6 +690,7 @@ public final class SocketFactsRecordsEngine {
     final String project;
     final TreeSet<String> children = new TreeSet<>();
     final TreeSet<String> files = new TreeSet<>();
+    boolean unfetched;
 
     Node(String id, String groupId, String artifactId, String type, String classifier, String version, String project) {
       this.id = id;
