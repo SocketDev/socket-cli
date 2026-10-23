@@ -76,9 +76,9 @@ object SocketFactsPlugin extends AutoPlugin {
           }
           val resolver = new Resolver(ivy, poms)
           runUpdateResilient(updateTaskName, ref, allRefs, extracted, st, matcher, failures, unscannable, resolver)
-            .foreach { case (report, unresolved, ivyUnfetched) =>
+            .foreach { case (report, unresolved, ivyUnfetched, updateFailed) =>
             foldReport(report, unresolved, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts,
-              resolver, ivyUnfetched, failures).foreach {
+              resolver, ivyUnfetched, updateFailed, failures).foreach {
               case (rootKey, tree) => perSub(rootKey) = tree
             }
           }
@@ -224,7 +224,7 @@ object SocketFactsPlugin extends AutoPlugin {
       failures: mutable.LinkedHashSet[Failure],
       unscannable: mutable.LinkedHashSet[Unscannable],
       resolver: Resolver
-  ): Option[(UpdateReport, Set[String], IvyUnfetched)] = {
+  ): Option[(UpdateReport, Set[String], IvyUnfetched, Boolean)] = {
     val key = TaskKey[UpdateReport](taskName)
 
     def runOn(st: State): Either[(Seq[ModuleID], String), UpdateReport] =
@@ -235,12 +235,12 @@ object SocketFactsPlugin extends AutoPlugin {
       }
 
     runOn(state) match {
-      case Right(rep) => Some((rep, Set.empty[String], Map.empty: IvyUnfetched))
+      case Right(rep) => Some((rep, Set.empty[String], Map.empty: IvyUnfetched, false))
       case Left((failed, detail)) =>
         // Every project: `update` also runs each upstream project's update, which would fail strictly.
         val lenient = extracted.append(allRefs.map(r => updateConfiguration.in(r) ~= (c => withMissingOk(c))), state)
         val lenientRun = runOn(lenient).right.map { rep =>
-          (rep, if (resolver.ivy) ivyUnfetchedOf(rep) else Map.empty: IvyUnfetched)
+          (rep, if (resolver.ivy) ivyUnfetchedOf(rep, extracted.get(target.in(ref))) else Map.empty: IvyUnfetched)
         }
         lenientRun match {
           case Right((rep, ivyUnfetched))
@@ -262,7 +262,7 @@ object SocketFactsPlugin extends AutoPlugin {
                 case Some(confs) => confs.filter(matcher).foreach(c => failures += Failure(coordOf(m), detailFor(m, detail), c, ref.project))
               }
             }
-            Some((rep, failed.map(gavKey).toSet, ivyUnfetched))
+            Some((rep, failed.map(gavKey).toSet, ivyUnfetched, failed.isEmpty))
           case Left(_) =>
             // Even a lenient update failed: the whole project is unresolved, but the modules sbt
             // named are still reported.
@@ -283,10 +283,12 @@ object SocketFactsPlugin extends AutoPlugin {
   // `<resolution cache>/reports/<resolveId>-<conf>.xml`. The resolve id is the cached descriptor's
   // `<organisation>-<module>`, and the descriptor sits below the resolution cache (deeper for sbt plugins).
   // A non-empty result keeps only configs with failures.
-  private def ivyUnfetchedOf(rep: UpdateReport): IvyUnfetched = {
+  private def ivyUnfetchedOf(rep: UpdateReport, projectTarget: File): IvyUnfetched = {
     val descriptor = Option(rep.cachedDescriptor).filter(_.isFile)
+    val bound = projectTarget.getCanonicalFile.toPath
     def reportsDirs(f: File): Stream[File] =
-      Option(f.getParentFile).toStream.flatMap(p => new File(p, "reports") #:: reportsDirs(p))
+      Option(f.getParentFile).filter(_.getCanonicalFile.toPath.startsWith(bound)).toStream
+        .flatMap(p => new File(p, "reports") #:: reportsDirs(p))
     (for {
       d <- descriptor.toSeq
       id <- ivyResolveId(d).toSeq
@@ -406,6 +408,9 @@ object SocketFactsPlugin extends AutoPlugin {
       moduleExts: Map[String, String],
       resolver: Resolver,
       ivyUnfetched: IvyUnfetched,
+      // sbt's own update failed on artifacts alone, so one it could not fetch is a failure even
+      // without files.
+      updateFailed: Boolean,
       failures: mutable.LinkedHashSet[Failure]
   ): mutable.LinkedHashMap[String, RootTree] = {
     val perRoot = mutable.LinkedHashMap.empty[String, RootTree]
@@ -489,12 +494,11 @@ object SocketFactsPlugin extends AutoPlugin {
             variantsOf(m, resolver, ivyMissing).foreach { v =>
               val node = nodes.getOrElseUpdate(v.coord.id, new Node(v.coord))
               ids += v.coord.id
-              if (withFiles && inScope(m.module)) {
-                v.file.foreach(f => node.targets += f.getAbsolutePath)
-                v.unfetched.foreach { url =>
-                  node.unfetched = true
-                  failures += Failure(coordOf(m.module), url, cfg, ref.project)
-                }
+              val recordFiles = withFiles && inScope(m.module)
+              if (recordFiles) v.file.foreach(f => node.targets += f.getAbsolutePath)
+              v.unfetched.foreach { url =>
+                if (recordFiles) node.unfetched = true
+                if (recordFiles || updateFailed) failures += Failure(coordOf(m.module), url, cfg, ref.project)
               }
             }
           }

@@ -11,9 +11,9 @@
 # its war. Coursier skips a missing jar silently and lists one for every Maven module whatever its
 # packaging; Ivy's own resolution report names what it failed to download.
 #
-# A third run with files on ../artifact-failure, whose only failure is ok's missing tests jar: an
-# artifact failure names no module, yet must be reported, not make core or its dependent app
-# unscannable.
+# Then ../artifact-failure, whose only failure is ok's missing tests jar, without and with files: an
+# artifact failure names no module, yet sbt's update fails on it, so it must be reported in both runs
+# and must not make core or its dependent app unscannable.
 #
 # Usage: smoke-test-failure.sh <sbt-version> <scala-version> [coursier|ivy]   (ivy: sbt 1.x only)
 set -euo pipefail
@@ -187,6 +187,30 @@ mkdir -p "$ARTIFACT/project"
 echo "sbt.version=$SBT_VERSION" > "$ARTIFACT/project/build.properties"
 cp "$PROJECT/scala-version.sbt" "$ARTIFACT/scala-version.sbt"
 rm -rf "$ARTIFACT/records.tsv" "$ARTIFACT/target" "$ARTIFACT"/*/target "$ARTIFACT/project/target"
+echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (artifact failure)"
+( cd "$ARTIFACT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
+    -Dsbt.ivy.home="$IVY" \
+    -Dsocket.recordsFile="$ARTIFACT/records.tsv" --batch socketFacts )
+
+python3 - "$ARTIFACT/records.tsv" <<'PY'
+import sys
+rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
+unscannable = [r[1:] for r in rows if r[0] == 'unscannable']
+failed = {r[1] for r in rows if r[0] == 'failure'}
+errors = []
+if unscannable:
+    errors.append(f"a missing artifact names no module, but must not make a project unscannable: {unscannable}")
+if failed != {'demo.fail:ok:1.0'}:
+    errors.append(f"sbt's update fails on ok's missing tests jar, so it must be reported without files too; failures={sorted(failed)}")
+if errors:
+    print("FAIL:")
+    for e in errors:
+        print("  -", e)
+    sys.exit(1)
+print("PASS (artifact failure): ok's missing tests jar reported without files")
+PY
+
+rm -rf "$ARTIFACT/records.tsv"
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (artifact failure, with files)"
 ( cd "$ARTIFACT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
     -Dsbt.ivy.home="$IVY" \

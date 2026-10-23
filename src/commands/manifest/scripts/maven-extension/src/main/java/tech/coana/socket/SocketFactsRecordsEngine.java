@@ -240,6 +240,8 @@ public final class SocketFactsRecordsEngine {
       reported |= addFailures(failures, e.getKey(), e.getValue().detail, scopes, passingScopes, moduleCoord);
     }
     for (Map.Entry<String, String> e : incompleteDescriptors.entrySet()) {
+      // A strict descriptor policy also throws for it: already reported above.
+      if (brokenDescriptors.containsKey(e.getKey())) continue;
       Set<String> scopes = scopesByGav.get(e.getKey());
       if (scopes != null) reported |= addFailures(failures, e.getKey(), e.getValue(), scopes, passingScopes, moduleCoord);
     }
@@ -262,7 +264,7 @@ public final class SocketFactsRecordsEngine {
       // can still be placed.
       for (Map.Entry<String, BrokenDescriptor> e : brokenDescriptors.entrySet()) {
         if (scopesByGav.containsKey(e.getKey()) || placed.contains(e.getKey())) continue;
-        String scope = declaredScope(module, e.getValue().artifact);
+        String scope = declaredScope(session, module, e.getValue().artifact);
         if (scope != null && passingScopes.contains(scope)) {
           failures.add(new Failure(e.getKey(), e.getValue().detail, scope, moduleCoord));
           reported = true;
@@ -714,7 +716,7 @@ public final class SocketFactsRecordsEngine {
       String managed = managedScope(session, module, dependency.getArtifact());
       return derivedScope(parent.getDependency().getScope(), managed != null ? managed : scopeOf(dependency));
     }
-    String declared = declaredScope(module, failed.artifact);
+    String declared = declaredScope(session, module, failed.artifact);
     return declared != null ? declared : "";
   }
 
@@ -745,14 +747,17 @@ public final class SocketFactsRecordsEngine {
 
   // The module's own declaration of the artifact, with management applied; a ranged declaration
   // matches whichever version it resolved to.
-  private static String declaredScope(MavenProject module, Artifact artifact) {
+  // Compared as the resolver sees the dependency: a `test-jar` type becomes classifier `tests`.
+  private static String declaredScope(MavenSession session, MavenProject module, Artifact artifact) {
     for (org.apache.maven.model.Dependency d : module.getDependencies()) {
-      String version = d.getVersion() == null ? "" : d.getVersion();
+      Artifact declared =
+          RepositoryUtils.toDependency(d, session.getRepositorySession().getArtifactTypeRegistry()).getArtifact();
+      String version = declared.getVersion();
       boolean versionMatches = version.equals(artifact.getVersion()) || version.startsWith("[") || version.startsWith("(");
-      if (d.getGroupId().equals(artifact.getGroupId())
-          && d.getArtifactId().equals(artifact.getArtifactId())
-          && (d.getClassifier() == null ? "" : d.getClassifier()).equals(artifact.getClassifier())
-          && d.getType().equals(artifact.getProperty(ARTIFACT_PROPERTY_TYPE, artifact.getExtension()))
+      if (declared.getGroupId().equals(artifact.getGroupId())
+          && declared.getArtifactId().equals(artifact.getArtifactId())
+          && declared.getClassifier().equals(artifact.getClassifier())
+          && declared.getExtension().equals(artifact.getExtension())
           && versionMatches) {
         return d.getScope() == null || d.getScope().isEmpty() ? "compile" : d.getScope();
       }

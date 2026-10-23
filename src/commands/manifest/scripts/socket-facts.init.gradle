@@ -439,10 +439,11 @@ allprojects { project ->
       // Gradle verifies checksums/signatures only when an artifact file is read through the
       // artifact-view API, never through the `ResolvedArtifact.file` the walk reads; the read then
       // fails with every fatal verification failure of the build so far, not just this config's.
-      // Only STRICT mode throws (LENIENT logs). The mode exists since Gradle 6.2, which introduced
-      // verification.
+      // Only STRICT mode throws (LENIENT logs), and only a build with verification metadata
+      // verifies at all. The mode exists since Gradle 6.2, which introduced verification.
       def startParameter = gradle.startParameter
       def verifyArtifacts = withFiles &&
+        new File(project.rootDir, 'gradle/verification-metadata.xml').isFile() &&
         startParameter.metaClass.respondsTo(startParameter, 'getDependencyVerificationMode') &&
         startParameter.dependencyVerificationMode.toString() == 'STRICT'
       def gavOf = { Map c -> "${c.groupId}:${c.artifactId}:${c.version}".toString() }
@@ -461,28 +462,42 @@ allprojects { project ->
       // only some carry its artifacts. An artifact-less instance is then the same component, not
       // an ext-less one: fold it into the module's artifact nodes.
       def foldArtifactless = {
-        nodes.keySet().findAll { id -> !nodes[id].coord.ext && nodes[id].project == null }.each { id ->
-          def gav = gavOf(nodes[id].coord)
-          def siblings = nodes.keySet().findAll { o -> nodes[o].coord.ext && gavOf(nodes[o].coord) == gav }
-          if (siblings.isEmpty()) {
-            return
+        def withExt = [:]
+        nodes.each { id, n ->
+          if (n.coord.ext) {
+            withExt.get(gavOf(n.coord), []) << id
           }
+        }
+        def folds = [:]
+        nodes.each { id, n ->
+          def siblings = (!n.coord.ext && n.project == null) ? withExt[gavOf(n.coord)] : null
+          if (siblings) {
+            folds[id] = siblings
+          }
+        }
+        if (folds.isEmpty()) {
+          return
+        }
+        def replaced = { Collection ids -> ids.collectMany { c -> folds[c] ?: [c] } }
+        folds.each { id, siblings ->
           def folded = nodes.remove(id)
           siblings.each { sid ->
-            nodes[sid].children.addAll(folded.children.findAll { it != sid })
+            nodes[sid].children.addAll(replaced(folded.children).findAll { it != sid })
             if (folded.prod) {
               nodes[sid].prod = true
             }
           }
-          nodes.each { nid, n ->
-            if (n.children.remove(id)) {
-              n.children.addAll(siblings.findAll { it != nid })
-            }
-          }
-          if (directIds.remove(id)) {
-            directIds.addAll(siblings)
+        }
+        nodes.each { nid, n ->
+          if (n.children.any { folds.containsKey(it) }) {
+            def children = replaced(n.children).findAll { it != nid }
+            n.children.clear()
+            n.children.addAll(children)
           }
         }
+        def direct = replaced(directIds)
+        directIds.clear()
+        directIds.addAll(direct)
       }
 
       // Drops the files of this config's artifacts that failed verification and reports them.
@@ -504,7 +519,8 @@ allprojects { project ->
         } catch (Exception e) {
           message = verificationMessage(e)
           if (message == null) {
-            throw e
+            // Any other failure concerns files the walk already read without it.
+            println "[socket-facts] could not check artifact verification for ${cfg.name}: ${rawDetail(e).readLines().find()}"
           }
         }
         if (message == null) {
@@ -526,7 +542,10 @@ allprojects { project ->
         failed.each { gav, fileNames ->
           def ids = external.findAll { id -> gavOf(nodes[id].coord) == gav }
           // A failed metadata file (pom, module) names none of the module's artifacts: all are suspect.
-          def hit = ids.findAll { id -> paths[id].any { p -> fileNames.contains(new File(p).name) } } ?: ids
+          // A failed artifact this config did not fetch leaves it untouched.
+          def metadataOnly = fileNames.every { it.endsWith('.pom') || it.endsWith('.module') }
+          def matched = ids.findAll { id -> paths[id].any { p -> fileNames.contains(new File(p).name) } }
+          def hit = matched ?: (metadataOnly ? ids : [])
           if (!hit.isEmpty()) {
             failures << [coord: gav, detail: message, config: cfg.name, project: project.path]
             hit.each { id ->
