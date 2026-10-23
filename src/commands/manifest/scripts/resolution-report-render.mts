@@ -218,11 +218,24 @@ export function renderResolutionReport(
   const isBlocking = (cat: FailureCategory): boolean =>
     specOf.get(cat)?.blocking ?? true
 
-  // Aggregate by (coord, category): one module can fail with different causes
-  // across configs. Keep first-seen detail, union the configs and projects.
+  // A non-blocking kind is only benign when its module resolved anyway: one
+  // that resolved in no configuration of its project is missing from that
+  // project's SBOM.
+  const resolved = opts.resolvedModules
+  const isFailureBlocking = (
+    category: FailureCategory,
+    f: ResolutionFailure,
+  ): boolean =>
+    isBlocking(category) ||
+    (!!resolved && !resolved.has(moduleKey(f.project, f.coord)))
+
+  // Aggregate by (coord, category, blocking): one module can fail with
+  // different causes across configs, and block in only some projects. Keep
+  // first-seen detail, union the configs and projects.
   type CoordInfo = {
     coord: string
     category: FailureCategory
+    blocking: boolean
     detail: string
     configs: Set<string>
     projects: Set<string>
@@ -230,16 +243,16 @@ export function renderResolutionReport(
     configless: boolean
   }
   const byKey = new Map<string, CoordInfo>()
-  const keyOf = (coord: string, category: FailureCategory): string =>
-    `${coord} ${category}`
   for (const f of failures) {
     const category = dialect.classify(f.detail)
-    const key = keyOf(f.coord, category)
+    const blocking = isFailureBlocking(category, f)
+    const key = `${f.coord} ${category} ${blocking}`
     let info = byKey.get(key)
     if (!info) {
       info = {
         coord: f.coord,
         category,
+        blocking,
         detail: f.detail,
         configs: new Set(),
         projects: new Set(),
@@ -257,20 +270,7 @@ export function renderResolutionReport(
     }
   }
   const allInfos = [...byKey.values()]
-  // A non-blocking kind is only benign when its module resolved anyway: one
-  // that resolved in no configuration of its project is missing from the SBOM.
-  const resolved = opts.resolvedModules
-  const blockingInfos = new Set(
-    allInfos.filter(
-      info =>
-        isBlocking(info.category) ||
-        (!!resolved &&
-          ![...info.projects].some(p =>
-            resolved.has(moduleKey(p, info.coord)),
-          )),
-    ),
-  )
-  const isInfoBlocking = (info: CoordInfo): boolean => blockingInfos.has(info)
+  const isInfoBlocking = (info: CoordInfo): boolean => info.blocking
 
   // A whole-config throw is classified by the same cause rules as a per-dep
   // failure: ambiguity stays lenient, every other cause is fail-closed.

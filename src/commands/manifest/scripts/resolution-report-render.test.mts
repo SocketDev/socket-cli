@@ -424,6 +424,19 @@ describe('failures checked against what resolved', () => {
     expect(r.nonBlockingNotice).toBe('')
   })
 
+  it('blocks on variant ambiguity in the project where the module resolved nowhere', () => {
+    const r = renderResolutionErrorReport(
+      [ambiguous, { ...ambiguous, project: ':lib' }],
+      ['runtimeClasspath'],
+      'gradle',
+      { resolvedModules: new Set([':app\tcom.example:amb']) },
+    )
+    expect(r.hasBlockingFailures).toBe(true)
+    expect(r.summary).toContain('    - com.example:amb:1.0 (in `:lib`)')
+    expect(r.summary).not.toContain('`:app`')
+    expect(r.nonBlockingNotice).toContain('ambiguous variant selection')
+  })
+
   it('keeps a bare module failure from another project than its versioned form', () => {
     const r = renderResolutionErrorReport(
       [
