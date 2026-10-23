@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Regression guard: a dependency that fails while Maven collects the graph must be reported as that
-# dependency, in the module it was collected for, and never emitted as a node. Maven keeps a
-# dependency whose POM failed in the graph (Maven 3.2's resolver leaves it out instead), so it fails
-# in its own scope, and an excluded scope drops it; a dependency the graph lacks (an unsatisfiable
-# range) has no scope. The module itself must never be reported as the failure. Under --with-files,
-# every healthy dependency must still get its file, and a jar that cannot be fetched is reported under
-# its full coordinate, with the cause rather than a wrapper.
+# dependency, in the module it was collected for, and never emitted as a node. It fails in its own
+# scope, and an excluded scope drops it; one the graph lacks (an unsatisfiable range, or a failed POM
+# on Maven 3.2) fails in the scope it is declared with. The module itself must never be reported as
+# the failure. Under --with-files, every healthy dependency must still get its file, and a jar that
+# cannot be fetched is reported under its full coordinate, with the cause rather than a wrapper.
 #
 # Runs offline: the POMs are seeded straight into the local repository, so their missing parent and
 # the absent versions of ranged can only fail to resolve.
@@ -60,15 +59,14 @@ run() {
       validate )
 }
 
-# $1: expected scope per coord (null: excluded) when the failed dependency stays in the graph.
+# $1: expected scope per coord (null: excluded).
 check() {
-  python3 - "$RECORDS" "$1" "$KEEPS_FAILED" <<'PY'
+  python3 - "$RECORDS" "$1" <<'PY'
 import json, sys
 def read(path):
     return [l.rstrip('\n').split('\t') for l in open(path) if l.strip()]
 rows = read(sys.argv[1])
 expected = json.loads(sys.argv[2])
-keeps_failed = sys.argv[3] == 'true'
 emitted = {f"{r[3]}:{r[4]}:{r[5]}" for r in rows if r[0] == 'node'}
 errors = []
 if 'demo.graphfail:ok:1.0' not in emitted:
@@ -81,8 +79,6 @@ for coord, scope in expected.items():
     found = [f for f in failures if f[0] == coord]
     if coord in emitted:
         errors.append(f"{coord} failed to resolve, so it must not be emitted as a node")
-    if not keeps_failed:
-        scope = ''
     if scope is None:
         if found:
             errors.append(f"{coord} is in an excluded scope and must not be reported, got {found}")
@@ -133,14 +129,10 @@ PY
 
 VERSION="$("$MVN" -v 2>/dev/null | head -1)"
 echo "+ $VERSION (graph failure)"
-case "$VERSION" in
-  *"Maven 3.2."*) KEEPS_FAILED=false ;;
-  *) KEEPS_FAILED=true ;;
-esac
 run
-check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": "test", "demo.graphfail:ranged:[1.0,2.0)": ""}'
+check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": "test", "demo.graphfail:ranged:[1.0,2.0)": "compile"}'
 run -Dsocket.excludeConfigs=test
-check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": null, "demo.graphfail:ranged:[1.0,2.0)": ""}'
+check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": null, "demo.graphfail:ranged:[1.0,2.0)": "compile"}'
 run -Dsocket.withFiles=true
-check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": "test", "demo.graphfail:ranged:[1.0,2.0)": ""}'
+check '{"demo.graphfail:lib:1.0": "compile", "demo.graphfail:testlib:1.0": "test", "demo.graphfail:ranged:[1.0,2.0)": "compile"}'
 check_files

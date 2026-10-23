@@ -370,3 +370,42 @@ describe('resolution failure remedies', () => {
     expect(r.nonBlockingNotice).not.toContain('re-run with --verbose')
   })
 })
+
+const mavenReport = (detail: string) =>
+  renderResolutionErrorReport(
+    [f('com.example:x:jar:1.0', detail, 'compile')],
+    ['compile'],
+    'maven',
+  )
+
+describe('Maven failure classification', () => {
+  it('classifies a repository blocked by the HTTP blocker as a repository error', () => {
+    const r = mavenReport(
+      'Blocked mirror for repositories: [insecure (http://repo.example.invalid/maven, default, releases+snapshots)]',
+    )
+    expect(r.hasBlockingFailures).toBe(true)
+    expect(r.summary).toContain('Repository or network error')
+  })
+
+  it('classifies offline mode as a repository error, not a miss', () => {
+    const r = mavenReport(
+      'The POM for com.example:x:jar:1.0 is missing, no dependency information available: Cannot access central (https://repo.maven.apache.org/maven2) in offline mode',
+    )
+    expect(r.summary).toContain('Repository or network error')
+    expect(r.summary).not.toContain('Not found in any repository')
+  })
+
+  it('classifies a POM Maven tolerated as invalid as a POM problem', () => {
+    const r = mavenReport(
+      'The POM for com.example:x:jar:1.0 is invalid, transitive dependencies (if any) will not be available: 1 problem was encountered while building the effective model for com.example:x:1.0',
+    )
+    expect(r.summary).toContain('POM/descriptor problem')
+  })
+
+  it('classifies a path the repository prefix filter rules out as not found', () => {
+    const r = mavenReport(
+      'prefixes: Path com/example/x/1.0/x-1.0.pom NOT allowed from central',
+    )
+    expect(r.summary).toContain('Not found in any repository')
+  })
+})

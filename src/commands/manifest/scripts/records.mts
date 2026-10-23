@@ -19,7 +19,7 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   file        rootId  coordId  path                    (--with-files only)
 //   unfetched   rootId  coordId                          (--with-files only; requested artifact not fetched)
 //   scanned     config
-//   failure     coord  detail  config  projectKey   (config empty: no configuration)
+//   failure     coord  detail  config  projectKey   (config empty: not placeable in one)
 //   unscannable config  detail  projectKey          (config empty: whole project)
 //
 // `projectKey` is the tool's unique project identity (Maven: GAV; Gradle:
