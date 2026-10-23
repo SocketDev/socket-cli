@@ -12,7 +12,10 @@ import {
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from './scripts/resolution-report-render.mts'
+import {
+  DSI_SETUP_COMMAND,
+  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+} from './scripts/resolution-report-render.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
@@ -179,6 +182,9 @@ async function runEcosystemCandidates({
         excludeConfigs,
         excludePaths: excludePathsForRoot,
         hints: {
+          continueOnInstallErrorsFlag: withFiles
+            ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+            : undefined,
           flags: optionFlags,
           setupCommand: DSI_SETUP_COMMAND,
           socketJson: displayPath(path.join(dir, SOCKET_JSON)),

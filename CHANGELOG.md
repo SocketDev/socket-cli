@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - JVM dependencies whose jars cannot be fetched, or are gone from disk, no longer reach reachability analysis looking resolved without code.
 - One unresolvable Maven dependency no longer strips the jar paths from every other dependency of its build, which made reachability analysis call their vulnerabilities unreachable. Jars that cannot be fetched are reported with their real cause, Maven 4 included.
 - Maven dependencies with missing or invalid POMs are reported in every module that uses them, `system`-scope jars reach reachability analysis, and a failing dependency no longer fails scopes that `excludeConfigs` leaves out or the build when it lost a version conflict.
+- Reachability scans that hit unresolved JVM dependencies now point out that ignoring them also needs `--reach-continue-on-install-errors`.
+- A Gradle dependency whose variant is ambiguous in every configuration of its project now fails the run instead of quietly dropping out of the scan.
 
 ## [1.10.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.0) - 2026-10-22
 
