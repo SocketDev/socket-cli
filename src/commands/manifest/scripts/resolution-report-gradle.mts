@@ -30,7 +30,15 @@ export function classifyGradleFailure(detail: string): FailureCategory {
   ) {
     return 'variant-ambiguity'
   }
-  if (t.includes('checksum is missing from verification metadata')) {
+  // One line per problem of the artifact; a checksum missing from the
+  // metadata is no evidence against it, unlike any other problem.
+  const problems = t.split('\n').filter(l => l.startsWith('on artifact '))
+  if (
+    problems.length &&
+    problems.every(l =>
+      l.endsWith(': checksum is missing from verification metadata.'),
+    )
+  ) {
     return 'checksum-missing'
   }
   if (

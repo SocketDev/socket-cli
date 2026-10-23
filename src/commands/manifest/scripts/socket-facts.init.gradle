@@ -533,13 +533,14 @@ allprojects { project ->
         // Each failed artifact is named by its identifier's display name, "<file> (<group>:<module>:<version>)",
         // whose file part is `<name>-<version>[-<classifier>].<ext>` rather than the cached file's own name.
         def artifactRef = /(\S+) \(([^\s():]+):([^\s():]+):([^\s()]+)\)/
-        def header = message.readLines().find() ?: ''
+        def lines = message.readLines()
+        def header = lines ? lines[0] : ''
         // The verbose report (the Socket CLI sets org.gradle.dependency.verification.console=verbose) gives
         // each artifact's problems: "On artifact <ref> in repository '<repo>': <problem>", or "On artifact
         // <ref> multiple problems reported:" followed by one "in repository '<repo>': <problem>" line each.
         def failed = []
         def current = null
-        message.readLines().each { raw ->
+        lines.each { raw ->
           def line = raw.trim().replaceFirst(/^- /, '')
           def m = line =~ ('^On artifact ' + artifactRef + ' (.*)$')
           if (m.matches()) {
@@ -555,10 +556,7 @@ allprojects { project ->
           }
         }
         failed.each { f ->
-          // A checksum missing from the metadata is no evidence against the artifact, unlike any other problem.
-          def missing = f.problems.findAll { it.endsWith(': checksum is missing from verification metadata.') }
-          def shown = missing.size() == f.problems.size() ? missing : f.problems - missing
-          f.detail = ([header] + shown.collect { "On artifact ${f.file} (${f.gav}) ${it}" }).join('\n')
+          f.detail = ([header] + f.problems.collect { "On artifact ${f.file} (${f.gav}) ${it}" }).join('\n')
         }
         if (failed.isEmpty()) {
           // The summary report names only the artifacts.
@@ -566,13 +564,16 @@ allprojects { project ->
             failed << [gav: "${m[2]}:${m[3]}:${m[4]}".toString(), file: m[1], detail: message]
           }
         }
-        if (failed.isEmpty()) {
-          // No artifact can be told apart: the walked graph stands, without any of its external files.
-          state.unscannable << [config: cfg.name, detail: message, project: project.path]
-          external.each { id ->
+        def markUnfetched = { Collection ids ->
+          ids.each { id ->
             paths.remove(id)
             unfetched << id
           }
+        }
+        if (failed.isEmpty()) {
+          // No artifact can be told apart: the walked graph stands, without any of its external files.
+          state.unscannable << [config: cfg.name, detail: message, project: project.path]
+          markUnfetched(external)
           return
         }
         failed.each { f ->
@@ -586,10 +587,7 @@ allprojects { project ->
           }
           if (!hit.isEmpty()) {
             recordFailure(f.gav, f.detail)
-            hit.each { id ->
-              paths.remove(id)
-              unfetched << id
-            }
+            markUnfetched(hit)
           }
         }
       }

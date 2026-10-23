@@ -93,6 +93,18 @@ describe('resolution failure classification', () => {
       'gradle',
     )
     expect(mismatch.hasBlockingFailures).toBe(true)
+    const both = renderResolutionErrorReport(
+      [
+        f(
+          'com.example:lib:1.0',
+          `${header}\nOn artifact lib-1.0.jar (com.example:lib:1.0) in repository 'a': checksum is missing from verification metadata.\nOn artifact lib-1.0.jar (com.example:lib:1.0) in repository 'b': expected a 'sha256' checksum of '00' but was '11'`,
+        ),
+      ],
+      ['runtimeClasspath'],
+      'gradle',
+      { resolvedModules: new Set([moduleKey(':', 'com.example:lib')]) },
+    )
+    expect(both.hasBlockingFailures).toBe(true)
   })
 
   it("classifies Gradle's 'unable to find a matching variant' phrasing as blocking no-matching-variant", () => {

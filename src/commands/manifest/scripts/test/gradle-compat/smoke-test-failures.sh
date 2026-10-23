@@ -18,6 +18,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 GRADLE="${1:?usage: smoke-test-failures.sh <path-to-gradle-binary>}"
 INIT="$HERE/../../socket-facts.init.gradle"
 CLASSIFY="$HERE/../../resolution-report-gradle.mts"
+RECORDS_PARSER="$HERE/../../records.mts"
 PROJECT="$HERE/failures"
 RECORDS="$PROJECT/records.tsv"
 # shellcheck source=SCRIPTDIR/../compat-cache.sh
@@ -38,11 +39,10 @@ run() {
 categories() {
   node --input-type=module -e '
     import { readFileSync } from "node:fs"
+    import { parseRecords } from "'"$RECORDS_PARSER"'"
     import { classifyGradleFailure } from "'"$CLASSIFY"'"
-    const unescape = v => v.replace(/\\(.)/g, (_, c) => ({ n: "\n", t: "\t", r: "\r" })[c] ?? c)
-    for (const line of readFileSync(process.argv[1], "utf8").split("\n")) {
-      const f = line.split("\t").map(unescape)
-      if (f[0] === "failure") console.log([f[3], f[1], classifyGradleFailure(f[2])].join("\t"))
+    for (const f of parseRecords(readFileSync(process.argv[1], "utf8")).failures) {
+      console.log([f.config, f.coord, classifyGradleFailure(f.detail)].join("\t"))
     }' "$RECORDS"
 }
 
