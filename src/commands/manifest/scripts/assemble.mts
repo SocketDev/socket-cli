@@ -8,6 +8,7 @@ import {
   type SocketFactsSbomMetadata,
   type SocketFactsSbomProject,
 } from './facts.mts'
+import { moduleKey } from './resolution-report.mts'
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
@@ -475,5 +476,20 @@ function buildReport(parsed: ParsedRecords): ResolutionReport {
     seenUnscannable.add(key)
     return true
   })
-  return { failures, scannedConfigs: parsed.scannedConfigs, unscannable }
+  const resolvedModules = new Set<string>()
+  if (failures.length) {
+    for (const r of parsed.roots.values()) {
+      for (const n of r.nodes.values()) {
+        resolvedModules.add(
+          moduleKey(r.projectKey, `${n.coord.group}:${n.coord.name}`),
+        )
+      }
+    }
+  }
+  return {
+    failures,
+    resolvedModules,
+    scannedConfigs: parsed.scannedConfigs,
+    unscannable,
+  }
 }

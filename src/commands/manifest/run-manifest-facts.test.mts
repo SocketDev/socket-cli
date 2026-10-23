@@ -26,7 +26,12 @@ function okResult(buildRoot: string): ManifestRunResult {
       projects: [],
     },
     factsFileName: 'pom.xml.socket.facts.json',
-    report: { failures: [], scannedConfigs: [], unscannable: [] },
+    report: {
+      failures: [],
+      resolvedModules: new Set(),
+      scannedConfigs: [],
+      unscannable: [],
+    },
     artifactPaths: {
       pathsById: new Map(),
       classpathByProject: new Map(),

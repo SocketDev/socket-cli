@@ -11,6 +11,7 @@ import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './scripts/resolution-report-render.mts'
 import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
 import {
   ENVIRONMENT_YML,
@@ -91,6 +92,12 @@ export async function generateAutoManifest({
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const generatedFiles: string[] = []
+  const hints: BuildOptionHints = computeArtifactsSidecar
+    ? {
+        ...AUTO_MANIFEST_HINTS,
+        continueOnInstallErrorsFlag: REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+      }
+    : AUTO_MANIFEST_HINTS
 
   // Resolved paths across all JVM roots, serialized to one sidecar at the end.
   const sidecarAcc: SidecarAccumulator | undefined = computeArtifactsSidecar
@@ -127,7 +134,7 @@ export async function generateAutoManifest({
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined,
-        hints: AUTO_MANIFEST_HINTS,
+        hints,
         sidecarAcc,
         tmpDir,
         withFiles: computeArtifactsSidecar,
@@ -173,7 +180,7 @@ export async function generateAutoManifest({
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined,
-        hints: AUTO_MANIFEST_HINTS,
+        hints,
         sidecarAcc,
         withFiles: computeArtifactsSidecar,
       })
@@ -206,7 +213,7 @@ export async function generateAutoManifest({
       mavenOpts: parseBuildToolOpts(
         sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
       ),
-      hints: AUTO_MANIFEST_HINTS,
+      hints,
       sidecarAcc,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
       withFiles: computeArtifactsSidecar,
