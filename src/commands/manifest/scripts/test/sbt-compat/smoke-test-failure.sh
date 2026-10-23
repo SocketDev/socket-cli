@@ -8,9 +8,9 @@
 # A second run with files: a jar that cannot be fetched (nojar; lib/testlib's under coursier; ok's
 # tests classifier, test-scoped) must be reported and marked `unfetched` under its full coordinate,
 # in the configurations that requested it, while pomonly (and under coursier doctype, whose POM
-# declares a DOCTYPE) stays an artifactless module and pkwar keeps its war. Coursier's update report gives no cause for a
-# missing artifact, so none is claimed for it. Coursier skips a missing jar silently and lists one for every Maven module whatever its
-# packaging; Ivy's own resolution report names what it failed to download.
+# declares a DOCTYPE) stays an artifactless module and pkwar keeps its war. Coursier skips a missing
+# jar silently and lists one for every Maven module whatever its packaging, without a cause; Ivy's
+# own resolution report names what it failed to download, and why.
 #
 # Then ../artifact-failure, whose only failure is ok's missing tests jar, without and with files: an
 # artifact failure names no module, yet sbt's update fails on it, so it must be reported in both runs
