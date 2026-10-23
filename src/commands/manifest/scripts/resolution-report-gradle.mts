@@ -63,10 +63,8 @@ export function classifyGradleFailure(detail: string): FailureCategory {
 // Every kind blocks except variant-ambiguity: the module demonstrably exists
 // and is almost always captured via another configuration, so it's benign for
 // the SBOM (non-blocking, count only). The renderer blocks it anyway when the
-// module resolved in no configuration of its project. Nor does checksum-missing,
-// whose module always resolved: teams often record checksums only for what
-// their own tasks resolve, and the artifact is still left uninstalled for
-// reachability.
+// module resolved in no configuration of its project. Nor does checksum-missing:
+// teams often record checksums only for what their own tasks resolve.
 export const GRADLE_DIALECT: ResolutionDialect = {
   label: 'Gradle',
   classify: classifyGradleFailure,
