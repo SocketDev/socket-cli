@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Regression guard for failures Maven's resolver hides from a plain resolution result:
 # - A POM that failed once is cached build-wide, so a later module gets the dependency without an
-#   error. It must still fail there, in that module's scope (broken: test in b, compile in a).
+#   error. It must still fail there, in that module's scope (broken: test in b, compile in a), but
+#   not where a range resolved to another version (rebroken: 1.0 in b, [2.0,3.0) in a).
 # - A missing POM is tolerated by Maven's default descriptor policy, losing the dependency's own
 #   dependencies. It must fail; the dependency stays emitted with its jar (nopom), and one whose jar
 #   is missing too gets no file (nothing).
@@ -57,6 +58,17 @@ jar_for broken 1.0
 jar_for nopom 1.0
 pom testparent 1.0 "$(dep rangedchild '[5.0,6.0)')"
 jar_for testparent 1.0
+pom rebroken 1.0 '<parent><groupId>demo.descfail</groupId><artifactId>absent-parent</artifactId><version>1.0</version></parent>'
+jar_for rebroken 1.0
+pom rebroken 2.0 ''
+jar_for rebroken 2.0
+cat > "$REPO/rebroken/maven-metadata-local.xml" <<'XML'
+<metadata>
+  <groupId>demo.descfail</groupId>
+  <artifactId>rebroken</artifactId>
+  <versioning><versions><version>1.0</version><version>2.0</version></versions></versioning>
+</metadata>
+XML
 pom conflict 2.0 ''
 jar_for conflict 2.0
 pom conflict 1.0 '<parent><groupId>demo.descfail</groupId><artifactId>absent-parent</artifactId><version>1.0</version></parent>'
@@ -93,6 +105,7 @@ expected = {
 }
 if not keeps_failed:
     expected.add(('demo.descfail:conflict:1.0', '', a))
+expected.add(('demo.descfail:rebroken:1.0', 'compile', b))
 if with_test:
     expected.add(('demo.descfail:broken:1.0', 'test', b))
 if with_test or not steps:
@@ -112,7 +125,8 @@ for f in failures:
         errors.append(f"{f[0]} reports the batch wrapper, not its cause: {f[1]!r}")
 if any(n.startswith('demo.descfail:broken:') for n in nodes):
     errors.append(f"broken's POM failed, so it must not be emitted; nodes={sorted(nodes)}")
-for coord in ('demo.descfail:ok:jar:1.0', 'demo.descfail:nopom:jar:1.0', 'demo.descfail:sys:jar:1.0'):
+for coord in ('demo.descfail:ok:jar:1.0', 'demo.descfail:nopom:jar:1.0', 'demo.descfail:sys:jar:1.0',
+              'demo.descfail:rebroken:jar:2.0'):
     if coord not in files:
         errors.append(f"{coord} must be emitted with its jar; files={sorted(files)}")
 if unfetched != {'demo.descfail:nothing:jar:1.0', 'demo.descfail:sysmissing:jar:1.0'}:

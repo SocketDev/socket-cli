@@ -10,12 +10,18 @@
   <!-- broken's POM names a parent that cannot be fetched. nopom has a jar but no POM; nothing has neither. sys and
        sysmissing are system-scoped, the latter at a path that does not exist. testparent (test) declares rangedchild
        at a range no version satisfies. loserparent declares conflict 1.0, whose POM is broken but which loses to the
-       nearer conflict 2.0. -->
+       nearer conflict 2.0. rebroken's range resolves to 2.0, not to the 1.0 whose broken POM b already met.
+  -->
   <dependencies>
     <dependency>
       <groupId>demo.descfail</groupId>
       <artifactId>broken</artifactId>
       <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>rebroken</artifactId>
+      <version>[2.0,3.0)</version>
     </dependency>
     <dependency>
       <groupId>demo.descfail</groupId>

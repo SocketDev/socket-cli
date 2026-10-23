@@ -259,9 +259,11 @@ public final class SocketFactsRecordsEngine {
     }
     if (collectorDropsFailedNodes) {
       // An earlier module's cached failure leaves no trace in this graph; only a direct dependency
-      // can still be placed.
+      // can still be placed. One still among the direct children resolved (a ranged declaration to
+      // another version), since a direct dependency never loses a conflict.
       for (Map.Entry<String, FailedRequest> e : brokenDescriptors.entrySet()) {
         if (scopesByGav.containsKey(e.getKey()) || placed.contains(e.getKey())) continue;
+        if (isDirectChild(graph, e.getValue().artifact)) continue;
         String scope = declaredScope(session, module, e.getValue().artifact);
         if (scope != null && passingScopes.contains(scope)) {
           failures.add(new Failure(e.getKey(), e.getValue().detail, scope, moduleCoord));
@@ -754,6 +756,22 @@ public final class SocketFactsRecordsEngine {
       }
     }
     return null;
+  }
+
+  // A direct dependency of `root` naming the artifact, at any version.
+  private static boolean isDirectChild(DependencyNode root, Artifact artifact) {
+    if (root == null) return false;
+    for (DependencyNode child : root.getChildren()) {
+      Artifact a = child.getArtifact();
+      if (a != null
+          && a.getGroupId().equals(artifact.getGroupId())
+          && a.getArtifactId().equals(artifact.getArtifactId())
+          && a.getClassifier().equals(artifact.getClassifier())
+          && a.getExtension().equals(artifact.getExtension())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // The final graph's root and every node on its classpath, by identity.
