@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A Gradle dependency whose variant is ambiguous in every configuration of its project now fails the run instead of quietly dropping out of the scan.
 - Gradle dependencies that fail dependency verification, or whose jars cannot be fetched, are reported instead of passed on as healthy.
 - Failed Gradle project dependencies are reported instead of silently dropping everything they pull in, and failures name the version that actually failed.
+- sbt dependencies whose jars coursier skips or Ivy fails to download are reported instead of passed off as POM-only modules, and POM-only, war and aar modules keep their real shape.
 
 ## [1.10.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.0) - 2026-10-22
 

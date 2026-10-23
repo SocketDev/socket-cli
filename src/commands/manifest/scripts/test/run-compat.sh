@@ -29,7 +29,8 @@ GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "6.2.2 8" "8.10.2 17" "9.2.1 21")
 # 3.2.5 is the oldest, 4.x the newest. Resolution goes through Maven's own
 # ProjectDependenciesResolver, so both ends are load-bearing, not decorative.
 MAVEN_MATRIX=("3.2.5 8" "3.6.3 11" "3.8.8 17" "3.9.9 17" "4.0.0-rc-6 21")
-SBT_MATRIX=("0.13.18 8 2.10.7" "1.4.9 11 2.12.20" "1.6.2 17 2.12.20" "1.9.9 17 2.12.20")
+# The `ivy` row runs sbt 1.x with `useCoursier := false`, the other resolver path; failure suite only.
+SBT_MATRIX=("0.13.18 8 2.10.7" "1.4.9 11 2.12.20" "1.6.2 17 2.12.20" "1.9.9 17 2.12.20" "1.9.9 17 2.12.20 ivy")
 
 # Select a JDK for the given Java major: use $JDK<major> if set, else current java.
 use_jdk() {
@@ -103,12 +104,14 @@ run_sbt() {
   for row in "${SBT_MATRIX[@]}"; do
     # shellcheck disable=SC2086
     set -- $row
-    local ver="$1" java="$2" scala="$3"
-    echo "== sbt $ver / scala $scala (wants JDK $java) =="
+    local ver="$1" java="$2" scala="$3" resolver="${4:-}"
+    echo "== sbt $ver / scala $scala${resolver:+ / $resolver} (wants JDK $java) =="
     use_jdk "$java"
-    bash "$HERE/sbt-compat/smoke-test.sh" "$ver" "$scala"
-    bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
-    bash "$HERE/sbt-compat/smoke-test-failure.sh" "$ver" "$scala"
+    if [ -z "$resolver" ]; then
+      bash "$HERE/sbt-compat/smoke-test.sh" "$ver" "$scala"
+      bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
+    fi
+    bash "$HERE/sbt-compat/smoke-test-failure.sh" "$ver" "$scala" ${resolver:+"$resolver"}
   done
 }
 
