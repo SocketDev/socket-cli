@@ -776,22 +776,13 @@ public final class SocketFactsRecordsEngine {
     return false;
   }
 
-  // The collector reuses a parent's children for every later instance of its artifact, so a failing
-  // collect step runs under the first instance only, which may have lost a conflict; any instance of
-  // the same artifact on the classpath places the failure.
+  // The collector caches a parent's child list and hands that same list to every later instance with
+  // the same artifact, repositories and exclusions, so a failing collect step runs under the first
+  // instance only, which may have lost a conflict. Any classpath instance sharing the list places it.
   private static DependencyNode classpathInstance(Set<DependencyNode> onClasspath, DependencyNode parent) {
     if (onClasspath.contains(parent)) return parent;
-    Artifact artifact = parent.getArtifact();
     for (DependencyNode dn : onClasspath) {
-      Artifact a = dn.getArtifact();
-      if (dn.getDependency() != null
-          && a.getGroupId().equals(artifact.getGroupId())
-          && a.getArtifactId().equals(artifact.getArtifactId())
-          && a.getVersion().equals(artifact.getVersion())
-          && a.getClassifier().equals(artifact.getClassifier())
-          && a.getExtension().equals(artifact.getExtension())) {
-        return dn;
-      }
+      if (dn.getChildren() == parent.getChildren()) return dn;
     }
     return null;
   }

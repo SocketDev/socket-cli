@@ -10,7 +10,9 @@
 # - A failure absent from the graph fails in the scope it would have had: rangedchild under the
 #   test-scoped testparent is test; before Maven 3.9 and on Maven 4 the position is unknown (no scope).
 #   It is placed even when the collector met its parent first where that parent lost a conflict
-#   (sharedchild), and a scope the module manages is kept, not derived (managedchild: compile).
+#   (sharedchild), but not where the instance on the classpath excludes it (sharedxchild; before Maven
+#   3.9 its position is unknown, so it has no scope), and a scope the module manages is kept, not
+#   derived (managedchild: compile).
 # - A version-conflict loser (conflict 1.0) is on no classpath and must not fail; Maven 3.2 drops
 #   a failed POM's node, so there it cannot be told apart and has no scope.
 #
@@ -76,12 +78,16 @@ jar_for conflict 2.0
 pom conflict 1.0 '<parent><groupId>demo.descfail</groupId><artifactId>absent-parent</artifactId><version>1.0</version></parent>'
 pom loserparent 1.0 "$(dep conflict 1.0)"
 jar_for loserparent 1.0
-for parent in viaq:q q:shared nearb:shared; do
+for parent in viaq:q q:shared nearb:shared viax:qx qx:sharedx; do
   pom "${parent%%:*}" 1.0 "$(dep "${parent#*:}" 1.0)"
   jar_for "${parent%%:*}" 1.0
 done
 pom shared 1.0 "$(dep sharedchild '[5.0,6.0)')"
 jar_for shared 1.0
+pom sharedx 1.0 "$(dep sharedxchild '[5.0,6.0)')"
+jar_for sharedx 1.0
+pom nearx 1.0 '<dependencies><dependency><groupId>demo.descfail</groupId><artifactId>sharedx</artifactId><version>1.0</version><exclusions><exclusion><groupId>demo.descfail</groupId><artifactId>sharedxchild</artifactId></exclusion></exclusions></dependency></dependencies>'
+jar_for nearx 1.0
 pom managedparent 1.0 "$(dep managedchild 1.0)"
 jar_for managedparent 1.0
 mkdir -p "$SYS_DIR/empty"
@@ -102,9 +108,9 @@ run() {
 
 # $1: whether test scope is scanned.
 check() {
-  python3 - "$RECORDS" "$1" "$STEPS" "$KEEPS_FAILED" <<'PY'
+  python3 - "$RECORDS" "$1" "$STEPS" "$KEEPS_FAILED" "$TRACED" <<'PY'
 import sys
-with_test, steps, keeps_failed = (a == 'true' for a in sys.argv[2:5])
+with_test, steps, keeps_failed, traced = (a == 'true' for a in sys.argv[2:6])
 a, b = 'demo:a:1.0', 'demo:b:1.0'
 expected = {
     ('demo.descfail:broken:1.0', 'compile', a),
@@ -122,6 +128,8 @@ if with_test or not steps:
     expected.add(('demo.descfail:rangedchild:[5.0,6.0)', 'test' if steps else '', a))
 expected.add(('demo.descfail:sharedchild:[5.0,6.0)', 'compile' if steps else '', a))
 expected.add(('demo.descfail:managedchild:[7.0,8.0)', 'compile' if steps else '', a))
+if not traced:
+    expected.add(('demo.descfail:sharedxchild:[5.0,6.0)', '', a))
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 failures = [r[1:] for r in rows if r[0] == 'failure']
 actual = {(f[0], f[2], f[3]) for f in failures}
@@ -159,9 +167,10 @@ PY
 VERSION="$("$MVN" -v 2>/dev/null | head -1)"
 echo "+ $VERSION (descriptor failure)"
 case "$VERSION" in
-  *"Maven 3.2."*) STEPS=false; KEEPS_FAILED=false ;;
-  *"Maven 3.9."*) STEPS=true; KEEPS_FAILED=true ;;
-  *) STEPS=false; KEEPS_FAILED=true ;;
+  *"Maven 3.2."*) STEPS=false; KEEPS_FAILED=false; TRACED=false ;;
+  *"Maven 3.9."*) STEPS=true; KEEPS_FAILED=true; TRACED=true ;;
+  *"Maven 4."*) STEPS=false; KEEPS_FAILED=true; TRACED=true ;;
+  *) STEPS=false; KEEPS_FAILED=true; TRACED=false ;;
 esac
 
 run
