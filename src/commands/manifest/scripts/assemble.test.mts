@@ -115,6 +115,29 @@ describe('records → assemble → sidecar', () => {
     expect(bom?.targets).toEqual([])
     expect(bom?.sources).toEqual([])
   })
+  it("carries an excluded module's paths into the kept project that depends on it", () => {
+    const records = [
+      'meta\tgradle\t8.10\t17',
+      'project\t:app\tg\tapp\t1\tapp',
+      'projectSrc\t:app\t/abs/app/src',
+      'projectTgt\t:app\t/abs/app/classes',
+      'excludedProject\t:lib',
+      'projectSrc\t:lib\t/abs/lib/src',
+      'projectTgt\t:lib\t/abs/lib/classes',
+      'root\t0\t:app\tcompileClasspath\t1',
+      'node\t0\t:lib\tg\tlib\t1\tjar\t\t1\t:lib',
+    ].join('\n')
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      fileExists: () => true,
+    })
+
+    expect(facts.projects?.map(p => p.id)).toEqual([':app'])
+    expect(artifactPaths.pathsById.get(':lib')).toEqual({
+      sources: ['/abs/lib/src'],
+      targets: ['/abs/lib/classes'],
+    })
+    expect([...artifactPaths.classpathByProject.keys()]).toEqual([':app'])
+  })
   it('states no targets for an artifact that failed to resolve or is gone from disk', () => {
     const records = [
       'meta\tmaven\t3.9.6\t17',

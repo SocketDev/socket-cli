@@ -13,6 +13,7 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
 //   projectBuild  projectKey  path                     (build-root-relative; may be absent on disk)
+//   excludedProject  projectKey                          (--with-files only; paths without a project)
 //   root        rootId  projectKey  config  prod(0|1)
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
@@ -80,6 +81,9 @@ export type ParsedRecords = {
   // directory-addressed build.
   entry: string
   projects: Map<string, RawProject>
+  // Excluded from the scan: not projects of their own, but their paths serve
+  // the kept projects depending on them.
+  excludedProjects: Map<string, RawProject>
   roots: Map<string, RawRoot>
   scannedConfigs: string[]
   failures: ResolutionFailure[]
@@ -115,12 +119,14 @@ export function parseRecords(text: string): ParsedRecords {
     buildRoot: '',
     entry: '',
     projects: new Map(),
+    excludedProjects: new Map(),
     roots: new Map(),
     scannedConfigs: [],
     failures: [],
     unscannable: [],
   }
   const scanned = new Set<string>()
+  const excluded = new Set<string>()
 
   const root = (id: string): RawRoot => {
     let r = result.roots.get(id)
@@ -189,6 +195,9 @@ export function parseRecords(text: string): ParsedRecords {
         if (f[2]) {
           project(f[1] ?? '').targets.push(f[2])
         }
+        break
+      case 'excludedProject':
+        excluded.add(f[1] ?? '')
         break
       case 'projectBuild':
         if (f[2]) {
@@ -269,6 +278,13 @@ export function parseRecords(text: string): ParsedRecords {
         break
       default:
         break
+    }
+  }
+  for (const key of excluded) {
+    const p = result.projects.get(key)
+    if (p) {
+      result.projects.delete(key)
+      result.excludedProjects.set(key, p)
     }
   }
   result.scannedConfigs = [...scanned].sort()
