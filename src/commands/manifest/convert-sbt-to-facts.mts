@@ -1,5 +1,6 @@
 import { runManifestFacts } from './run-manifest-facts.mts'
 
+import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
 import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
@@ -35,8 +36,8 @@ export async function convertSbtToFacts({
   tmpDir: string
   verbose: boolean
   withFiles?: boolean | undefined
-}): Promise<void> {
-  await runManifestFacts({
+}): Promise<RunManifestFactsOutcome> {
+  return await runManifestFacts({
     bin,
     buildOpts: sbtOpts,
     cwd,

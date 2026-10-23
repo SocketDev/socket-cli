@@ -294,10 +294,10 @@ export async function generateRecursiveManifests({
   // A shared global base across every sbt root in this run lets sbt's own
   // Scala-toolchain cache under <base>/boot survive between invocations
   // instead of being reprovisioned per root (the plugin file is rewritten and
-  // records.tsv is fully overwritten - not appended - on every invocation, so
-  // reuse is safe). A caller-supplied sbtTmpDir is reused as-is (the caller
-  // owns its lifetime); otherwise one is allocated and cleaned up here, but
-  // only when there's an sbt root to benefit from sharing it at all.
+  // records.tsv is removed before every invocation, so reuse is safe). A
+  // caller-supplied sbtTmpDir is reused as-is (the caller owns its lifetime);
+  // otherwise one is allocated and cleaned up here, but only when there's an
+  // sbt root to benefit from sharing it at all.
   const outcomes = sbtTmpDir
     ? await runAll(sbtTmpDir)
     : candidatesByTool.get('sbt')?.length
