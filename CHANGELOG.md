@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Updated the Coana CLI to v `15.12.12`.
 
+### Fixed
+- With `--dynamic-sbom-inference`, an sbt build that fails before writing its results is reported as failed instead of reusing another build's results.
+
 ## [1.10.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.0) - 2026-10-22
 
 ### Added

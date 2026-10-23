@@ -299,6 +299,9 @@ async function invokeSbtIn(
 ): Promise<ManifestRunResult> {
   await writeSbtPlugin(globalBase, pluginSourceFilename, pluginDestFilename)
   const recordsFile = path.join(globalBase, 'records.tsv')
+  // The global base is shared across sbt roots: a build that dies before
+  // writing must not be read as the previous root's records.
+  await fs.rm(recordsFile, { force: true })
   const bin = resolveBuildToolBin('sbt', opts.projectDir, opts.bin)
   // Fresh per-run global base (not ~/.sbt): sbt executes everything under
   // plugins/, so a shared path is a code-injection surface. BSP off for this
