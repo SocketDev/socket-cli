@@ -8,18 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Updated the Coana CLI to v `15.12.12`.
+- JVM manifest generation now fails the run on dependencies the build tool only warns about or silently skips, so they no longer pass into the scan without code: Maven POMs that are missing or invalid, missing `system` jars, Gradle artifacts that fail dependency verification, failed Gradle project dependencies, jars coursier or Ivy could not fetch, and Gradle variants ambiguous in every configuration. A checksum missing from Gradle's verification metadata only leaves that artifact out of reachability analysis. Set `ignoreUnresolved`, plus `--reach-continue-on-install-errors` for reachability scans, to proceed past them.
 
 ### Fixed
 - With `--dynamic-sbom-inference`, an sbt build that fails before writing its results is reported as failed instead of reusing another build's results.
 - `socket scan create --reach` keeps the private libraries and build modules of Socket facts files in the stored SBOM, with their dependencies under them.
 - JVM dependencies whose jars cannot be fetched, or are gone from disk, no longer reach reachability analysis looking resolved without code.
 - One unresolvable Maven dependency no longer strips the jar paths from every other dependency of its build, which made reachability analysis call their vulnerabilities unreachable. Jars that cannot be fetched are reported with their real cause, Maven 4 included.
-- Maven dependencies with missing or invalid POMs are reported in every module that uses them, `system`-scope jars reach reachability analysis, and a failing dependency no longer fails scopes that `excludeConfigs` leaves out or the build when it lost a version conflict.
+- Maven `system`-scope jars reach reachability analysis, and a failing Maven dependency no longer fails scopes that `excludeConfigs` leaves out, or the build when it lost a version conflict.
 - Reachability scans that hit unresolved JVM dependencies now point out that ignoring them also needs `--reach-continue-on-install-errors`.
-- A Gradle dependency whose variant is ambiguous in every configuration of its project now fails the run instead of quietly dropping out of the scan.
-- Gradle dependencies that fail dependency verification, or whose jars cannot be fetched, are reported instead of passed on as healthy.
-- Failed Gradle project dependencies are reported instead of silently dropping everything they pull in, and failures name the version that actually failed.
-- sbt dependencies whose jars coursier skips or Ivy fails to download are reported instead of passed off as POM-only modules, and POM-only, war and aar modules keep their real shape.
+- JVM failures name the version that actually failed, and sbt POM-only, war and aar modules keep their real shape.
 - A module excluded with `--exclude-paths` is still analysed as part of the projects that depend on it.
 
 ## [1.10.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.0) - 2026-10-22
