@@ -91,6 +91,7 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
+      [...parsed.excludedProjects.values()],
       graphs,
       fileExists,
     ),
@@ -410,6 +411,7 @@ function byProject(
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
+  excludedProjects: RawProject[],
   graphs: Map<string, SubprojectGraph>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
@@ -444,7 +446,7 @@ function buildArtifactPaths(
   }
   // A project's own component shares its id, so this also covers dependency
   // edges onto a sibling project.
-  for (const p of projects) {
+  for (const p of [...projects, ...excludedProjects]) {
     pathsById.set(p.projectKey, {
       sources: [...new Set(p.sources)].filter(fileExists).sort(),
       targets: [...new Set(p.targets)].filter(fileExists).sort(),

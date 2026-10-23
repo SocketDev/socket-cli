@@ -131,11 +131,16 @@ public final class SocketFactsRecordsEngine {
       // own "no POM in this directory" error surface instead of an NPE.
       if (module.getBasedir() == null) continue;
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
-      if (SocketSupport.isExcludedPath(ws, excludes)) continue;
       String key = projectKey(module);
-      rec(lines, "project", key, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
-      File pom = module.getFile();
-      if (pom != null && pom.isFile()) rec(lines, "projectBuild", key, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));
+      boolean excluded = SocketSupport.isExcludedPath(ws, excludes);
+      if (excluded) {
+        // Not analysed on its own, but a kept module depending on it is analysed with its code.
+        if (opts.withFiles) rec(lines, "excludedProject", key);
+      } else {
+        rec(lines, "project", key, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
+        File pom = module.getFile();
+        if (pom != null && pom.isFile()) rec(lines, "projectBuild", key, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));
+      }
       if (opts.withFiles) {
         for (String s : collectSources(module)) rec(lines, "projectSrc", key, s);
         for (String t : collectTargets(module)) rec(lines, "projectTgt", key, t);

@@ -117,21 +117,24 @@ object SocketFactsPlugin extends AutoPlugin {
       rec("buildRoot", rootCanonPath.toString)
 
       // One `project` record per build module (sources/targets only with --with-files). Excluded
-      // subprojects are omitted (they were also skipped during resolution above).
+      // subprojects get none (they were also skipped during resolution above), but keep their paths so
+      // a kept project depending on one is analysed with its code.
       allRefs.foreach { ref =>
-        if (!isExcludedRef(ref)) {
-          val mid = rootIdOf(extracted, ref)
-          val ver = if (mid.revision == null) "" else mid.revision
+        val mid = rootIdOf(extracted, ref)
+        val ver = if (mid.revision == null) "" else mid.revision
+        if (isExcludedRef(ref)) {
+          if (withFiles) rec("excludedProject", ref.project)
+        } else {
           val baseDir = extracted.get(baseDirectory.in(ref))
           rec("project", ref.project, mid.organization, mid.name, ver, relOf(baseDir))
           (buildFilesByRef.getOrElse(ref, Nil) ++ baseBuildSbt(baseDir, rootCanonPath).map(relOf)).distinct.sorted
             .foreach(f => rec("projectBuild", ref.project, f))
-          if (withFiles) {
-            moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
-              case (sources, targets) =>
-                sources.foreach(s => rec("projectSrc", ref.project, s))
-                targets.foreach(t => rec("projectTgt", ref.project, t))
-            }
+        }
+        if (withFiles) {
+          moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
+            case (sources, targets) =>
+              sources.foreach(s => rec("projectSrc", ref.project, s))
+              targets.foreach(t => rec("projectTgt", ref.project, t))
           }
         }
       }

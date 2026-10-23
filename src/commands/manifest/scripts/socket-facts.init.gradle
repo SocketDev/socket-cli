@@ -92,11 +92,9 @@ gradle.projectsEvaluated { g ->
     g.socketFactsState.projectGaByPath[p.path] = "${p.group ?: ''}:${p.name}".toString()
     g.socketFactsState.projectGavByPath[p.path] = "${p.group ?: ''}:${p.name}:${p.version ?: ''}".toString()
     // A wholly excluded subproject emits no project record and its configs are never resolved (see the
-    // collector). The project maps above stay populated so a KEPT project depending on it still
-    // recognizes it as a first-party module.
-    if (g.ext.socketIsExcluded.call(rel(p.projectDir))) {
-      return
-    }
+    // collector). The project maps above stay populated so a KEPT project depending on it
+    // still recognizes it as a first-party module, and its paths are kept so it is analysed with its code.
+    def excluded = g.ext.socketIsExcluded.call(rel(p.projectDir))
     // Guarded: projects without the java `sourceSets` convention (pure aggregators, AGP-only
     // Android modules) contribute empty lists rather than failing.
     // ALL source sets are emitted (not just main/test) so custom ones (integrationTest,
@@ -134,6 +132,7 @@ gradle.projectsEvaluated { g ->
       sources: (sources as List).sort(),
       targets: (targets as List).sort(),
       buildFiles: buildFiles,
+      excluded: excluded,
     ])
   }
 }
@@ -701,8 +700,12 @@ rootProject { rp ->
       def projectsInfo
       synchronized (state.projectsInfo) { projectsInfo = new ArrayList(state.projectsInfo) }
       projectsInfo.each { pi ->
-        rec(['project', pi.path, pi.group ?: '', pi.name, pi.version ?: '', pi.dir])
-        pi.buildFiles.each { f -> rec(['projectBuild', pi.path, f]) }
+        if (pi.excluded) {
+          if (withFilesProjects) rec(['excludedProject', pi.path])
+        } else {
+          rec(['project', pi.path, pi.group ?: '', pi.name, pi.version ?: '', pi.dir])
+          pi.buildFiles.each { f -> rec(['projectBuild', pi.path, f]) }
+        }
         if (withFilesProjects) {
           pi.sources.each { s -> rec(['projectSrc', pi.path, s]) }
           pi.targets.each { t -> rec(['projectTgt', pi.path, t]) }
