@@ -15,6 +15,7 @@ export type FailureCategory =
   | 'no-matching-variant'
   | 'capability-conflict'
   | 'variant-ambiguity'
+  | 'checksum-missing'
   | 'repository-or-network'
   | 'config-problem'
   | 'other'

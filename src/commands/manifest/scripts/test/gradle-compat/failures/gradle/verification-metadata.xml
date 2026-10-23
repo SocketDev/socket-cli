@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- tampered's jar never matches its recorded checksum; every other artifact is trusted. -->
+<!-- tampered's jar never matches its recorded checksum, and unlisted has none recorded; every other artifact is trusted. -->
 <verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.0.xsd">
   <configuration>
     <verify-metadata>false</verify-metadata>
     <verify-signatures>false</verify-signatures>
     <trusted-artifacts>
-      <trust group="demo" name="^(?!tampered$).*$" regex="true"/>
+      <trust group="demo" name="^(?!(tampered|unlisted)$).*$" regex="true"/>
     </trusted-artifacts>
   </configuration>
   <components>

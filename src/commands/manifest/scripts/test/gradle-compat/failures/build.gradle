@@ -12,6 +12,7 @@ configurations {
   verified
   walkAborted
   quiet
+  unparsed
 }
 configurations.forced.resolutionStrategy.force 'demo:c:9.9'
 
@@ -21,9 +22,11 @@ dependencies {
   shadowing 'demo:lib:7.7'
   verified 'demo:a:1.0'
   verified 'demo:tampered:1.0'
+  verified 'demo:unlisted:1.0'
   walkAborted 'demo:a:1.0'
   walkAborted 'demo:boom:1.0'
   quiet 'demo:quiet:1.0'
+  unparsed 'demo:a:1.0'
 }
 
 // Artifact transforms and dependency verification exist only on newer Gradle.
@@ -32,7 +35,8 @@ if (org.gradle.util.GradleVersion.current() >= org.gradle.util.GradleVersion.ver
 }
 
 // No build throws from the walk's own reads on demand, so make two of them throw for one module
-// each: boom's children, and quiet's file with an empty message.
+// each: boom's children, and quiet's file with an empty message. unparsed's verification read
+// fails with a message that names no artifact.
 tasks.matching { it.name == 'socketFactsCollect' }.all { t ->
   t.doFirst {
     def boom = configurations.walkAborted.resolvedConfiguration.firstLevelModuleDependencies.find { it.moduleName == 'boom' }
@@ -52,6 +56,9 @@ tasks.matching { it.name == 'socketFactsCollect' }.all { t ->
         throw new RuntimeException('')
       }
       file.invoke(delegate)
+    }
+    configurations.unparsed.incoming.metaClass.artifactView = { Closure spec ->
+      throw new GradleException("Dependency verification failed for configuration ':unparsed'")
     }
   }
 }

@@ -256,6 +256,9 @@ async function invokeGradle(
       '--init-script',
       initScript,
       '-Dorg.gradle.configuration-cache=false',
+      // Names each artifact's own verification problem, so a checksum missing
+      // from the metadata can be told apart from a mismatch.
+      '-Porg.gradle.dependency.verification.console=verbose',
       `-Psocket.recordsFile=${recordsFile}`,
       ...commonProps(opts, '-P'),
       ...(opts.toolOpts ?? []),

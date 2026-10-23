@@ -530,29 +530,62 @@ allprojects { project ->
         if (message == null) {
           return
         }
-        // The report names each failed artifact by its identifier's display name,
-        // "<file> (<group>:<module>:<version>)", whose file part is `<name>-<version>[-<classifier>].<ext>`
-        // rather than the cached file's own name.
-        def failed = [:]
-        (message =~ /(\S+) \(([^\s():]+):([^\s():]+):([^\s()]+)\)/).each { m ->
-          failed.get("${m[2]}:${m[3]}:${m[4]}".toString(), [] as Set) << m[1]
+        // Each failed artifact is named by its identifier's display name, "<file> (<group>:<module>:<version>)",
+        // whose file part is `<name>-<version>[-<classifier>].<ext>` rather than the cached file's own name.
+        def artifactRef = /(\S+) \(([^\s():]+):([^\s():]+):([^\s()]+)\)/
+        def header = message.readLines().find() ?: ''
+        // The verbose report (the Socket CLI sets org.gradle.dependency.verification.console=verbose) gives
+        // each artifact's problems: "On artifact <ref> in repository '<repo>': <problem>", or "On artifact
+        // <ref> multiple problems reported:" followed by one "in repository '<repo>': <problem>" line each.
+        def failed = []
+        def current = null
+        message.readLines().each { raw ->
+          def line = raw.trim().replaceFirst(/^- /, '')
+          def m = line =~ ('^On artifact ' + artifactRef + ' (.*)$')
+          if (m.matches()) {
+            current = [gav: "${m.group(2)}:${m.group(3)}:${m.group(4)}".toString(), file: m.group(1), problems: []]
+            failed << current
+            if (m.group(5) != 'multiple problems reported:') {
+              current.problems << m.group(5)
+            }
+          } else if (current != null && line.startsWith("in repository '")) {
+            current.problems << line
+          } else {
+            current = null
+          }
+        }
+        failed.each { f ->
+          // A checksum missing from the metadata is no evidence against the artifact, unlike any other problem.
+          def missing = f.problems.findAll { it.endsWith(': checksum is missing from verification metadata.') }
+          def shown = missing.size() == f.problems.size() ? missing : f.problems - missing
+          f.detail = ([header] + shown.collect { "On artifact ${f.file} (${f.gav}) ${it}" }).join('\n')
         }
         if (failed.isEmpty()) {
-          throw new GradleException(message)
+          // The summary report names only the artifacts.
+          (message =~ artifactRef).each { m ->
+            failed << [gav: "${m[2]}:${m[3]}:${m[4]}".toString(), file: m[1], detail: message]
+          }
         }
-        failed.each { gav, fileNames ->
-          def ids = external.findAll { id -> gavOf(nodes[id].coord) == gav }
+        if (failed.isEmpty()) {
+          // No artifact can be told apart: the walked graph stands, without any of its external files.
+          state.unscannable << [config: cfg.name, detail: message, project: project.path]
+          external.each { id ->
+            paths.remove(id)
+            unfetched << id
+          }
+          return
+        }
+        failed.each { f ->
+          def ids = external.findAll { id -> gavOf(nodes[id].coord) == f.gav }
           // A failed metadata file (pom, module) names none of the module's artifacts: all are suspect.
           // A failed artifact this config did not fetch leaves it untouched.
-          def metadataOnly = fileNames.every { it.endsWith('.pom') || it.endsWith('.module') }
-          def matched = ids.findAll { id ->
+          def hit = (f.file.endsWith('.pom') || f.file.endsWith('.module')) ? ids : ids.findAll { id ->
             def c = nodes[id].coord
             def named = "${c.artifactId}-${c.version}${c.classifier ? '-' + c.classifier : ''}${c.ext ? '.' + c.ext : ''}"
-            fileNames.contains(named.toString()) || paths[id].any { p -> fileNames.contains(new File(p).name) }
+            f.file == named.toString() || paths[id]?.any { p -> f.file == new File(p).name }
           }
-          def hit = matched ?: (metadataOnly ? ids : [])
           if (!hit.isEmpty()) {
-            recordFailure(gav, message)
+            recordFailure(f.gav, f.detail)
             hit.each { id ->
               paths.remove(id)
               unfetched << id

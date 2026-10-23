@@ -4,7 +4,9 @@
 # is emitted:
 #  - a forced version that doesn't exist is reported as that version, not the one requested;
 #  - a failed project dependency, and an external module sharing a project's group:name, are reported;
-#  - an artifact failing dependency verification (Gradle 6.2+) is reported and has no file;
+#  - an artifact failing dependency verification (Gradle 6.2+) is reported and has no file, a missing
+#    checksum as non-blocking and a mismatch as blocking, and one whose report names no artifact
+#    leaves the configuration unscannable but keeps its graph, without files;
 #  - a module whose artifact can't be selected is reported with no component, with or without
 #    --with-files;
 #  - a walk that throws midway leaves no resolution root, only an unscannable configuration;
@@ -15,6 +17,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 GRADLE="${1:?usage: smoke-test-failures.sh <path-to-gradle-binary>}"
 INIT="$HERE/../../socket-facts.init.gradle"
+CLASSIFY="$HERE/../../resolution-report-gradle.mts"
 PROJECT="$HERE/failures"
 RECORDS="$PROJECT/records.tsv"
 # shellcheck source=SCRIPTDIR/../compat-cache.sh
@@ -22,21 +25,40 @@ RECORDS="$PROJECT/records.tsv"
 GUH="$SOCKET_COMPAT_CACHE/gradle-home"
 
 bash "$HERE/../make-stub-repo.sh" "$PROJECT/localrepo" \
-  'demo:a:1.0+demo:c:1.0' 'demo:c:1.0' 'demo:boom:1.0+demo:c:1.0' 'demo:quiet:1.0' 'demo:tampered:1.0'
+  'demo:a:1.0+demo:c:1.0' 'demo:c:1.0' 'demo:boom:1.0+demo:c:1.0' 'demo:quiet:1.0' 'demo:tampered:1.0' 'demo:unlisted:1.0'
 
 run() {
   rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build" "$PROJECT/lib/build" "$PROJECT/app/build"
   ( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
-      --init-script "$INIT" -Psocket.recordsFile="$RECORDS" "$@" socketFacts -q ) > /dev/null
+      --init-script "$INIT" -Porg.gradle.dependency.verification.console=verbose \
+      -Psocket.recordsFile="$RECORDS" "$@" socketFacts -q ) > /dev/null
+}
+
+# The category the Socket CLI gives each failure record, as "config<TAB>coord<TAB>category" lines.
+categories() {
+  node --input-type=module -e '
+    import { readFileSync } from "node:fs"
+    const { classifyGradleFailure } = await import(process.argv[1])
+    const unescape = v => v.replace(/\\(.)/g, (_, c) => ({ n: "\n", t: "\t", r: "\r" })[c] ?? c)
+    for (const line of readFileSync(process.argv[2], "utf8").split("\n")) {
+      const f = line.split("\t").map(unescape)
+      if (f[0] === "failure") console.log([f[3], f[1], classifyGradleFailure(f[2])].join("\t"))
+    }' "$CLASSIFY" "$RECORDS"
 }
 
 echo "+ $("$GRADLE" --version 2>/dev/null | sed -n 's/^Gradle //p' | head -1) (failures)"
 for files in true false; do
   run -Psocket.withFiles="$files"
-  python3 - "$RECORDS" "$files" <<'PY'
+  categories > "$PROJECT/categories.tsv"
+  python3 - "$RECORDS" "$files" "$PROJECT/categories.tsv" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 with_files = sys.argv[2] == 'true'
+categories = {}
+for l in open(sys.argv[3]):
+    if l.strip():
+        config, coord, category = l.rstrip('\n').split('\t')
+        categories.setdefault((config, coord), set()).add(category)
 version = next(r[2] for r in rows if r[0] == 'meta')
 modern = tuple(int(p) for p in version.split('.')[:2]) >= (6, 2)
 roots = {r[1]: r[3] for r in rows if r[0] == 'root'}
@@ -66,8 +88,12 @@ if modern:
     ambiguous = [k for k in nodes if k[0] == 'ambiguous']
     reported = ('ambiguous', 'demo:a:1.0') in failures
     expect(reported != bool(ambiguous), f"ambiguous: components {ambiguous}, reported={reported}")
+    if reported:
+        expect(categories[('ambiguous', 'demo:a:1.0')] == {'variant-ambiguity'},
+               f"ambiguous: classified {categories[('ambiguous', 'demo:a:1.0')]}, not variant-ambiguity")
 
 tampered = ('verified', 'demo:tampered:jar:1.0')
+unlisted = ('verified', 'demo:unlisted:jar:1.0')
 if with_files:
     expect(('quiet', 'demo:quiet:1.0') in failures, f"quiet: unreadable file not reported: {sorted(failures)}")
     expect(('quiet', 'demo:quiet:jar:1.0') in unfetched, f"quiet: unreadable file not marked unfetched: {sorted(unfetched)}")
@@ -77,6 +103,15 @@ if with_files:
         expect(('verified', 'demo:tampered:1.0') in failures, f"verified: verification failure not reported: {sorted(failures)}")
         expect(tampered in unfetched, f"verified: tampered jar not marked unfetched: {sorted(unfetched)}")
         expect(tampered not in files, "verified: tampered jar emitted as a file")
+        expect(categories.get(('verified', 'demo:tampered:1.0')) == {'other'},
+               f"verified: checksum mismatch not blocking: {categories.get(('verified', 'demo:tampered:1.0'))}")
+        expect(unlisted in unfetched and unlisted not in files, "verified: unlisted jar not marked unfetched")
+        expect(categories.get(('verified', 'demo:unlisted:1.0')) == {'checksum-missing'},
+               f"verified: missing checksum not non-blocking: {categories.get(('verified', 'demo:unlisted:1.0'))}")
+        expect('unparsed' in unscannable, f"unparsed: unparseable verification failure not reported: {sorted(unscannable)}")
+        expect(('unparsed', 'demo:a:jar:1.0') in nodes, "unparsed: graph dropped for an unparseable verification failure")
+        expect(('unparsed', 'demo:a:jar:1.0') in unfetched and ('unparsed', 'demo:a:jar:1.0') not in files,
+               "unparsed: files kept despite an unparseable verification failure")
     else:
         expect(tampered in files, "verified: no verification before Gradle 6.2, so the jar must materialize")
 else:

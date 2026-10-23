@@ -12,3 +12,4 @@ failures/.gradle/
 failures/build/
 failures/lib/build/
 failures/app/build/
+failures/categories.tsv
