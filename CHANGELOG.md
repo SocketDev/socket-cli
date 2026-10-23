@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Updated the Coana CLI to v `15.12.12`.
-- JVM manifest generation now fails the run on dependencies the build tool only warns about or silently skips, so they no longer pass into the scan without code: Maven POMs that are missing or invalid, missing `system` jars, Gradle artifacts that fail dependency verification, failed Gradle project dependencies, jars coursier or Ivy could not fetch, and Gradle variants ambiguous in every configuration. A checksum missing from Gradle's verification metadata only leaves that artifact out of reachability analysis. Set `ignoreUnresolved`, plus `--reach-continue-on-install-errors` for reachability scans, to proceed past them.
+- JVM manifest generation now fails on dependencies the build tool only warns about or skips, instead of passing them into the scan without code: missing or invalid Maven POMs, missing `system` jars, jars coursier or Ivy could not fetch, failed Gradle project dependencies, artifacts failing Gradle dependency verification, and Gradle variants ambiguous in every configuration.
+- To proceed past them, set `ignoreUnresolved`, and for reachability scans also pass `--reach-continue-on-install-errors`.
+- An artifact with no checksum in Gradle's verification metadata no longer fails the run; it is left out of reachability analysis.
 
 ### Fixed
 - With `--dynamic-sbom-inference`, an sbt build that fails before writing its results is reported as failed instead of reusing another build's results.
