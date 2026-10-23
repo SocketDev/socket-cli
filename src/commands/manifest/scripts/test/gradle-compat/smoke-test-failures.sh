@@ -38,12 +38,12 @@ run() {
 categories() {
   node --input-type=module -e '
     import { readFileSync } from "node:fs"
-    const { classifyGradleFailure } = await import(process.argv[1])
+    import { classifyGradleFailure } from "'"$CLASSIFY"'"
     const unescape = v => v.replace(/\\(.)/g, (_, c) => ({ n: "\n", t: "\t", r: "\r" })[c] ?? c)
-    for (const line of readFileSync(process.argv[2], "utf8").split("\n")) {
+    for (const line of readFileSync(process.argv[1], "utf8").split("\n")) {
       const f = line.split("\t").map(unescape)
       if (f[0] === "failure") console.log([f[3], f[1], classifyGradleFailure(f[2])].join("\t"))
-    }' "$CLASSIFY" "$RECORDS"
+    }' "$RECORDS"
 }
 
 echo "+ $("$GRADLE" --version 2>/dev/null | sed -n 's/^Gradle //p' | head -1) (failures)"
