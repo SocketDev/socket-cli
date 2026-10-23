@@ -89,6 +89,7 @@ run_maven() {
     bash "$HERE/maven-compat/smoke-test-repo-inheritance.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-duplicate-failure.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-graph-failure.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-descriptor-failure.sh" "$dir/bin/mvn" "$jar"
   done
 }
 

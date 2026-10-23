@@ -13,3 +13,6 @@ duplicate-failure/target/
 duplicate-failure/*/target/
 graph-failure/records.tsv
 graph-failure/target/
+descriptor-failure/records.tsv
+descriptor-failure/target/
+descriptor-failure/*/target/

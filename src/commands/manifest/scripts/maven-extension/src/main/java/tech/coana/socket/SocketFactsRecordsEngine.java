@@ -1,5 +1,6 @@
 package tech.coana.socket;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.project.DefaultDependencyResolutionRequest;
@@ -9,13 +10,16 @@ import org.apache.maven.project.DependencyResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RequestTrace;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.resolution.ArtifactDescriptorException;
+import org.eclipse.aether.resolution.ArtifactDescriptorRequest;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.slf4j.Logger;
 
@@ -77,15 +81,28 @@ public final class SocketFactsRecordsEngine {
   private final ProjectDependenciesResolver dependenciesResolver;
   private final RepositorySystem repositorySystem;
   private final String mavenVersion;
+  private final CollectionObserver observer;
   private final Logger log;
+  // Maven 3.2.5's collector (aether 1.0.0) leaves a dependency whose POM failed out of the graph; from
+  // aether 1.0.2 (Maven 3.3) on it stays, minus its children.
+  private final boolean collectorDropsFailedNodes;
+  // Maven 3's JavaScopeDeriver and ClassicDependencyManager, which absentScope models.
+  private final boolean maven3ScopeRules;
+  // The resolver caches a failed POM build-wide, keyed by artifact alone, so only the first module to
+  // reach one sees the failure; every later module gets the node without children and no error.
+  // Keyed by GAV.
+  private final Map<String, FailedRequest> brokenDescriptors = new LinkedHashMap<>();
 
   public SocketFactsRecordsEngine(
       ProjectDependenciesResolver dependenciesResolver, RepositorySystem repositorySystem, String mavenVersion,
-      Logger log) {
+      CollectionObserver observer, Logger log) {
     this.dependenciesResolver = dependenciesResolver;
     this.repositorySystem = repositorySystem;
     this.mavenVersion = mavenVersion;
+    this.observer = observer;
     this.log = log;
+    this.collectorDropsFailedNodes = mavenVersion != null && mavenVersion.startsWith("3.2.");
+    this.maven3ScopeRules = mavenVersion == null || mavenVersion.startsWith("3.");
   }
 
   public void run(MavenSession session, List<MavenProject> reactor, File rootDir, Options opts)
@@ -173,6 +190,7 @@ public final class SocketFactsRecordsEngine {
     DependencyResolutionResult result;
     DependencyResolutionException thrown = null;
     DependencyFilter resolutionFilter = materializationFilter(opts, passingScopes, reactorGavs, populateGavs);
+    observer.reset();
     try {
       DependencyResolutionRequest request =
           new DefaultDependencyResolutionRequest(module, session.getRepositorySession());
@@ -191,26 +209,65 @@ public final class SocketFactsRecordsEngine {
     }
     boolean reported = false;
     DependencyNode graph = result.getDependencyGraph();
-    // Dependencies whose own resolution failed are reported, not emitted, as Gradle and sbt do.
-    Set<String> unresolved = new HashSet<>();
-    Map<String, Set<String>> scopesByGav = null;
+    List<FailedRequest> collectionFailures = new ArrayList<>();
     for (Exception e : result.getCollectionErrors()) {
-      String failed = failedArtifact(e);
+      FailedRequest failed = failedRequest(e);
       if (failed == null) {
         unscannable.add(new Unscannable(rootMessage(e), moduleCoord));
       } else {
-        // Maven keeps a dependency whose POM failed in the graph, minus its children (Maven 3.2 drops it), so
-        // the failure belongs to the scopes it has there. One absent from the graph has none.
-        if (scopesByGav == null) scopesByGav = scopesByGav(graph);
-        Set<String> scopes = scopesByGav.getOrDefault(failed, Collections.emptySet());
-        if (scopes.isEmpty()) failures.add(new Failure(failed, rootMessage(e), "", moduleCoord));
-        for (String scope : scopes) {
-          if (passingScopes.contains(scope)) failures.add(new Failure(failed, rootMessage(e), scope, moduleCoord));
+        collectionFailures.add(failed);
+        if (failed.descriptor) {
+          brokenDescriptors.put(gav(failed.artifact), failed);
         }
-        unresolved.add(failed);
       }
       log.warn("[socket-facts] could not build dependency graph for " + moduleCoord + ": " + rootMessage(e));
       reported = true;
+    }
+    Map<String, String> incompleteDescriptors = observer.incompleteDescriptors();
+    // Dependencies whose own resolution failed are reported, not emitted, as Gradle and sbt do. One
+    // whose POM Maven tolerated as missing or invalid is still emitted: its own artifact may be fine.
+    Set<String> unresolved = new HashSet<>();
+    Map<String, Set<String>> scopesByGav =
+        brokenDescriptors.isEmpty() && incompleteDescriptors.isEmpty() && collectionFailures.isEmpty()
+            ? Collections.<String, Set<String>>emptyMap()
+            : scopesByGav(graph);
+    for (Map.Entry<String, FailedRequest> e : brokenDescriptors.entrySet()) {
+      Set<String> scopes = scopesByGav.get(e.getKey());
+      if (scopes == null) continue;
+      unresolved.add(e.getKey());
+      reported |= addFailures(failures, e.getKey(), e.getValue().detail, scopes, passingScopes, moduleCoord);
+    }
+    for (Map.Entry<String, String> e : incompleteDescriptors.entrySet()) {
+      // A strict descriptor policy also throws for it: already reported above.
+      if (brokenDescriptors.containsKey(e.getKey())) continue;
+      Set<String> scopes = scopesByGav.get(e.getKey());
+      if (scopes != null) reported |= addFailures(failures, e.getKey(), e.getValue(), scopes, passingScopes, moduleCoord);
+    }
+    Set<String> placed = new HashSet<>();
+    Set<DependencyNode> onClasspath = null;
+    for (FailedRequest failed : collectionFailures) {
+      String coord = gav(failed.artifact);
+      if (scopesByGav.containsKey(coord)) continue;
+      if (onClasspath == null) onClasspath = onClasspath(graph);
+      String scope = absentScope(session, module, failed, onClasspath);
+      placed.add(coord);
+      if (scope == null) {
+        log.debug("[socket-facts] " + coord + " failed but sits on no classpath of " + moduleCoord);
+      } else if (scope.isEmpty() || passingScopes.contains(scope)) {
+        failures.add(new Failure(coord, failed.detail, scope, moduleCoord));
+      }
+    }
+    if (collectorDropsFailedNodes) {
+      // An earlier module's cached failure leaves no trace in this graph; only a direct dependency
+      // can still be placed.
+      for (Map.Entry<String, FailedRequest> e : brokenDescriptors.entrySet()) {
+        if (scopesByGav.containsKey(e.getKey()) || placed.contains(e.getKey())) continue;
+        String scope = declaredScope(session, module, e.getValue().artifact);
+        if (scope != null && passingScopes.contains(scope)) {
+          failures.add(new Failure(e.getKey(), e.getValue().detail, scope, moduleCoord));
+          reported = true;
+        }
+      }
     }
     // Maven throws on a collection error before it fetches any artifact, which would leave every
     // healthy node of the partial graph without its file.
@@ -278,10 +335,7 @@ public final class SocketFactsRecordsEngine {
         Dependency dep = node == null ? null : node.getDependency();
         Artifact artifact = dep == null ? null : dep.getArtifact();
         if (artifact == null) return false;
-        String scope = scopeOf(dep);
-        // A system-scope artifact carries its systemPath on the model and has no repository to be
-        // fetched from; visit() reads the file straight off the node instead.
-        if ("system".equals(scope) || !passingScopes.contains(scope)) return false;
+        if (!passingScopes.contains(scopeOf(dep))) return false;
         String gav = gav(artifact);
         if (reactorGavs.contains(gav)) return false;
         return populateGavs == null || populateGavs.contains(gav);
@@ -391,7 +445,7 @@ public final class SocketFactsRecordsEngine {
         artifact.getBaseVersion());
   }
 
-  private static String gav(Artifact artifact) {
+  static String gav(Artifact artifact) {
     return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getBaseVersion();
   }
 
@@ -576,7 +630,7 @@ public final class SocketFactsRecordsEngine {
     log.info("[socket-facts] records written to: " + out.getAbsolutePath());
   }
 
-  private static String rootMessage(Throwable t) {
+  static String rootMessage(Throwable t) {
     Throwable cur = t;
     String msg = null;
     int guard = 0;
@@ -607,29 +661,134 @@ public final class SocketFactsRecordsEngine {
     return scopes;
   }
 
-  // The artifact a collection error is about, when the resolver names one.
-  private static String failedArtifact(Throwable t) {
-    Throwable cur = t;
+  // The request a collection error is about, when the resolver names one.
+  private static FailedRequest failedRequest(Exception e) {
+    Throwable cur = e;
     int guard = 0;
     while (cur != null && guard++ < 12) {
-      Artifact artifact = null;
       if (cur instanceof ArtifactDescriptorException) {
-        ArtifactDescriptorException e = (ArtifactDescriptorException) cur;
-        if (e.getResult() != null) artifact = e.getResult().getRequest().getArtifact();
+        ArtifactDescriptorException d = (ArtifactDescriptorException) cur;
+        if (d.getResult() != null) {
+          ArtifactDescriptorRequest request = d.getResult().getRequest();
+          return new FailedRequest(request.getArtifact(), request.getTrace(), true, rootMessage(e));
+        }
       } else if (cur instanceof VersionRangeResolutionException) {
-        VersionRangeResolutionException e = (VersionRangeResolutionException) cur;
-        if (e.getResult() != null) artifact = e.getResult().getRequest().getArtifact();
+        VersionRangeResolutionException r = (VersionRangeResolutionException) cur;
+        if (r.getResult() != null) {
+          VersionRangeRequest request = r.getResult().getRequest();
+          return new FailedRequest(request.getArtifact(), request.getTrace(), false, rootMessage(e));
+        }
       }
-      if (artifact != null) return gav(artifact);
       cur = cur.getCause();
     }
     return null;
   }
 
+  private static boolean addFailures(
+      Set<Failure> failures, String coord, String detail, Set<String> scopes, Set<String> passingScopes,
+      String moduleCoord) {
+    boolean added = false;
+    for (String scope : scopes) {
+      if (passingScopes.contains(scope)) added |= failures.add(new Failure(coord, detail, scope, moduleCoord));
+    }
+    return added;
+  }
+
+  // Null: on no classpath (from Maven 3.3 the graph keeps a failed POM's node, so an absent one lost a
+  // conflict). Empty: position unknown (no collect step before 3.9; Maven 4's scope rules not modelled).
+  private String absentScope(
+      MavenSession session, MavenProject module, FailedRequest failed, Set<DependencyNode> onClasspath) {
+    if (failed.descriptor && !collectorDropsFailedNodes) return null;
+    DependencyNode parent = observer.parentOf(failed.trace);
+    Dependency dependency = observer.dependencyOf(failed.trace);
+    if (parent != null && dependency != null) {
+      if (!onClasspath.contains(parent)) return null;
+      if (parent.getDependency() == null) return scopeOf(dependency);
+      if (!maven3ScopeRules) return "";
+      String managed = managedScope(session, module, dependency.getArtifact());
+      return derivedScope(parent.getDependency().getScope(), managed != null ? managed : scopeOf(dependency));
+    }
+    String declared = declaredScope(session, module, failed.artifact);
+    return declared != null ? declared : "";
+  }
+
+  // ClassicDependencyManager: below the direct dependencies, only the root's dependencyManagement applies.
+  private static String managedScope(MavenSession session, MavenProject module, Artifact artifact) {
+    if (module.getDependencyManagement() == null) return null;
+    org.apache.maven.model.Dependency d =
+        modelDependency(session, module.getDependencyManagement().getDependencies(), artifact, false);
+    return d == null || d.getScope() == null || d.getScope().isEmpty() ? null : d.getScope();
+  }
+
+  // maven-resolver's JavaScopeDeriver.
+  private static String derivedScope(String parentScope, String childScope) {
+    if ("system".equals(childScope) || "test".equals(childScope)) return childScope;
+    if (parentScope == null || parentScope.isEmpty() || "compile".equals(parentScope)) return childScope;
+    if ("test".equals(parentScope) || "runtime".equals(parentScope)) return parentScope;
+    if ("system".equals(parentScope) || "provided".equals(parentScope)) return "provided";
+    return "runtime";
+  }
+
+  // The module's own declaration of the artifact, with management applied.
+  private static String declaredScope(MavenSession session, MavenProject module, Artifact artifact) {
+    org.apache.maven.model.Dependency d = modelDependency(session, module.getDependencies(), artifact, true);
+    if (d == null) return null;
+    return d.getScope() == null || d.getScope().isEmpty() ? "compile" : d.getScope();
+  }
+
+  // The first of `deps` naming the artifact, compared as the resolver sees it: a `test-jar` type
+  // becomes classifier `tests`. With `matchVersion`, a ranged version matches whichever it resolved to.
+  private static org.apache.maven.model.Dependency modelDependency(
+      MavenSession session, List<org.apache.maven.model.Dependency> deps, Artifact artifact, boolean matchVersion) {
+    for (org.apache.maven.model.Dependency d : deps) {
+      Artifact candidate =
+          RepositoryUtils.toDependency(d, session.getRepositorySession().getArtifactTypeRegistry()).getArtifact();
+      String version = candidate.getVersion();
+      if (candidate.getGroupId().equals(artifact.getGroupId())
+          && candidate.getArtifactId().equals(artifact.getArtifactId())
+          && candidate.getClassifier().equals(artifact.getClassifier())
+          && candidate.getExtension().equals(artifact.getExtension())
+          && (!matchVersion
+              || version.equals(artifact.getVersion()) || version.startsWith("[") || version.startsWith("("))) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  // The final graph's root and every node on its classpath, by identity.
+  private static Set<DependencyNode> onClasspath(DependencyNode root) {
+    Set<DependencyNode> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+    if (root == null) return seen;
+    Deque<DependencyNode> todo = new ArrayDeque<>();
+    todo.push(root);
+    while (!todo.isEmpty()) {
+      DependencyNode dn = todo.pop();
+      if (dn.getData().get(NODE_DATA_CONFLICT_WINNER) != null || !seen.add(dn)) continue;
+      todo.addAll(dn.getChildren());
+    }
+    return seen;
+  }
+
+  private static final class FailedRequest {
+    final Artifact artifact;
+    final RequestTrace trace;
+    // The artifact's POM could not be read; else no version satisfied its range.
+    final boolean descriptor;
+    final String detail;
+
+    FailedRequest(Artifact artifact, RequestTrace trace, boolean descriptor, String detail) {
+      this.artifact = artifact;
+      this.trace = trace;
+      this.descriptor = descriptor;
+      this.detail = detail;
+    }
+  }
+
   private static final class Failure {
     final String coord;
     final String detail;
-    // Empty when the failure belongs to no scope.
+    // Empty when the failure cannot be placed in a scope.
     final String config;
     final String project;
 

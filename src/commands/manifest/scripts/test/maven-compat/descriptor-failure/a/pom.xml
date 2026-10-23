@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>demo</groupId>
+    <artifactId>descriptor-failure</artifactId>
+    <version>1.0</version>
+  </parent>
+  <artifactId>a</artifactId>
+  <!-- broken's POM names a parent that cannot be fetched. nopom has a jar but no POM; nothing has neither. sys and
+       sysmissing are system-scoped, the latter at a path that does not exist. testparent (test) declares rangedchild
+       at a range no version satisfies. loserparent declares conflict 1.0, whose POM is broken but which loses to the
+       nearer conflict 2.0. -->
+  <dependencies>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>broken</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>nopom</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>nothing</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>sys</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${descfail.sysDir}/sys.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>sysmissing</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${descfail.sysDir}/missing.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>testparent</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>conflict</artifactId>
+      <version>2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>loserparent</artifactId>
+      <version>1.0</version>
+    </dependency>
+  </dependencies>
+</project>

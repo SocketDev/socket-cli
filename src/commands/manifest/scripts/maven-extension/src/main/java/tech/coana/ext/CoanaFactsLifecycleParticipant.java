@@ -8,6 +8,7 @@ import org.apache.maven.rtinfo.RuntimeInformation;
 import org.eclipse.aether.RepositorySystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.coana.socket.CollectionObserver;
 import tech.coana.socket.SocketFactsRecordsEngine;
 
 import javax.inject.Inject;
@@ -59,11 +60,16 @@ public class CoanaFactsLifecycleParticipant extends AbstractMavenLifecyclePartic
     opts.excludeConfigs = opt(session, "socket.excludeConfigs");
     opts.excludePaths = opt(session, "socket.excludePaths");
     File rootDir = new File(session.getExecutionRootDirectory());
+    CollectionObserver observer = new CollectionObserver();
+    CoanaFactsEventSpy.observe(observer);
     try {
-      new SocketFactsRecordsEngine(dependenciesResolver, repositorySystem, runtimeInformation.getMavenVersion(), LOG)
+      new SocketFactsRecordsEngine(
+              dependenciesResolver, repositorySystem, runtimeInformation.getMavenVersion(), observer, LOG)
           .run(session, session.getProjects(), rootDir, opts);
     } catch (IOException exception) {
       throw new MavenExecutionException("Cannot write socket facts records", exception);
+    } finally {
+      CoanaFactsEventSpy.observe(null);
     }
   }
 

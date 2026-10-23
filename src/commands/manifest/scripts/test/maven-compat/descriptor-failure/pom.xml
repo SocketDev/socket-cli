@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo</groupId>
+  <artifactId>descriptor-failure</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <!-- b comes first, so it is the module that reads broken's POM; a only gets the resolver's cached failure. -->
+  <modules>
+    <module>b</module>
+    <module>a</module>
+  </modules>
+</project>

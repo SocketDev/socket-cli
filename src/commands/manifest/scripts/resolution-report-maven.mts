@@ -19,7 +19,12 @@ export function classifyMavenFailure(detail: string): FailureCategory {
     t.includes('unauthorized') ||
     t.includes('forbidden') ||
     t.includes('peer not authenticated') ||
-    t.includes('certpathbuilderexception')
+    t.includes('certpathbuilderexception') ||
+    // Maven 3.8.1+ blocks plain-HTTP repositories behind its
+    // maven-default-http-blocker mirror.
+    t.includes('blocked mirror for repositories') ||
+    // Offline (-o): no repository was asked, so the artifact may well exist.
+    t.includes('in offline mode')
   ) {
     return 'repository-or-network'
   }
@@ -28,7 +33,10 @@ export function classifyMavenFailure(detail: string): FailureCategory {
     t.includes('failure to find') ||
     t.includes('could not resolve') ||
     t.includes('no versions available') ||
-    t.includes('not found')
+    t.includes('not found') ||
+    // maven-resolver's remote repository filters (prefixes, groupId): the
+    // repository is known not to serve that path or group.
+    t.includes('not allowed from')
   ) {
     return 'not-found'
   }
@@ -36,7 +44,9 @@ export function classifyMavenFailure(detail: string): FailureCategory {
   if (
     t.includes('failed to read artifact descriptor') ||
     t.includes('invalid pom') ||
-    t.includes('could not parse pom')
+    t.includes('could not parse pom') ||
+    // Maven's warning for a POM its descriptor policy tolerated as invalid.
+    t.includes('is invalid, transitive dependencies')
   ) {
     return 'config-problem'
   }
