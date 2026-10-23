@@ -776,10 +776,8 @@ public final class SocketFactsRecordsEngine {
     return false;
   }
 
-  // The collector caches a parent's child list and hands that same list to every later instance with
-  // the same artifact and collection context (repositories, exclusions, management), so a failing
-  // collect step runs under the first instance only, which may have lost a conflict. Any classpath
-  // instance sharing the list places it.
+  // Instances with the same artifact and collection context share one cached child list, whose failing
+  // collect step ran only under the first of them; that one may have lost a conflict.
   private static DependencyNode classpathInstance(Set<DependencyNode> onClasspath, DependencyNode parent) {
     if (onClasspath.contains(parent)) return parent;
     for (DependencyNode dn : onClasspath) {
