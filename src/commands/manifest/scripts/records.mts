@@ -13,12 +13,14 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
 //   projectBuild  projectKey  path                     (build-root-relative; may be absent on disk)
+//   excludedProject  projectKey                          (--with-files only; paths without a project)
 //   root        rootId  projectKey  config  prod(0|1)
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)
+//   unfetched   rootId  coordId                          (--with-files only; requested artifact not fetched)
 //   scanned     config
-//   failure     coord  detail  config  projectKey   (config empty: no configuration)
+//   failure     coord  detail  config  projectKey   (config empty: not placeable in one)
 //   unscannable config  detail  projectKey          (config empty: whole project)
 //
 // `projectKey` is the tool's unique project identity (Maven: GAV; Gradle:
@@ -45,6 +47,7 @@ export type RawNode = {
   project: string
   // --with-files only.
   targets: string[]
+  unfetched: boolean
 }
 
 export type RawRoot = {
@@ -66,6 +69,9 @@ export type RawProject = {
   targets: string[]
   // The project's build files, build-root-relative.
   buildFiles: string[]
+  // Excluded from the scan: not a project of its own, but its paths serve the
+  // kept projects depending on it.
+  excluded: boolean
 }
 
 export type ParsedRecords = {
@@ -147,6 +153,7 @@ export function parseRecords(text: string): ParsedRecords {
         sources: [],
         targets: [],
         buildFiles: [],
+        excluded: false,
       }
       result.projects.set(key, p)
     }
@@ -188,6 +195,9 @@ export function parseRecords(text: string): ParsedRecords {
           project(f[1] ?? '').targets.push(f[2])
         }
         break
+      case 'excludedProject':
+        project(f[1] ?? '').excluded = true
+        break
       case 'projectBuild':
         if (f[2]) {
           project(f[1] ?? '').buildFiles.push(f[2])
@@ -215,6 +225,7 @@ export function parseRecords(text: string): ParsedRecords {
           direct: bool(f[8]),
           project: f[9] ?? '',
           targets: [],
+          unfetched: false,
         })
         break
       }
@@ -223,6 +234,13 @@ export function parseRecords(text: string): ParsedRecords {
         const child = f[3] ?? ''
         if (parent !== child) {
           root(f[1] ?? '').edges.push([parent, child])
+        }
+        break
+      }
+      case 'unfetched': {
+        const node = root(f[1] ?? '').nodes.get(f[2] ?? '')
+        if (node) {
+          node.unfetched = true
         }
         break
       }

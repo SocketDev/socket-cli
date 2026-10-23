@@ -12,7 +12,10 @@ import {
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from './scripts/resolution-report-render.mts'
+import {
+  DSI_SETUP_COMMAND,
+  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+} from './scripts/resolution-report-render.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
@@ -179,6 +182,9 @@ async function runEcosystemCandidates({
         excludeConfigs,
         excludePaths: excludePathsForRoot,
         hints: {
+          continueOnInstallErrorsFlag: withFiles
+            ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+            : undefined,
           flags: optionFlags,
           setupCommand: DSI_SETUP_COMMAND,
           socketJson: displayPath(path.join(dir, SOCKET_JSON)),
@@ -294,8 +300,8 @@ export async function generateRecursiveManifests({
   // A shared global base across every sbt root in this run lets sbt's own
   // Scala-toolchain cache under <base>/boot survive between invocations
   // instead of being reprovisioned per root (the plugin file is rewritten and
-  // records.tsv is fully overwritten - not appended - on every invocation, so
-  // reuse is safe). A caller-supplied sbtTmpDir is reused as-is (the caller
+  // records.tsv is removed before every invocation, so reuse is safe). A
+  // caller-supplied sbtTmpDir is reused as-is (the caller
   // owns its lifetime); otherwise one is allocated and cleaned up here, but
   // only when there's an sbt root to benefit from sharing it at all.
   const outcomes = sbtTmpDir

@@ -21,7 +21,11 @@ export function classifyGradleFailure(detail: string): FailureCategory {
   ) {
     return 'no-matching-variant'
   }
-  if (t.includes('cannot choose between')) {
+  // The artifact-level form: several transforms produce the requested variant.
+  if (
+    t.includes('cannot choose between') ||
+    t.includes('found multiple transformation chains')
+  ) {
     return 'variant-ambiguity'
   }
   if (
@@ -45,8 +49,8 @@ export function classifyGradleFailure(detail: string): FailureCategory {
 
 // Every kind blocks except variant-ambiguity: the module demonstrably exists
 // and is almost always captured via another configuration, so it's benign for
-// the SBOM (non-blocking, count only). A module that resolves in NO config
-// surfaces as not-found / no-matching-variant, which stay blocking.
+// the SBOM (non-blocking, count only). The renderer blocks it anyway when the
+// module resolved in no configuration of its project.
 export const GRADLE_DIALECT: ResolutionDialect = {
   label: 'Gradle',
   classify: classifyGradleFailure,
@@ -89,6 +93,8 @@ export const GRADLE_DIALECT: ResolutionDialect = {
     },
     {
       key: 'variant-ambiguity',
+      header: n =>
+        `  Ambiguous variant — ${n} could not choose a variant, and the module resolved in no other configuration:`,
       blocking: false,
       notice: (n, depCount, configCount) =>
         `Skipped ${depCount} dependency(ies) with ambiguous variant selection in ${configCount} configuration(s) — re-run with --verbose for ${n}'s messages.`,

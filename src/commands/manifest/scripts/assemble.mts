@@ -33,6 +33,7 @@ type MergedNode = {
   // projectKey when this node is a build project, else empty.
   project: string
   targets: Set<string>
+  unfetched: boolean
 }
 
 type SubprojectGraph = {
@@ -52,6 +53,7 @@ type RootNode = {
   direct: boolean
   project: string
   targets: string[]
+  unfetched: boolean
 }
 
 export function assembleFacts(
@@ -116,10 +118,12 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
           direct: false,
           project: n.project,
           targets: [],
+          unfetched: false,
         }
         nodes.set(id, node)
       }
       node.direct ||= n.direct
+      node.unfetched ||= n.unfetched
       node.targets.push(...n.targets)
     }
     for (const [p, c] of r.edges) {
@@ -153,6 +157,7 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
           direct: false,
           project: node.project,
           targets: new Set(),
+          unfetched: false,
         }
         finalNodes.set(coordId, fn)
       }
@@ -161,6 +166,9 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
       }
       if (node.direct) {
         fn.direct = true
+      }
+      if (node.unfetched) {
+        fn.unfetched = true
       }
       for (const t of node.targets) {
         fn.targets.add(t)
@@ -296,6 +304,7 @@ function buildDependencyGraph(
   const byComponent = (a: string, b: string) =>
     componentIndex.get(a)! - componentIndex.get(b)!
   const projects = [...parsed.projects.values()]
+    .filter(p => !p.excluded)
     .map(p => ({
       p,
       roots: treeRoots(p.projectKey, graphs.get(p.projectKey), byComponent),
@@ -408,10 +417,11 @@ function buildArtifactPaths(
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
   for (const [id, fn] of finalNodes) {
     if (!fn.project) {
-      pathsById.set(id, {
-        sources: [],
-        targets: [...fn.targets].filter(fileExists).sort(),
-      })
+      const targets = [...fn.targets].filter(fileExists).sort()
+      // An artifact with any file that could not be fetched, or is gone from
+      // disk, has no targets: a partial list would claim it resolved whole.
+      const unresolved = fn.unfetched || targets.length < fn.targets.size
+      pathsById.set(id, unresolved ? { sources: [] } : { sources: [], targets })
     }
   }
   // A project's own component shares its id, so this also covers dependency
@@ -422,10 +432,11 @@ function buildArtifactPaths(
       targets: [...new Set(p.targets)].filter(fileExists).sort(),
     })
   }
+  const kept = projects.filter(p => !p.excluded)
   return {
     pathsById,
-    classpathByProject: byProject(projects, graphs, g => g.children.keys()),
-    directDependenciesByProject: byProject(projects, graphs, g => g.direct),
+    classpathByProject: byProject(kept, graphs, g => g.children.keys()),
+    directDependenciesByProject: byProject(kept, graphs, g => g.direct),
   }
 }
 
@@ -448,5 +459,16 @@ function buildReport(parsed: ParsedRecords): ResolutionReport {
     seenUnscannable.add(key)
     return true
   })
-  return { failures, scannedConfigs: parsed.scannedConfigs, unscannable }
+  const resolvedModules = new Set<string>()
+  for (const r of parsed.roots.values()) {
+    for (const n of r.nodes.values()) {
+      resolvedModules.add(`${r.projectKey}\t${n.coord.group}:${n.coord.name}`)
+    }
+  }
+  return {
+    failures,
+    resolvedModules,
+    scannedConfigs: parsed.scannedConfigs,
+    unscannable,
+  }
 }

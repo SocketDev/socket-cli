@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- One unresolvable Maven dependency no longer strips the jar paths from every other dependency of its build, which made reachability analysis call their vulnerabilities unreachable.
+- Maven, Gradle and sbt dependencies whose jars cannot be fetched are reported, and reachability no longer treats them as resolved without code. sbt no longer passes them off as POM-only modules.
+- Reachability scans that hit unresolved JVM dependencies now point out that ignoring them also needs `--reach-continue-on-install-errors`.
+- Gradle dependencies that fail dependency verification are reported instead of passed on as healthy.
+- Maven dependencies with missing or invalid POMs are reported in every module that uses them, `system`-scope jars reach reachability analysis, and Maven 4 failures show their real cause.
+- Failed Gradle project dependencies are reported instead of silently dropping everything they pull in, and failures name the version that actually failed.
+- A module excluded with `--exclude-paths` is still analysed as part of the projects that depend on it.
+- A failing dependency no longer fails scopes or configurations that `excludeConfigs` leaves out, and a version-conflict loser no longer fails the build.
+- With `--dynamic-sbom-inference`, an sbt build that fails before writing its results is reported as failed instead of reusing another build's results.
+
 ## [1.10.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.0) - 2026-10-22
 
 ### Added

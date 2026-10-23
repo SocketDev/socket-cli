@@ -3,8 +3,8 @@ export type ResolutionFailure = {
   // Build tool's own failure message (deepest cause; may be multi-line).
   // Classified on; first line shown by default, whole thing at --verbose.
   detail: string
-  // Empty when the failed module is absent from the tool's resolved graph, so
-  // no configuration holds it.
+  // Empty when the failure cannot be placed in a configuration; it then counts
+  // against every configuration of its project.
   config: string
   // projectKey of the subproject being resolved.
   project: string
@@ -20,6 +20,9 @@ export type Unscannable = {
 
 export type ResolutionReport = {
   failures: ResolutionFailure[]
+  // `<projectKey>\t<group>:<name>` of every external module a project resolved
+  // in some configuration.
+  resolvedModules: ReadonlySet<string>
   scannedConfigs: string[]
   unscannable: Unscannable[]
 }

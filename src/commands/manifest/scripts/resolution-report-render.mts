@@ -43,6 +43,9 @@ export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 // Where the invoking command lets the user set each build option, so a remedy
 // names something they can actually set.
 export type BuildOptionHints = {
+  // Reachability scans only: reachability cannot install a dependency that
+  // `ignoreUnresolved` lets through, so it must be told to continue too.
+  continueOnInstallErrorsFlag?: string | undefined
   // Taken as flags; every other option is set in `socketJson`.
   flags: ReadonlySet<BuildOption>
   // Wizard that writes `socketJson`.
@@ -52,6 +55,9 @@ export type BuildOptionHints = {
 
 export const DSI_SETUP_COMMAND =
   'socket manifest setup --dynamic-sbom-inference'
+
+export const REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG =
+  '--reach-continue-on-install-errors'
 
 // The single-build manifest commands take every option as a flag.
 export const FLAG_HINTS: BuildOptionHints = {
@@ -79,19 +85,27 @@ const RESOLUTION_REPORT_ARTIFACT_LIMIT = 15
 const RESOLUTION_REPORT_CONFIG_LIMIT = 20
 
 // Drop a bare "group:name" when a versioned "group:name:v" of the same module
-// is also present: the lenient resolver reports both forms for one failure.
-function dedupCoords(coords: Iterable<string>): string[] {
-  const set = new Set(coords)
+// failed in the same projects: the lenient resolver reports both forms for one
+// failure.
+function dedupInfos<T extends { coord: string; projects: Set<string> }>(
+  infos: T[],
+): T[] {
   const versioned = new Set<string>()
-  for (const c of set) {
-    const p = c.split(':')
+  for (const i of infos) {
+    const p = i.coord.split(':')
     if (p.length >= 3) {
-      versioned.add(`${p[0]}:${p[1]}`)
+      for (const project of i.projects) {
+        versioned.add(`${project}\t${p[0]}:${p[1]}`)
+      }
     }
   }
-  return [...set]
-    .filter(c => c.split(':').length >= 3 || !versioned.has(c))
-    .sort()
+  return infos
+    .filter(
+      i =>
+        i.coord.split(':').length >= 3 ||
+        ![...i.projects].every(p => versioned.has(`${p}\t${i.coord}`)),
+    )
+    .sort((a, b) => (a.coord < b.coord ? -1 : a.coord > b.coord ? 1 : 0))
 }
 
 function firstLine(s: string): string {
@@ -122,9 +136,35 @@ function inProjects(projects: string | Iterable<string>): string {
   return list.length ? ` (in ${fmtList(list, 3)})` : ''
 }
 
+function installErrorsHint(
+  hints: BuildOptionHints,
+  ignored: boolean,
+): string[] {
+  const flag = hints.continueOnInstallErrorsFlag
+  if (!flag) {
+    return []
+  }
+  return [
+    ignored
+      ? `Reachability analysis cannot install the ignored dependencies; pass ${flag} unless you already do.`
+      : `If you ignore unresolved dependencies, also pass ${flag}: reachability analysis cannot install them.`,
+  ]
+}
+
 // `excludableConfigs` is empty when excluding configurations cannot clear
 // every blocking failure.
 function proceedHint(
+  hints: BuildOptionHints,
+  tool: BuildTool,
+  excludableConfigs: string[],
+): string[] {
+  return [
+    ...proceedOptions(hints, tool, excludableConfigs),
+    ...installErrorsHint(hints, false),
+  ]
+}
+
+function proceedOptions(
   hints: BuildOptionHints,
   tool: BuildTool,
   excludableConfigs: string[],
@@ -174,6 +214,7 @@ export function renderResolutionReport(
   opts: {
     hints?: BuildOptionHints | undefined
     ignoreUnresolved?: boolean | undefined
+    resolvedModules?: ReadonlySet<string> | undefined
     unscannable?: Unscannable[] | undefined
   } = {},
 ): RenderedResolutionReport {
@@ -227,6 +268,19 @@ export function renderResolutionReport(
     }
   }
   const allInfos = [...byKey.values()]
+  // A non-blocking kind is only benign when its module resolved anyway: one
+  // that resolved in no configuration of its project is missing from the SBOM.
+  const isInfoBlocking = (info: CoordInfo): boolean => {
+    if (isBlocking(info.category)) {
+      return true
+    }
+    const resolved = opts.resolvedModules
+    if (!resolved) {
+      return false
+    }
+    const module = info.coord.split(':').slice(0, 2).join(':')
+    return ![...info.projects].some(p => resolved.has(`${p}\t${module}`))
+  }
 
   // A whole-config throw is classified by the same cause rules as a per-dep
   // failure: ambiguity stays lenient, every other cause is fail-closed.
@@ -241,7 +295,7 @@ export function renderResolutionReport(
 
   const perDepBlockingConfigs = new Set<string>()
   for (const info of allInfos) {
-    if (isBlocking(info.category)) {
+    if (isInfoBlocking(info)) {
       for (const c of info.configs) {
         perDepBlockingConfigs.add(c)
       }
@@ -256,7 +310,7 @@ export function renderResolutionReport(
   // its project incomplete, so none can be reported as succeeded.
   const hasBlockingConfiglessFailure =
     blockingUnscannableProjects.length > 0 ||
-    allInfos.some(i => i.configless && isBlocking(i.category))
+    allInfos.some(i => i.configless && isInfoBlocking(i))
   // An un-scannable config was attempted but resolved nothing, so it didn't succeed.
   const succeeded = hasBlockingConfiglessFailure
     ? []
@@ -264,16 +318,16 @@ export function renderResolutionReport(
         .filter(c => !blockingConfigs.has(c) && !unscannableConfigs.has(c))
         .sort()
 
-  const groups = dialect.categories
-    .map(spec => ({
-      spec,
-      infos: dedupCoords(
-        allInfos.filter(i => i.category === spec.key).map(i => i.coord),
-      ).map(c => byKey.get(keyOf(c, spec.key))!),
-    }))
+  const groups = dialect.categories.map(spec => ({
+    spec,
+    infos: dedupInfos(allInfos.filter(i => i.category === spec.key)),
+  }))
+  const blockingGroups = groups
+    .map(g => ({ ...g, infos: g.infos.filter(isInfoBlocking) }))
     .filter(g => g.infos.length)
-  const blockingGroups = groups.filter(g => g.spec.blocking)
-  const nonBlockingGroups = groups.filter(g => !g.spec.blocking)
+  const nonBlockingGroups = groups
+    .map(g => ({ ...g, infos: g.infos.filter(i => !isInfoBlocking(i)) }))
+    .filter(g => g.infos.length)
   const blockingCount = blockingGroups.reduce((n, g) => n + g.infos.length, 0)
   const hasBlockingFailures =
     blockingCount > 0 || blockingUnscannable.length > 0
@@ -367,6 +421,8 @@ export function renderResolutionReport(
           hasBlockingConfiglessFailure ? [] : blockingFailed,
         ),
       )
+    } else if (hints.continueOnInstallErrorsFlag) {
+      out.push('', ...installErrorsHint(hints, true))
     }
     out.push('')
     out.push(
@@ -384,8 +440,8 @@ export function renderResolutionReport(
     const configCount = new Set(infos.flatMap(i => [...i.configs])).size
     notices.push(spec.notice(name, infos.length, configCount))
   }
-  // A config-level throw whose cause classifies as variant ambiguity is surfaced, not failed —
-  // matching the deliberately-lenient per-dep variant-ambiguity policy.
+  // A config-level throw whose cause classifies as variant ambiguity is surfaced, not failed: many
+  // configurations are marked resolvable yet too underspecified to resolve.
   if (nonBlockingUnscannable.length) {
     const n = new Set(nonBlockingUnscannable.map(u => u.config)).size
     notices.push(
@@ -443,6 +499,7 @@ export function renderResolutionErrorReport(
   opts: {
     hints?: BuildOptionHints | undefined
     ignoreUnresolved?: boolean | undefined
+    resolvedModules?: ReadonlySet<string> | undefined
     unscannable?: Unscannable[] | undefined
   } = {},
 ): RenderedResolutionReport {

@@ -1,0 +1,8 @@
+// Kept out of the root project: on some old Gradle, a project dependency on a missing configuration
+// fails resolving the declaring project's other configurations too.
+configurations {
+  projectFail
+}
+dependencies {
+  projectFail project(path: ':lib', configuration: 'nonexistent')
+}

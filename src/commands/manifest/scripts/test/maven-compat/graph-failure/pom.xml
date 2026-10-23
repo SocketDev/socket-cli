@@ -9,13 +9,18 @@
     <maven.compiler.target>8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-  <!-- ok resolves. The rest fail while Maven collects the graph: lib's and testlib's POMs name a parent that cannot be
-       fetched, which leaves them in the graph with their scope; no version of ranged exists, which
-       leaves it out of the graph. -->
+  <!-- ok resolves. nojar's POM resolves but its jar is absent. The rest fail while Maven collects the graph: lib's
+       and testlib's POMs name a parent that cannot be fetched, which leaves them in the graph with their scope; no
+       version of ranged exists, which leaves it out of the graph. -->
   <dependencies>
     <dependency>
       <groupId>demo.graphfail</groupId>
       <artifactId>ok</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.graphfail</groupId>
+      <artifactId>nojar</artifactId>
       <version>1.0</version>
     </dependency>
     <dependency>

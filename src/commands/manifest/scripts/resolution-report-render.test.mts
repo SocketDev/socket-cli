@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   DSI_SETUP_COMMAND,
+  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   renderResolutionErrorReport,
 } from './resolution-report-render.mts'
 
@@ -45,6 +46,21 @@ describe('resolution failure classification', () => {
     )
     expect(r.hasBlockingFailures).toBe(false)
     expect(r.summary).toBe('')
+    expect(r.nonBlockingNotice).toContain('ambiguous variant')
+  })
+
+  it('classifies an ambiguous Gradle artifact transform as variant ambiguity', () => {
+    const r = renderResolutionErrorReport(
+      [
+        f(
+          'com.example:amb:1.0',
+          'Found multiple transformation chains that produce a variant of com.example:amb:1.0',
+        ),
+      ],
+      ['runtimeClasspath'],
+      'gradle',
+    )
+    expect(r.hasBlockingFailures).toBe(false)
     expect(r.nonBlockingNotice).toContain('ambiguous variant')
   })
 
@@ -322,6 +338,26 @@ describe('resolution failure remedies', () => {
     expect(r.summary).not.toMatch(/--ignore-unresolved|--exclude-configs/)
   })
 
+  it('tells a reachability scan to also continue on install errors', () => {
+    const r = renderResolutionErrorReport([mavenMiss], ['compile'], 'maven', {
+      hints: {
+        ...socketJsonOnly,
+        continueOnInstallErrorsFlag: REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+      },
+    })
+    expect(r.summary).toContain('    "ignoreUnresolved": true')
+    expect(r.summary).toContain(
+      'If you ignore unresolved dependencies, also pass --reach-continue-on-install-errors: reachability analysis cannot install them.',
+    )
+  })
+
+  it('does not mention install errors outside a reachability scan', () => {
+    const r = renderResolutionErrorReport([mavenMiss], ['compile'], 'maven', {
+      hints: socketJsonOnly,
+    })
+    expect(r.summary).not.toContain('install')
+  })
+
   it("names the failing build root's own socket.json", () => {
     const r = renderResolutionErrorReport([mavenMiss], ['compile'], 'maven', {
       hints: { ...socketJsonOnly, socketJson: 'tools/codegen/socket.json' },
@@ -368,5 +404,116 @@ describe('resolution failure remedies', () => {
       'set defaults.manifest.gradle.verbose to true in socket.json',
     )
     expect(r.nonBlockingNotice).not.toContain('re-run with --verbose')
+  })
+})
+
+describe('failures checked against what resolved', () => {
+  const ambiguous = f(
+    'com.example:amb:1.0',
+    'Cannot choose between the following variants of com.example:amb:1.0',
+    'runtimeClasspath',
+    ':app',
+  )
+
+  it('keeps variant ambiguity lenient when the module resolved in its project', () => {
+    const r = renderResolutionErrorReport(
+      [ambiguous],
+      ['runtimeClasspath'],
+      'gradle',
+      { resolvedModules: new Set([':app\tcom.example:amb']) },
+    )
+    expect(r.hasBlockingFailures).toBe(false)
+    expect(r.nonBlockingNotice).toContain('ambiguous variant selection')
+  })
+
+  it('blocks on variant ambiguity when the module resolved nowhere in its project', () => {
+    const r = renderResolutionErrorReport(
+      [ambiguous],
+      ['runtimeClasspath'],
+      'gradle',
+      { resolvedModules: new Set([':lib\tcom.example:amb']) },
+    )
+    expect(r.hasBlockingFailures).toBe(true)
+    expect(r.summary).toContain('Ambiguous variant')
+    expect(r.summary).toContain('    - com.example:amb:1.0 (in `:app`)')
+    expect(r.nonBlockingNotice).toBe('')
+  })
+
+  it('keeps a bare module failure from another project than its versioned form', () => {
+    const r = renderResolutionErrorReport(
+      [
+        f('com.example:x', 'Could not find com.example:x.', 'compile', ':a'),
+        f(
+          'com.example:x:1.0',
+          'Could not find com.example:x:1.0.',
+          'compile',
+          ':b',
+        ),
+      ],
+      ['compile'],
+      'gradle',
+    )
+    expect(r.summary).toContain('    - com.example:x (in `:a`)')
+    expect(r.summary).toContain('    - com.example:x:1.0 (in `:b`)')
+  })
+
+  it('still reminds a reachability scan of install errors once failures are ignored', () => {
+    const r = renderResolutionErrorReport(
+      [f('com.example:missing:1.0', 'Could not find com.example:missing:1.0.')],
+      ['runtimeClasspath'],
+      'gradle',
+      {
+        hints: {
+          continueOnInstallErrorsFlag: REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+          flags: new Set(),
+          setupCommand: 'socket manifest setup',
+          socketJson: 'socket.json',
+        },
+        ignoreUnresolved: true,
+      },
+    )
+    expect(r.summary).toContain('Ignored 1 unresolved dependency(ies)')
+    expect(r.summary).toContain(
+      'Reachability analysis cannot install the ignored dependencies; pass --reach-continue-on-install-errors unless you already do.',
+    )
+  })
+})
+
+const mavenReport = (detail: string) =>
+  renderResolutionErrorReport(
+    [f('com.example:x:jar:1.0', detail, 'compile')],
+    ['compile'],
+    'maven',
+  )
+
+describe('Maven failure classification', () => {
+  it('classifies a repository blocked by the HTTP blocker as a repository error', () => {
+    const r = mavenReport(
+      'Blocked mirror for repositories: [insecure (http://repo.example.invalid/maven, default, releases+snapshots)]',
+    )
+    expect(r.hasBlockingFailures).toBe(true)
+    expect(r.summary).toContain('Repository or network error')
+  })
+
+  it('classifies offline mode as a repository error, not a miss', () => {
+    const r = mavenReport(
+      'The POM for com.example:x:jar:1.0 is missing, no dependency information available: Cannot access central (https://repo.maven.apache.org/maven2) in offline mode',
+    )
+    expect(r.summary).toContain('Repository or network error')
+    expect(r.summary).not.toContain('Not found in any repository')
+  })
+
+  it('classifies a POM Maven tolerated as invalid as a POM problem', () => {
+    const r = mavenReport(
+      'The POM for com.example:x:jar:1.0 is invalid, transitive dependencies (if any) will not be available: 1 problem was encountered while building the effective model for com.example:x:1.0',
+    )
+    expect(r.summary).toContain('POM/descriptor problem')
+  })
+
+  it('classifies a path the repository prefix filter rules out as not found', () => {
+    const r = mavenReport(
+      'prefixes: Path com/example/x/1.0/x-1.0.pom NOT allowed from central',
+    )
+    expect(r.summary).toContain('Not found in any repository')
   })
 })

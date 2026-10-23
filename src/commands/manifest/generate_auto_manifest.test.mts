@@ -386,4 +386,18 @@ describe('generateAutoManifest — conda branch', () => {
     ).rejects.toThrow(/Auto-manifest generation failed for the conda project/)
     process.exitCode = undefined
   })
+
+  it('aborts on a failed facts generator even when the exit code was already set', async () => {
+    process.exitCode = 1
+    vi.mocked(convertGradleToFacts).mockResolvedValueOnce(null)
+    await expect(
+      generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, gradle: true, count: 1 },
+        outputKind: 'text',
+        verbose: false,
+      }),
+    ).rejects.toThrow(/Auto-manifest generation failed for the gradle project/)
+    process.exitCode = undefined
+  })
 })
