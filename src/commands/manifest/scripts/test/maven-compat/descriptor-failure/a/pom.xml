@@ -11,7 +11,20 @@
        sysmissing are system-scoped, the latter at a path that does not exist. testparent (test) declares rangedchild
        at a range no version satisfies. loserparent declares conflict 1.0, whose POM is broken but which loses to the
        nearer conflict 2.0. rebroken's range resolves to 2.0, not to the 1.0 whose broken POM b already met.
+       viaq and nearb both reach shared, whose sharedchild range fails: the collector meets shared first under viaq,
+       where it loses to nearb's nearer shared. managedparent (test) declares managedchild, which this module
+       manages to compile at a range no version satisfies.
   -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>demo.descfail</groupId>
+        <artifactId>managedchild</artifactId>
+        <version>[7.0,8.0)</version>
+        <scope>compile</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>demo.descfail</groupId>
@@ -62,6 +75,22 @@
       <groupId>demo.descfail</groupId>
       <artifactId>loserparent</artifactId>
       <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>viaq</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>nearb</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>managedparent</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

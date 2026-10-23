@@ -704,11 +704,13 @@ public final class SocketFactsRecordsEngine {
     DependencyNode parent = observer.parentOf(failed.trace);
     Dependency dependency = observer.dependencyOf(failed.trace);
     if (parent != null && dependency != null) {
-      if (!onClasspath.contains(parent)) return null;
       if (parent.getDependency() == null) return scopeOf(dependency);
+      DependencyNode placed = classpathInstance(onClasspath, parent);
+      if (placed == null) return null;
       if (!maven3ScopeRules) return "";
+      // ConflictResolver keeps a managed scope as it is, without deriving it.
       String managed = managedScope(session, module, dependency.getArtifact());
-      return derivedScope(parent.getDependency().getScope(), managed != null ? managed : scopeOf(dependency));
+      return managed != null ? managed : derivedScope(placed.getDependency().getScope(), scopeOf(dependency));
     }
     String declared = declaredScope(session, module, failed.artifact);
     return declared != null ? declared : "";
@@ -772,6 +774,26 @@ public final class SocketFactsRecordsEngine {
       }
     }
     return false;
+  }
+
+  // The collector reuses a parent's children for every later instance of its artifact, so a failing
+  // collect step runs under the first instance only, which may have lost a conflict; any instance of
+  // the same artifact on the classpath places the failure.
+  private static DependencyNode classpathInstance(Set<DependencyNode> onClasspath, DependencyNode parent) {
+    if (onClasspath.contains(parent)) return parent;
+    Artifact artifact = parent.getArtifact();
+    for (DependencyNode dn : onClasspath) {
+      Artifact a = dn.getArtifact();
+      if (dn.getDependency() != null
+          && a.getGroupId().equals(artifact.getGroupId())
+          && a.getArtifactId().equals(artifact.getArtifactId())
+          && a.getVersion().equals(artifact.getVersion())
+          && a.getClassifier().equals(artifact.getClassifier())
+          && a.getExtension().equals(artifact.getExtension())) {
+        return dn;
+      }
+    }
+    return null;
   }
 
   // The final graph's root and every node on its classpath, by identity.
