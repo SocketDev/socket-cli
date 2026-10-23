@@ -413,12 +413,22 @@ function buildArtifactPaths(
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
+  // Every root that fetched an artifact lists its file, so check each path once.
+  const existing = new Map<string, boolean>()
+  const exists = (p: string) => {
+    let e = existing.get(p)
+    if (e === undefined) {
+      e = fileExists(p)
+      existing.set(p, e)
+    }
+    return e
+  }
   for (const [id, fn] of finalNodes) {
     if (!fn.project) {
       // Only a root that fetched every file of the artifact, all still on
       // disk, resolved it: a partial list would claim it resolved whole.
       const complete = fn.resolutions.filter(
-        r => !r.unfetched && r.targets.every(fileExists),
+        r => !r.unfetched && r.targets.every(exists),
       )
       pathsById.set(
         id,
