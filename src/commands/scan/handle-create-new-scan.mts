@@ -20,7 +20,6 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import {
   compressSocketFactsForUpload,
   isReachabilityReportPath,
-  isSocketFactsFile,
   snapshotSocketFacts,
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
@@ -360,25 +359,22 @@ async function createNewScan(
 
         reachabilityReport = reachResult.data?.reachabilityReport
 
-        // Mirror the SBOM inputs Coana analyzed; otherwise its fresh report
-        // (appended below) supersedes every facts file.
-        const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-          ? filterToPregeneratedSboms(packagePaths, supportedFiles).filter(
-              p =>
-                !isReachabilityReportPath(p, {
-                  cwd,
-                  outputPath: constants.DOT_SOCKET_DOT_FACTS_JSON,
-                }),
-            )
-          : packagePaths.filter(p => !isSocketFactsFile(p))
+        // Upload Coana's inputs next to its report: depscan drops the report's
+        // components without public metadata, such as private libraries.
+        const pathsForScan = (
+          reach.reachUseOnlyPregeneratedSboms
+            ? filterToPregeneratedSboms(packagePaths, supportedFiles)
+            : packagePaths
+        ).filter(
+          p =>
+            !isReachabilityReportPath(p, {
+              cwd,
+              outputPath: constants.DOT_SOCKET_DOT_FACTS_JSON,
+            }),
+        )
 
-        // Append coana's reachability report, but not twice: a pre-generated facts
-        // input can resolve to the same path coana wrote its report to.
-        const reportPath = reachabilityReport
-          ? path.resolve(cwd, reachabilityReport)
-          : undefined
         scanPaths = [
-          ...pathsForScan.filter(p => path.resolve(cwd, p) !== reportPath),
+          ...pathsForScan,
           ...(reachabilityReport ? [reachabilityReport] : []),
         ]
 
