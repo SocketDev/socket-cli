@@ -33,6 +33,7 @@ type MergedNode = {
   // projectKey when this node is a build project, else empty.
   project: string
   targets: Set<string>
+  unfetched: boolean
 }
 
 type SubprojectGraph = {
@@ -52,6 +53,7 @@ type RootNode = {
   direct: boolean
   project: string
   targets: string[]
+  unfetched: boolean
 }
 
 export function assembleFacts(
@@ -116,10 +118,12 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
           direct: false,
           project: n.project,
           targets: [],
+          unfetched: false,
         }
         nodes.set(id, node)
       }
       node.direct ||= n.direct
+      node.unfetched ||= n.unfetched
       node.targets.push(...n.targets)
     }
     for (const [p, c] of r.edges) {
@@ -153,6 +157,7 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
           direct: false,
           project: node.project,
           targets: new Set(),
+          unfetched: false,
         }
         finalNodes.set(coordId, fn)
       }
@@ -161,6 +166,9 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
       }
       if (node.direct) {
         fn.direct = true
+      }
+      if (node.unfetched) {
+        fn.unfetched = true
       }
       for (const t of node.targets) {
         fn.targets.add(t)
@@ -408,10 +416,11 @@ function buildArtifactPaths(
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
   for (const [id, fn] of finalNodes) {
     if (!fn.project) {
-      pathsById.set(id, {
-        sources: [],
-        targets: [...fn.targets].filter(fileExists).sort(),
-      })
+      const targets = [...fn.targets].filter(fileExists).sort()
+      // An artifact with any file that could not be fetched, or is gone from
+      // disk, has no targets: a partial list would claim it resolved whole.
+      const unresolved = fn.unfetched || targets.length < fn.targets.size
+      pathsById.set(id, unresolved ? { sources: [] } : { sources: [], targets })
     }
   }
   // A project's own component shares its id, so this also covers dependency

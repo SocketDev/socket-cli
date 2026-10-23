@@ -17,6 +17,7 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)
+//   unfetched   rootId  coordId                          (--with-files only; requested artifact not fetched)
 //   scanned     config
 //   failure     coord  detail  config  projectKey   (config empty: no configuration)
 //   unscannable config  detail  projectKey          (config empty: whole project)
@@ -45,6 +46,7 @@ export type RawNode = {
   project: string
   // --with-files only.
   targets: string[]
+  unfetched: boolean
 }
 
 export type RawRoot = {
@@ -215,6 +217,7 @@ export function parseRecords(text: string): ParsedRecords {
           direct: bool(f[8]),
           project: f[9] ?? '',
           targets: [],
+          unfetched: false,
         })
         break
       }
@@ -223,6 +226,13 @@ export function parseRecords(text: string): ParsedRecords {
         const child = f[3] ?? ''
         if (parent !== child) {
           root(f[1] ?? '').edges.push([parent, child])
+        }
+        break
+      }
+      case 'unfetched': {
+        const node = root(f[1] ?? '').nodes.get(f[2] ?? '')
+        if (node) {
+          node.unfetched = true
         }
         break
       }
