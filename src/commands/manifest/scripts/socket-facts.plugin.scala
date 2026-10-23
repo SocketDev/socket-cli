@@ -295,8 +295,14 @@ object SocketFactsPlugin extends AutoPlugin {
   }
 
   private def parseXml(f: File): org.w3c.dom.Document = {
+    // A POM may declare a DOCTYPE, so only what it could pull in from outside is refused.
     val dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance()
-    dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+    dbf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true)
+    dbf.setFeature("http://xml.org/sax/features/external-general-entities", false)
+    dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+    dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    dbf.setXIncludeAware(false)
+    dbf.setExpandEntityReferences(false)
     dbf.newDocumentBuilder().parse(f)
   }
 
@@ -535,7 +541,8 @@ object SocketFactsPlugin extends AutoPlugin {
     def coordFor(art: Artifact) = Coord(mid.organization, mid.name, ver, extOf(art), classifierOf(art))
     val fetched = Option(m.artifacts).toList.flatten.map { case (art, file) => Variant(coordFor(art), Option(file), None) }
     val missing = resolver.missingOf(m).map { art =>
-      Variant(coordFor(art), None, Some("not found: " + art.url.map(_.toString).getOrElse(coordFor(art).id)))
+      // The update report does not say why: a 401 or a timeout is as likely as an absent file.
+      Variant(coordFor(art), None, Some("could not be fetched: " + art.url.map(_.toString).getOrElse(coordFor(art).id)))
     } ++ ivyMissing.map(a => Variant(Coord(mid.organization, mid.name, ver, a.ext, a.classifier), None, Some(a.detail)))
     if (fetched.isEmpty && missing.isEmpty)
       // No artifact expected (a pom-only module): leave it ext-less.

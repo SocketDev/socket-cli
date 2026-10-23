@@ -7,8 +7,9 @@
 #
 # A second run with files: a jar that cannot be fetched (nojar; lib/testlib's under coursier; ok's
 # tests classifier, test-scoped) must be reported and marked `unfetched` under its full coordinate,
-# in the configurations that requested it, while pomonly stays an artifactless module and pkwar keeps
-# its war. Coursier skips a missing jar silently and lists one for every Maven module whatever its
+# in the configurations that requested it, while pomonly (and under coursier doctype, whose POM
+# declares a DOCTYPE) stays an artifactless module and pkwar keeps its war. Coursier's update report gives no cause for a
+# missing artifact, so none is claimed for it. Coursier skips a missing jar silently and lists one for every Maven module whatever its
 # packaging; Ivy's own resolution report names what it failed to download.
 #
 # Then ../artifact-failure, whose only failure is ok's missing tests jar, without and with files: an
@@ -45,7 +46,7 @@ for lib in lib testlib; do
 </project>
 POM
 done
-mkdir -p "$REPO/demo/fail/nojar/1.0" "$REPO/demo/fail/pomonly/1.0" "$REPO/demo/fail/pkwar/1.0"
+mkdir -p "$REPO/demo/fail/nojar/1.0" "$REPO/demo/fail/pomonly/1.0" "$REPO/demo/fail/pkwar/1.0" "$REPO/demo/fail/doctype/1.0"
 cat > "$REPO/demo/fail/pkwar/1.0/pkwar-1.0.pom" <<'POM'
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
@@ -69,6 +70,17 @@ cat > "$REPO/demo/fail/pomonly/1.0/pomonly-1.0.pom" <<'POM'
   <modelVersion>4.0.0</modelVersion>
   <groupId>demo.fail</groupId>
   <artifactId>pomonly</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+</project>
+POM
+cat > "$REPO/demo/fail/doctype/1.0/doctype-1.0.pom" <<'POM'
+<?xml version="1.0"?>
+<!DOCTYPE project>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo.fail</groupId>
+  <artifactId>doctype</artifactId>
   <version>1.0</version>
   <packaging>pom</packaging>
 </project>
@@ -136,9 +148,14 @@ rm -rf "$RECORDS" "$PROJECT/target" "$PROJECT/project/target"
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (failure, with files)"
 run "$PROJECT" -Dsocket.withFiles=true -Dsocket.recordsFile="$RECORDS"
 
-python3 - "$RECORDS" <<'PY'
+IVY_RESOLVER=false
+if [ "$RESOLVER" = ivy ] || [ "${SBT_VERSION%%.*}" = 0 ]; then
+  IVY_RESOLVER=true
+fi
+python3 - "$RECORDS" "$IVY_RESOLVER" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
+ivy = sys.argv[2] == 'true'
 nodes = {r[2]: r for r in rows if r[0] == 'node'}
 unfetched = {r[2] for r in rows if r[0] == 'unfetched'}
 failed = {r[1] for r in rows if r[0] == 'failure'}
@@ -149,8 +166,14 @@ errors = []
 
 if 'demo.fail:pomonly:1.0' not in nodes:
     errors.append(f"pomonly is pom-packaged, so it must be emitted without an artifact; nodes={sorted(nodes)}")
-if any('pomonly' in u for u in unfetched) or 'demo.fail:pomonly:1.0' in failed:
-    errors.append(f"pomonly has no jar to fetch; unfetched={sorted(unfetched)} failures={sorted(failed)}")
+# Ivy's POM reader declares a DOCTYPE of its own, so it fails on doctype's; coursier reads it.
+if ivy and 'demo.fail:doctype:1.0' not in failed:
+    errors.append(f"Ivy cannot read doctype's POM, so it must be reported; failures={sorted(failed)}")
+for name in ('pomonly',) if ivy else ('pomonly', 'doctype'):
+    if f'demo.fail:{name}:1.0' not in nodes:
+        errors.append(f"{name} is pom-packaged, so it must be emitted without an artifact; nodes={sorted(nodes)}")
+    if any(name in u for u in unfetched) or f'demo.fail:{name}:1.0' in failed:
+        errors.append(f"{name} has no jar to fetch; unfetched={sorted(unfetched)} failures={sorted(failed)}")
 for name in ('nojar', 'ok'):
     if f'demo.fail:{name}:1.0' not in failed:
         errors.append(f"{name}'s jar cannot be fetched, so it must be reported; failures={sorted(failed)}")
@@ -171,8 +194,10 @@ if 'demo.fail:pkwar:war:1.0' not in files:
 if any('pkwar' in f for f in failed):
     errors.append(f"pkwar's packaging is war, so a missing jar is expected; failures={sorted(failed)}")
 details = [r[2] for r in rows if r[0] == 'failure' and r[1] == 'demo.fail:nojar:1.0']
-if len(set(details)) != 1 or 'not found' not in details[0]:
-    errors.append(f"nojar's jar is absent, so it must be reported once as not found: {sorted(set(details))}")
+# Ivy's report names the cause; coursier's update report does not, so none may be claimed.
+expected_cause = 'not found' if ivy else 'could not be fetched'
+if len(set(details)) != 1 or expected_cause not in details[0]:
+    errors.append(f"nojar's jar is absent, so it must be reported once as {expected_cause!r}: {sorted(set(details))}")
 stray = unfetched - {f'demo.fail:{n}:jar:1.0' for n in ('nojar', 'lib', 'testlib')} - {'demo.fail:ok:jar:tests:1.0'}
 if stray:
     errors.append(f"only the jars that are missing may be unfetched: {sorted(stray)}")
