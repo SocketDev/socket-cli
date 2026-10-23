@@ -1,0 +1,2 @@
+rootProject.name = 'gradle-compat-failures'
+include 'lib', 'app'

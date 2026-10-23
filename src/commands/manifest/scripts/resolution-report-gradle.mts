@@ -21,7 +21,11 @@ export function classifyGradleFailure(detail: string): FailureCategory {
   ) {
     return 'no-matching-variant'
   }
-  if (t.includes('cannot choose between')) {
+  // The artifact-level form: several transforms produce the requested variant.
+  if (
+    t.includes('cannot choose between') ||
+    t.includes('found multiple transformation chains')
+  ) {
     return 'variant-ambiguity'
   }
   if (

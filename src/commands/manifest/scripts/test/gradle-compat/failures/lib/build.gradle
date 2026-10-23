@@ -1,0 +1,3 @@
+apply plugin: 'java'
+group = 'demo'
+version = '3.0'

@@ -49,6 +49,21 @@ describe('resolution failure classification', () => {
     expect(r.nonBlockingNotice).toContain('ambiguous variant')
   })
 
+  it('classifies an ambiguous Gradle artifact transform as variant ambiguity', () => {
+    const r = renderResolutionErrorReport(
+      [
+        f(
+          'com.example:amb:1.0',
+          'Found multiple transformation chains that produce a variant of com.example:amb:1.0',
+        ),
+      ],
+      ['runtimeClasspath'],
+      'gradle',
+    )
+    expect(r.hasBlockingFailures).toBe(false)
+    expect(r.nonBlockingNotice).toContain('ambiguous variant')
+  })
+
   it("classifies Gradle's 'unable to find a matching variant' phrasing as blocking no-matching-variant", () => {
     const r = renderResolutionErrorReport(
       [

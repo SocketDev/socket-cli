@@ -53,7 +53,6 @@ gradle.ext.socketFactsState = [
   // Whole configs whose resolution threw (vs a single unresolved dep in `failures`).
   unscannable        : Collections.synchronizedList([]),
   scannedConfigs     : Collections.synchronizedSet([] as Set),
-  projectKeys        : Collections.synchronizedSet([] as Set),
   // Only populated with `-Psocket.withFiles=true`: reading `artifact.file` downloads the artifact.
   paths              : Collections.synchronizedMap([:]),
   perSub             : Collections.synchronizedMap([:]),
@@ -63,10 +62,12 @@ gradle.ext.socketFactsState = [
   projectArtifactExt : Collections.synchronizedMap([:]),
   // Project path -> "group:name", to tell this build's projects from an included build's.
   projectGaByPath    : Collections.synchronizedMap([:]),
+  // Project path -> "group:name:version", the coordinate a failed project dependency is reported by.
+  projectGavByPath   : Collections.synchronizedMap([:]),
 ]
 
-// Capture every project's (group:name) before collectors run so they can filter intra-project
-// deps without an ordering dependency on other subprojects.
+// Capture every project's identity before collectors run so they can recognize intra-project deps
+// without an ordering dependency on other subprojects.
 gradle.projectsEvaluated { g ->
   def rootPath = g.rootProject.projectDir.toPath()
   // '/'-normalized so values are stable across OSes and portable to another machine.
@@ -75,7 +76,6 @@ gradle.projectsEvaluated { g ->
     r.isEmpty() ? '.' : r
   }
   g.rootProject.allprojects.each { p ->
-    g.socketFactsState.projectKeys.add("${p.group ?: ''}:${p.name}")
     // The module's real artifact extension (jar for java; '' for a project that builds no archive,
     // e.g. a pure aggregator). Used to stamp intra-project deps that resolve without an artifact.
     def artExt = ''
@@ -90,9 +90,10 @@ gradle.projectsEvaluated { g ->
     } catch (Exception ignore) {}
     g.socketFactsState.projectArtifactExt[p.path] = artExt
     g.socketFactsState.projectGaByPath[p.path] = "${p.group ?: ''}:${p.name}".toString()
+    g.socketFactsState.projectGavByPath[p.path] = "${p.group ?: ''}:${p.name}:${p.version ?: ''}".toString()
     // A wholly excluded subproject emits no project record and its configs are never resolved (see the
-    // collector). projectKeys/projectArtifactExt above stay populated so a KEPT project depending on it
-    // still recognizes it as a first-party module.
+    // collector). The project maps above stay populated so a KEPT project depending on it still
+    // recognizes it as a first-party module.
     if (g.ext.socketIsExcluded.call(rel(p.projectDir))) {
       return
     }
@@ -157,13 +158,15 @@ allprojects { project ->
       // visit/upsertNode closures capture them); `failures`/`scannedConfigs` stay shared.
       def nodes = [:]
       def directIds = [] as Set
+      def configName = ''
       // "group:name:version" -> path of the build project this config resolved it to.
       def projectByGav = [:]
       def failures = state.failures
       def scannedConfigs = state.scannedConfigs
-      def projectKeys = state.projectKeys
       def projectArtifactExt = state.projectArtifactExt
       def paths = [:]
+      // Ids of nodes whose requested artifact yielded no file.
+      def unfetched = [] as Set
       def withFiles = gradle.socketProp.call(project, 'socket.withFiles')?.toString()?.toLowerCase() == 'true'
       // Optional `-Psocket.populateFilesFor=<file>` (newline-delimited GAVs): scope `--with-files`
       // materialization to those GAVs. This run walks EVERY resolvable config (not told the SBOM's
@@ -203,10 +206,6 @@ allprojects { project ->
         [coord.groupId, coord.artifactId, coord.ext, coord.classifier, coord.version].findAll { it }.join(':')
       }
 
-      def isIntraProject = { String group, String name ->
-        projectKeys.contains("${group ?: ''}:${name}")
-      }
-
       // A first-party module dep can resolve with no published artifact (classes-dir variant, or
       // variant-ambiguous moduleArtifacts), leaving it ext-less. Stamp the module's real artifact
       // extension so it keeps a full, stable coordinate instead of an ext-less one.
@@ -234,6 +233,24 @@ allprojects { project ->
         id
       }
 
+      def causeMessages = { problem ->
+        def out = []
+        def t = problem
+        int guard = 0
+        while (t != null && guard++ < 12) { out << t.message; t = t.cause }
+        out
+      }
+
+      // The deepest cause's full message: the TS report classifies it, so nothing is categorized here.
+      def rawDetail = { problem ->
+        def messages = causeMessages(problem).findAll { it }
+        return (messages ? messages[-1] : 'unknown resolution failure').toString().trim()
+      }
+
+      def recordFailure = { String coord, String detail ->
+        failures << [coord: coord, detail: detail, config: configName, project: project.path]
+      }
+
       // Walk a resolved dependency and its transitive closure. We never touch `artifact.file` here —
       // that forces Gradle to download the file (catastrophic on builds declaring distribution
       // archives as deps); `artifact.extension`/`artifact.classifier` read already-resolved metadata.
@@ -251,15 +268,23 @@ allprojects { project ->
 
         // `moduleArtifacts` forces ARTIFACT-level variant selection, which can throw on a
         // variant-ambiguous dep even when the dependency GRAPH resolves fine. Guard per-dep: on
-        // failure emit at GAV level and keep walking so one ambiguous artifact can't sink the config.
+        // failure keep walking so one ambiguous artifact can't sink the config.
+        def gav = "${dep.moduleGroup ?: ''}:${dep.moduleName}:${dep.moduleVersion ?: ''}".toString()
+        def shouldMaterialize = withFiles && (populateGavs == null || populateGavs.contains(gav))
+        def projPath = projectByGav[gav]
         def artifacts
+        def artifactsError = null
         try {
           artifacts = dep.moduleArtifacts
         } catch (Exception e) {
           artifacts = [] as Set
+          artifactsError = e
         }
-        def projPath = projectByGav["${dep.moduleGroup ?: ''}:${dep.moduleName}:${dep.moduleVersion ?: ''}".toString()]
-        if (artifacts.isEmpty()) {
+        if (artifactsError != null && projPath == null) {
+          // No artifact was selected, so there is no coordinate to emit: report the module and
+          // bubble its children up (below), as for a skipped first-party module.
+          recordFailure(gav, rawDetail(artifactsError))
+        } else if (artifacts.isEmpty()) {
           def ext = effExt(projPath, '')
           // Skip a no-artifact first-party module (aggregator / build root): it builds no archive, so
           // it's fully described by `projects` and is never a real artifact dependency.
@@ -273,17 +298,6 @@ allprojects { project ->
             ], isProd, projPath)
           }
         } else {
-          // Build the GAV scope key only when a scope is set: the no-scope path never reads it and
-          // this is the hottest line under --parallel.
-          def shouldMaterialize
-          if (!withFiles) {
-            shouldMaterialize = false
-          } else if (populateGavs == null) {
-            shouldMaterialize = true
-          } else {
-            def gav = "${dep.moduleGroup ?: ''}:${dep.moduleName}:${dep.moduleVersion ?: ''}".toString()
-            shouldMaterialize = populateGavs.contains(gav)
-          }
           artifacts.each { a ->
             // Directory variants (java-classes-directory etc.) carry no extension; for a first-party
             // module fall back to its real artifact ext (never artifact.type, a Gradle variant attr).
@@ -310,7 +324,13 @@ allprojects { project ->
                   set << path
                 }
               } catch (Exception e) {
-                println "[socket-facts] could not materialize ${aid}: ${e.message?.readLines()?.first()}"
+                println "[socket-facts] could not materialize ${aid}: ${rawDetail(e).readLines().find()}"
+                // A requested artifact that yields no file is a failure: without one, the dependency
+                // would read as resolved with nothing to analyse.
+                if (projPath == null) {
+                  recordFailure(gav, rawDetail(e))
+                  unfetched << aid
+                }
               }
             }
           }
@@ -320,9 +340,9 @@ allprojects { project ->
         dep.children.each { child ->
           childIds.addAll(visit(child, isProd, cache))
         }
-        // A skipped no-artifact first-party module produced no node, so bubble its resolved children
-        // up to the parent (return childIds) — otherwise the module's transitives orphan (attached to
-        // nothing, not bubbled). The module itself is described by `projects`.
+        // A skipped no-artifact first-party module, or a module whose artifacts could not be
+        // selected, produced no node, so bubble its resolved children up to the parent (return
+        // childIds); otherwise the module's transitives would be attached to nothing.
         if (producedIds.isEmpty()) {
           cache[dep] = childIds
           return childIds
@@ -408,13 +428,137 @@ allprojects { project ->
         return true
       }
 
-      // Deepest cause's message, in FULL — Coana classifies/templates it, so we don't categorize here.
-      def rawDetail = { problem ->
-        def deepest = null
-        def t = problem
-        int guard = 0
-        while (t != null && guard++ < 12) { if (t.message) { deepest = t.message }; t = t.cause }
-        return (deepest ?: 'unknown resolution failure').toString().trim()
+      // A failed edge is reported by the selector Gradle ATTEMPTED (after forces and substitutions).
+      // A project of this build is named by its own coordinate, as its resolved node would be.
+      def selectorCoord = { sel ->
+        if (sel instanceof org.gradle.api.artifacts.component.ModuleComponentSelector) {
+          return "${sel.group}:${sel.module}${sel.version ? ':' + sel.version : ''}".toString()
+        }
+        if (sel instanceof org.gradle.api.artifacts.component.ProjectComponentSelector) {
+          def build = sel.metaClass.respondsTo(sel, 'getBuildPath') ? sel.buildPath :
+            sel.metaClass.respondsTo(sel, 'getBuildName') ? sel.buildName : ':'
+          def gav = build == ':' ? state.projectGavByPath[sel.projectPath] : null
+          if (gav != null) {
+            return gav
+          }
+        }
+        sel.displayName.toString()
+      }
+
+      // Gradle verifies only artifact-set reads, never the walk's `ResolvedArtifact.file`, and fails
+      // them with every fatal failure so far; only STRICT throws, from 6.2, with the root build's metadata.
+      def rootBuild = gradle
+      while (rootBuild.parent != null) {
+        rootBuild = rootBuild.parent
+      }
+      def startParameter = gradle.startParameter
+      def verifyArtifacts = withFiles &&
+        new File(rootBuild.rootProject.rootDir, 'gradle/verification-metadata.xml').isFile() &&
+        startParameter.metaClass.respondsTo(startParameter, 'getDependencyVerificationMode') &&
+        startParameter.dependencyVerificationMode.toString() == 'STRICT'
+      def gavOf = { Map c -> "${c.groupId}:${c.artifactId}:${c.version}".toString() }
+      def verificationMessage = { Throwable e ->
+        causeMessages(e).find { it?.startsWith('Dependency verification failed') }
+      }
+      // Old Gradle splits a module into one ResolvedDependency per target configuration, of which only
+      // some carry its artifacts: an artifact-less one is the same component, so fold it into them.
+      def foldArtifactless = {
+        if (!nodes.values().any { n -> !n.coord.ext && n.project == null }) {
+          return
+        }
+        def withExt = [:]
+        nodes.each { id, n ->
+          if (n.coord.ext) {
+            withExt.get(gavOf(n.coord), []) << id
+          }
+        }
+        def folds = [:]
+        nodes.each { id, n ->
+          def siblings = (!n.coord.ext && n.project == null) ? withExt[gavOf(n.coord)] : null
+          if (siblings) {
+            folds[id] = siblings
+          }
+        }
+        if (folds.isEmpty()) {
+          return
+        }
+        def replaced = { Collection ids -> ids.collectMany { c -> folds[c] ?: [c] } }
+        folds.each { id, siblings ->
+          def folded = nodes.remove(id)
+          siblings.each { sid ->
+            nodes[sid].children.addAll(replaced(folded.children).findAll { it != sid })
+            if (folded.prod) {
+              nodes[sid].prod = true
+            }
+          }
+        }
+        nodes.each { nid, n ->
+          if (n.children.any { folds.containsKey(it) }) {
+            def children = replaced(n.children).findAll { it != nid }
+            n.children.clear()
+            n.children.addAll(children)
+          }
+        }
+        def direct = replaced(directIds)
+        directIds.clear()
+        directIds.addAll(direct)
+      }
+
+      // Drops the files of this config's artifacts that failed verification and reports them.
+      def checkVerification = { cfg ->
+        def external = paths.keySet().findAll { id -> nodes[id].project == null }
+        if (external.isEmpty()) {
+          return
+        }
+        def fetched = external.collect { id -> gavOf(nodes[id].coord) } as Set
+        def message = null
+        try {
+          cfg.incoming.artifactView {
+            lenient(true)
+            componentFilter { id ->
+              id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+                fetched.contains("${id.group}:${id.module}:${id.version}".toString())
+            }
+          }.artifacts.each { it.file }
+        } catch (Exception e) {
+          message = verificationMessage(e)
+          if (message == null) {
+            // Any other failure concerns files the walk already read without it.
+            println "[socket-facts] could not check artifact verification for ${cfg.name}: ${rawDetail(e).readLines().find()}"
+          }
+        }
+        if (message == null) {
+          return
+        }
+        // The report names each failed artifact by its identifier's display name,
+        // "<file> (<group>:<module>:<version>)", whose file part is `<name>-<version>[-<classifier>].<ext>`
+        // rather than the cached file's own name.
+        def failed = [:]
+        (message =~ /(\S+) \(([^\s():]+):([^\s():]+):([^\s()]+)\)/).each { m ->
+          failed.get("${m[2]}:${m[3]}:${m[4]}".toString(), [] as Set) << m[1]
+        }
+        if (failed.isEmpty()) {
+          throw new GradleException(message)
+        }
+        failed.each { gav, fileNames ->
+          def ids = external.findAll { id -> gavOf(nodes[id].coord) == gav }
+          // A failed metadata file (pom, module) names none of the module's artifacts: all are suspect.
+          // A failed artifact this config did not fetch leaves it untouched.
+          def metadataOnly = fileNames.every { it.endsWith('.pom') || it.endsWith('.module') }
+          def matched = ids.findAll { id ->
+            def c = nodes[id].coord
+            def named = "${c.artifactId}-${c.version}${c.classifier ? '-' + c.classifier : ''}${c.ext ? '.' + c.ext : ''}"
+            fileNames.contains(named.toString()) || paths[id].any { p -> fileNames.contains(new File(p).name) }
+          }
+          def hit = matched ?: (metadataOnly ? ids : [])
+          if (!hit.isEmpty()) {
+            recordFailure(gav, message)
+            hit.each { id ->
+              paths.remove(id)
+              unfetched << id
+            }
+          }
+        }
       }
 
       targetConfigs.each { cfg ->
@@ -426,10 +570,13 @@ allprojects { project ->
         // Fresh tree for THIS resolution root — captured by visit/upsertNode, so no union with siblings.
         nodes = [:]
         directIds = [] as Set
+        configName = cfg.name
         paths = [:]
+        unfetched = [] as Set
         projectByGav = [:]
         // Per-config try/catch: AGP-style configs can fail variant ambiguity from an init-script
         // context lacking the consumer attributes AGP sets internally.
+        def walked = false
         try {
           def lenient = cfg.resolvedConfiguration.lenientConfiguration
           // The resolution graph names a project dependency by project path; within one graph a
@@ -453,20 +600,25 @@ allprojects { project ->
           firstLevel.each { dep ->
             directIds.addAll(visit(dep, isProd, cache))
           }
+          foldArtifactless()
           // Unresolved deps drive the root aggregator's abort/warn decision but are NOT emitted as
           // nodes — their selector-only coordinates would surface as half-formed phantom artifacts.
-          lenient.unresolvedModuleDependencies.each { dep ->
-            def sel = dep.selector
-            if (isIntraProject(sel.group, sel.name)) {
-              return
+          // hasError() covers every unresolved dependency, project ones included.
+          if (cfg.resolvedConfiguration.hasError()) {
+            def reported = [] as Set
+            cfg.incoming.resolutionResult.allDependencies.each { d ->
+              if (d instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
+                def coord = selectorCoord(d.attempted ?: d.requested)
+                if (reported.add(coord)) {
+                  recordFailure(coord, rawDetail(d.failure))
+                }
+              }
             }
-            failures << [
-              coord : "${sel.group}:${sel.name}${sel.version ? ':' + sel.version : ''}".toString(),
-              detail: rawDetail(dep.problem),
-              config: cfg.name,
-              project: project.path,
-            ]
           }
+          if (verifyArtifacts) {
+            checkVerification(cfg)
+          }
+          walked = true
         } catch (Exception e) {
           // A config-LEVEL resolution failure (a resolutionStrategy/beforeResolve rule that throws,
           // an artifact-transform failure, a broken repository, ...) rather than a per-dep failure.
@@ -474,11 +626,11 @@ allprojects { project ->
           state.unscannable << [config: cfg.name, detail: rawDetail(e), project: project.path]
         }
         // Stash this resolution root's tree; the key only has to be unique per root. Skip empty
-        // configs — they'd contribute nothing.
-        if (!nodes.isEmpty()) {
+        // configs, which contribute nothing, and a partial walk, which can orphan components.
+        if (walked && !nodes.isEmpty()) {
           synchronized (state.perSub) {
             state.perSub["${project.path}::${cfg.name}".toString()] =
-              [nodes: nodes, direct: directIds, paths: paths, projectPath: project.path, config: cfg.name, prod: isProd]
+              [nodes: nodes, direct: directIds, paths: paths, unfetched: unfetched, projectPath: project.path, config: cfg.name, prod: isProd]
           }
         }
       }
@@ -541,6 +693,7 @@ rootProject { rp ->
           node.children.each { childId -> rec(['edge', rootId, coordId, childId]) }
           def fs = tree.paths[coordId]
           if (fs) { (fs as List).sort().each { p -> rec(['file', rootId, coordId, p]) } }
+          if (tree.unfetched.contains(coordId)) rec(['unfetched', rootId, coordId])
         }
       }
 
