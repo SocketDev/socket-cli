@@ -22,7 +22,7 @@ export function classifyGradleFailure(detail: string): FailureCategory {
     return 'no-matching-variant'
   }
   // The artifact-level form: several transforms produce the requested variant
-  // (Gradle 9 says "transformation chains", earlier versions "transforms").
+  // ("transformation chains" from Gradle 8.12, "transforms" before it).
   if (
     t.includes('cannot choose between') ||
     t.includes('found multiple transformation chains') ||
