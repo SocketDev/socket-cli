@@ -5,6 +5,7 @@ import org.apache.maven.MavenExecutionException;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.ProjectDependenciesResolver;
 import org.apache.maven.rtinfo.RuntimeInformation;
+import org.eclipse.aether.RepositorySystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.coana.socket.SocketFactsRecordsEngine;
@@ -28,12 +29,16 @@ public class CoanaFactsLifecycleParticipant extends AbstractMavenLifecyclePartic
   private static final Logger LOG = LoggerFactory.getLogger("coana");
 
   private final ProjectDependenciesResolver dependenciesResolver;
+  private final RepositorySystem repositorySystem;
   private final RuntimeInformation runtimeInformation;
 
   @Inject
   public CoanaFactsLifecycleParticipant(
-      ProjectDependenciesResolver dependenciesResolver, RuntimeInformation runtimeInformation) {
+      ProjectDependenciesResolver dependenciesResolver,
+      RepositorySystem repositorySystem,
+      RuntimeInformation runtimeInformation) {
     this.dependenciesResolver = dependenciesResolver;
+    this.repositorySystem = repositorySystem;
     this.runtimeInformation = runtimeInformation;
   }
 
@@ -55,7 +60,7 @@ public class CoanaFactsLifecycleParticipant extends AbstractMavenLifecyclePartic
     opts.excludePaths = opt(session, "socket.excludePaths");
     File rootDir = new File(session.getExecutionRootDirectory());
     try {
-      new SocketFactsRecordsEngine(dependenciesResolver, runtimeInformation.getMavenVersion(), LOG)
+      new SocketFactsRecordsEngine(dependenciesResolver, repositorySystem, runtimeInformation.getMavenVersion(), LOG)
           .run(session, session.getProjects(), rootDir, opts);
     } catch (IOException exception) {
       throw new MavenExecutionException("Cannot write socket facts records", exception);
