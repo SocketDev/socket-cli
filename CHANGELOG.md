@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `socket scan create --reach` and `socket scan reach` take `--reach-advisories` to focus reachability analysis on the GHSA or CVE advisories you care about. Every other advisory is left with unknown reachability.
 
+### Changed
+- Updated the Coana CLI to v `15.13.0`.
+
 ## [1.10.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.1) - 2026-10-23
 
 ### Changed
