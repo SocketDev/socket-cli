@@ -1,4 +1,10 @@
-import { copyFileSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import {
+  copyFileSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  statSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -34,7 +40,7 @@ describe('resolveBazelBinary', () => {
       undefined,
       cwd,
     )
-    expect(path.normalize(resolved)).toBe(bin)
+    expect(statSync(resolved).ino).toBe(statSync(bin).ino)
   })
 
   it('preserves an explicit executable outside PATH', async () => {
@@ -44,7 +50,7 @@ describe('resolveBazelBinary', () => {
       getBazelEnvironment({ PATH: '' }),
       cwd,
     )
-    expect(path.normalize(resolved)).toBe(bin)
+    expect(statSync(resolved).ino).toBe(statSync(bin).ino)
   })
 
   it('prefers Bazelisk over Bazel', async () => {
@@ -55,7 +61,7 @@ describe('resolveBazelBinary', () => {
       getBazelEnvironment({ PATH: cwd }),
       cwd,
     )
-    expect(path.normalize(resolved)).toBe(bazelisk)
+    expect(statSync(resolved).ino).toBe(statSync(bazelisk).ino)
   })
 
   it('falls back to Bazel when Bazelisk is absent', async () => {
@@ -65,7 +71,7 @@ describe('resolveBazelBinary', () => {
       getBazelEnvironment({ PATH: cwd }),
       cwd,
     )
-    expect(path.normalize(resolved)).toBe(bazel)
+    expect(statSync(resolved).ino).toBe(statSync(bazel).ino)
   })
 
   it('reports missing tools', async () => {
