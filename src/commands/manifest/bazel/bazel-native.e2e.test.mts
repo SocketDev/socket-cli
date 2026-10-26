@@ -40,9 +40,15 @@ describe.skipIf(process.env['SOCKET_BAZEL_INTEGRATION'] !== '1')(
     let bin: string
 
     beforeAll(async () => {
-      bin = await resolveBazelBinary(process.env['SOCKET_BAZEL_TEST_BIN'])
-      ensureJavaOnPath()
-      const python = await provisionPythonShim()
+      const env = getBazelEnvironment()
+      const cwd = process.cwd()
+      bin = await resolveBazelBinary(
+        process.env['SOCKET_BAZEL_TEST_BIN'],
+        env,
+        cwd,
+      )
+      ensureJavaOnPath(env, cwd)
+      const python = await provisionPythonShim(env, cwd)
       if (python.shimDir) {
         rmSync(python.shimDir, { recursive: true, force: true })
       }

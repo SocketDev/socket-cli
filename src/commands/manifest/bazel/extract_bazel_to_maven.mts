@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import {
+  BAZEL_OUTPUT_ROOT_PREFIX,
   cleanUpBazelServer,
   makeBazelOutputUserRoot,
   removeBazelTempdir,
@@ -610,14 +611,10 @@ async function cleanUpOutputRoot(
   root: string,
   contexts: Map<string, BazelQueryOptions>,
 ): Promise<boolean> {
-  let stopped = true
-  for (const opts of contexts.values()) {
-    // eslint-disable-next-line no-await-in-loop
-    if (!(await cleanUpBazelServer(opts))) {
-      stopped = false
-    }
-  }
-  return stopped ? await removeBazelTempdir(root) : false
+  const stopped = await Promise.all(
+    Array.from(contexts.values(), cleanUpBazelServer),
+  )
+  return stopped.every(Boolean) ? await removeBazelTempdir(root) : false
 }
 
 // Construct the BazelQueryOptions shape used for a single workspace's
@@ -625,7 +622,7 @@ async function cleanUpOutputRoot(
 // ESLint's consistent-function-scoping is happy; takes everything it
 // previously closed over as explicit params.
 function buildQueryOpts(args: {
-  baseEnv: NodeJS.ProcessEnv | undefined
+  baseEnv: NodeJS.ProcessEnv
   bin: string
   invocationFlags: string[]
   opts: ExtractBazelOptions
@@ -652,7 +649,7 @@ function buildQueryOpts(args: {
     ...(opts.bazelOutputBase
       ? { bazelOutputBase: path.resolve(opts.cwd, opts.bazelOutputBase) }
       : {}),
-    ...(baseEnv ? { env: baseEnv } : {}),
+    env: baseEnv,
     verbose,
   }
 }
@@ -684,7 +681,7 @@ export async function extractBazelToMaven(
     bin = await resolveBazelBinary(opts.bin, baseEnv, cwd)
     const shim = await provisionPythonShim(baseEnv, cwd)
     pythonShimDir = shim.shimDir
-    baseEnv = shim.augmentedEnv ?? baseEnv
+    baseEnv = shim.env
     outputUserRoot = makeBazelOutputUserRoot(baseEnv, cwd)
   } catch (e) {
     if (pythonShimDir) {
@@ -743,11 +740,11 @@ export async function extractBazelToMaven(
     // callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
     const ignoreDirNames = new Set([
       ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
-      path.basename(outputUserRoot),
       ...(opts.ignoreDirNames ?? []),
     ])
     const ignoreDirPrefixes = [
       ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+      BAZEL_OUTPUT_ROOT_PREFIX,
       ...(opts.ignoreDirPrefixes ?? []),
     ]
     const workspaceRoots = findWorkspaceRoots({
@@ -1192,14 +1189,12 @@ export async function extractBazelToMaven(
       workspaceOutcomes,
     }
   } finally {
-    let cleaned = true
-    for (const [root, contexts] of mintedRoots) {
-      // eslint-disable-next-line no-await-in-loop
-      if (!(await cleanUpOutputRoot(root, contexts))) {
-        cleaned = false
-      }
-    }
-    if (pythonShimDir && cleaned) {
+    const cleaned = await Promise.all(
+      Array.from(mintedRoots, ([root, contexts]) =>
+        cleanUpOutputRoot(root, contexts),
+      ),
+    )
+    if (pythonShimDir && cleaned.every(Boolean)) {
       await removeBazelTempdir(pythonShimDir)
     }
   }

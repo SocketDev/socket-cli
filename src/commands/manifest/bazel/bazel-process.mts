@@ -12,9 +12,21 @@ import which from 'which'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { InputError } from '../../../utils/errors.mts'
+import { InputError, isErrnoException } from '../../../utils/errors.mts'
 
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+
+function findEnvironmentKey(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  if (platform !== 'win32') {
+    return name
+  }
+  const lower = name.toLowerCase()
+  return Object.keys(env).find(key => key.toLowerCase() === lower) ?? name
+}
 
 export function getBazelEnvironment(
   overrides: NodeJS.ProcessEnv = {},
@@ -22,13 +34,7 @@ export function getBazelEnvironment(
 ): NodeJS.ProcessEnv {
   const env = { ...process.env }
   for (const [key, value] of Object.entries(overrides)) {
-    const existing =
-      platform === 'win32'
-        ? Object.keys(env).find(
-            name => name.toLowerCase() === key.toLowerCase(),
-          )
-        : undefined
-    env[existing ?? key] = value
+    env[findEnvironmentKey(env, key, platform)] = value
   }
   return env
 }
@@ -37,11 +43,15 @@ export function getBazelEnvironmentValue(
   env: NodeJS.ProcessEnv,
   name: string,
 ): string | undefined {
-  const key =
-    process.platform === 'win32'
-      ? Object.keys(env).find(key => key.toLowerCase() === name.toLowerCase())
-      : name
-  return key ? env[key] : undefined
+  return env[findEnvironmentKey(env, name)]
+}
+
+export function prependBazelPath(
+  env: NodeJS.ProcessEnv,
+  dir: string,
+): NodeJS.ProcessEnv {
+  const key = findEnvironmentKey(env, 'PATH')
+  return { ...env, [key]: `${dir}${path.delimiter}${env[key] ?? ''}` }
 }
 
 export async function findBazelExecutable(
@@ -51,7 +61,7 @@ export async function findBazelExecutable(
 ): Promise<string | undefined> {
   const searchPath = (getBazelEnvironmentValue(env, 'PATH') ?? '')
     .split(path.delimiter)
-    .map(entry => path.resolve(cwd, entry))
+    .map(entry => path.resolve(cwd, entry.replace(/^"(.*)"$/, '$1')))
     .join(path.delimiter)
   const found = await which(name, {
     nothrow: true,
@@ -78,7 +88,7 @@ export function resolveBazelExecutable(file: string): string {
         'This PowerShell Bazel launcher could not be resolved to a Node entry point. Pass a native .exe, a .cmd or .bat wrapper, or a JavaScript entry point with --bazel.',
       )
     }
-    if (e instanceof Error && 'code' in e && e.code === 'ENOENT') {
+    if (isErrnoException(e) && e.code === 'ENOENT') {
       return resolved
     }
     throw e
@@ -102,6 +112,12 @@ function isNodeScript(bin: string): boolean {
   }
 }
 
+const BATCH_METACHARACTERS = /[ !%^&()<>|"]/g
+
+function escapeBatchMetacharacters(value: string): string {
+  return value.replace(BATCH_METACHARACTERS, '^$&')
+}
+
 function escapeBatchArgument(value: string): string {
   if (/[\r\n\0]/.test(value)) {
     throw new InputError(
@@ -110,29 +126,33 @@ function escapeBatchArgument(value: string): string {
   }
   const quoted = `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1')}"`
   // Batch forwarding parses arguments twice, so protect each shell metacharacter twice.
-  return quoted
-    .replace(/[ !%^&()<>|"]/g, '^$&')
-    .replace(/[ !%^&()<>|"]/g, '^$&')
+  return escapeBatchMetacharacters(escapeBatchMetacharacters(quoted))
 }
 
-export function buildBazelProcessInvocation(
+function buildBazelProcessInvocation(
   bin: string,
   args: string[],
   env: NodeJS.ProcessEnv,
-): { command: string; args: string[]; windowsVerbatimArguments?: boolean } {
+): { command: string; args: string[]; windowsVerbatimArguments: boolean } {
   if (isNodeScript(bin)) {
-    return { command: process.execPath, args: [bin, ...args] }
+    return {
+      command: process.execPath,
+      args: [bin, ...args],
+      windowsVerbatimArguments: false,
+    }
   }
   if (process.platform === 'win32' && /\.(?:cmd|bat)$/i.test(bin)) {
-    const command = bin.replace(/[ !%^&()<>|"]/g, '^$&')
-    const script = [command, ...args.map(escapeBatchArgument)].join(' ')
+    const script = [
+      escapeBatchMetacharacters(bin),
+      ...args.map(escapeBatchArgument),
+    ].join(' ')
     return {
       command: getBazelEnvironmentValue(env, 'ComSpec') ?? 'cmd.exe',
       args: ['/d', '/v:off', '/s', '/c', `"${script}"`],
       windowsVerbatimArguments: true,
     }
   }
-  return { command: bin, args }
+  return { command: bin, args, windowsVerbatimArguments: false }
 }
 
 export function spawnBazel(bin: string, args: string[], options: SpawnOptions) {
@@ -140,11 +160,9 @@ export function spawnBazel(bin: string, args: string[], options: SpawnOptions) {
   const invocation = buildBazelProcessInvocation(bin, args, env)
   return spawn(invocation.command, invocation.args, {
     ...options,
-    ...('windowsVerbatimArguments' in invocation
-      ? { windowsVerbatimArguments: invocation.windowsVerbatimArguments }
-      : {}),
     env,
     shell: false,
+    windowsVerbatimArguments: invocation.windowsVerbatimArguments,
   })
 }
 

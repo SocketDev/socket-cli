@@ -1,4 +1,4 @@
-import { promises as fs, mkdirSync, mkdtempSync } from 'node:fs'
+import { promises as fs, mkdirSync, mkdtempSync, realpathSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -9,9 +9,11 @@ import {
   getBazelEnvironmentValue,
   spawnBazel,
 } from './bazel-process.mts'
-import { getErrorCause } from '../../../utils/errors.mts'
+import { getErrorCause, isErrnoException } from '../../../utils/errors.mts'
 
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
+
+export const BAZEL_OUTPUT_ROOT_PREFIX = 'socket-bazel-'
 
 export function makeBazelOutputUserRoot(
   env: NodeJS.ProcessEnv,
@@ -20,33 +22,26 @@ export function makeBazelOutputUserRoot(
   const parent = getBazelEnvironmentValue(env, 'SOCKET_BAZEL_OUTPUT_ROOT')
   const resolved = parent ? path.resolve(cwd, parent) : os.tmpdir()
   mkdirSync(resolved, { recursive: true })
-  return mkdtempSync(path.join(resolved, 'socket-bazel-'))
+  return mkdtempSync(path.join(resolved, BAZEL_OUTPUT_ROOT_PREFIX))
+}
+
+const RM_OPTIONS = {
+  recursive: true,
+  force: true,
+  maxRetries: 5,
+  retryDelay: 200,
 }
 
 export async function removeBazelTempdir(dir: string): Promise<boolean> {
   try {
     try {
-      await fs.rm(dir, {
-        recursive: true,
-        force: true,
-        maxRetries: 5,
-        retryDelay: 200,
-      })
+      await fs.rm(dir, RM_OPTIONS)
     } catch (e) {
-      if (
-        !(e instanceof Error) ||
-        !('code' in e) ||
-        !['EACCES', 'EPERM'].includes(String(e.code))
-      ) {
+      if (!isErrnoException(e) || !['EACCES', 'EPERM'].includes(e.code ?? '')) {
         throw e
       }
       await makeDirectoriesWritable(dir)
-      await fs.rm(dir, {
-        recursive: true,
-        force: true,
-        maxRetries: 5,
-        retryDelay: 200,
-      })
+      await fs.rm(dir, RM_OPTIONS)
     }
     return true
   } catch (error) {
@@ -81,7 +76,7 @@ async function makeDirectoriesWritable(root: string): Promise<void> {
         }
       }
     } catch (e) {
-      if (!(e instanceof Error) || !('code' in e) || e.code !== 'ENOENT') {
+      if (!isErrnoException(e) || e.code !== 'ENOENT') {
         throw e
       }
     }
@@ -94,13 +89,24 @@ export async function cleanUpBazelServer(
   if (!opts.outputUserRoot || opts.bazelOutputBase) {
     return true
   }
+  const startupFlags = buildBazelStartupFlags(opts)
+  const spawnOptions = {
+    cwd: opts.cwd,
+    ...(opts.env ? { env: opts.env } : {}),
+    signal: new AbortController().signal,
+    timeout: 10_000,
+  }
   try {
-    await spawnBazel(opts.bin, [...buildBazelStartupFlags(opts), 'shutdown'], {
-      cwd: opts.cwd,
-      ...(opts.env ? { env: opts.env } : {}),
-      signal: new AbortController().signal,
-      timeout: 10_000,
-    })
+    // An rc file can set `startup --output_base`, which points the scan at a server it does not own.
+    const info = await spawnBazel(
+      opts.bin,
+      [...startupFlags, 'info', 'output_base'],
+      spawnOptions,
+    )
+    if (!isPathInside(info.stdout.trim(), opts.outputUserRoot)) {
+      return true
+    }
+    await spawnBazel(opts.bin, [...startupFlags, 'shutdown'], spawnOptions)
     return true
   } catch (error) {
     logger.warn(
@@ -108,4 +114,16 @@ export async function cleanUpBazelServer(
     )
     return false
   }
+}
+
+function isPathInside(child: string, parent: string): boolean {
+  const relative = path.relative(
+    realpathSync.native(parent),
+    realpathSync.native(child),
+  )
+  return (
+    relative !== '' &&
+    relative.split(path.sep)[0] !== '..' &&
+    !path.isAbsolute(relative)
+  )
 }

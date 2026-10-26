@@ -57,16 +57,18 @@ describe('provisionPythonShim', () => {
         throw new Error('Python fixture is unavailable')
       }
       if (process.platform === 'win32') {
-        const result = await provisionPythonShim(
-          getBazelEnvironment({ Path: path.dirname(python) }),
-          cwd,
-        )
-        expect(result).toEqual({ augmentedEnv: undefined, shimDir: undefined })
+        const env = getBazelEnvironment({ Path: path.dirname(python) })
+        expect(await provisionPythonShim(env, cwd)).toEqual({
+          env,
+          shimDir: undefined,
+        })
       } else {
         symlinkSync(python, path.join(cwd, 'python'))
-        expect(
-          await provisionPythonShim(getBazelEnvironment({ PATH: cwd }), cwd),
-        ).toEqual({ augmentedEnv: undefined, shimDir: undefined })
+        const env = getBazelEnvironment({ PATH: cwd })
+        expect(await provisionPythonShim(env, cwd)).toEqual({
+          env,
+          shimDir: undefined,
+        })
       }
       await expect(
         provisionPythonShim(
@@ -95,7 +97,7 @@ describe('provisionPythonShim', () => {
         shims.push(result.shimDir)
         expect(existsSync(path.join(result.shimDir, 'python'))).toBe(true)
         expect(readlinkSync(path.join(result.shimDir, 'python'))).toBe(python)
-        expect(result.augmentedEnv?.['PATH']).toContain(cwd)
+        expect(result.env['PATH']).toContain(cwd)
       }
       expect(results[0]?.shimDir).not.toBe(results[1]?.shimDir)
     },

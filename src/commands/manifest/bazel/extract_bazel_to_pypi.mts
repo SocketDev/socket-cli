@@ -105,7 +105,7 @@ export async function extractBazelToPypi(
     const env = getBazelEnvironment(opts.env)
     const shim = await provisionPythonShim(env, cwd)
     pythonShimDir = shim.shimDir
-    const baseEnv = shim.augmentedEnv ?? env
+    const baseEnv = shim.env
 
     // Step 1: workspace detection.
     const mode = detectWorkspaceMode(cwd)
@@ -137,7 +137,7 @@ export async function extractBazelToPypi(
       ...(opts.bazelOutputBase
         ? { bazelOutputBase: opts.bazelOutputBase }
         : {}),
-      ...(baseEnv ? { env: baseEnv } : {}),
+      env: baseEnv,
       verbose,
     }
 

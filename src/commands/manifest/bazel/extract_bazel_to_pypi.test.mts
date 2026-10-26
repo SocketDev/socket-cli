@@ -53,8 +53,8 @@ vi.mock('./bazel-output-base-check.mts', () => ({
   validateOutputBase: vi.fn(),
 }))
 vi.mock('./bazel-python-shim.mts', () => ({
-  provisionPythonShim: vi.fn(async () => ({
-    augmentedEnv: undefined,
+  provisionPythonShim: vi.fn(async (env: NodeJS.ProcessEnv) => ({
+    env,
     shimDir: undefined,
   })),
 }))

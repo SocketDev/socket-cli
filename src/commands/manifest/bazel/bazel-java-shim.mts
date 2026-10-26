@@ -1,16 +1,10 @@
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 
-import {
-  getBazelEnvironment,
-  getBazelEnvironmentValue,
-} from './bazel-process.mts'
+import { getBazelEnvironmentValue } from './bazel-process.mts'
 import { InputError } from '../../../utils/errors.mts'
 
-export function ensureJavaOnPath(
-  env: NodeJS.ProcessEnv = getBazelEnvironment(),
-  cwd: string = process.cwd(),
-): void {
+export function ensureJavaOnPath(env: NodeJS.ProcessEnv, cwd: string): void {
   const javaHome = getBazelEnvironmentValue(env, 'JAVA_HOME')
   const executable = process.platform === 'win32' ? 'java.exe' : 'java'
   const java = javaHome

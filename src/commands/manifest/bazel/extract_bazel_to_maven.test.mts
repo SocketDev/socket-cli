@@ -27,8 +27,8 @@ vi.mock('./bazel-java-shim.mts', () => ({
   ensureJavaOnPath: vi.fn(),
 }))
 vi.mock('./bazel-python-shim.mts', () => ({
-  provisionPythonShim: vi.fn(async () => ({
-    augmentedEnv: undefined,
+  provisionPythonShim: vi.fn(async (env: NodeJS.ProcessEnv) => ({
+    env,
     shimDir: undefined,
   })),
 }))
@@ -516,6 +516,7 @@ Fetched repositories:
     expect(names).toContain('.git')
     expect(names).toContain('.socket-auto-manifest')
     expect(call.ignoreDirPrefixes).toContain('bazel-')
+    expect(call.ignoreDirPrefixes).toContain('socket-bazel-')
   })
 
   it('extends (not replaces) the default prune policy with caller-supplied dirs', async () => {

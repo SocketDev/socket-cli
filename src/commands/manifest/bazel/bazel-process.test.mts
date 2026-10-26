@@ -44,6 +44,13 @@ if (process.env.SOCKET_BAZEL_RECORD) { fs.writeFileSync(process.env.SOCKET_BAZEL
 process.stdout.write(JSON.stringify(record))
 `
 
+function readServerCalls(record: string): unknown[] {
+  return readFileSync(record, 'utf8')
+    .trim()
+    .split('\n')
+    .map(line => JSON.parse(line))
+}
+
 describe('Bazel process invocation', () => {
   let cwd: string
   let launcher: string
@@ -93,6 +100,8 @@ describe('Bazel process invocation', () => {
     await cmdShim(launcher, shim)
     const bin = await resolveBazelBinary(
       process.platform === 'win32' ? `${shim}.cmd` : shim,
+      getBazelEnvironment(),
+      cwd,
     )
     const result = await spawnBazel(bin, ARGUMENTS, { cwd })
     expect(JSON.parse(result.stdout)).toMatchObject({ args: ARGUMENTS, cwd })
@@ -136,12 +145,31 @@ describe('Bazel process invocation', () => {
     expect(key && env[key]).toBe('last value')
   })
 
-  it('shuts down with the same workspace, startup flags, and environment', async () => {
-    const record = path.join(cwd, 'shutdown.json')
+  function writeServerLauncher(outputBase: string): string {
+    const record = path.join(cwd, 'server.jsonl')
+    writeFileSync(
+      launcher,
+      `const fs = require('node:fs')
+const args = process.argv.slice(2)
+fs.appendFileSync(${JSON.stringify(record)}, JSON.stringify({ args, cwd: process.cwd(), marker: process.env.SOCKET_BAZEL_LITERAL }) + '\\n')
+if (args.includes('info')) { process.stdout.write(${JSON.stringify(outputBase)} + '\\n') }
+`,
+    )
+    return record
+  }
+
+  it('shuts down its own server with the same workspace, startup flags, and environment', async () => {
     const root = makeBazelOutputUserRoot(
       getBazelEnvironment({ SOCKET_BAZEL_OUTPUT_ROOT: cwd }),
       cwd,
     )
+    const outputBase = path.join(root, 'workspace hash')
+    mkdirSync(outputBase)
+    const record = writeServerLauncher(outputBase)
+    const startupFlags = [
+      `--bazelrc=${path.join(cwd, 'custom rc')}`,
+      `--output_user_root=${root}`,
+    ]
     expect(
       await cleanUpBazelServer({
         bin: launcher,
@@ -149,22 +177,46 @@ describe('Bazel process invocation', () => {
         invocationFlags: [],
         outputUserRoot: root,
         bazelRc: path.join(cwd, 'custom rc'),
-        env: {
-          SOCKET_BAZEL_LITERAL: 'shutdown environment',
-          SOCKET_BAZEL_RECORD: record,
-        },
+        env: { SOCKET_BAZEL_LITERAL: 'shutdown environment' },
       }),
     ).toBe(true)
-    expect(JSON.parse(readFileSync(record, 'utf8'))).toEqual({
-      args: [
-        `--bazelrc=${path.join(cwd, 'custom rc')}`,
-        `--output_user_root=${root}`,
-        'shutdown',
-      ],
-      cwd,
-      marker: 'shutdown environment',
-    })
+    expect(readServerCalls(record)).toEqual([
+      {
+        args: [...startupFlags, 'info', 'output_base'],
+        cwd,
+        marker: 'shutdown environment',
+      },
+      {
+        args: [...startupFlags, 'shutdown'],
+        cwd,
+        marker: 'shutdown environment',
+      },
+    ])
     expect(await removeBazelTempdir(root)).toBe(true)
+  })
+
+  it('leaves a server selected by an rc output base alone', async () => {
+    const root = makeBazelOutputUserRoot(
+      getBazelEnvironment({ SOCKET_BAZEL_OUTPUT_ROOT: cwd }),
+      cwd,
+    )
+    const callerOutputBase = path.join(cwd, 'caller output base')
+    mkdirSync(callerOutputBase)
+    const record = writeServerLauncher(callerOutputBase)
+    expect(
+      await cleanUpBazelServer({
+        bin: launcher,
+        cwd,
+        invocationFlags: [],
+        outputUserRoot: root,
+        bazelRc: path.join(cwd, 'custom rc'),
+      }),
+    ).toBe(true)
+    expect(readServerCalls(record)).toEqual([
+      expect.objectContaining({
+        args: expect.arrayContaining(['info', 'output_base']),
+      }),
+    ])
   })
 
   it('leaves caller-owned output bases and their servers alone', async () => {

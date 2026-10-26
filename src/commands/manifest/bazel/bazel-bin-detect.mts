@@ -3,7 +3,6 @@ import path from 'node:path'
 
 import {
   findBazelExecutable,
-  getBazelEnvironment,
   resolveBazelExecutable,
 } from './bazel-process.mts'
 import { InputError } from '../../../utils/errors.mts'
@@ -19,8 +18,8 @@ import { InputError } from '../../../utils/errors.mts'
  */
 export async function resolveBazelBinary(
   explicit: string | undefined,
-  env: NodeJS.ProcessEnv = getBazelEnvironment(),
-  cwd: string = process.cwd(),
+  env: NodeJS.ProcessEnv,
+  cwd: string,
 ): Promise<string> {
   if (explicit) {
     const resolved = path.resolve(cwd, explicit)

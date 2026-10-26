@@ -37,7 +37,7 @@ describe('resolveBazelBinary', () => {
     const bin = install('bazel')
     const resolved = await resolveBazelBinary(
       path.basename(bin),
-      undefined,
+      getBazelEnvironment(),
       cwd,
     )
     expect(statSync(resolved).ino).toBe(statSync(bin).ino)
@@ -74,12 +74,22 @@ describe('resolveBazelBinary', () => {
     expect(statSync(resolved).ino).toBe(statSync(bazel).ino)
   })
 
+  it('finds tools in a quoted PATH entry', async () => {
+    const bazel = install('bazel')
+    const resolved = await resolveBazelBinary(
+      undefined,
+      getBazelEnvironment({ PATH: `"${cwd}"` }),
+      os.tmpdir(),
+    )
+    expect(statSync(resolved).ino).toBe(statSync(bazel).ino)
+  })
+
   it('reports missing tools', async () => {
     await expect(
       resolveBazelBinary(undefined, getBazelEnvironment({ PATH: cwd }), cwd),
     ).rejects.toThrow(/Could not find bazelisk or bazel/)
-    await expect(resolveBazelBinary(path.join(cwd, 'missing'))).rejects.toThrow(
-      /--bazel path does not exist/,
-    )
+    await expect(
+      resolveBazelBinary(path.join(cwd, 'missing'), getBazelEnvironment(), cwd),
+    ).rejects.toThrow(/--bazel path does not exist/)
   })
 })

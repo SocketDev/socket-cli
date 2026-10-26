@@ -3,15 +3,11 @@ import { mkdtempSync, symlinkSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import {
-  findBazelExecutable,
-  getBazelEnvironment,
-  getBazelEnvironmentValue,
-} from './bazel-process.mts'
+import { findBazelExecutable, prependBazelPath } from './bazel-process.mts'
 import { InputError } from '../../../utils/errors.mts'
 
 export type PythonShimResult = {
-  augmentedEnv: NodeJS.ProcessEnv | undefined
+  env: NodeJS.ProcessEnv
   shimDir: string | undefined
 }
 
@@ -44,8 +40,8 @@ function verifyPython(
 }
 
 export async function provisionPythonShim(
-  env: NodeJS.ProcessEnv = getBazelEnvironment(),
-  cwd: string = process.cwd(),
+  env: NodeJS.ProcessEnv,
+  cwd: string,
 ): Promise<PythonShimResult> {
   const python = await findBazelExecutable('python', env, cwd)
   if (python) {
@@ -58,7 +54,7 @@ export async function provisionPythonShim(
       )
     }
     verifyPython(python, env, cwd)
-    return { augmentedEnv: undefined, shimDir: undefined }
+    return { env, shimDir: undefined }
   }
   if (process.platform === 'win32') {
     throw new InputError(
@@ -74,11 +70,5 @@ export async function provisionPythonShim(
   verifyPython(python3, env, cwd)
   const shimDir = mkdtempSync(path.join(os.tmpdir(), 'socket-bazel-python-'))
   symlinkSync(python3, path.join(shimDir, 'python'))
-  return {
-    augmentedEnv: getBazelEnvironment({
-      ...env,
-      PATH: `${shimDir}${path.delimiter}${getBazelEnvironmentValue(env, 'PATH') ?? ''}`,
-    }),
-    shimDir,
-  }
+  return { env: prependBazelPath(env, shimDir), shimDir }
 }

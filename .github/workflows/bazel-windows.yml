@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: bazel-windows-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   maven:
     name: Maven on Windows x64
@@ -25,7 +29,6 @@ jobs:
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           git init -q
           git config --local advice.detachedHead false
@@ -39,7 +42,6 @@ jobs:
 
       - name: Install pinned toolchains
         run: |
-          $ErrorActionPreference = 'Stop'
           $tools = Join-Path $env:RUNNER_TEMP 'bazel-tools'
           New-Item -ItemType Directory -Force "$tools/bin" | Out-Null
           function Get-VerifiedTool($url, $file, $sha256) {
@@ -67,7 +69,6 @@ jobs:
 
       - name: Record versions and verify prerequisites
         run: |
-          $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           git rev-parse HEAD
           node --version
@@ -81,20 +82,17 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           pnpm install --frozen-lockfile
           pnpm build
 
       - name: Test executable handling and prerequisites
         run: |
-          $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           pnpm test:unit src/commands/manifest/bazel/bazel-bin-detect.test.mts src/commands/manifest/bazel/bazel-process.test.mts src/commands/manifest/bazel/bazel-java-shim.test.mts src/commands/manifest/bazel/bazel-python-shim.test.mts src/commands/manifest/bazel/bazel-query-runner.test.mts src/commands/manifest/bazel/bazel-cquery.test.mts
 
       - name: Install the packaged CLI
         run: |
-          $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           $packages = Join-Path $env:RUNNER_TEMP 'bazel-packages'
           $installation = Join-Path $env:RUNNER_TEMP 'bazel-installation'
@@ -107,6 +105,5 @@ jobs:
         env:
           SOCKET_BAZEL_INTEGRATION: '1'
         run: |
-          $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           pnpm exec vitest run --config vitest.e2e.config.mts src/commands/manifest/bazel/bazel-native.e2e.test.mts
