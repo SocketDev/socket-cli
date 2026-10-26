@@ -1,4 +1,4 @@
-import { existsSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
@@ -121,7 +121,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     agent,
   })
 
-  shadowResult.spawnPromise.process.on('exit', () => {
+  shadowResult.spawnPromise.process.on('exit', (code, signalName) => {
     if (cleanupPackageLock) {
       try {
         // TODO: Consider using trash instead of rmSync for safer deletion.
@@ -130,11 +130,28 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       } catch {}
     }
 
+    if (code !== 0 || signalName) {
+      return
+    }
+
     const outputPath = argvMutable['output'] as string
     if (outputPath) {
-      const fullOutputPath = path.join(process.cwd(), outputPath)
+      const fullOutputPath = path.resolve(process.cwd(), outputPath)
       if (existsSync(fullOutputPath)) {
         logger.log(colors.cyanBright(`${outputPath} created!`))
+        let bom: { components?: unknown } | null
+        try {
+          bom = JSON.parse(readFileSync(fullOutputPath, 'utf8'))
+        } catch {
+          return
+        }
+        if (Array.isArray(bom?.components) && bom.components.length === 0) {
+          logger.warn(
+            `cdxgen produced an SBOM with no components at ${outputPath}. ` +
+              'Check dependency resolution and repository access before uploading this file. ' +
+              'Pass --fail-on-error to fail when dependency extraction fails.',
+          )
+        }
       }
     }
   })
