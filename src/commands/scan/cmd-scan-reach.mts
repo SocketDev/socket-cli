@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
+import { resolveReachAdvisories } from './reach-advisories.mts'
 import {
   DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
   excludePathsFlag,
@@ -200,6 +201,7 @@ async function run(
 
   // Process comma-separated values for isMultiple flags.
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  const reachAdvisoriesRaw = cmdFlagValueToArray(cli.flags['reachAdvisories'])
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
   assertValidExcludePaths(excludePaths)
@@ -290,6 +292,8 @@ async function run(
     return
   }
 
+  const reachAdvisories = await resolveReachAdvisories(reachAdvisoriesRaw)
+
   await handleScanReach({
     cwd,
     interactive,
@@ -299,6 +303,7 @@ async function run(
     reachabilityOptions: {
       dynamicSbomInference: Boolean(dynamicSbomInference),
       excludePaths,
+      reachAdvisories,
       reachAnalysisMemoryLimit,
       reachAnalysisTimeout,
       reachConcurrency: Number(reachConcurrency),

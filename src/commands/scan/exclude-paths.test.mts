@@ -16,6 +16,7 @@ function makeReachOptions(
   return {
     dynamicSbomInference: false,
     excludePaths: [],
+    reachAdvisories: [],
     reachAnalysisMemoryLimit: '8192',
     reachAnalysisTimeout: '',
     reachConcurrency: 1,

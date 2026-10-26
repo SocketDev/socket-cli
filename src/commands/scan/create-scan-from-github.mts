@@ -325,6 +325,7 @@ async function scanOneRepo(
     reach: {
       dynamicSbomInference: false,
       excludePaths: [],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,
