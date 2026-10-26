@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Set `SOCKET_BAZEL_OUTPUT_ROOT` to choose a short parent directory for temporary Bazel output, including on Windows.
+
+### Fixed
+- Bazel Maven extraction handles native Windows executables, batch launchers, and JavaScript entry points while preserving arguments and the selected executable path.
+- Bazel prerequisite checks use the extraction environment and verify Python 3. Windows requires a working `python.exe` without creating a Python symlink.
+- Quoted Bazel flags preserve spaces and Windows backslashes. Unclosed quotes produce an error.
+- Bazel cleanup uses the extraction workspace, environment, and startup options, retries temporary file locks, and leaves caller-owned output bases and their servers alone.
+
 ## [1.10.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.1) - 2026-10-23
 
 ### Changed

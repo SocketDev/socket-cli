@@ -24,8 +24,7 @@
  *  6. Tag every artifact with `workspace:<rel-path>` + `repo:<name>`
  *     provenance via `sourceRepo`.
  */
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
+import { buildBazelStartupFlags, spawnBazel } from './bazel-process.mts'
 import { splitBazelFlags } from './bazel-query-runner.mts'
 
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
@@ -120,16 +119,7 @@ export function buildMetadataCqueryArgv(
   repoName: string,
   opts: BazelQueryOptions,
 ): string[] {
-  const startup: string[] = []
-  if (opts.bazelRc) {
-    startup.push(`--bazelrc=${opts.bazelRc}`)
-  }
-  if (opts.outputUserRoot) {
-    startup.push(`--output_user_root=${opts.outputUserRoot}`)
-  }
-  if (opts.bazelOutputBase) {
-    startup.push(`--output_base=${opts.bazelOutputBase}`)
-  }
+  const startup = buildBazelStartupFlags(opts)
   const userFlags = splitBazelFlags(opts.bazelFlags)
   return [
     ...startup,
@@ -520,7 +510,7 @@ export async function runMetadataCqueryForRepo(
   const argv = buildMetadataCqueryArgv(repoName, opts)
   const startedAt = Date.now()
   try {
-    const result = await spawn(opts.bin, argv, {
+    const result = await spawnBazel(opts.bin, argv, {
       cwd: workspaceRoot,
       timeout: timeoutMs,
       ...(opts.env ? { env: opts.env } : {}),

@@ -4,7 +4,9 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
+import { removeBazelTempdir } from './bazel-cleanup.mts'
 import { validateOutputBase } from './bazel-output-base-check.mts'
+import { getBazelEnvironment } from './bazel-process.mts'
 import {
   discoverPypiHubs,
   parseBazelModPipExtensionCandidates,
@@ -30,7 +32,7 @@ import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
 } from './bazel-workspace-detect.mts'
-import { getErrorCause } from '../../../utils/errors.mts'
+import { InputError, getErrorCause } from '../../../utils/errors.mts'
 
 import type { PypiHubCandidate } from './bazel-pypi-discovery.mts'
 import type {
@@ -88,14 +90,22 @@ export async function extractBazelToPypi(
   }
   logger.groupEnd()
 
+  let pythonShimDir: string | undefined
   try {
+    if (process.platform === 'win32') {
+      throw new InputError(
+        'Bazel PyPI extraction on Windows is not supported yet. Platform-specific dependency selection still needs verification. Use --ecosystem maven for Windows SCA scans.',
+      )
+    }
     // Validate caller-provided Bazel filesystem settings before invoking Bazel.
     if (opts.bazelOutputBase) {
       validateOutputBase(opts.bazelOutputBase, opts.cwd)
     }
     // Python shim (for rules_python workspace discovery).
-    const shim = await provisionPythonShim()
-    const baseEnv = shim.augmentedEnv ?? opts.env
+    const env = getBazelEnvironment(opts.env)
+    const shim = await provisionPythonShim(env, cwd)
+    pythonShimDir = shim.shimDir
+    const baseEnv = shim.augmentedEnv ?? env
 
     // Step 1: workspace detection.
     const mode = detectWorkspaceMode(cwd)
@@ -105,7 +115,7 @@ export async function extractBazelToPypi(
     const invocationFlags = getBazelInvocationFlags(mode)
 
     // Step 2: bazel binary resolution.
-    const bin = await resolveBazelBinary(opts.bin)
+    const bin = await resolveBazelBinary(opts.bin, baseEnv, cwd)
     logger.info(`Using bazel: ${bin}`)
     if (verbose) {
       logger.log('[VERBOSE] resolved options:', {
@@ -299,6 +309,10 @@ export async function extractBazelToPypi(
       logger.info('Re-run with --verbose for the full stack.')
     }
     return { artifactCount: 0, ok: false }
+  } finally {
+    if (pythonShimDir) {
+      await removeBazelTempdir(pythonShimDir)
+    }
   }
 }
 

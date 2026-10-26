@@ -1,89 +1,84 @@
-import { existsSync, mkdirSync, symlinkSync, unlinkSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, symlinkSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { whichBin } from '@socketsecurity/registry/lib/bin'
-
+import {
+  findBazelExecutable,
+  getBazelEnvironment,
+  getBazelEnvironmentValue,
+} from './bazel-process.mts'
 import { InputError } from '../../../utils/errors.mts'
 
 export type PythonShimResult = {
-  // PATH-prefixed env to pass into spawn opts. undefined if no shim needed.
   augmentedEnv: NodeJS.ProcessEnv | undefined
   shimDir: string | undefined
 }
 
-// Stable shim dir name — same process will get the same dir; concurrent
-// socket-cli invocations on the same machine share it. The symlink target
-// is whatever python3 resolves to NOW; if PATH changes between invocations
-// we replace the symlink.
-const SHIM_SUBDIR = 'socket-cli-bazel-python-shim'
-
-// Cache the result for the lifetime of this process.
-let cached: PythonShimResult | null = null
-
-// Safe wrapper around whichBin that returns null instead of throwing when
-// nothrow semantics are broken in older registry versions (realpath 'null' bug).
-async function safeWhichBin(name: string): Promise<string | null> {
+function verifyPython(
+  executable: string,
+  env: NodeJS.ProcessEnv,
+  cwd: string,
+): void {
   try {
-    return (await whichBin(name, { nothrow: true })) ?? null
+    const version = execFileSync(
+      executable,
+      ['-c', 'import sys\nprint(sys.version_info.major)'],
+      {
+        cwd,
+        env,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 10_000,
+      },
+    )
+    if (version.trim() === '3') {
+      return
+    }
   } catch {
-    return null
+    // Windows application aliases can resolve without a working interpreter.
   }
+  throw new InputError(
+    `Python 3 is required for Bazel manifest extraction. ${executable} did not run as Python 3. Install Python 3 and ensure python${process.platform === 'win32' ? '.exe' : ''} is on PATH.`,
+  )
 }
 
-export async function provisionPythonShim(): Promise<PythonShimResult> {
-  if (cached) {
-    return cached
+export async function provisionPythonShim(
+  env: NodeJS.ProcessEnv = getBazelEnvironment(),
+  cwd: string = process.cwd(),
+): Promise<PythonShimResult> {
+  const python = await findBazelExecutable('python', env, cwd)
+  if (python) {
+    if (
+      process.platform === 'win32' &&
+      path.extname(python).toLowerCase() !== '.exe'
+    ) {
+      throw new InputError(
+        'Bazel on Windows requires a working Python 3 python.exe on PATH. Python batch launchers are not supported.',
+      )
+    }
+    verifyPython(python, env, cwd)
+    return { augmentedEnv: undefined, shimDir: undefined }
   }
-  const pythonOnPath = await safeWhichBin('python')
-  if (pythonOnPath) {
-    cached = { augmentedEnv: undefined, shimDir: undefined }
-    return cached
-  }
-  const python3OnPath = await safeWhichBin('python3')
-  if (!python3OnPath) {
+  if (process.platform === 'win32') {
     throw new InputError(
-      'Neither `python` nor `python3` found on PATH. Older versions of ' +
-        'rules_jvm_external require a `python` interpreter for repository ' +
-        'rules. Install Python 3 and ensure it is on PATH, then retry.',
+      'Bazel on Windows requires a working Python 3 python.exe on PATH. Install Python 3 with the PATH option enabled, then retry.',
     )
   }
-  const shimDir = path.join(os.tmpdir(), SHIM_SUBDIR)
-  mkdirSync(shimDir, { recursive: true })
-  const linkPath = path.join(shimDir, 'python')
-  // Replace the symlink defensively in case python3's resolved path moved.
-  if (existsSync(linkPath)) {
-    try {
-      unlinkSync(linkPath)
-    } catch {
-      // Tolerate races; the next symlinkSync may still succeed.
-    }
+  const python3 = await findBazelExecutable('python3', env, cwd)
+  if (!python3) {
+    throw new InputError(
+      'Neither python nor python3 was found on PATH. Install Python 3 and ensure it is on PATH, then retry.',
+    )
   }
-  // The shim dir is process-shared (os.tmpdir()/socket-cli-bazel-python-shim),
-  // so a concurrent socket-cli invocation may re-create the link between our
-  // unlinkSync and symlinkSync. Tolerate EEXIST when the link is back: the
-  // other process won the race and left a usable shim in place.
-  try {
-    symlinkSync(python3OnPath, linkPath)
-  } catch (e) {
-    if (
-      (e as NodeJS.ErrnoException).code === 'EEXIST' &&
-      existsSync(linkPath)
-    ) {
-      // Another process re-created the link; assume it points at a python3.
-    } else {
-      throw e
-    }
+  verifyPython(python3, env, cwd)
+  const shimDir = mkdtempSync(path.join(os.tmpdir(), 'socket-bazel-python-'))
+  symlinkSync(python3, path.join(shimDir, 'python'))
+  return {
+    augmentedEnv: getBazelEnvironment({
+      ...env,
+      PATH: `${shimDir}${path.delimiter}${getBazelEnvironmentValue(env, 'PATH') ?? ''}`,
+    }),
+    shimDir,
   }
-  const augmentedEnv = {
-    ...process.env,
-    PATH: `${shimDir}${path.delimiter}${process.env['PATH'] ?? ''}`,
-  }
-  cached = { augmentedEnv, shimDir }
-  return cached
-}
-
-// Test-only: clear the per-process cache so tests can re-mock whichBin.
-export function _resetPythonShimCacheForTests(): void {
-  cached = null
 }

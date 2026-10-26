@@ -1,72 +1,58 @@
-import { execSync } from 'node:child_process'
+import { mkdtempSync, rmSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  _resetJavaShimCacheForTests,
-  ensureJavaOnPath,
-} from './bazel-java-shim.mts'
+import { ensureJavaOnPath } from './bazel-java-shim.mts'
+import { findBazelExecutable, getBazelEnvironment } from './bazel-process.mts'
 
-vi.mock('node:child_process', async () => {
-  const actual =
-    await vi.importActual<typeof import('node:child_process')>(
-      'node:child_process',
-    )
-  return { ...actual, execSync: vi.fn() }
-})
+const java = await findBazelExecutable(
+  'java',
+  getBazelEnvironment(),
+  process.cwd(),
+)
 
 describe('ensureJavaOnPath', () => {
-  const mockedExec = vi.mocked(execSync)
-
-  let originalJavaHome: string | undefined
-  let originalPath: string | undefined
+  let cwd: string
 
   beforeEach(() => {
-    mockedExec.mockReset()
-    _resetJavaShimCacheForTests()
-    originalJavaHome = process.env['JAVA_HOME']
-    originalPath = process.env['PATH']
+    cwd = mkdtempSync(path.join(os.tmpdir(), 'bazel java '))
   })
 
   afterEach(() => {
-    if (originalJavaHome === undefined) {
-      delete process.env['JAVA_HOME']
-    } else {
-      process.env['JAVA_HOME'] = originalJavaHome
-    }
-    process.env['PATH'] = originalPath
+    rmSync(cwd, { recursive: true, force: true })
   })
 
-  it('returns silently and leaves the environment untouched when java is on PATH', () => {
-    mockedExec.mockReturnValue(Buffer.from(''))
-    expect(() => ensureJavaOnPath()).not.toThrow()
-    expect(process.env['JAVA_HOME']).toBe(originalJavaHome)
-    expect(process.env['PATH']).toBe(originalPath)
+  it.skipIf(!java)('runs the installed Java executable', () => {
+    expect(() => ensureJavaOnPath(getBazelEnvironment(), cwd)).not.toThrow()
   })
 
-  it('throws an actionable error when java is missing', () => {
-    mockedExec.mockImplementation(() => {
-      throw new Error('java not found')
-    })
-    expect(() => ensureJavaOnPath()).toThrow(/Java is required/)
-    // No env mutation on failure.
-    expect(process.env['JAVA_HOME']).toBe(originalJavaHome)
-    expect(process.env['PATH']).toBe(originalPath)
+  it('reports missing Java in the supplied environment', () => {
+    expect(() =>
+      ensureJavaOnPath(getBazelEnvironment({ PATH: cwd, JAVA_HOME: '' }), cwd),
+    ).toThrow(/Java is required/)
   })
 
-  it('is idempotent on success: subsequent calls do not re-probe', () => {
-    mockedExec.mockReturnValue(Buffer.from(''))
-    ensureJavaOnPath()
-    ensureJavaOnPath()
-    expect(mockedExec).toHaveBeenCalledTimes(1)
+  it('checks the supplied JAVA_HOME before PATH', () => {
+    expect(() =>
+      ensureJavaOnPath(
+        getBazelEnvironment({ JAVA_HOME: path.join(cwd, 'missing jdk') }),
+        cwd,
+      ),
+    ).toThrow(/JAVA_HOME/)
   })
 
-  it('re-throws on every call when java remains missing', () => {
-    mockedExec.mockImplementation(() => {
-      throw new Error('java not found')
-    })
-    expect(() => ensureJavaOnPath()).toThrow(/Java is required/)
-    expect(() => ensureJavaOnPath()).toThrow(/Java is required/)
-    expect(mockedExec).toHaveBeenCalledTimes(2)
-  })
+  it.skipIf(!java)(
+    'does not reuse a successful check with a different environment',
+    () => {
+      ensureJavaOnPath(getBazelEnvironment(), cwd)
+      expect(() =>
+        ensureJavaOnPath(
+          getBazelEnvironment({ PATH: cwd, JAVA_HOME: '' }),
+          cwd,
+        ),
+      ).toThrow(/Java is required/)
+    },
+  )
 })

@@ -1,53 +1,79 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { copyFileSync, mkdtempSync, realpathSync, rmSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
-// Mock whichBin so tests run with no bazel on PATH.
-vi.mock('@socketsecurity/registry/lib/bin', () => ({
-  whichBin: vi.fn(),
-}))
-
-import { whichBin } from '@socketsecurity/registry/lib/bin'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
+import { getBazelEnvironment } from './bazel-process.mts'
 
 describe('resolveBazelBinary', () => {
-  const mocked = vi.mocked(whichBin)
+  let cwd: string
 
   beforeEach(() => {
-    mocked.mockReset()
+    cwd = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'bazel binaries ')))
   })
 
-  it('returns explicit path when it exists', async () => {
-    // Use a path that definitely exists on every dev machine.
-    const existing = process.execPath
-    await expect(resolveBazelBinary(existing)).resolves.toBe(existing)
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true, maxRetries: 5 })
   })
 
-  it('throws InputError when explicit path does not exist', async () => {
+  function install(name: string): string {
+    const bin = path.join(
+      cwd,
+      `${name}${process.platform === 'win32' ? '.exe' : ''}`,
+    )
+    copyFileSync(process.execPath, bin)
+    return bin
+  }
+
+  it('resolves an explicit path relative to the scan directory', async () => {
+    const bin = install('bazel')
+    const resolved = await resolveBazelBinary(
+      path.basename(bin),
+      undefined,
+      cwd,
+    )
+    expect(path.normalize(resolved)).toBe(bin)
+  })
+
+  it('preserves an explicit executable outside PATH', async () => {
+    const bin = install('selected')
+    const resolved = await resolveBazelBinary(
+      bin,
+      getBazelEnvironment({ PATH: '' }),
+      cwd,
+    )
+    expect(path.normalize(resolved)).toBe(bin)
+  })
+
+  it('prefers Bazelisk over Bazel', async () => {
+    const bazelisk = install('bazelisk')
+    install('bazel')
+    const resolved = await resolveBazelBinary(
+      undefined,
+      getBazelEnvironment({ PATH: cwd }),
+      cwd,
+    )
+    expect(path.normalize(resolved)).toBe(bazelisk)
+  })
+
+  it('falls back to Bazel when Bazelisk is absent', async () => {
+    const bazel = install('bazel')
+    const resolved = await resolveBazelBinary(
+      undefined,
+      getBazelEnvironment({ PATH: cwd }),
+      cwd,
+    )
+    expect(path.normalize(resolved)).toBe(bazel)
+  })
+
+  it('reports missing tools', async () => {
     await expect(
-      resolveBazelBinary('/no/such/bazel/binary/xyz'),
-    ).rejects.toThrow(/--bazel path does not exist/)
-  })
-
-  it('returns bazelisk when on PATH', async () => {
-    mocked.mockResolvedValueOnce('/usr/local/bin/bazelisk')
-    await expect(resolveBazelBinary(undefined)).resolves.toBe(
-      '/usr/local/bin/bazelisk',
-    )
-  })
-
-  it('falls back to bazel when bazelisk is missing', async () => {
-    mocked
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce('/usr/local/bin/bazel')
-    await expect(resolveBazelBinary(undefined)).resolves.toBe(
-      '/usr/local/bin/bazel',
-    )
-  })
-
-  it('throws InputError when neither is on PATH', async () => {
-    mocked.mockResolvedValue(null)
-    await expect(resolveBazelBinary(undefined)).rejects.toThrow(
-      /Could not find bazelisk or bazel/,
+      resolveBazelBinary(undefined, getBazelEnvironment({ PATH: cwd }), cwd),
+    ).rejects.toThrow(/Could not find bazelisk or bazel/)
+    await expect(resolveBazelBinary(path.join(cwd, 'missing'))).rejects.toThrow(
+      /--bazel path does not exist/,
     )
   })
 })

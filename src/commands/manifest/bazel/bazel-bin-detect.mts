@@ -1,7 +1,9 @@
 import { existsSync } from 'node:fs'
+import path from 'node:path'
 
-import { whichBin } from '@socketsecurity/registry/lib/bin'
+import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
 
+import { findBazelExecutable, getBazelEnvironment } from './bazel-process.mts'
 import { InputError } from '../../../utils/errors.mts'
 
 /**
@@ -15,21 +17,24 @@ import { InputError } from '../../../utils/errors.mts'
  */
 export async function resolveBazelBinary(
   explicit: string | undefined,
+  env: NodeJS.ProcessEnv = getBazelEnvironment(),
+  cwd: string = process.cwd(),
 ): Promise<string> {
   if (explicit) {
-    if (!existsSync(explicit)) {
+    const resolved = path.resolve(cwd, explicit)
+    if (!existsSync(resolved)) {
       throw new InputError(
         `--bazel path does not exist: ${explicit}. Install bazelisk or bazel, or pass an existing path via --bazel.`,
       )
     }
-    return explicit
+    return resolveBinPathSync(resolved)
   }
   // Prefer bazelisk: respects .bazelversion in the workspace.
-  const bazelisk = await whichBin('bazelisk', { nothrow: true })
+  const bazelisk = await findBazelExecutable('bazelisk', env, cwd)
   if (bazelisk) {
     return bazelisk
   }
-  const bazel = await whichBin('bazel', { nothrow: true })
+  const bazel = await findBazelExecutable('bazel', env, cwd)
   if (bazel) {
     return bazel
   }
