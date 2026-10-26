@@ -179,7 +179,12 @@ export async function runManifestFacts({
     report.failures,
     report.scannedConfigs,
     ecosystem,
-    { hints, ignoreUnresolved, unscannable: report.unscannable },
+    {
+      hints,
+      ignoreUnresolved,
+      resolvedModules: report.resolvedModules,
+      unscannable: report.unscannable,
+    },
   )
 
   if (rendered.hasBlockingFailures) {

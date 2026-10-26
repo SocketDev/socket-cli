@@ -9,7 +9,8 @@
 #  - every resolved dependency gets an on-disk jar `file` record under -Psocket.withFiles (incl. the
 #    production dep reached via the legacy `compile` config on old Gradle);
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
-#  - -Psocket.populateFilesFor scopes materialization to a single GAV.
+#  - -Psocket.populateFilesFor scopes materialization to a single GAV;
+#  - a jar that cannot be fetched is reported as a failure, and the other jars still materialize.
 #
 # Usage: smoke-test.sh /path/to/gradle
 set -euo pipefail
@@ -23,11 +24,15 @@ RECORDS="$PROJECT/records.tsv"
 GUH="$SOCKET_COMPAT_CACHE/gradle-home"   # isolated Gradle user home -> hermetic, no global init scripts
 
 bash "$HERE/../make-stub-repo.sh" "$PROJECT/localrepo" 'demo.lib:foo:1.0' 'demo.test:bar:1.0'
-rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
+
+run() {
+  rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
+  ( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
+      --init-script "$INIT" -Psocket.withFiles=true -Psocket.recordsFile="$RECORDS" "$@" socketFacts -q )
+}
 
 echo "+ $("$GRADLE" --version 2>/dev/null | sed -n 's/^Gradle //p' | head -1)"
-( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
-    --init-script "$INIT" -Psocket.withFiles=true -Psocket.recordsFile="$RECORDS" socketFacts -q )
+run
 
 python3 - "$RECORDS" 'full' <<'PY'
 import sys
@@ -72,9 +77,7 @@ python3 "$HERE/../assert-reachability.py" "$RECORDS"
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
 SCOPE="$HERE/.populate-for.txt"
 printf 'demo.lib:foo:1.0\n' > "$SCOPE"
-rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
-( cd "$PROJECT" && "$GRADLE" --no-daemon --offline -g "$GUH" \
-    --init-script "$INIT" -Psocket.withFiles=true -Psocket.populateFilesFor="$SCOPE" -Psocket.recordsFile="$RECORDS" socketFacts -q )
+run -Psocket.populateFilesFor="$SCOPE"
 rm -f "$SCOPE"
 
 python3 - "$RECORDS" 'scoped' <<'PY'
@@ -96,3 +99,28 @@ print("PASS (populateFilesFor scoping): foo materialized, bar skipped")
 PY
 
 python3 "$HERE/../assert-reachability.py" "$RECORDS"
+
+# Third run: bar's jar is gone from the repository, so it must be reported rather than emitted as
+# resolved with no file.
+find "$PROJECT/localrepo/demo/test/bar" -name '*.jar' -delete
+run > /dev/null
+
+python3 - "$RECORDS" <<'PY'
+import sys
+rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
+files = {r[2] for r in rows if r[0] == 'file'}
+failures = {r[1] for r in rows if r[0] == 'failure'}
+unfetched = {r[2] for r in rows if r[0] == 'unfetched'}
+errors = []
+if 'demo.lib:foo:jar:1.0' not in files:
+    errors.append(f"missing jar run: foo must still be materialized: {sorted(files)}")
+if 'demo.test:bar:1.0' not in failures:
+    errors.append(f"missing jar run: bar's jar cannot be fetched, so it must be reported: {sorted(failures)}")
+if unfetched != {'demo.test:bar:jar:1.0'}:
+    errors.append(f"missing jar run: only bar's jar is unfetched: {sorted(unfetched)}")
+if errors:
+    print("FAIL:")
+    for e in errors: print("  -", e)
+    sys.exit(1)
+print("PASS (missing jar): bar reported, foo materialized")
+PY

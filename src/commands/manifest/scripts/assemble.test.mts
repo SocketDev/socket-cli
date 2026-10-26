@@ -115,6 +115,104 @@ describe('records → assemble → sidecar', () => {
     expect(bom?.targets).toEqual([])
     expect(bom?.sources).toEqual([])
   })
+  it("carries an excluded module's paths into the kept project that depends on it", () => {
+    const records = [
+      'meta\tgradle\t8.10\t17',
+      'project\t:app\tg\tapp\t1\tapp',
+      'projectSrc\t:app\t/abs/app/src',
+      'projectTgt\t:app\t/abs/app/classes',
+      'excludedProject\t:lib',
+      'projectSrc\t:lib\t/abs/lib/src',
+      'projectTgt\t:lib\t/abs/lib/classes',
+      'root\t0\t:app\tcompileClasspath\t1',
+      'node\t0\t:lib\tg\tlib\t1\tjar\t\t1\t:lib',
+    ].join('\n')
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      fileExists: () => true,
+    })
+
+    expect(facts.projects?.map(p => p.id)).toEqual([':app'])
+    expect(artifactPaths.pathsById.get(':lib')).toEqual({
+      sources: ['/abs/lib/src'],
+      targets: ['/abs/lib/classes'],
+    })
+    expect([...artifactPaths.classpathByProject.keys()]).toEqual([':app'])
+  })
+  it('states no targets for an artifact that failed to resolve or is gone from disk', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\tg:app:1\tg\tapp\t1\t.',
+      'root\t0\tg:app:1\tcompile\t1',
+      'node\t0\tg:ok:jar:1\tg\tok\t1\tjar\t\t1',
+      'node\t0\tg:nojar:jar:1\tg\tnojar\t1\tjar\t\t1',
+      'node\t0\tg:nojar:test-jar:tests:1\tg\tnojar\t1\ttest-jar\ttests\t1',
+      'node\t0\tg:gone:jar:1\tg\tgone\t1\tjar\t\t1',
+      'node\t0\tg:bom:pom:1\tg\tbom\t1\tpom\t\t1',
+      'node\t0\tg:half:jar:1\tg\thalf\t1\tjar\t\t1',
+      'node\t0\tg:halfgone:jar:1\tg\thalfgone\t1\tjar\t\t1',
+      'file\t0\tg:ok:jar:1\t/abs/ok.jar',
+      'file\t0\tg:half:jar:1\t/abs/half-a.jar',
+      'unfetched\t0\tg:half:jar:1',
+      'file\t0\tg:halfgone:jar:1\t/abs/halfgone-a.jar',
+      'file\t0\tg:halfgone:jar:1\t/abs/gone.jar',
+      'file\t0\tg:gone:jar:1\t/abs/gone.jar',
+      'file\t0\tg:nojar:test-jar:tests:1\t/abs/nojar-tests.jar',
+      'unfetched\t0\tg:nojar:jar:1',
+    ].join('\n')
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      fileExists: p => p !== '/abs/gone.jar',
+    })
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      acc,
+      facts,
+      artifactPaths,
+      '/abs/pom.xml.socket.facts.json',
+    )
+    const byId = new Map(
+      serializeSidecar(acc)['/abs/pom.xml.socket.facts.json']!.components.map(
+        c => [c.id, c],
+      ),
+    )
+
+    expect(byId.get('g:ok:jar:1')?.targets).toEqual(['/abs/ok.jar'])
+    expect(byId.get('g:nojar:jar:1')).not.toHaveProperty('targets')
+    expect(byId.get('g:nojar:test-jar:tests:1')?.targets).toEqual([
+      '/abs/nojar-tests.jar',
+    ])
+    expect(byId.get('g:gone:jar:1')).not.toHaveProperty('targets')
+    expect(byId.get('g:bom:pom:1')?.targets).toEqual([])
+    // One of several files missing leaves the artifact incomplete.
+    expect(byId.get('g:half:jar:1')).not.toHaveProperty('targets')
+    expect(byId.get('g:halfgone:jar:1')).not.toHaveProperty('targets')
+  })
+  it('keeps the targets of an artifact that another root fetched', () => {
+    const records = [
+      'meta\tmaven\t3.9.6\t17',
+      'project\tg:a:1\tg\ta\t1\ta',
+      'project\tg:b:1\tg\tb\t1\tb',
+      'root\t0\tg:a:1\tcompile\t1',
+      'root\t1\tg:b:1\tcompile\t1',
+      'node\t0\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\t1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\t0\tg:moved:jar:1\tg\tmoved\t1\tjar\t\t1',
+      'node\t1\tg:moved:jar:1\tg\tmoved\t1\tjar\t\t1',
+      'unfetched\t0\tg:lib:jar:1',
+      'file\t1\tg:lib:jar:1\t/abs/lib.jar',
+      'file\t0\tg:moved:jar:1\t/abs/gone.jar',
+      'file\t1\tg:moved:jar:1\t/abs/moved.jar',
+    ].join('\n')
+    const { artifactPaths } = assembleFacts(parseRecords(records), {
+      fileExists: p => p !== '/abs/gone.jar',
+    })
+
+    expect(artifactPaths.pathsById.get('g:lib:jar:1')?.targets).toEqual([
+      '/abs/lib.jar',
+    ])
+    expect(artifactPaths.pathsById.get('g:moved:jar:1')?.targets).toEqual([
+      '/abs/moved.jar',
+    ])
+  })
   it('keeps a coordinate with divergent subtrees as one component with a dependency entry per subtree', () => {
     // :a and :b both depend on `lib`, which pulls a different `dep` version in
     // each subproject.

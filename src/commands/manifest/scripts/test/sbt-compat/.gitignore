@@ -12,3 +12,8 @@ failure/target/
 failure/project/
 failure/scala-version.sbt
 failure/records.tsv
+artifact-failure/target/
+artifact-failure/*/target/
+artifact-failure/project/
+artifact-failure/scala-version.sbt
+artifact-failure/records.tsv

@@ -6,3 +6,10 @@ project/.socket.facts.json
 project/.gradle/
 project/build/
 .populate-for.txt
+failures/localrepo/
+failures/records.tsv
+failures/.gradle/
+failures/build/
+failures/lib/build/
+failures/app/build/
+failures/categories.tsv

@@ -53,15 +53,17 @@ export type SidecarAccumulator = Map<
   { projects: SidecarProjectEntry[]; components: SidecarComponentEntry[] }
 >
 
-// `[]` means resolved and found nothing (e.g. a pom/BOM with no artifact).
+// `[]` means resolved and found nothing (e.g. a pom/BOM with no artifact); no
+// `targets` means the artifact did not resolve.
 function attachPaths<T extends { id: string }>(
   entry: T,
   artifactPaths: ResolvedArtifactPaths,
-): T & { targets: string[]; sources: string[] } {
+): T & { targets?: string[]; sources: string[] } {
   const paths = artifactPaths.pathsById.get(entry.id)
+  const targets = paths ? paths.targets : []
   return {
     ...entry,
-    targets: [...(paths?.targets ?? [])],
+    ...(targets ? { targets: [...targets] } : {}),
     sources: [...(paths?.sources ?? [])],
   }
 }

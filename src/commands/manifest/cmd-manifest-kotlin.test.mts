@@ -25,7 +25,7 @@ describe('socket manifest kotlin', async () => {
           Options
             --bin               Location of the gradle binary to use, default: ./gradlew if present, else gradle on PATH
             --exclude-configs   When generating facts: comma-separated glob patterns; Gradle configurations matching any pattern are skipped (applied after --include-configs)
-            --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
+            --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.
             --facts             Emit a Socket facts JSON file (\`gradle.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --ignore-unresolved  When generating facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)

@@ -11,6 +11,7 @@ import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './scripts/resolution-report-render.mts'
 import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
 import {
   ENVIRONMENT_YML,
@@ -21,6 +22,7 @@ import { InputError } from '../../utils/errors.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
+import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
 import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type {
   ResolvedPathsSidecar,
@@ -41,12 +43,20 @@ export type GenerateAutoManifestResult = {
   resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
 }
 
-// Under --auto-manifest, a manifest generator that failed — raising the exit
-// code above the value captured before it ran — aborts the whole run: a partial
-// or empty SBOM silently under-reports dependencies. The generator has already
-// logged the specifics. A tolerated resolution failure (ignoreUnresolved) warns
-// without touching the exit code, so it passes through here and the run
-// continues.
+// A failed generator aborts --auto-manifest: a partial SBOM silently
+// under-reports dependencies. Facts generators return null on failure; the
+// others only change the exit code.
+function abortFactsRunIfFailed(
+  ecosystem: string,
+  outcome: RunManifestFactsOutcome,
+): void {
+  if (outcome === null) {
+    throw new InputError(
+      `Auto-manifest generation failed for the ${ecosystem} project; aborting (see the errors above).`,
+    )
+  }
+}
+
 function abortManifestRunIfFailed(
   ecosystem: string,
   beforeExitCode: string | number | undefined,
@@ -82,6 +92,12 @@ export async function generateAutoManifest({
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const generatedFiles: string[] = []
+  const hints: BuildOptionHints = computeArtifactsSidecar
+    ? {
+        ...AUTO_MANIFEST_HINTS,
+        continueOnInstallErrorsFlag: REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+      }
+    : AUTO_MANIFEST_HINTS
 
   // Resolved paths across all JVM roots, serialized to one sidecar at the end.
   const sidecarAcc: SidecarAccumulator | undefined = computeArtifactsSidecar
@@ -109,8 +125,7 @@ export async function generateAutoManifest({
     // `defaults.manifest.sbt.facts: false` in socket.json.
     if (sockJson.defaults?.manifest?.sbt?.facts !== false) {
       logger.log('Detected a Scala sbt build, generating Socket facts...')
-      const beforeExitCode = process.exitCode
-      await convertSbtToFacts({
+      const outcome = await convertSbtToFacts({
         ...sbtArgs,
         excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
         excludePaths,
@@ -119,12 +134,12 @@ export async function generateAutoManifest({
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined,
-        hints: AUTO_MANIFEST_HINTS,
+        hints,
         sidecarAcc,
         tmpDir,
         withFiles: computeArtifactsSidecar,
       })
-      abortManifestRunIfFailed('sbt', beforeExitCode)
+      abortFactsRunIfFailed('sbt', outcome)
     } else {
       logger.log('Detected a Scala sbt build, generating pom files with sbt...')
       const beforeExitCode = process.exitCode
@@ -154,8 +169,7 @@ export async function generateAutoManifest({
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
       )
-      const beforeExitCode = process.exitCode
-      await convertGradleToFacts({
+      const outcome = await convertGradleToFacts({
         ...gradleArgs,
         excludeConfigs:
           sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
@@ -166,11 +180,11 @@ export async function generateAutoManifest({
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined,
-        hints: AUTO_MANIFEST_HINTS,
+        hints,
         sidecarAcc,
         withFiles: computeArtifactsSidecar,
       })
-      abortManifestRunIfFailed('gradle', beforeExitCode)
+      abortFactsRunIfFailed('gradle', outcome)
     } else {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
@@ -183,8 +197,7 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
     logger.log('Detected a Maven pom.xml build, generating Socket facts...')
-    const beforeExitCode = process.exitCode
-    await convertMavenToFacts({
+    const outcome = await convertMavenToFacts({
       // Configured bin wins; else prefer ./mvnw, else mvn on PATH.
       bin:
         sockJson.defaults?.manifest?.maven?.bin ??
@@ -200,12 +213,12 @@ export async function generateAutoManifest({
       mavenOpts: parseBuildToolOpts(
         sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
       ),
-      hints: AUTO_MANIFEST_HINTS,
+      hints,
       sidecarAcc,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
       withFiles: computeArtifactsSidecar,
     })
-    abortManifestRunIfFailed('maven', beforeExitCode)
+    abortFactsRunIfFailed('maven', outcome)
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {

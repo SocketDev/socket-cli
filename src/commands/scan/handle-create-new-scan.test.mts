@@ -264,7 +264,7 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(cleanup).toHaveBeenCalledOnce()
   })
 
-  it('replaces every facts file input with the reachability report', async () => {
+  it('keeps build facts but not earlier reports next to the reachability report', async () => {
     const cleanup = vi.fn()
     const files = [
       '/repo/pom.xml.socket.facts.json',
@@ -285,7 +285,12 @@ describe('handleCreateNewScan excludePaths', () => {
     })
     await handleCreateNewScan(config)
     expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
-      ['/repo/package-lock.json', '.socket.facts.json'],
+      [
+        '/repo/pom.xml.socket.facts.json',
+        '/repo/gradle.socket.facts.json',
+        '/repo/package-lock.json',
+        '.socket.facts.json',
+      ],
       'fakeOrg',
       expect.anything(),
       expect.anything(),

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>demo</groupId>
+    <artifactId>descriptor-failure</artifactId>
+    <version>1.0</version>
+  </parent>
+  <artifactId>a</artifactId>
+  <!-- broken's POM names a parent that cannot be fetched. nopom has a jar but no POM; nothing has neither. sys and
+       sysmissing are system-scoped, the latter at a path that does not exist. testparent (test) declares rangedchild
+       at a range no version satisfies. loserparent declares conflict 1.0, whose POM is broken but which loses to the
+       nearer conflict 2.0. rebroken's range resolves to 2.0, not to the 1.0 whose broken POM b already met.
+       viaq and nearb both reach shared, whose sharedchild range fails: the collector meets shared first under viaq,
+       where it loses to nearb's nearer shared. viax and nearx likewise reach sharedx, but nearx excludes its failing
+       sharedxchild, so Maven puts that child on no classpath. managedparent (test) declares managedchild, which this module
+       manages to compile at a range no version satisfies.
+  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>demo.descfail</groupId>
+        <artifactId>managedchild</artifactId>
+        <version>[7.0,8.0)</version>
+        <scope>compile</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>broken</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>rebroken</artifactId>
+      <version>[2.0,3.0)</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>nopom</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>nothing</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>sys</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${descfail.sysDir}/sys.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>sysmissing</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${descfail.sysDir}/missing.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>testparent</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>conflict</artifactId>
+      <version>2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>loserparent</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>viaq</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>nearb</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>viax</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>nearx</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.descfail</groupId>
+      <artifactId>managedparent</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

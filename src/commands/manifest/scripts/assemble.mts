@@ -8,6 +8,7 @@ import {
   type SocketFactsSbomMetadata,
   type SocketFactsSbomProject,
 } from './facts.mts'
+import { moduleKey } from './resolution-report.mts'
 
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
@@ -32,7 +33,8 @@ type MergedNode = {
   direct: boolean
   // projectKey when this node is a build project, else empty.
   project: string
-  targets: Set<string>
+  // One per resolution root that recorded files or failed to fetch them.
+  resolutions: Array<{ targets: string[]; unfetched: boolean }>
 }
 
 type SubprojectGraph = {
@@ -52,6 +54,7 @@ type RootNode = {
   direct: boolean
   project: string
   targets: string[]
+  unfetched: boolean
 }
 
 export function assembleFacts(
@@ -88,6 +91,7 @@ export function assembleFacts(
     artifactPaths: buildArtifactPaths(
       finalNodes,
       [...parsed.projects.values()],
+      [...parsed.excludedProjects.values()],
       graphs,
       fileExists,
     ),
@@ -116,10 +120,12 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
           direct: false,
           project: n.project,
           targets: [],
+          unfetched: false,
         }
         nodes.set(id, node)
       }
       node.direct ||= n.direct
+      node.unfetched ||= n.unfetched
       node.targets.push(...n.targets)
     }
     for (const [p, c] of r.edges) {
@@ -152,7 +158,7 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
           prod: false,
           direct: false,
           project: node.project,
-          targets: new Set(),
+          resolutions: [],
         }
         finalNodes.set(coordId, fn)
       }
@@ -162,8 +168,11 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
       if (node.direct) {
         fn.direct = true
       }
-      for (const t of node.targets) {
-        fn.targets.add(t)
+      if (node.unfetched || node.targets.length) {
+        fn.resolutions.push({
+          targets: node.targets,
+          unfetched: node.unfetched,
+        })
       }
     }
   }
@@ -402,21 +411,42 @@ function byProject(
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
+  excludedProjects: RawProject[],
   graphs: Map<string, SubprojectGraph>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
+  // Every root that fetched an artifact lists its file, so check each path once.
+  const existing = new Map<string, boolean>()
+  const exists = (p: string) => {
+    let e = existing.get(p)
+    if (e === undefined) {
+      e = fileExists(p)
+      existing.set(p, e)
+    }
+    return e
+  }
   for (const [id, fn] of finalNodes) {
     if (!fn.project) {
-      pathsById.set(id, {
-        sources: [],
-        targets: [...fn.targets].filter(fileExists).sort(),
-      })
+      // Only a root that fetched every file of the artifact, all still on
+      // disk, resolved it: a partial list would claim it resolved whole.
+      const complete = fn.resolutions.filter(
+        r => !r.unfetched && r.targets.every(exists),
+      )
+      pathsById.set(
+        id,
+        fn.resolutions.length && !complete.length
+          ? { sources: [] }
+          : {
+              sources: [],
+              targets: [...new Set(complete.flatMap(r => r.targets))].sort(),
+            },
+      )
     }
   }
   // A project's own component shares its id, so this also covers dependency
   // edges onto a sibling project.
-  for (const p of projects) {
+  for (const p of [...projects, ...excludedProjects]) {
     pathsById.set(p.projectKey, {
       sources: [...new Set(p.sources)].filter(fileExists).sort(),
       targets: [...new Set(p.targets)].filter(fileExists).sort(),
@@ -448,5 +478,20 @@ function buildReport(parsed: ParsedRecords): ResolutionReport {
     seenUnscannable.add(key)
     return true
   })
-  return { failures, scannedConfigs: parsed.scannedConfigs, unscannable }
+  const resolvedModules = new Set<string>()
+  if (failures.length) {
+    for (const r of parsed.roots.values()) {
+      for (const n of r.nodes.values()) {
+        resolvedModules.add(
+          moduleKey(r.projectKey, `${n.coord.group}:${n.coord.name}`),
+        )
+      }
+    }
+  }
+  return {
+    failures,
+    resolvedModules,
+    scannedConfigs: parsed.scannedConfigs,
+    unscannable,
+  }
 }
