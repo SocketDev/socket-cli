@@ -672,9 +672,7 @@ async function run(
     return
   }
 
-  const reachAdvisories = reach
-    ? await resolveReachAdvisories(reachAdvisoriesRaw)
-    : []
+  const reachAdvisories = await resolveReachAdvisories(reachAdvisoriesRaw)
 
   await handleCreateNewScan({
     autoManifest: Boolean(autoManifest),

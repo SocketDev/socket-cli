@@ -1,15 +1,9 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
-import {
-  CVE_FORMAT_REGEXP,
-  GHSA_FORMAT_REGEXP,
-  convertCveToGhsa,
-} from '../../utils/cve-to-ghsa.mts'
-import { convertPurlToGhsas } from '../../utils/purl-to-ghsa.mts'
+import { resolveAdvisoryIds } from '../../utils/advisory-ids.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'
@@ -45,59 +39,9 @@ export async function convertIdsToGhsas(
   debugFn('notice', `Converting ${ids.length} IDs to GHSA format`)
   debugDir('inspect', { ids })
 
-  const validGhsas: string[] = []
-  const errors: string[] = []
-
-  for (const id of ids) {
-    const trimmedId = id.trim()
-
-    if (trimmedId.startsWith('GHSA-')) {
-      // Already a GHSA ID, validate format
-      if (GHSA_FORMAT_REGEXP.test(trimmedId)) {
-        validGhsas.push(trimmedId)
-      } else {
-        errors.push(`Invalid GHSA format: ${trimmedId}`)
-      }
-    } else if (trimmedId.startsWith('CVE-')) {
-      // Convert CVE to GHSA
-      if (!CVE_FORMAT_REGEXP.test(trimmedId)) {
-        errors.push(`Invalid CVE format: ${trimmedId}`)
-        continue
-      }
-
-      // eslint-disable-next-line no-await-in-loop
-      const conversionResult = await convertCveToGhsa(trimmedId)
-      if (conversionResult.ok) {
-        validGhsas.push(conversionResult.data)
-        if (!silence) {
-          logger.info(`Converted ${trimmedId} to ${conversionResult.data}`)
-        }
-      } else {
-        errors.push(`${trimmedId}: ${conversionResult.message}`)
-      }
-    } else if (trimmedId.startsWith('pkg:')) {
-      // Convert PURL to GHSAs.
-      // eslint-disable-next-line no-await-in-loop
-      const conversionResult = await convertPurlToGhsas(trimmedId)
-      if (conversionResult.ok && conversionResult.data.length) {
-        validGhsas.push(...conversionResult.data)
-        if (!silence) {
-          logger.info(
-            `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${joinAnd(conversionResult.data)}`,
-          )
-        }
-      } else {
-        errors.push(
-          `${trimmedId}: ${conversionResult.message || 'No GHSAs found'}`,
-        )
-      }
-    } else {
-      // Neither CVE, GHSA, nor PURL, skip
-      errors.push(
-        `Unsupported ID format (expected CVE, GHSA, or PURL): ${trimmedId}`,
-      )
-    }
-  }
+  const { errors, ghsas: validGhsas } = await resolveAdvisoryIds(ids, {
+    silence,
+  })
 
   if (errors.length) {
     if (!silence) {
