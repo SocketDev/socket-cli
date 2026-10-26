@@ -1,7 +1,15 @@
-import { closeSync, existsSync, openSync, readSync } from 'node:fs'
+import {
+  closeSync,
+  existsSync,
+  openSync,
+  readSync,
+  realpathSync,
+} from 'node:fs'
 import path from 'node:path'
 
-import { whichBin } from '@socketsecurity/registry/lib/bin'
+import which from 'which'
+
+import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { InputError } from '../../../utils/errors.mts'
@@ -45,16 +53,35 @@ export async function findBazelExecutable(
     .split(path.delimiter)
     .map(entry => path.resolve(cwd, entry))
     .join(path.delimiter)
+  const found = await which(name, {
+    nothrow: true,
+    path: searchPath,
+    pathExt: getBazelEnvironmentValue(env, 'PATHEXT'),
+  })
+  return found ? resolveBazelExecutable(found) : undefined
+}
+
+export function resolveBazelExecutable(file: string): string {
+  const resolved = realpathSync(file)
+  const extension = path.extname(resolved).toLowerCase()
+  if (
+    process.platform !== 'win32' ||
+    !['', '.cmd', '.ps1'].includes(extension)
+  ) {
+    return resolved
+  }
   try {
-    return await whichBin(name, {
-      path: searchPath,
-      pathExt: getBazelEnvironmentValue(env, 'PATHEXT'),
-    })
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      return undefined
+    return resolveBinPathSync(resolved)
+  } catch (e) {
+    if (extension === '.ps1') {
+      throw new InputError(
+        'This PowerShell Bazel launcher could not be resolved to a Node entry point. Pass a native .exe, a .cmd or .bat wrapper, or a JavaScript entry point with --bazel.',
+      )
     }
-    throw error
+    if (e instanceof Error && 'code' in e && e.code === 'ENOENT') {
+      return resolved
+    }
+    throw e
   }
 }
 

@@ -107,7 +107,12 @@ describe('Bazel process invocation', () => {
           wrapper,
           `@echo off\r\n"${process.execPath}" "${launcher}" %*\r\n`,
         )
-        const result = await spawnBazel(wrapper, ARGUMENTS, {
+        const bin = await resolveBazelBinary(
+          wrapper,
+          getBazelEnvironment({ PATH: cwd }),
+          cwd,
+        )
+        const result = await spawnBazel(bin, ARGUMENTS, {
           cwd,
           env: { SOCKET_BAZEL_LITERAL: 'must not expand' },
         })
