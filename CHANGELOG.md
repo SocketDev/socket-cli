@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.11.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.11.0) - 2026-10-26
 
 ### Added
 - `socket scan create --reach` and `socket scan reach` take `--reach-advisories` to focus reachability analysis on the GHSA or CVE advisories you care about. Every other advisory is left with unknown reachability.
