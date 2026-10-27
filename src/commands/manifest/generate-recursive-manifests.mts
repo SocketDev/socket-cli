@@ -12,15 +12,13 @@ import {
 } from './discover-manifest-roots.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
-import {
-  resolveBuildToolBin,
-  withEntryFileOpts,
-} from './scripts/build-tool.mts'
+import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import {
   DSI_SETUP_COMMAND,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
 } from './scripts/resolution-report-render.mts'
 import { SOCKET_JSON } from '../../constants.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
   readOrDefaultSocketJson,
@@ -136,8 +134,7 @@ async function runEcosystemCandidates({
   const covered = new Set<string>()
   for (const [ecosystem, roots] of candidatesByTool) {
     const disabledRoots: DisabledRoot[] = []
-    for (let rootIndex = 0; rootIndex < roots.length; rootIndex += 1) {
-      const root = roots[rootIndex] as BuildRoot
+    for (const { 0: rootIndex, 1: root } of roots.entries()) {
       const { dir, entryFile } = root
       if (isBuildRootCovered(covered, ecosystem, root)) {
         outcomes.push({ ...root, ecosystem, status: 'skippedCovered' })
@@ -181,9 +178,10 @@ async function runEcosystemCandidates({
       // eslint-disable-next-line no-await-in-loop
       const result = await runManifestFacts({
         bin,
-        buildOpts: withEntryFileOpts(ecosystem, entryFile, buildOpts),
+        buildOpts,
         cwd: dir,
         ecosystem,
+        entryFile,
         excludeConfigs,
         excludePaths: excludePathsForRoot,
         hints: {
@@ -282,9 +280,11 @@ export async function generateRecursiveManifests({
   // A root-disabled ecosystem must still be scanned for - a nested socket.json
   // may re-enable it - so the per-directory cascade below, not this scan, is
   // what actually decides skip vs. include.
+  const socketYml = findSocketYmlSync(cwd)
   const candidatesByTool = await findBuildToolCandidates({
     cwd,
     excludePaths,
+    socketConfig: socketYml.ok ? socketYml.data?.parsed : undefined,
     sockJson: withoutDisabledFlags(rootSockJson),
   })
 

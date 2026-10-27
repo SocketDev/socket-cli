@@ -5,10 +5,13 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
+  sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
 import { testPath } from '../../../test/utils.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -35,10 +38,37 @@ async function pomNamesRoots(excludePaths?: string[]): Promise<string[]> {
     sockJson: {} as SocketJson,
   })
   return (candidates.get('maven') ?? []).map(r =>
-    path
-      .relative(pomNames, path.join(r.dir, r.entryFile ?? ''))
-      .replaceAll('\\', '/'),
+    path.relative(pomNames, buildRootPath(r)).replaceAll('\\', '/'),
   )
+}
+
+async function rootsBesideIgnoredPom(
+  ignoredPomDir: string,
+  ignoreFile: { content: string; name: string },
+): Promise<BuildRoot[] | undefined> {
+  const cwd = await fs.realpath(
+    await fs.mkdtemp(path.join(tmpdir(), 'ignored-poms-')),
+  )
+  try {
+    await fs.mkdir(path.join(cwd, ignoredPomDir), { recursive: true })
+    await fs.writeFile(
+      path.join(cwd, ignoredPomDir, 'lib-1.0.pom'),
+      '<project/>',
+    )
+    await fs.writeFile(path.join(cwd, 'pom.xml'), '<project/>')
+    await fs.writeFile(path.join(cwd, ignoreFile.name), ignoreFile.content)
+    const socketYml = findSocketYmlSync(cwd)
+    const candidates = await findBuildToolCandidates({
+      cwd,
+      socketConfig: socketYml.ok ? socketYml.data?.parsed : undefined,
+      sockJson: {} as SocketJson,
+    })
+    return candidates
+      .get('maven')
+      ?.map(root => ({ ...root, dir: path.relative(cwd, root.dir) }))
+  } finally {
+    await fs.rm(cwd, { recursive: true, force: true })
+  }
 }
 
 function dirsOf(roots: BuildRoot[] | undefined): string[] {
@@ -154,53 +184,21 @@ describe('findBuildToolCandidates', () => {
   })
 
   it('skips POMs a .gitignore covers, as a scan does when uploading', async () => {
-    const cwd = await fs.realpath(
-      await fs.mkdtemp(path.join(tmpdir(), 'gitignored-poms-')),
-    )
-    try {
-      const repoDir = path.join(cwd, '.m2/repository/com/example/lib/1.0')
-      await fs.mkdir(repoDir, { recursive: true })
-      await fs.writeFile(path.join(repoDir, 'lib-1.0.pom'), '<project/>')
-      await fs.writeFile(path.join(cwd, 'pom.xml'), '<project/>')
-      await fs.writeFile(path.join(cwd, '.gitignore'), '.m2/\n')
-
-      const candidates = await findBuildToolCandidates({
-        cwd,
-        sockJson: {} as SocketJson,
-      })
-
-      expect(candidates.get('maven')).toEqual([
-        { dir: cwd, entryFile: 'pom.xml' },
-      ])
-    } finally {
-      await fs.rm(cwd, { recursive: true, force: true })
-    }
+    expect(
+      await rootsBesideIgnoredPom('.m2/repository/com/example/lib/1.0', {
+        content: '.m2/\n',
+        name: '.gitignore',
+      }),
+    ).toEqual([{ dir: '', entryFile: 'pom.xml' }])
   })
 
   it("skips POMs socket.yml's projectIgnorePaths covers, as a scan does when uploading", async () => {
-    const cwd = await fs.realpath(
-      await fs.mkdtemp(path.join(tmpdir(), 'project-ignored-poms-')),
-    )
-    try {
-      await fs.mkdir(path.join(cwd, 'libs/repo'), { recursive: true })
-      await fs.writeFile(path.join(cwd, 'libs/repo/lib-1.0.pom'), '<project/>')
-      await fs.writeFile(path.join(cwd, 'pom.xml'), '<project/>')
-      await fs.writeFile(
-        path.join(cwd, 'socket.yml'),
-        'version: 2\nprojectIgnorePaths:\n  - libs/repo\n',
-      )
-
-      const candidates = await findBuildToolCandidates({
-        cwd,
-        sockJson: {} as SocketJson,
-      })
-
-      expect(candidates.get('maven')).toEqual([
-        { dir: cwd, entryFile: 'pom.xml' },
-      ])
-    } finally {
-      await fs.rm(cwd, { recursive: true, force: true })
-    }
+    expect(
+      await rootsBesideIgnoredPom('libs/repo', {
+        content: 'version: 2\nprojectIgnorePaths:\n  - libs/repo\n',
+        name: 'socket.yml',
+      }),
+    ).toEqual([{ dir: '', entryFile: 'pom.xml' }])
   })
 
   it('respects --exclude-paths for non-default POMs, case-sensitively', async () => {
@@ -234,17 +232,7 @@ describe('isBuildRootCovered', () => {
     ).toBe(false)
   })
 
-  it('covers a root without an entry file through its default entry file or a marker file', () => {
-    expect(
-      isBuildRootCovered(new Set(['/repo/service/pom.xml']), 'maven', {
-        dir: '/repo/service',
-      }),
-    ).toBe(true)
-    expect(
-      isBuildRootCovered(new Set(['/repo/service/lib-1.0.pom']), 'maven', {
-        dir: '/repo/service',
-      }),
-    ).toBe(false)
+  it('covers a root without an entry file through a marker file', () => {
     expect(
       isBuildRootCovered(new Set(['/repo/lib/settings.gradle.kts']), 'gradle', {
         dir: '/repo/lib',
@@ -255,5 +243,28 @@ describe('isBuildRootCovered', () => {
         dir: '/repo/lib',
       }),
     ).toBe(false)
+  })
+})
+
+describe('sortByDepthThenPath', () => {
+  it('sorts shallower dirs first, then by path, then by entry file', () => {
+    expect(
+      sortByDepthThenPath(
+        [
+          { dir: '/repo/b/nested' },
+          { dir: '/repo/b', entryFile: 'pom.xml' },
+          { dir: '/repo/b', entryFile: 'app-dev.pom.xml' },
+          { dir: '/repo/a' },
+          { dir: '/repo' },
+        ],
+        '/repo',
+      ),
+    ).toEqual([
+      { dir: '/repo' },
+      { dir: '/repo/a' },
+      { dir: '/repo/b', entryFile: 'app-dev.pom.xml' },
+      { dir: '/repo/b', entryFile: 'pom.xml' },
+      { dir: '/repo/b/nested' },
+    ])
   })
 })

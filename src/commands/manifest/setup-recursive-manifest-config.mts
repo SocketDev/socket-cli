@@ -12,13 +12,14 @@ import {
   findBuildToolCandidates,
   isBuildRootCovered,
   realpathOrResolved,
+  sortByDepthThenPath,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
-import { withEntryFileOpts } from './scripts/build-tool.mts'
 import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
 import { SOCKET_JSON } from '../../constants.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,
@@ -35,9 +36,11 @@ import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
-// A single discovered build root - a directory with its own gradle/sbt marker
-// file, or one Maven POM.
-type Candidate = BuildRoot & { ecosystem: BuildTool }
+type EcosystemRoot = BuildRoot & { ecosystem: BuildTool }
+
+// One prompt per directory, as settings are per directory; Maven may have
+// several POMs, so several roots, there.
+type Candidate = { dir: string; ecosystem: BuildTool; roots: BuildRoot[] }
 
 const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt']
 
@@ -72,26 +75,6 @@ function getEcosystemSection(
       | Record<string, unknown>
       | undefined) ?? {}
   )
-}
-
-// Depth-then-path sort: for exclusion roots it's just stable log ordering;
-// for candidates it's load-bearing, since a parent must be prompted before
-// its children so a child's shown default reflects a parent's just-written
-// cascade instead of its pre-run value.
-export function sortCandidatesForDisplay<T extends { dir: string }>(
-  candidates: readonly T[],
-  cwd: string,
-): T[] {
-  return [...candidates].sort((a, b) => {
-    const relA = path.relative(cwd, a.dir)
-    const relB = path.relative(cwd, b.dir)
-    const depthA = relA.split(path.sep).length
-    const depthB = relB.split(path.sep).length
-    if (depthA !== depthB) {
-      return depthA - depthB
-    }
-    return relA < relB ? -1 : relA > relB ? 1 : 0
-  })
 }
 
 function toPosixRelative(cwd: string, dir: string): string {
@@ -132,9 +115,11 @@ export async function scanBuildRoots({
   excludePaths?: string[] | undefined
   sockJson: SocketJson
 }): Promise<ScannedBuildRoots> {
+  const socketYml = findSocketYmlSync(cwd)
+  const socketConfig = socketYml.ok ? socketYml.data?.parsed : undefined
   const [fullByTool, includedByTool] = await Promise.all([
-    findBuildToolCandidates({ cwd, sockJson }),
-    findBuildToolCandidates({ cwd, excludePaths, sockJson }),
+    findBuildToolCandidates({ cwd, socketConfig, sockJson }),
+    findBuildToolCandidates({ cwd, excludePaths, socketConfig, sockJson }),
   ])
   return { fullByTool, includedByTool }
 }
@@ -167,27 +152,43 @@ export async function discoverBuildRoots({
   const ignorePatterns = (excludePaths ?? []).flatMap(excludePathToScanIgnores)
   const ecosystemsByRoot = new Map<string, Set<BuildTool>>()
   for (const [ecosystem, fullRoots] of fullByTool) {
-    const includedRoots = includedByTool.get(ecosystem) ?? []
-    const includedPaths = new Set(includedRoots.map(buildRootPath))
-    const includedDirs = new Set(includedRoots.map(root => root.dir))
+    const includedPaths = new Set(
+      (includedByTool.get(ecosystem) ?? []).map(buildRootPath),
+    )
+    const rootsByDir = new Map<string, BuildRoot[]>()
     for (const root of fullRoots) {
-      const { dir } = root
-      if (dir === realCwd) {
+      if (root.dir === realCwd) {
         continue
       }
-      if (includedPaths.has(buildRootPath(root))) {
-        included.push({ ...root, ecosystem })
-        continue
+      const roots = rootsByDir.get(root.dir)
+      if (roots) {
+        roots.push(root)
+      } else {
+        rootsByDir.set(root.dir, [root])
       }
-      // `disabled` is per directory, so it cannot exclude one build file
-      // without its included siblings.
-      if (includedDirs.has(dir)) {
-        logger.warn(
-          `Not disabling ${ecosystem} in ${toPosixRelative(realCwd, dir)}: --exclude-paths matches ${buildRootPath(root)} but not the other build files there. Pass the same --exclude-paths to the scan instead.`,
-        )
-        continue
-      }
+    }
+    for (const { 0: dir, 1: roots } of rootsByDir) {
       const relDir = toPosixRelative(realCwd, dir)
+      const includedRoots: BuildRoot[] = []
+      const excludedRoots: BuildRoot[] = []
+      for (const root of roots) {
+        if (includedPaths.has(buildRootPath(root))) {
+          includedRoots.push(root)
+        } else {
+          excludedRoots.push(root)
+        }
+      }
+      if (includedRoots.length) {
+        included.push({ dir, ecosystem, roots: includedRoots })
+        // `disabled` is per directory, so it cannot exclude one build file
+        // without its included siblings.
+        for (const root of excludedRoots) {
+          logger.warn(
+            `Not disabling ${ecosystem} in ${relDir}: --exclude-paths matches ${buildRootPath(root)} but not the other build files there. Pass the same --exclude-paths to the scan instead.`,
+          )
+        }
+        continue
+      }
       const rootRelDir = findExclusionRoot(relDir, ignorePatterns)
       const rootDir = path.join(realCwd, rootRelDir)
       const ecosystems = ecosystemsByRoot.get(rootDir) ?? new Set<BuildTool>()
@@ -214,7 +215,7 @@ export async function markWorkspaceCoverage({
   excludePaths,
   rootSockJson,
 }: {
-  candidate: Candidate
+  candidate: EcosystemRoot
   covered: Set<string>
   cwd: string
   excludePaths?: string[] | undefined
@@ -237,13 +238,10 @@ export async function markWorkspaceCoverage({
 
   const enumResult = await enumerateWorkspaces({
     bin,
-    buildOpts: withEntryFileOpts(
-      candidate.ecosystem,
-      candidate.entryFile,
-      buildOpts,
-    ),
+    buildOpts,
     cwd: candidate.dir,
     ecosystem: candidate.ecosystem,
+    entryFile: candidate.entryFile,
     excludePaths: excludePathsForCandidate,
     javaHome,
     verbose: false,
@@ -257,6 +255,41 @@ export async function markWorkspaceCoverage({
   }
 
   await addCoveredBuildFiles(covered, enumResult.buildRoot, enumResult.projects)
+  return { ok: true, data: undefined }
+}
+
+// In order, as a root's enumeration can cover the roots after it.
+async function markRootsCoverage({
+  covered,
+  cwd,
+  ecosystem,
+  excludePaths,
+  rootSockJson,
+  roots,
+}: {
+  covered: Set<string>
+  cwd: string
+  ecosystem: BuildTool
+  excludePaths?: string[] | undefined
+  rootSockJson: SocketJson
+  roots: readonly BuildRoot[]
+}): Promise<CResult<undefined>> {
+  for (const root of roots) {
+    if (isBuildRootCovered(covered, ecosystem, root)) {
+      continue
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const result = await markWorkspaceCoverage({
+      candidate: { ...root, ecosystem },
+      covered,
+      cwd,
+      excludePaths,
+      rootSockJson,
+    })
+    if (!result.ok) {
+      return result
+    }
+  }
   return { ok: true, data: undefined }
 }
 
@@ -718,7 +751,7 @@ export async function setupRecursiveManifestConfig(
   logger.log(`Configuring ${cwd} ...`)
 
   const initialSockJson = readOrDefaultSocketJson(cwd)
-  // Resolved once here for sortCandidatesForDisplay/disableExclusionRoot's
+  // Resolved once here for sortByDepthThenPath/disableExclusionRoot's
   // relative-path math, consistent with discoverBuildRoots' own internal
   // resolution (see its comment for why this matters).
   const realCwd = await realpathOrResolved(cwd)
@@ -793,7 +826,7 @@ export async function setupRecursiveManifestConfig(
     if (!excluded.length) {
       logger.log('None matched --exclude-paths; nothing disabled.')
     } else {
-      const orderedExcluded = sortCandidatesForDisplay(excluded, realCwd)
+      const orderedExcluded = sortByDepthThenPath(excluded, realCwd)
       for (const candidate of orderedExcluded) {
         // eslint-disable-next-line no-await-in-loop
         const result = await disableExclusionRoot({
@@ -839,19 +872,17 @@ export async function setupRecursiveManifestConfig(
   // cwd never appears in `included`, but a reactor root often sits exactly
   // at cwd - seed coverage from it first so its declared members still get
   // recognized.
-  const includedAtCwd = ROOT_ECOSYSTEMS.flatMap(ecosystem =>
-    (includedByTool.get(ecosystem) ?? [])
-      .filter(root => root.dir === realCwd)
-      .map(root => ({ ...root, ecosystem })),
-  )
-  for (const candidate of includedAtCwd) {
+  for (const ecosystem of ROOT_ECOSYSTEMS) {
     // eslint-disable-next-line no-await-in-loop
-    const coverageResult = await markWorkspaceCoverage({
-      candidate,
+    const coverageResult = await markRootsCoverage({
       covered,
       cwd: realCwd,
+      ecosystem,
       excludePaths,
       rootSockJson,
+      roots: (includedByTool.get(ecosystem) ?? []).filter(
+        root => root.dir === realCwd,
+      ),
     })
     if (!coverageResult.ok) {
       return coverageResult
@@ -865,42 +896,37 @@ export async function setupRecursiveManifestConfig(
     reenabled: 0,
     skipped: 0,
   }
-  // Settings are per directory, so a directory holding several POMs is asked
-  // about once and its answer counted for each.
-  const answersByDir = new Map<
-    string,
-    { outcome: CandidateOutcome; reenabled: boolean }
-  >()
-  const orderedIncluded = sortCandidatesForDisplay(included, realCwd)
+  // A parent is prompted before its children, so a child's shown default
+  // reflects the parent's just-written cascade.
+  const orderedIncluded = sortByDepthThenPath(included, realCwd)
   for (const candidate of orderedIncluded) {
-    if (isBuildRootCovered(covered, candidate.ecosystem, candidate)) {
+    const { ecosystem } = candidate
+    if (
+      candidate.roots.every(root =>
+        isBuildRootCovered(covered, ecosystem, root),
+      )
+    ) {
       counts.covered += 1
       continue
     }
 
-    const promptKey = `${candidate.ecosystem}:${candidate.dir}`
-    let answer = answersByDir.get(promptKey)
-    if (!answer) {
-      // eslint-disable-next-line no-await-in-loop
-      const result = await processCandidate({
-        cwd: realCwd,
-        dir: candidate.dir,
-        ecosystem: candidate.ecosystem,
-        rootSockJson,
-      })
-      if (!result.ok) {
-        return result
-      }
-      if (result.data.canceled) {
-        // The cancellation itself (select Esc/Ctrl+C, or a sub-wizard's own
-        // cancel) already logged "User canceled" - don't log it twice.
-        return { ok: true, data: { canceled: true } }
-      }
-      answer = result.data
-      answersByDir.set(promptKey, answer)
+    // eslint-disable-next-line no-await-in-loop
+    const result = await processCandidate({
+      cwd: realCwd,
+      dir: candidate.dir,
+      ecosystem,
+      rootSockJson,
+    })
+    if (!result.ok) {
+      return result
     }
-    counts[answer.outcome] += 1
-    if (answer.reenabled) {
+    if (result.data.canceled) {
+      // The cancellation itself (select Esc/Ctrl+C, or a sub-wizard's own
+      // cancel) already logged "User canceled" - don't log it twice.
+      return { ok: true, data: { canceled: true } }
+    }
+    counts[result.data.outcome] += 1
+    if (result.data.reenabled) {
       // A qualifier on the 'configured'/'inherited' bucket just incremented
       // above, not a separate bucket - avoids double-counting the candidate.
       counts.reenabled += 1
@@ -909,12 +935,13 @@ export async function setupRecursiveManifestConfig(
     // Interleaved rather than a bulk pre-pass, so this (possibly slow)
     // build-tool invocation only runs for a project already prompted about.
     // eslint-disable-next-line no-await-in-loop
-    const coverageResult = await markWorkspaceCoverage({
-      candidate,
+    const coverageResult = await markRootsCoverage({
       covered,
       cwd: realCwd,
+      ecosystem,
       excludePaths,
       rootSockJson,
+      roots: candidate.roots,
     })
     if (!coverageResult.ok) {
       return coverageResult

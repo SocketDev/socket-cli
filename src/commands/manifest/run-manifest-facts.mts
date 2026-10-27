@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { buildRootPath } from './discover-manifest-roots.mts'
 import {
   expandEnvVarRefs,
   formatMissingEnvVarRefs,
@@ -60,6 +61,7 @@ export async function runManifestFacts({
   buildOpts,
   cwd,
   ecosystem,
+  entryFile,
   excludeConfigs,
   excludePaths,
   hints = FLAG_HINTS,
@@ -75,6 +77,8 @@ export async function runManifestFacts({
   buildOpts: string[]
   cwd: string
   ecosystem: BuildTool
+  // See ManifestScriptOptions.entryFile.
+  entryFile?: string | undefined
   excludeConfigs: string
   excludePaths?: string[] | undefined
   // Where the user sets build options, for remedy hints.
@@ -109,12 +113,14 @@ export async function runManifestFacts({
     return null
   }
 
+  const location = buildRootPath({ dir: cwd, entryFile })
   logger.info(
-    `Generating Socket facts for the ${ecosystem} project at \`${cwd}\` ...`,
+    `Generating Socket facts for the ${ecosystem} project at \`${location}\` ...`,
   )
 
   const scriptOpts = {
     bin: bin || undefined,
+    entryFile,
     excludeConfigs: excludeConfigs || undefined,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
     // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
@@ -233,7 +239,7 @@ export async function runManifestFacts({
     // successful run couldn't resolve.
     process.exitCode = 1
     logger.fail(
-      `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`,
+      `The ${ecosystem} build at \`${location}\` failed (exit code ${code}) before producing any Socket facts.`,
     )
     return null
   }

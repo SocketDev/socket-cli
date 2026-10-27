@@ -23,13 +23,6 @@ const BUILD_TOOL_WRAPPER = {
 
 // Gradle (8+) and sbt hold one build per directory; Maven builds are addressed
 // by POM file, so `mvn -f other-pom.xml` puts a second build in the directory.
-const ADDRESSED_BY_FILE: Record<BuildTool, boolean> = {
-  __proto__: null,
-  gradle: false,
-  maven: true,
-  sbt: false,
-} as unknown as Record<BuildTool, boolean>
-
 const DEFAULT_ENTRY_FILE: Partial<Record<BuildTool, string>> = {
   __proto__: null,
   maven: 'pom.xml',
@@ -40,7 +33,7 @@ export function defaultEntryFile(tool: BuildTool): string | undefined {
 }
 
 export function isAddressedByFile(tool: BuildTool): boolean {
-  return ADDRESSED_BY_FILE[tool]
+  return !!DEFAULT_ENTRY_FILE[tool]
 }
 
 // sbt happily runs in any directory, synthesizing a default project from its
@@ -51,20 +44,6 @@ export function looksLikeSbtBuild(projectDir: string): boolean {
     existsSync(resolve(projectDir, 'build.sbt')) ||
     existsSync(resolve(projectDir, 'project'))
   )
-}
-
-// Leads, as Maven 3 takes the first `--file`; nothing for the default entry
-// file, so options a user passes keep their meaning.
-export function withEntryFileOpts(
-  tool: BuildTool,
-  entryFile: string | undefined,
-  buildOpts: string[],
-): string[] {
-  const defaultEntry = DEFAULT_ENTRY_FILE[tool]
-  if (!entryFile || !defaultEntry || entryFile === defaultEntry) {
-    return buildOpts
-  }
-  return ['--file', entryFile, ...buildOpts]
 }
 
 export function resolveBuildToolBin(
@@ -87,7 +66,7 @@ export function socketFactsFileName(
   tool: BuildTool,
   entryFile: string | undefined,
 ): string | undefined {
-  if (!ADDRESSED_BY_FILE[tool]) {
+  if (!isAddressedByFile(tool)) {
     return `${tool}${constants.DOT_SOCKET_DOT_FACTS_JSON}`
   }
   return entryFile

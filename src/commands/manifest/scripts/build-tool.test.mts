@@ -1,21 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { socketFactsFileName, withEntryFileOpts } from './build-tool.mts'
+import { socketFactsFileName } from './build-tool.mts'
 import { parseRecords } from './records.mts'
-
-describe('withEntryFileOpts', () => {
-  it('points a file-addressed build at a non-default entry file, ahead of the given options', () => {
-    expect(withEntryFileOpts('maven', 'app-dev.pom.xml', ['-P', 'ci'])).toEqual(
-      ['--file', 'app-dev.pom.xml', '-P', 'ci'],
-    )
-  })
-
-  it('adds nothing for the default entry file or a directory-addressed build', () => {
-    expect(withEntryFileOpts('maven', 'pom.xml', ['-q'])).toEqual(['-q'])
-    expect(withEntryFileOpts('maven', undefined, [])).toEqual([])
-    expect(withEntryFileOpts('gradle', 'build.gradle', [])).toEqual([])
-  })
-})
 
 describe('socketFactsFileName', () => {
   it('names a directory-addressed build after its tool', () => {
