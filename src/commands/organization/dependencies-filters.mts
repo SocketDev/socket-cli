@@ -94,7 +94,7 @@ export function matchesConfirmedPurls(
   if (!('valid' in filters) || !('invalid' in filters)) {
     return false
   }
-  const { valid, invalid } = filters
+  const { invalid, valid } = filters
   if (
     !Array.isArray(valid) ||
     !valid.every(value => typeof value === 'string') ||
