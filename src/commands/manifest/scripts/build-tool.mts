@@ -21,14 +21,33 @@ const BUILD_TOOL_WRAPPER = {
   maven: 'mvnw',
 } as unknown as Partial<Record<BuildTool, string>>
 
-// Gradle (8+) and sbt hold one build per directory; Maven builds are addressed
-// by POM file, so `mvn -f other-pom.xml` puts a second build in the directory.
-const ADDRESSED_BY_FILE: Record<BuildTool, boolean> = {
+// Maven builds by file (`mvn --file`), so a directory can hold several: the
+// POMs a scan uploads, matched case-insensitively. `walkGlob` is a
+// case-sensitive superset of `nocaseGlob`, for the walk.
+export type BuildFiles =
+  | { byFile: false; names: readonly string[] }
+  | { byFile: true; nocaseGlob: string; walkGlob: string }
+
+// `settings.gradle(.kts)` covers Kotlin-DSL roots that have no root
+// `build.gradle`.
+export const BUILD_FILES: Record<BuildTool, BuildFiles> = {
   __proto__: null,
-  gradle: false,
-  maven: true,
-  sbt: false,
-} as unknown as Record<BuildTool, boolean>
+  gradle: {
+    byFile: false,
+    names: [
+      'build.gradle',
+      'build.gradle.kts',
+      'settings.gradle',
+      'settings.gradle.kts',
+    ],
+  },
+  maven: {
+    byFile: true,
+    nocaseGlob: '{*-*.,}pom{.xml,}',
+    walkGlob: '*[pP][oO][mM]*',
+  },
+  sbt: { byFile: false, names: ['build.sbt'] },
+} as unknown as Record<BuildTool, BuildFiles>
 
 // sbt happily runs in any directory, synthesizing a default project from its
 // name, so an sbt run outside a build yields a plausible but bogus SBOM. Maven
@@ -60,7 +79,7 @@ export function socketFactsFileName(
   tool: BuildTool,
   entryFile: string | undefined,
 ): string | undefined {
-  if (!ADDRESSED_BY_FILE[tool]) {
+  if (!BUILD_FILES[tool].byFile) {
     return `${tool}${constants.DOT_SOCKET_DOT_FACTS_JSON}`
   }
   return entryFile

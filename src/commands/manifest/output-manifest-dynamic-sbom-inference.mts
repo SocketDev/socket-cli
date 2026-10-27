@@ -1,5 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { buildRootPath } from './discover-manifest-roots.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -12,7 +13,7 @@ function renderTable(outcomes: readonly RecursiveManifestOutcome[]): string {
     .filter(o => o.status !== 'skippedCovered')
     .map(
       o =>
-        `- ${o.dir} (${o.ecosystem}): ${o.status}${o.factsPath ? ` -> ${o.factsPath}` : ''}`,
+        `- ${buildRootPath(o)} (${o.ecosystem}): ${o.status}${o.factsPath ? ` -> ${o.factsPath}` : ''}`,
     )
     .join('\n')
 }

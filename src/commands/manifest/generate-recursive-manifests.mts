@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
   addCoveredBuildFiles,
+  buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
   realpathOrResolved,
@@ -17,6 +18,7 @@ import {
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
 } from './scripts/resolution-report-render.mts'
 import { SOCKET_JSON } from '../../constants.mts'
+import { loadSocketConfig } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
   readOrDefaultSocketJson,
@@ -24,6 +26,7 @@ import {
 } from '../../utils/socket-json.mts'
 import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
+import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { BuildOption } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
@@ -37,8 +40,7 @@ export type RecursiveManifestOutcomeStatus =
   | 'skippedCovered'
   | 'skippedDisabled'
 
-export type RecursiveManifestOutcome = {
-  dir: string
+export type RecursiveManifestOutcome = BuildRoot & {
   ecosystem: BuildTool
   factsPath?: string | undefined
   status: RecursiveManifestOutcomeStatus
@@ -82,7 +84,44 @@ function getSkipReason(
 
 type DisabledRoot = { dir: string; sockJson: SocketJson }
 
-// Nearest already-confirmed-disabled ancestor of `dir`, if any - lets the
+// Maven 3's options starting with `f`; its GnuParser takes a long name after
+// one dash too, and splits `-fX` and `-f=X` into `-f X`.
+const MAVEN_FILE_OPTS = new Set(['f', 'file'])
+const MAVEN_OTHER_F_OPTS = new Set([
+  'fae',
+  'fail-at-end',
+  'fail-fast',
+  'fail-never',
+  'ff',
+  'fn',
+])
+
+// Each POM is built by its own `--file`, so a user one is dropped.
+function withoutMavenFileOpts(dir: string, opts: string[]): string[] {
+  const kept: string[] = []
+  for (let i = 0, { length } = opts; i < length; i += 1) {
+    const opt = opts[i]!
+    const name = opt.replace(/^--?/, '')
+    if (opt === name || MAVEN_OTHER_F_OPTS.has(name)) {
+      kept.push(opt)
+    } else if (MAVEN_FILE_OPTS.has(name)) {
+      i += 1
+    } else if (
+      !MAVEN_FILE_OPTS.has(name.split('=')[0]!) &&
+      !(opt.startsWith('-f') && !opt.startsWith('--'))
+    ) {
+      kept.push(opt)
+    }
+  }
+  if (kept.length !== opts.length) {
+    logger.warn(
+      `Ignoring --file in mavenOpts for ${dir}: each POM there is built by its own file.`,
+    )
+  }
+  return kept
+}
+
+// Nearest already-confirmed-disabled `dir` or ancestor of it, if any - lets the
 // caller shorten `readSocketJsonCascade`'s walk to start there instead of
 // all the way back at `cwd`, without skipping any nested override.
 function nearestDisabledRoot(
@@ -92,7 +131,7 @@ function nearestDisabledRoot(
   let nearest: DisabledRoot | undefined
   for (const root of disabledRoots) {
     if (
-      dir.startsWith(`${root.dir}${path.sep}`) &&
+      (dir === root.dir || dir.startsWith(`${root.dir}${path.sep}`)) &&
       (!nearest || root.dir.length > nearest.dir.length)
     ) {
       nearest = root
@@ -113,7 +152,7 @@ async function runEcosystemCandidates({
   verbose,
   withFiles,
 }: {
-  candidatesByTool: Map<BuildTool, string[]>
+  candidatesByTool: Map<BuildTool, BuildRoot[]>
   excludePaths: string[] | undefined
   ignoreUnresolved: boolean | undefined
   optionFlags: ReadonlySet<BuildOption>
@@ -130,48 +169,62 @@ async function runEcosystemCandidates({
 }): Promise<RecursiveManifestOutcome[]> {
   const outcomes: RecursiveManifestOutcome[] = []
   const covered = new Set<string>()
-  for (const [ecosystem, dirs] of candidatesByTool) {
+  for (const [ecosystem, roots] of candidatesByTool) {
     const disabledRoots: DisabledRoot[] = []
-    for (let dirIndex = 0; dirIndex < dirs.length; dirIndex += 1) {
-      const dir = dirs[dirIndex] as string
-      if (isBuildRootCovered(covered, ecosystem, dir)) {
-        outcomes.push({ dir, ecosystem, status: 'skippedCovered' })
+    const configByDir = new Map<
+      string,
+      EcosystemBuildConfig & { excludePaths: string[] }
+    >()
+    for (const { 0: rootIndex, 1: root } of roots.entries()) {
+      const { dir, entryFile } = root
+      if (isBuildRootCovered(covered, ecosystem, root)) {
+        outcomes.push({ ...root, ecosystem, status: 'skippedCovered' })
         continue
       }
 
-      const nearestRoot = nearestDisabledRoot(dir, disabledRoots)
-      const sockJson = nearestRoot
-        ? readSocketJsonCascade(dir, nearestRoot.dir, nearestRoot.sockJson)
-        : readSocketJsonCascade(dir, realCwd, rootSockJson)
+      let dirConfig = configByDir.get(dir)
+      if (!dirConfig) {
+        const nearestRoot = nearestDisabledRoot(dir, disabledRoots)
+        const sockJson = nearestRoot
+          ? readSocketJsonCascade(dir, nearestRoot.dir, nearestRoot.sockJson)
+          : readSocketJsonCascade(dir, realCwd, rootSockJson)
+        dirConfig = {
+          ...resolveEcosystemConfig(ecosystem, dir, sockJson),
+          excludePaths: projectIgnorePathsToReachExcludePaths(excludePaths, {
+            cwd: realCwd,
+            target: dir,
+          }),
+        }
+        configByDir.set(dir, dirConfig)
+        if (dirConfig.skipReason) {
+          // Only warn for a genuinely new disabled root, not one already
+          // covered by an ancestor's warning above - otherwise a big disabled
+          // reactor with hundreds of nested poms would spam one warning line
+          // per pom for what's really a single root cause. The aggregate
+          // count still shows up in the final summary either way.
+          if (!nearestRoot) {
+            logger.warn(
+              `Skipping ${dir} (${ecosystem}): ${dirConfig.skipReason}.`,
+            )
+          }
+          disabledRoots.push({ dir, sockJson })
+        }
+      }
       const {
         bin,
         buildOpts,
         excludeConfigs,
+        excludePaths: excludePathsForRoot,
         ignoreUnresolved,
         includeConfigs,
         javaHome,
         skipReason,
         verbose: configVerbose,
-      } = resolveEcosystemConfig(ecosystem, dir, sockJson)
-
+      } = dirConfig
       if (skipReason) {
-        // Only warn for a genuinely new disabled root, not one already
-        // covered by an ancestor's warning above - otherwise a big disabled
-        // reactor with hundreds of nested poms would spam one warning line
-        // per pom for what's really a single root cause. The aggregate
-        // count still shows up in the final summary either way.
-        if (!nearestRoot) {
-          logger.warn(`Skipping ${dir} (${ecosystem}): ${skipReason}.`)
-        }
-        outcomes.push({ dir, ecosystem, status: 'skippedDisabled' })
-        disabledRoots.push({ dir, sockJson })
+        outcomes.push({ ...root, ecosystem, status: 'skippedDisabled' })
         continue
       }
-
-      const excludePathsForRoot = projectIgnorePathsToReachExcludePaths(
-        excludePaths,
-        { cwd: realCwd, target: dir },
-      )
 
       // eslint-disable-next-line no-await-in-loop
       const result = await runManifestFacts({
@@ -179,6 +232,7 @@ async function runEcosystemCandidates({
         buildOpts,
         cwd: dir,
         ecosystem,
+        entryFile,
         excludeConfigs,
         excludePaths: excludePathsForRoot,
         hints: {
@@ -199,24 +253,24 @@ async function runEcosystemCandidates({
       })
 
       if (result === null) {
-        outcomes.push({ dir, ecosystem, status: 'failed' })
-        const abortedDirs = dirs.slice(dirIndex + 1)
-        if (abortedDirs.length) {
+        outcomes.push({ ...root, ecosystem, status: 'failed' })
+        const abortedRoots = roots.slice(rootIndex + 1)
+        if (abortedRoots.length) {
           logger.warn(
-            `Aborting ${ecosystem} discovery: ${dir} failed to generate Socket facts, and without them the remaining build roots cannot be safely classified as covered or independent.`,
+            `Aborting ${ecosystem} discovery: ${buildRootPath(root)} failed to generate Socket facts, and without them the remaining build roots cannot be safely classified as covered or independent.`,
           )
         }
-        for (const abortedDir of abortedDirs) {
-          outcomes.push({ dir: abortedDir, ecosystem, status: 'aborted' })
+        for (const aborted of abortedRoots) {
+          outcomes.push({ ...aborted, ecosystem, status: 'aborted' })
         }
         break
       }
       if (!result) {
-        outcomes.push({ dir, ecosystem, status: 'empty' })
+        outcomes.push({ ...root, ecosystem, status: 'empty' })
         continue
       }
 
-      // `-f`/`-p` can root the reactor away from `dir`.
+      // Gradle's `-p` can root the build away from `dir`.
       // eslint-disable-next-line no-await-in-loop
       await addCoveredBuildFiles(
         covered,
@@ -224,7 +278,7 @@ async function runEcosystemCandidates({
         result.projects,
       )
       outcomes.push({
-        dir,
+        ...root,
         ecosystem,
         factsPath: result.factsPath,
         status: 'generated',
@@ -280,6 +334,7 @@ export async function generateRecursiveManifests({
   const candidatesByTool = await findBuildToolCandidates({
     cwd,
     excludePaths,
+    socketConfig: loadSocketConfig(cwd),
     sockJson: withoutDisabledFlags(rootSockJson),
   })
 
@@ -357,7 +412,10 @@ export function resolveEcosystemConfig(
   const bin = config?.bin ?? undefined
   return {
     bin: bin ?? resolveBuildToolBin('maven', dir),
-    buildOpts: parseBuildToolOpts(config?.mavenOpts ?? undefined),
+    buildOpts: withoutMavenFileOpts(
+      dir,
+      parseBuildToolOpts(config?.mavenOpts ?? undefined),
+    ),
     excludeConfigs: config?.excludeConfigs ?? '',
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',

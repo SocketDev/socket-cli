@@ -232,6 +232,7 @@ describe('uv member scans with the real uv binary', { timeout: 30_000 }, () => {
       reach: {
         dynamicSbomInference: false,
         excludePaths: [],
+        reachAdvisories: [],
         reachAnalysisMemoryLimit: '8192',
         reachAnalysisTimeout: '',
         reachConcurrency: 1,

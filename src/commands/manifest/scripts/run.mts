@@ -22,6 +22,8 @@ export type ManifestScriptOptions = {
   projectDir: string
   // Unset ⇒ resolved to the project wrapper, else PATH (resolveBuildToolBin).
   bin?: string | undefined
+  // Maven only: the POM in projectDir to build; unset leaves Maven's default.
+  entryFile?: string | undefined
   // Reachability-only: also materialize resolved artifact paths (artifactPaths).
   withFiles?: boolean | undefined
   // sbt only: caller-supplied directory to use as sbt's isolated global base.
@@ -389,8 +391,10 @@ async function invokeMaven(
       `-Dsocket.recordsFile=${recordsFile}`,
       ...commonProps(opts, '-D'),
     ]
+    const fileOpts = opts.entryFile ? ['--file', opts.entryFile] : []
     const args = [
       ...props,
+      ...fileOpts,
       ...(opts.toolOpts ?? []),
       '--batch-mode',
       'validate',

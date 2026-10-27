@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Set `SOCKET_BAZEL_OUTPUT_ROOT` to choose a short parent directory for temporary Bazel output, including on Windows.
 
+### Changed
+- `--dynamic-sbom-inference` now builds every Maven POM a scan uploads, not only `pom.xml`: `<artifactId>-<version>.pom` and `.pom.xml` files, a bare `pom`, and names in any case, each as a build of its own. Like the upload, it skips POMs matched by `.gitignore` or by `projectIgnorePaths` in `socket.yml`.
+
 ### Fixed
 - Bazel Maven extraction handles native Windows executables, batch launchers, and JavaScript entry points while preserving arguments and the selected executable path.
 - Bazel prerequisite checks use the extraction environment and verify Python 3. Windows requires a working `python.exe` without creating a Python symlink.
@@ -16,6 +19,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Bazel cleanup uses the extraction workspace, environment, and startup options, retries temporary file locks, and only stops Bazel servers the scan started.
 - Bazel timeouts and cancellation stop every process a Bazel launcher started. Cleanup still runs after Ctrl-C and keeps temporary output until the scan's own Bazel server has exited.
 - A relative `--bazel` path resolves against the current directory. A relative `bazel` path in `socket.json` resolves against the scanned directory.
+
+## [1.11.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.11.0) - 2026-10-26
+
+### Added
+- `socket scan create --reach` and `socket scan reach` take `--reach-advisories` to focus reachability analysis on the GHSA or CVE advisories you care about. Every other advisory is left with unknown reachability.
+
+### Changed
+- Updated the Coana CLI to v `15.13.0`.
 
 ## [1.10.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.1) - 2026-10-23
 

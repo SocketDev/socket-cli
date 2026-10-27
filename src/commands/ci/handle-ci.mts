@@ -67,6 +67,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     reach: {
       dynamicSbomInference: false,
       excludePaths: [],
+      reachAdvisories: [],
       reachAnalysisMemoryLimit: '',
       reachAnalysisTimeout: '',
       reachConcurrency: 1,

@@ -11,6 +11,14 @@ import { enumerateWorkspaces, runManifestScript } from './run.mts'
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(async () => ({ code: 0, stderr: '', stdout: '' })),
 }))
+// The Maven extension jar exists only in a built checkout.
+vi.mock('node:fs', async importOriginal => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...actual,
+    existsSync: (p: string) => p.endsWith('.jar') || actual.existsSync(p),
+  }
+})
 
 describe('build tool output', () => {
   it.each([
@@ -64,4 +72,30 @@ describe('shared sbt global base', () => {
       await fs.rm(base, { force: true, recursive: true })
     }
   })
+})
+
+describe('maven entry file', () => {
+  it.each([
+    ['app-dev.pom.xml', ['--file', 'app-dev.pom.xml', '-P', 'ci']],
+    ['pom.xml', ['--file', 'pom.xml', '-P', 'ci']],
+    [undefined, ['-P', 'ci']],
+  ] as const)(
+    'builds %s, ahead of the given options',
+    async (entryFile, expected) => {
+      vi.mocked(spawn).mockClear()
+      await runManifestScript('maven', {
+        bin: 'mvn',
+        entryFile,
+        projectDir: process.cwd(),
+        stdio: 'pipe',
+        toolOpts: ['-P', 'ci'],
+      })
+      const args = vi.mocked(spawn).mock.calls[0]?.[1] ?? []
+      expect(args.filter(a => !a.startsWith('-D'))).toEqual([
+        ...expected,
+        '--batch-mode',
+        'validate',
+      ])
+    },
+  )
 })
