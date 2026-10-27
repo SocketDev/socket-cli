@@ -426,7 +426,10 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
       ).rejects.toBeInstanceOf(BazelTimeoutError)
       expect(Date.now() - startedAt).toBeLessThan(15_000)
     } finally {
-      process.kill(readChildPid(record), 'SIGKILL')
+      const pid = readChildPid(record)
+      process.kill(pid, 'SIGKILL')
+      // Windows keeps the temporary directory locked until the process has exited.
+      expect(await waitForExit(pid)).toBe(true)
     }
   }, 30_000)
 

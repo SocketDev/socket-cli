@@ -177,6 +177,12 @@ function readOutput(error: unknown, key: 'stdout' | 'stderr'): string {
   return ''
 }
 
+function makeAbortError(reason: unknown): Error {
+  const error = new Error('The operation was aborted', { cause: reason })
+  error.name = 'AbortError'
+  return error
+}
+
 // Launchers can leave Bazel holding the output pipes after the launcher is killed.
 const PIPE_RELEASE_GRACE_MS = 5_000
 
@@ -251,6 +257,10 @@ export async function spawnBazel(
   } catch (e) {
     if (timedOut && timeout) {
       throw new BazelTimeoutError(timeout, e)
+    }
+    // On Windows the tree kill ends the launcher first, so the spawn rejects with its exit code.
+    if (signal.aborted && !(e instanceof Error && e.name === 'AbortError')) {
+      throw makeAbortError(signal.reason)
     }
     throw e
   } finally {
