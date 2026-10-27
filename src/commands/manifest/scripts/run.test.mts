@@ -77,7 +77,7 @@ describe('shared sbt global base', () => {
 describe('maven entry file', () => {
   it.each([
     ['app-dev.pom.xml', ['--file', 'app-dev.pom.xml', '-P', 'ci']],
-    ['pom.xml', ['-P', 'ci']],
+    ['pom.xml', ['--file', 'pom.xml', '-P', 'ci']],
     [undefined, ['-P', 'ci']],
   ] as const)(
     'builds %s, ahead of the given options',

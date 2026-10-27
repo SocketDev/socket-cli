@@ -1093,4 +1093,47 @@ describe('generateRecursiveManifests', () => {
     expect(statusOf('app-dev.pom.xml')).toBe('generated')
     expect(statusOf('bare/pom')).toBe('skippedCovered')
   })
+
+  it('resolves settings once per directory and drops a --file in mavenOpts with a warning', async () => {
+    vi.mocked(readSocketJsonCascade).mockClear()
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          maven: {
+            mavenOpts:
+              '--file other.xml -P ci -fae -fother.xml -fail-fast -file=x.xml',
+          },
+        },
+      },
+    } as SocketJson)
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects: [],
+      }),
+    )
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      await generateRecursiveManifests({ cwd: pomNames, verbose: false })
+
+      const cascadeDirs = vi
+        .mocked(readSocketJsonCascade)
+        .mock.calls.map(([dir]) => dir)
+      expect(cascadeDirs.length).toBeGreaterThan(0)
+      expect(cascadeDirs).toEqual([...new Set(cascadeDirs)])
+      expect(
+        warnSpy.mock.calls.filter(c => String(c[0]).includes('--file')),
+      ).toHaveLength(cascadeDirs.length)
+      expect(
+        vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.buildOpts),
+      ).toEqual(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.map(() => ['-P', 'ci', '-fae', '-fail-fast']),
+      )
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
 })

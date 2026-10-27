@@ -18,7 +18,7 @@ import {
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
 } from './scripts/resolution-report-render.mts'
 import { SOCKET_JSON } from '../../constants.mts'
-import { findSocketYmlSync } from '../../utils/config.mts'
+import { loadSocketConfig } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
   readOrDefaultSocketJson,
@@ -84,6 +84,43 @@ function getSkipReason(
 
 type DisabledRoot = { dir: string; sockJson: SocketJson }
 
+// Maven 3's options starting with `f`; its GnuParser takes a long name after
+// one dash too, and splits `-fX` and `-f=X` into `-f X`.
+const MAVEN_FILE_OPTS = new Set(['f', 'file'])
+const MAVEN_OTHER_F_OPTS = new Set([
+  'fae',
+  'fail-at-end',
+  'fail-fast',
+  'fail-never',
+  'ff',
+  'fn',
+])
+
+// Each POM is built by its own `--file`, so a user one is dropped.
+function withoutMavenFileOpts(dir: string, opts: string[]): string[] {
+  const kept: string[] = []
+  for (let i = 0, { length } = opts; i < length; i += 1) {
+    const opt = opts[i]!
+    const name = opt.replace(/^--?/, '')
+    if (opt === name || MAVEN_OTHER_F_OPTS.has(name)) {
+      kept.push(opt)
+    } else if (MAVEN_FILE_OPTS.has(name)) {
+      i += 1
+    } else if (
+      !MAVEN_FILE_OPTS.has(name.split('=')[0]!) &&
+      !(opt.startsWith('-f') && !opt.startsWith('--'))
+    ) {
+      kept.push(opt)
+    }
+  }
+  if (kept.length !== opts.length) {
+    logger.warn(
+      `Ignoring --file in mavenOpts for ${dir}: each POM there is built by its own file.`,
+    )
+  }
+  return kept
+}
+
 // Nearest already-confirmed-disabled `dir` or ancestor of it, if any - lets the
 // caller shorten `readSocketJsonCascade`'s walk to start there instead of
 // all the way back at `cwd`, without skipping any nested override.
@@ -134,6 +171,10 @@ async function runEcosystemCandidates({
   const covered = new Set<string>()
   for (const [ecosystem, roots] of candidatesByTool) {
     const disabledRoots: DisabledRoot[] = []
+    const configByDir = new Map<
+      string,
+      EcosystemBuildConfig & { excludePaths: string[] }
+    >()
     for (const { 0: rootIndex, 1: root } of roots.entries()) {
       const { dir, entryFile } = root
       if (isBuildRootCovered(covered, ecosystem, root)) {
@@ -141,39 +182,49 @@ async function runEcosystemCandidates({
         continue
       }
 
-      const nearestRoot = nearestDisabledRoot(dir, disabledRoots)
-      const sockJson = nearestRoot
-        ? readSocketJsonCascade(dir, nearestRoot.dir, nearestRoot.sockJson)
-        : readSocketJsonCascade(dir, realCwd, rootSockJson)
+      let dirConfig = configByDir.get(dir)
+      if (!dirConfig) {
+        const nearestRoot = nearestDisabledRoot(dir, disabledRoots)
+        const sockJson = nearestRoot
+          ? readSocketJsonCascade(dir, nearestRoot.dir, nearestRoot.sockJson)
+          : readSocketJsonCascade(dir, realCwd, rootSockJson)
+        dirConfig = {
+          ...resolveEcosystemConfig(ecosystem, dir, sockJson),
+          excludePaths: projectIgnorePathsToReachExcludePaths(excludePaths, {
+            cwd: realCwd,
+            target: dir,
+          }),
+        }
+        configByDir.set(dir, dirConfig)
+        if (dirConfig.skipReason) {
+          // Only warn for a genuinely new disabled root, not one already
+          // covered by an ancestor's warning above - otherwise a big disabled
+          // reactor with hundreds of nested poms would spam one warning line
+          // per pom for what's really a single root cause. The aggregate
+          // count still shows up in the final summary either way.
+          if (!nearestRoot) {
+            logger.warn(
+              `Skipping ${dir} (${ecosystem}): ${dirConfig.skipReason}.`,
+            )
+          }
+          disabledRoots.push({ dir, sockJson })
+        }
+      }
       const {
         bin,
         buildOpts,
         excludeConfigs,
+        excludePaths: excludePathsForRoot,
         ignoreUnresolved,
         includeConfigs,
         javaHome,
         skipReason,
         verbose: configVerbose,
-      } = resolveEcosystemConfig(ecosystem, dir, sockJson)
-
+      } = dirConfig
       if (skipReason) {
-        // Only warn for a genuinely new disabled root, not one already
-        // covered by an ancestor's warning above - otherwise a big disabled
-        // reactor with hundreds of nested poms would spam one warning line
-        // per pom for what's really a single root cause. The aggregate
-        // count still shows up in the final summary either way.
-        if (!nearestRoot) {
-          logger.warn(`Skipping ${dir} (${ecosystem}): ${skipReason}.`)
-        }
         outcomes.push({ ...root, ecosystem, status: 'skippedDisabled' })
-        disabledRoots.push({ dir, sockJson })
         continue
       }
-
-      const excludePathsForRoot = projectIgnorePathsToReachExcludePaths(
-        excludePaths,
-        { cwd: realCwd, target: dir },
-      )
 
       // eslint-disable-next-line no-await-in-loop
       const result = await runManifestFacts({
@@ -219,7 +270,7 @@ async function runEcosystemCandidates({
         continue
       }
 
-      // `-f`/`-p` can root the reactor away from `dir`.
+      // Gradle's `-p` can root the build away from `dir`.
       // eslint-disable-next-line no-await-in-loop
       await addCoveredBuildFiles(
         covered,
@@ -280,11 +331,10 @@ export async function generateRecursiveManifests({
   // A root-disabled ecosystem must still be scanned for - a nested socket.json
   // may re-enable it - so the per-directory cascade below, not this scan, is
   // what actually decides skip vs. include.
-  const socketYml = findSocketYmlSync(cwd)
   const candidatesByTool = await findBuildToolCandidates({
     cwd,
     excludePaths,
-    socketConfig: socketYml.ok ? socketYml.data?.parsed : undefined,
+    socketConfig: loadSocketConfig(cwd),
     sockJson: withoutDisabledFlags(rootSockJson),
   })
 
@@ -362,7 +412,10 @@ export function resolveEcosystemConfig(
   const bin = config?.bin ?? undefined
   return {
     bin: bin ?? resolveBuildToolBin('maven', dir),
-    buildOpts: parseBuildToolOpts(config?.mavenOpts ?? undefined),
+    buildOpts: withoutMavenFileOpts(
+      dir,
+      parseBuildToolOpts(config?.mavenOpts ?? undefined),
+    ),
     excludeConfigs: config?.excludeConfigs ?? '',
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',

@@ -4,11 +4,7 @@ import path from 'node:path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
-import {
-  defaultEntryFile,
-  resolveBuildToolBin,
-  socketFactsFileName,
-} from './build-tool.mts'
+import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
@@ -26,8 +22,7 @@ export type ManifestScriptOptions = {
   projectDir: string
   // Unset ⇒ resolved to the project wrapper, else PATH (resolveBuildToolBin).
   bin?: string | undefined
-  // Maven only: the POM in projectDir to build; unset or `pom.xml` builds the
-  // default, leaving a `--file` in toolOpts in effect.
+  // Maven only: the POM in projectDir to build; unset leaves Maven's default.
   entryFile?: string | undefined
   // Reachability-only: also materialize resolved artifact paths (artifactPaths).
   withFiles?: boolean | undefined
@@ -396,11 +391,7 @@ async function invokeMaven(
       `-Dsocket.recordsFile=${recordsFile}`,
       ...commonProps(opts, '-D'),
     ]
-    // Ahead of toolOpts, as Maven 3 takes the first `--file`.
-    const fileOpts =
-      opts.entryFile && opts.entryFile !== defaultEntryFile('maven')
-        ? ['--file', opts.entryFile]
-        : []
+    const fileOpts = opts.entryFile ? ['--file', opts.entryFile] : []
     const args = [
       ...props,
       ...fileOpts,

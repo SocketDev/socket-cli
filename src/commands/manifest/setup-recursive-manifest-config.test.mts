@@ -43,7 +43,10 @@ vi.mock('../../utils/socket-json.mts', () => ({
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 
-import { findBuildToolCandidates } from './discover-manifest-roots.mts'
+import {
+  buildRootPath,
+  findBuildToolCandidates,
+} from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
 import {
@@ -335,10 +338,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(result).toEqual({ ok: true, data: undefined })
@@ -367,10 +372,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(covered).toEqual(new Set([`${reactor}/build/member/pom.xml`]))
@@ -399,10 +406,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(covered).toEqual(new Set([`${reactor}/moduleA/pom.xml`]))
@@ -416,10 +425,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(result).toEqual({ ok: true, data: undefined })
@@ -432,14 +443,48 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(result.ok).toBe(false)
     expect(covered.size).toBe(0)
+  })
+
+  it('resolves settings once per directory and skips a POM an earlier one covers', async () => {
+    vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      buildRoot: reactor,
+      projects: [
+        {
+          type: 'maven',
+          name: 'reactor',
+          subprojectDir: '.',
+          manifestFiles: [{ file: 'pom.xml' }],
+          children: [],
+        },
+      ],
+    })
+
+    await markWorkspaceCoverage({
+      covered: new Set<string>(),
+      cwd,
+      dir: reactor,
+      ecosystem: 'maven',
+      rootSockJson: emptySockJson(),
+      roots: [
+        { dir: reactor, entryFile: 'all.pom.xml' },
+        { dir: reactor, entryFile: 'pom.xml' },
+      ],
+    })
+
+    expect(readSocketJsonCascade).toHaveBeenCalledTimes(1)
+    expect(
+      vi.mocked(enumerateWorkspaces).mock.calls.map(([o]) => o.entryFile),
+    ).toEqual(['all.pom.xml'])
   })
 
   it('forwards --exclude-paths, re-anchored to the candidate dir, so a member excluded specifically to dodge a broken resolution is actually skipped', async () => {
@@ -449,11 +494,13 @@ describe('markWorkspaceCoverage', () => {
     })
 
     await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered: new Set<string>(),
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       excludePaths: ['reactor/moduleB'],
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(enumerateWorkspaces).toHaveBeenCalledWith(
@@ -1354,7 +1401,9 @@ describe('setupRecursiveManifestConfig', () => {
       expect(
         vi
           .mocked(enumerateWorkspaces)
-          .mock.calls.map(([o]) => path.join(o.cwd, o.entryFile ?? '')),
+          .mock.calls.map(([o]) =>
+            buildRootPath({ dir: o.cwd, entryFile: o.entryFile }),
+          ),
       ).toEqual([
         path.join(cwd, 'all.pom.xml'),
         path.join(cwd, 'service/pom.xml'),

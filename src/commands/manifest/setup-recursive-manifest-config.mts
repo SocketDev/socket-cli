@@ -19,7 +19,7 @@ import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
 import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
 import { SOCKET_JSON } from '../../constants.mts'
-import { findSocketYmlSync } from '../../utils/config.mts'
+import { loadSocketConfig } from '../../utils/config.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,
@@ -35,8 +35,6 @@ import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
-
-type EcosystemRoot = BuildRoot & { ecosystem: BuildTool }
 
 // One prompt per directory, as settings are per directory; Maven may have
 // several POMs, so several roots, there.
@@ -115,8 +113,7 @@ export async function scanBuildRoots({
   excludePaths?: string[] | undefined
   sockJson: SocketJson
 }): Promise<ScannedBuildRoots> {
-  const socketYml = findSocketYmlSync(cwd)
-  const socketConfig = socketYml.ok ? socketYml.data?.parsed : undefined
+  const socketConfig = loadSocketConfig(cwd)
   const [fullByTool, includedByTool] = await Promise.all([
     findBuildToolCandidates({ cwd, socketConfig, sockJson }),
     findBuildToolCandidates({ cwd, excludePaths, socketConfig, sockJson }),
@@ -207,61 +204,12 @@ export async function discoverBuildRoots({
 }
 
 // Fails closed: without the members' build files, covered and independent
-// candidates can't be told apart.
+// candidates can't be told apart. In order, as a root's enumeration can cover
+// the roots after it.
 export async function markWorkspaceCoverage({
-  candidate,
   covered,
   cwd,
-  excludePaths,
-  rootSockJson,
-}: {
-  candidate: EcosystemRoot
-  covered: Set<string>
-  cwd: string
-  excludePaths?: string[] | undefined
-  rootSockJson: SocketJson
-}): Promise<CResult<undefined>> {
-  const cascade = readSocketJsonCascade(candidate.dir, cwd, rootSockJson)
-  const { bin, buildOpts, javaHome, skipReason } = resolveEcosystemConfig(
-    candidate.ecosystem,
-    candidate.dir,
-    cascade,
-  )
-  if (skipReason) {
-    return { ok: true, data: undefined }
-  }
-
-  const excludePathsForCandidate = projectIgnorePathsToReachExcludePaths(
-    excludePaths,
-    { cwd, target: candidate.dir },
-  )
-
-  const enumResult = await enumerateWorkspaces({
-    bin,
-    buildOpts,
-    cwd: candidate.dir,
-    ecosystem: candidate.ecosystem,
-    entryFile: candidate.entryFile,
-    excludePaths: excludePathsForCandidate,
-    javaHome,
-    verbose: false,
-  })
-  if (!enumResult) {
-    const relRoot = path.relative(cwd, buildRootPath(candidate)) || '.'
-    return {
-      ok: false,
-      message: `Could not determine ${candidate.ecosystem} workspace layout for ${relRoot}; aborting rather than risk misclassifying its members.`,
-    }
-  }
-
-  await addCoveredBuildFiles(covered, enumResult.buildRoot, enumResult.projects)
-  return { ok: true, data: undefined }
-}
-
-// In order, as a root's enumeration can cover the roots after it.
-async function markRootsCoverage({
-  covered,
-  cwd,
+  dir,
   ecosystem,
   excludePaths,
   rootSockJson,
@@ -269,26 +217,58 @@ async function markRootsCoverage({
 }: {
   covered: Set<string>
   cwd: string
+  dir: string
   ecosystem: BuildTool
   excludePaths?: string[] | undefined
   rootSockJson: SocketJson
   roots: readonly BuildRoot[]
 }): Promise<CResult<undefined>> {
+  if (roots.every(root => isBuildRootCovered(covered, ecosystem, root))) {
+    return { ok: true, data: undefined }
+  }
+  const cascade = readSocketJsonCascade(dir, cwd, rootSockJson)
+  const { bin, buildOpts, javaHome, skipReason } = resolveEcosystemConfig(
+    ecosystem,
+    dir,
+    cascade,
+  )
+  if (skipReason) {
+    return { ok: true, data: undefined }
+  }
+
+  const excludePathsForDir = projectIgnorePathsToReachExcludePaths(
+    excludePaths,
+    { cwd, target: dir },
+  )
+
   for (const root of roots) {
     if (isBuildRootCovered(covered, ecosystem, root)) {
       continue
     }
     // eslint-disable-next-line no-await-in-loop
-    const result = await markWorkspaceCoverage({
-      candidate: { ...root, ecosystem },
-      covered,
-      cwd,
-      excludePaths,
-      rootSockJson,
+    const enumResult = await enumerateWorkspaces({
+      bin,
+      buildOpts,
+      cwd: dir,
+      ecosystem,
+      entryFile: root.entryFile,
+      excludePaths: excludePathsForDir,
+      javaHome,
+      verbose: false,
     })
-    if (!result.ok) {
-      return result
+    if (!enumResult) {
+      const relRoot = path.relative(cwd, buildRootPath(root)) || '.'
+      return {
+        ok: false,
+        message: `Could not determine ${ecosystem} workspace layout for ${relRoot}; aborting rather than risk misclassifying its members.`,
+      }
     }
+    // eslint-disable-next-line no-await-in-loop
+    await addCoveredBuildFiles(
+      covered,
+      enumResult.buildRoot,
+      enumResult.projects,
+    )
   }
   return { ok: true, data: undefined }
 }
@@ -874,9 +854,10 @@ export async function setupRecursiveManifestConfig(
   // recognized.
   for (const ecosystem of ROOT_ECOSYSTEMS) {
     // eslint-disable-next-line no-await-in-loop
-    const coverageResult = await markRootsCoverage({
+    const coverageResult = await markWorkspaceCoverage({
       covered,
       cwd: realCwd,
+      dir: realCwd,
       ecosystem,
       excludePaths,
       rootSockJson,
@@ -935,9 +916,10 @@ export async function setupRecursiveManifestConfig(
     // Interleaved rather than a bulk pre-pass, so this (possibly slow)
     // build-tool invocation only runs for a project already prompted about.
     // eslint-disable-next-line no-await-in-loop
-    const coverageResult = await markRootsCoverage({
+    const coverageResult = await markWorkspaceCoverage({
       covered,
       cwd: realCwd,
+      dir: candidate.dir,
       ecosystem,
       excludePaths,
       rootSockJson,

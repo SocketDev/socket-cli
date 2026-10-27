@@ -11,7 +11,7 @@ import {
   sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
 import { testPath } from '../../../test/utils.mts'
-import { findSocketYmlSync } from '../../utils/config.mts'
+import { loadSocketConfig } from '../../utils/config.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -35,6 +35,7 @@ async function pomNamesRoots(excludePaths?: string[]): Promise<string[]> {
   const candidates = await findBuildToolCandidates({
     cwd: pomNames,
     excludePaths,
+    socketConfig: undefined,
     sockJson: {} as SocketJson,
   })
   return (candidates.get('maven') ?? []).map(r =>
@@ -57,10 +58,9 @@ async function rootsBesideIgnoredPom(
     )
     await fs.writeFile(path.join(cwd, 'pom.xml'), '<project/>')
     await fs.writeFile(path.join(cwd, ignoreFile.name), ignoreFile.content)
-    const socketYml = findSocketYmlSync(cwd)
     const candidates = await findBuildToolCandidates({
       cwd,
-      socketConfig: socketYml.ok ? socketYml.data?.parsed : undefined,
+      socketConfig: loadSocketConfig(cwd),
       sockJson: {} as SocketJson,
     })
     return candidates
@@ -79,6 +79,7 @@ describe('findBuildToolCandidates', () => {
   it('discovers maven, gradle, and sbt candidates in depth order', async () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,
+      socketConfig: undefined,
       sockJson: {} as SocketJson,
     })
 
@@ -104,6 +105,7 @@ describe('findBuildToolCandidates', () => {
   it('lists a reactor root before its own members (depth-ascending)', async () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,
+      socketConfig: undefined,
       sockJson: {} as SocketJson,
     })
     const maven = dirsOf(candidates.get('maven'))
@@ -118,6 +120,7 @@ describe('findBuildToolCandidates', () => {
   it('includes a gradle project nested inside a maven candidate directory tree', async () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,
+      socketConfig: undefined,
       sockJson: {} as SocketJson,
     })
     expect(dirsOf(candidates.get('gradle'))).toContain(
@@ -128,6 +131,7 @@ describe('findBuildToolCandidates', () => {
   it('lists a dual-marker directory on both ecosystems', async () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,
+      socketConfig: undefined,
       sockJson: {} as SocketJson,
     })
     const dualDir = path.join(monorepo, 'dual-marker-dir')
@@ -138,6 +142,7 @@ describe('findBuildToolCandidates', () => {
   it('drops a disabled ecosystem entirely', async () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,
+      socketConfig: undefined,
       sockJson: {
         defaults: { manifest: { maven: { disabled: true } } },
       } as SocketJson,
@@ -150,6 +155,7 @@ describe('findBuildToolCandidates', () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,
       excludePaths: ['reactor'],
+      socketConfig: undefined,
       sockJson: {} as SocketJson,
     })
     expect(candidates.get('maven')).toEqual([
@@ -164,6 +170,7 @@ describe('findBuildToolCandidates', () => {
   it('lists a gradle directory once despite several markers', async () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,
+      socketConfig: undefined,
       sockJson: {} as SocketJson,
     })
     const standalone = path.join(monorepo, 'standalone-gradle')
