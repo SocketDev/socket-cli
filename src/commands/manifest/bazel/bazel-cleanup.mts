@@ -101,7 +101,15 @@ export async function cleanUpBazelOutputRoot(
 ): Promise<boolean> {
   // Ctrl-C aborts the scan's signal while the CLI keeps running, and cleanup must still run.
   const signal = AbortSignal.timeout(3 * SHUTDOWN_TIMEOUT_MS)
-  const servers = new Set(findServerPids(root))
+  let listed: number[] | undefined
+  try {
+    listed = findServerPids(root)
+  } catch (e) {
+    logger.warn(
+      `Bazel output root kept because its servers could not be checked: ${root}. ${getErrorCause(e)}`,
+    )
+  }
+  const servers = new Set(listed)
   const shutDown = await Promise.all(
     Array.from(contexts.values(), opts => shutDownBazelServer(opts, signal)),
   )
@@ -115,6 +123,9 @@ export async function cleanUpBazelOutputRoot(
     logger.warn(
       `Bazel output root kept because its server is still running: ${root}`,
     )
+    return false
+  }
+  if (!listed) {
     return false
   }
   return await removeBazelTempdir(root)

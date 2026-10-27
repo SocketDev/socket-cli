@@ -292,6 +292,26 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
     expect(existsSync(root)).toBe(false)
   }, 30_000)
 
+  it('keeps the output root when its server pid files cannot be read', async () => {
+    const { root } = makeServerRoot()
+    mkdirSync(path.join(root, 'workspace hash', 'server', 'server.pid.txt'), {
+      recursive: true,
+    })
+    writeFileSync(launcher, 'process.exit(1)\n')
+    expect(
+      await cleanUpBazelOutputRoot(
+        root,
+        new Map([
+          [
+            cwd,
+            { bin: launcher, cwd, invocationFlags: [], outputUserRoot: root },
+          ],
+        ]),
+      ),
+    ).toBe(false)
+    expect(existsSync(root)).toBe(true)
+  })
+
   it('stops its own server when shutdown leaves it running', async () => {
     const { installBase, root } = makeServerRoot()
     const callerOutputBase = path.join(cwd, 'caller cache')
