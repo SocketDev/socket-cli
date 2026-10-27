@@ -43,7 +43,10 @@ vi.mock('../../utils/socket-json.mts', () => ({
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 
-import { findBuildToolCandidates } from './discover-manifest-roots.mts'
+import {
+  buildRootPath,
+  findBuildToolCandidates,
+} from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
 import {
@@ -54,7 +57,6 @@ import {
   processCandidate,
   scanBuildRoots,
   setupRecursiveManifestConfig,
-  sortCandidatesForDisplay,
 } from './setup-recursive-manifest-config.mts'
 import {
   readOrDefaultSocketJson,
@@ -63,10 +65,33 @@ import {
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 
+import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
+
+function dirRoots(...dirs: string[]): BuildRoot[] {
+  return dirs.map(dir => ({ dir }))
+}
+
+function mavenRoots(...dirs: string[]): BuildRoot[] {
+  return dirs.map(dir => ({ dir, entryFile: 'pom.xml' }))
+}
 
 function emptySockJson(): SocketJson {
   return { version: 1 } as SocketJson
+}
+
+// Declines the root questions, opts into the individual walk and leaves each
+// candidate inheriting. Returns the prompts asked, in order.
+function inheritEveryCandidate(): string[] {
+  const messages: string[] = []
+  vi.mocked(select).mockImplementation(async ({ message }) => {
+    messages.push(message)
+    if (message.startsWith('Configure other build roots')) {
+      return true
+    }
+    return message.startsWith('Configure') ? false : 'inherit'
+  })
+  return messages
 }
 
 // In-memory `dir -> own gradle section` store backing readSocketJsonCascade/
@@ -121,24 +146,6 @@ function makeFakeGradleDisk(cwd: string) {
   }
 }
 
-describe('sortCandidatesForDisplay', () => {
-  const cwd = '/repo'
-
-  it('sorts shallower dirs before deeper ones, parent before child', () => {
-    const sorted = sortCandidatesForDisplay(
-      [
-        { dir: '/repo/module-b/standalone-gradle-lib', ecosystems: ['gradle'] },
-        { dir: '/repo/independent-service', ecosystems: ['maven'] },
-      ],
-      cwd,
-    )
-    expect(sorted).toEqual([
-      { dir: '/repo/independent-service', ecosystems: ['maven'] },
-      { dir: '/repo/module-b/standalone-gradle-lib', ecosystems: ['gradle'] },
-    ])
-  })
-})
-
 describe('scanBuildRoots', () => {
   const cwd = '/repo'
 
@@ -147,8 +154,10 @@ describe('scanBuildRoots', () => {
   })
 
   it('runs the unfiltered and excludePaths-filtered walks once each and returns both', async () => {
-    const unfiltered = new Map([['gradle', ['/repo/a', '/repo/legacy']]])
-    const filtered = new Map([['gradle', ['/repo/a']]])
+    const unfiltered = new Map([
+      ['gradle', dirRoots('/repo/a', '/repo/legacy')],
+    ])
+    const filtered = new Map([['gradle', dirRoots('/repo/a')]])
     vi.mocked(findBuildToolCandidates).mockImplementation(
       async ({ excludePaths }) =>
         excludePaths?.length ? filtered : unfiltered,
@@ -174,8 +183,8 @@ describe('discoverBuildRoots', () => {
   it('excludes cwd itself', async () => {
     const result = await discoverBuildRoots({
       cwd,
-      fullByTool: new Map([['gradle', [cwd]]]),
-      includedByTool: new Map([['gradle', [cwd]]]),
+      fullByTool: new Map([['gradle', dirRoots(cwd)]]),
+      includedByTool: new Map([['gradle', dirRoots(cwd)]]),
     })
 
     expect(result).toEqual({ excluded: [], included: [] })
@@ -188,13 +197,13 @@ describe('discoverBuildRoots', () => {
     const result = await discoverBuildRoots({
       cwd,
       excludePaths: ['legacy'],
-      fullByTool: new Map([['gradle', [legacy, active]]]),
-      includedByTool: new Map([['gradle', [active]]]),
+      fullByTool: new Map([['gradle', dirRoots(legacy, active)]]),
+      includedByTool: new Map([['gradle', dirRoots(active)]]),
     })
 
     expect(result).toEqual({
       excluded: [{ dir: legacy, ecosystems: ['gradle'] }],
-      included: [{ dir: active, ecosystem: 'gradle' }],
+      included: [{ dir: active, ecosystem: 'gradle', roots: dirRoots(active) }],
     })
   })
 
@@ -210,12 +219,12 @@ describe('discoverBuildRoots', () => {
       cwd,
       excludePaths: ['legacy'],
       fullByTool: new Map([
-        ['maven', [a]],
-        ['gradle', [b]],
+        ['maven', mavenRoots(a)],
+        ['gradle', dirRoots(b)],
       ]),
       includedByTool: new Map([
-        ['maven', []],
-        ['gradle', []],
+        ['maven', mavenRoots()],
+        ['gradle', dirRoots()],
       ]),
     })
 
@@ -223,6 +232,40 @@ describe('discoverBuildRoots', () => {
       excluded: [{ dir: '/repo/legacy', ecosystems: ['gradle', 'maven'] }],
       included: [],
     })
+  })
+
+  it('does not disable a directory to exclude one POM while a sibling POM there stays included', async () => {
+    const service = '/repo/service'
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const result = await discoverBuildRoots({
+        cwd,
+        excludePaths: ['service/app-dev.pom.xml'],
+        fullByTool: new Map([
+          [
+            'maven',
+            [
+              { dir: service, entryFile: 'app-dev.pom.xml' },
+              { dir: service, entryFile: 'pom.xml' },
+            ],
+          ],
+        ]),
+        includedByTool: new Map([['maven', mavenRoots(service)]]),
+      })
+
+      expect(result).toEqual({
+        excluded: [],
+        included: [
+          { dir: service, ecosystem: 'maven', roots: mavenRoots(service) },
+        ],
+      })
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Not disabling maven in service'),
+      )
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 })
 
@@ -295,10 +338,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(result).toEqual({ ok: true, data: undefined })
@@ -327,10 +372,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(covered).toEqual(new Set([`${reactor}/build/member/pom.xml`]))
@@ -359,10 +406,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(covered).toEqual(new Set([`${reactor}/moduleA/pom.xml`]))
@@ -376,10 +425,12 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(result).toEqual({ ok: true, data: undefined })
@@ -392,14 +443,48 @@ describe('markWorkspaceCoverage', () => {
     const covered = new Set<string>()
 
     const result = await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered,
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(result.ok).toBe(false)
     expect(covered.size).toBe(0)
+  })
+
+  it('resolves settings once per directory and skips a POM an earlier one covers', async () => {
+    vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      buildRoot: reactor,
+      projects: [
+        {
+          type: 'maven',
+          name: 'reactor',
+          subprojectDir: '.',
+          manifestFiles: [{ file: 'pom.xml' }],
+          children: [],
+        },
+      ],
+    })
+
+    await markWorkspaceCoverage({
+      covered: new Set<string>(),
+      cwd,
+      dir: reactor,
+      ecosystem: 'maven',
+      rootSockJson: emptySockJson(),
+      roots: [
+        { dir: reactor, entryFile: 'all.pom.xml' },
+        { dir: reactor, entryFile: 'pom.xml' },
+      ],
+    })
+
+    expect(readSocketJsonCascade).toHaveBeenCalledTimes(1)
+    expect(
+      vi.mocked(enumerateWorkspaces).mock.calls.map(([o]) => o.entryFile),
+    ).toEqual(['all.pom.xml'])
   })
 
   it('forwards --exclude-paths, re-anchored to the candidate dir, so a member excluded specifically to dodge a broken resolution is actually skipped', async () => {
@@ -409,11 +494,13 @@ describe('markWorkspaceCoverage', () => {
     })
 
     await markWorkspaceCoverage({
-      candidate: { dir: reactor, ecosystem: 'maven' },
       covered: new Set<string>(),
       cwd,
+      dir: reactor,
+      ecosystem: 'maven',
       excludePaths: ['reactor/moduleB'],
       rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'pom.xml' }],
     })
 
     expect(enumerateWorkspaces).toHaveBeenCalledWith(
@@ -839,7 +926,7 @@ describe('setupRecursiveManifestConfig', () => {
       async ({ excludePaths }) =>
         excludePaths?.length
           ? new Map()
-          : new Map([['maven', [`${cwd}/service`]]]),
+          : new Map([['maven', mavenRoots(`${cwd}/service`)]]),
     )
 
     const result = await setupRecursiveManifestConfig(cwd, false, ['service'])
@@ -851,7 +938,7 @@ describe('setupRecursiveManifestConfig', () => {
     // Maven is detected (a candidate exists, elsewhere in the tree); gradle
     // and sbt have none anywhere, so neither should ever be asked about.
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [`${cwd}/service`]]]),
+      new Map([['maven', mavenRoots(`${cwd}/service`)]]),
     )
     const messages: string[] = []
     vi.mocked(select).mockImplementation(async ({ message }) => {
@@ -880,8 +967,8 @@ describe('setupRecursiveManifestConfig', () => {
     // an inheritable default for something else.
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
       new Map([
-        ['maven', [cwd]],
-        ['gradle', [`${cwd}/module-b/standalone-gradle-lib`]],
+        ['maven', mavenRoots(cwd)],
+        ['gradle', dirRoots(`${cwd}/module-b/standalone-gradle-lib`)],
       ]),
     )
     const messages: string[] = []
@@ -911,7 +998,7 @@ describe('setupRecursiveManifestConfig', () => {
     vi.mocked(findBuildToolCandidates).mockImplementation(
       async ({ sockJson }) => {
         seenSockJsons.push(sockJson)
-        return new Map([['maven', [cwd]]])
+        return new Map([['maven', mavenRoots(cwd)]])
       },
     )
 
@@ -925,7 +1012,7 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('offers to re-enable an ecosystem disabled at the root, before asking to configure it', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd]]]),
+      new Map([['maven', mavenRoots(cwd)]]),
     )
     vi.mocked(readSocketJsonSync).mockImplementation(() => ({
       ok: true,
@@ -960,7 +1047,7 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('declining the root re-enable question leaves the ecosystem disabled and skips configuring it', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd]]]),
+      new Map([['maven', mavenRoots(cwd)]]),
     )
     vi.mocked(readSocketJsonSync).mockImplementation(() => ({
       ok: true,
@@ -980,7 +1067,7 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('stops when canceling the only detected root ecosystem question', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd]]]),
+      new Map([['maven', mavenRoots(cwd)]]),
     )
     vi.mocked(select).mockResolvedValueOnce(null)
 
@@ -991,7 +1078,7 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('stops when a root ecosystem sub-wizard is canceled', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd]]]),
+      new Map([['maven', mavenRoots(cwd)]]),
     )
     vi.mocked(select).mockResolvedValueOnce(true)
     vi.mocked(setupMaven).mockResolvedValue({
@@ -1006,7 +1093,7 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('propagates a hard failure reading the root socket.json', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd]]]),
+      new Map([['maven', mavenRoots(cwd)]]),
     )
     vi.mocked(readSocketJsonSync).mockImplementation(() => ({
       ok: false,
@@ -1023,7 +1110,7 @@ describe('setupRecursiveManifestConfig', () => {
     // The only maven candidate anywhere IS cwd itself, so there's nothing
     // left to configure individually afterward.
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd]]]),
+      new Map([['maven', mavenRoots(cwd)]]),
     )
     vi.mocked(select)
       // Configure Maven? -> yes.
@@ -1044,7 +1131,7 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('does not write when the user says yes to configure Maven but leaves every prompt blank', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd]]]),
+      new Map([['maven', mavenRoots(cwd)]]),
     )
     vi.mocked(select).mockResolvedValueOnce(true)
     // A no-op wizard: doesn't set a single field.
@@ -1065,8 +1152,8 @@ describe('setupRecursiveManifestConfig', () => {
     vi.mocked(findBuildToolCandidates).mockImplementation(
       async ({ excludePaths }) =>
         excludePaths?.length
-          ? new Map([['gradle', []]])
-          : new Map([['gradle', [legacy]]]),
+          ? new Map([['gradle', dirRoots()]])
+          : new Map([['gradle', dirRoots(legacy)]]),
     )
 
     const result = await setupRecursiveManifestConfig(cwd, false, ['legacy'])
@@ -1085,7 +1172,7 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('reports nothing excluded without writing anything, then asks about the remaining candidate individually', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['gradle', [`${cwd}/active`]]]),
+      new Map([['gradle', dirRoots(`${cwd}/active`)]]),
     )
     vi.mocked(select)
       // Configure Gradle defaults? -> no (gradle is detected via `active`).
@@ -1114,8 +1201,8 @@ describe('setupRecursiveManifestConfig', () => {
     vi.mocked(findBuildToolCandidates).mockImplementation(
       async ({ excludePaths }) =>
         excludePaths?.length
-          ? new Map([['gradle', []]])
-          : new Map([['gradle', [legacy, nested]]]),
+          ? new Map([['gradle', dirRoots()]])
+          : new Map([['gradle', dirRoots(legacy, nested)]]),
     )
 
     const result = await setupRecursiveManifestConfig(cwd, false, ['legacy'])
@@ -1134,24 +1221,9 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('reports the discovered count and walks the remaining candidate even when no --exclude-paths is given', async () => {
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['gradle', [`${cwd}/active`]]]),
+      new Map([['gradle', dirRoots(`${cwd}/active`)]]),
     )
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ message }) => {
-      messages.push(message)
-      // Configure Gradle defaults? -> no (gradle is detected via `active`,
-      // a nested project, not cwd itself).
-      if (message.startsWith('Configure Gradle defaults')) {
-        return false
-      }
-      // Configure other build roots individually? -> yes.
-      if (message.startsWith('Configure other build roots')) {
-        return true
-      }
-      // Candidate action prompt -> anything but 'configure' is a safe no-op
-      // (inherit), so this never touches writeSocketJson.
-      return 'inherit'
-    })
+    const messages = inheritEveryCandidate()
     const logSpy = vi.spyOn(logger, 'log')
 
     try {
@@ -1191,8 +1263,8 @@ describe('setupRecursiveManifestConfig', () => {
     // --exclude-paths run, say - so neither is ever prompted.
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
       new Map([
-        ['maven', [serviceA, serviceB, serviceBSubmodule]],
-        ['gradle', [serviceC]],
+        ['maven', mavenRoots(serviceA, serviceB, serviceBSubmodule)],
+        ['gradle', dirRoots(serviceC)],
       ]),
     )
     vi.mocked(readSocketJsonCascade).mockImplementation(dir =>
@@ -1221,6 +1293,126 @@ describe('setupRecursiveManifestConfig', () => {
     )
   })
 
+  it('asks once about a directory holding several POMs and enumerates each', async () => {
+    const service = `${cwd}/service`
+    vi.mocked(findBuildToolCandidates).mockResolvedValue(
+      new Map([
+        [
+          'maven',
+          [
+            { dir: service, entryFile: 'app-dev.pom.xml' },
+            { dir: service, entryFile: 'pom.xml' },
+          ],
+        ],
+      ]),
+    )
+    vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd: dir }) => ({
+      buildRoot: dir,
+      projects: [],
+    }))
+    const messages = inheritEveryCandidate()
+    const logSpy = vi.spyOn(logger, 'log')
+
+    try {
+      const result = await setupRecursiveManifestConfig(cwd, false)
+
+      expect(result).toEqual({ ok: true, data: { canceled: false } })
+      expect(messages.filter(m => m === 'service (maven)')).toHaveLength(1)
+      expect(
+        vi.mocked(enumerateWorkspaces).mock.calls.map(([o]) => o.entryFile),
+      ).toEqual(['app-dev.pom.xml', 'pom.xml'])
+      const logged = logSpy.mock.calls.map(c => String(c[0])).join('\n')
+      expect(logged).toMatch(/0 configured \(0 re-enabled\), 1 left as-is/)
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('does not enumerate a POM at cwd that --exclude-paths excludes', async () => {
+    vi.mocked(findBuildToolCandidates).mockImplementation(
+      async ({ excludePaths }) =>
+        new Map([
+          [
+            'maven',
+            excludePaths?.length
+              ? mavenRoots(cwd, `${cwd}/service`)
+              : [
+                  { dir: cwd, entryFile: 'broken.pom.xml' },
+                  ...mavenRoots(cwd, `${cwd}/service`),
+                ],
+          ],
+        ]),
+    )
+    vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd: dir }) => ({
+      buildRoot: dir,
+      projects: [],
+    }))
+    inheritEveryCandidate()
+
+    const result = await setupRecursiveManifestConfig(cwd, false, [
+      'broken.pom.xml',
+    ])
+
+    expect(result).toEqual({ ok: true, data: { canceled: false } })
+    expect(
+      vi
+        .mocked(enumerateWorkspaces)
+        .mock.calls.some(([o]) => o.entryFile === 'broken.pom.xml'),
+    ).toBe(false)
+  })
+
+  it('does not enumerate a POM at cwd that another POM there already aggregates', async () => {
+    const cwd = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'seed-coverage-poms-')),
+    )
+    await fs.writeFile(path.join(cwd, 'all.pom.xml'), '<project/>')
+    await fs.writeFile(path.join(cwd, 'pom.xml'), '<project/>')
+    vi.mocked(findBuildToolCandidates).mockResolvedValue(
+      new Map([
+        [
+          'maven',
+          [
+            { dir: cwd, entryFile: 'all.pom.xml' },
+            ...mavenRoots(cwd, `${cwd}/service`),
+          ],
+        ],
+      ]),
+    )
+    vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd: dir }) => ({
+      buildRoot: dir,
+      projects:
+        dir === cwd
+          ? [
+              {
+                type: 'maven',
+                name: 'core',
+                subprojectDir: '',
+                manifestFiles: [{ file: 'pom.xml' }],
+                children: [],
+              },
+            ]
+          : [],
+    }))
+    inheritEveryCandidate()
+
+    try {
+      await setupRecursiveManifestConfig(cwd, false)
+
+      expect(
+        vi
+          .mocked(enumerateWorkspaces)
+          .mock.calls.map(([o]) =>
+            buildRootPath({ dir: o.cwd, entryFile: o.entryFile }),
+          ),
+      ).toEqual([
+        path.join(cwd, 'all.pom.xml'),
+        path.join(cwd, 'service/pom.xml'),
+      ])
+    } finally {
+      await fs.rm(cwd, { recursive: true, force: true })
+    }
+  })
+
   it('seeds coverage from cwd itself, so a reactor rooted exactly at cwd still gets its declared members pruned', async () => {
     const cwd = await fs.realpath(
       await fs.mkdtemp(path.join(tmpdir(), 'seed-coverage-')),
@@ -1240,7 +1432,9 @@ describe('setupRecursiveManifestConfig', () => {
     const moduleB = `${cwd}/module-b`
 
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [cwd, independentService, moduleA, moduleB]]]),
+      new Map([
+        ['maven', mavenRoots(cwd, independentService, moduleA, moduleB)],
+      ]),
     )
     vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd: dir }) =>
       dir === cwd
@@ -1265,17 +1459,7 @@ describe('setupRecursiveManifestConfig', () => {
           }
         : { buildRoot: dir, projects: [] },
     )
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ message }) => {
-      messages.push(message)
-      if (message.startsWith('Configure Maven settings')) {
-        return false
-      }
-      if (message.startsWith('Configure other build roots')) {
-        return true
-      }
-      return 'inherit'
-    })
+    const messages = inheritEveryCandidate()
 
     try {
       const result = await setupRecursiveManifestConfig(cwd, false)
@@ -1300,17 +1484,9 @@ describe('setupRecursiveManifestConfig', () => {
     const laterCandidate = `${cwd}/zzz-later`
 
     vi.mocked(findBuildToolCandidates).mockResolvedValue(
-      new Map([['maven', [independentService, laterCandidate]]]),
+      new Map([['maven', mavenRoots(independentService, laterCandidate)]]),
     )
-    vi.mocked(select).mockImplementation(async ({ message }) => {
-      if (message.startsWith('Configure Maven defaults')) {
-        return false
-      }
-      if (message.startsWith('Configure other build roots')) {
-        return true
-      }
-      return 'inherit'
-    })
+    inheritEveryCandidate()
     // Simulates a missing $JAVA8_HOME env var reference: enumeration fails
     // for independent-service specifically.
     vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd: dir }) =>

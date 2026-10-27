@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- `--dynamic-sbom-inference` now builds every Maven POM a scan uploads, not only `pom.xml`: `<artifactId>-<version>.pom` and `.pom.xml` files, a bare `pom`, and names in any case, each as a build of its own. Like the upload, it skips POMs matched by `.gitignore` or by `projectIgnorePaths` in `socket.yml`.
+
 ## [1.11.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.11.0) - 2026-10-26
 
 ### Added

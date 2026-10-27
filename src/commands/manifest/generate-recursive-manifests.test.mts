@@ -16,6 +16,7 @@ vi.mock('./run-manifest-facts.mts', () => ({
   runManifestFacts: vi.fn(),
 }))
 
+import { buildRootPath } from './discover-manifest-roots.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { testPath } from '../../../test/utils.mts'
@@ -29,6 +30,10 @@ import type { SocketJson } from '../../utils/socket-json.mts'
 const monorepo = path.join(
   testPath,
   'fixtures/commands/manifest/dynamic-sbom-inference/monorepo',
+)
+const pomNames = path.join(
+  testPath,
+  'fixtures/commands/manifest/dynamic-sbom-inference/pom-names',
 )
 const reactor = path.join(monorepo, 'reactor')
 const dualMarkerDir = path.join(monorepo, 'dual-marker-dir')
@@ -1026,6 +1031,109 @@ describe('generateRecursiveManifests', () => {
     for (const [opts] of vi.mocked(runManifestFacts).mock.calls) {
       expect(opts.sidecarAcc).toBe(sidecarAcc)
       expect(opts.withFiles).toBe(true)
+    }
+  })
+
+  it('runs every POM in a directory as its own build', async () => {
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects: [],
+      }),
+    )
+
+    const outcomes = await generateRecursiveManifests({
+      cwd: pomNames,
+      verbose: false,
+    })
+
+    const calls = vi
+      .mocked(runManifestFacts)
+      .mock.calls.map(([opts]) => [
+        path.relative(pomNames, opts.cwd).replaceAll('\\', '/'),
+        opts.entryFile,
+      ])
+    expect(calls).toEqual([
+      ['', 'app-dev.pom.xml'],
+      ['', 'pom.xml'],
+      ['bare', 'pom'],
+      ['upper', 'POM.XML'],
+      ['vendored', 'lib-1.0.pom'],
+    ])
+    expect(outcomes.every(o => o.status === 'generated')).toBe(true)
+  })
+
+  it('covers a POM by file, so a sibling POM in the same directory still runs', async () => {
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects:
+          cwd === pomNames && entryFile === 'pom.xml'
+            ? [
+                {
+                  type: 'maven',
+                  name: 'bare',
+                  subprojectDir: 'bare',
+                  manifestFiles: [{ file: 'bare/pom' }],
+                  children: [],
+                },
+              ]
+            : [],
+      }),
+    )
+
+    const outcomes = await generateRecursiveManifests({
+      cwd: pomNames,
+      verbose: false,
+    })
+
+    const statusOf = (rel: string) =>
+      outcomes.find(o => buildRootPath(o) === path.join(pomNames, rel))?.status
+    expect(statusOf('pom.xml')).toBe('generated')
+    expect(statusOf('app-dev.pom.xml')).toBe('generated')
+    expect(statusOf('bare/pom')).toBe('skippedCovered')
+  })
+
+  it('resolves settings once per directory and drops a --file in mavenOpts with a warning', async () => {
+    vi.mocked(readSocketJsonCascade).mockClear()
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          maven: {
+            mavenOpts:
+              '--file other.xml -P ci -fae -fother.xml -fail-fast -file=x.xml',
+          },
+        },
+      },
+    } as SocketJson)
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects: [],
+      }),
+    )
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      await generateRecursiveManifests({ cwd: pomNames, verbose: false })
+
+      const cascadeDirs = vi
+        .mocked(readSocketJsonCascade)
+        .mock.calls.map(([dir]) => dir)
+      expect(cascadeDirs.length).toBeGreaterThan(0)
+      expect(cascadeDirs).toEqual([...new Set(cascadeDirs)])
+      expect(
+        warnSpy.mock.calls.filter(c => String(c[0]).includes('--file')),
+      ).toHaveLength(cascadeDirs.length)
+      expect(
+        vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.buildOpts),
+      ).toEqual(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.map(() => ['-P', 'ci', '-fae', '-fail-fast']),
+      )
+    } finally {
+      warnSpy.mockRestore()
     }
   })
 })

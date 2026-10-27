@@ -17,6 +17,7 @@
  * Key Functions:
  * - findSocketYmlSync: Locate socket.yml configuration file
  * - getConfigValue: Retrieve configuration value by key
+ * - loadSocketConfig: Parsed socket.yml, if one is found and valid
  * - overrideCachedConfig: Apply temporary config overrides
  * - updateConfigValue: Persist configuration changes
  */
@@ -244,6 +245,11 @@ export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
 let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
 let _configFromFlag = false
+
+export function loadSocketConfig(dir: string): SocketYml | undefined {
+  const result = findSocketYmlSync(dir)
+  return result.ok ? result.data?.parsed : undefined
+}
 
 /**
  * Reset config cache for testing purposes.
