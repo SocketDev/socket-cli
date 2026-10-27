@@ -8,6 +8,7 @@ import {
 } from './output-scan-report.mts'
 import {
   FOLD_SETTING_NONE,
+  FOLD_SETTING_PKG,
   REPORT_LEVEL_DEFER,
   REPORT_LEVEL_ERROR,
 } from '../../constants.mts'
@@ -49,6 +50,12 @@ function buildReport(
 }
 
 function buildAlerts(): ScanReport['alerts'] {
+  const leaf = alert(
+    'error',
+    'envVars',
+    'package.json',
+    'https://socket.dev/npm/package/acme-widget',
+  )
   return new Map([
     [
       'npm',
@@ -58,12 +65,7 @@ function buildAlerts(): ScanReport['alerts'] {
           new Map([
             [
               '1.0.0',
-              alert(
-                'error',
-                'envVars',
-                'package.json',
-                'https://socket.dev/npm/package/acme-widget',
-              ),
+              new Map([['package.json', new Map([['envVars at 1:2', leaf]])]]),
             ],
           ]),
         ],
@@ -100,6 +102,8 @@ describe('toPlainTextReport', () => {
     expect(text).toContain('1.0.0')
     expect(text).toContain('package.json')
     expect(text).toContain('https://socket.dev/npm/package/acme-widget')
+    expect(text).toContain('VERSION')
+    expect(text).not.toContain('INTRODUCED BY')
   })
 
   it('aligns columns for one alert and keeps its URL on a separate line', () => {
@@ -162,6 +166,7 @@ describe('toPlainTextReport', () => {
     expect(text).toContain('PASSES')
     expect(text).toContain('No alerts')
     expect(text).not.toContain('ALERT TYPE')
+    expect(text).not.toContain('VERSION')
   })
 
   it('includes license, fold and deferred-level settings', () => {
@@ -203,6 +208,95 @@ describe('toPlainTextReport', () => {
     expect(text).toContain('package-000000')
     expect(text).toContain('package-199999')
   })
+
+  it('keeps package versions accurate across fold modes', () => {
+    const leaf = alert('error', 'envVars', 'package.json', '')
+    const versionFoldAlerts: ScanReport['alerts'] = new Map([
+      ['npm', new Map([['demo-transitive', new Map([['2.3.4', leaf]])]])],
+    ])
+    const fileFoldAlerts: ScanReport['alerts'] = new Map([
+      [
+        'npm',
+        new Map([
+          [
+            'demo-transitive',
+            new Map([
+              [
+                '2.3.4',
+                new Map([
+                  ['package.json', leaf],
+                  [
+                    'src/index.js',
+                    alert('warn', 'telemetry', 'package-lock.json', ''),
+                  ],
+                ]),
+              ],
+            ]),
+          ],
+        ]),
+      ],
+    ])
+    const packageFoldAlerts: ScanReport['alerts'] = new Map([
+      ['npm', new Map([['demo-transitive', leaf]])],
+    ])
+    const twoVersionAlerts: ScanReport['alerts'] = new Map([
+      [
+        'npm',
+        new Map([
+          [
+            'demo-transitive',
+            new Map([
+              ['2.3.4', leaf],
+              ['2.3.5', alert('warn', 'telemetry', 'package.json', '')],
+            ]),
+          ],
+        ]),
+      ],
+    ])
+    const versionFoldReport = buildReport({
+      alerts: versionFoldAlerts,
+      fold: 'version',
+      healthy: false,
+    })
+    const fileFoldReport = buildReport({
+      alerts: fileFoldAlerts,
+      fold: 'file',
+      healthy: false,
+    })
+    const packageFoldReport = buildReport({
+      alerts: packageFoldAlerts,
+      fold: FOLD_SETTING_PKG,
+      healthy: false,
+    })
+
+    expect(flattenReportAlerts(versionFoldReport)[0]?.packageVersion).toBe(
+      '2.3.4',
+    )
+    expect(toPlainTextReport(versionFoldReport)).toContain('VERSION')
+    expect(toPlainTextReport(versionFoldReport)).toContain('2.3.4')
+    expect(flattenReportAlerts(fileFoldReport)).toEqual([
+      expect.objectContaining({
+        manifest: 'package.json',
+        packageVersion: '2.3.4',
+      }),
+      expect.objectContaining({
+        manifest: 'package-lock.json',
+        packageVersion: '2.3.4',
+      }),
+    ])
+    expect(toPlainTextReport(fileFoldReport)).toContain('VERSION')
+    expect(toPlainTextReport(fileFoldReport)).toContain('2.3.4')
+    expect(toPlainTextReport(fileFoldReport)).toContain('package-lock.json')
+    expect(flattenReportAlerts(packageFoldReport)[0]?.packageVersion).toBe(
+      '<unknown>',
+    )
+    expect(toPlainTextReport(packageFoldReport)).toContain('<unknown>')
+    expect(
+      flattenReportAlerts(
+        buildReport({ alerts: twoVersionAlerts, fold: 'version' }),
+      ).map(row => row.packageVersion),
+    ).toEqual(['2.3.4', '2.3.5'])
+  })
 })
 
 describe('structured scan reports', () => {
@@ -216,10 +310,14 @@ describe('structured scan reports', () => {
           npm: {
             'acme-widget-π': {
               '1.0.0': {
-                manifest: ['package.json'],
-                policy: 'error',
-                type: 'envVars',
-                url: 'https://socket.dev/npm/package/acme-widget',
+                'package.json': {
+                  'envVars at 1:2': {
+                    manifest: ['package.json'],
+                    policy: 'error',
+                    type: 'envVars',
+                    url: 'https://socket.dev/npm/package/acme-widget',
+                  },
+                },
               },
             },
           },
@@ -227,6 +325,9 @@ describe('structured scan reports', () => {
         includeLicensePolicy: true,
       },
     })
+    expect(JSON.parse(json)).not.toHaveProperty(
+      'data.alerts.npm.acme-widget-π.1.0.0.packageVersion',
+    )
   })
 
   it('keeps alert fields and URLs in Markdown', () => {
@@ -247,9 +348,9 @@ describe('structured scan reports', () => {
       [
         {
           alertType: 'envVars',
-          introducedBy: '1.0.0',
           manifest: 'package.json',
           packageName: 'acme-widget-π',
+          packageVersion: '1.0.0',
           policy: 'error',
           url: 'https://socket.dev/npm/package/acme-widget',
         },
