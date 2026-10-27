@@ -1,7 +1,11 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import {
+  buildBazelStartupFlags as buildStartupFlags,
+  spawnBazel,
+} from './bazel-process.mts'
 import constants from '../../../constants.mts'
+import { InputError } from '../../../utils/errors.mts'
 
 import type { RepoProbe } from './bazel-repo-discovery.mts'
 
@@ -35,33 +39,53 @@ const BAZEL_QUERY_TIMEOUT_MS = 600_000
 const STDERR_TAIL_BYTES = 4_096
 const STDOUT_EXCERPT_BYTES = 1_024
 
-// Splits the user-supplied --bazel-flags string on whitespace.
-// Empty / undefined returns []. No shell parsing — quoted args with embedded
-// whitespace are not supported (documented limitation; same trust model as
-// gradleOpts).
 export function splitBazelFlags(flags: string | undefined): string[] {
   if (!flags) {
     return []
   }
-  return flags.split(/\s+/).filter(Boolean)
-}
-
-// Build the shared startup-flag prefix for any bazel invocation. Centralised
-// so `--output_user_root` propagates to every spawn — principle 7 of the
-// Maven design requires per-invocation server isolation across query,
-// cquery, and `bazel mod` commands alike.
-function buildStartupFlags(opts: BazelQueryOptions): string[] {
-  const startup: string[] = []
-  if (opts.bazelRc) {
-    startup.push(`--bazelrc=${opts.bazelRc}`)
+  const args: string[] = []
+  let argument = ''
+  let quote: string | undefined
+  let started = false
+  for (let index = 0; index < flags.length; index += 1) {
+    const character = flags.charAt(index)
+    if (quote) {
+      if (character === quote) {
+        if (flags.charAt(index + 1) === quote) {
+          argument += quote
+          index += 1
+        } else {
+          quote = undefined
+        }
+      } else {
+        argument += character
+      }
+    } else if (
+      (character === '"' || character === "'") &&
+      (!started || argument.endsWith('='))
+    ) {
+      quote = character
+      started = true
+    } else if (/\s/.test(character)) {
+      if (started) {
+        args.push(argument)
+        argument = ''
+        started = false
+      }
+    } else {
+      argument += character
+      started = true
+    }
   }
-  if (opts.outputUserRoot) {
-    startup.push(`--output_user_root=${opts.outputUserRoot}`)
+  if (quote) {
+    throw new InputError(
+      '--bazel-flags contains an unterminated quote. Close each quoted value. Backslashes are preserved literally.',
+    )
   }
-  if (opts.bazelOutputBase) {
-    startup.push(`--output_base=${opts.bazelOutputBase}`)
+  if (started) {
+    args.push(argument)
   }
-  return startup
+  return args
 }
 
 function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
@@ -252,7 +276,7 @@ export async function runBazelQuery(
   let result: BazelQueryResult | undefined
   try {
     spinner.start(`Running bazel query (${queryStr.slice(0, 80)})...`)
-    const output = await spawn(opts.bin, argv, {
+    const output = await spawnBazel(opts.bin, argv, {
       cwd: opts.cwd,
       timeout: BAZEL_QUERY_TIMEOUT_MS,
       ...(opts.env ? { env: opts.env } : {}),
@@ -293,7 +317,7 @@ async function runBazelOneShot(
   const startedAt = Date.now()
   let result: BazelQueryResult
   try {
-    const output = await spawn(opts.bin, argv, {
+    const output = await spawnBazel(opts.bin, argv, {
       cwd: opts.cwd,
       timeout: BAZEL_QUERY_TIMEOUT_MS,
       ...(opts.env ? { env: opts.env } : {}),

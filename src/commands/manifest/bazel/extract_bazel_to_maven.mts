@@ -1,20 +1,19 @@
-import {
-  existsSync,
-  promises as fs,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-} from 'node:fs'
-import os from 'node:os'
+import { existsSync, promises as fs, mkdirSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
+import {
+  BAZEL_OUTPUT_ROOT_PREFIX,
+  cleanUpBazelOutputRoot,
+  makeBazelOutputUserRoot,
+  removeBazelTempdir,
+} from './bazel-cleanup.mts'
 import { runMetadataCqueryForRepo } from './bazel-cquery.mts'
 import { ensureJavaOnPath } from './bazel-java-shim.mts'
 import { validateOutputBase } from './bazel-output-base-check.mts'
+import { getBazelEnvironment } from './bazel-process.mts'
 import { provisionPythonShim } from './bazel-python-shim.mts'
 import {
   buildMavenProbeFor,
@@ -142,7 +141,6 @@ export type ExtractBazelResult = {
 }
 
 const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
-const REAP_TIMEOUT_MS = 10_000
 
 // Machine-readable completeness signal emitted alongside the synthetic
 // manifests. A `complete: false` summary tells a downstream consumer (e.g.
@@ -609,52 +607,12 @@ async function discoverCandidatesForWorkspace(
   return { candidates, discoveryIndeterminate, indeterminateProbes }
 }
 
-// Best-effort reap of a Bazel server. Spawned with a short timeout so
-// a wedged server can't itself hang the cleanup; failures are swallowed
-// because the caller will `rm -rf` the output_user_root regardless.
-async function reapBazelServer(
-  bin: string,
-  outputUserRoot: string,
-  verbose: boolean,
-): Promise<void> {
-  try {
-    await spawn(bin, [`--output_user_root=${outputUserRoot}`, 'shutdown'], {
-      timeout: REAP_TIMEOUT_MS,
-    })
-  } catch (e) {
-    // Server may already be dead, or shutdown itself timed out — the
-    // tempdir removal below is sufficient cleanup.
-    if (verbose) {
-      logger.log(
-        `[VERBOSE] reapBazelServer: shutdown failed for ${outputUserRoot} (${getErrorCause(e)}); tempdir removal will still run`,
-      )
-    }
-  }
-}
-
-async function removeTempdir(dir: string, verbose: boolean): Promise<void> {
-  try {
-    await fs.rm(dir, { recursive: true, force: true })
-  } catch (e) {
-    // Best effort. The next CLI invocation lands a fresh tempdir.
-    if (verbose) {
-      logger.log(
-        `[VERBOSE] removeTempdir: ${dir} not fully removed (${getErrorCause(e)}); a stale dir may linger until the next OS tempdir sweep`,
-      )
-    }
-  }
-}
-
-function makeOutputUserRoot(): string {
-  return mkdtempSync(path.join(os.tmpdir(), 'socket-bazel-'))
-}
-
 // Construct the BazelQueryOptions shape used for a single workspace's
 // queries. Lifted to module scope (out of the per-workspace loop) so
 // ESLint's consistent-function-scoping is happy; takes everything it
 // previously closed over as explicit params.
 function buildQueryOpts(args: {
-  baseEnv: NodeJS.ProcessEnv | undefined
+  baseEnv: NodeJS.ProcessEnv
   bin: string
   invocationFlags: string[]
   opts: ExtractBazelOptions
@@ -676,10 +634,12 @@ function buildQueryOpts(args: {
     cwd: spawnCwd,
     invocationFlags,
     outputUserRoot,
-    ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
+    ...(opts.bazelRc ? { bazelRc: path.resolve(opts.cwd, opts.bazelRc) } : {}),
     ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
-    ...(opts.bazelOutputBase ? { bazelOutputBase: opts.bazelOutputBase } : {}),
-    ...(baseEnv ? { env: baseEnv } : {}),
+    ...(opts.bazelOutputBase
+      ? { bazelOutputBase: path.resolve(opts.cwd, opts.bazelOutputBase) }
+      : {}),
+    env: baseEnv,
     verbose,
   }
 }
@@ -700,16 +660,23 @@ export async function extractBazelToMaven(
 
   // Validate config + ensure toolchains BEFORE we mint a tempdir.
   let bin: string
-  let baseEnv: NodeJS.ProcessEnv | undefined
+  let baseEnv = getBazelEnvironment(opts.env)
+  let pythonShimDir: string | undefined
+  let outputUserRoot: string
   try {
     if (opts.bazelOutputBase) {
       validateOutputBase(opts.bazelOutputBase, opts.cwd)
     }
-    ensureJavaOnPath()
-    const shim = await provisionPythonShim()
-    baseEnv = shim.augmentedEnv ?? opts.env
-    bin = await resolveBazelBinary(opts.bin)
+    ensureJavaOnPath(baseEnv, cwd)
+    bin = await resolveBazelBinary(opts.bin, baseEnv, cwd)
+    const shim = await provisionPythonShim(baseEnv, cwd)
+    pythonShimDir = shim.shimDir
+    baseEnv = shim.env
+    outputUserRoot = makeBazelOutputUserRoot(baseEnv, cwd)
   } catch (e) {
+    if (pythonShimDir) {
+      await removeBazelTempdir(pythonShimDir)
+    }
     logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')
@@ -728,8 +695,9 @@ export async function extractBazelToMaven(
 
   // Track every output_user_root we mint so we can reap them all in
   // the cleanup pass, even if a per-repo timeout forced a re-mint.
-  let outputUserRoot = makeOutputUserRoot()
-  const mintedRoots: string[] = [outputUserRoot]
+  const mintedRoots = new Map<string, Map<string, BazelQueryOptions>>([
+    [outputUserRoot, new Map()],
+  ])
   if (verbose) {
     logger.log(
       `[VERBOSE] initial --output_user_root=${outputUserRoot} (will be reaped on completion)`,
@@ -766,6 +734,7 @@ export async function extractBazelToMaven(
     ])
     const ignoreDirPrefixes = [
       ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+      BAZEL_OUTPUT_ROOT_PREFIX,
       ...(opts.ignoreDirPrefixes ?? []),
     ]
     const workspaceRoots = findWorkspaceRoots({
@@ -826,8 +795,8 @@ export async function extractBazelToMaven(
         `Workspace ${relPath || '.'}: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
       )
       const invocationFlags = getBazelInvocationFlags(mode)
-      const queryOptsFor = (userRoot: string): BazelQueryOptions =>
-        buildQueryOpts({
+      const queryOptsFor = (userRoot: string): BazelQueryOptions => {
+        const queryOpts = buildQueryOpts({
           baseEnv,
           bin,
           invocationFlags,
@@ -836,6 +805,9 @@ export async function extractBazelToMaven(
           spawnCwd: workspaceRoot,
           verbose,
         })
+        mintedRoots.get(userRoot)?.set(workspaceRoot, queryOpts)
+        return queryOpts
+      }
 
       const { candidates, discoveryIndeterminate, indeterminateProbes } =
         // eslint-disable-next-line no-await-in-loop
@@ -930,11 +902,15 @@ export async function extractBazelToMaven(
             state: 'failed',
           })
           // eslint-disable-next-line no-await-in-loop
-          await reapBazelServer(bin, outputUserRoot, verbose)
-          // eslint-disable-next-line no-await-in-loop
-          await removeTempdir(outputUserRoot, verbose)
-          outputUserRoot = makeOutputUserRoot()
-          mintedRoots.push(outputUserRoot)
+          const cleaned = await cleanUpBazelOutputRoot(
+            outputUserRoot,
+            mintedRoots.get(outputUserRoot) ?? new Map(),
+          )
+          if (cleaned) {
+            mintedRoots.delete(outputUserRoot)
+          }
+          outputUserRoot = makeBazelOutputUserRoot(baseEnv, cwd)
+          mintedRoots.set(outputUserRoot, new Map())
           if (verbose) {
             logger.log(
               `[VERBOSE] minted fresh --output_user_root=${outputUserRoot} after timeout`,
@@ -1203,11 +1179,13 @@ export async function extractBazelToMaven(
       workspaceOutcomes,
     }
   } finally {
-    for (const dir of mintedRoots) {
-      // eslint-disable-next-line no-await-in-loop
-      await reapBazelServer(bin, dir, verbose)
-      // eslint-disable-next-line no-await-in-loop
-      await removeTempdir(dir, verbose)
+    await Promise.all(
+      Array.from(mintedRoots, ([root, contexts]) =>
+        cleanUpBazelOutputRoot(root, contexts),
+      ),
+    )
+    if (pythonShimDir) {
+      await removeBazelTempdir(pythonShimDir)
     }
   }
 }

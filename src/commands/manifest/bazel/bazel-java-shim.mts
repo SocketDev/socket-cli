@@ -1,30 +1,25 @@
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
+import path from 'node:path'
 
-let probed = false
+import { getBazelEnvironmentValue } from './bazel-process.mts'
+import { InputError } from '../../../utils/errors.mts'
 
-// Verifies `java` is functional in the current execution environment. Bazel
-// JVM manifest extraction (rules_jvm_external → Coursier) requires a real
-// JDK; the CLI does not attempt to discover Homebrew installs or mutate the
-// caller's PATH/JAVA_HOME. If `java -version` fails we throw with an
-// actionable message so the surfaced error names the prerequisite directly
-// instead of relying on Bazel's downstream diagnostic.
-export function ensureJavaOnPath(): void {
-  if (probed) {
-    return
-  }
+export function ensureJavaOnPath(env: NodeJS.ProcessEnv, cwd: string): void {
+  const javaHome = getBazelEnvironmentValue(env, 'JAVA_HOME')
+  const executable = process.platform === 'win32' ? 'java.exe' : 'java'
+  const java = javaHome
+    ? path.resolve(cwd, javaHome, 'bin', executable)
+    : executable
   try {
-    execSync('java -version', { stdio: 'ignore' })
-    probed = true
+    execFileSync(java, ['-version'], {
+      cwd,
+      env,
+      stdio: 'ignore',
+      timeout: 10_000,
+    })
   } catch {
-    throw new Error(
-      'Java is required for Bazel JVM manifest extraction ' +
-        '(rules_jvm_external invokes Coursier, which needs a JDK). ' +
-        'Install a JDK (e.g. Temurin or OpenJDK) and ensure `java` is on PATH.',
+    throw new InputError(
+      'Java is required for Bazel JVM manifest extraction. Install a JDK and ensure JAVA_HOME points to it or java is on PATH.',
     )
   }
-}
-
-// Test-only: clear the per-process cache so tests can re-mock execSync.
-export function _resetJavaShimCacheForTests(): void {
-  probed = false
 }

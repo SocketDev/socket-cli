@@ -24,8 +24,11 @@
  *  6. Tag every artifact with `workspace:<rel-path>` + `repo:<name>`
  *     provenance via `sourceRepo`.
  */
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
+import {
+  BazelTimeoutError,
+  buildBazelStartupFlags,
+  spawnBazel,
+} from './bazel-process.mts'
 import { splitBazelFlags } from './bazel-query-runner.mts'
 
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
@@ -120,16 +123,7 @@ export function buildMetadataCqueryArgv(
   repoName: string,
   opts: BazelQueryOptions,
 ): string[] {
-  const startup: string[] = []
-  if (opts.bazelRc) {
-    startup.push(`--bazelrc=${opts.bazelRc}`)
-  }
-  if (opts.outputUserRoot) {
-    startup.push(`--output_user_root=${opts.outputUserRoot}`)
-  }
-  if (opts.bazelOutputBase) {
-    startup.push(`--output_base=${opts.bazelOutputBase}`)
-  }
+  const startup = buildBazelStartupFlags(opts)
   const userFlags = splitBazelFlags(opts.bazelFlags)
   return [
     ...startup,
@@ -520,7 +514,7 @@ export async function runMetadataCqueryForRepo(
   const argv = buildMetadataCqueryArgv(repoName, opts)
   const startedAt = Date.now()
   try {
-    const result = await spawn(opts.bin, argv, {
+    const result = await spawnBazel(opts.bin, argv, {
       cwd: workspaceRoot,
       timeout: timeoutMs,
       ...(opts.env ? { env: opts.env } : {}),
@@ -547,20 +541,12 @@ export async function runMetadataCqueryForRepo(
   } catch (e) {
     const err = e as {
       code?: unknown
-      killed?: unknown
-      signal?: unknown
       stderr?: unknown
       stdout?: unknown
     }
     const stdout = typeof err.stdout === 'string' ? err.stdout : ''
     const stderr = typeof err.stderr === 'string' ? err.stderr : ''
-    // On a `timeout`, the registry spawn kills the child, so Node sets
-    // `killed: true` and `signal: 'SIGTERM'` (or `SIGKILL`). There is no
-    // `timedOut` flag on the real rejection, so do not test for one.
-    const timedOut =
-      err.killed === true ||
-      err.signal === 'SIGTERM' ||
-      err.signal === 'SIGKILL'
+    const timedOut = e instanceof BazelTimeoutError
     const { artifacts, unresolvedLabels } = stdout
       ? parseCqueryJsonproto(stdout, repoName, workspaceRelPath)
       : { artifacts: [], unresolvedLabels: [] }

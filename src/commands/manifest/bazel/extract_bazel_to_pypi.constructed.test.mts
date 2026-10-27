@@ -6,40 +6,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { extractBazelToPypi } from './extract_bazel_to_pypi.mts'
 
-const FIXTURE_DIR = path.resolve(
-  import.meta.dirname,
-  '..',
-  '..',
-  '..',
-  '..',
-  '..',
-  'bazel-bench',
-  'constructed',
-  'python-pypi',
-)
-
-function isSandboxed(): boolean {
-  // Detect sandbox by probing a Bazel server socket bind or a write to
-  // /var/tmp/_bazel_$USER (both blocked in the agent sandbox).
-  try {
-    // A quick heuristic: if /var/tmp/_bazel_$USER is not writable and we're
-    // on macOS, the sandbox is likely active.
-    const { accessSync, constants } = require('node:fs')
-    accessSync(
-      `/var/tmp/_bazel_${process.env['USER'] ?? 'unknown'}`,
-      constants.W_OK,
-    )
-    return false
-  } catch {
-    return true
-  }
-}
+const FIXTURE_DIR = process.env['SOCKET_BAZEL_PYPI_FIXTURE'] ?? ''
 
 function normalizeFinalNewline(text: string): string {
   return text.replace(/\r\n/g, '\n').replace(/\n?$/, '\n')
 }
 
-describe.skipIf(isSandboxed())(
+describe.skipIf(!FIXTURE_DIR)(
   'extract_bazel_to_pypi — constructed fixture',
   () => {
     let tmp: string

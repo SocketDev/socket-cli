@@ -1,0 +1,9 @@
+{
+  "artifacts": {
+    "junit:junit": { "version": "4.13.2" },
+    "org.hamcrest:hamcrest-core": { "version": "1.3" }
+  },
+  "dependencies": {
+    "junit:junit": ["org.hamcrest:hamcrest-core"]
+  }
+}

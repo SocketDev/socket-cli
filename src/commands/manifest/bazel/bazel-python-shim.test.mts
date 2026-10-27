@@ -1,91 +1,125 @@
-import { existsSync, readlinkSync, rmSync } from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readlinkSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-vi.mock('@socketsecurity/registry/lib/bin', () => ({
-  whichBin: vi.fn(),
-}))
+import { findBazelExecutable, getBazelEnvironment } from './bazel-process.mts'
+import { provisionPythonShim } from './bazel-python-shim.mts'
 
-import { whichBin } from '@socketsecurity/registry/lib/bin'
-
-import {
-  _resetPythonShimCacheForTests,
-  provisionPythonShim,
-} from './bazel-python-shim.mts'
+const python = await findBazelExecutable(
+  process.platform === 'win32' ? 'python' : 'python3',
+  getBazelEnvironment(),
+  process.cwd(),
+)
 
 describe('provisionPythonShim', () => {
-  const mocked = vi.mocked(whichBin)
-  const SHIM_DIR = path.join(os.tmpdir(), 'socket-cli-bazel-python-shim')
+  let cwd: string
+  const shims: string[] = []
 
   beforeEach(() => {
-    mocked.mockReset()
-    _resetPythonShimCacheForTests()
+    cwd = mkdtempSync(path.join(os.tmpdir(), 'bazel python '))
   })
 
   afterEach(() => {
-    // Clean up the shared shim dir between tests to avoid stale symlinks.
-    if (existsSync(SHIM_DIR)) {
-      rmSync(SHIM_DIR, { recursive: true, force: true })
+    for (const dir of [cwd, ...shims.splice(0)]) {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5 })
     }
   })
 
-  it('returns no-shim result when python is already on PATH', async () => {
-    mocked.mockResolvedValueOnce('/usr/bin/python')
-    const result = await provisionPythonShim()
-    expect(result).toEqual({ augmentedEnv: undefined, shimDir: undefined })
+  it('reports missing Python in the supplied environment', async () => {
+    await expect(
+      provisionPythonShim(getBazelEnvironment({ PATH: cwd }), cwd),
+    ).rejects.toThrow(/python.exe|Neither python nor python3/)
   })
 
-  it('creates python symlink shim when only python3 is on PATH', async () => {
-    mocked
-      .mockResolvedValueOnce(null) // python
-      .mockResolvedValueOnce(process.execPath) // python3
-    const result = await provisionPythonShim()
-    expect(result.shimDir).toBe(SHIM_DIR)
-    expect(existsSync(path.join(SHIM_DIR, 'python'))).toBe(true)
-    expect(readlinkSync(path.join(SHIM_DIR, 'python'))).toBe(process.execPath)
-    const pathValue = result.augmentedEnv?.['PATH'] ?? ''
-    expect(pathValue.startsWith(SHIM_DIR)).toBe(true)
-  })
-
-  it('throws InputError when neither python nor python3 is found on PATH', async () => {
-    mocked.mockResolvedValue(null)
-    await expect(provisionPythonShim()).rejects.toThrow(
-      /Neither .python. nor .python3/,
+  it('rejects an executable that does not run Python 3', async () => {
+    copyFileSync(
+      process.execPath,
+      path.join(cwd, process.platform === 'win32' ? 'python.exe' : 'python'),
     )
+    await expect(
+      provisionPythonShim(getBazelEnvironment({ PATH: cwd }), cwd),
+    ).rejects.toThrow(/did not run as Python 3/)
   })
 
-  it('is idempotent: returns cached result on second call', async () => {
-    mocked
-      .mockResolvedValueOnce(null) // python
-      .mockResolvedValueOnce(process.execPath) // python3
-    const a = await provisionPythonShim()
-    const b = await provisionPythonShim()
-    // Same object reference — cached.
-    expect(b).toBe(a)
-    // whichBin only called twice (for the first invocation).
-    expect(mocked).toHaveBeenCalledTimes(2)
-  })
+  it.skipIf(!python)(
+    'checks a working interpreter in the supplied environment',
+    async () => {
+      if (!python) {
+        throw new Error('Python fixture is unavailable')
+      }
+      if (process.platform === 'win32') {
+        const env = getBazelEnvironment({ Path: path.dirname(python) })
+        expect(await provisionPythonShim(env, cwd)).toEqual({
+          env,
+          shimDir: undefined,
+        })
+      } else {
+        symlinkSync(python, path.join(cwd, 'python'))
+        const env = getBazelEnvironment({ PATH: cwd })
+        expect(await provisionPythonShim(env, cwd)).toEqual({
+          env,
+          shimDir: undefined,
+        })
+      }
+      await expect(
+        provisionPythonShim(
+          getBazelEnvironment({ PATH: path.join(cwd, 'missing') }),
+          cwd,
+        ),
+      ).rejects.toThrow(/python/)
+    },
+  )
 
-  it('uses a stable shim dir under os.tmpdir()', async () => {
-    mocked
-      .mockResolvedValueOnce(null) // python
-      .mockResolvedValueOnce(process.execPath) // python3
-    const result = await provisionPythonShim()
-    expect(result.shimDir).toBe(
-      path.join(os.tmpdir(), 'socket-cli-bazel-python-shim'),
-    )
-  })
+  it.skipIf(!python || process.platform === 'win32')(
+    'creates separate Unix shims for concurrent calls',
+    async () => {
+      if (!python) {
+        throw new Error('Python fixture is unavailable')
+      }
+      symlinkSync(python, path.join(cwd, 'python3'))
+      const results = await Promise.all([
+        provisionPythonShim(getBazelEnvironment({ PATH: cwd }), cwd),
+        provisionPythonShim(getBazelEnvironment({ PATH: cwd }), cwd),
+      ])
+      for (const result of results) {
+        if (!result.shimDir) {
+          throw new Error('Expected a Python shim')
+        }
+        shims.push(result.shimDir)
+        expect(existsSync(path.join(result.shimDir, 'python'))).toBe(true)
+        expect(readlinkSync(path.join(result.shimDir, 'python'))).toBe(python)
+        expect(result.env['PATH']).toContain(cwd)
+      }
+      expect(results[0]?.shimDir).not.toBe(results[1]?.shimDir)
+    },
+  )
 
-  it('symlink target is the absolute resolved python3 path', async () => {
-    mocked
-      .mockResolvedValueOnce(null) // python
-      .mockResolvedValueOnce(process.execPath) // python3
-    await provisionPythonShim()
-    const linkTarget = readlinkSync(path.join(SHIM_DIR, 'python'))
-    // Must be an absolute path.
-    expect(path.isAbsolute(linkTarget)).toBe(true)
-    expect(linkTarget).toBe(process.execPath)
-  })
+  it.skipIf(!python || process.platform === 'win32')(
+    'uses python3 when python is not Python 3',
+    async () => {
+      if (!python) {
+        throw new Error('Python fixture is unavailable')
+      }
+      copyFileSync(process.execPath, path.join(cwd, 'python'))
+      symlinkSync(python, path.join(cwd, 'python3'))
+      const result = await provisionPythonShim(
+        getBazelEnvironment({ PATH: cwd }),
+        cwd,
+      )
+      if (!result.shimDir) {
+        throw new Error('Expected a Python shim')
+      }
+      shims.push(result.shimDir)
+      expect(readlinkSync(path.join(result.shimDir, 'python'))).toBe(python)
+    },
+  )
 })

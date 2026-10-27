@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './extract_bazel_to_maven.mts'
 import { extractBazelToPypi } from './extract_bazel_to_pypi.mts'
-import constants, { SOCKET_JSON } from '../../../constants.mts'
+import { DRY_RUN_BAILING_NOW, SOCKET_JSON } from '../../../constants.mts'
 import { commonFlags } from '../../../flags.mts'
 import { checkCommandInput } from '../../../utils/check-input.mts'
 import { InputError } from '../../../utils/errors.mts'
@@ -35,7 +35,7 @@ const config: CliCommandConfig = {
     bazelFlags: {
       type: 'string',
       description:
-        'Flags forwarded to every bazel invocation (single quoted string)',
+        'Bazel command flags, with quoted values and literal backslashes',
     },
     bazelOutputBase: {
       type: 'string',
@@ -85,6 +85,20 @@ const config: CliCommandConfig = {
 
     Note: this command generates dependency manifests for Bazel workspaces.
     It does not run reachability analysis.
+
+    Native Windows support currently covers Maven. Use PowerShell or
+    Command Prompt with a working Python 3 python.exe and a JDK on PATH.
+    PyPI extraction on Windows is not supported yet.
+
+    Set SOCKET_BAZEL_OUTPUT_ROOT to a short, writable parent directory,
+    such as C:/sb, to shorten connector-owned Bazel output paths. Each
+    invocation gets a separate directory. An explicit --bazel-output-base
+    takes precedence for Bazel's cache and is kept after the scan. The
+    scan only stops Bazel servers it started.
+
+    In --bazel-flags, single or double quotes at the start of a value or
+    after = group values containing spaces. Backslashes stay literal. Double a matching quote to include
+    it within a quoted value. Shell variables are not expanded.
 
     Maven hub discovery: under Bzlmod, hubs are enumerated from
     \`bazel mod show_extension\` and filtered to the root module's own hubs.
@@ -265,7 +279,9 @@ async function run(
   let perRepoTimeout = cli.flags['perRepoTimeout'] as number | undefined
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
-  if (!bazel) {
+  if (bazel) {
+    bazel = path.resolve(process.cwd(), String(bazel))
+  } else {
     const defaultBazel =
       sockJson.defaults?.manifest?.bazel?.bazel ??
       sockJson.defaults?.manifest?.bazel?.bin
@@ -359,7 +375,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
