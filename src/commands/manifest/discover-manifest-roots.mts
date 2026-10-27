@@ -1,6 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import micromatch from 'micromatch'
+
+import { defaultEntryFile, isAddressedByFile } from './scripts/build-tool.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
@@ -11,8 +15,19 @@ import type { SocketJson } from '../../utils/socket-json.mts'
 
 const BUILD_TOOLS: BuildTool[] = ['gradle', 'maven', 'sbt']
 
+// In the pattern, not the walk, whose ignores (--exclude-paths, .gitignore)
+// stay case-sensitive. Assumes every letter in the pattern is a literal.
+function foldCase(pattern: string): string {
+  return pattern.replace(
+    /[a-z]/gi,
+    c => `[${c.toLowerCase()}${c.toUpperCase()}]`,
+  )
+}
+
 // One glob-suffix set per ecosystem's build-descriptor marker(s); `settings.gradle(.kts)`
-// covers Kotlin-DSL roots that have no root `build.gradle`.
+// covers Kotlin-DSL roots that have no root `build.gradle`. Maven mirrors the
+// `pomxml` pattern of the API's supported files, case-insensitively as a scan
+// matches it, so every POM a scan uploads is also a build root here.
 const MARKERS_BY_TOOL: Record<BuildTool, string[]> = {
   __proto__: null,
   gradle: [
@@ -21,17 +36,34 @@ const MARKERS_BY_TOOL: Record<BuildTool, string[]> = {
     'settings.gradle',
     'settings.gradle.kts',
   ],
-  maven: ['pom.xml'],
+  maven: [foldCase('{*-*.,}pom{.xml,}')],
   sbt: ['build.sbt'],
 } as unknown as Record<BuildTool, string[]>
 
-const TOOL_BY_MARKER: Record<string, BuildTool> = {
-  __proto__: null,
-} as unknown as Record<string, BuildTool>
-for (const tool of BUILD_TOOLS) {
-  for (const marker of MARKERS_BY_TOOL[tool]) {
-    TOOL_BY_MARKER[marker] = tool
-  }
+const MARKER_MATCHERS_BY_TOOL = Object.fromEntries(
+  BUILD_TOOLS.map(tool => [
+    tool,
+    MARKERS_BY_TOOL[tool].map(marker =>
+      micromatch.matcher(marker, { dot: true }),
+    ),
+  ]),
+) as Record<BuildTool, Array<(basename: string) => boolean>>
+
+// `entryFile` (a basename in `dir`) is set only for a tool that addresses its
+// builds by file, where one directory can hold several builds.
+export type BuildRoot = { dir: string; entryFile?: string | undefined }
+
+export function buildRootPath(root: BuildRoot): string {
+  return path.join(root.dir, root.entryFile ?? '')
+}
+
+function markerTool(
+  tools: readonly BuildTool[],
+  basename: string,
+): BuildTool | undefined {
+  return tools.find(tool =>
+    MARKER_MATCHERS_BY_TOOL[tool].some(matches => matches(basename)),
+  )
 }
 
 // A disabled ecosystem is skipped entirely by the glob scan below, so a
@@ -85,27 +117,39 @@ export async function addCoveredBuildFiles(
   }
 }
 
-// `dir` must be realpath-resolved, as findBuildToolCandidates returns it.
+// `root.dir` must be realpath-resolved, as findBuildToolCandidates returns it.
 export function isBuildRootCovered(
   covered: ReadonlySet<string>,
   tool: BuildTool,
-  dir: string,
+  root: BuildRoot,
 ): boolean {
+  const entryFile = root.entryFile ?? defaultEntryFile(tool)
+  if (entryFile) {
+    return covered.has(path.join(root.dir, entryFile))
+  }
   return MARKERS_BY_TOOL[tool].some(marker =>
-    covered.has(path.join(dir, marker)),
+    covered.has(path.join(root.dir, marker)),
   )
 }
 
-function sortByDepthThenPath(dirs: readonly string[], cwd: string): string[] {
-  return [...dirs].sort((a, b) => {
-    const relA = path.relative(cwd, a)
-    const relB = path.relative(cwd, b)
+function sortByDepthThenPath(
+  roots: readonly BuildRoot[],
+  cwd: string,
+): BuildRoot[] {
+  return [...roots].sort((a, b) => {
+    const relA = path.relative(cwd, a.dir)
+    const relB = path.relative(cwd, b.dir)
     const depthA = relA === '' ? 0 : relA.split(path.sep).length
     const depthB = relB === '' ? 0 : relB.split(path.sep).length
     if (depthA !== depthB) {
       return depthA - depthB
     }
-    return relA < relB ? -1 : relA > relB ? 1 : 0
+    if (relA !== relB) {
+      return relA < relB ? -1 : 1
+    }
+    const entryA = a.entryFile ?? ''
+    const entryB = b.entryFile ?? ''
+    return entryA < entryB ? -1 : entryA > entryB ? 1 : 0
   })
 }
 
@@ -119,11 +163,11 @@ export async function findBuildToolCandidates({
   cwd: string
   excludePaths?: string[] | undefined
   sockJson: SocketJson
-}): Promise<Map<BuildTool, string[]>> {
+}): Promise<Map<BuildTool, BuildRoot[]>> {
   const enabledTools = BUILD_TOOLS.filter(
     tool => !sockJson.defaults?.manifest?.[tool]?.disabled,
   )
-  const result = new Map<BuildTool, string[]>()
+  const result = new Map<BuildTool, BuildRoot[]>()
   if (!enabledTools.length) {
     return result
   }
@@ -134,32 +178,48 @@ export async function findBuildToolCandidates({
   const additionalIgnores = (excludePaths ?? []).flatMap(
     excludePathToScanIgnores,
   )
+  // The same socket.yml a scan applies to its upload, so a build file a scan
+  // would not upload is not built either.
+  const socketYml = findSocketYmlSync(cwd)
   const hits = await globWithGitIgnore(patterns, {
     absolute: true,
     additionalIgnores,
     cwd,
+    socketConfig: socketYml.ok ? socketYml.data?.parsed : undefined,
   })
 
-  const dirSetsByTool = new Map<BuildTool, Set<string>>(
-    enabledTools.map(tool => [tool, new Set<string>()]),
+  const rootsByTool = new Map<BuildTool, Map<string, BuildRoot>>(
+    enabledTools.map(tool => [tool, new Map<string, BuildRoot>()]),
   )
   const resolvedHits = await Promise.all(
-    hits.map(async hit => ({
-      dir: await realpathOrResolved(path.dirname(hit)),
-      tool: TOOL_BY_MARKER[path.basename(hit)],
-    })),
+    hits.map(async hit => {
+      const basename = path.basename(hit)
+      return {
+        basename,
+        dir: await realpathOrResolved(path.dirname(hit)),
+        tool: markerTool(enabledTools, basename),
+      }
+    }),
   )
-  for (const { dir, tool } of resolvedHits) {
-    if (tool) {
-      dirSetsByTool.get(tool)?.add(dir)
+  for (const { basename, dir, tool } of resolvedHits) {
+    if (!tool) {
+      continue
     }
+    const root = {
+      dir,
+      entryFile: isAddressedByFile(tool) ? basename : undefined,
+    }
+    rootsByTool.get(tool)?.set(buildRootPath(root), root)
   }
 
   const realCwd = await realpathOrResolved(cwd)
   for (const tool of enabledTools) {
     result.set(
       tool,
-      sortByDepthThenPath([...(dirSetsByTool.get(tool) ?? [])], realCwd),
+      sortByDepthThenPath(
+        [...(rootsByTool.get(tool)?.values() ?? [])],
+        realCwd,
+      ),
     )
   }
   return result

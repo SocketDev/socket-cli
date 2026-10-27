@@ -30,6 +30,10 @@ const monorepo = path.join(
   testPath,
   'fixtures/commands/manifest/dynamic-sbom-inference/monorepo',
 )
+const pomNames = path.join(
+  testPath,
+  'fixtures/commands/manifest/dynamic-sbom-inference/pom-names',
+)
 const reactor = path.join(monorepo, 'reactor')
 const dualMarkerDir = path.join(monorepo, 'dual-marker-dir')
 
@@ -1027,5 +1031,73 @@ describe('generateRecursiveManifests', () => {
       expect(opts.sidecarAcc).toBe(sidecarAcc)
       expect(opts.withFiles).toBe(true)
     }
+  })
+
+  it('runs every POM in a directory as its own build, pointing maven at any non-default one', async () => {
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ buildOpts, cwd }) => ({
+        factsPath: path.join(
+          cwd,
+          `${buildOpts[1] ?? 'pom.xml'}.socket.facts.json`,
+        ),
+        projects: [],
+      }),
+    )
+
+    const outcomes = await generateRecursiveManifests({
+      cwd: pomNames,
+      verbose: false,
+    })
+
+    const calls = vi
+      .mocked(runManifestFacts)
+      .mock.calls.map(([opts]) => [
+        path.relative(pomNames, opts.cwd).replaceAll('\\', '/'),
+        opts.buildOpts,
+      ])
+    expect(calls).toEqual([
+      ['', ['--file', 'app-dev.pom.xml']],
+      ['', []],
+      ['bare', ['--file', 'pom']],
+      ['upper', ['--file', 'POM.XML']],
+      ['vendored', ['--file', 'lib-1.0.pom']],
+    ])
+    expect(outcomes.every(o => o.status === 'generated')).toBe(true)
+  })
+
+  it('covers a POM by file, so a sibling POM in the same directory still runs', async () => {
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ buildOpts, cwd }) => ({
+        factsPath: path.join(
+          cwd,
+          `${buildOpts[1] ?? 'pom.xml'}.socket.facts.json`,
+        ),
+        projects:
+          cwd === pomNames && !buildOpts.length
+            ? [
+                {
+                  type: 'maven',
+                  name: 'bare',
+                  subprojectDir: 'bare',
+                  manifestFiles: [{ file: 'bare/pom' }],
+                  children: [],
+                },
+              ]
+            : [],
+      }),
+    )
+
+    const outcomes = await generateRecursiveManifests({
+      cwd: pomNames,
+      verbose: false,
+    })
+
+    const statusOf = (rel: string) =>
+      outcomes.find(
+        o => path.join(o.dir, o.entryFile ?? '') === path.join(pomNames, rel),
+      )?.status
+    expect(statusOf('pom.xml')).toBe('generated')
+    expect(statusOf('app-dev.pom.xml')).toBe('generated')
+    expect(statusOf('bare/pom')).toBe('skippedCovered')
   })
 })

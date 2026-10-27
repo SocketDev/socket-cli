@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
   addCoveredBuildFiles,
+  buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
   realpathOrResolved,
@@ -11,7 +12,10 @@ import {
 } from './discover-manifest-roots.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
-import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import {
+  resolveBuildToolBin,
+  withEntryFileOpts,
+} from './scripts/build-tool.mts'
 import {
   DSI_SETUP_COMMAND,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
@@ -24,6 +28,7 @@ import {
 } from '../../utils/socket-json.mts'
 import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
+import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { BuildOption } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
@@ -37,8 +42,7 @@ export type RecursiveManifestOutcomeStatus =
   | 'skippedCovered'
   | 'skippedDisabled'
 
-export type RecursiveManifestOutcome = {
-  dir: string
+export type RecursiveManifestOutcome = BuildRoot & {
   ecosystem: BuildTool
   factsPath?: string | undefined
   status: RecursiveManifestOutcomeStatus
@@ -82,7 +86,7 @@ function getSkipReason(
 
 type DisabledRoot = { dir: string; sockJson: SocketJson }
 
-// Nearest already-confirmed-disabled ancestor of `dir`, if any - lets the
+// Nearest already-confirmed-disabled `dir` or ancestor of it, if any - lets the
 // caller shorten `readSocketJsonCascade`'s walk to start there instead of
 // all the way back at `cwd`, without skipping any nested override.
 function nearestDisabledRoot(
@@ -92,7 +96,7 @@ function nearestDisabledRoot(
   let nearest: DisabledRoot | undefined
   for (const root of disabledRoots) {
     if (
-      dir.startsWith(`${root.dir}${path.sep}`) &&
+      (dir === root.dir || dir.startsWith(`${root.dir}${path.sep}`)) &&
       (!nearest || root.dir.length > nearest.dir.length)
     ) {
       nearest = root
@@ -113,7 +117,7 @@ async function runEcosystemCandidates({
   verbose,
   withFiles,
 }: {
-  candidatesByTool: Map<BuildTool, string[]>
+  candidatesByTool: Map<BuildTool, BuildRoot[]>
   excludePaths: string[] | undefined
   ignoreUnresolved: boolean | undefined
   optionFlags: ReadonlySet<BuildOption>
@@ -130,12 +134,13 @@ async function runEcosystemCandidates({
 }): Promise<RecursiveManifestOutcome[]> {
   const outcomes: RecursiveManifestOutcome[] = []
   const covered = new Set<string>()
-  for (const [ecosystem, dirs] of candidatesByTool) {
+  for (const [ecosystem, roots] of candidatesByTool) {
     const disabledRoots: DisabledRoot[] = []
-    for (let dirIndex = 0; dirIndex < dirs.length; dirIndex += 1) {
-      const dir = dirs[dirIndex] as string
-      if (isBuildRootCovered(covered, ecosystem, dir)) {
-        outcomes.push({ dir, ecosystem, status: 'skippedCovered' })
+    for (let rootIndex = 0; rootIndex < roots.length; rootIndex += 1) {
+      const root = roots[rootIndex] as BuildRoot
+      const { dir, entryFile } = root
+      if (isBuildRootCovered(covered, ecosystem, root)) {
+        outcomes.push({ ...root, ecosystem, status: 'skippedCovered' })
         continue
       }
 
@@ -163,7 +168,7 @@ async function runEcosystemCandidates({
         if (!nearestRoot) {
           logger.warn(`Skipping ${dir} (${ecosystem}): ${skipReason}.`)
         }
-        outcomes.push({ dir, ecosystem, status: 'skippedDisabled' })
+        outcomes.push({ ...root, ecosystem, status: 'skippedDisabled' })
         disabledRoots.push({ dir, sockJson })
         continue
       }
@@ -176,7 +181,7 @@ async function runEcosystemCandidates({
       // eslint-disable-next-line no-await-in-loop
       const result = await runManifestFacts({
         bin,
-        buildOpts,
+        buildOpts: withEntryFileOpts(ecosystem, entryFile, buildOpts),
         cwd: dir,
         ecosystem,
         excludeConfigs,
@@ -199,20 +204,20 @@ async function runEcosystemCandidates({
       })
 
       if (result === null) {
-        outcomes.push({ dir, ecosystem, status: 'failed' })
-        const abortedDirs = dirs.slice(dirIndex + 1)
-        if (abortedDirs.length) {
+        outcomes.push({ ...root, ecosystem, status: 'failed' })
+        const abortedRoots = roots.slice(rootIndex + 1)
+        if (abortedRoots.length) {
           logger.warn(
-            `Aborting ${ecosystem} discovery: ${dir} failed to generate Socket facts, and without them the remaining build roots cannot be safely classified as covered or independent.`,
+            `Aborting ${ecosystem} discovery: ${buildRootPath(root)} failed to generate Socket facts, and without them the remaining build roots cannot be safely classified as covered or independent.`,
           )
         }
-        for (const abortedDir of abortedDirs) {
-          outcomes.push({ dir: abortedDir, ecosystem, status: 'aborted' })
+        for (const aborted of abortedRoots) {
+          outcomes.push({ ...aborted, ecosystem, status: 'aborted' })
         }
         break
       }
       if (!result) {
-        outcomes.push({ dir, ecosystem, status: 'empty' })
+        outcomes.push({ ...root, ecosystem, status: 'empty' })
         continue
       }
 
@@ -224,7 +229,7 @@ async function runEcosystemCandidates({
         result.projects,
       )
       outcomes.push({
-        dir,
+        ...root,
         ecosystem,
         factsPath: result.factsPath,
         status: 'generated',

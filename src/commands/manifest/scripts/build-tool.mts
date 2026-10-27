@@ -30,6 +30,19 @@ const ADDRESSED_BY_FILE: Record<BuildTool, boolean> = {
   sbt: false,
 } as unknown as Record<BuildTool, boolean>
 
+const DEFAULT_ENTRY_FILE: Partial<Record<BuildTool, string>> = {
+  __proto__: null,
+  maven: 'pom.xml',
+} as unknown as Partial<Record<BuildTool, string>>
+
+export function defaultEntryFile(tool: BuildTool): string | undefined {
+  return DEFAULT_ENTRY_FILE[tool]
+}
+
+export function isAddressedByFile(tool: BuildTool): boolean {
+  return ADDRESSED_BY_FILE[tool]
+}
+
 // sbt happily runs in any directory, synthesizing a default project from its
 // name, so an sbt run outside a build yields a plausible but bogus SBOM. Maven
 // and Gradle refuse such a directory themselves.
@@ -38,6 +51,20 @@ export function looksLikeSbtBuild(projectDir: string): boolean {
     existsSync(resolve(projectDir, 'build.sbt')) ||
     existsSync(resolve(projectDir, 'project'))
   )
+}
+
+// Leads, as Maven 3 takes the first `--file`; nothing for the default entry
+// file, so options a user passes keep their meaning.
+export function withEntryFileOpts(
+  tool: BuildTool,
+  entryFile: string | undefined,
+  buildOpts: string[],
+): string[] {
+  const defaultEntry = DEFAULT_ENTRY_FILE[tool]
+  if (!entryFile || !defaultEntry || entryFile === defaultEntry) {
+    return buildOpts
+  }
+  return ['--file', entryFile, ...buildOpts]
 }
 
 export function resolveBuildToolBin(
