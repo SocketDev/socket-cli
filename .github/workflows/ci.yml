@@ -10,7 +10,7 @@ on:
     branches: [main]
     tags: ['*']
   pull_request:
-    branches: [main]
+    branches: [main, fix/scan-report-large-output]
   workflow_dispatch:
 
 permissions:
