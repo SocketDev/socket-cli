@@ -7,6 +7,7 @@ import {
   readdirSync,
   realpathSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -16,8 +17,16 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
+import {
+  cleanUpBazelOutputRoot,
+  makeBazelOutputUserRoot,
+} from './bazel-cleanup.mts'
 import { ensureJavaOnPath } from './bazel-java-shim.mts'
-import { getBazelEnvironment, spawnBazel } from './bazel-process.mts'
+import {
+  BazelTimeoutError,
+  getBazelEnvironment,
+  spawnBazel,
+} from './bazel-process.mts'
 import { provisionPythonShim } from './bazel-python-shim.mts'
 import { extractBazelToMaven } from './extract_bazel_to_maven.mts'
 
@@ -178,6 +187,149 @@ describe.skipIf(process.env['SOCKET_BAZEL_INTEGRATION'] !== '1')(
         ).toMatchObject(EXPECTED)
         expect(readdirSync(outputParent)).toEqual([])
       }, 600_000)
+    }
+  },
+)
+
+const SLOW_REPOSITORY_RULE = `def _slow_repo_impl(ctx):
+    if ctx.os.name.startswith("windows"):
+        ctx.execute(["cmd.exe", "/c", "ping -n 301 127.0.0.1 > nul"], timeout = 600)
+    else:
+        ctx.execute(["sleep", "300"], timeout = 600)
+    ctx.file("BUILD.bazel", 'filegroup(name = "fixture")\\n')
+
+slow_repo = repository_rule(implementation = _slow_repo_impl)
+`
+
+describe.skipIf(process.env['SOCKET_BAZEL_INTEGRATION'] !== '1')(
+  'native Bazel process supervision',
+  () => {
+    let bin: string
+    let workspace: string
+    let root: string
+
+    beforeAll(async () => {
+      bin = await resolveBazelBinary(
+        process.env['SOCKET_BAZEL_TEST_BIN'],
+        getBazelEnvironment(),
+        process.cwd(),
+      )
+    })
+
+    beforeEach(() => {
+      workspace = realpathSync(
+        mkdtempSync(path.join(os.tmpdir(), 'bazel supervision ')),
+      )
+      cpSync(
+        path.join(FIXTURES, 'workspace', '.bazelversion'),
+        path.join(workspace, '.bazelversion'),
+      )
+      writeFileSync(path.join(workspace, 'BUILD.bazel'), '')
+      writeFileSync(path.join(workspace, 'slow.bzl'), SLOW_REPOSITORY_RULE)
+      writeFileSync(
+        path.join(workspace, 'WORKSPACE'),
+        'load("//:slow.bzl", "slow_repo")\n\nslow_repo(name = "slow")\n',
+      )
+      // A shutdown that exits successfully while the server keeps running.
+      writeFileSync(
+        path.join(workspace, '.bazelrc'),
+        'common --noenable_bzlmod\nshutdown --iff_heap_size_greater_than=1000000\n',
+      )
+      root = makeBazelOutputUserRoot(getBazelEnvironment(), workspace)
+    })
+
+    afterEach(() => {
+      rmSync(workspace, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 200,
+      })
+      rmSync(root, { recursive: true, force: true, maxRetries: 5 })
+    })
+
+    const launchers: Array<[string, () => string]> = [
+      [
+        'JavaScript',
+        () => {
+          const launcher = path.join(workspace, 'launcher.cjs')
+          writeFileSync(
+            launcher,
+            `const { spawnSync } = require('node:child_process')
+const result = spawnSync(${JSON.stringify(bin)}, process.argv.slice(2), { stdio: 'inherit' })
+process.exit(result.status ?? 1)
+`,
+          )
+          return launcher
+        },
+      ],
+    ]
+    if (process.platform === 'win32') {
+      launchers.push([
+        'batch',
+        () => {
+          const launcher = path.join(workspace, 'launcher.cmd')
+          writeFileSync(launcher, `@"${bin}" %*\r\n`)
+          return launcher
+        },
+      ])
+    }
+
+    async function expectServerStopped(launcher: string): Promise<void> {
+      const server = readdirSync(root)
+        .map(entry => path.join(root, entry, 'server', 'server.pid.txt'))
+        .filter(file => existsSync(file))
+        .map(file => Number(readFileSync(file, 'utf8')))
+      expect(server).toHaveLength(1)
+      expect(
+        await cleanUpBazelOutputRoot(
+          root,
+          new Map([
+            [
+              workspace,
+              {
+                bin: launcher,
+                cwd: workspace,
+                invocationFlags: [],
+                outputUserRoot: root,
+              },
+            ],
+          ]),
+        ),
+      ).toBe(true)
+      expect(existsSync(root)).toBe(false)
+      expect(() => process.kill(server[0] ?? 0, 0)).toThrow()
+    }
+
+    for (const [kind, writeLauncher] of launchers) {
+      it(`stops Bazel behind a ${kind} launcher when a query times out`, async () => {
+        const launcher = writeLauncher()
+        const startedAt = Date.now()
+        await expect(
+          spawnBazel(
+            launcher,
+            [`--output_user_root=${root}`, 'query', '@slow//:fixture'],
+            { cwd: workspace, timeout: 30_000 },
+          ),
+        ).rejects.toBeInstanceOf(BazelTimeoutError)
+        expect(Date.now() - startedAt).toBeLessThan(60_000)
+        await expectServerStopped(launcher)
+      }, 180_000)
+
+      it(`stops Bazel behind a ${kind} launcher when cancelled`, async () => {
+        const launcher = writeLauncher()
+        const controller = new AbortController()
+        const startedAt = Date.now()
+        const query = spawnBazel(
+          launcher,
+          [`--output_user_root=${root}`, 'query', '@slow//:fixture'],
+          { cwd: workspace, signal: controller.signal },
+        )
+        setTimeout(() => controller.abort(), 30_000)
+        await expect(query).rejects.toMatchObject({ name: 'AbortError' })
+        expect(Date.now() - startedAt).toBeLessThan(60_000)
+        await expectServerStopped(launcher)
+      }, 180_000)
     }
   },
 )

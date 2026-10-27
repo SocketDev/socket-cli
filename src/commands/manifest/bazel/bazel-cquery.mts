@@ -24,7 +24,11 @@
  *  6. Tag every artifact with `workspace:<rel-path>` + `repo:<name>`
  *     provenance via `sourceRepo`.
  */
-import { buildBazelStartupFlags, spawnBazel } from './bazel-process.mts'
+import {
+  BazelTimeoutError,
+  buildBazelStartupFlags,
+  spawnBazel,
+} from './bazel-process.mts'
 import { splitBazelFlags } from './bazel-query-runner.mts'
 
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
@@ -537,20 +541,12 @@ export async function runMetadataCqueryForRepo(
   } catch (e) {
     const err = e as {
       code?: unknown
-      killed?: unknown
-      signal?: unknown
       stderr?: unknown
       stdout?: unknown
     }
     const stdout = typeof err.stdout === 'string' ? err.stdout : ''
     const stderr = typeof err.stderr === 'string' ? err.stderr : ''
-    // On a `timeout`, the registry spawn kills the child, so Node sets
-    // `killed: true` and `signal: 'SIGTERM'` (or `SIGKILL`). There is no
-    // `timedOut` flag on the real rejection, so do not test for one.
-    const timedOut =
-      err.killed === true ||
-      err.signal === 'SIGTERM' ||
-      err.signal === 'SIGKILL'
+    const timedOut = e instanceof BazelTimeoutError
     const { artifacts, unresolvedLabels } = stdout
       ? parseCqueryJsonproto(stdout, repoName, workspaceRelPath)
       : { artifacts: [], unresolvedLabels: [] }

@@ -1,3 +1,4 @@
+import childProcess from 'node:child_process'
 import {
   chmodSync,
   copyFileSync,
@@ -13,6 +14,7 @@ import {
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 
 import cmdShim from 'cmd-shim'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -20,11 +22,15 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import {
   cleanUpBazelOutputRoot,
-  cleanUpBazelServer,
   makeBazelOutputUserRoot,
   removeBazelTempdir,
+  shutDownBazelServer,
 } from './bazel-cleanup.mts'
-import { getBazelEnvironment, spawnBazel } from './bazel-process.mts'
+import {
+  BazelTimeoutError,
+  getBazelEnvironment,
+  spawnBazel,
+} from './bazel-process.mts'
 import { splitBazelFlags } from './bazel-query-runner.mts'
 
 const ARGUMENTS = [
@@ -56,6 +62,7 @@ function readServerCalls(record: string): unknown[] {
 describe('Bazel process invocation', () => {
   let cwd: string
   let launcher: string
+  const servers: number[] = []
 
   beforeEach(() => {
     cwd = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'bazel process ')))
@@ -64,6 +71,11 @@ describe('Bazel process invocation', () => {
   })
 
   afterEach(() => {
+    for (const pid of servers.splice(0)) {
+      if (isAlive(pid)) {
+        process.kill(pid, 'SIGKILL')
+      }
+    }
     rmSync(cwd, { recursive: true, force: true, maxRetries: 5 })
   })
 
@@ -182,14 +194,17 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
       `--bazelrc=${path.join(cwd, 'custom rc')}`,
       `--output_user_root=${root}`,
     ]
-    await cleanUpBazelServer({
-      bin: launcher,
-      cwd,
-      invocationFlags: [],
-      outputUserRoot: root,
-      bazelRc: path.join(cwd, 'custom rc'),
-      env: { SOCKET_BAZEL_LITERAL: 'shutdown environment' },
-    })
+    await shutDownBazelServer(
+      {
+        bin: launcher,
+        cwd,
+        invocationFlags: [],
+        outputUserRoot: root,
+        bazelRc: path.join(cwd, 'custom rc'),
+        env: { SOCKET_BAZEL_LITERAL: 'shutdown environment' },
+      },
+      AbortSignal.timeout(30_000),
+    )
     expect(readServerCalls(record)).toEqual([
       {
         args: [...startupFlags, 'info', 'install_base', 'output_base'],
@@ -210,13 +225,16 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
     const callerOutputBase = path.join(cwd, 'caller cache')
     mkdirSync(callerOutputBase)
     const record = writeServerLauncher(installBase, callerOutputBase)
-    await cleanUpBazelServer({
-      bin: launcher,
-      cwd,
-      invocationFlags: [],
-      outputUserRoot: root,
-      bazelOutputBase: callerOutputBase,
-    })
+    await shutDownBazelServer(
+      {
+        bin: launcher,
+        cwd,
+        invocationFlags: [],
+        outputUserRoot: root,
+        bazelOutputBase: callerOutputBase,
+      },
+      AbortSignal.timeout(30_000),
+    )
     expect(readServerCalls(record)).toEqual([
       expect.objectContaining({
         args: expect.arrayContaining(['info', 'install_base', 'output_base']),
@@ -238,13 +256,16 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
     mkdirSync(callerInstallBase)
     mkdirSync(callerOutputBase)
     const record = writeServerLauncher(callerInstallBase, callerOutputBase)
-    await cleanUpBazelServer({
-      bin: launcher,
-      cwd,
-      invocationFlags: [],
-      outputUserRoot: root,
-      bazelRc: path.join(cwd, 'custom rc'),
-    })
+    await shutDownBazelServer(
+      {
+        bin: launcher,
+        cwd,
+        invocationFlags: [],
+        outputUserRoot: root,
+        bazelRc: path.join(cwd, 'custom rc'),
+      },
+      AbortSignal.timeout(30_000),
+    )
     expect(readServerCalls(record)).toEqual([
       expect.objectContaining({
         args: expect.arrayContaining(['info', 'install_base', 'output_base']),
@@ -252,8 +273,9 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
     ])
   })
 
-  it('removes the output root when Bazel cannot report its bases', async () => {
+  it('stops its own server when Bazel cannot report its bases', async () => {
     const { root } = makeServerRoot()
+    const server = startFakeServer(path.join(root, 'workspace hash'))
     writeFileSync(launcher, 'process.exit(1)\n')
     expect(
       await cleanUpBazelOutputRoot(
@@ -266,6 +288,55 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
         ]),
       ),
     ).toBe(true)
+    expect(isAlive(server)).toBe(false)
+    expect(existsSync(root)).toBe(false)
+  }, 30_000)
+
+  it('stops its own server when shutdown leaves it running', async () => {
+    const { installBase, root } = makeServerRoot()
+    const callerOutputBase = path.join(cwd, 'caller cache')
+    const server = startFakeServer(callerOutputBase)
+    writeServerLauncher(installBase, callerOutputBase)
+    expect(
+      await cleanUpBazelOutputRoot(
+        root,
+        new Map([
+          [
+            cwd,
+            {
+              bin: launcher,
+              cwd,
+              invocationFlags: [],
+              outputUserRoot: root,
+              bazelOutputBase: callerOutputBase,
+            },
+          ],
+        ]),
+      ),
+    ).toBe(true)
+    expect(isAlive(server)).toBe(false)
+    expect(existsSync(root)).toBe(false)
+  }, 30_000)
+
+  it('leaves a server in a caller output base running', async () => {
+    const { root } = makeServerRoot()
+    const callerInstallBase = path.join(cwd, 'caller install base')
+    const callerOutputBase = path.join(cwd, 'caller output base')
+    mkdirSync(callerInstallBase)
+    const server = startFakeServer(callerOutputBase)
+    writeServerLauncher(callerInstallBase, callerOutputBase)
+    expect(
+      await cleanUpBazelOutputRoot(
+        root,
+        new Map([
+          [
+            cwd,
+            { bin: launcher, cwd, invocationFlags: [], outputUserRoot: root },
+          ],
+        ]),
+      ),
+    ).toBe(true)
+    expect(isAlive(server)).toBe(true)
     expect(existsSync(root)).toBe(false)
   })
 
@@ -297,7 +368,7 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
     writeFileSync(launcher, 'setInterval(() => {}, 1000)\n')
     await expect(
       spawnBazel(launcher, [], { cwd, timeout: 100 }),
-    ).rejects.toMatchObject({ signal: 'SIGTERM' })
+    ).rejects.toBeInstanceOf(BazelTimeoutError)
   })
 
   it('cancels a real subprocess', async () => {
@@ -307,7 +378,101 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
     controller.abort()
     await expect(result).rejects.toMatchObject({ name: 'AbortError' })
   })
+
+  it('stops what a launcher started when the timeout expires', async () => {
+    const record = writeParentLauncher({ detached: false })
+    await expect(
+      spawnBazel(launcher, [], { cwd, timeout: 500 }),
+    ).rejects.toBeInstanceOf(BazelTimeoutError)
+    expect(await waitForExit(readChildPid(record))).toBe(true)
+  })
+
+  it('stops what a launcher started when cancelled', async () => {
+    const record = writeParentLauncher({ detached: false })
+    const controller = new AbortController()
+    const result = spawnBazel(launcher, [], { cwd, signal: controller.signal })
+    await waitForFile(record)
+    controller.abort()
+    await expect(result).rejects.toMatchObject({ name: 'AbortError' })
+    expect(await waitForExit(readChildPid(record))).toBe(true)
+  })
+
+  it('settles a timeout when an escaped process keeps the output open', async () => {
+    const record = writeParentLauncher({ detached: true })
+    const startedAt = Date.now()
+    try {
+      await expect(
+        spawnBazel(launcher, [], { cwd, timeout: 500 }),
+      ).rejects.toBeInstanceOf(BazelTimeoutError)
+      expect(Date.now() - startedAt).toBeLessThan(15_000)
+    } finally {
+      process.kill(readChildPid(record), 'SIGKILL')
+    }
+  }, 30_000)
+
+  function writeParentLauncher(options: { detached: boolean }): string {
+    const record = path.join(cwd, 'child.pid')
+    writeFileSync(
+      launcher,
+      `const { spawn } = require('node:child_process')
+const fs = require('node:fs')
+const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { detached: ${options.detached}, stdio: 'inherit' })
+fs.writeFileSync(${JSON.stringify(record)}, String(child.pid))
+${options.detached ? 'child.unref()' : ''}
+`,
+    )
+    return record
+  }
+
+  function startFakeServer(outputBase: string): number {
+    const server = childProcess.spawn(
+      process.execPath,
+      ['-e', 'setInterval(() => {}, 1000)'],
+      { detached: true, stdio: 'ignore' },
+    )
+    server.unref()
+    const { pid } = server
+    if (pid === undefined) {
+      throw new Error('Fake Bazel server did not start')
+    }
+    servers.push(pid)
+    mkdirSync(path.join(outputBase, 'server'), { recursive: true })
+    writeFileSync(
+      path.join(outputBase, 'server', 'server.pid.txt'),
+      String(pid),
+    )
+    return pid
+  }
 })
+
+function readChildPid(record: string): number {
+  return Number(readFileSync(record, 'utf8'))
+}
+
+function isAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function waitForExit(pid: number): Promise<boolean> {
+  const deadline = Date.now() + 5_000
+  while (isAlive(pid) && Date.now() < deadline) {
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(50)
+  }
+  return !isAlive(pid)
+}
+
+async function waitForFile(file: string): Promise<void> {
+  while (!existsSync(file)) {
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(50)
+  }
+}
 
 describe('splitBazelFlags', () => {
   it('handles existing unquoted flags and CRLF', () => {

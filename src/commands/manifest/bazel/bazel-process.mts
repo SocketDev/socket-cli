@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process'
 import {
   closeSync,
   existsSync,
@@ -12,9 +13,11 @@ import which from 'which'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import constants from '../../../constants.mts'
 import { InputError, isErrnoException } from '../../../utils/errors.mts'
 
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type { ChildProcess } from 'node:child_process'
 
 function findEnvironmentKey(
   env: NodeJS.ProcessEnv,
@@ -155,15 +158,111 @@ function buildBazelProcessInvocation(
   return { command: bin, args, windowsVerbatimArguments: false }
 }
 
-export function spawnBazel(bin: string, args: string[], options: SpawnOptions) {
+export class BazelTimeoutError extends Error {
+  readonly stdout: string
+  readonly stderr: string
+
+  constructor(timeout: number, cause: unknown) {
+    super(`Bazel did not finish within ${timeout}ms`, { cause })
+    this.stdout = readOutput(cause, 'stdout')
+    this.stderr = readOutput(cause, 'stderr')
+  }
+}
+
+function readOutput(error: unknown, key: 'stdout' | 'stderr'): string {
+  if (error && typeof error === 'object' && key in error) {
+    const value: unknown = Reflect.get(error, key)
+    return typeof value === 'string' ? value : ''
+  }
+  return ''
+}
+
+// Launchers can leave Bazel holding the output pipes after the launcher is killed.
+const PIPE_RELEASE_GRACE_MS = 5_000
+
+async function killProcessTree(child: ChildProcess): Promise<void> {
+  const { pid } = child
+  if (pid === undefined) {
+    return
+  }
+  if (process.platform === 'win32') {
+    await new Promise<void>(resolve => {
+      execFile('taskkill', ['/pid', String(pid), '/t', '/f'], () => resolve())
+    })
+    return
+  }
+  try {
+    process.kill(-pid, 'SIGTERM')
+  } catch (e) {
+    if (!isErrnoException(e) || e.code !== 'ESRCH') {
+      throw e
+    }
+  }
+}
+
+export async function spawnBazel(
+  bin: string,
+  args: string[],
+  {
+    signal = constants.abortSignal,
+    timeout,
+    ...options
+  }: Omit<SpawnOptions, 'stdioString'>,
+) {
   const env = getBazelEnvironment(options.env)
   const invocation = buildBazelProcessInvocation(bin, args, env)
-  return spawn(invocation.command, invocation.args, {
+  const controller = new AbortController()
+  const pending = spawn(invocation.command, invocation.args, {
     ...options,
+    // A process group of its own lets a timeout or abort reach everything the launcher started.
+    detached: process.platform !== 'win32',
     env,
     shell: false,
+    signal: controller.signal,
     windowsVerbatimArguments: invocation.windowsVerbatimArguments,
   })
+  let timedOut = false
+  let releaseTimer: NodeJS.Timeout | undefined
+  const stop = () => {
+    releaseTimer ??= setTimeout(() => {
+      pending.process.stdout?.destroy()
+      pending.process.stderr?.destroy()
+    }, PIPE_RELEASE_GRACE_MS)
+    return killProcessTree(pending.process)
+  }
+  const onAbort = () => {
+    // taskkill finds descendants through the launcher, so the launcher must outlive the tree kill.
+    void stop().finally(() => controller.abort(signal.reason))
+  }
+  if (signal.aborted) {
+    onAbort()
+  } else {
+    signal.addEventListener('abort', onAbort, { once: true })
+  }
+  const timer = timeout
+    ? setTimeout(() => {
+        timedOut = true
+        void stop()
+      }, timeout)
+    : undefined
+  let result: Awaited<typeof pending>
+  try {
+    result = await pending
+  } catch (e) {
+    if (timedOut && timeout) {
+      throw new BazelTimeoutError(timeout, e)
+    }
+    throw e
+  } finally {
+    clearTimeout(timer)
+    clearTimeout(releaseTimer)
+    signal.removeEventListener('abort', onAbort)
+  }
+  // Output is incomplete when the pipes were released after a timeout.
+  if (timedOut && timeout) {
+    throw new BazelTimeoutError(timeout, result)
+  }
+  return result
 }
 
 export function buildBazelStartupFlags(opts: {

@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Bazel prerequisite checks use the extraction environment and verify Python 3. Windows requires a working `python.exe` without creating a Python symlink.
 - Quoted Bazel flags preserve spaces and Windows backslashes. Quotes open at the start of a value or after `=`, so apostrophes inside a value stay literal. Unclosed quotes produce an error.
 - Bazel cleanup uses the extraction workspace, environment, and startup options, retries temporary file locks, and only stops Bazel servers the scan started.
+- Bazel timeouts and cancellation stop every process a Bazel launcher started. Cleanup still runs after Ctrl-C and keeps temporary output until the scan's own Bazel server has exited.
 - A relative `--bazel` path resolves against the current directory. A relative `bazel` path in `socket.json` resolves against the scanned directory.
 
 ## [1.10.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.10.1) - 2026-10-23

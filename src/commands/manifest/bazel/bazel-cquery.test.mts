@@ -642,46 +642,33 @@ describe('runMetadataCqueryForRepo', () => {
     expect(r.artifacts).toEqual([])
   })
 
-  it('returns status:timeout when spawn is killed on timeout (killed=true + SIGTERM)', async () => {
-    // The real registry spawn does not set `timedOut`; on a `timeout` it kills
-    // the child, so Node populates `killed: true` and `signal: 'SIGTERM'`.
-    // Mock that shape so the test pins the behaviour real spawn produces.
-    mocked.mockRejectedValueOnce(
-      Object.assign(new Error('command timed out'), {
-        code: null,
-        killed: true,
-        signal: 'SIGTERM',
-        stderr: '',
-        stdout: '',
-      }),
+  it('returns status:timeout when Bazel outlives the timeout', async () => {
+    mocked.mockImplementationOnce(() =>
+      // @ts-ignore — narrow return shape for the test.
+      Object.assign(
+        new Promise((_resolve, reject) => {
+          setTimeout(() => {
+            reject(
+              Object.assign(new Error('killed'), {
+                signal: 'SIGTERM',
+                stderr: '',
+                stdout: '',
+              }),
+            )
+          }, 100)
+        }),
+        { process: {} },
+      ),
     )
     const r = await runMetadataCqueryForRepo({
       opts: { bin: 'bazel', cwd: '/r', invocationFlags: [] },
       repoName: 'maven',
-      timeoutMs: 60_000,
+      timeoutMs: 10,
       workspaceRelPath: '',
       workspaceRoot: '/r',
     })
     expect(r.status).toBe('timeout')
     expect(r.artifacts).toEqual([])
-  })
-
-  it('returns status:timeout when spawn signals SIGTERM/SIGKILL', async () => {
-    mocked.mockRejectedValueOnce(
-      Object.assign(new Error('killed'), {
-        signal: 'SIGTERM',
-        stderr: '',
-        stdout: '',
-      }),
-    )
-    const r = await runMetadataCqueryForRepo({
-      opts: { bin: 'bazel', cwd: '/r', invocationFlags: [] },
-      repoName: 'maven',
-      timeoutMs: 60_000,
-      workspaceRelPath: '',
-      workspaceRoot: '/r',
-    })
-    expect(r.status).toBe('timeout')
   })
 
   it('passes workspaceRoot as cwd and outputUserRoot as startup flag', async () => {
@@ -700,7 +687,7 @@ describe('runMetadataCqueryForRepo', () => {
       workspaceRoot: '/repo/sub',
     })
     const call = mocked.mock.calls[0]!
-    expect(call[2]).toMatchObject({ cwd: '/repo/sub', timeout: 60_000 })
+    expect(call[2]).toMatchObject({ cwd: '/repo/sub' })
     const argv = call[1] as string[]
     expect(argv).toContain('--output_user_root=/tmp/socket-bazel-xyz')
   })
