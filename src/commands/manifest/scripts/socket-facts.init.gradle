@@ -95,8 +95,8 @@ gradle.projectsEvaluated { g ->
     // collector). The project maps above stay populated so a KEPT project depending on it
     // still recognizes it as a first-party module, and its paths are kept so it is analysed with its code.
     def excluded = g.ext.socketIsExcluded.call(rel(p.projectDir))
-    // Guarded: projects without the java `sourceSets` convention (pure aggregators, AGP-only
-    // Android modules) contribute empty lists rather than failing.
+    // Guarded: projects without the java `sourceSets` convention (pure aggregators) contribute empty
+    // lists rather than failing. Kotlin and Android code lives outside it (see below).
     // ALL source sets are emitted (not just main/test) so custom ones (integrationTest,
     // functionalTest, ...) reach the analysis; source-file-level exclusion is coana's job.
     // `classesDirs` (Gradle 4+) falls back to the legacy single `classesDir` on older Gradle.
@@ -116,6 +116,59 @@ gradle.projectsEvaluated { g ->
         }
       }
     } catch (Exception ignore) {}
+    // Kotlin compilations for the JVM (kotlin-jvm, KMP `jvm()`, Android): Kotlin source sets, shared
+    // ones like commonMain included, are not java source sets. Untyped: KGP is not on this classpath.
+    def kotlin = p.extensions.findByName('kotlin')
+    if (kotlin != null) {
+      try {
+        (kotlin.hasProperty('targets') ? kotlin.targets : [kotlin.target]).each { t ->
+          try {
+            if (t.platformType.name() in ['jvm', 'androidJvm']) {
+              t.compilations.each { c ->
+                c.allKotlinSourceSets.each { ks ->
+                  sources.addAll(ks.kotlin.srcDirs*.absolutePath)
+                  sources.addAll(ks.resources.srcDirs*.absolutePath)
+                }
+                targets.addAll(c.output.classesDirs*.absolutePath)
+              }
+            }
+          } catch (Exception ignore) {}
+        }
+      } catch (Exception ignore) {}
+    }
+    // AGP keeps its source sets in the `android` extension and leaves the java ones empty.
+    def android = p.extensions.findByName('android')
+    if (android != null) {
+      try {
+        android.sourceSets.each { ss ->
+          try {
+            sources.addAll(ss.java.srcDirs*.absolutePath)
+            sources.addAll(ss.resources.srcDirs*.absolutePath)
+            // Last: older AGP has no `kotlin`.
+            sources.addAll(ss.kotlin.srcDirs*.absolutePath)
+          } catch (Exception ignore) {}
+        }
+      } catch (Exception ignore) {}
+      // Class dirs come from the compile tasks: AGP's built-in Kotlin (AGP 9) leaves the Kotlin
+      // compilations' classesDirs empty.
+      def compileTypes = [JavaCompile]
+      if (kotlin != null) {
+        try {
+          compileTypes << Class.forName('org.jetbrains.kotlin.gradle.tasks.KotlinCompileTool', false, kotlin.getClass().classLoader)
+        } catch (Throwable ignore) {}
+      }
+      compileTypes.each { type ->
+        try {
+          p.tasks.withType(type).each { t ->
+            try {
+              targets << t.destinationDirectory.get().asFile.absolutePath
+            } catch (Exception e1) {
+              try { targets << t.destinationDir.absolutePath } catch (Exception ignore) {}
+            }
+          }
+        } catch (Exception ignore) {}
+      }
+    }
     // `buildFile` is the configured script, absent on disk for a project configured from the root or
     // a convention plugin. Still emitted: a direct dependency's mark must name its subproject.
     def buildFiles = []
