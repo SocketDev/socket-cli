@@ -93,11 +93,11 @@ const config: CliCommandConfig = {
     Set SOCKET_BAZEL_OUTPUT_ROOT to a short, writable parent directory,
     such as C:/sb, to shorten connector-owned Bazel output paths. Each
     invocation gets a separate directory. An explicit --bazel-output-base
-    takes precedence for Bazel's cache and stays under your control,
-    including server shutdown.
+    takes precedence for Bazel's cache and is kept after the scan. The
+    scan only stops Bazel servers it started.
 
-    In --bazel-flags, single or double quotes group values containing
-    spaces. Backslashes stay literal. Double a matching quote to include
+    In --bazel-flags, single or double quotes at the start of a value or
+    after = group values containing spaces. Backslashes stay literal. Double a matching quote to include
     it within a quoted value. Shell variables are not expanded.
 
     Maven hub discovery: under Bzlmod, hubs are enumerated from
@@ -279,7 +279,9 @@ async function run(
   let perRepoTimeout = cli.flags['perRepoTimeout'] as number | undefined
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
-  if (!bazel) {
+  if (bazel) {
+    bazel = path.resolve(process.cwd(), String(bazel))
+  } else {
     const defaultBazel =
       sockJson.defaults?.manifest?.bazel?.bazel ??
       sockJson.defaults?.manifest?.bazel?.bin

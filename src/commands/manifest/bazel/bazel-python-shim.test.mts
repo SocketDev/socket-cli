@@ -102,4 +102,24 @@ describe('provisionPythonShim', () => {
       expect(results[0]?.shimDir).not.toBe(results[1]?.shimDir)
     },
   )
+
+  it.skipIf(!python || process.platform === 'win32')(
+    'uses python3 when python is not Python 3',
+    async () => {
+      if (!python) {
+        throw new Error('Python fixture is unavailable')
+      }
+      copyFileSync(process.execPath, path.join(cwd, 'python'))
+      symlinkSync(python, path.join(cwd, 'python3'))
+      const result = await provisionPythonShim(
+        getBazelEnvironment({ PATH: cwd }),
+        cwd,
+      )
+      if (!result.shimDir) {
+        throw new Error('Expected a Python shim')
+      }
+      shims.push(result.shimDir)
+      expect(readlinkSync(path.join(result.shimDir, 'python'))).toBe(python)
+    },
+  )
 })

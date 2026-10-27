@@ -60,7 +60,10 @@ export function splitBazelFlags(flags: string | undefined): string[] {
       } else {
         argument += character
       }
-    } else if (character === '"' || character === "'") {
+    } else if (
+      (character === '"' || character === "'") &&
+      (!started || argument.endsWith('='))
+    ) {
       quote = character
       started = true
     } else if (/\s/.test(character)) {

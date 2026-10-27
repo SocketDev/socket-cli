@@ -6,7 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import {
   BAZEL_OUTPUT_ROOT_PREFIX,
-  cleanUpBazelServer,
+  cleanUpBazelOutputRoot,
   makeBazelOutputUserRoot,
   removeBazelTempdir,
 } from './bazel-cleanup.mts'
@@ -607,16 +607,6 @@ async function discoverCandidatesForWorkspace(
   return { candidates, discoveryIndeterminate, indeterminateProbes }
 }
 
-async function cleanUpOutputRoot(
-  root: string,
-  contexts: Map<string, BazelQueryOptions>,
-): Promise<boolean> {
-  const stopped = await Promise.all(
-    Array.from(contexts.values(), cleanUpBazelServer),
-  )
-  return stopped.every(Boolean) ? await removeBazelTempdir(root) : false
-}
-
 // Construct the BazelQueryOptions shape used for a single workspace's
 // queries. Lifted to module scope (out of the per-workspace loop) so
 // ESLint's consistent-function-scoping is happy; takes everything it
@@ -912,7 +902,7 @@ export async function extractBazelToMaven(
             state: 'failed',
           })
           // eslint-disable-next-line no-await-in-loop
-          const cleaned = await cleanUpOutputRoot(
+          const cleaned = await cleanUpBazelOutputRoot(
             outputUserRoot,
             mintedRoots.get(outputUserRoot) ?? new Map(),
           )
@@ -1189,12 +1179,12 @@ export async function extractBazelToMaven(
       workspaceOutcomes,
     }
   } finally {
-    const cleaned = await Promise.all(
+    await Promise.all(
       Array.from(mintedRoots, ([root, contexts]) =>
-        cleanUpOutputRoot(root, contexts),
+        cleanUpBazelOutputRoot(root, contexts),
       ),
     )
-    if (pythonShimDir && cleaned.every(Boolean)) {
+    if (pythonShimDir) {
       await removeBazelTempdir(pythonShimDir)
     }
   }

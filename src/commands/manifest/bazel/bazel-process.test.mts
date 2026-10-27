@@ -1,6 +1,7 @@
 import {
   chmodSync,
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -18,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import {
+  cleanUpBazelOutputRoot,
   cleanUpBazelServer,
   makeBazelOutputUserRoot,
   removeBazelTempdir,
@@ -145,44 +147,52 @@ describe('Bazel process invocation', () => {
     expect(key && env[key]).toBe('last value')
   })
 
-  function writeServerLauncher(outputBase: string): string {
+  function writeServerLauncher(
+    installBase: string,
+    outputBase: string,
+  ): string {
     const record = path.join(cwd, 'server.jsonl')
     writeFileSync(
       launcher,
       `const fs = require('node:fs')
 const args = process.argv.slice(2)
 fs.appendFileSync(${JSON.stringify(record)}, JSON.stringify({ args, cwd: process.cwd(), marker: process.env.SOCKET_BAZEL_LITERAL }) + '\\n')
-if (args.includes('info')) { process.stdout.write(${JSON.stringify(outputBase)} + '\\n') }
+if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base: ${installBase}\noutput_base: ${outputBase}\n`)}) }
 `,
     )
     return record
   }
 
-  it('shuts down its own server with the same workspace, startup flags, and environment', async () => {
+  function makeServerRoot(): { root: string; installBase: string } {
     const root = makeBazelOutputUserRoot(
       getBazelEnvironment({ SOCKET_BAZEL_OUTPUT_ROOT: cwd }),
       cwd,
     )
+    const installBase = path.join(root, 'install', 'hash')
+    mkdirSync(installBase, { recursive: true })
+    return { root, installBase }
+  }
+
+  it('shuts down its own server with the same workspace, startup flags, and environment', async () => {
+    const { installBase, root } = makeServerRoot()
     const outputBase = path.join(root, 'workspace hash')
     mkdirSync(outputBase)
-    const record = writeServerLauncher(outputBase)
+    const record = writeServerLauncher(installBase, outputBase)
     const startupFlags = [
       `--bazelrc=${path.join(cwd, 'custom rc')}`,
       `--output_user_root=${root}`,
     ]
-    expect(
-      await cleanUpBazelServer({
-        bin: launcher,
-        cwd,
-        invocationFlags: [],
-        outputUserRoot: root,
-        bazelRc: path.join(cwd, 'custom rc'),
-        env: { SOCKET_BAZEL_LITERAL: 'shutdown environment' },
-      }),
-    ).toBe(true)
+    await cleanUpBazelServer({
+      bin: launcher,
+      cwd,
+      invocationFlags: [],
+      outputUserRoot: root,
+      bazelRc: path.join(cwd, 'custom rc'),
+      env: { SOCKET_BAZEL_LITERAL: 'shutdown environment' },
+    })
     expect(readServerCalls(record)).toEqual([
       {
-        args: [...startupFlags, 'info', 'output_base'],
+        args: [...startupFlags, 'info', 'install_base', 'output_base'],
         cwd,
         marker: 'shutdown environment',
       },
@@ -195,52 +205,68 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(outputBase)} 
     expect(await removeBazelTempdir(root)).toBe(true)
   })
 
-  it('leaves a server selected by an rc output base alone', async () => {
-    const root = makeBazelOutputUserRoot(
-      getBazelEnvironment({ SOCKET_BAZEL_OUTPUT_ROOT: cwd }),
-      cwd,
-    )
-    const callerOutputBase = path.join(cwd, 'caller output base')
+  it('shuts down the server it started in an explicit output base', async () => {
+    const { installBase, root } = makeServerRoot()
+    const callerOutputBase = path.join(cwd, 'caller cache')
     mkdirSync(callerOutputBase)
-    const record = writeServerLauncher(callerOutputBase)
-    expect(
-      await cleanUpBazelServer({
-        bin: launcher,
-        cwd,
-        invocationFlags: [],
-        outputUserRoot: root,
-        bazelRc: path.join(cwd, 'custom rc'),
-      }),
-    ).toBe(true)
+    const record = writeServerLauncher(installBase, callerOutputBase)
+    await cleanUpBazelServer({
+      bin: launcher,
+      cwd,
+      invocationFlags: [],
+      outputUserRoot: root,
+      bazelOutputBase: callerOutputBase,
+    })
     expect(readServerCalls(record)).toEqual([
       expect.objectContaining({
-        args: expect.arrayContaining(['info', 'output_base']),
+        args: expect.arrayContaining(['info', 'install_base', 'output_base']),
+      }),
+      expect.objectContaining({
+        args: [
+          `--output_user_root=${root}`,
+          `--output_base=${callerOutputBase}`,
+          'shutdown',
+        ],
       }),
     ])
   })
 
-  it('leaves caller-owned output bases and their servers alone', async () => {
-    expect(
-      await cleanUpBazelServer({
-        bin: path.join(cwd, 'must not run'),
-        cwd,
-        invocationFlags: [],
-        outputUserRoot: cwd,
-        bazelOutputBase: path.join(cwd, 'caller cache'),
+  it('leaves a server selected by an rc install and output base alone', async () => {
+    const { root } = makeServerRoot()
+    const callerInstallBase = path.join(cwd, 'caller install base')
+    const callerOutputBase = path.join(cwd, 'caller output base')
+    mkdirSync(callerInstallBase)
+    mkdirSync(callerOutputBase)
+    const record = writeServerLauncher(callerInstallBase, callerOutputBase)
+    await cleanUpBazelServer({
+      bin: launcher,
+      cwd,
+      invocationFlags: [],
+      outputUserRoot: root,
+      bazelRc: path.join(cwd, 'custom rc'),
+    })
+    expect(readServerCalls(record)).toEqual([
+      expect.objectContaining({
+        args: expect.arrayContaining(['info', 'install_base', 'output_base']),
       }),
-    ).toBe(true)
+    ])
   })
 
-  it('returns a cleanup failure when shutdown fails', async () => {
+  it('removes the output root when Bazel cannot report its bases', async () => {
+    const { root } = makeServerRoot()
     writeFileSync(launcher, 'process.exit(1)\n')
     expect(
-      await cleanUpBazelServer({
-        bin: launcher,
-        cwd,
-        invocationFlags: [],
-        outputUserRoot: cwd,
-      }),
-    ).toBe(false)
+      await cleanUpBazelOutputRoot(
+        root,
+        new Map([
+          [
+            cwd,
+            { bin: launcher, cwd, invocationFlags: [], outputUserRoot: root },
+          ],
+        ]),
+      ),
+    ).toBe(true)
+    expect(existsSync(root)).toBe(false)
   })
 
   it.skipIf(process.platform === 'win32')(
@@ -314,6 +340,12 @@ describe('splitBazelFlags', () => {
     expect(splitBazelFlags('--define="a=""quoted"""')).toEqual([
       '--define=a="quoted"',
     ])
+  })
+
+  it('keeps apostrophes inside a value literal', () => {
+    expect(
+      splitBazelFlags("--action_env=GREETING=don't --define=owner=O'Brien"),
+    ).toEqual(["--action_env=GREETING=don't", "--define=owner=O'Brien"])
   })
 
   it('reports malformed quoting', () => {

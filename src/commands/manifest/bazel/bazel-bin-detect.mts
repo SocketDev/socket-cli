@@ -25,7 +25,7 @@ export async function resolveBazelBinary(
     const resolved = path.resolve(cwd, explicit)
     if (!existsSync(resolved)) {
       throw new InputError(
-        `--bazel path does not exist: ${explicit}. Install bazelisk or bazel, or pass an existing path via --bazel.`,
+        `--bazel path does not exist: ${resolved}. Install bazelisk or bazel, or pass an existing path via --bazel.`,
       )
     }
     return resolveBazelExecutable(resolved)

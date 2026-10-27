@@ -83,37 +83,51 @@ async function makeDirectoriesWritable(root: string): Promise<void> {
   }
 }
 
+export async function cleanUpBazelOutputRoot(
+  root: string,
+  contexts: Map<string, BazelQueryOptions>,
+): Promise<boolean> {
+  await Promise.all(Array.from(contexts.values(), cleanUpBazelServer))
+  return await removeBazelTempdir(root)
+}
+
 export async function cleanUpBazelServer(
   opts: BazelQueryOptions,
-): Promise<boolean> {
-  if (!opts.outputUserRoot || opts.bazelOutputBase) {
-    return true
+): Promise<void> {
+  const root = opts.outputUserRoot
+  if (!root) {
+    return
   }
   const startupFlags = buildBazelStartupFlags(opts)
   const spawnOptions = {
     cwd: opts.cwd,
     ...(opts.env ? { env: opts.env } : {}),
-    signal: new AbortController().signal,
     timeout: 10_000,
   }
   try {
-    // An rc file can set `startup --output_base`, which points the scan at a server it does not own.
+    // Only this scan can have started a server whose install or output base is in its fresh root.
+    // An rc file can point the scan at a caller's install and output base.
     const info = await spawnBazel(
       opts.bin,
-      [...startupFlags, 'info', 'output_base'],
+      [...startupFlags, 'info', 'install_base', 'output_base'],
       spawnOptions,
     )
-    if (!isPathInside(info.stdout.trim(), opts.outputUserRoot)) {
-      return true
+    if (
+      !parseBazelInfoPaths(info.stdout).some(dir => isPathInside(dir, root))
+    ) {
+      return
     }
     await spawnBazel(opts.bin, [...startupFlags, 'shutdown'], spawnOptions)
-    return true
   } catch (error) {
-    logger.warn(
-      `Bazel shutdown failed in ${opts.cwd}. Keeping ${opts.outputUserRoot} for manual cleanup. ${getErrorCause(error)}`,
-    )
-    return false
+    logger.warn(`Bazel shutdown failed in ${opts.cwd}. ${getErrorCause(error)}`)
   }
+}
+
+function parseBazelInfoPaths(stdout: string): string[] {
+  return stdout
+    .split(/\r?\n/)
+    .map(line => line.slice(line.indexOf(': ') + 2).trim())
+    .filter(Boolean)
 }
 
 function isPathInside(child: string, parent: string): boolean {
