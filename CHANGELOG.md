@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Updated the Coana CLI to v `15.13.1`.
+
 ### Fixed
 - Reachability analysis of Gradle and sbt builds now sees the code of Kotlin Multiplatform and Android modules, and sbt sources placed directly in a project's directory.
 
