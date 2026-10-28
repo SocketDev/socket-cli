@@ -7,7 +7,8 @@
 #  - the two expected dependency nodes are present (demo.ext:tool prod, demo.ext:harness test);
 #  - tool appears in a prod root, harness only in non-prod roots -> the assembler's dev flag;
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
-#  - both get an on-disk jar `file` record under -Dsocket.withFiles.
+#  - both get an on-disk jar `file` record under -Dsocket.withFiles;
+#  - a source in the base dir is a `projectSrc` file, never the base dir itself.
 #
 # Both deps are stubs generated into project/localrepo at test time (../make-stub-repo.sh, shared with
 # the Gradle and Maven fixtures), so neither can age into a CVE alert or a version bump.
@@ -48,14 +49,16 @@ echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION)"
     -Dsbt.ivy.home="$IVY" \
     -Dsocket.withFiles=true -Dsocket.recordsFile="$RECORDS" --batch socketFacts )
 
-python3 - "$RECORDS" <<'PY'
-import sys
+python3 - "$RECORDS" "$PROJECT" <<'PY'
+import os, sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
-roots, nodes, files = {}, {}, {}
+base = os.path.realpath(sys.argv[2])
+roots, nodes, files, srcs = {}, {}, {}, set()
 for r in rows:
     if r[0] == 'root':  roots[r[1]] = (r[4] == '1')
     elif r[0] == 'node': nodes.setdefault(r[2], set()).add(r[1])
     elif r[0] == 'file': files.setdefault(r[2], set()).add(r[3])
+    elif r[0] == 'projectSrc': srcs.add(os.path.realpath(r[2]))
 errors = []
 
 tool    = 'demo.ext:tool:jar:1.0'
@@ -69,6 +72,8 @@ if harness in nodes and any(roots.get(rid) for rid in nodes[harness]):
 def has_jar(cid): return any(p.endswith('.jar') for p in files.get(cid, ()))
 for cid in (tool, harness):
     if not has_jar(cid): errors.append(f"{cid} missing materialized jar under --with-files: {files.get(cid)}")
+if os.path.join(base, 'Base.scala') not in srcs: errors.append(f"base-dir source Base.scala not a projectSrc: {sorted(srcs)}")
+if base in srcs: errors.append("base dir emitted as a projectSrc root")
 
 if errors:
     print("FAIL:")

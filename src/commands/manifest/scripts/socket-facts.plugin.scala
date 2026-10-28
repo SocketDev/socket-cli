@@ -90,7 +90,7 @@ object SocketFactsPlugin extends AutoPlugin {
       }
 
       val moduleDirs: Map[String, (Seq[String], Seq[String])] =
-        if (withFiles) buildModuleDirs(allRefs, extracted) else Map.empty
+        if (withFiles) buildModuleDirs(allRefs, extracted, st) else Map.empty
 
       // Where sbt recorded the project's own settings as defined (the root build.sbt for a subproject
       // defined there); positions outside the build are sbt defaults, plugins or our injected base.
@@ -197,21 +197,47 @@ object SocketFactsPlugin extends AutoPlugin {
   // (IntegrationTest, ...) reach the analysis; source-file-level exclusion is coana's job.
   private def buildModuleDirs(
       allRefs: Seq[ProjectRef],
-      extracted: Extracted
+      extracted: Extracted,
+      state: State
   ): Map[String, (Seq[String], Seq[String])] = {
     allRefs.map { ref =>
       val mid = rootIdOf(extracted, ref)
       val ver = if (mid.revision == null) "" else mid.revision
       val configs: Seq[Configuration] =
         extracted.getOpt(thisProject.in(ref)).map(_.configurations).getOrElse(Seq(Compile, Test))
-      val sources = configs
-        .flatMap(c => extracted.getOpt(sourceDirectories.in(ref).in(c)).getOrElse(Nil))
+      val sources = (configs.flatMap(c => extracted.getOpt(sourceDirectories.in(ref).in(c)).getOrElse(Nil)) ++
+        baseDirSources(ref, configs, extracted, state))
         .map(_.getAbsolutePath).distinct.sorted
       val targets = configs
         .flatMap(c => extracted.getOpt(classDirectory.in(ref).in(c)))
         .map(_.getAbsolutePath).distinct.sorted
       (mid.organization + ":" + mid.name + ":" + ver) -> ((sources, targets))
     }.toMap
+  }
+
+  // Sources sbt compiles from the base dir itself (`sourcesInBase`), as files: sbt includes them
+  // non-recursively, and the base dir as a source root would be walked into nested subprojects.
+  private def baseDirSources(
+      ref: ProjectRef,
+      configs: Seq[Configuration],
+      extracted: Extracted,
+      state: State
+  ): Seq[File] = {
+    val base = extracted.get(baseDirectory.in(ref)).getCanonicalFile
+    // A configuration that only inherits the task (Runtime from Compile) would re-run the same walk.
+    val definingScopes = configs.flatMap { c =>
+      val key = unmanagedSources.in(ref).in(c)
+      extracted.structure.data.definingScope(key.scope, key.key)
+    }.distinct
+    definingScopes.flatMap { scope =>
+      Project.runTask(Def.ScopedKey(scope, unmanagedSources.key), state) match {
+        case Some((_, sbt.Value(files))) =>
+          files.groupBy(_.getAbsoluteFile.getParentFile).collect {
+            case (dir, inDir) if dir.getCanonicalFile == base => inDir
+          }.flatten
+        case _ => Nil
+      }
+    }
   }
 
   // A failure naming no module is an artifact that could not be fetched, which only the lenient
