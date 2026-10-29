@@ -19,6 +19,7 @@ vi.mock(
 )
 
 import {
+  NativePackageEntrypointFailures,
   type NativePackageProcessResult,
   type NativePackageSpawnProcess,
   verifyNativePackage,
@@ -138,6 +139,10 @@ describe('packed native package verification', () => {
     expect(result).toEqual({
       requestedTarget: target,
       launcherTarget: launcherTarget(),
+      entrypoints: Object.keys(packageBins).map(entrypoint => ({
+        entrypoint,
+        version: 'socket version',
+      })),
     })
     expect(spawnProcess).toHaveBeenCalledTimes(8)
     expect(spawnProcess.mock.calls.slice(0, 3).map(call => call[1])).toEqual([
@@ -157,6 +162,41 @@ describe('packed native package verification', () => {
       expect.objectContaining({ cwd: packageRoot, timeoutMs: 60_000 }),
     )
     expect(mocks.qualifyDarwinPackageArtifact).not.toHaveBeenCalled()
+  })
+
+  it('collects failures by entrypoint and remains fail-closed', async () => {
+    const failingEntrypoints = new Set(['socket-npm', 'socket-yarn'])
+    spawnProcess.mockImplementation(async (...invocation) => {
+      const args = invocation[1]
+      const launcher = args[0]
+      const entrypoint =
+        typeof launcher === 'string'
+          ? Object.entries(packageBins).find(
+              ([, relativeFile]) =>
+                path.resolve(packageRoot, relativeFile) === launcher,
+            )?.[0]
+          : undefined
+      return failingEntrypoints.has(entrypoint ?? '')
+        ? { ...successfulResult(), code: 1 }
+        : successfulResult()
+    })
+
+    let failure: unknown
+    try {
+      await verifyNativePackage({
+        packageRoot,
+        target: SEA_TARGETS[0]!,
+        spawnProcess,
+      })
+    } catch (error) {
+      failure = error
+    }
+
+    expect(failure).toBeInstanceOf(NativePackageEntrypointFailures)
+    expect(failure).toMatchObject({
+      failures: [{ entrypoint: 'socket-npm' }, { entrypoint: 'socket-yarn' }],
+    })
+    expect(spawnProcess).toHaveBeenCalledTimes(8)
   })
 
   it.each([
