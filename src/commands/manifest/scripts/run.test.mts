@@ -99,3 +99,69 @@ describe('maven entry file', () => {
     },
   )
 })
+
+async function fakeJdk(home: string, javaVersion: string): Promise<string> {
+  await fs.mkdir(path.join(home, 'bin'), { recursive: true })
+  await fs.writeFile(path.join(home, 'bin', 'java'), '', { mode: 0o755 })
+  await fs.writeFile(
+    path.join(home, 'release'),
+    `JAVA_VERSION="${javaVersion}"\n`,
+  )
+  return await fs.realpath(home)
+}
+
+async function withGradle814(
+  fn: (dir: string, jdk21: string, jdk25: string) => Promise<void>,
+): Promise<void> {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'gradle-814-'))
+  try {
+    await fs.mkdir(path.join(dir, 'gradle', 'wrapper'), { recursive: true })
+    await fs.writeFile(path.join(dir, 'gradlew'), '', { mode: 0o755 })
+    await fs.writeFile(
+      path.join(dir, 'gradle', 'wrapper', 'gradle-wrapper.properties'),
+      'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14.3-bin.zip\n',
+    )
+    await fn(
+      dir,
+      await fakeJdk(path.join(dir, 'jdk21'), '21.0.12'),
+      await fakeJdk(path.join(dir, 'jdk25'), '25.0.4'),
+    )
+  } finally {
+    await fs.rm(dir, { force: true, recursive: true })
+  }
+}
+
+function spawnedJavaHome(): string | undefined {
+  return vi.mocked(spawn).mock.calls[0]?.[2]?.env?.['JAVA_HOME']
+}
+
+describe('build JDK', () => {
+  it('runs the Gradle wrapper on a JDK it supports', async () => {
+    await withGradle814(async (dir, jdk21, jdk25) => {
+      vi.mocked(spawn).mockClear()
+      vi.stubEnv('JAVA_HOME', jdk25)
+      vi.stubEnv('JAVA_HOME_21_X64', jdk21)
+      try {
+        await runManifestScript('gradle', { projectDir: dir, stdio: 'pipe' })
+      } finally {
+        vi.unstubAllEnvs()
+      }
+      const javaHome = spawnedJavaHome()
+      expect(javaHome).not.toBe(jdk25)
+      const release = await fs.readFile(path.join(javaHome!, 'release'), 'utf8')
+      expect(Number(/JAVA_VERSION="(\d+)/.exec(release)?.[1])).toBeLessThan(25)
+    })
+  })
+
+  it('keeps the JAVA_HOME a caller configures', async () => {
+    await withGradle814(async (dir, jdk21, jdk25) => {
+      vi.mocked(spawn).mockClear()
+      await runManifestScript('gradle', {
+        env: { JAVA_HOME: jdk25, JAVA_HOME_21_X64: jdk21 },
+        projectDir: dir,
+        stdio: 'pipe',
+      })
+      expect(spawnedJavaHome()).toBe(jdk25)
+    })
+  })
+})

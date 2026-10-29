@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Updated the Coana CLI to v `15.13.1`.
+- Generating Socket facts for a Gradle wrapper or sbt build now picks an installed JDK the pinned Gradle or sbt version runs on, when the JDK in `JAVA_HOME` or on `PATH` is one it cannot start on. A `javaHome` set in `socket.json` is used as is.
 
 ### Fixed
 - Reachability analysis of Gradle and sbt builds now sees the code of Kotlin Multiplatform and Android modules, and sbt sources placed directly in a project's directory.

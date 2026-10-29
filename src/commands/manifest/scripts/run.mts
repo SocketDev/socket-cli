@@ -1,11 +1,13 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
 import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
+import { selectBuildJavaHome } from './java-home.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
@@ -179,12 +181,36 @@ function assertMavenExtensionBuilt(jarPath: string): void {
   )
 }
 
+// A JAVA_HOME the caller passes (a configured javaHome) is kept as is.
+async function withBuildJavaHome(
+  tool: BuildTool,
+  opts: ManifestScriptOptions,
+): Promise<ManifestScriptOptions> {
+  if (opts.env?.['JAVA_HOME']) {
+    return opts
+  }
+  const env = opts.env ?? process.env
+  const selected = await selectBuildJavaHome(tool, opts.projectDir, {
+    bin: opts.bin,
+    env,
+  })
+  if (!selected) {
+    return opts
+  }
+  const { current, picked, toolVersion } = selected
+  logger.info(
+    `Running ${tool} ${toolVersion} on Java ${picked.feature} at ${picked.home}, since it does not run on ${current ? `Java ${current.feature} at ${current.home}` : 'the Java in JAVA_HOME or on PATH'}.`,
+  )
+  return { ...opts, env: { ...env, JAVA_HOME: picked.home } }
+}
+
 // Runs the build-tool script (which emits a records file) and assembles it.
 // Writes no files; the caller persists facts or consumes artifactPaths.
 export async function runManifestScript(
   tool: BuildTool,
-  opts: ManifestScriptOptions,
+  scriptOpts: ManifestScriptOptions,
 ): Promise<ManifestRunResult> {
+  const opts = await withBuildJavaHome(tool, scriptOpts)
   switch (tool) {
     case 'gradle':
       return await runGradle(opts)
@@ -199,8 +225,9 @@ export async function runManifestScript(
 // before committing to a full `runManifestScript` resolution cost.
 export async function enumerateWorkspaces(
   tool: BuildTool,
-  opts: ManifestScriptOptions,
+  scriptOpts: ManifestScriptOptions,
 ): Promise<WorkspaceEnumerationResult> {
+  const opts = await withBuildJavaHome(tool, scriptOpts)
   const result = await (tool === 'gradle'
     ? enumerateGradleWorkspaces(opts)
     : tool === 'sbt'
