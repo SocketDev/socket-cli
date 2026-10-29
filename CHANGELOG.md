@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Updated the Coana CLI to v `15.13.1`.
+- `socket scan reach` now shows up in `socket scan --help`.
 
 ### Fixed
 - Reachability analysis of Gradle and sbt builds now sees the code of Kotlin Multiplatform and Android modules, and sbt sources placed directly in a project's directory.

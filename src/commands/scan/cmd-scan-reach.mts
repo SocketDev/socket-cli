@@ -37,7 +37,7 @@ export const CMD_NAME = 'reach'
 
 const description = 'Compute full application reachability'
 
-const hidden = true
+const hidden = false
 
 // Not in reachabilityFlags: on `scan create` it is a general flag the --reach
 // guard must not reject. Reachability is always on here, so the description
