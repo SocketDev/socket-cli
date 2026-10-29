@@ -4,6 +4,7 @@ import { handleDependencies } from './handle-dependencies.mts'
 import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -11,6 +12,7 @@ import {
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
+import { parsePurlsOption } from './dependencies-filters.mts'
 
 import type {
   CliCommandConfig,
@@ -49,7 +51,12 @@ async function run(
       offset: {
         type: 'number',
         default: 0,
-        description: 'Page number',
+        description: 'Number of dependencies to skip',
+      },
+      purls: {
+        type: 'string',
+        isMultiple: true,
+        description: 'Search for a full PURL; repeat this flag for more PURLs',
       },
       ...outputFlags,
     },
@@ -66,6 +73,7 @@ async function run(
     Examples
       ${command}
       ${command} --limit 20 --offset 10
+      ${command} --purls 'pkg:npm/minimist@0.0.4'
   `,
   }
 
@@ -77,6 +85,11 @@ async function run(
   })
 
   const { json, limit, markdown, offset } = cli.flags
+  const parsedPurls = parsePurlsOption(argv, cli.flags['purls'])
+  if (!parsedPurls.ok) {
+    throw new InputError(parsedPurls.message)
+  }
+  const { purls } = parsedPurls
 
   const dryRun = !!cli.flags['dryRun']
 
@@ -111,6 +124,7 @@ async function run(
   await handleDependencies({
     limit: Number(limit || 0) || 0,
     offset: Number(offset || 0) || 0,
+    purls,
     outputKind,
   })
 }
