@@ -9,6 +9,7 @@ import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
 import { debugApiResponse } from '../debug.mts'
 import { getNetworkErrorDiagnostics } from '../error/errors.mts'
+import { getSocketApiRequestTimeout } from './api-timeout.mts'
 
 import {
   getErrorMessageForHttpStatusCode,
@@ -149,7 +150,7 @@ export async function sendApiRequest<T>(
         'Content-Type': 'application/json',
       },
       method,
-      timeout: 60_000,
+      timeout: getSocketApiRequestTimeout(60_000),
     })
     const durationMs = Date.now() - startTime
     if (description) {

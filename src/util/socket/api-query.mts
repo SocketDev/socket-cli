@@ -10,6 +10,7 @@ import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import { debugApiResponse } from '../debug.mts'
 import { ConfigError, getNetworkErrorDiagnostics } from '../error/errors.mts'
+import { getSocketApiRequestTimeout } from './api-timeout.mts'
 
 import {
   getErrorMessageForHttpStatusCode,
@@ -93,7 +94,7 @@ export async function queryApi(
           authScheme,
         }),
       },
-      timeout: 30_000,
+      timeout: getSocketApiRequestTimeout(30_000),
     },
   )
 }
