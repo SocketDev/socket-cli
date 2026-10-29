@@ -6,7 +6,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import { parseJavaFeatureVersion } from './java-home.mts'
 import { enumerateWorkspaces, runManifestScript } from './run.mts'
+import { fakeJdk, gradleWrapperProject } from './test/java-fixtures.mts'
+import { withTmpDir } from '../../../utils/fs.mts'
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(async () => ({ code: 0, stderr: '', stdout: '' })),
@@ -100,35 +103,17 @@ describe('maven entry file', () => {
   )
 })
 
-async function fakeJdk(home: string, javaVersion: string): Promise<string> {
-  await fs.mkdir(path.join(home, 'bin'), { recursive: true })
-  await fs.writeFile(path.join(home, 'bin', 'java'), '', { mode: 0o755 })
-  await fs.writeFile(
-    path.join(home, 'release'),
-    `JAVA_VERSION="${javaVersion}"\n`,
-  )
-  return await fs.realpath(home)
-}
-
 async function withGradle814(
   fn: (dir: string, jdk21: string, jdk25: string) => Promise<void>,
 ): Promise<void> {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'gradle-814-'))
-  try {
-    await fs.mkdir(path.join(dir, 'gradle', 'wrapper'), { recursive: true })
-    await fs.writeFile(path.join(dir, 'gradlew'), '', { mode: 0o755 })
-    await fs.writeFile(
-      path.join(dir, 'gradle', 'wrapper', 'gradle-wrapper.properties'),
-      'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14.3-bin.zip\n',
-    )
+  await withTmpDir('gradle-814-', async dir => {
+    await gradleWrapperProject(dir, '8.14.3')
     await fn(
       dir,
       await fakeJdk(path.join(dir, 'jdk21'), '21.0.12'),
       await fakeJdk(path.join(dir, 'jdk25'), '25.0.4'),
     )
-  } finally {
-    await fs.rm(dir, { force: true, recursive: true })
-  }
+  })
 }
 
 function spawnedJavaHome(): string | undefined {
@@ -149,7 +134,7 @@ describe('build JDK', () => {
       const javaHome = spawnedJavaHome()
       expect(javaHome).not.toBe(jdk25)
       const release = await fs.readFile(path.join(javaHome!, 'release'), 'utf8')
-      expect(Number(/JAVA_VERSION="(\d+)/.exec(release)?.[1])).toBeLessThan(25)
+      expect(parseJavaFeatureVersion(release)).toBeLessThan(25)
     })
   })
 

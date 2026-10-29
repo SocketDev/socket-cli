@@ -2,6 +2,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import semver from 'semver'
+
 import { whichBin } from '@socketsecurity/registry/lib/bin'
 
 import { resolveBuildToolBin } from './build-tool.mts'
@@ -16,99 +18,78 @@ export type BuildJavaHome = {
   // Undefined when no usable JDK is set in JAVA_HOME or found on PATH.
   current: JavaInstallation | undefined
   picked: JavaInstallation
-  tool: BuildTool
   toolVersion: string
 }
 
-type Version = number[]
-
-// The first Gradle release that runs on each Java release, from
-// https://docs.gradle.org/current/userguide/compatibility.html.
-const GRADLE_RUNS_ON_JAVA_FROM: ReadonlyArray<[number, string]> = [
-  [8, '2.0'],
-  [9, '4.3'],
-  [10, '4.7'],
-  [11, '5.0'],
-  [12, '5.4'],
-  [13, '6.0'],
-  [14, '6.3'],
-  [15, '6.7'],
-  [16, '7.0'],
-  [17, '7.3'],
-  [18, '7.5'],
-  [19, '7.6'],
-  [20, '8.3'],
-  [21, '8.5'],
-  [22, '8.8'],
-  [23, '8.10'],
-  [24, '8.14'],
-  [25, '9.1'],
-]
-
-// The first sbt release that runs on each LTS Java release. The sbt version is
-// the project's, which the launcher downloads and runs.
-const SBT_RUNS_ON_JAVA_FROM: ReadonlyArray<[number, string]> = [
-  [8, '0.13'],
-  [11, '0.13'],
-  [17, '1.3'],
-  [21, '1.9'],
-  [25, '1.9'],
-]
-
-function parseVersion(text: string): Version | undefined {
-  const match = /^(\d+(?:\.\d+)*)/.exec(text.trim())
-  return match ? match[1]!.split('.').map(Number) : undefined
+type JavaSupport = {
+  // The first release of the tool that runs on each Java release.
+  runsOnJavaFrom: ReadonlyArray<[number, string]>
+  // The first major release that needs Java 17.
+  java17FromMajor: number
 }
 
-function compareVersions(a: Version, b: Version): number {
-  for (let i = 0, length = Math.max(a.length, b.length); i < length; i += 1) {
-    const diff = (a[i] ?? 0) - (b[i] ?? 0)
-    if (diff !== 0) {
-      return diff
-    }
+const JAVA_SUPPORT: Partial<Record<BuildTool, JavaSupport>> = {
+  // https://docs.gradle.org/current/userguide/compatibility.html
+  gradle: {
+    runsOnJavaFrom: [
+      [8, '2.0.0'],
+      [9, '4.3.0'],
+      [10, '4.7.0'],
+      [11, '5.0.0'],
+      [12, '5.4.0'],
+      [13, '6.0.0'],
+      [14, '6.3.0'],
+      [15, '6.7.0'],
+      [16, '7.0.0'],
+      [17, '7.3.0'],
+      [18, '7.5.0'],
+      [19, '7.6.0'],
+      [20, '8.3.0'],
+      [21, '8.5.0'],
+      [22, '8.8.0'],
+      [23, '8.10.0'],
+      [24, '8.14.0'],
+      [25, '9.1.0'],
+    ],
+    java17FromMajor: 9,
+  },
+  // LTS Java releases only. The sbt version is the project's, which the
+  // launcher downloads and runs.
+  sbt: {
+    runsOnJavaFrom: [
+      [8, '0.13.0'],
+      [11, '0.13.0'],
+      [17, '1.3.0'],
+      [21, '1.9.0'],
+      [25, '1.9.0'],
+    ],
+    java17FromMajor: 2,
+  },
+}
+
+export function javaRange(
+  tool: BuildTool,
+  version: string,
+): JavaRange | undefined {
+  const support = JAVA_SUPPORT[tool]
+  const parsed = semver.coerce(version)
+  if (!support || !parsed) {
+    return undefined
   }
-  return 0
-}
-
-// Past the table's newest entry the tool may support newer Java than we know
-// of, so any Java counts as supported there.
-function maxJavaFor(
-  table: ReadonlyArray<[number, string]>,
-  version: Version,
-): number {
-  const newest = table[table.length - 1]!
-  if (compareVersions(version, parseVersion(newest[1])!) > 0) {
-    return Number.POSITIVE_INFINITY
+  const { java17FromMajor, runsOnJavaFrom } = support
+  const min = parsed.major >= java17FromMajor ? 17 : 8
+  // Past the table's newest entry the tool may support newer Java than we know
+  // of, so any Java counts as supported there.
+  if (semver.gt(parsed, runsOnJavaFrom[runsOnJavaFrom.length - 1]![1])) {
+    return { min, max: Number.POSITIVE_INFINITY }
   }
   let max = 0
-  for (const [java, since] of table) {
-    if (compareVersions(version, parseVersion(since)!) >= 0) {
+  for (const [java, since] of runsOnJavaFrom) {
+    if (semver.gte(parsed, since)) {
       max = java
     }
   }
-  return max
-}
-
-export function gradleJavaRange(version: string): JavaRange | undefined {
-  const parsed = parseVersion(version)
-  if (!parsed) {
-    return undefined
-  }
-  return {
-    min: parsed[0]! >= 9 ? 17 : 8,
-    max: maxJavaFor(GRADLE_RUNS_ON_JAVA_FROM, parsed),
-  }
-}
-
-export function sbtJavaRange(version: string): JavaRange | undefined {
-  const parsed = parseVersion(version)
-  if (!parsed) {
-    return undefined
-  }
-  return {
-    min: parsed[0]! >= 2 ? 17 : 8,
-    max: maxJavaFor(SBT_RUNS_ON_JAVA_FROM, parsed),
-  }
+  return { min, max }
 }
 
 // `JAVA_VERSION` in a JDK's `release` file: "1.8.0_462", "17.0.16", "25".
@@ -121,7 +102,7 @@ export function parseJavaFeatureVersion(release: string): number | undefined {
   return first === 1 && match[2] ? Number(match[2]) : first
 }
 
-export async function readJavaInstallation(
+async function readJavaInstallation(
   home: string,
 ): Promise<JavaInstallation | undefined> {
   if (!existsSync(path.join(home, 'bin', 'java'))) {
@@ -137,7 +118,7 @@ export async function readJavaInstallation(
   return feature === undefined ? undefined : { home, feature }
 }
 
-export function defaultJavaSearchDirs(): string[] {
+function defaultJavaSearchDirs(): string[] {
   const userHome = os.homedir()
   return [
     '/usr/lib/jvm',
@@ -159,35 +140,39 @@ export async function discoverJavaInstallations(
   env: NodeJS.ProcessEnv,
   searchDirs: readonly string[] = defaultJavaSearchDirs(),
 ): Promise<JavaInstallation[]> {
-  const candidates: string[] = []
-  for (const [name, value] of Object.entries(env)) {
-    if (value && /^JAVA_HOME_\d+_/i.test(name)) {
-      candidates.push(value)
-    }
-  }
-  for (const dir of searchDirs) {
-    let children: string[]
-    try {
-      children = await fs.readdir(dir)
-    } catch {
-      continue
-    }
-    for (const child of children.sort()) {
-      candidates.push(path.join(dir, child))
-      candidates.push(path.join(dir, child, 'Contents', 'Home'))
-    }
-  }
+  const runnerHomes = Object.entries(env).flatMap(([name, value]) =>
+    value && /^JAVA_HOME_\d+_/i.test(name) ? [value] : [],
+  )
+  const searchDirHomes = await Promise.all(
+    searchDirs.map(async dir => {
+      let children: string[]
+      try {
+        children = await fs.readdir(dir)
+      } catch {
+        return []
+      }
+      return children
+        .sort()
+        .flatMap(child => [
+          path.join(dir, child),
+          path.join(dir, child, 'Contents', 'Home'),
+        ])
+    }),
+  )
+  const installations = await Promise.all(
+    [...runnerHomes, ...searchDirHomes.flat()].map(async candidate => {
+      const installation = await readJavaInstallation(candidate)
+      return installation
+        ? { ...installation, home: await fs.realpath(candidate) }
+        : undefined
+    }),
+  )
   const seen = new Set<string>()
   const found: JavaInstallation[] = []
-  for (const candidate of candidates) {
-    const installation = await readJavaInstallation(candidate)
-    if (!installation) {
-      continue
-    }
-    const home = await fs.realpath(candidate)
-    if (!seen.has(home)) {
-      seen.add(home)
-      found.push({ ...installation, home })
+  for (const installation of installations) {
+    if (installation && !seen.has(installation.home)) {
+      seen.add(installation.home)
+      found.push(installation)
     }
   }
   return found
@@ -258,17 +243,6 @@ export async function projectBuildToolVersion(
   return undefined
 }
 
-function javaRangeFor(tool: BuildTool, version: string): JavaRange | undefined {
-  switch (tool) {
-    case 'gradle':
-      return gradleJavaRange(version)
-    case 'sbt':
-      return sbtJavaRange(version)
-    case 'maven':
-      return undefined
-  }
-}
-
 // A JDK to run the project's build tool on, when the current one is outside
 // the range the tool's pinned version runs on. Undefined keeps the current JDK.
 export async function selectBuildJavaHome(
@@ -281,7 +255,7 @@ export async function selectBuildJavaHome(
   },
 ): Promise<BuildJavaHome | undefined> {
   const toolVersion = await projectBuildToolVersion(tool, projectDir, opts.bin)
-  const range = toolVersion ? javaRangeFor(tool, toolVersion) : undefined
+  const range = toolVersion ? javaRange(tool, toolVersion) : undefined
   if (!toolVersion || !range) {
     return undefined
   }
@@ -300,5 +274,5 @@ export async function selectBuildJavaHome(
       picked = installation
     }
   }
-  return picked ? { current, picked, tool, toolVersion } : undefined
+  return picked ? { current, picked, toolVersion } : undefined
 }

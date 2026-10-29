@@ -7,12 +7,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   currentJavaInstallation,
   discoverJavaInstallations,
-  gradleJavaRange,
+  javaRange,
   parseJavaFeatureVersion,
   projectBuildToolVersion,
-  sbtJavaRange,
   selectBuildJavaHome,
 } from './java-home.mts'
+import { fakeJdk, gradleWrapperProject } from './test/java-fixtures.mts'
 
 let root: string
 
@@ -26,25 +26,11 @@ afterEach(async () => {
   await fs.rm(root, { recursive: true, force: true })
 })
 
-async function fakeJdk(home: string, javaVersion: string): Promise<string> {
-  await fs.mkdir(path.join(home, 'bin'), { recursive: true })
-  await fs.writeFile(path.join(home, 'bin', 'java'), '', { mode: 0o755 })
-  await fs.writeFile(
-    path.join(home, 'release'),
-    `IMPLEMENTOR="Eclipse Adoptium"\nJAVA_VERSION="${javaVersion}"\n`,
+function gradleProject(gradleVersion: string): Promise<string> {
+  return gradleWrapperProject(
+    path.join(root, `gradle-${gradleVersion}`),
+    gradleVersion,
   )
-  return home
-}
-
-async function gradleProject(gradleVersion: string): Promise<string> {
-  const dir = path.join(root, `gradle-${gradleVersion}`)
-  await fs.mkdir(path.join(dir, 'gradle', 'wrapper'), { recursive: true })
-  await fs.writeFile(path.join(dir, 'gradlew'), '', { mode: 0o755 })
-  await fs.writeFile(
-    path.join(dir, 'gradle', 'wrapper', 'gradle-wrapper.properties'),
-    `distributionBase=GRADLE_USER_HOME\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-${gradleVersion}-bin.zip\n`,
-  )
-  return dir
 }
 
 describe('parseJavaFeatureVersion', () => {
@@ -63,7 +49,7 @@ describe('parseJavaFeatureVersion', () => {
   })
 })
 
-describe('gradleJavaRange', () => {
+describe('Gradle javaRange', () => {
   it.each([
     ['6.9.4', 8, 15],
     ['7.6.4', 8, 19],
@@ -73,18 +59,18 @@ describe('gradleJavaRange', () => {
     ['9.0.0', 17, 24],
     ['9.1.0', 17, 25],
   ])('runs Gradle %s on Java %i to %i', (version, min, max) => {
-    expect(gradleJavaRange(version)).toEqual({ min, max })
+    expect(javaRange('gradle', version)).toEqual({ min, max })
   })
 
   it('runs a Gradle newer than it knows of on any Java from 17', () => {
-    expect(gradleJavaRange('9.4.0')).toEqual({
+    expect(javaRange('gradle', '9.4.0')).toEqual({
       min: 17,
       max: Number.POSITIVE_INFINITY,
     })
   })
 })
 
-describe('sbtJavaRange', () => {
+describe('sbt javaRange', () => {
   it.each([
     ['0.13.18', 8, 11],
     ['1.2.8', 8, 11],
@@ -92,11 +78,11 @@ describe('sbtJavaRange', () => {
     ['1.8.3', 8, 17],
     ['1.9.0', 8, 25],
   ])('runs sbt %s on Java %i to %i', (version, min, max) => {
-    expect(sbtJavaRange(version)).toEqual({ min, max })
+    expect(javaRange('sbt', version)).toEqual({ min, max })
   })
 
   it('runs sbt 2 on any Java from 17', () => {
-    expect(sbtJavaRange('2.0.0')).toEqual({
+    expect(javaRange('sbt', '2.0.0')).toEqual({
       min: 17,
       max: Number.POSITIVE_INFINITY,
     })
@@ -176,16 +162,16 @@ describe('currentJavaInstallation', () => {
   })
 })
 
-describe('selectBuildJavaHome', () => {
-  async function installed(): Promise<Record<number, string>> {
-    const jvm = path.join(root, 'jvm')
-    return {
-      17: await fakeJdk(path.join(jvm, 'temurin-17'), '17.0.20'),
-      21: await fakeJdk(path.join(jvm, 'temurin-21'), '21.0.12'),
-      25: await fakeJdk(path.join(jvm, 'temurin-25'), '25.0.4'),
-    }
+async function installed(): Promise<Record<number, string>> {
+  const jvm = path.join(root, 'jvm')
+  return {
+    17: await fakeJdk(path.join(jvm, 'temurin-17'), '17.0.20'),
+    21: await fakeJdk(path.join(jvm, 'temurin-21'), '21.0.12'),
+    25: await fakeJdk(path.join(jvm, 'temurin-25'), '25.0.4'),
   }
+}
 
+describe('selectBuildJavaHome', () => {
   it('moves Gradle 8 off Java 25 onto the newest JDK it runs on', async () => {
     const jdks = await installed()
     const dir = await gradleProject('8.14.3')
@@ -196,7 +182,6 @@ describe('selectBuildJavaHome', () => {
     expect(selected).toEqual({
       current: { home: jdks[25], feature: 25 },
       picked: { home: jdks[21], feature: 21 },
-      tool: 'gradle',
       toolVersion: '8.14.3',
     })
   })
