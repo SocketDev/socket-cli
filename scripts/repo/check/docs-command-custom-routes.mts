@@ -16,30 +16,30 @@ import type {
 export type CustomRouteKind = 'patch' | 'sfw'
 
 function isIndexZero(value: unknown, objectName: string): boolean {
-  if (!isNode(value) || value.type !== 'MemberExpression') {
+  if (!isNode(value) || value['type'] !== 'MemberExpression') {
     return false
   }
-  const property = value.property
+  const property = value['property']
   return (
-    value.computed === true &&
-    isNode(value.object) &&
-    identifierName(value.object) === objectName &&
+    value['computed'] === true &&
+    isNode(value['object']) &&
+    identifierName(value['object']) === objectName &&
     isNode(property) &&
-    property.type === 'Literal' &&
-    property.value === 0
+    property['type'] === 'Literal' &&
+    property['value'] === 0
   )
 }
 
 function isIdentifierIndexZero(value: unknown, identifier: string): boolean {
   return (
     isNode(value) &&
-    value.type === 'MemberExpression' &&
-    value.computed === true &&
-    isNode(value.object) &&
-    identifierName(value.object) === identifier &&
-    isNode(value.property) &&
-    value.property.type === 'Literal' &&
-    value.property.value === 0
+    value['type'] === 'MemberExpression' &&
+    value['computed'] === true &&
+    isNode(value['object']) &&
+    identifierName(value['object']) === identifier &&
+    isNode(value['property']) &&
+    value['property']['type'] === 'Literal' &&
+    value['property']['value'] === 0
   )
 }
 
@@ -51,9 +51,9 @@ function hasIndexZeroAssignment(
   let found = false
   visitAst(node, candidate => {
     if (
-      candidate.type === 'VariableDeclarator' &&
-      identifierName(candidate.id) === variableName &&
-      isIdentifierIndexZero(candidate.init, sourceName)
+      candidate['type'] === 'VariableDeclarator' &&
+      identifierName(candidate['id']) === variableName &&
+      isIdentifierIndexZero(candidate['init'], sourceName)
     ) {
       found = true
     }
@@ -65,9 +65,9 @@ function hasCall(node: AstNode, functionName: string): boolean {
   let found = false
   visitAst(node, child => {
     if (
-      child.type === 'CallExpression' &&
-      isNode(child.callee) &&
-      identifierName(child.callee) === functionName
+      child['type'] === 'CallExpression' &&
+      isNode(child['callee']) &&
+      identifierName(child['callee']) === functionName
     ) {
       found = true
     }
@@ -79,10 +79,10 @@ function importedPatchHandlers(node: AstNode, module: ParsedModule): string[] {
   const handlers: string[] = []
   let unsupportedCall = false
   visitAst(node, child => {
-    if (child.type !== 'CallExpression') {
+    if (child['type'] !== 'CallExpression') {
       return
     }
-    const callee = identifierName(child.callee)
+    const callee = identifierName(child['callee'])
     const binding =
       callee === undefined ? undefined : module.imports.get(callee)
     if (
@@ -118,12 +118,12 @@ function importedFrom(
 function functionBody(module: ParsedModule, name: string): AstNode {
   const declaration = module.declarations.get(name)
   if (
-    declaration?.type !== 'FunctionDeclaration' ||
-    !isNode(declaration.body)
+    declaration?.['type'] !== 'FunctionDeclaration' ||
+    !isNode(declaration['body'])
   ) {
     throw new Error(`${module.path}: missing ${name} function`)
   }
-  return declaration.body
+  return declaration['body']
 }
 
 function routeCases(
@@ -134,39 +134,42 @@ function routeCases(
 ): string[] {
   const found: string[] = []
   visitAst(node, child => {
-    if (child.type !== 'IfStatement' || !isNode(child.test)) {
+    if (child['type'] !== 'IfStatement' || !isNode(child['test'])) {
       return
     }
-    const test = child.test
+    const test = child['test']
     let value: string | undefined
     visitAst(test, candidate => {
       if (
-        candidate.type === 'BinaryExpression' &&
-        candidate.operator === '===' &&
-        isNode(candidate.left) &&
-        candidate.left.type === 'Identifier' &&
-        identifierName(candidate.left) === selector
+        candidate['type'] === 'BinaryExpression' &&
+        candidate['operator'] === '===' &&
+        isNode(candidate['left']) &&
+        candidate['left']['type'] === 'Identifier' &&
+        identifierName(candidate['left']) === selector
       ) {
-        value = stringLiteral(candidate.right)
+        value = stringLiteral(candidate['right'])
       }
     })
-    if (value === undefined || !isNode(child.consequent)) {
+    if (value === undefined || !isNode(child['consequent'])) {
       return
     }
-    const handlers = importedPatchHandlers(child.consequent, module)
+    const handlers = importedPatchHandlers(child['consequent'], module)
     if (handlers.length === 0) {
       return
     }
     let skipFlagFound = false
     visitAst(test, candidate => {
-      if (candidate.type === 'CallExpression' && isNode(candidate.callee)) {
-        const callee = candidate.callee
+      if (
+        candidate['type'] === 'CallExpression' &&
+        isNode(candidate['callee'])
+      ) {
+        const callee = candidate['callee']
         if (
-          callee.type === 'MemberExpression' &&
-          isNode(callee.property) &&
-          identifierName(callee.property) === 'includes' &&
-          Array.isArray(candidate.arguments) &&
-          stringLiteral(candidate.arguments[0]) === '--skip-rollback'
+          callee['type'] === 'MemberExpression' &&
+          isNode(callee['property']) &&
+          identifierName(callee['property']) === 'includes' &&
+          Array.isArray(candidate['arguments']) &&
+          stringLiteral(candidate['arguments'][0]) === '--skip-rollback'
         ) {
           skipFlagFound = true
         }
@@ -189,14 +192,14 @@ function binaryRouteCases(
   let count = 0
   visitAst(node, child => {
     if (
-      child.type === 'IfStatement' &&
-      isNode(child.test) &&
-      child.test.type === 'BinaryExpression' &&
-      child.test.operator === '===' &&
-      isIndexZero(child.test.left, selector) &&
-      stringLiteral(child.test.right) === target &&
-      isNode(child.consequent) &&
-      hasCall(child.consequent, handler)
+      child['type'] === 'IfStatement' &&
+      isNode(child['test']) &&
+      child['test']['type'] === 'BinaryExpression' &&
+      child['test']['operator'] === '===' &&
+      isIndexZero(child['test']['left'], selector) &&
+      stringLiteral(child['test']['right']) === target &&
+      isNode(child['consequent']) &&
+      hasCall(child['consequent'], handler)
     ) {
       count += 1
     }
@@ -207,14 +210,14 @@ function binaryRouteCases(
 function isPositionalsFirstFallback(value: unknown): boolean {
   if (
     !isNode(value) ||
-    value.type !== 'LogicalExpression' ||
-    value.operator !== '??' ||
-    !isIndexZero(value.left, 'positionals') ||
-    !isNode(value.right)
+    value['type'] !== 'LogicalExpression' ||
+    value['operator'] !== '??' ||
+    !isIndexZero(value['left'], 'positionals') ||
+    !isNode(value['right'])
   ) {
     return false
   }
-  return value.right.type === 'Literal' && value.right.value === ''
+  return value['right']['type'] === 'Literal' && value['right']['value'] === ''
 }
 
 function firewallCaModes(sourceReader: SourceReader): string[] {
@@ -233,8 +236,8 @@ function firewallCaModes(sourceReader: SourceReader): string[] {
   let runnerValidatesArguments = false
   visitAst(runner, node => {
     if (
-      node.type === 'CallExpression' &&
-      identifierName(node.callee) === 'validateFirewallCaArguments'
+      node['type'] === 'CallExpression' &&
+      identifierName(node['callee']) === 'validateFirewallCaArguments'
     ) {
       runnerValidatesArguments = true
     }
@@ -246,22 +249,23 @@ function firewallCaModes(sourceReader: SourceReader): string[] {
   let allowlistValidated = false
   visitAst(validator, node => {
     if (
-      node.type !== 'CallExpression' ||
-      !isNode(node.callee) ||
-      node.callee.type !== 'MemberExpression' ||
-      !isNode(node.callee.object) ||
-      node.callee.object.type !== 'ArrayExpression' ||
-      !isNode(node.callee.property) ||
-      identifierName(node.callee.property) !== 'includes'
+      node['type'] !== 'CallExpression' ||
+      !isNode(node['callee']) ||
+      node['callee']['type'] !== 'MemberExpression' ||
+      !isNode(node['callee']['object']) ||
+      node['callee']['object']['type'] !== 'ArrayExpression' ||
+      !isNode(node['callee']['property']) ||
+      identifierName(node['callee']['property']) !== 'includes'
     ) {
       return
     }
-    if (!isPositionalsFirstFallback(node.arguments[0])) {
+    const args = node['arguments']
+    if (!Array.isArray(args) || !isPositionalsFirstFallback(args[0])) {
       return
     }
     allowlistValidated = true
     const values = nodeArray(
-      node.callee.object.elements,
+      node['callee']['object']['elements'],
       `${module.path}: invalid CA allowlist`,
     ).map(stringLiteral)
     if (values.some(value => value === undefined) || values.length === 0) {

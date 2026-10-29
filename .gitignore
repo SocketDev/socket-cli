@@ -189,7 +189,9 @@ opencode.json
 .claude/commands/fleet/update-hooks-dry.md
 .claude/commands/fleet/update-pricing.md
 .claude/commands/fleet/update-security.md
+.claude/hooks/fleet/_dist/fleet-pack.excluded.generated.cjs
 .claude/hooks/fleet/_dist/fleet-pack.generated.cjs
+.claude/hooks/fleet/_dist/fleet-pack.snapshot.generated.cjs
 .claude/hooks/fleet/_dist/launchers/dispatch-launcher-darwin-arm64
 .claude/hooks/fleet/_dist/launchers/dispatch-launcher-darwin-x64
 .claude/hooks/fleet/_dist/launchers/dispatch-launcher-linux-arm64
