@@ -61,28 +61,31 @@ export function objectProperties(
   node: AstNode,
   sourcePath: string,
 ): Map<string, AstNode> {
-  if (node.type !== 'ObjectExpression') {
+  if (node['type'] !== 'ObjectExpression') {
     throw sourceError(sourcePath, node, 'expected a literal object')
   }
   const result = new Map<string, AstNode>()
-  const properties = nodeArray(node.properties, `${sourcePath}: invalid object`)
+  const properties = nodeArray(
+    node['properties'],
+    `${sourcePath}: invalid object`,
+  )
   for (let index = 0, { length } = properties; index < length; index += 1) {
     const property = properties[index]
     if (property === undefined) {
       throw new Error(`${sourcePath}: invalid object property`)
     }
     if (
-      property.type !== 'Property' ||
-      property.computed === true ||
-      property.kind !== 'init'
+      property['type'] !== 'Property' ||
+      property['computed'] === true ||
+      property['kind'] !== 'init'
     ) {
       throw sourceError(sourcePath, property, 'dynamic object entry')
     }
-    const key = staticPropertyKey(property.key)
-    if (key === undefined || result.has(key) || !isNode(property.value)) {
+    const key = staticPropertyKey(property['key'])
+    if (key === undefined || result.has(key) || !isNode(property['value'])) {
       throw sourceError(sourcePath, property, 'invalid object entry')
     }
-    result.set(key, property.value)
+    result.set(key, property['value'])
   }
   return result
 }
@@ -91,28 +94,28 @@ export function staticPropertyKey(value: unknown): string | undefined {
   if (!isNode(value)) {
     return undefined
   }
-  if (value.type === 'Identifier' && typeof value.name === 'string') {
-    return value.name
+  if (value['type'] === 'Identifier' && typeof value['name'] === 'string') {
+    return value['name']
   }
-  if (value.type === 'Literal' && typeof value.value === 'string') {
-    return value.value
+  if (value['type'] === 'Literal' && typeof value['value'] === 'string') {
+    return value['value']
   }
   return undefined
 }
 
 export function stringLiteral(value: unknown): string | undefined {
   return isNode(value) &&
-    value.type === 'Literal' &&
-    typeof value.value === 'string'
-    ? value.value
+    value['type'] === 'Literal' &&
+    typeof value['value'] === 'string'
+    ? value['value']
     : undefined
 }
 
 export function identifierName(value: unknown): string | undefined {
   return isNode(value) &&
-    value.type === 'Identifier' &&
-    typeof value.name === 'string'
-    ? value.name
+    value['type'] === 'Identifier' &&
+    typeof value['name'] === 'string'
+    ? value['name']
     : undefined
 }
 
@@ -122,8 +125,8 @@ export function sourceError(
   reason: string,
 ): Error {
   const loc =
-    isRecord(node.loc) && isRecord(node.loc['start'])
-      ? node.loc['start']
+    isRecord(node['loc']) && isRecord(node['loc']['start'])
+      ? node['loc']['start']
       : undefined
   const line = loc && typeof loc['line'] === 'number' ? loc['line'] : 1
   return new Error(`${sourcePath}:${line}: ${reason}`)
@@ -166,14 +169,14 @@ export function parseModule(
   } catch {
     throw new Error(`${sourcePath}: unable to parse source`)
   }
-  if (!isNode(parsed) || parsed.type !== 'Program') {
+  if (!isNode(parsed) || parsed['type'] !== 'Program') {
     throw new Error(`${sourcePath}: unable to parse source`)
   }
   annotateSourceLocations(parsed, source)
   const imports = new Map<string, { path: string; name: string }>()
   const declarations = new Map<string, AstNode>()
   const exports = new Map<string, AstNode>()
-  const body = nodeArray(parsed.body, `${sourcePath}: invalid source body`)
+  const body = nodeArray(parsed['body'], `${sourcePath}: invalid source body`)
   const context = { sourcePath, sourceReader, imports, declarations, exports }
   for (let index = 0, { length } = body; index < length; index += 1) {
     const statement = body[index]
@@ -192,16 +195,17 @@ function annotateSourceLocations(root: AstNode, source: string): void {
     }
   }
   visitAst(root, node => {
-    const loc = isRecord(node.loc) ? node.loc : undefined
+    const loc = isRecord(node['loc']) ? node['loc'] : undefined
     const start =
       loc !== undefined && isRecord(loc['start']) ? loc['start'] : undefined
+    const offset = node['start']
     if (
       (start !== undefined && typeof start['line'] === 'number') ||
-      typeof node.start !== 'number'
+      typeof offset !== 'number'
     ) {
       return
     }
-    node.loc = { start: { line: lineForOffset(lineOffsets, node.start) } }
+    node['loc'] = { start: { line: lineForOffset(lineOffsets, offset) } }
   })
 }
 
@@ -229,7 +233,7 @@ interface ParseContext {
 }
 
 function collectStatement(statement: AstNode, context: ParseContext): void {
-  if (statement.type === 'ImportDeclaration') {
+  if (statement['type'] === 'ImportDeclaration') {
     collectImports(statement, context)
     return
   }
@@ -237,8 +241,8 @@ function collectStatement(statement: AstNode, context: ParseContext): void {
 }
 
 function collectImports(statement: AstNode, context: ParseContext): void {
-  const specifier = isNode(statement.source)
-    ? stringLiteral(statement.source)
+  const specifier = isNode(statement['source'])
+    ? stringLiteral(statement['source'])
     : undefined
   if (specifier === undefined || !specifier.startsWith('.')) {
     return
@@ -258,7 +262,7 @@ function collectImports(statement: AstNode, context: ParseContext): void {
     )
   }
   const importedBindings = nodeArray(
-    statement.specifiers,
+    statement['specifiers'],
     `${context.sourcePath}: invalid imports`,
   )
   for (
@@ -270,12 +274,12 @@ function collectImports(statement: AstNode, context: ParseContext): void {
     if (imported === undefined) {
       throw new Error(`${context.sourcePath}: invalid import binding`)
     }
-    const local = identifierName(imported.local)
+    const local = identifierName(imported['local'])
     const importedName =
-      imported.type === 'ImportDefaultSpecifier'
+      imported['type'] === 'ImportDefaultSpecifier'
         ? 'default'
-        : isNode(imported.imported)
-          ? staticPropertyKey(imported.imported)
+        : isNode(imported['imported'])
+          ? staticPropertyKey(imported['imported'])
           : undefined
     if (local === undefined || importedName === undefined) {
       throw sourceError(
@@ -289,14 +293,14 @@ function collectImports(statement: AstNode, context: ParseContext): void {
 }
 
 function collectDeclarations(statement: AstNode, context: ParseContext): void {
-  const isExported = statement.type === 'ExportNamedDeclaration'
-  const declaration = isExported ? statement.declaration : statement
+  const isExported = statement['type'] === 'ExportNamedDeclaration'
+  const declaration = isExported ? statement['declaration'] : statement
   if (!isNode(declaration)) {
     return
   }
-  if (declaration.type === 'VariableDeclaration') {
+  if (declaration['type'] === 'VariableDeclaration') {
     const items = nodeArray(
-      declaration.declarations,
+      declaration['declarations'],
       `${context.sourcePath}: invalid declarations`,
     )
     for (let index = 0, { length } = items; index < length; index += 1) {
@@ -304,18 +308,18 @@ function collectDeclarations(statement: AstNode, context: ParseContext): void {
       if (item === undefined) {
         throw new Error(`${context.sourcePath}: invalid declaration`)
       }
-      const name = identifierName(item.id)
-      if (name !== undefined && isNode(item.init)) {
-        context.declarations.set(name, item.init)
+      const name = identifierName(item['id'])
+      if (name !== undefined && isNode(item['init'])) {
+        context.declarations.set(name, item['init'])
         if (isExported) {
-          context.exports.set(name, item.init)
+          context.exports.set(name, item['init'])
         }
       }
     }
     return
   }
-  if (declaration.type === 'FunctionDeclaration') {
-    const name = identifierName(declaration.id)
+  if (declaration['type'] === 'FunctionDeclaration') {
+    const name = identifierName(declaration['id'])
     if (name !== undefined) {
       context.declarations.set(name, declaration)
       if (isExported) {

@@ -8,7 +8,7 @@ import { isMainModule } from '../../../fleet/process/is-main-module.mts'
 import { runMain } from '../../../fleet/process/main/run.mts'
 import { BINJECT_VERSION, NODE_SMOL_VERSION } from '../constants/sea-assets.mts'
 import { fetchSeaAsset } from './assets.mts'
-import { relocateDarwinInitializerOffsets } from './initializer-offsets.mts'
+import { repairDarwinInitializerOffsets } from './initializer-repair.mts'
 import { extractSmolRuntime } from './runtime.mts'
 import { signAndNotarizeSeaBinary } from './sign.mts'
 import type { SeaSigningReceipt } from './sign.mts'
@@ -344,11 +344,7 @@ async function buildSeaTarget(
       )
     }
     if (target === 'darwin-x64') {
-      const injected = await readFile(output)
-      const relocated = relocateDarwinInitializerOffsets(runtime, injected)
-      if (relocated !== injected) {
-        await writeFile(output, relocated)
-      }
+      await repairDarwinInitializerOffsets(runtime, output)
     }
   }
   if (entitlementsPath) {

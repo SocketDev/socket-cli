@@ -205,7 +205,6 @@
     "publish:npm": "node scripts/fleet/npm/publish/run.mts",
     "release:github": "node scripts/fleet/release/github/remote.mts",
     "release:hint": "node scripts/fleet/release/hint.mts",
-    "release:nightly:plan": "node scripts/fleet/release/nightly/cli.mts",
     "review:comments": "node scripts/fleet/comment-review/run.mts",
     "review:pr": "node scripts/fleet/ai/review/jev/run.mts",
     "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
@@ -286,6 +285,9 @@
     "weekly-update": "node scripts/fleet/weekly-update.mts",
     "weekly-update:ci": "gh workflow run cron-weekly-update.yml",
     "worktree:create": "node scripts/fleet/worktree/create/run.mts",
+    "docs:commands:check": "node scripts/repo/check/docs-commands.mts",
+    "docs:commands:test": "node scripts/fleet/test.mts test/repo/unit/check/docs-command-inventory.test.mts test/repo/unit/check/docs-commands.test.mts",
+    "release:nightly:plan": "node scripts/fleet/release/nightly/cli.mts",
     "ci:fix:preview": "node scripts/fleet/ci/fix/preview.mts"
   },
   "devDependencies": {

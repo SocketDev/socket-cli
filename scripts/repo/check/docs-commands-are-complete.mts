@@ -59,9 +59,9 @@ function inlineCode(node: MarkdownNode | undefined): string | undefined {
     return undefined
   }
   const children = nodeChildren(node)
-  const child = children[0]
-  return children.length === 1 && child?.type === 'inlineCode'
-    ? textContent(child)
+  const firstChild = children[0]
+  return children.length === 1 && firstChild?.type === 'inlineCode'
+    ? textContent(firstChild)
     : undefined
 }
 
@@ -117,12 +117,14 @@ function sectionRows(
     throw new Error(`docs/commands.md: invalid ${heading} table header`)
   }
   const headerCells = header.children
+  const firstHeaderCell = headerCells[0]
+  const secondHeaderCell = headerCells[1]
   if (
     headerCells.length !== 2 ||
-    headerCells[0] === undefined ||
-    headerCells[1] === undefined ||
-    textContent(headerCells[0]) !== headers[0] ||
-    textContent(headerCells[1]) !== headers[1]
+    firstHeaderCell === undefined ||
+    secondHeaderCell === undefined ||
+    textContent(firstHeaderCell) !== headers[0] ||
+    textContent(secondHeaderCell) !== headers[1]
   ) {
     throw new Error(
       `docs/commands.md: ${heading} table must have ${headers.join(' and ')} columns`,
@@ -130,12 +132,13 @@ function sectionRows(
   }
   return rows.slice(1).map(row => {
     const cells = row.children
-    return {
+    const parsedRow = {
       __proto__: null,
       name: inlineCode(cells[0]),
       value: inlineCode(cells[1]),
       guide: linkTarget(cells[1]),
     }
+    return parsedRow
   })
 }
 
@@ -156,7 +159,8 @@ function uniqueRows(
     }
     result.set(row.name, row)
   }
-  return { rows: result, problems }
+  const inventory = { __proto__: null, rows: result, problems }
+  return inventory
 }
 
 function validGuide(

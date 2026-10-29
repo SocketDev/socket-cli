@@ -35,9 +35,10 @@ function literalStringArray(node: AstNode, sourcePath: string): string[] {
   if (node.type !== 'ArrayExpression') {
     throw sourceError(sourcePath, node, 'expected a literal array')
   }
-  const values = nodeArray(node.elements, `${sourcePath}: invalid array`).map(
-    stringLiteral,
-  )
+  const values = nodeArray(
+    node['elements'],
+    `${sourcePath}: invalid array`,
+  ).map(stringLiteral)
   if (values.some(value => value === undefined)) {
     throw sourceError(sourcePath, node, 'expected literal string values')
   }
@@ -128,7 +129,8 @@ function runBody(
   if (run === undefined) {
     throw sourceError(module.path, runProperty, 'unresolved run handler')
   }
-  return isNode(run.body) ? run.body : undefined
+  const body = run['body']
+  return isNode(body) ? body : undefined
 }
 
 function subcommandConfig(
@@ -160,12 +162,13 @@ function subcommandConfig(
     if (!isNode(value)) {
       return
     }
+    const callee = value['callee']
     if (
       value.type === 'CallExpression' &&
-      isNode(value.callee) &&
+      isNode(callee) &&
       isImportedFrom(
         module,
-        identifierName(value.callee) ?? '',
+        identifierName(callee) ?? '',
         'with-subcommands.mts',
         'meowWithSubcommands',
       )
@@ -191,7 +194,7 @@ function subcommandConfig(
     return { subcommands: undefined, aliases: undefined }
   }
   const args = nodeArray(
-    call.arguments,
+    call['arguments'],
     `${module.path}: invalid router arguments`,
   )
   const config = args[0]
@@ -216,7 +219,7 @@ function factorySubcommandConfig(
   module: ParsedModule,
   commandValue: AstNode,
 ): { subcommands: AstNode | undefined; aliases: AstNode | undefined } {
-  const callee = identifierName(commandValue.callee)
+  const callee = identifierName(commandValue['callee'])
   if (callee === undefined) {
     throw sourceError(module.path, commandValue, 'unsupported command factory')
   }
@@ -249,7 +252,7 @@ function factorySubcommandConfig(
     throw sourceError(module.path, commandValue, 'unsupported command factory')
   }
   const args = nodeArray(
-    commandValue.arguments,
+    commandValue['arguments'],
     `${module.path}: invalid factory arguments`,
   )
   return parseFactoryConfig(module, commandValue, args[0])

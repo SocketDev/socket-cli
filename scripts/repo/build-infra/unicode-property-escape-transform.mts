@@ -149,18 +149,41 @@ export function hasUnsupportedUnicodeFeatures(pattern: string) {
  * Transform a regex pattern by replacing \p{Property} with character classes.
  */
 export function transformRegexPattern(pattern: string) {
-  let transformed = pattern
-
-  // Replace \p{Property} with character class equivalents.
-  for (const [prop, replacement] of Object.entries(unicodePropertyMap)) {
-    const escapedProp = prop.replace(/[\\{}]/g, '\\$&')
-    // Replace \p{Property} with [replacement].
-    transformed = transformed.replace(
-      new RegExp(`\\\\p\\{${escapedProp}\\}`, 'g'),
-      () => `[${replacement}]`,
-    )
+  let transformed = ''
+  let inCharacterClass = false
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index]!
+    if (character === '\\') {
+      if (
+        pattern.charCodeAt(index + 1) === 112 /* 'p' */ &&
+        pattern.charCodeAt(index + 2) === 123 /* '{' */
+      ) {
+        const propertyEnd = pattern.indexOf('}', index + 3)
+        if (propertyEnd !== -1) {
+          const property = pattern.slice(index + 3, propertyEnd)
+          if (Object.hasOwn(unicodePropertyMap, property)) {
+            const replacement =
+              unicodePropertyMap[property as keyof typeof unicodePropertyMap]
+            transformed += inCharacterClass ? replacement : `[${replacement}]`
+            index = propertyEnd
+            continue
+          }
+        }
+      }
+      transformed += character
+      if (index + 1 < pattern.length) {
+        transformed += pattern[index + 1]
+        index += 1
+      }
+      continue
+    }
+    if (character === '[' && !inCharacterClass) {
+      inCharacterClass = true
+    } else if (character === ']' && inCharacterClass) {
+      inCharacterClass = false
+    }
+    transformed += character
   }
-
   return transformed
 }
 
@@ -230,15 +253,7 @@ export function transformUnicodePropertyEscapes(content: string) {
         const originalPattern = originalRegex.slice(1, lastSlash)
         const originalFlags = originalRegex.slice(lastSlash + 1)
 
-        // Do the same transformations on the source text.
-        let newPattern = originalPattern
-        for (const [prop, replacement] of Object.entries(unicodePropertyMap)) {
-          const escapedProp = prop.replace(/[\\{}]/g, '\\$&')
-          newPattern = newPattern.replace(
-            new RegExp(`\\\\p\\{${escapedProp}\\}`, 'g'),
-            () => `[${replacement}]`,
-          )
-        }
+        const newPattern = transformRegexPattern(originalPattern)
 
         // Remove /u and /v flags from the original flags.
         const newFlags = originalFlags.replace(/[uv]/g, '')
