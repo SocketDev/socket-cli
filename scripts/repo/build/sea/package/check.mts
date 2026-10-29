@@ -36,6 +36,36 @@ type NativePackageManifest = {
   entrypoints: Record<string, string>
 }
 
+export interface NativePackageEntrypointVersion {
+  entrypoint: string
+  version: string
+}
+
+export interface NativePackageVerificationResult {
+  requestedTarget: string
+  launcherTarget: string
+  entrypoints: NativePackageEntrypointVersion[]
+}
+
+export interface NativePackageEntrypointFailure {
+  entrypoint: string
+  error: Error
+}
+
+export class NativePackageEntrypointFailures extends Error {
+  readonly failures: NativePackageEntrypointFailure[]
+
+  constructor(failures: NativePackageEntrypointFailure[]) {
+    super(
+      failures
+        .map(({ entrypoint, error }) => `${entrypoint}: ${error.message}`)
+        .join('\n'),
+    )
+    this.name = 'NativePackageEntrypointFailures'
+    this.failures = failures
+  }
+}
+
 function isStringRecord(value: unknown): value is Record<string, string> {
   return (
     typeof value === 'object' &&
@@ -178,7 +208,7 @@ async function runNativePackageCommand(
   description: string,
   target: string,
   hostTarget: string,
-): Promise<void> {
+): Promise<string> {
   let result: NativePackageProcessResult
   try {
     result = await spawnProcess(command, args, {
@@ -203,6 +233,7 @@ async function runNativePackageCommand(
       `Native package command failed for ${description} (requested target ${target}; launcher target ${hostTarget}; exit ${result.code}; signal ${result.signal ?? 'none'}${result.timedOut ? '; timed out' : ''}${result.outputLimitExceeded ? '; output limit exceeded' : ''})${details ? `: ${details}` : ''}. Rebuild the native package.`,
     )
   }
+  return result.stdout.toString().trim()
 }
 
 function verifyNativePackageMetadata(
@@ -253,12 +284,54 @@ function assertNativeQualificationTarget(config: {
   }
 }
 
+async function verifyNativePackageEntrypoints(config: {
+  launcherFiles: string[]
+  packageRoot: string
+  spawnProcess: NativePackageSpawnProcess
+  target: string
+  hostTarget: string
+}): Promise<NativePackageEntrypointVersion[]> {
+  const { launcherFiles, packageRoot, spawnProcess, target, hostTarget } =
+    config
+  const entrypoints: NativePackageEntrypointVersion[] = []
+  const failures: NativePackageEntrypointFailure[] = []
+  for (let index = 0, { length } = launcherFiles; index < length; index += 1) {
+    const relativeFile = launcherFiles[index]!
+    const launcher = path.resolve(packageRoot, relativeFile)
+    const entrypoint = path.posix.basename(
+      relativeFile,
+      path.posix.extname(relativeFile),
+    )
+    try {
+      const version = await runNativePackageCommand(
+        spawnProcess,
+        packageRoot,
+        process.execPath,
+        [launcher, '--version'],
+        `launcher ${relativeFile}`,
+        target,
+        hostTarget,
+      )
+      entrypoints.push({ entrypoint, version })
+    } catch (error) {
+      failures.push({
+        entrypoint,
+        error: error instanceof Error ? error : new Error(String(error)),
+      })
+    }
+  }
+  if (failures.length > 0) {
+    throw new NativePackageEntrypointFailures(failures)
+  }
+  return entrypoints
+}
+
 export async function verifyNativePackage(config: {
   packageRoot: string
   target: string
   gatekeeper?: boolean | undefined
   spawnProcess?: NativePackageSpawnProcess | undefined
-}): Promise<{ requestedTarget: string; launcherTarget: string }> {
+}): Promise<NativePackageVerificationResult> {
   const opts = { __proto__: null, ...config } as typeof config
   const packageRoot = path.resolve(opts.packageRoot)
   const target = opts.target
@@ -344,18 +417,12 @@ export async function verifyNativePackage(config: {
       hostTarget,
     )
   }
-  for (let index = 0, { length } = launcherFiles; index < length; index += 1) {
-    const relativeFile = launcherFiles[index]!
-    const launcher = path.resolve(packageRoot, relativeFile)
-    await runNativePackageCommand(
-      spawnProcess,
-      packageRoot,
-      process.execPath,
-      [launcher, '--version'],
-      `launcher ${relativeFile}`,
-      target,
-      hostTarget,
-    )
-  }
-  return { requestedTarget: target, launcherTarget: hostTarget }
+  const entrypoints = await verifyNativePackageEntrypoints({
+    launcherFiles,
+    packageRoot,
+    spawnProcess,
+    target,
+    hostTarget,
+  })
+  return { requestedTarget: target, launcherTarget: hostTarget, entrypoints }
 }
