@@ -8,17 +8,19 @@ import type { OutputKind } from '../../types.mts'
 export async function handleDependencies({
   limit,
   offset,
+  purls,
   outputKind,
 }: {
   limit: number
   offset: number
+  purls: string[] | undefined
   outputKind: OutputKind
 }): Promise<void> {
   debug(`Fetching dependencies with limit=${limit}, offset=${offset}`)
-  debugDir({ limit, offset, outputKind })
+  debugDir({ limit, offset, purls, outputKind })
 
   const result = await fetchDependencies(
-    { limit, offset },
+    { limit, offset, purls },
     {
       commandPath: 'socket organization dependencies',
     },
