@@ -39,6 +39,7 @@ export type ReachabilityOptions = {
   reachContinueOnNoSourceFiles: boolean
   reachDebug: boolean
   reachDetailedAnalysisLogFile: boolean
+  reachDisableDependencyDownloads: boolean
   reachDisableExternalToolChecks: boolean
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
@@ -242,6 +243,9 @@ export async function performReachabilityAnalysis(
       : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
+      : []),
+    ...(reachabilityOptions.reachDisableDependencyDownloads
+      ? ['--disable-dependency-downloads']
       : []),
     ...(reachabilityOptions.reachDisableExternalToolChecks
       ? ['--disable-external-tool-checks']

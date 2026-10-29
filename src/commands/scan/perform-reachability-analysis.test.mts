@@ -107,6 +107,7 @@ function makeReachabilityOptions(): ReachabilityOptions {
     reachContinueOnNoSourceFiles: false,
     reachDebug: false,
     reachDetailedAnalysisLogFile: false,
+    reachDisableDependencyDownloads: false,
     reachDisableExternalToolChecks: false,
     reachDisableAnalytics: false,
     reachEcosystems: [],
