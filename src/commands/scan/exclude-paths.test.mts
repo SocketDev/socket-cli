@@ -27,6 +27,7 @@ function makeReachOptions(
     reachDebug: false,
     reachDetailedAnalysisLogFile: false,
     reachDisableAnalytics: false,
+    reachDisableDependencyDownloads: false,
     reachDisableExternalToolChecks: false,
     reachEcosystems: [],
     reachEnableAnalysisSplitting: false,
