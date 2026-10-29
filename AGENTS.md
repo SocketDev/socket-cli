@@ -169,3 +169,11 @@
 - A written mermaid fence gets rewritten GitHub-safe at edit time. [`hook-registry`](docs/fleet/agents.md/hook-registry.md)
 
 <!-- </fleet> -->
+
+## 🏗️ CLI-Specific
+
+- Build production native binaries with `pnpm run build:native:prod`; inspect them with `pnpm run check:native-package`.
+- Use `pnpm test <path>` for focused tests. Native release tests live under `test/repo/unit/build/sea/` and `test/repo/unit/sea/`.
+- Version selection, reservation, and source tagging belong to the npm release pipeline. Use the `next` dist-tag for prereleases; do not edit the package version to start a release.
+- Native release signing and notarization run in macOS CI. The Apple certificate passphrase is CI-only. The workflow qualifies one packed artifact on all eight supported targets. See [native release](docs/repo/agents.md/native-release.md).
+- Inspect staged package state with `pnpm run npm:staged`. After validation, approve eligible stages with `pnpm stage approve`; use the AI Drive/browser path only for CLI fallback or an npm challenge.

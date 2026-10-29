@@ -101,7 +101,7 @@
         "honors a custom stdio",
         "merges options.env"
       ],
-      "notes": "The patch adapter resolves and executes socket-patch with argument, environment, and stdio forwarding. The sparse upstream contains core implementation, CLI commands, and behavioral tests for incorporation. This row covers the execution adapter; patch algorithms are implemented by the upstream executable."
+      "notes": "The adapter resolves and executes `socket-patch` with argument, environment, and stdio forwarding. It remains the CLI implementation until the in-process TypeScript port reaches the upstream contract. The public SocketDev/socket-patch source pin is `15a6ba6f416c244e918ff01260a1bc91f67bc945` on `main`, with a depth-one single-branch checkout of core, CLI, and tests. The upstream license is MIT."
     }
   ]
 }
