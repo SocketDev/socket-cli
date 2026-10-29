@@ -5,13 +5,9 @@ import {
   parseModule,
   stringLiteral,
   visitAst,
-} from './docs-command-inventory-lib.mts'
+} from './util.mts'
 
-import type {
-  AstNode,
-  ParsedModule,
-  SourceReader,
-} from './docs-command-inventory-lib.mts'
+import type { AstNode, ParsedModule, SourceReader } from './util.mts'
 
 export type CustomRouteKind = 'patch' | 'sfw'
 

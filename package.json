@@ -92,6 +92,8 @@
     "check:hooks": "node scripts/fleet/check.mts --category=hooks",
     "check:native-package": "node scripts/repo/build/sea/check.mts",
     "check:paths": "node scripts/fleet/check/paths-are-valid.mts",
+    "docs:commands:check": "node scripts/repo/check/docs-commands-are-complete.mts",
+    "docs:commands:test": "node scripts/fleet/test.mts test/repo/unit/docs/commands/inventory.test.mts test/repo/unit/check/docs-commands-are-complete.test.mts",
     "check:test": "node scripts/fleet/commands/run.mts check test",
     "check:test-budget-headroom": "node scripts/fleet/check/test-budget-headroom.mts",
     "check:types": "node scripts/fleet/check.mts --category=types",

@@ -6,16 +6,12 @@ import {
   parseModule,
   sourceError,
   stringLiteral,
-} from './docs-command-inventory-lib.mts'
-import { extractCustomRoutes } from './docs-command-custom-routes.mts'
+} from './util.mts'
+import { extractCustomRoutes } from './custom-routes.mts'
 
-import type { CustomRouteKind } from './docs-command-custom-routes.mts'
+import type { CustomRouteKind } from './custom-routes.mts'
 
-import type {
-  AstNode,
-  ParsedModule,
-  SourceReader,
-} from './docs-command-inventory-lib.mts'
+import type { AstNode, ParsedModule, SourceReader } from './util.mts'
 
 export interface CommandAlias {
   alias: string

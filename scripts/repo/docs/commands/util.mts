@@ -5,6 +5,33 @@ import { parseAst } from 'rolldown/parseAst'
 
 export interface AstNode extends Record<string, unknown> {
   type: string
+  arguments?: unknown | undefined
+  body?: unknown | undefined
+  callee?: unknown | undefined
+  computed?: unknown | undefined
+  consequent?: unknown | undefined
+  declaration?: unknown | undefined
+  declarations?: unknown | undefined
+  elements?: unknown | undefined
+  id?: unknown | undefined
+  imported?: unknown | undefined
+  init?: unknown | undefined
+  key?: unknown | undefined
+  kind?: unknown | undefined
+  left?: unknown | undefined
+  local?: unknown | undefined
+  loc?: unknown | undefined
+  name?: unknown | undefined
+  object?: unknown | undefined
+  operator?: unknown | undefined
+  properties?: unknown | undefined
+  property?: unknown | undefined
+  right?: unknown | undefined
+  source?: unknown | undefined
+  specifiers?: unknown | undefined
+  start?: unknown | undefined
+  test?: unknown | undefined
+  value?: unknown | undefined
 }
 
 export type SourceReader = (sourcePath: string) => string
