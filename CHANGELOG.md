@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
-- Updated the Coana CLI to v `15.13.1`.
+- Updated the Coana CLI to v `15.13.2`.
 - `socket scan reach` now shows up in `socket scan --help`.
 
 ### Fixed
