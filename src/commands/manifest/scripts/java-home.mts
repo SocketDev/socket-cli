@@ -7,15 +7,15 @@ import semver from 'semver'
 import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { safeReadFile } from '@socketsecurity/registry/lib/fs'
 
-import { resolveBuildToolBin } from './build-tool.mts'
+import { isBuildToolWrapper, resolveBuildToolBin } from './build-tool.mts'
 
 import type { BuildTool } from './build-tool.mts'
 
-export type JavaInstallation = { home: string; feature: number }
+type JavaInstallation = { home: string; feature: number }
 
-export type JavaRange = { min: number; max: number }
+type JavaRange = { min: number; max: number }
 
-export type BuildJavaHome = {
+type BuildJavaHome = {
   // Undefined when no usable JDK is set in JAVA_HOME or found on PATH.
   current: JavaInstallation | undefined
   picked: JavaInstallation
@@ -82,12 +82,8 @@ export function javaRange(
   if (semver.gt(parsed, runsOnJavaFrom[runsOnJavaFrom.length - 1]![1])) {
     return { min, max: Number.POSITIVE_INFINITY }
   }
-  let max = 0
-  for (const [java, since] of runsOnJavaFrom) {
-    if (semver.gte(parsed, since)) {
-      max = java
-    }
-  }
+  const max =
+    runsOnJavaFrom.findLast(([, since]) => semver.gte(parsed, since))?.[0] ?? 0
   return { min, max }
 }
 
@@ -218,7 +214,7 @@ export async function projectBuildToolVersion(
       projectDir,
       resolveBuildToolBin('gradle', projectDir, bin),
     )
-    if (path.basename(gradleBin) !== 'gradlew') {
+    if (!isBuildToolWrapper('gradle', gradleBin)) {
       return undefined
     }
     const url = await readProperty(
