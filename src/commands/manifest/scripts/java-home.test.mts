@@ -102,6 +102,18 @@ describe('projectBuildToolVersion', () => {
     ).toBeUndefined()
   })
 
+  it('reads the version next to a wrapper given as the bin', async () => {
+    const dir = await gradleProject('8.14.3')
+    const subproject = path.join(dir, 'app')
+    await fs.mkdir(subproject)
+    expect(
+      await projectBuildToolVersion('gradle', subproject, '../gradlew'),
+    ).toBe('8.14.3')
+    expect(
+      await projectBuildToolVersion('gradle', root, path.join(dir, 'gradlew')),
+    ).toBe('8.14.3')
+  })
+
   it("reads sbt's pinned version", async () => {
     const dir = path.join(root, 'sbt')
     await fs.mkdir(path.join(dir, 'project'), { recursive: true })

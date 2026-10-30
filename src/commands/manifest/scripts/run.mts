@@ -208,9 +208,9 @@ async function withBuildJavaHome(
 // Writes no files; the caller persists facts or consumes artifactPaths.
 export async function runManifestScript(
   tool: BuildTool,
-  scriptOpts: ManifestScriptOptions,
+  opts: ManifestScriptOptions,
 ): Promise<ManifestRunResult> {
-  const opts = await withBuildJavaHome(tool, scriptOpts)
+  opts = await withBuildJavaHome(tool, opts)
   switch (tool) {
     case 'gradle':
       return await runGradle(opts)
@@ -225,9 +225,9 @@ export async function runManifestScript(
 // before committing to a full `runManifestScript` resolution cost.
 export async function enumerateWorkspaces(
   tool: BuildTool,
-  scriptOpts: ManifestScriptOptions,
+  opts: ManifestScriptOptions,
 ): Promise<WorkspaceEnumerationResult> {
-  const opts = await withBuildJavaHome(tool, scriptOpts)
+  opts = await withBuildJavaHome(tool, opts)
   const result = await (tool === 'gradle'
     ? enumerateGradleWorkspaces(opts)
     : tool === 'sbt'

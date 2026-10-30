@@ -5,6 +5,7 @@ import path from 'node:path'
 import semver from 'semver'
 
 import { whichBin } from '@socketsecurity/registry/lib/bin'
+import { safeReadFile } from '@socketsecurity/registry/lib/fs'
 
 import { resolveBuildToolBin } from './build-tool.mts'
 
@@ -24,8 +25,8 @@ export type BuildJavaHome = {
 type JavaSupport = {
   // The first release of the tool that runs on each Java release.
   runsOnJavaFrom: ReadonlyArray<[number, string]>
-  // The first major release that needs Java 17.
-  java17FromMajor: number
+  // The first release that needs Java 17.
+  needsJava17From: string
 }
 
 const JAVA_SUPPORT: Partial<Record<BuildTool, JavaSupport>> = {
@@ -51,19 +52,17 @@ const JAVA_SUPPORT: Partial<Record<BuildTool, JavaSupport>> = {
       [24, '8.14.0'],
       [25, '9.1.0'],
     ],
-    java17FromMajor: 9,
+    needsJava17From: '9.0.0',
   },
   // LTS Java releases only. The sbt version is the project's, which the
   // launcher downloads and runs.
   sbt: {
     runsOnJavaFrom: [
-      [8, '0.13.0'],
       [11, '0.13.0'],
       [17, '1.3.0'],
-      [21, '1.9.0'],
       [25, '1.9.0'],
     ],
-    java17FromMajor: 2,
+    needsJava17From: '2.0.0',
   },
 }
 
@@ -76,8 +75,8 @@ export function javaRange(
   if (!support || !parsed) {
     return undefined
   }
-  const { java17FromMajor, runsOnJavaFrom } = support
-  const min = parsed.major >= java17FromMajor ? 17 : 8
+  const { needsJava17From, runsOnJavaFrom } = support
+  const min = semver.gte(parsed, needsJava17From) ? 17 : 8
   // Past the table's newest entry the tool may support newer Java than we know
   // of, so any Java counts as supported there.
   if (semver.gt(parsed, runsOnJavaFrom[runsOnJavaFrom.length - 1]![1])) {
@@ -108,13 +107,8 @@ async function readJavaInstallation(
   if (!existsSync(path.join(home, 'bin', 'java'))) {
     return undefined
   }
-  let release: string
-  try {
-    release = await fs.readFile(path.join(home, 'release'), 'utf8')
-  } catch {
-    return undefined
-  }
-  const feature = parseJavaFeatureVersion(release)
+  const release = await safeReadFile(path.join(home, 'release'))
+  const feature = release ? parseJavaFeatureVersion(release) : undefined
   return feature === undefined ? undefined : { home, feature }
 }
 
@@ -202,13 +196,8 @@ async function readProperty(
   file: string,
   key: string,
 ): Promise<string | undefined> {
-  let text: string
-  try {
-    text = await fs.readFile(file, 'utf8')
-  } catch {
-    return undefined
-  }
-  for (const line of text.split(/\r?\n/)) {
+  const text = await safeReadFile(file)
+  for (const line of text?.split(/\r?\n/) ?? []) {
     const match = /^\s*([^#!=:\s]+)\s*[=:]\s*(.*?)\s*$/.exec(line)
     if (match?.[1] === key) {
       return match[2]
@@ -225,11 +214,20 @@ export async function projectBuildToolVersion(
   bin?: string | undefined,
 ): Promise<string | undefined> {
   if (tool === 'gradle') {
-    if (resolveBuildToolBin('gradle', projectDir, bin) !== './gradlew') {
+    const gradleBin = path.resolve(
+      projectDir,
+      resolveBuildToolBin('gradle', projectDir, bin),
+    )
+    if (path.basename(gradleBin) !== 'gradlew') {
       return undefined
     }
     const url = await readProperty(
-      path.join(projectDir, 'gradle', 'wrapper', 'gradle-wrapper.properties'),
+      path.join(
+        path.dirname(gradleBin),
+        'gradle',
+        'wrapper',
+        'gradle-wrapper.properties',
+      ),
       'distributionUrl',
     )
     return url ? /gradle-(\d+(?:\.\d+)*)[^/]*\.zip$/.exec(url)?.[1] : undefined
@@ -265,11 +263,9 @@ export async function selectBuildJavaHome(
   if (current && fits(current)) {
     return undefined
   }
+  const installed = await discoverJavaInstallations(opts.env, opts.searchDirs)
   let picked: JavaInstallation | undefined
-  for (const installation of await discoverJavaInstallations(
-    opts.env,
-    opts.searchDirs,
-  )) {
+  for (const installation of installed) {
     if (fits(installation) && installation.feature > (picked?.feature ?? 0)) {
       picked = installation
     }
