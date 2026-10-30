@@ -74,6 +74,10 @@ export function resolveBuildToolBin(
   return DEFAULT_BUILD_TOOL_BIN[tool]
 }
 
+export function isBuildToolWrapper(tool: BuildTool, bin: string): boolean {
+  return basename(bin) === BUILD_TOOL_WRAPPER[tool]
+}
+
 // Distinct for every build sharing a directory.
 export function socketFactsFileName(
   tool: BuildTool,

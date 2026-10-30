@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- Generating Socket facts for a Gradle wrapper or sbt build now picks an installed JDK the pinned Gradle or sbt version runs on, when the JDK in `JAVA_HOME` or on `PATH` is one it cannot start on. A `javaHome` set in `socket.json` is used as is.
+
 ## [1.12.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.12.1) - 2026-10-29
 
 ### Changed

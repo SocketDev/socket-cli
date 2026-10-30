@@ -6,7 +6,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import { parseJavaFeatureVersion } from './java-home.mts'
 import { enumerateWorkspaces, runManifestScript } from './run.mts'
+import { fakeJdk, gradleWrapperProject } from './test/java-fixtures.mts'
+import { withTmpDir } from '../../../utils/fs.mts'
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(async () => ({ code: 0, stderr: '', stdout: '' })),
@@ -98,4 +101,52 @@ describe('maven entry file', () => {
       ])
     },
   )
+})
+
+async function withGradle814(
+  fn: (dir: string, jdk21: string, jdk25: string) => Promise<void>,
+): Promise<void> {
+  await withTmpDir('gradle-814-', async dir => {
+    await gradleWrapperProject(dir, '8.14.3')
+    await fn(
+      dir,
+      await fakeJdk(path.join(dir, 'jdk21'), '21.0.12'),
+      await fakeJdk(path.join(dir, 'jdk25'), '25.0.4'),
+    )
+  })
+}
+
+function spawnedJavaHome(): string | undefined {
+  return vi.mocked(spawn).mock.calls[0]?.[2]?.env?.['JAVA_HOME']
+}
+
+describe('build JDK', () => {
+  it('runs the Gradle wrapper on a JDK it supports', async () => {
+    await withGradle814(async (dir, jdk21, jdk25) => {
+      vi.mocked(spawn).mockClear()
+      vi.stubEnv('JAVA_HOME', jdk25)
+      vi.stubEnv('JAVA_HOME_21_X64', jdk21)
+      try {
+        await runManifestScript('gradle', { projectDir: dir, stdio: 'pipe' })
+      } finally {
+        vi.unstubAllEnvs()
+      }
+      const javaHome = spawnedJavaHome()
+      expect(javaHome).not.toBe(jdk25)
+      const release = await fs.readFile(path.join(javaHome!, 'release'), 'utf8')
+      expect(parseJavaFeatureVersion(release)).toBeLessThan(25)
+    })
+  })
+
+  it('keeps the JAVA_HOME a caller configures', async () => {
+    await withGradle814(async (dir, jdk21, jdk25) => {
+      vi.mocked(spawn).mockClear()
+      await runManifestScript('gradle', {
+        env: { JAVA_HOME: jdk25, JAVA_HOME_21_X64: jdk21 },
+        projectDir: dir,
+        stdio: 'pipe',
+      })
+      expect(spawnedJavaHome()).toBe(jdk25)
+    })
+  })
 })
