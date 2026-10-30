@@ -92,6 +92,12 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Deprecated: Analysis splitting is now disabled by default. This flag is a no-op.',
   },
+  reachDisableDependencyDownloads: {
+    type: 'boolean',
+    default: false,
+    description:
+      "Only analyze dependencies that are already installed (e.g. in the project's .venv, vendor directory or module cache). Missing dependencies count as installation failures.",
+  },
   reachEnableAnalysisSplitting: {
     type: 'boolean',
     default: false,

@@ -6,38 +6,8 @@ import {
   excludePathToScanIgnores,
   projectIgnorePathsToReachExcludePaths,
 } from './exclude-paths.mts'
+import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
 import { InputError } from '../../utils/errors.mts'
-
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
-
-function makeReachOptions(
-  overrides: Partial<ReachabilityOptions> = {},
-): ReachabilityOptions {
-  return {
-    dynamicSbomInference: false,
-    excludePaths: [],
-    reachAdvisories: [],
-    reachAnalysisMemoryLimit: '8192',
-    reachAnalysisTimeout: '',
-    reachConcurrency: 1,
-    reachContinueOnAnalysisErrors: false,
-    reachContinueOnInstallErrors: false,
-    reachContinueOnMissingLockFiles: false,
-    reachContinueOnNoSourceFiles: false,
-    reachDebug: false,
-    reachDetailedAnalysisLogFile: false,
-    reachDisableAnalytics: false,
-    reachDisableExternalToolChecks: false,
-    reachEcosystems: [],
-    reachEnableAnalysisSplitting: false,
-    reachExcludePaths: [],
-    reachRetainFactsFile: false,
-    reachSkipCache: false,
-    reachUseOnlyPregeneratedSboms: false,
-    reachVersion: undefined,
-    ...overrides,
-  }
-}
 
 describe('exclude-paths', () => {
   describe('assertValidExcludePaths', () => {
@@ -206,9 +176,10 @@ describe('exclude-paths', () => {
     it('expands exclude-paths into SCA ignores and re-anchored Coana excludes', () => {
       const result = applyFullExcludePaths({
         cwd: '/repo',
-        reachabilityOptions: makeReachOptions({
+        reachabilityOptions: {
+          ...makeReachabilityOptions(),
           excludePaths: ['tests'],
-        }),
+        },
         target: '/repo',
       })
 

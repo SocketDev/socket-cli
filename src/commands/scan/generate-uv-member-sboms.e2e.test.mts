@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { generateUvMemberSboms } from './generate-uv-member-sboms.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
 
 import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
 
@@ -230,28 +231,8 @@ describe('uv member scans with the real uv binary', { timeout: 30_000 }, () => {
       pendingHead: false,
       pullRequest: 0,
       reach: {
-        dynamicSbomInference: false,
-        excludePaths: [],
-        reachAdvisories: [],
-        reachAnalysisMemoryLimit: '8192',
-        reachAnalysisTimeout: '',
-        reachConcurrency: 1,
-        reachContinueOnAnalysisErrors: false,
-        reachContinueOnInstallErrors: false,
-        reachContinueOnMissingLockFiles: false,
-        reachContinueOnNoSourceFiles: false,
-        reachDebug: false,
-        reachDetailedAnalysisLogFile: false,
-        reachDisableAnalytics: false,
-        reachDisableExternalToolChecks: false,
-        reachEcosystems: [],
-        reachEnableAnalysisSplitting: false,
-        reachExcludePaths: [],
+        ...makeReachabilityOptions(),
         reachFallbackToRegularScan: false,
-        reachRetainFactsFile: false,
-        reachSkipCache: false,
-        reachUseOnlyPregeneratedSboms: false,
-        reachVersion: undefined,
         runReachabilityAnalysis: false,
       },
       readOnly: false,

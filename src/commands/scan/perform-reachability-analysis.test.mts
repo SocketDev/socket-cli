@@ -21,6 +21,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
+import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 
@@ -92,32 +93,6 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
     warn: vi.fn(),
   },
 }))
-
-function makeReachabilityOptions(): ReachabilityOptions {
-  return {
-    dynamicSbomInference: false,
-    excludePaths: [],
-    reachAdvisories: [],
-    reachAnalysisMemoryLimit: '',
-    reachAnalysisTimeout: '',
-    reachConcurrency: 0,
-    reachContinueOnAnalysisErrors: false,
-    reachContinueOnInstallErrors: false,
-    reachContinueOnMissingLockFiles: false,
-    reachContinueOnNoSourceFiles: false,
-    reachDebug: false,
-    reachDetailedAnalysisLogFile: false,
-    reachDisableExternalToolChecks: false,
-    reachDisableAnalytics: false,
-    reachEcosystems: [],
-    reachEnableAnalysisSplitting: false,
-    reachExcludePaths: [],
-    reachRetainFactsFile: false,
-    reachSkipCache: false,
-    reachUseOnlyPregeneratedSboms: false,
-    reachVersion: undefined,
-  }
-}
 
 describe('performReachabilityAnalysis facts-file resolution', () => {
   let scanCwd: string

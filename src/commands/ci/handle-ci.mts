@@ -78,6 +78,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
       reachDebug: false,
       reachDetailedAnalysisLogFile: false,
       reachDisableAnalytics: false,
+      reachDisableDependencyDownloads: false,
       reachDisableExternalToolChecks: false,
       reachEcosystems: [],
       reachEnableAnalysisSplitting: false,

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleScanReach } from './handle-scan-reach.mts'
+import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
 
 const {
   mockCheckCommandInput,
@@ -117,27 +118,9 @@ describe('handleScanReach', () => {
 
   it('applies excludePaths to manifest discovery and reachability analysis', async () => {
     const reachabilityOptions = {
-      dynamicSbomInference: false,
+      ...makeReachabilityOptions(),
       excludePaths: ['tests', 'packages/*'],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
       reachExcludePaths: ['node_modules'],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
     }
 
     await handleScanReach({
@@ -170,27 +153,9 @@ describe('handleScanReach', () => {
 
   it('translates excludePaths from the scan root for nested targets', async () => {
     const reachabilityOptions = {
-      dynamicSbomInference: false,
+      ...makeReachabilityOptions(),
       excludePaths: ['apps/api/tests', '**/dist'],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
       reachExcludePaths: ['node_modules'],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
     }
 
     await handleScanReach({
@@ -233,27 +198,9 @@ describe('handleScanReach', () => {
         checks.every(check => check.test),
     )
     const reachabilityOptions = {
-      dynamicSbomInference: false,
+      ...makeReachabilityOptions(),
       excludePaths: ['apps/api'],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
       reachExcludePaths: ['node_modules'],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
     }
 
     await handleScanReach({
@@ -282,27 +229,8 @@ describe('handleScanReach', () => {
     mockFindSocketYmlSync.mockReturnValueOnce({ ok: false })
 
     const reachabilityOptions = {
-      dynamicSbomInference: false,
+      ...makeReachabilityOptions(),
       excludePaths: ['tests'],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
-      reachExcludePaths: [],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
     }
 
     await handleScanReach({
@@ -335,27 +263,7 @@ describe('handleScanReach', () => {
       },
     })
     const reachabilityOptions = {
-      dynamicSbomInference: false,
-      excludePaths: [],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
-      reachExcludePaths: [],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
+      ...makeReachabilityOptions(),
     }
 
     await handleScanReach({
@@ -373,27 +281,7 @@ describe('handleScanReach', () => {
 
   it('does not call finalize when Coana did not return a full application reachability scan id', async () => {
     const reachabilityOptions = {
-      dynamicSbomInference: false,
-      excludePaths: [],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
-      reachExcludePaths: [],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
+      ...makeReachabilityOptions(),
     }
 
     await handleScanReach({
@@ -424,27 +312,7 @@ describe('handleScanReach', () => {
       cause: 'Socket API server error (503)',
     })
     const reachabilityOptions = {
-      dynamicSbomInference: false,
-      excludePaths: [],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
-      reachExcludePaths: [],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
+      ...makeReachabilityOptions(),
     }
 
     // The handler resolves normally (no throw, returns undefined) so the
@@ -478,27 +346,9 @@ describe('handleScanReach', () => {
   })
   describe('dynamic SBOM inference', () => {
     const baseReachabilityOptions = {
+      ...makeReachabilityOptions(),
       dynamicSbomInference: true,
       excludePaths: ['vendor/**'],
-      reachAdvisories: [],
-      reachAnalysisMemoryLimit: '8192',
-      reachAnalysisTimeout: '',
-      reachConcurrency: 1,
-      reachContinueOnAnalysisErrors: false,
-      reachContinueOnInstallErrors: false,
-      reachContinueOnMissingLockFiles: false,
-      reachContinueOnNoSourceFiles: false,
-      reachDebug: false,
-      reachDetailedAnalysisLogFile: false,
-      reachDisableAnalytics: false,
-      reachDisableExternalToolChecks: false,
-      reachEcosystems: [],
-      reachEnableAnalysisSplitting: false,
-      reachExcludePaths: [],
-      reachRetainFactsFile: false,
-      reachSkipCache: false,
-      reachUseOnlyPregeneratedSboms: false,
-      reachVersion: undefined,
     }
 
     it('generates per-build-root facts, merges them into manifest discovery, and forwards the sidecar', async () => {

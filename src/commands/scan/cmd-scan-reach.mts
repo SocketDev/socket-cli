@@ -37,7 +37,7 @@ export const CMD_NAME = 'reach'
 
 const description = 'Compute full application reachability'
 
-const hidden = true
+const hidden = false
 
 // Not in reachabilityFlags: on `scan create` it is a general flag the --reach
 // guard must not reject. Reachability is always on here, so the description
@@ -162,6 +162,7 @@ async function run(
     reachDetailedAnalysisLogFile,
     reachDisableAnalysisSplitting: _reachDisableAnalysisSplitting,
     reachDisableAnalytics,
+    reachDisableDependencyDownloads,
     reachDisableExternalToolChecks,
     reachEnableAnalysisSplitting,
     reachLazyMode: _reachLazyMode,
@@ -188,6 +189,7 @@ async function run(
     reachDetailedAnalysisLogFile: boolean
     reachDisableAnalysisSplitting: boolean
     reachDisableAnalytics: boolean
+    reachDisableDependencyDownloads: boolean
     reachDisableExternalToolChecks: boolean
     reachEnableAnalysisSplitting: boolean
     reachLazyMode: boolean
@@ -314,6 +316,7 @@ async function run(
       reachDebug: Boolean(reachDebug),
       reachDetailedAnalysisLogFile: Boolean(reachDetailedAnalysisLogFile),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
+      reachDisableDependencyDownloads: Boolean(reachDisableDependencyDownloads),
       reachDisableExternalToolChecks: Boolean(reachDisableExternalToolChecks),
       reachEcosystems,
       reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
