@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFrameworks>net6.0;netstandard2.0</TargetFrameworks><PackageId>Acme.Lib</PackageId><Version>2.3.4</Version></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Demo.Ext.Tool" Version="1.0.0" />
+    <PackageReference Include="Demo.Ext.Analyzer" Version="1.0.0" PrivateAssets="all" />
+  </ItemGroup>
+  <!-- Only the net6.0 restore reaches Extra. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <ProjectReference Include="../Extra/Extra.csproj" />
+  </ItemGroup>
+</Project>

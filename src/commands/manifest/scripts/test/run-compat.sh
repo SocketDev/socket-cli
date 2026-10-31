@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the JVM manifest-script compatibility matrix LOCALLY, on demand.
+# Run the manifest-script compatibility matrix LOCALLY, on demand.
 #
 # GitHub Actions can't run this: SocketDev's org action allowlist forbids
 # `actions/setup-java` and `sbt/setup-sbt`, so the build-tool matrix has no CI
@@ -13,7 +13,11 @@
 # per row; otherwise the current `java` is used (fine if it can run that tool).
 # sbt rows additionally need the `sbt` launcher on PATH.
 #
-# Usage: run-compat.sh [gradle|sbt|maven|all]   (default: all)
+# dotnet rows need the SDKs installed side by side under $CACHE/dotnet (each row
+# pins its SDK with a global.json), plus a built CLI with the dotnet tool
+# (pnpm run build:dotnet-tool && pnpm build:dist:src).
+#
+# Usage: run-compat.sh [dotnet|gradle|sbt|maven|all]   (default: all)
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -30,6 +34,8 @@ GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "6.2.2 8" "8.10.2 17" "9.2.1 21")
 # ProjectDependenciesResolver, so both ends are load-bearing, not decorative.
 MAVEN_MATRIX=("3.2.5 8" "3.6.3 11" "3.8.8 17" "3.9.9 17" "4.0.0-rc-6 21")
 # The `ivy` row runs sbt 1.x with `useCoursier := false`, the other resolver path; failure suite only.
+# One SDK per supported major.
+DOTNET_MATRIX=("6.0.428" "7.0.410" "8.0.414" "9.0.315" "10.0.301" "11.0.100-rc.3.26522.148")
 SBT_MATRIX=("0.13.18 8 2.10.7" "1.4.9 11 2.12.20" "1.6.2 17 2.12.20" "1.9.9 17 2.12.20" "1.9.9 17 2.12.20 ivy")
 
 # Select a JDK for the given Java major: use $JDK<major> if set, else current java.
@@ -45,6 +51,22 @@ use_jdk() {
     echo "  JDK $1 not provided (set $home_var=<jdk-home> for fidelity); using current java"
     unset JAVA_HOME || true
   fi
+}
+
+run_dotnet() {
+  local dotnet="$CACHE/dotnet/dotnet"
+  for sdk in "${DOTNET_MATRIX[@]}"; do
+    echo "== dotnet SDK $sdk =="
+    if ! "$dotnet" --list-sdks 2>/dev/null | grep -q "^$sdk "; then
+      # SDK downloads stay out of this committed script (fleet CDN allowlist).
+      echo "dotnet SDK $sdk not found under $CACHE/dotnet." >&2
+      echo "Fix: bash dotnet-install.sh --version $sdk --install-dir $CACHE/dotnet (https://dot.net/v1/dotnet-install.sh)" >&2
+      exit 1
+    fi
+    bash "$HERE/dotnet-compat/smoke-test.sh" "$dotnet" "$sdk"
+    bash "$HERE/dotnet-compat/smoke-test-workspaces.sh" "$dotnet" "$sdk"
+    bash "$HERE/dotnet-compat/smoke-test-exclude-base.sh" "$dotnet" "$sdk"
+  done
 }
 
 run_gradle() {
@@ -119,16 +141,18 @@ run_sbt() {
 }
 
 case "$TOOL" in
+  dotnet) run_dotnet ;;
   gradle) run_gradle ;;
   maven) run_maven ;;
   sbt) run_sbt ;;
   all)
+    run_dotnet
     run_gradle
     run_maven
     run_sbt
     ;;
   *)
-    echo "usage: run-compat.sh [gradle|sbt|maven|all]" >&2
+    echo "usage: run-compat.sh [dotnet|gradle|sbt|maven|all]" >&2
     exit 1
     ;;
 esac

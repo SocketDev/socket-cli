@@ -15,10 +15,15 @@ vi.mock('../../utils/socket-json.mts', () => ({
 vi.mock('./run-manifest-facts.mts', () => ({
   runManifestFacts: vi.fn(),
 }))
+vi.mock('./scripts/run.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./scripts/run.mts')>()),
+  skipWithoutDotnetSdk: vi.fn(async () => false),
+}))
 
 import { buildRootPath } from './discover-manifest-roots.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
+import { skipWithoutDotnetSdk } from './scripts/run.mts'
 import { testPath } from '../../../test/utils.mts'
 import {
   readOrDefaultSocketJson,
@@ -516,6 +521,33 @@ describe('generateRecursiveManifests', () => {
       excludeBase: await fs.realpath(monorepo),
       excludePaths: ['reactor/moduleB'],
     })
+  })
+
+  it('skips .NET builds, without failing, where no .NET SDK runs', async () => {
+    const dir = await fs.mkdtemp(path.join(tmpdir(), 'dsi-no-sdk-'))
+    try {
+      await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
+      await fs.mkdir(path.join(dir, 'samples'))
+      await fs.writeFile(path.join(dir, 'samples', 'Stray.csproj'), '')
+      vi.mocked(skipWithoutDotnetSdk).mockResolvedValueOnce(true)
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+        factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
+        projects: [],
+      }))
+      const outcomes = await generateRecursiveManifests({
+        cwd: dir,
+        verbose: false,
+      })
+
+      expect(
+        outcomes.map(o => `${o.ecosystem}:${o.entryFile}:${o.status}`).sort(),
+      ).toEqual(['dotnet:Stray.csproj:skippedNoSdk', 'maven:pom.xml:generated'])
+      expect(
+        vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.ecosystem),
+      ).toEqual(['maven'])
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true })
+    }
   })
 
   it('resolves each build root its own nearest socket.json instead of only the root config', async () => {

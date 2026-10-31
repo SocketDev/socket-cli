@@ -513,6 +513,36 @@ describe('failures checked against what resolved', () => {
     expect(r.summary).toContain('    - com.example:x:1.0 (in `:b`)')
   })
 
+  it('blocks on a failure placed in no project', () => {
+    const r = renderResolutionErrorReport(
+      [
+        f(
+          'App.sln',
+          'NU1201: Project Fs is not compatible with net48.',
+          '',
+          '',
+        ),
+      ],
+      ['net48'],
+      'dotnet',
+    )
+    expect(r.hasBlockingFailures).toBe(true)
+    expect(r.summary).toContain('    - App.sln')
+  })
+
+  it('drops a bare module failure placed in no project behind its versioned form', () => {
+    const r = renderResolutionErrorReport(
+      [
+        f('com.example:x', 'Could not find com.example:x.', '', ''),
+        f('com.example:x:1.0', 'Could not find com.example:x:1.0.', '', ''),
+      ],
+      ['compile'],
+      'gradle',
+    )
+    expect(r.summary).toContain('    - com.example:x:1.0')
+    expect(r.summary).not.toMatch(/- com\.example:x\s/)
+  })
+
   it('still reminds a reachability scan of install errors once failures are ignored', () => {
     const r = renderResolutionErrorReport(
       [f('com.example:missing:1.0', 'Could not find com.example:missing:1.0.')],

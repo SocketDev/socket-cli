@@ -16,6 +16,9 @@ vi.mock('./convert_gradle_to_maven.mts', () => ({
 vi.mock('./convert_sbt_to_maven.mts', () => ({
   convertSbtToMaven: vi.fn(async () => undefined),
 }))
+vi.mock('./convert-dotnet-to-facts.mts', () => ({
+  convertDotnetToFacts: vi.fn(async () => undefined),
+}))
 vi.mock('./convert-gradle-to-facts.mts', () => ({
   convertGradleToFacts: vi.fn(async () => undefined),
 }))
@@ -25,6 +28,10 @@ vi.mock('./convert-sbt-to-facts.mts', () => ({
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
 }))
+vi.mock('./scripts/run.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./scripts/run.mts')>()),
+  skipWithoutDotnetSdk: vi.fn(async () => false),
+}))
 vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
 }))
@@ -32,10 +39,12 @@ vi.mock('../../utils/socket-json.mts', () => ({
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import { skipWithoutDotnetSdk } from './scripts/run.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -46,6 +55,7 @@ const baseDetected = {
   conda: false,
   condaFile: '',
   count: 0,
+  dotnet: false,
   gradle: false,
   maven: false,
   sbt: false,
@@ -399,5 +409,86 @@ describe('generateAutoManifest — conda branch', () => {
       }),
     ).rejects.toThrow(/Auto-manifest generation failed for the gradle project/)
     process.exitCode = undefined
+  })
+})
+
+describe('generateAutoManifest — dotnet branch', () => {
+  const detected = { ...baseDetected, dotnet: true, count: 1 }
+
+  beforeEach(() => {
+    vi.mocked(convertDotnetToFacts).mockClear()
+    vi.mocked(skipWithoutDotnetSdk).mockReset()
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
+  })
+
+  it('generates facts with the socket.json dotnet defaults', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          dotnet: {
+            bin: '/opt/dotnet/dotnet',
+            dotnetOpts: '-p:Configuration=Release',
+            includeConfigs: 'net8.0',
+            ignoreUnresolved: true,
+          },
+        },
+      },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected,
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(skipWithoutDotnetSdk).toHaveBeenCalledWith(
+      '/opt/dotnet/dotnet',
+      '/tmp/repo',
+    )
+    expect(convertDotnetToFacts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bin: '/opt/dotnet/dotnet',
+        cwd: '/tmp/repo',
+        dotnetOpts: ['-p:Configuration=Release'],
+        ignoreUnresolved: true,
+        includeConfigs: 'net8.0',
+      }),
+    )
+  })
+
+  it('skips the build where no .NET SDK runs', async () => {
+    vi.mocked(skipWithoutDotnetSdk).mockResolvedValue(true)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected,
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(convertDotnetToFacts).not.toHaveBeenCalled()
+  })
+
+  it('does not run when defaults.manifest.dotnet.disabled is true', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: { manifest: { dotnet: { disabled: true } } },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected,
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(skipWithoutDotnetSdk).not.toHaveBeenCalled()
+    expect(convertDotnetToFacts).not.toHaveBeenCalled()
+  })
+
+  it('aborts the run when the facts generator fails', async () => {
+    vi.mocked(convertDotnetToFacts).mockResolvedValueOnce(null)
+    await expect(
+      generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected,
+        outputKind: 'text',
+        verbose: false,
+      }),
+    ).rejects.toThrow(/Auto-manifest generation failed for the dotnet project/)
   })
 })

@@ -1,10 +1,13 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { detectManifestActions } from './detect-manifest-actions.mts'
+import {
+  detectManifestActions,
+  findDotnetEntries,
+} from './detect-manifest-actions.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
 
@@ -191,5 +194,62 @@ describe('detectManifestActions — conda detector', () => {
     expect(result.conda).toBe(false)
     expect(result.condaFile).toBe('')
     expect(result.count).toBe(0)
+  })
+})
+
+describe('detectManifestActions — dotnet detector', () => {
+  let cwd: string
+
+  beforeEach(() => {
+    cwd = mkTmp()
+  })
+
+  afterEach(() => {
+    rmSync(cwd, { recursive: true, force: true })
+  })
+
+  it.each([
+    'App.sln',
+    'App.slnx',
+    'App.csproj',
+    'App.fsproj',
+    'App.vbproj',
+    'APP.SLN',
+  ])('detects %s', async name => {
+    touch(cwd, name)
+    expect((await detectManifestActions(null, cwd)).dotnet).toBe(true)
+  })
+
+  it('ignores a solution filter, other files and directories named like projects', async () => {
+    touch(cwd, 'App.slnf')
+    touch(cwd, 'App.sqlproj')
+    mkdirSync(path.join(cwd, 'Lib.csproj'))
+    expect((await detectManifestActions(null, cwd)).dotnet).toBe(false)
+  })
+
+  it('skips dotnet when defaults.manifest.dotnet.disabled is true', async () => {
+    touch(cwd, 'App.sln')
+    const sockJson = {
+      defaults: { manifest: { dotnet: { disabled: true } } },
+    } as unknown as SocketJson
+    expect((await detectManifestActions(sockJson, cwd)).dotnet).toBe(false)
+  })
+
+  it('lists solutions before projects, each sorted by name', () => {
+    for (const name of [
+      'b.csproj',
+      'A.vbproj',
+      'Z.sln',
+      'M.slnx',
+      'notes.txt',
+    ]) {
+      touch(cwd, name)
+    }
+    expect(findDotnetEntries(cwd)).toEqual([
+      'M.slnx',
+      'Z.sln',
+      'A.vbproj',
+      'b.csproj',
+    ])
   })
 })

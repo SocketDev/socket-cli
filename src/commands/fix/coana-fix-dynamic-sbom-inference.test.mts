@@ -124,6 +124,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
   const uploadManifestFiles = vi.fn()
   const generated = {
     paths: [FACTS],
+    sidecar: undefined,
     sidecarFile: '/tmp/socket-fix-facts/sidecar.json',
     remove: vi.fn(),
     restore: vi.fn(),
