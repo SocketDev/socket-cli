@@ -7,7 +7,7 @@ import type { MeowFlags } from '../../flags.mts'
 // differs: reachability is optional on `scan create` and always on for
 // `scan reach`.
 export const DYNAMIC_SBOM_INFERENCE_DESCRIPTION =
-  'For Gradle, sbt, and Maven: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root.'
+  'For Gradle, sbt, Maven and .NET: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root.'
 
 export const reachabilityFlags: MeowFlags = {
   reachVersion: {
@@ -154,6 +154,6 @@ export const excludePathsFlag: MeowFlags = {
     type: 'string',
     isMultiple: true,
     description:
-      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (`--cwd` if set), not the reachability target: `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.',
+      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (`--cwd` if set), not the reachability target: `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module or .NET project is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.',
   },
 }

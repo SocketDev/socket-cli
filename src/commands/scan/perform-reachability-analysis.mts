@@ -192,7 +192,7 @@ export async function performReachabilityAnalysis(
 
   // Temp file for --compute-artifacts-sidecar, removed in the finally below.
   // Written even when empty under dynamicSbomInference, since the
-  // --maven-use-only-socket-facts flag below requires one to be present.
+  // facts-only flag below requires one to be present.
   let sidecarPath: string | undefined
   if (
     reachabilityOptions.dynamicSbomInference ||

@@ -8,6 +8,6 @@ export const excludePathsFlag: MeowFlags = {
     type: 'string',
     isMultiple: true,
     description:
-      'List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (`--cwd` if set): `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.',
+      'List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (`--cwd` if set): `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module or .NET project is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.',
   },
 }

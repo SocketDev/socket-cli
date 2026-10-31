@@ -28,7 +28,7 @@ describe('socket manifest', async () => {
             cdxgen                      Run cdxgen for SBOM generation
             conda                       [beta] Convert a Conda environment.yml file to a python requirements.txt
             dotnet                      [beta] Generate Socket facts files from .NET solutions and projects
-            dynamic-sbom-inference      Recursively discover gradle/sbt/maven build roots and generate a Socket facts SBOM for each
+            dynamic-sbom-inference      Recursively discover gradle/sbt/maven/dotnet build roots and generate a Socket facts SBOM for each
             gradle                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Gradle/Java/Kotlin/etc project
             kotlin                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Kotlin project
             maven                       [beta] Generate a Socket facts file from a Maven \`pom.xml\` project

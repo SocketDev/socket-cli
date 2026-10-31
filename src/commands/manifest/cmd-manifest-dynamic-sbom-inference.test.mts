@@ -18,7 +18,7 @@ describe('socket manifest dynamic-sbom-inference', async () => {
         cwd: testPath,
       })
       expect(stdout).toMatchInlineSnapshot(`
-        "Recursively discover gradle/sbt/maven build roots and generate a Socket facts SBOM for each
+        "Recursively discover gradle/sbt/maven/dotnet build roots and generate a Socket facts SBOM for each
 
           Usage
             $ socket manifest dynamic-sbom-inference [options] [CWD=.]
@@ -33,7 +33,7 @@ describe('socket manifest dynamic-sbom-inference', async () => {
           CWD itself.
 
           Options
-            --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.
+            --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module or .NET project is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.
             --ignore-unresolved  Warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts files); overrides each build's socket.json setting
             --json              Output as JSON
             --markdown          Output as Markdown

@@ -97,15 +97,15 @@ describe('socket scan create', async () => {
             - Permissions: full-scans:create
 
           Options
-            --auto-manifest     Run \`socket manifest auto\` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See \`socket manifest auto --help\`. For Gradle, sbt, and Maven, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.
+            --auto-manifest     Run \`socket manifest auto\` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See \`socket manifest auto --help\`. For Gradle, sbt, Maven and .NET, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.
             --branch            Branch name
             --commit-hash       Commit hash
             --commit-message    Commit message
             --committers        Committers
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
-            --dynamic-sbom-inference  For Gradle, sbt, and Maven: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root. Combine with --reach to split the reachability analysis per project/module.
-            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.
+            --dynamic-sbom-inference  For Gradle, sbt, Maven and .NET: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root. Combine with --reach to split the reachability analysis per project/module.
+            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module or .NET project is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
             --markdown          Output as Markdown

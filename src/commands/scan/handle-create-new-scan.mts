@@ -171,8 +171,8 @@ async function createNewScan(
 
       if (reach.dynamicSbomInference) {
         // Recursively discover and generate Socket facts for every
-        // independent gradle/sbt/maven build root instead of only the one at
-        // cwd. This runs on its own, so nothing outside those three
+        // independent dotnet/gradle/sbt/maven build root instead of only the
+        // one at cwd. This runs on its own, so nothing outside those
         // ecosystems is generated unless --auto-manifest also asked for it.
         const dynamicResult = await runDynamicSbomInference({
           cwd,

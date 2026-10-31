@@ -88,8 +88,8 @@ const RESOLUTION_REPORT_ARTIFACT_LIMIT = 15
 const RESOLUTION_REPORT_CONFIG_LIMIT = 20
 
 // Drop a bare "group:name" when a versioned "group:name:v" of the same module
-// failed in the same projects: the lenient resolver reports both forms for one
-// failure.
+// failed in the same projects (or, outside any project, also outside one): the
+// lenient resolver reports both forms for one failure.
 function dedupInfos<T extends { coord: string; projects: Set<string> }>(
   infos: T[],
 ): T[] {

@@ -21,7 +21,7 @@ import type {
 const config: CliCommandConfig = {
   commandName: 'dynamic-sbom-inference',
   description:
-    'Recursively discover gradle/sbt/maven build roots and generate a Socket facts SBOM for each',
+    'Recursively discover gradle/sbt/maven/dotnet build roots and generate a Socket facts SBOM for each',
   hidden: false,
   flags: {
     ...commonFlags,

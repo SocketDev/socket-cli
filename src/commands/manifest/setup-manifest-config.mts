@@ -779,7 +779,7 @@ async function askForIgnoreUnresolvedFlag(
   })
 }
 
-// Prompts for the facts-only options shared by gradle and sbt: the config
+// Prompts for the facts-only options every facts generator shares: the config
 // include/exclude filters and --ignore-unresolved. Mutates `config` in place.
 async function setupFactsOptions(
   config: {

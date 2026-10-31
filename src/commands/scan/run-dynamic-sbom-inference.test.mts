@@ -97,7 +97,7 @@ describe('runDynamicSbomInference', () => {
         sbtTmpDir: undefined,
         withFiles: true,
       }),
-    ).rejects.toThrow(/No Gradle, sbt, or Maven build root was found/)
+    ).rejects.toThrow(/No Gradle, sbt, Maven or .NET build root was found/)
   })
 
   it('throws when a discovered build root failed to generate facts', async () => {
