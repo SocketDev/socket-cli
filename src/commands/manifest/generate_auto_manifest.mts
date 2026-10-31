@@ -3,15 +3,18 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
+import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './scripts/resolution-report-render.mts'
+import { skipWithoutDotnetSdk } from './scripts/run.mts'
 import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
 import {
   ENVIRONMENT_YML,
@@ -219,6 +222,29 @@ export async function generateAutoManifest({
       withFiles: computeArtifactsSidecar,
     })
     abortFactsRunIfFailed('maven', outcome)
+  }
+
+  if (!sockJson?.defaults?.manifest?.dotnet?.disabled && detected.dotnet) {
+    const config = resolveEcosystemConfig('dotnet', cwd, sockJson)
+    if (!(await skipWithoutDotnetSdk(config.bin, cwd))) {
+      logger.log(
+        'Detected a .NET solution or project, generating Socket facts...',
+      )
+      const outcome = await convertDotnetToFacts({
+        bin: config.bin,
+        cwd,
+        dotnetOpts: config.buildOpts,
+        excludeConfigs: config.excludeConfigs,
+        excludePaths,
+        hints,
+        ignoreUnresolved: config.ignoreUnresolved,
+        includeConfigs: config.includeConfigs,
+        sidecarAcc,
+        verbose: config.verbose,
+        withFiles: computeArtifactsSidecar,
+      })
+      abortFactsRunIfFailed('dotnet', outcome)
+    }
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {

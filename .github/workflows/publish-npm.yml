@@ -386,6 +386,12 @@ jobs:
           fi
           bash src/commands/manifest/scripts/maven-extension/build-jar.sh
 
+      # Same for the dotnet manifest tool: built here, bundled into
+      # dist/manifest-scripts, never committed. The runner image's preinstalled
+      # .NET SDK builds it (actions/setup-dotnet is not on the org allowlist).
+      - name: Build dotnet manifest tool
+        run: bash src/commands/manifest/scripts/dotnet-tool/build-tool.sh
+
       # PACK ONCE, PUBLISH THOSE BYTES. Each variant is built, packed to a
       # tarball, and smoke-tested from that tarball; the three tarballs are
       # uploaded as an artifact and the publish job stages those exact files.

@@ -1,6 +1,7 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
@@ -8,6 +9,7 @@ import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
+import { getErrorMessageOr } from '../../../utils/errors.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
 
 import type { BuildTool } from './build-tool.mts'
@@ -153,9 +155,18 @@ async function assembleFromRecords(
   out: RunOutput,
   recordsFile: string,
 ): Promise<ManifestRunResult> {
-  const text = existsSync(recordsFile)
-    ? await fs.readFile(recordsFile, 'utf8')
-    : ''
+  return assembleRecords(tool, out, await readRecordsFile(recordsFile))
+}
+
+async function readRecordsFile(recordsFile: string): Promise<string> {
+  return existsSync(recordsFile) ? await fs.readFile(recordsFile, 'utf8') : ''
+}
+
+function assembleRecords(
+  tool: BuildTool,
+  out: RunOutput,
+  text: string,
+): ManifestRunResult {
   const parsed = parseRecords(text)
   const factsFileName = socketFactsFileName(tool, parsed.entry || undefined)
   const { artifactPaths, facts, report } = assembleFacts(parsed)
@@ -171,14 +182,18 @@ async function assembleFromRecords(
   }
 }
 
-// Missing only in an unbuilt local checkout. Fail loudly: without the extension,
-// Maven silently emits an empty SBOM.
-function assertMavenExtensionBuilt(jarPath: string): void {
-  if (existsSync(jarPath)) {
+// Missing only in an unbuilt local checkout. Fail loudly: without the
+// extension, Maven silently emits an empty SBOM.
+function assertBundledAssetBuilt(
+  assetPath: string,
+  description: string,
+  buildScript: string,
+): void {
+  if (existsSync(assetPath)) {
     return
   }
   throw new Error(
-    `Maven manifest extension jar not found at ${jarPath}. It is bundled in the published CLI; for local dev build it with: bash src/commands/manifest/scripts/maven-extension/build-jar.sh`,
+    `${description} not found at ${assetPath}. It is bundled in the published CLI; for local dev build it with: bash src/commands/manifest/scripts/${buildScript}`,
   )
 }
 
@@ -189,6 +204,8 @@ export async function runManifestScript(
   opts: ManifestScriptOptions,
 ): Promise<ManifestRunResult> {
   switch (tool) {
+    case 'dotnet':
+      return await runDotnet(opts)
     case 'gradle':
       return await runGradle(opts)
     case 'sbt':
@@ -204,11 +221,13 @@ export async function enumerateWorkspaces(
   tool: BuildTool,
   opts: ManifestScriptOptions,
 ): Promise<WorkspaceEnumerationResult> {
-  const result = await (tool === 'gradle'
-    ? enumerateGradleWorkspaces(opts)
-    : tool === 'sbt'
-      ? enumerateSbtWorkspaces(opts)
-      : enumerateMavenWorkspaces(opts))
+  const result = await (tool === 'dotnet'
+    ? runDotnet(opts, '--workspaces')
+    : tool === 'gradle'
+      ? enumerateGradleWorkspaces(opts)
+      : tool === 'sbt'
+        ? enumerateSbtWorkspaces(opts)
+        : enumerateMavenWorkspaces(opts))
   return {
     buildRoot: result.buildRoot,
     code: result.code,
@@ -385,7 +404,11 @@ async function invokeMaven(
     'maven-extension',
     'coana-maven-extension.jar',
   )
-  assertMavenExtensionBuilt(jarPath)
+  assertBundledAssetBuilt(
+    jarPath,
+    'Maven manifest extension jar',
+    'maven-extension/build-jar.sh',
+  )
   return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
     const bin = resolveBuildToolBin('maven', opts.projectDir, opts.bin)
@@ -424,4 +447,154 @@ async function enumerateMavenWorkspaces(
     'socket-workspaces',
     'socket-maven-workspaces-',
   )
+}
+
+// `dotnet --version` from the build's directory: the SDK the dotnet host
+// selects there (global.json included). A host that finds none says why.
+// global.json pins the SDK per directory; every entry of a directory shares
+// it, failures included.
+const sdkVersionByDir = new Map<string, Promise<string>>()
+
+function dotnetSdkVersion(
+  bin: string,
+  opts: ManifestScriptOptions,
+): Promise<string> {
+  const key = `${bin}\0${opts.projectDir}`
+  let version = sdkVersionByDir.get(key)
+  if (!version) {
+    version = readDotnetSdkVersion(bin, opts)
+    sdkVersionByDir.set(key, version)
+  }
+  return version
+}
+
+async function readDotnetSdkVersion(
+  bin: string,
+  opts: ManifestScriptOptions,
+): Promise<string> {
+  const out = await runNeverThrow(bin, ['--version'], {
+    ...opts,
+    stdio: 'pipe',
+  })
+  if (out.code !== 0) {
+    throw new Error(
+      out.stderr.trim() ||
+        out.stdout.trim() ||
+        `\`${bin} --version\` exited with code ${out.code}`,
+    )
+  }
+  return out.stdout.trim()
+}
+
+const noSdkWarnings = new Set<string>()
+
+// True, after a warning, when no .NET SDK runs in `dir` (none installed, or
+// none matching its global.json), so its .NET builds are skipped.
+export async function skipWithoutDotnetSdk(
+  bin: string,
+  dir: string,
+): Promise<boolean> {
+  try {
+    await dotnetSdkVersion(bin, { projectDir: dir })
+    return false
+  } catch (e) {
+    const reason = getErrorMessageOr(e, `\`${bin} --version\` failed`).split(
+      '\n',
+    )[0]!
+    if (!noSdkWarnings.has(reason)) {
+      noSdkWarnings.add(reason)
+      logger.warn(
+        `Skipping .NET builds where no .NET SDK runs (${reason}); their project files are scanned as they are.`,
+      )
+    }
+    return true
+  }
+}
+
+// Runs the bundled tool against the build's own dotnet, in `mode` (none: a
+// full facts run), and returns its exit and records.
+async function invokeDotnetTool(
+  opts: ManifestScriptOptions,
+  mode: '--members' | '--workspaces' | undefined,
+): Promise<{ out: RunOutput; records: string }> {
+  if (!opts.entryFile) {
+    throw new Error('A dotnet build needs a solution or project file.')
+  }
+  const toolDll = manifestScriptsPath('dotnet-tool', 'socket-facts-dotnet.dll')
+  assertBundledAssetBuilt(
+    toolDll,
+    'dotnet manifest tool',
+    'dotnet-tool/build-tool.sh',
+  )
+  const bin = resolveBuildToolBin('dotnet', opts.projectDir, opts.bin)
+  const sdkVersion = await dotnetSdkVersion(bin, opts)
+  // The tool runs on the newest installed runtime (RollForward=LatestMajor),
+  // which must be able to load the selected SDK's MSBuild; a preview SDK
+  // needs a preview runtime, which roll-forward only picks when told to.
+  const env = sdkVersion.includes('-')
+    ? {
+        ...(opts.env ?? process.env),
+        DOTNET_ROLL_FORWARD_TO_PRERELEASE: '1',
+      }
+    : opts.env
+  return await withTmpDir('socket-dotnet-facts-', async tmp => {
+    const recordsFile = path.join(tmp, 'records.tsv')
+    const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
+    const args = [
+      toolDll,
+      '--records',
+      recordsFile,
+      '--entry',
+      opts.entryFile!,
+      '--dotnet',
+      bin,
+      ...(mode ? [mode] : []),
+      ...(opts.withFiles ? ['--with-files'] : []),
+      ...(opts.includeConfigs
+        ? ['--include-configs', opts.includeConfigs]
+        : []),
+      ...(opts.excludeConfigs
+        ? ['--exclude-configs', opts.excludeConfigs]
+        : []),
+      ...(excludePatterns ? ['--exclude-paths', excludePatterns] : []),
+      ...(excludePatterns && opts.excludeBase
+        ? ['--exclude-base', opts.excludeBase]
+        : []),
+      ...(opts.stdio === 'inherit' ? ['--verbose'] : []),
+      '--',
+      ...(opts.toolOpts ?? []),
+    ]
+    const out = await runNeverThrow(bin, args, { ...opts, env })
+    return { out, records: await readRecordsFile(recordsFile) }
+  })
+}
+
+async function runDotnet(
+  opts: ManifestScriptOptions,
+  mode?: '--workspaces' | undefined,
+): Promise<ManifestRunResult> {
+  const { out, records } = await invokeDotnetTool(opts, mode)
+  return assembleRecords('dotnet', out, records)
+}
+
+// Undefined when the SDK cannot read the entry (a .slnx before SDK 9.0.200);
+// empty when the listing fails, which the build itself then reports.
+export async function listDotnetEntryProjects(
+  opts: ManifestScriptOptions,
+): Promise<string[] | undefined> {
+  let listing
+  try {
+    listing = await invokeDotnetTool({ ...opts, stdio: 'pipe' }, '--members')
+  } catch {
+    return []
+  }
+  const { out, records } = listing
+  if (out.code !== 0) {
+    return []
+  }
+  const parsed = parseRecords(records)
+  if (parsed.failures.length) {
+    return undefined
+  }
+  return parsed.members.map(m => path.resolve(opts.projectDir, m))
 }

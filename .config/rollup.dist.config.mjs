@@ -131,6 +131,20 @@ async function copyManifestScripts() {
       path.join(destDir, 'socket-workspaces.plugin.scala'),
     ),
   ])
+  // The dotnet tool's publish output (scripts/dotnet-tool/build-tool.sh),
+  // like the Maven jar absent from a fresh checkout.
+  const dotnetToolDir = path.join(srcDir, 'dotnet-tool', 'publish')
+  if (existsSync(path.join(dotnetToolDir, 'socket-facts-dotnet.dll'))) {
+    await fs.cp(dotnetToolDir, path.join(destDir, 'dotnet-tool'), {
+      recursive: true,
+    })
+  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
+    throw new Error(
+      'dotnet manifest tool not found at ' +
+        dotnetToolDir +
+        ' for a published build. Build it first: pnpm run build:dotnet-tool',
+    )
+  }
   const jarPath = path.join(
     srcDir,
     'maven-extension',
