@@ -52,7 +52,7 @@ export async function runDynamicSbomInference({
   if (!outcomes.length) {
     throw new InputError(
       [
-        'No Gradle, sbt, or Maven build root was found.',
+        'No Gradle, sbt, Maven or .NET build root was found.',
         '',
         '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
         '- Make sure to run it from the correct dir (use --cwd to target another dir).',

@@ -94,7 +94,8 @@ async function realFilePath(file: string): Promise<string> {
 }
 
 // Gradle reports a project's build file even when absent, which covers
-// nothing. A sibling outside the build root is independently locatable.
+// nothing. A sibling outside the build root is independently locatable,
+// unless its projects resolve alone.
 export async function addCoveredBuildFiles(
   covered: Set<string>,
   tool: BuildTool,

@@ -34,9 +34,9 @@ const BUILD_TOOL_WRAPPER = {
   maven: 'mvnw',
 } as unknown as Partial<Record<BuildTool, string>>
 
-// Maven builds by file (`mvn --file`), so a directory can hold several: the
-// POMs a scan uploads, matched case-insensitively. `walkGlob` is a
-// case-sensitive superset of `nocaseGlob`, for the walk.
+// Maven (`mvn --file`) and dotnet (`dotnet restore <file>`) build by file, so
+// a directory can hold several builds, matched case-insensitively. `walkGlob`
+// is a case-sensitive superset of `nocaseGlob`, for the walk.
 export type BuildFiles =
   | { byFile: false; names: readonly string[] }
   | {

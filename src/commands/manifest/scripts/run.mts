@@ -24,7 +24,8 @@ export type ManifestScriptOptions = {
   projectDir: string
   // Unset ⇒ resolved to the project wrapper, else PATH (resolveBuildToolBin).
   bin?: string | undefined
-  // Maven only: the POM in projectDir to build; unset leaves Maven's default.
+  // The file in projectDir to build: Maven's POM (unset leaves Maven's
+  // default), dotnet's solution or project (required).
   entryFile?: string | undefined
   // Reachability-only: also materialize resolved artifact paths (artifactPaths).
   withFiles?: boolean | undefined
