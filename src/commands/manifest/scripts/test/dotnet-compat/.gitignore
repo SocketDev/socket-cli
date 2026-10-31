@@ -1,0 +1,6 @@
+bin/
+obj/
+packages/
+stub-feed/
+packages.lock.json
+*.socket.facts.json

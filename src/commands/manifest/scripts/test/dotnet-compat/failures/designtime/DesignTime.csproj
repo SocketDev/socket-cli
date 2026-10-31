@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net6.0</TargetFramework></PropertyGroup>
+  <ItemGroup><PackageReference Include="Demo.Ext.Tool" Version="1.0.0" /></ItemGroup>
+  <!-- Restores, but its design-time build fails. -->
+  <Target Name="FailBeforeCompile" BeforeTargets="CoreCompile">
+    <Error Text="generated sources unavailable" />
+  </Target>
+</Project>

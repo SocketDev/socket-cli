@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Demo.Ext.Logging" Version="1.0.0" />
+    <ProjectReference Include="../Lib/Lib.csproj" />
+    <Compile Include="../../shared/Linked.cs" Link="Linked.cs" />
+  </ItemGroup>
+</Project>

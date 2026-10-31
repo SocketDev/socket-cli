@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <!-- Ships: PrivateAssets only keeps it from flowing to consumers. -->
+    <PackageReference Include="Demo.Ext.Tool" Version="1.0.0" PrivateAssets="all" />
+    <!-- Ships nothing: its runtime assets are excluded. -->
+    <PackageReference Include="Demo.Ext.Logging" Version="1.0.0" ExcludeAssets="runtime" />
+    <PackageReference Include="Demo.Ext.Analyzer" Version="1.0.0" PrivateAssets="all" />
+    <!-- Ships: its build files can copy files into the output. -->
+    <PackageReference Include="Demo.Ext.Payload" Version="1.0.0" />
+    <!-- Ships nothing: build files only, declared a development dependency. -->
+    <PackageReference Include="Demo.Ext.BuildTool" Version="1.0.0" />
+  </ItemGroup>
+</Project>

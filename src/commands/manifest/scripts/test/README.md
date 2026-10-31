@@ -1,4 +1,4 @@
-# JVM manifest-script compatibility tests
+# Manifest-script compatibility tests
 
 These exercise the bundled build-tool scripts — the Gradle init script
 (`socket-facts.init.gradle`), the sbt plugin (`socket-facts.plugin.scala`), the
@@ -22,7 +22,7 @@ Actions home. Run it locally whenever you change one of the scripts or the
 Maven extension:
 
 ```sh
-src/commands/manifest/scripts/test/run-compat.sh [gradle|sbt|maven|all]
+src/commands/manifest/scripts/test/run-compat.sh [dotnet|gradle|sbt|maven|all]
 ```
 
 The matrix needs several JDKs. Point `JDK8` / `JDK11` / `JDK17` / `JDK21` at JDK
@@ -71,3 +71,24 @@ first run after clearing it pays for the download. The *stub* artifacts are evic
 from it before every run, so a run can never pass on a stale copy of the thing
 under test. Set `SOCKET_COMPAT_CACHE` to a fresh `mktemp -d` for a completely cold
 run.
+
+## dotnet
+
+`dotnet-compat/smoke-test.sh` runs the built CLI's `socket manifest dotnet`
+over fixtures covering solutions (`.sln`, `.slnx`), multi-targeting,
+target-framework-conditional project references, test projects,
+`PrivateAssets` and `developmentDependency` packages, floating versions,
+central package management with transitive pinning, `VersionOverride` and
+`GlobalPackageReference`, lock files and locked mode, runtime-specific packages,
+packages.config next to SDK projects, F# and VB, several builds in one
+directory, `--exclude-paths`, `--include-configs` and failures. Each
+PackageReference project's tree is compared with what
+`dotnet list package --include-transitive` reports for the same restore.
+
+- Rows are SDK versions, each pinned with a `global.json`; install them side by
+  side under `$SOCKET_COMPAT_CACHE/dotnet` with `dotnet-install.sh`.
+- Dependencies are stub packages `make-stub-feed.py` writes into a local feed,
+  routed there by the fixtures' `nuget.config` package source mapping. Only the
+  SDK's own packs (targeting packs, `NETStandard.Library`) come from nuget.org.
+- `NUGET_PACKAGES` and the NuGet HTTP cache live under the cache root, and the
+  stubs are evicted from it before every run.
