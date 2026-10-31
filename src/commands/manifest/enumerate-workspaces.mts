@@ -25,6 +25,7 @@ export async function enumerateWorkspaces({
   cwd,
   ecosystem,
   entryFile,
+  excludeBase,
   excludePaths,
   javaHome,
   verbose,
@@ -35,6 +36,8 @@ export async function enumerateWorkspaces({
   ecosystem: BuildTool
   // See ManifestScriptOptions.entryFile.
   entryFile?: string | undefined
+  // See ManifestScriptOptions.excludeBase.
+  excludeBase?: string | undefined
   excludePaths?: string[] | undefined
   javaHome?: string | undefined
   verbose: boolean
@@ -55,6 +58,7 @@ export async function enumerateWorkspaces({
   const scriptOpts = {
     bin: bin || undefined,
     entryFile,
+    excludeBase,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
     // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
     env: resolvedJavaHome

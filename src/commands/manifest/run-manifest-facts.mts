@@ -62,6 +62,7 @@ export async function runManifestFacts({
   cwd,
   ecosystem,
   entryFile,
+  excludeBase,
   excludeConfigs,
   excludePaths,
   hints = FLAG_HINTS,
@@ -79,6 +80,8 @@ export async function runManifestFacts({
   ecosystem: BuildTool
   // See ManifestScriptOptions.entryFile.
   entryFile?: string | undefined
+  // See ManifestScriptOptions.excludeBase.
+  excludeBase?: string | undefined
   excludeConfigs: string
   excludePaths?: string[] | undefined
   // Where the user sets build options, for remedy hints.
@@ -122,6 +125,7 @@ export async function runManifestFacts({
     bin: bin || undefined,
     entryFile,
     excludeConfigs: excludeConfigs || undefined,
+    excludeBase,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
     // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
     env: resolvedJavaHome

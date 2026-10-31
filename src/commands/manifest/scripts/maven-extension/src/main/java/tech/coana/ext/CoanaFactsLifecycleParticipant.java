@@ -59,6 +59,7 @@ public class CoanaFactsLifecycleParticipant extends AbstractMavenLifecyclePartic
     opts.includeConfigs = opt(session, "socket.includeConfigs");
     opts.excludeConfigs = opt(session, "socket.excludeConfigs");
     opts.excludePaths = opt(session, "socket.excludePaths");
+    opts.excludeBase = opt(session, "socket.excludeBase");
     File rootDir = new File(session.getExecutionRootDirectory());
     CollectionObserver observer = new CollectionObserver();
     CoanaFactsEventSpy.observe(observer);

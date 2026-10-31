@@ -102,6 +102,30 @@ public final class SocketSupport {
     return out;
   }
 
+  /**
+   * Whether a module directory is covered by an {@code --exclude-paths} pattern, which is relative
+   * to {@code base} (the scan root). A module outside it, such as a {@code <module>../x</module>}
+   * beyond the scan root, never is.
+   */
+  public static boolean isExcludedDir(Path base, Path dir, List<Pattern> patterns) {
+    if (patterns == null || patterns.isEmpty()) return false;
+    String rel = base.relativize(canonical(dir)).toString().replace(File.separatorChar, '/');
+    return !rel.equals("..") && !rel.startsWith("../") && isExcludedPath(rel.isEmpty() ? "." : rel, patterns);
+  }
+
+  /** The canonical {@code isExcludedDir} base: {@code socket.excludeBase}, else the build root. */
+  public static Path excludeBase(String excludeBase, File rootDir) {
+    return canonical((excludeBase != null && !excludeBase.isEmpty() ? new File(excludeBase) : rootDir).toPath());
+  }
+
+  private static Path canonical(Path p) {
+    try {
+      return p.toRealPath();
+    } catch (java.io.IOException e) {
+      return p.toAbsolutePath().normalize();
+    }
+  }
+
   /** Whether a scan-root-relative POSIX path is covered by any {@code --exclude-paths} pattern. */
   public static boolean isExcludedPath(String rel, List<Pattern> patterns) {
     if (patterns == null || patterns.isEmpty()) return false;
