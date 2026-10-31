@@ -199,6 +199,7 @@ async function createNewScan(
         if (reach.dynamicSbomInference) {
           // Already generated recursively above; resolving cwd's own build
           // root a second time would race on the same facts file.
+          detected.dotnet = false
           detected.gradle = false
           detected.sbt = false
           detected.maven = false

@@ -1,6 +1,7 @@
 import { GRADLE_DIALECT } from './resolution-report-gradle.mts'
 import { SBT_DIALECT } from './resolution-report-ivy.mts'
 import { MAVEN_DIALECT } from './resolution-report-maven.mts'
+import { NUGET_DIALECT } from './resolution-report-nuget.mts'
 import { moduleKey } from './resolution-report.mts'
 import constants from '../../../constants.mts'
 import { camelToKebab } from '../../../utils/strings.mts'
@@ -92,11 +93,12 @@ const RESOLUTION_REPORT_CONFIG_LIMIT = 20
 function dedupInfos<T extends { coord: string; projects: Set<string> }>(
   infos: T[],
 ): T[] {
+  const placesOf = (i: T): string[] =>
+    i.projects.size ? [...i.projects] : ['']
   const versioned = new Set<string>()
   for (const i of infos) {
-    const p = i.coord.split(':')
-    if (p.length >= 3) {
-      for (const project of i.projects) {
+    if (i.coord.split(':').length >= 3) {
+      for (const project of placesOf(i)) {
         versioned.add(moduleKey(project, i.coord))
       }
     }
@@ -105,7 +107,7 @@ function dedupInfos<T extends { coord: string; projects: Set<string> }>(
     .filter(
       i =>
         i.coord.split(':').length >= 3 ||
-        ![...i.projects].every(p => versioned.has(moduleKey(p, i.coord))),
+        !placesOf(i).every(p => versioned.has(moduleKey(p, i.coord))),
     )
     .sort((a, b) => (a.coord < b.coord ? -1 : a.coord > b.coord ? 1 : 0))
 }
@@ -475,6 +477,8 @@ export function renderResolutionReport(
 
 function dialectFor(tool: BuildTool): ResolutionDialect {
   switch (tool) {
+    case 'dotnet':
+      return NUGET_DIALECT
     case 'gradle':
       return GRADLE_DIALECT
     case 'sbt':

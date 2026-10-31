@@ -7,6 +7,7 @@ import {
   buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
+  isSolutionCovered,
   realpathOrResolved,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
@@ -17,6 +18,7 @@ import {
   DSI_SETUP_COMMAND,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
 } from './scripts/resolution-report-render.mts'
+import { skipWithoutDotnetSdk } from './scripts/run.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
@@ -38,6 +40,7 @@ export type RecursiveManifestOutcomeStatus =
   | 'generated'
   | 'skippedCovered'
   | 'skippedDisabled'
+  | 'skippedNoSdk'
 
 export type RecursiveManifestOutcome = BuildRoot & {
   ecosystem: BuildTool
@@ -214,6 +217,23 @@ async function runEcosystemCandidates({
         outcomes.push({ ...root, ecosystem, status: 'skippedDisabled' })
         continue
       }
+      // eslint-disable-next-line no-await-in-loop
+      if (ecosystem === 'dotnet' && (await skipWithoutDotnetSdk(bin, dir))) {
+        outcomes.push({ ...root, ecosystem, status: 'skippedNoSdk' })
+        continue
+      }
+      if (
+        // eslint-disable-next-line no-await-in-loop
+        await isSolutionCovered(covered, root, {
+          bin,
+          excludeBase: realCwd,
+          excludePaths,
+          toolOpts: buildOpts,
+        })
+      ) {
+        outcomes.push({ ...root, ecosystem, status: 'skippedCovered' })
+        continue
+      }
 
       // eslint-disable-next-line no-await-in-loop
       const result = await runManifestFacts({
@@ -222,10 +242,10 @@ async function runEcosystemCandidates({
         cwd: dir,
         ecosystem,
         entryFile,
-        excludeConfigs,
         // Relative to the scan root: a build can reach modules outside its
         // own directory (Maven `../x` modules, relocated Gradle projects).
         excludeBase: realCwd,
+        excludeConfigs,
         excludePaths,
         hints: {
           continueOnInstallErrorsFlag: withFiles
@@ -266,6 +286,7 @@ async function runEcosystemCandidates({
       // eslint-disable-next-line no-await-in-loop
       await addCoveredBuildFiles(
         covered,
+        ecosystem,
         path.dirname(result.factsPath),
         result.projects,
       )
@@ -372,6 +393,19 @@ export function resolveEcosystemConfig(
   dir: string,
   sockJson: SocketJson,
 ): EcosystemBuildConfig {
+  if (ecosystem === 'dotnet') {
+    const config = sockJson.defaults?.manifest?.dotnet
+    return {
+      bin: config?.bin ?? resolveBuildToolBin('dotnet', dir),
+      buildOpts: parseBuildToolOpts(config?.dotnetOpts ?? undefined),
+      excludeConfigs: config?.excludeConfigs ?? '',
+      ignoreUnresolved: Boolean(config?.ignoreUnresolved),
+      includeConfigs: config?.includeConfigs ?? '',
+      javaHome: undefined,
+      skipReason: getSkipReason(ecosystem, config?.disabled),
+      verbose: Boolean(config?.verbose),
+    }
+  }
   if (ecosystem === 'sbt') {
     const config = sockJson.defaults?.manifest?.sbt
     const bin = config?.bin ?? undefined

@@ -1,5 +1,7 @@
 import type {
   AnyPURL,
+  ComponentFramework,
+  ProjectFramework,
   ResolvedArtifactPaths,
   SocketFactsSbom,
   SocketFactsSbomComponent,
@@ -14,6 +16,8 @@ export type SidecarComponentEntry = SocketFactsSbomComponent & {
   // First-party source roots; `[]` for a genuinely external dependency (still
   // attempted, nothing to find), not undefined.
   sources?: string[] | undefined
+  // dotnet: `targets` per target framework, which differ by framework.
+  frameworks?: ComponentFramework[] | undefined
 }
 
 export type SidecarProjectEntry = Omit<SocketFactsSbomProject, 'children'> & {
@@ -24,6 +28,8 @@ export type SidecarProjectEntry = Omit<SocketFactsSbomProject, 'children'> & {
   // Ids of this facts file's components[] forming the project's full
   // transitive classpath across all its configurations.
   classpath: string[]
+  // dotnet: each build of the project, by target framework.
+  frameworks?: ProjectFramework[] | undefined
 }
 
 // Frozen contract with `coana run --compute-artifacts-sidecar`; change only
@@ -95,8 +101,15 @@ export function accumulateSidecar(
 ): void {
   const paths = <T extends AnyPURL & { id: string }>(entry: T) =>
     withPaths ? attachPaths(entry, artifactPaths) : { ...entry }
+  function frameworks<T>(byId: Map<string, T[]> | undefined, id: string) {
+    const list = withPaths ? byId?.get(id) : undefined
+    return list ? { frameworks: list } : {}
+  }
   acc.set(factsFile, {
-    components: facts.components.map(paths),
+    components: facts.components.map(c => ({
+      ...paths(c),
+      ...frameworks(artifactPaths.frameworksById, c.id),
+    })),
     projects: (facts.projects ?? []).map(
       ({ children: _children, ...proj }) => ({
         ...paths(proj),
@@ -104,6 +117,7 @@ export function accumulateSidecar(
           ...(artifactPaths.directDependenciesByProject.get(proj.id) ?? []),
         ],
         classpath: [...(artifactPaths.classpathByProject.get(proj.id) ?? [])],
+        ...frameworks(artifactPaths.frameworksByProject, proj.id),
       }),
     ),
   })
@@ -142,4 +156,21 @@ export function serializeSidecar(
     }
   }
   return result
+}
+
+// Tells Coana which ecosystems' artifacts only these facts files attribute.
+// Maven's always are (the dynamic-SBOM-inference contract), under its own flag
+// every Coana release knows unless another ecosystem's facts are present too.
+export function useOnlySocketFactsArtifactsFlags(
+  sidecar: ResolvedPathsSidecar | undefined,
+): string[] {
+  const types = new Set(['maven'])
+  for (const entry of Object.values(sidecar ?? {})) {
+    for (const item of [...entry.projects, ...entry.components]) {
+      types.add(item.type)
+    }
+  }
+  return types.size === 1
+    ? ['--maven-use-only-socket-facts']
+    : ['--use-only-socket-facts-artifacts', [...types].sort().join(',')]
 }

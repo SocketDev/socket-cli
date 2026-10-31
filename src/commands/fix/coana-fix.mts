@@ -54,6 +54,7 @@ import {
 } from '../../utils/github.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import { useOnlySocketFactsArtifactsFlags } from '../manifest/scripts/sidecar.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
@@ -392,7 +393,7 @@ async function coanaFixWithFacts(
     if (!silence) {
       spinner?.stop()
       logger.info(
-        'Generating Socket facts for Gradle, sbt and Maven builds ...',
+        'Generating Socket facts for .NET, Gradle, sbt and Maven builds ...',
       )
     }
     factsSlot.generated = await generateSocketFactsForFix({
@@ -412,7 +413,9 @@ async function coanaFixWithFacts(
   // Discovery only needs which artifacts the facts files resolve. Applying
   // fixes reads each project's tree; a Coana predating facts trees can only
   // tell from the sidecar's classpaths which projects resolve an artifact.
-  const discoveryFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
+  const discoveryFlags = factsSlot
+    ? useOnlySocketFactsArtifactsFlags(factsSlot.generated?.sidecar)
+    : []
   const factsFlags = [
     ...discoveryFlags,
     ...(sidecarFile ? ['--compute-artifacts-sidecar', sidecarFile] : []),

@@ -54,6 +54,12 @@ export async function setupManifestConfig(
 
   const choices = [
     {
+      name: '.NET (dotnet)'.padEnd(30, ' '),
+      value: 'dotnet',
+      description:
+        'Generate a Socket facts file for .NET solutions and projects through dotnet',
+    },
+    {
       name: 'Conda'.padEnd(30, ' '),
       value: 'conda',
       description: `Generate ${REQUIREMENTS_TXT} from a Conda environment.yml`,
@@ -143,6 +149,13 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.conda = {}
       }
       result = await setupConda(sockJson.defaults.manifest.conda)
+      break
+    }
+    case 'dotnet': {
+      if (!sockJson.defaults.manifest.dotnet) {
+        sockJson.defaults.manifest.dotnet = {}
+      }
+      result = await setupDotnet(sockJson.defaults.manifest.dotnet)
       break
     }
     case 'gradle': {
@@ -255,6 +268,57 @@ async function setupConda(
         delete config.outfile
       }
     }
+  }
+
+  const verbose = await askForVerboseFlag(config.verbose)
+  if (verbose === undefined) {
+    return canceledByUser()
+  } else if (verbose === 'yes' || verbose === 'no') {
+    config.verbose = verbose === 'yes'
+  } else {
+    delete config.verbose
+  }
+
+  return notCanceled()
+}
+
+export async function setupDotnet(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['dotnet']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  const priorBin = config.bin
+  const bin = await askForBin(config.bin || '', 'dotnet')
+  if (bin === undefined) {
+    return canceledByUser()
+  } else if (bin) {
+    config.bin = bin
+  } else if (priorBin !== undefined) {
+    config.bin = null
+  } else {
+    delete config.bin
+  }
+
+  const priorDotnetOpts = config.dotnetOpts
+  const opts = await input({
+    message:
+      '(--dotnet-opts) Enter options to pass to `dotnet restore`, e.g. `-p:Configuration=Release --configfile nuget.config`',
+    default: config.dotnetOpts || '',
+    required: false,
+  })
+  if (opts === undefined) {
+    return canceledByUser()
+  } else if (opts) {
+    config.dotnetOpts = opts
+  } else if (priorDotnetOpts !== undefined) {
+    config.dotnetOpts = null
+  } else {
+    delete config.dotnetOpts
+  }
+
+  const factsOptions = await setupFactsOptions(config, 'target framework')
+  if (!factsOptions.ok || factsOptions.data.canceled) {
+    return factsOptions
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
@@ -717,15 +781,17 @@ async function askForIgnoreUnresolvedFlag(
 
 // Prompts for the facts-only options shared by gradle and sbt: the config
 // include/exclude filters and --ignore-unresolved. Mutates `config` in place.
-async function setupFactsOptions(config: {
-  excludeConfigs?: string | undefined | null
-  ignoreUnresolved?: boolean | undefined
-  includeConfigs?: string | undefined | null
-}): Promise<CResult<{ canceled: boolean }>> {
+async function setupFactsOptions(
+  config: {
+    excludeConfigs?: string | undefined | null
+    ignoreUnresolved?: boolean | undefined
+    includeConfigs?: string | undefined | null
+  },
+  configNoun = 'config-name',
+): Promise<CResult<{ canceled: boolean }>> {
   const priorIncludeConfigs = config.includeConfigs
   const includeConfigs = await input({
-    message:
-      '(--include-configs) Comma-separated config-name globs to resolve (blank = all configurations)',
+    message: `(--include-configs) Comma-separated ${configNoun} globs to resolve (blank = all)`,
     default: config.includeConfigs || '',
     required: false,
   })
@@ -743,8 +809,7 @@ async function setupFactsOptions(config: {
 
   const priorExcludeConfigs = config.excludeConfigs
   const excludeConfigs = await input({
-    message:
-      '(--exclude-configs) Comma-separated config-name globs to skip (blank = none)',
+    message: `(--exclude-configs) Comma-separated ${configNoun} globs to skip (blank = none)`,
     default: config.excludeConfigs || '',
     required: false,
   })

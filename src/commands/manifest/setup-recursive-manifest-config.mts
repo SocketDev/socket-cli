@@ -11,13 +11,20 @@ import {
   buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
+  isSolutionCovered,
   realpathOrResolved,
   sortByDepthThenPath,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
-import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
+import { skipWithoutDotnetSdk } from './scripts/run.mts'
+import {
+  setupDotnet,
+  setupGradle,
+  setupMaven,
+  setupSbt,
+} from './setup-manifest-config.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 import {
@@ -37,10 +44,11 @@ import type { SocketJson } from '../../utils/socket-json.mts'
 // several POMs, so several roots, there.
 type Candidate = { dir: string; ecosystem: BuildTool; roots: BuildRoot[] }
 
-const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt']
+const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt', 'dotnet']
 
 const ECOSYSTEM_LABELS: Record<BuildTool, string> = {
   __proto__: null,
+  dotnet: '.NET',
   gradle: 'Gradle',
   maven: 'Maven',
   sbt: 'sbt',
@@ -232,9 +240,21 @@ export async function markWorkspaceCoverage({
   if (skipReason) {
     return { ok: true, data: undefined }
   }
+  if (ecosystem === 'dotnet' && (await skipWithoutDotnetSdk(bin, dir))) {
+    return { ok: true, data: undefined }
+  }
 
   for (const root of roots) {
-    if (isBuildRootCovered(covered, ecosystem, root)) {
+    if (
+      isBuildRootCovered(covered, ecosystem, root) ||
+      // eslint-disable-next-line no-await-in-loop
+      (await isSolutionCovered(covered, root, {
+        bin,
+        excludeBase: cwd,
+        excludePaths,
+        toolOpts: buildOpts,
+      }))
+    ) {
       continue
     }
     // eslint-disable-next-line no-await-in-loop
@@ -259,6 +279,7 @@ export async function markWorkspaceCoverage({
     // eslint-disable-next-line no-await-in-loop
     await addCoveredBuildFiles(
       covered,
+      ecosystem,
       enumResult.buildRoot,
       enumResult.projects,
     )
@@ -322,6 +343,13 @@ async function runEcosystemWizard(
   ecosystem: BuildTool,
   config: Record<string, unknown>,
 ): Promise<CResult<{ canceled: boolean }>> {
+  if (ecosystem === 'dotnet') {
+    return await setupDotnet(
+      config as NonNullable<
+        NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['dotnet']
+      >,
+    )
+  }
   if (ecosystem === 'gradle') {
     return await setupGradle(
       config as NonNullable<

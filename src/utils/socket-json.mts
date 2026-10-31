@@ -59,6 +59,22 @@ export interface SocketJson {
         target?: string | undefined
         verbose?: boolean | undefined
       }
+      dotnet?: {
+        // Root-only: gates auto-detection for socket manifest auto/dotnet.
+        // Cascaded (any level): also skips that build root in
+        // dynamic-sbom-inference specifically.
+        disabled?: boolean | undefined
+        // A field set to null explicitly clears an inherited cascade value.
+        bin?: string | undefined | null
+        // Arguments for `dotnet restore`; MSBuild properties among them also
+        // apply to project evaluation.
+        dotnetOpts?: string | undefined | null
+        // Target framework globs.
+        excludeConfigs?: string | undefined | null
+        includeConfigs?: string | undefined | null
+        ignoreUnresolved?: boolean | undefined
+        verbose?: boolean | undefined
+      }
       gradle?: {
         // Root-only: gates auto-detection for socket manifest auto/gradle.
         // Cascaded (any level): also skips that build root in
@@ -177,6 +193,12 @@ function mergeManifestDefaults(
   }
   if (overrideManifest.conda) {
     mergedManifest.conda = { ...baseManifest?.conda, ...overrideManifest.conda }
+  }
+  if (overrideManifest.dotnet) {
+    mergedManifest.dotnet = {
+      ...baseManifest?.dotnet,
+      ...overrideManifest.dotnet,
+    }
   }
   if (overrideManifest.gradle) {
     mergedManifest.gradle = {

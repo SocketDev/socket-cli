@@ -3,11 +3,24 @@ import { basename, resolve } from 'node:path'
 
 import constants from '../../../constants.mts'
 
-export type BuildTool = 'gradle' | 'maven' | 'sbt'
+import type { PURL_Type } from '../../../utils/ecosystem.mts'
+
+export type BuildTool = 'dotnet' | 'gradle' | 'maven' | 'sbt'
+
+// The purl type of the packages each tool resolves; exhaustive, so a new tool
+// cannot silently produce another ecosystem's purls.
+export const PURL_TYPE_BY_TOOL: Record<BuildTool, PURL_Type> = {
+  __proto__: null,
+  dotnet: 'nuget',
+  gradle: 'maven',
+  maven: 'maven',
+  sbt: 'maven',
+} as unknown as Record<BuildTool, PURL_Type>
 
 // PATH fallback when no `bin` and no project wrapper.
 const DEFAULT_BUILD_TOOL_BIN: Record<BuildTool, string> = {
   __proto__: null,
+  dotnet: 'dotnet',
   gradle: 'gradle',
   maven: 'mvn',
   sbt: 'sbt',
@@ -26,12 +39,29 @@ const BUILD_TOOL_WRAPPER = {
 // case-sensitive superset of `nocaseGlob`, for the walk.
 export type BuildFiles =
   | { byFile: false; names: readonly string[] }
-  | { byFile: true; nocaseGlob: string; walkGlob: string }
+  | {
+      byFile: true
+      nocaseGlob: string
+      walkGlob: string
+      // Each project restores on its own whichever build reaches it, so a build
+      // covers its projects wherever they live; solution properties aside.
+      projectsResolveAlone?: true
+    }
 
 // `settings.gradle(.kts)` covers Kotlin-DSL roots that have no root
 // `build.gradle`.
 export const BUILD_FILES: Record<BuildTool, BuildFiles> = {
   __proto__: null,
+  // Solutions, and the project types the .NET SDK builds. A solution filter
+  // (.slnf) narrows a solution, so it is only built when named explicitly.
+  dotnet: {
+    byFile: true,
+    nocaseGlob: '*.{sln,slnx,csproj,fsproj,vbproj}',
+    walkGlob:
+      '*.{[sS][lL][nN],[sS][lL][nN][xX],[cCfFvV][sSbB][pP][rR][oO][jJ]}',
+    // NuGet restores each project into its own project.assets.json.
+    projectsResolveAlone: true,
+  },
   gradle: {
     byFile: false,
     names: [
@@ -72,6 +102,10 @@ export function resolveBuildToolBin(
     return `./${wrapperName}`
   }
   return DEFAULT_BUILD_TOOL_BIN[tool]
+}
+
+export function isDotnetSolution(file: string): boolean {
+  return /\.slnx?$/i.test(file)
 }
 
 // Distinct for every build sharing a directory.
