@@ -321,3 +321,51 @@ describe('runManifestFacts - sbt build detection', () => {
     },
   )
 })
+
+describe('runManifestFacts - crashed build', () => {
+  let cwd = ''
+
+  beforeEach(async () => {
+    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
+    vi.mocked(runManifestScript).mockReset()
+    process.exitCode = undefined
+  })
+  afterEach(async () => {
+    await fs.rm(cwd, { recursive: true, force: true })
+    process.exitCode = undefined
+  })
+
+  it('fails closed on a dotnet tool exit, whatever it recorded before', async () => {
+    vi.mocked(runManifestScript).mockResolvedValue({
+      ...okResult(cwd),
+      code: 1,
+      factsFileName: 'App.sln.socket.facts.json',
+      stderr: 'socket-facts-dotnet: System.InvalidOperationException',
+    })
+
+    const outcome = await runManifestFacts({
+      ...baseArgs,
+      bin: 'dotnet',
+      cwd,
+      ecosystem: 'dotnet',
+      entryFile: 'App.sln',
+      ignoreUnresolved: true,
+    })
+
+    expect(outcome).toBeNull()
+    expect(process.exitCode).toBe(1)
+    expect(await fs.readdir(cwd)).toEqual([])
+  })
+
+  it('keeps what a JVM build resolved before a non-zero exit', async () => {
+    vi.mocked(runManifestScript).mockResolvedValue({
+      ...okResult(cwd),
+      code: 1,
+    })
+
+    const outcome = await runManifestFacts({ ...baseArgs, cwd })
+
+    expect(outcome?.factsPath).toBe(path.join(cwd, 'pom.xml.socket.facts.json'))
+    expect(process.exitCode).toBeUndefined()
+  })
+})
