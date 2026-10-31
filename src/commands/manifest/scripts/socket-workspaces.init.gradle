@@ -39,6 +39,18 @@ gradle.ext.socketIsExcluded = { String rel ->
   if (c.isEmpty()) { return false }
   gradle.ext.socketExcludeMatchers.call().any { p -> p.matcher(c).matches() }
 }
+// `-Psocket.excludeBase` (the scan root; the root project's dir by default) anchors `--exclude-paths`:
+// a project relocated outside the build root still matches, one outside the scan root never does.
+gradle.ext.socketExcludeBaseCache = null
+gradle.ext.socketIsExcludedDir = { java.io.File dir ->
+  if (gradle.ext.socketExcludeMatchers.call().isEmpty()) { return false }
+  if (gradle.ext.socketExcludeBaseCache == null) {
+    def base = gradle.socketProp.call(gradle.rootProject, 'socket.excludeBase')?.toString()
+    gradle.ext.socketExcludeBaseCache = (base ? new java.io.File(base) : gradle.rootProject.projectDir).canonicalFile.toPath()
+  }
+  def rel = gradle.ext.socketExcludeBaseCache.relativize(dir.canonicalFile.toPath()).toString().replace(File.separator, '/')
+  !(rel == '..' || rel.startsWith('../')) && gradle.ext.socketIsExcluded.call(rel.isEmpty() ? '.' : rel)
+}
 
 gradle.ext.socketWorkspacesInfo = Collections.synchronizedList([])
 
@@ -52,7 +64,7 @@ gradle.projectsEvaluated { g ->
     r.isEmpty() ? '.' : r
   }
   g.rootProject.allprojects.each { p ->
-    if (g.ext.socketIsExcluded.call(rel(p.projectDir))) {
+    if (g.ext.socketIsExcludedDir.call(p.projectDir)) {
       return
     }
     def buildFiles = []

@@ -64,8 +64,10 @@ public final class SocketFactsRecordsEngine {
     public String populateFilesFor;
     public String includeConfigs;
     public String excludeConfigs;
-    // Scan-root-relative `--exclude-paths` (CSV): a wholly excluded reactor module is skipped.
+    // `--exclude-paths` (CSV) relative to excludeBase: a wholly excluded reactor module is skipped.
     public String excludePaths;
+    // The directory excludePaths are relative to; the build root when unset.
+    public String excludeBase;
     public String recordsFile;
   }
 
@@ -118,6 +120,7 @@ public final class SocketFactsRecordsEngine {
       reactorGavs.add(p.getGroupId() + ":" + p.getArtifactId() + ":" + p.getVersion());
     }
     List<Pattern> excludes = SocketSupport.parseExcludePatterns(opts.excludePaths);
+    java.nio.file.Path excludeBase = SocketSupport.excludeBase(opts.excludeBase, rootDir);
 
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
@@ -132,7 +135,7 @@ public final class SocketFactsRecordsEngine {
       if (module.getBasedir() == null) continue;
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
       String key = projectKey(module);
-      boolean excluded = SocketSupport.isExcludedPath(ws, excludes);
+      boolean excluded = SocketSupport.isExcludedDir(excludeBase, module.getBasedir().toPath(), excludes);
       if (excluded) {
         // Not analysed on its own, but a kept module depending on it is analysed with its code.
         if (opts.withFiles) rec(lines, "excludedProject", key);
@@ -154,9 +157,8 @@ public final class SocketFactsRecordsEngine {
     int rootIdx = 0;
     for (MavenProject module : reactor) {
       if (module.getBasedir() == null) continue;
-      String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
       // A wholly excluded reactor module is not resolved (matches the project-record skip above).
-      if (SocketSupport.isExcludedPath(ws, excludes)) continue;
+      if (SocketSupport.isExcludedDir(excludeBase, module.getBasedir().toPath(), excludes)) continue;
       Map<String, Node> nodes = new LinkedHashMap<>();
       Set<String> directIds = new HashSet<>();
       // Which direct dependencies are prod-scoped: seeds the prod/dev root split (see emitModuleRoots).

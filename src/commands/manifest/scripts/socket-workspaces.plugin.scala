@@ -32,12 +32,19 @@ object SocketWorkspacesPlugin extends AutoPlugin {
       // emits no project record. Mirrors socket-facts.plugin.scala / the gradle / maven producers.
       val excludeMatchers = parseExcludeMatchers()
       val rootCanonPath = buildRoot.getCanonicalFile.toPath
-      def relOf(f: File): String = {
-        val r = rootCanonPath.relativize(f.getCanonicalFile.toPath).toString.replace(java.io.File.separator, "/")
+      def relTo(base: java.nio.file.Path)(f: File): String = {
+        val r = base.relativize(f.getCanonicalFile.toPath).toString.replace(java.io.File.separator, "/")
         if (r.isEmpty) "." else r
       }
-      def isExcludedRef(ref: ProjectRef): Boolean =
-        isExcludedPath(relOf(extracted.get(baseDirectory.in(ref))), excludeMatchers)
+      def relOf(f: File): String = relTo(rootCanonPath)(f)
+      // `-Dsocket.excludeBase`: the directory `--exclude-paths` is relative to (the scan root; the
+      // build root by default); a project outside it never matches.
+      val excludeBase = sys.props.get("socket.excludeBase").filter(_.nonEmpty)
+        .map(b => new File(b).getCanonicalFile.toPath).getOrElse(rootCanonPath)
+      def isExcludedRef(ref: ProjectRef): Boolean = excludeMatchers.nonEmpty && {
+        val r = relTo(excludeBase)(extracted.get(baseDirectory.in(ref)))
+        r != ".." && !r.startsWith("../") && isExcludedPath(r, excludeMatchers)
+      }
 
       def rootIdOf(ref: ProjectRef): ModuleID = {
         val sv = extracted.get(scalaVersion.in(ref))

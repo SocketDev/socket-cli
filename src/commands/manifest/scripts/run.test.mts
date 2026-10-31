@@ -99,3 +99,32 @@ describe('maven entry file', () => {
     },
   )
 })
+
+async function excludeProps(excludeBase: string | undefined) {
+  vi.mocked(spawn).mockClear()
+  await enumerateWorkspaces('gradle', {
+    bin: 'gradle',
+    excludeBase,
+    excludePaths: ['shared'],
+    projectDir: path.join(path.sep, 'repo', 'app'),
+    stdio: 'pipe',
+  }).catch(() => {})
+  const args = (vi.mocked(spawn).mock.calls[0]?.[1] ?? []) as string[]
+  return args.filter(a => a.startsWith('-Psocket.exclude'))
+}
+
+describe('--exclude-paths anchoring', () => {
+  it('tells the build script the scan root the patterns are relative to', async () => {
+    expect(await excludeProps(path.join(path.sep, 'repo'))).toEqual([
+      expect.stringMatching(/^-Psocket\.excludePaths=/),
+      `-Psocket.excludeBase=${path.join(path.sep, 'repo')}`,
+    ])
+  })
+
+  it('defaults the base to the build root', async () => {
+    expect(await excludeProps(undefined)).toEqual([
+      expect.stringMatching(/^-Psocket\.excludePaths=/),
+      `-Psocket.excludeBase=${path.join(path.sep, 'repo', 'app')}`,
+    ])
+  })
+})

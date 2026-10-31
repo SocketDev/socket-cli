@@ -496,6 +496,28 @@ describe('generateRecursiveManifests', () => {
     expect(byKey.get('maven:dual-marker-dir')).toBe('empty')
   })
 
+  it('passes every build root the scan-root-relative --exclude-paths and the scan root', async () => {
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+
+    await generateRecursiveManifests({
+      cwd: monorepo,
+      excludePaths: ['reactor/moduleB'],
+      verbose: false,
+    })
+
+    const reactorCall = vi
+      .mocked(runManifestFacts)
+      .mock.calls.map(([opts]) => opts)
+      .find(opts => opts.cwd === reactor)
+    expect(reactorCall).toMatchObject({
+      excludeBase: await fs.realpath(monorepo),
+      excludePaths: ['reactor/moduleB'],
+    })
+  })
+
   it('resolves each build root its own nearest socket.json instead of only the root config', async () => {
     vi.mocked(readSocketJsonCascade).mockImplementation(
       (dir, _boundaryDir, fallback) =>

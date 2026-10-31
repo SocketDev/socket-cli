@@ -42,6 +42,18 @@ gradle.ext.socketIsExcluded = { String rel ->
   if (c.isEmpty()) { return false }
   gradle.ext.socketExcludeMatchers.call().any { p -> p.matcher(c).matches() }
 }
+// `-Psocket.excludeBase` (the scan root; the root project's dir by default) anchors `--exclude-paths`:
+// a project relocated outside the build root still matches, one outside the scan root never does.
+gradle.ext.socketExcludeBaseCache = null
+gradle.ext.socketIsExcludedDir = { java.io.File dir ->
+  if (gradle.ext.socketExcludeMatchers.call().isEmpty()) { return false }
+  if (gradle.ext.socketExcludeBaseCache == null) {
+    def base = gradle.socketProp.call(gradle.rootProject, 'socket.excludeBase')?.toString()
+    gradle.ext.socketExcludeBaseCache = (base ? new java.io.File(base) : gradle.rootProject.projectDir).canonicalFile.toPath()
+  }
+  def rel = gradle.ext.socketExcludeBaseCache.relativize(dir.canonicalFile.toPath()).toString().replace(File.separator, '/')
+  !(rel == '..' || rel.startsWith('../')) && gradle.ext.socketIsExcluded.call(rel.isEmpty() ? '.' : rel)
+}
 
 // Synchronized collections so --parallel-enabled builds don't race; lives on gradle.ext so every
 // collector and the root aggregator share one instance.
@@ -94,7 +106,7 @@ gradle.projectsEvaluated { g ->
     // A wholly excluded subproject emits no project record and its configs are never resolved (see the
     // collector). The project maps above stay populated so a KEPT project depending on it
     // still recognizes it as a first-party module, and its paths are kept so it is analysed with its code.
-    def excluded = g.ext.socketIsExcluded.call(rel(p.projectDir))
+    def excluded = g.ext.socketIsExcludedDir.call(p.projectDir)
     // Guarded: projects without the java `sourceSets` convention (pure aggregators) contribute empty
     // lists rather than failing. Kotlin and Android code lives outside it (see below).
     // ALL source sets are emitted (not just main/test) so custom ones (integrationTest,
@@ -200,9 +212,7 @@ allprojects { project ->
       def state = gradle.socketFactsState
       // Skip resolving a wholly excluded subproject: `--exclude-paths` covering its dir means we don't
       // resolve for it at all (matches the project-record skip in projectsEvaluated).
-      def excludeRootPath = project.rootProject.projectDir.toPath()
-      def excludeRelDir = excludeRootPath.relativize(project.projectDir.toPath()).toString().replace(File.separator, '/')
-      if (gradle.ext.socketIsExcluded.call(excludeRelDir.isEmpty() ? '.' : excludeRelDir)) {
+      if (gradle.ext.socketIsExcludedDir.call(project.projectDir)) {
         return
       }
       // Per-RESOLUTION-ROOT accumulators, LOCAL to this collector: one (subproject, configuration)

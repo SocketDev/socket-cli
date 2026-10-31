@@ -38,10 +38,13 @@ export type ManifestScriptOptions = {
   populateFilesFor?: string | undefined
   includeConfigs?: string | undefined
   excludeConfigs?: string | undefined
-  // Scan-root-relative `--exclude-paths`. Passed to the build script, which skips
-  // resolving a wholly excluded subproject. Source-file-level exclusion is left to
-  // the reachability analysis (coana's --exclude-dirs), not applied here.
+  // `--exclude-paths`, relative to excludeBase. Passed to the build script, which
+  // skips resolving a wholly excluded subproject. Source-file-level exclusion is
+  // left to the reachability analysis (coana's --exclude-dirs), not applied here.
   excludePaths?: string[] | undefined
+  // The scan root, which a build's modules can lie outside of (Maven `../x`
+  // modules); projectDir when unset.
+  excludeBase?: string | undefined
   toolOpts?: string[] | undefined
   stdio?: 'inherit' | 'pipe' | undefined
   env?: NodeJS.ProcessEnv | undefined
@@ -238,6 +241,9 @@ function commonProps(
   const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
   if (excludePatterns) {
     props.push(`${prefix}socket.excludePaths=${excludePatterns}`)
+    props.push(
+      `${prefix}socket.excludeBase=${opts.excludeBase ?? opts.projectDir}`,
+    )
   }
   return props
 }

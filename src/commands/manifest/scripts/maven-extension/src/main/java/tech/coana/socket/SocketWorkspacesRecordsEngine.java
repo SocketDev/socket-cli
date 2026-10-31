@@ -20,8 +20,10 @@ import java.util.regex.Pattern;
 public final class SocketWorkspacesRecordsEngine {
 
   public static final class Options {
-    // Scan-root-relative `--exclude-paths` (CSV): a wholly excluded reactor module is skipped.
+    // `--exclude-paths` (CSV) relative to excludeBase: a wholly excluded reactor module is skipped.
     public String excludePaths;
+    // The directory excludePaths are relative to; the build root when unset.
+    public String excludeBase;
     public String recordsFile;
   }
 
@@ -30,6 +32,7 @@ public final class SocketWorkspacesRecordsEngine {
   public static void run(List<MavenProject> reactor, File rootDir, Options opts, String mavenVersion)
       throws IOException {
     List<Pattern> excludes = SocketSupport.parseExcludePatterns(opts.excludePaths);
+    java.nio.file.Path excludeBase = SocketSupport.excludeBase(opts.excludeBase, rootDir);
 
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
@@ -40,7 +43,7 @@ public final class SocketWorkspacesRecordsEngine {
       // own "no POM in this directory" error surface instead of an NPE.
       if (module.getBasedir() == null) continue;
       String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
-      if (SocketSupport.isExcludedPath(ws, excludes)) continue;
+      if (SocketSupport.isExcludedDir(excludeBase, module.getBasedir().toPath(), excludes)) continue;
       rec(lines, "project", ws, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
       File pom = module.getFile();
       if (pom != null && pom.isFile()) rec(lines, "projectBuild", ws, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));

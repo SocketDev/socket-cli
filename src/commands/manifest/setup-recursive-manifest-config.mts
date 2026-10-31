@@ -236,10 +236,11 @@ export async function markWorkspaceCoverage({
     return { ok: true, data: undefined }
   }
 
-  const excludePathsForDir = projectIgnorePathsToReachExcludePaths(
-    excludePaths,
-    { cwd, target: dir },
-  )
+  // Relative to the scan root, as generateRecursiveManifests passes them.
+  const scanExcludePaths = projectIgnorePathsToReachExcludePaths(excludePaths, {
+    cwd,
+    target: cwd,
+  })
 
   for (const root of roots) {
     if (isBuildRootCovered(covered, ecosystem, root)) {
@@ -252,7 +253,8 @@ export async function markWorkspaceCoverage({
       cwd: dir,
       ecosystem,
       entryFile: root.entryFile,
-      excludePaths: excludePathsForDir,
+      excludeBase: cwd,
+      excludePaths: scanExcludePaths,
       javaHome,
       verbose: false,
     })
