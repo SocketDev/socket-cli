@@ -6,16 +6,18 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //
 //   <tag>\t<field>\t<field>...
 //
-//   meta        tool  toolVersion  javaVersion
+//   meta        tool  toolVersion  javaVersion             (dotnet: the SDK version; no javaVersion)
 //   buildRoot   path                                     (absolute; the facts file's directory)
 //   entry       path                                     (file-addressed builds; build-root-relative)
 //   member      path                                     (dotnet --members: a project the entry builds; build-root-relative)
 //   project     projectKey  group  name  version  dir
-//   projectSrc  projectKey  path                         (--with-files only)
-//   projectTgt  projectKey  path                         (--with-files only)
+//   projectSrc  projectKey  path  [config]               (--with-files only)
+//   projectTgt  projectKey  path  [config]               (--with-files only)
+//   projectInfo   projectKey  config  name  value        (dotnet, --with-files only; a name may repeat)
+//   projectUsing  projectKey  config  namespace  alias  static(0|1)   (dotnet, --with-files only)
 //   projectBuild  projectKey  path                     (build-root-relative; may be absent on disk)
 //   excludedProject  projectKey                          (--with-files only; paths without a project)
-//   root        rootId  projectKey  config  prod(0|1)
+//   root        rootId  projectKey  config  prod(0|1)  [framework  runtime  alias]   (dotnet: NuGet short folder name, RID, TargetFrameworks entry)
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)

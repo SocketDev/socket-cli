@@ -48,7 +48,8 @@ export type SocketFactsSbomDependency = {
 
 export type SocketFactsSbomProject = AnyPURL & {
   // The build tool's own project identity, unique within the facts file:
-  // Maven's GAV, Gradle's project path, sbt's project id.
+  // Maven's GAV, Gradle's project path, sbt's project id, the project file's
+  // build-root-relative path for dotnet.
   id: string
   subprojectDir: string
   // The build files the tool reports for the project, e.g. a POM other than
