@@ -544,6 +544,243 @@ describe('records → assemble → sidecar', () => {
   })
 })
 
+describe('dotnet records → assemble', () => {
+  const DOTNET = [
+    'meta\tdotnet\t8.0.414\t',
+    'buildRoot\t/abs',
+    'entry\tApp.sln',
+    'project\tsrc/App/App.csproj\t\tApp\t1.0.0\tsrc/App',
+    'projectBuild\tsrc/App/App.csproj\tsrc/App/App.csproj',
+    'projectBuild\tsrc/App/App.csproj\tDirectory.Packages.props',
+    'project\tsrc/Lib/Lib.csproj\t\tAcme.Lib\t2.0.0\tsrc/Lib',
+    'root\tsrc/App/App.csproj|net8.0|prod\tsrc/App/App.csproj\tnet8.0\t1',
+    'node\tsrc/App/App.csproj|net8.0|prod\tacme.lib:2.0.0\t\tAcme.Lib\t2.0.0\t\t\t1\tsrc/Lib/Lib.csproj',
+    'node\tsrc/App/App.csproj|net8.0|prod\tnewtonsoft.json:13.0.3\t\tNewtonsoft.Json\t13.0.3\t\t\t0\t',
+    'edge\tsrc/App/App.csproj|net8.0|prod\tacme.lib:2.0.0\tnewtonsoft.json:13.0.3',
+    'root\tsrc/Lib/Lib.csproj|net8.0|prod\tsrc/Lib/Lib.csproj\tnet8.0\t1',
+    'node\tsrc/Lib/Lib.csproj|net8.0|prod\tnewtonsoft.json:13.0.3\t\tNewtonsoft.Json\t13.0.3\t\t\t1\t',
+    'scanned\tnet8.0',
+  ].join('\r\n')
+
+  it('assembles nuget purls without a namespace, with project-path ids', () => {
+    const { facts } = assembleFacts(parseRecords(DOTNET))
+    expect(facts.metadata?.tool).toBe('dotnet')
+    expect(facts.components).toEqual([
+      {
+        type: 'nuget',
+        name: 'Newtonsoft.Json',
+        version: '13.0.3',
+        id: 'newtonsoft.json:13.0.3',
+        direct: true,
+      },
+      {
+        type: 'nuget',
+        name: 'Acme.Lib',
+        version: '2.0.0',
+        id: 'src/Lib/Lib.csproj',
+        direct: true,
+        firstParty: true,
+      },
+    ])
+    expect(facts.projects?.map(p => ({ ...p, children: undefined }))).toEqual([
+      {
+        id: 'src/App/App.csproj',
+        type: 'nuget',
+        name: 'App',
+        version: '1.0.0',
+        subprojectDir: 'src/App',
+        manifestFiles: [
+          { file: 'Directory.Packages.props' },
+          { file: 'src/App/App.csproj' },
+        ],
+        children: undefined,
+      },
+      {
+        id: 'src/Lib/Lib.csproj',
+        type: 'nuget',
+        name: 'Acme.Lib',
+        version: '2.0.0',
+        subprojectDir: 'src/Lib',
+        children: undefined,
+      },
+    ])
+    expect(trees(facts)).toEqual({
+      'src/App/App.csproj': ['src/Lib/Lib.csproj(newtonsoft.json:13.0.3)'],
+      'src/Lib/Lib.csproj': ['newtonsoft.json:13.0.3'],
+    })
+  })
+})
+
+describe('dotnet records → sidecar', () => {
+  it('carries assemblies, compile items and unresolved packages per nuget purl', () => {
+    const records = [
+      'meta\tdotnet\t8.0.414\t',
+      'project\tApp.csproj\t\tApp\t1.0.0\t.',
+      'projectSrc\tApp.csproj\t/abs/Program.cs',
+      'projectTgt\tApp.csproj\t/abs/bin/App.dll',
+      'root\tr\tApp.csproj\tnet8.0\t1',
+      'node\tr\tlib:1.0.0\t\tLib\t1.0.0\t\t\t1\t',
+      'file\tr\tlib:1.0.0\t/pkgs/lib/1.0.0/lib/net8.0/Lib.dll',
+      'node\tr\tanalyzer:1.0.0\t\tAnalyzer\t1.0.0\t\t\t1\t',
+      'node\tr\tgone:1.0.0\t\tGone\t1.0.0\t\t\t1\t',
+      'unfetched\tr\tgone:1.0.0',
+    ].join('\n')
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      fileExists: () => true,
+    })
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      acc,
+      facts,
+      artifactPaths,
+      '/abs/App.csproj.socket.facts.json',
+    )
+    const entry = serializeSidecar(acc)['/abs/App.csproj.socket.facts.json']!
+    expect(entry.components.map(c => [c.type, c.name, c.targets])).toEqual([
+      ['nuget', 'Analyzer', []],
+      ['nuget', 'Gone', undefined],
+      ['nuget', 'Lib', ['/pkgs/lib/1.0.0/lib/net8.0/Lib.dll']],
+    ])
+    expect(entry.projects).toMatchObject([
+      {
+        id: 'App.csproj',
+        type: 'nuget',
+        sources: ['/abs/Program.cs'],
+        targets: ['/abs/bin/App.dll'],
+        dependencies: ['analyzer:1.0.0', 'gone:1.0.0', 'lib:1.0.0'],
+      },
+    ])
+    expect(entry.projects[0]).not.toHaveProperty('namespace')
+  })
+})
+
+describe('dotnet records → per-framework sidecar', () => {
+  const records = [
+    'meta\tdotnet\t8.0.414\t',
+    'project\tLib.csproj\t\tLib\t1.0.0\t.',
+    'projectSrc\tLib.csproj\t/abs/L.cs\tnet8.0',
+    'projectSrc\tLib.csproj\t/abs/obj/Lib.AssemblyInfo.cs\tnet8.0',
+    'projectSrc\tLib.csproj\t/abs/Legacy.cs\tnetstandard2.0',
+    'projectInfo\tLib.csproj\tnetstandard2.0\tBuildError\tMSB3644: reference assemblies not found',
+    'projectTgt\tLib.csproj\t/abs/bin/net8.0/Lib.dll\tnet8.0',
+    'projectInfo\tLib.csproj\tnet8.0\tTargetFrameworkMoniker\t.NETCoreApp,Version=v8.0',
+    'projectInfo\tLib.csproj\tnet8.0\tDefineConstant\tNET8_0_OR_GREATER',
+    'projectInfo\tLib.csproj\tnet8.0\tFrameworkReference\tMicrosoft.NETCore.App',
+    'projectInfo\tLib.csproj\tnet8.0\tNullable\tenable',
+    'projectInfo\tLib.csproj\tnet8.0\tReference\t/packs/ref/net8.0/System.Runtime.dll',
+    'projectInfo\tLib.csproj\tnet8.0\tReference\t/pkgs/x/ref/net8.0/X.dll',
+    'projectInfo\tLib.csproj\tnet8.0\tAnalyzer\t/packs/analyzers/Gen.dll',
+    'projectUsing\tLib.csproj\tnet8.0\tSystem.Linq\t\t0',
+    'projectUsing\tLib.csproj\tnet8.0\tSystem.Math\t\t1',
+    'root\ta\tLib.csproj\tnet8.0\t0\tnet8.0\t\tnet8.0',
+    'node\ta\tx:1.0.0\t\tX\t1.0.0\t\t\t1\t',
+    'file\ta\tx:1.0.0\t/pkgs/x/lib/net8.0/X.dll',
+    'compileFile\ta\tx:1.0.0\t/pkgs/x/ref/net8.0/X.dll',
+    'node\ta\tgone:1.0.0\t\tGone\t1.0.0\t\t\t1\t',
+    'unfetched\ta\tgone:1.0.0',
+    'root\tp\tLib.csproj\tnet8.0\t1\tnet8.0\t\tnet8.0',
+    'node\tp\tx:1.0.0\t\tX\t1.0.0\t\t\t1\t',
+    'node\tp\tgone:1.0.0\t\tGone\t1.0.0\t\t\t1\t',
+    'root\ts\tLib.csproj\tnetstandard2.0\t0\tnetstandard2.0\t\tnetstandard2.0',
+    'node\ts\tx:1.0.0\t\tX\t1.0.0\t\t\t1\t',
+    'file\ts\tx:1.0.0\t/pkgs/x/lib/netstandard2.0/X.dll',
+  ].join('\n')
+
+  it('gives each project build its own context and each package its assemblies per framework', () => {
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
+      fileExists: () => true,
+    })
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      acc,
+      facts,
+      artifactPaths,
+      '/abs/Lib.csproj.socket.facts.json',
+    )
+    const entry = serializeSidecar(acc)['/abs/Lib.csproj.socket.facts.json']!
+    expect(entry.projects[0]!.frameworks).toEqual([
+      {
+        alias: 'net8.0',
+        framework: 'net8.0',
+        targetFrameworkMoniker: '.NETCoreApp,Version=v8.0',
+        language: undefined,
+        langVersion: undefined,
+        nullable: 'enable',
+        assemblyName: undefined,
+        buildError: undefined,
+        frameworkReferences: ['Microsoft.NETCore.App'],
+        defineConstants: ['NET8_0_OR_GREATER'],
+        usings: [
+          { namespace: 'System.Linq' },
+          { namespace: 'System.Math', static: true },
+        ],
+        // Compiler order, not sorted.
+        sources: ['/abs/L.cs', '/abs/obj/Lib.AssemblyInfo.cs'],
+        references: [
+          '/packs/ref/net8.0/System.Runtime.dll',
+          '/pkgs/x/ref/net8.0/X.dll',
+        ],
+        analyzers: ['/packs/analyzers/Gen.dll'],
+        targets: ['/abs/bin/net8.0/Lib.dll'],
+        dependencies: ['gone:1.0.0', 'x:1.0.0'],
+        classpath: ['gone:1.0.0', 'x:1.0.0'],
+      },
+      expect.objectContaining({
+        alias: 'netstandard2.0',
+        buildError: 'MSB3644: reference assemblies not found',
+        sources: ['/abs/Legacy.cs'],
+        references: [],
+        targets: [],
+        classpath: ['x:1.0.0'],
+      }),
+    ])
+    const byName = Object.fromEntries(
+      entry.components.map(c => [c.name, c.frameworks]),
+    )
+    expect(byName['X']).toEqual([
+      {
+        framework: 'net8.0',
+        targets: ['/pkgs/x/lib/net8.0/X.dll'],
+        compile: ['/pkgs/x/ref/net8.0/X.dll'],
+      },
+      {
+        framework: 'netstandard2.0',
+        targets: ['/pkgs/x/lib/netstandard2.0/X.dll'],
+        compile: [],
+      },
+    ])
+    // A root without files (the prod one) does not count as resolving it.
+    expect(byName['Gone']).toEqual([{ framework: 'net8.0' }])
+  })
+})
+
+describe('dotnet build without dependencies', () => {
+  it('still gets its compile context in the sidecar', () => {
+    const records = [
+      'meta\tdotnet\t8.0.414\t',
+      'project\tLeaf.csproj\t\tLeaf\t1.0.0\t.',
+      'projectSrc\tLeaf.csproj\t/abs/Leaf.cs\tnet8.0',
+      'projectInfo\tLeaf.csproj\tnet8.0\tFramework\tnet8.0',
+      'projectInfo\tLeaf.csproj\tnet8.0\tFrameworkReference\tMicrosoft.NETCore.App',
+    ].join('\n')
+    const { artifactPaths } = assembleFacts(parseRecords(records), {
+      fileExists: () => true,
+    })
+    expect(artifactPaths.frameworksByProject?.get('Leaf.csproj')).toMatchObject(
+      [
+        {
+          alias: 'net8.0',
+          framework: 'net8.0',
+          frameworkReferences: ['Microsoft.NETCore.App'],
+          sources: ['/abs/Leaf.cs'],
+          dependencies: [],
+          classpath: [],
+        },
+      ],
+    )
+  })
+})
+
 describe('parseRecords', () => {
   it('reads the build root the build reports', () => {
     expect(

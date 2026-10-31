@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- In the solution, but not built by its configurations (as NUKE build projects are). -->
+  <PropertyGroup><TargetFramework>net6.0</TargetFramework></PropertyGroup>
+  <ItemGroup><PackageReference Include="Demo.Ext.DoesNotExist" Version="1.0.0" /></ItemGroup>
+</Project>
