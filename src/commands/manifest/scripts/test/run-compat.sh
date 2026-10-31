@@ -64,6 +64,8 @@ run_dotnet() {
       exit 1
     fi
     bash "$HERE/dotnet-compat/smoke-test.sh" "$dotnet" "$sdk"
+    bash "$HERE/dotnet-compat/smoke-test-workspaces.sh" "$dotnet" "$sdk"
+    bash "$HERE/dotnet-compat/smoke-test-exclude-base.sh" "$dotnet" "$sdk"
   done
 }
 

@@ -9,9 +9,14 @@ vi.mock('@socketsecurity/registry/lib/prompts', () => ({
   select: vi.fn(async ({ default: def }: { default?: string }) => def ?? ''),
 }))
 
-import { select } from '@socketsecurity/registry/lib/prompts'
+import { input, select } from '@socketsecurity/registry/lib/prompts'
 
-import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
+import {
+  setupDotnet,
+  setupGradle,
+  setupMaven,
+  setupSbt,
+} from './setup-manifest-config.mts'
 
 describe('setupGradle/setupMaven/setupSbt', () => {
   it('leaves bin unset on a fresh config when every prompt is left blank, instead of freezing the hardcoded fallback', async () => {
@@ -80,5 +85,41 @@ describe('setupGradle/setupMaven/setupSbt', () => {
     // The facts-only options (config filters) still ask, just without the
     // facts/pom choice gating them.
     expect(messages.some(m => m.includes('--ignore-unresolved'))).toBe(true)
+  })
+})
+
+describe('setupDotnet', () => {
+  it('leaves a fresh config empty when every prompt is left blank', async () => {
+    const config: Record<string, unknown> = {}
+
+    const result = await setupDotnet(config)
+
+    expect(result).toEqual({ ok: true, data: { canceled: false } })
+    expect(config).toEqual({})
+  })
+
+  it('preserves explicit nulls on a blank re-prompt', async () => {
+    const config: Record<string, unknown> = { bin: null, dotnetOpts: null }
+
+    await setupDotnet(config)
+
+    expect(config['bin']).toBeNull()
+    expect(config['dotnetOpts']).toBeNull()
+  })
+
+  it('asks for target framework filters, never the facts/pom choice', async () => {
+    vi.mocked(input).mockClear()
+    vi.mocked(select).mockClear()
+
+    await setupDotnet({})
+
+    const messages = [
+      ...vi.mocked(input).mock.calls,
+      ...vi.mocked(select).mock.calls,
+    ].map(c => c[0].message)
+    expect(messages.some(m => m.includes('--dotnet-opts'))).toBe(true)
+    expect(messages.some(m => m.includes('target framework globs'))).toBe(true)
+    expect(messages.some(m => m.includes('--ignore-unresolved'))).toBe(true)
+    expect(messages.some(m => m.includes('--facts / --pom'))).toBe(false)
   })
 })

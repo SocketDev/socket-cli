@@ -84,6 +84,9 @@ packages.config next to SDK projects, F# and VB, several builds in one
 directory, `--exclude-paths`, `--include-configs` and failures. Each
 PackageReference project's tree is compared with what
 `dotnet list package --include-transitive` reports for the same restore.
+`smoke-test-workspaces.sh` checks the restore-free `--workspaces` and
+`--members` listings, `smoke-test-exclude-base.sh` scan-root-relative
+`--exclude-paths`.
 
 - Rows are SDK versions, each pinned with a `global.json`; install them side by
   side under `$SOCKET_COMPAT_CACHE/dotnet` with `dotnet-install.sh`.

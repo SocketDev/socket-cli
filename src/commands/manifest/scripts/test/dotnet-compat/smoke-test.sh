@@ -8,20 +8,14 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 DOTNET="${1:?usage: smoke-test.sh <dotnet> [sdk-version]}"
 SDK="${2:-}"
-REPO="$(cd "$HERE/../../../../../.." && pwd)"
+# shellcheck source=SCRIPTDIR/lib.sh
+. "$HERE/lib.sh"
 CLI="$REPO/bin/cli.js"
-TOOL="$REPO/dist/manifest-scripts/dotnet-tool/socket-facts-dotnet.dll"
 # shellcheck source=SCRIPTDIR/../compat-cache.sh
 . "$HERE/../compat-cache.sh"
 
-if [ ! -f "$TOOL" ]; then
-  echo "dotnet tool not built: run pnpm run build:dotnet-tool && pnpm build:dist:src" >&2
-  exit 1
-fi
-
 export NUGET_PACKAGES="$SOCKET_COMPAT_CACHE/nuget-packages"
 export NUGET_HTTP_CACHE_PATH="$SOCKET_COMPAT_CACHE/nuget-http"
-export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 # Stubs are regenerated per run under the same versions, so no stale copy
 # may survive in the package folder.
 rm -rf "$NUGET_PACKAGES"/demo.* "$NUGET_PACKAGES"/runtime.win-x64.demo.*
@@ -29,10 +23,7 @@ rm -rf "$NUGET_PACKAGES"/demo.* "$NUGET_PACKAGES"/runtime.win-x64.demo.*
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 # A copy per run keeps obj/, lock files and global.json out of the source tree.
-( cd "$HERE" && find . -type f \
-    -not -path '*/obj/*' -not -path '*/bin/*' -not -path './stub-feed/*' \
-    -not -name '*.socket.facts.json' -not -name 'packages.lock.json' \
-    -exec sh -c 'mkdir -p "$1/$(dirname "$2")" && cp "$2" "$1/$2"' _ "$WORK" {} \; )
+copy_fixture "$WORK" .
 python3 "$HERE/make-stub-feed.py" "$WORK/stub-feed" \
   'Demo.Ext.Tool:1.0.0+Demo.Ext.Shared:1.0.0' \
   'Demo.Ext.Shared:1.0.0' \
@@ -49,10 +40,7 @@ python3 "$HERE/make-stub-feed.py" "$WORK/stub-feed" \
   'Demo.Ext.Floating:1.1.0' \
   'Demo.Ext.Native:1.0.0#runtime=win-x64' \
   'runtime.win-x64.Demo.Ext.Native:1.0.0#rid=win-x64'
-if [ -n "$SDK" ]; then
-  printf '{"sdk": {"version": "%s", "rollForward": "disable"}}\n' "$SDK" > "$WORK/global.json"
-fi
-SDK_VERSION="$(cd "$WORK" && "$DOTNET" --version)"
+pin_sdk "$WORK" "$SDK"
 echo "+ dotnet SDK $SDK_VERSION"
 
 socket_dotnet() {
@@ -109,9 +97,7 @@ python3 "$HERE/assert-facts.py" "$WORK" "$SDK_VERSION" "$CPM_ENTRY" ignore-unres
 
 # --with-files: the records the reachability sidecar is built from.
 records() {
-  # A preview SDK's MSBuild needs a preview runtime (see run.mts).
-  ( cd "$(dirname "$1")" && case "$SDK_VERSION" in *-*) export DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 ;; esac
-    "$DOTNET" "$TOOL" --records "$2" --entry "$1" --dotnet "$DOTNET" --with-files >/dev/null )
+  run_tool "$(dirname "$1")" --records "$2" --entry "$1" --with-files
 }
 records "$WORK/basic/Basic.sln" "$WORK/basic.tsv"
 records "$WORK/langs/Vb/Vb.vbproj" "$WORK/langs.tsv"
