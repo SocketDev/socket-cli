@@ -124,8 +124,8 @@ export async function runManifestFacts({
   const scriptOpts = {
     bin: bin || undefined,
     entryFile,
-    excludeConfigs: excludeConfigs || undefined,
     excludeBase,
+    excludeConfigs: excludeConfigs || undefined,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
     // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
     env: resolvedJavaHome
@@ -185,6 +185,41 @@ export async function runManifestFacts({
     stdout,
   } = result
 
+  // A non-zero build exit with no usable output (no graph, no first-party
+  // modules, no failure records) means the build died before the socketFacts
+  // task emitted anything — a script/plugin compile error, OOM, or an unchecked
+  // exception in the extension. The build tool's own exit is the only signal, so
+  // fail closed rather than silently dropping the ecosystem with an empty SBOM
+  // (the empty-facts branch below would otherwise just log "nothing to upload").
+  // The dotnet tool exits non-zero only when it crashed, so whatever it
+  // recorded before is incomplete however much there is.
+  if (
+    code !== 0 &&
+    (ecosystem === 'dotnet' ||
+      (!facts.components.length &&
+        !facts.projects?.length &&
+        !report.failures.length &&
+        !report.unscannable.length))
+  ) {
+    if (!verbose) {
+      const tail = tailBuildOutput(stdout, stderr)
+      if (tail) {
+        logger.group('Build output:')
+        logger.error(tail)
+        logger.groupEnd()
+      }
+    }
+    // A crashed build is a process failure (missing JDK/build tool, unparseable
+    // project, OOM, plugin error), not an unresolved dependency, so it fails
+    // regardless of `ignoreUnresolved` — that flag only tolerates dependencies a
+    // successful run couldn't resolve.
+    process.exitCode = 1
+    logger.fail(
+      `The ${ecosystem} build at \`${location}\` failed (exit code ${code}) without completing its Socket facts.`,
+    )
+    return null
+  }
+
   const rendered = renderResolutionErrorReport(
     report.failures,
     report.scannedConfigs,
@@ -214,38 +249,6 @@ export async function runManifestFacts({
   }
   if (verbose && rendered.details) {
     logger.info(rendered.details)
-  }
-
-  // A non-zero build exit with no usable output (no graph, no first-party
-  // modules, no failure records) means the build died before the socketFacts
-  // task emitted anything — a script/plugin compile error, OOM, or an unchecked
-  // exception in the extension. The build tool's own exit is the only signal, so
-  // fail closed rather than silently dropping the ecosystem with an empty SBOM
-  // (the empty-facts branch below would otherwise just log "nothing to upload").
-  if (
-    code !== 0 &&
-    !facts.components.length &&
-    !facts.projects?.length &&
-    !report.failures.length &&
-    !report.unscannable.length
-  ) {
-    if (!verbose) {
-      const tail = tailBuildOutput(stdout, stderr)
-      if (tail) {
-        logger.group('Build output:')
-        logger.error(tail)
-        logger.groupEnd()
-      }
-    }
-    // A crashed build is a process failure (missing JDK/build tool, unparseable
-    // project, OOM, plugin error), not an unresolved dependency, so it fails
-    // regardless of `ignoreUnresolved` — that flag only tolerates dependencies a
-    // successful run couldn't resolve.
-    process.exitCode = 1
-    logger.fail(
-      `The ${ecosystem} build at \`${location}\` failed (exit code ${code}) before producing any Socket facts.`,
-    )
-    return null
   }
 
   // Nothing resolved at all — no dependencies and no first-party modules. A

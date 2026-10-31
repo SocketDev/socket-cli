@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- net6 floor so SDK 6 machines can run the tool; RollForward covers
+         every newer runtime. -->
+    <TargetFramework>net6.0</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
+    <LangVersion>12</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>socket-facts-dotnet</AssemblyName>
+    <RootNamespace>Socket.Facts.Dotnet</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- Run as `dotnet socket-facts-dotnet.dll`; no native launcher. -->
+    <UseAppHost>false</UseAppHost>
+    <!-- Content hashes for everything restored, checked by build-tool.sh. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile-time API surface only: MSBuild and NuGet load from the
+         locator-selected SDK, so the tool reads restore output with the same
+         NuGet that wrote it. The oldest surface (MSBuild 17.3, the newest
+         with net6.0 assets; NuGet 6.0) binds on every SDK from 6 up.
+         ExcludeAssets is not transitive, hence every NuGet.* package of the
+         closure is listed. -->
+    <PackageReference Include="Microsoft.Build" Version="17.3.2" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.3.2" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Common" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Configuration" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.DependencyResolver.Core" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.LibraryModel" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Packaging" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.ProjectModel" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Protocol" Version="6.0.6" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Versioning" Version="6.0.6" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

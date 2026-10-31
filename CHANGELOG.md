@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `socket manifest dotnet` [beta] generates Socket facts files for .NET solutions and projects from your own `dotnet restore`, covering PackageReference (central package management and lock files included) and packages.config projects.
+- `socket manifest auto`, `socket manifest setup` and `--auto-manifest` now detect .NET solutions and projects, and skip them with a warning where no .NET SDK is installed.
+
 ### Fixed
 - `--exclude-paths` now also excludes modules a build reaches outside its own directory, such as Maven `../` modules and relocated Gradle projects, when Socket facts are generated for each build root.
 

@@ -9,6 +9,7 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   meta        tool  toolVersion  javaVersion
 //   buildRoot   path                                     (absolute; the facts file's directory)
 //   entry       path                                     (file-addressed builds; build-root-relative)
+//   member      path                                     (dotnet --members: a project the entry builds; build-root-relative)
 //   project     projectKey  group  name  version  dir
 //   projectSrc  projectKey  path                         (--with-files only)
 //   projectTgt  projectKey  path                         (--with-files only)
@@ -18,6 +19,7 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)
+//   compileFile rootId  coordId  path                    (dotnet, --with-files only; what sources compile against)
 //   unfetched   rootId  coordId                          (--with-files only; requested artifact not fetched)
 //   scanned     config
 //   failure     coord  detail  config  projectKey   (config empty: not placeable in one)
@@ -47,6 +49,8 @@ export type RawNode = {
   project: string
   // --with-files only.
   targets: string[]
+  // dotnet, --with-files only.
+  compileTargets: string[]
   unfetched: boolean
 }
 
@@ -55,8 +59,24 @@ export type RawRoot = {
   projectKey: string
   config: string
   prod: boolean
+  // dotnet: the target framework's NuGet short folder name, the runtime
+  // identifier of a runtime-specific target, and the framework's alias in
+  // the project; empty otherwise.
+  framework: string
+  runtime: string
+  alias: string
   nodes: Map<string, RawNode>
   edges: Array<[string, string]>
+}
+
+export type RawUsing = { namespace: string; alias: string; static: boolean }
+
+// One dotnet target framework build of a project, by its alias.
+export type RawBuild = {
+  sources: string[]
+  targets: string[]
+  info: Map<string, string[]>
+  usings: RawUsing[]
 }
 
 export type RawProject = {
@@ -69,6 +89,7 @@ export type RawProject = {
   targets: string[]
   // The project's build files, build-root-relative.
   buildFiles: string[]
+  builds: Map<string, RawBuild>
 }
 
 export type ParsedRecords = {
@@ -81,6 +102,7 @@ export type ParsedRecords = {
   // directory-addressed build.
   entry: string
   projects: Map<string, RawProject>
+  members: string[]
   // Excluded from the scan: not projects of their own, but their paths serve
   // the kept projects depending on them.
   excludedProjects: Map<string, RawProject>
@@ -119,6 +141,7 @@ export function parseRecords(text: string): ParsedRecords {
     buildRoot: '',
     entry: '',
     projects: new Map(),
+    members: [],
     excludedProjects: new Map(),
     roots: new Map(),
     scannedConfigs: [],
@@ -136,6 +159,9 @@ export function parseRecords(text: string): ParsedRecords {
         projectKey: '',
         config: '',
         prod: false,
+        framework: '',
+        runtime: '',
+        alias: '',
         nodes: new Map(),
         edges: [],
       }
@@ -155,13 +181,26 @@ export function parseRecords(text: string): ParsedRecords {
         sources: [],
         targets: [],
         buildFiles: [],
+        builds: new Map(),
       }
       result.projects.set(key, p)
     }
     return p
   }
 
-  for (const rawLine of text.split('\n')) {
+  const build = (key: string, config: string): RawBuild => {
+    const builds = project(key).builds
+    let b = builds.get(config)
+    if (!b) {
+      b = { sources: [], targets: [], info: new Map(), usings: [] }
+      builds.set(config, b)
+    }
+    return b
+  }
+
+  for (const line of text.split('\n')) {
+    // Tolerates an emitter that writes CRLF line endings.
+    const rawLine = line.endsWith('\r') ? line.slice(0, -1) : line
     if (!rawLine) {
       continue
     }
@@ -178,6 +217,11 @@ export function parseRecords(text: string): ParsedRecords {
       case 'entry':
         result.entry = f[1] ?? ''
         break
+      case 'member':
+        if (f[1]) {
+          result.members.push(f[1])
+        }
+        break
       case 'project': {
         const p = project(f[1] ?? '')
         p.group = f[2] ?? ''
@@ -189,11 +233,32 @@ export function parseRecords(text: string): ParsedRecords {
       case 'projectSrc':
         if (f[2]) {
           project(f[1] ?? '').sources.push(f[2])
+          if (f[3]) {
+            build(f[1] ?? '', f[3]).sources.push(f[2])
+          }
         }
         break
       case 'projectTgt':
         if (f[2]) {
           project(f[1] ?? '').targets.push(f[2])
+          if (f[3]) {
+            build(f[1] ?? '', f[3]).targets.push(f[2])
+          }
+        }
+        break
+      case 'projectInfo':
+        if (f[2] && f[3] && f[4]) {
+          const info = build(f[1] ?? '', f[2]).info
+          info.set(f[3], [...(info.get(f[3]) ?? []), f[4]])
+        }
+        break
+      case 'projectUsing':
+        if (f[2] && f[3]) {
+          build(f[1] ?? '', f[2]).usings.push({
+            namespace: f[3],
+            alias: f[4] ?? '',
+            static: bool(f[5]),
+          })
         }
         break
       case 'excludedProject':
@@ -209,6 +274,9 @@ export function parseRecords(text: string): ParsedRecords {
         r.projectKey = f[2] ?? ''
         r.config = f[3] ?? ''
         r.prod = bool(f[4])
+        r.framework = f[5] ?? ''
+        r.runtime = f[6] ?? ''
+        r.alias = f[7] ?? ''
         break
       }
       case 'node': {
@@ -226,6 +294,7 @@ export function parseRecords(text: string): ParsedRecords {
           direct: bool(f[8]),
           project: f[9] ?? '',
           targets: [],
+          compileTargets: [],
           unfetched: false,
         })
         break
@@ -249,6 +318,13 @@ export function parseRecords(text: string): ParsedRecords {
         const node = root(f[1] ?? '').nodes.get(f[2] ?? '')
         if (node && f[3]) {
           node.targets.push(f[3])
+        }
+        break
+      }
+      case 'compileFile': {
+        const node = root(f[1] ?? '').nodes.get(f[2] ?? '')
+        if (node && f[3]) {
+          node.compileTargets.push(f[3])
         }
         break
       }

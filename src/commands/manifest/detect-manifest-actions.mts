@@ -1,11 +1,12 @@
 // The point here is to attempt to detect the various supported manifest files
 // the CLI can generate. This would be environments that we can't do server side
 
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 
+import { compareEntryFiles, isBuildFile } from './discover-manifest-roots.mts'
 import {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
@@ -21,6 +22,7 @@ export interface GeneratableManifests {
   conda: boolean
   // The Conda file found at cwd, empty when there is none.
   condaFile: string
+  dotnet: boolean
   gradle: boolean
   maven: boolean
   sbt: boolean
@@ -37,6 +39,21 @@ export function findCondaFile(cwd: string): string {
   return ''
 }
 
+// The solutions and projects at the top of `cwd`, in the order builds there
+// run.
+export function findDotnetEntries(cwd: string): string[] {
+  let entries
+  try {
+    entries = readdirSync(cwd, { withFileTypes: true })
+  } catch {
+    return []
+  }
+  return entries
+    .filter(e => e.isFile() && isBuildFile('dotnet', e.name))
+    .map(e => e.name)
+    .sort(compareEntryFiles)
+}
+
 export async function detectManifestActions(
   // Passing in null means we attempt detection for every supported language
   // regardless of local socket.json status. Sometimes we want that.
@@ -49,6 +66,7 @@ export async function detectManifestActions(
     count: 0,
     conda: false,
     condaFile: '',
+    dotnet: false,
     gradle: false,
     maven: false,
     sbt: false,
@@ -107,6 +125,17 @@ export async function detectManifestActions(
   } else if (existsSync(path.join(cwd, 'pom.xml'))) {
     debugLog('notice', '[DEBUG] - Detected a Maven pom.xml build file')
     output.maven = true
+    output.count += 1
+  }
+
+  if (sockJson?.defaults?.manifest?.dotnet?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - dotnet auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (findDotnetEntries(cwd).length) {
+    debugLog('notice', '[DEBUG] - Detected a .NET solution or project file')
+    output.dotnet = true
     output.count += 1
   }
 

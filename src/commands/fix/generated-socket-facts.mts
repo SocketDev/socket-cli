@@ -3,10 +3,13 @@ import path from 'node:path'
 
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
+
 export type GeneratedSocketFacts = {
   paths: string[]
   // The facts files' per-project classpaths, outside the repository.
   sidecarFile: string | undefined
+  sidecar: ResolvedPathsSidecar | undefined
   remove: () => Promise<void>
   restore: () => Promise<void>
 }
@@ -54,6 +57,7 @@ export async function generateSocketFactsForFix({
   }
   let paths: string[]
   let sidecarFile: string | undefined
+  let sidecar: ResolvedPathsSidecar | undefined
   try {
     const { factsPaths, resolvedPathsSidecar } = await runDynamicSbomInference({
       cwd,
@@ -63,6 +67,7 @@ export async function generateSocketFactsForFix({
       withFiles: false,
     })
     paths = factsPaths.map(p => path.resolve(cwd, p))
+    sidecar = resolvedPathsSidecar
     if (resolvedPathsSidecar) {
       sidecarFile = path.join(tmpDir, 'sidecar.json')
       await writeFile(sidecarFile, JSON.stringify(resolvedPathsSidecar))
@@ -79,6 +84,7 @@ export async function generateSocketFactsForFix({
   ]
   return {
     paths,
+    sidecar,
     sidecarFile,
     remove: () => reset(paths),
     restore: () => restoreAll(backups),

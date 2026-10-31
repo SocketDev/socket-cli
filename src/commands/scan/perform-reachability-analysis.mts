@@ -16,7 +16,10 @@ import {
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
-import { hasResolvedPathsSidecarEntries } from '../manifest/scripts/sidecar.mts'
+import {
+  hasResolvedPathsSidecarEntries,
+  useOnlySocketFactsArtifactsFlags,
+} from '../manifest/scripts/sidecar.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -269,7 +272,7 @@ export async function performReachabilityAnalysis(
     // sidecarPath is always set above when this is true - Coana rejects this
     // flag without one.
     ...(reachabilityOptions.dynamicSbomInference
-      ? ['--maven-use-only-socket-facts']
+      ? useOnlySocketFactsArtifactsFlags(resolvedPathsSidecar)
       : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms

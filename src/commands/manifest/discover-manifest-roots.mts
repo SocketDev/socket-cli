@@ -3,17 +3,21 @@ import path from 'node:path'
 
 import micromatch from 'micromatch'
 
-import { BUILD_FILES } from './scripts/build-tool.mts'
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+import { BUILD_FILES, isDotnetSolution } from './scripts/build-tool.mts'
+import { listDotnetEntryProjects } from './scripts/run.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
+import type { ManifestScriptOptions } from './scripts/run.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 import type { SocketYml } from '@socketsecurity/config'
 
-const BUILD_TOOLS: BuildTool[] = ['gradle', 'maven', 'sbt']
+const BUILD_TOOLS: BuildTool[] = ['dotnet', 'gradle', 'maven', 'sbt']
 
 const BUILD_FILE_MATCHERS = new Map(
   BUILD_TOOLS.map(tool => {
@@ -35,11 +39,25 @@ export function buildRootPath(root: BuildRoot): string {
   return path.join(root.dir, root.entryFile ?? '')
 }
 
+export function isBuildFile(tool: BuildTool, basename: string): boolean {
+  return !!BUILD_FILE_MATCHERS.get(tool)?.(basename)
+}
+
 function buildFileTool(
   tools: readonly BuildTool[],
   basename: string,
 ): BuildTool | undefined {
-  return tools.find(tool => BUILD_FILE_MATCHERS.get(tool)?.(basename))
+  return tools.find(tool => isBuildFile(tool, basename))
+}
+
+function solutionsFirst(file: string): number {
+  return isDotnetSolution(file) ? 0 : 1
+}
+
+// Within one directory: solutions before projects (a solution covers the
+// projects it lists), then by name.
+export function compareEntryFiles(a: string, b: string): number {
+  return solutionsFirst(a) - solutionsFirst(b) || compareStrings(a, b)
 }
 
 // A disabled ecosystem is skipped entirely by the glob scan below, so a
@@ -67,27 +85,35 @@ export function withoutDisabledFlags(sockJson: SocketJson): SocketJson {
 
 export { realpathOrResolved }
 
+// Coverage compares files by their realpath-resolved directory.
+async function realFilePath(file: string): Promise<string> {
+  return path.join(
+    await realpathOrResolved(path.dirname(file)),
+    path.basename(file),
+  )
+}
+
 // Gradle reports a project's build file even when absent, which covers
 // nothing. A sibling outside the build root is independently locatable.
 export async function addCoveredBuildFiles(
   covered: Set<string>,
+  tool: BuildTool,
   buildRoot: string,
   projects: readonly SocketFactsSbomProject[],
 ): Promise<void> {
+  const buildFiles = BUILD_FILES[tool]
+  const anywhere = buildFiles.byFile && !!buildFiles.projectsResolveAlone
   const realBuildRoot = await realpathOrResolved(buildRoot)
   const files = await Promise.all(
     projects
       .flatMap(project => project.manifestFiles ?? [])
-      .map(async ({ file }) => {
-        const resolved = path.resolve(buildRoot, file)
-        return path.join(
-          await realpathOrResolved(path.dirname(resolved)),
-          path.basename(resolved),
-        )
-      }),
+      .map(({ file }) => realFilePath(path.resolve(buildRoot, file))),
   )
   for (const file of files) {
-    if (file.startsWith(`${realBuildRoot}${path.sep}`) && existsSync(file)) {
+    if (
+      (anywhere || file.startsWith(`${realBuildRoot}${path.sep}`)) &&
+      existsSync(file)
+    ) {
       covered.add(file)
     }
   }
@@ -106,6 +132,46 @@ export function isBuildRootCovered(
   return files.names.some(name => covered.has(path.join(root.dir, name)))
 }
 
+// A dotnet solution is covered once every project it builds is, or, when the
+// SDK cannot read it, by a same-named solution in the other format beside it
+// (`dotnet sln migrate` writes App.slnx next to App.sln) that it can read.
+export async function isSolutionCovered(
+  covered: ReadonlySet<string>,
+  root: BuildRoot,
+  opts: Pick<
+    ManifestScriptOptions,
+    'bin' | 'excludeBase' | 'excludePaths' | 'toolOpts'
+  >,
+  listMembers: typeof listDotnetEntryProjects = listDotnetEntryProjects,
+): Promise<boolean> {
+  const { entryFile } = root
+  if (!entryFile || !isDotnetSolution(entryFile)) {
+    return false
+  }
+  const twin = entryFile.replace(/\.slnx?$/i, ext =>
+    ext.toLowerCase() === '.sln' ? '.slnx' : '.sln',
+  )
+  const hasTwin = existsSync(path.join(root.dir, twin))
+  if (!covered.size && !hasTwin) {
+    return false
+  }
+  const list = (file: string) =>
+    listMembers({ ...opts, entryFile: file, projectDir: root.dir })
+  const listed = await list(entryFile)
+  if (!listed) {
+    // Unless the twin is readable, this one is built and its failure shows.
+    if (!hasTwin || !(await list(twin))) {
+      return false
+    }
+    logger.warn(
+      `Skipping ${buildRootPath(root)}: the .NET SDK could not read it; ${twin} beside it is built instead.`,
+    )
+    return true
+  }
+  const members = await Promise.all(listed.map(realFilePath))
+  return !!members.length && members.every(member => covered.has(member))
+}
+
 function compareStrings(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0
 }
@@ -122,7 +188,7 @@ export function sortByDepthThenPath<T extends BuildRoot>(
     return (
       depthA - depthB ||
       compareStrings(relA, relB) ||
-      compareStrings(a.entryFile ?? '', b.entryFile ?? '')
+      compareEntryFiles(a.entryFile ?? '', b.entryFile ?? '')
     )
   })
 }
