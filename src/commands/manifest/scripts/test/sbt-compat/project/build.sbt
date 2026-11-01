@@ -1,5 +1,6 @@
-// Minimal cross-sbt smoke project for ../../socket-facts.plugin.scala. Resolves one prod dep and one
-// test dep so the smoke test can assert the prod/dev split and --with-files materialization. Both are
+// Minimal cross-sbt smoke project for ../../socket-facts.plugin.scala. Resolves prod deps (two through
+// a Maven relocation) and one test dep so the smoke test can assert the prod/dev split, relocations
+// and --with-files materialization. All are
 // stub artifacts generated into `localrepo` at test time (../../make-stub-repo.sh): plain Java
 // artifacts needing no Scala cross-version, never compiled against, so they can never age into a CVE
 // alert or a version bump. Uses the `in ThisBuild` setting form (not the `/` slash form) so it parses
@@ -20,5 +21,7 @@ lazy val root = (project in file("."))
       "Maven Central" at "https://repo1.maven.org/maven2/"
     ) ++ resolvers.value,
     libraryDependencies += "demo.ext" % "tool" % "1.0",
+    // Relocated to demo.ext:moved; tool depends on demo.old:legacy, relocated to demo.ext:legacy.
+    libraryDependencies += "demo.old" % "moved" % "1.0",
     libraryDependencies += "demo.ext" % "harness" % "1.0" % Test
   )

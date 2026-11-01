@@ -115,6 +115,7 @@ run_sbt() {
       bash "$HERE/sbt-compat/smoke-test-exclude-base.sh" "$ver" "$scala"
     fi
     bash "$HERE/sbt-compat/smoke-test-failure.sh" "$ver" "$scala" ${resolver:+"$resolver"}
+    bash "$HERE/sbt-compat/smoke-test-relocation.sh" "$ver" "$scala" ${resolver:+"$resolver"}
   done
 }
 

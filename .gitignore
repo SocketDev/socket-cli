@@ -47,6 +47,12 @@ test/fixtures/commands/fix/e2e-test-py-temp-*
 /src/commands/manifest/scripts/test/sbt-compat/project/localrepo/
 /src/commands/manifest/scripts/test/sbt-compat/project/records.tsv
 /src/commands/manifest/scripts/test/sbt-compat/project/target/
+/src/commands/manifest/scripts/test/sbt-compat/relocation/*/target/
+/src/commands/manifest/scripts/test/sbt-compat/relocation/localrepo/
+/src/commands/manifest/scripts/test/sbt-compat/relocation/project/
+/src/commands/manifest/scripts/test/sbt-compat/relocation/records.tsv
+/src/commands/manifest/scripts/test/sbt-compat/relocation/scala-version.sbt
+/src/commands/manifest/scripts/test/sbt-compat/relocation/target/
 
 # Generated when the dynamic SBOM inference tests walk their fixtures
 # (test/fixtures/commands/manifest/dynamic-sbom-inference). Those fixtures are

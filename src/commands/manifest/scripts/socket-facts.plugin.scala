@@ -186,11 +186,11 @@ object SocketFactsPlugin extends AutoPlugin {
 
   // ---- resolution ---------------------------------------------------------
 
-  private def rootIdOf(extracted: Extracted, ref: ProjectRef): ModuleID = {
-    val sv = extracted.get(scalaVersion.in(ref))
-    val sbv = extracted.get(scalaBinaryVersion.in(ref))
-    CrossVersion.apply(sv, sbv)(extracted.get(projectID.in(ref)))
-  }
+  private def crossOf(extracted: Extracted, ref: ProjectRef): ModuleID => ModuleID =
+    CrossVersion.apply(extracted.get(scalaVersion.in(ref)), extracted.get(scalaBinaryVersion.in(ref)))
+
+  private def rootIdOf(extracted: Extracted, ref: ProjectRef): ModuleID =
+    crossOf(extracted, ref)(extracted.get(projectID.in(ref)))
 
   // GAV -> a build module's real artifact extension (jar for a normal project). coursier reports an
   // inter-project dependency with no resolved artifact, so it would otherwise be ext-less and not
@@ -346,6 +346,47 @@ object SocketFactsPlugin extends AutoPlugin {
     dbf.newDocumentBuilder().parse(f)
   }
 
+  // Child elements by local name; "*" for all.
+  private def pomKids(e: org.w3c.dom.Element, name: String): Seq[org.w3c.dom.Element] = {
+    val ns = e.getChildNodes
+    (0 until ns.getLength).map(ns.item).collect {
+      case c: org.w3c.dom.Element if name == "*" || c.getNodeName.split(':').last == name => c
+    }
+  }
+
+  private def pomText(e: org.w3c.dom.Element, name: String): Option[String] =
+    pomKids(e, name).headOption.map(_.getTextContent.trim).filter(_.nonEmpty)
+
+  private def pomGroupId(e: org.w3c.dom.Element): String =
+    pomText(e, "groupId").orElse(pomKids(e, "parent").headOption.flatMap(pomText(_, "groupId"))).getOrElse("")
+
+  private val PropertyRef = "\\$\\{([^}]+)\\}".r
+
+  // A POM after inheritance: its dependencies (groupId:artifactId -> declared scope, optional), its
+  // managed scopes, the BOMs it imports, and its properties.
+  private final case class PomModel(
+      deps: Map[String, (String, Boolean)],
+      managed: Map[String, String],
+      imports: Seq[(String, String, String)],
+      props: Map[String, String])
+
+  private object PomModel {
+    val empty = PomModel(Map.empty, Map.empty, Nil, Map.empty)
+  }
+
+  // Until nothing changes, as a property's value may refer to another.
+  private def interpolate(s: String, props: Map[String, String]): String = {
+    var cur = s
+    var prev = ""
+    var rounds = 0
+    while (cur != prev && rounds < 16) {
+      prev = cur
+      cur = PropertyRef.replaceAllIn(cur, m => java.util.regex.Matcher.quoteReplacement(props.getOrElse(m.group(1), m.matched)))
+      rounds += 1
+    }
+    cur
+  }
+
   // Ivy's ResolveOptions.getDefaultResolveId: `<organisation>-<module>` of the resolved descriptor.
   private def ivyResolveId(descriptor: File): Option[String] =
     try {
@@ -464,10 +505,21 @@ object SocketFactsPlugin extends AutoPlugin {
       !m.evicted && !moduleExts.contains(gavKey(m.module)) && !unresolved.contains(gavKey(m.module))
 
     def confsOf(r: ProjectRef): Seq[Configuration] = extracted.getOpt(ivyConfigurations.in(r)).getOrElse(Nil)
+    lazy val refByProject: Map[String, ProjectRef] = extracted.structure.allProjectRefs.map(r => r.project -> r).toMap
+    // Whether build project `r` declares module `c` in one of `confs`. A declaration without a
+    // configuration goes to Compile; the report names the module cross-versioned.
+    def declares(r: ProjectRef, c: ModuleID, confs: Set[String]): Boolean = {
+      val cross = crossOf(extracted, r)
+      extracted.getOpt(libraryDependencies.in(r)).getOrElse(Nil).exists { d =>
+        val masters = d.configurations.getOrElse("compile").split(';').flatMap(_.split("->").head.split(',')).map(_.trim)
+        d.organization == c.organization && cross(d).name == c.name && masters.exists(m => m == "*" || confs(m))
+      }
+    }
     val buildDeps = extracted.get(buildDependencies)
 
-    // Classpaths.interSort, recording the (project -> dependency project) edges it follows.
-    def interProjectEdges(conf: Configuration): mutable.LinkedHashSet[(ProjectRef, ProjectRef)] = {
+    // Classpaths.interSort, recording the (project -> dependency project) edges it follows and the
+    // configurations of each project it reaches.
+    def interProjectEdges(conf: Configuration): (mutable.LinkedHashSet[(ProjectRef, ProjectRef)], Map[String, Set[String]]) = {
       val masterConfs = confsOf(ref).map(_.name)
       val visited = mutable.HashSet.empty[(ProjectRef, String)]
       val edges = mutable.LinkedHashSet.empty[(ProjectRef, ProjectRef)]
@@ -488,7 +540,7 @@ object SocketFactsPlugin extends AutoPlugin {
         }
       }
       visit(ref, conf)
-      edges
+      (edges, visited.toSeq.groupBy(_._1.project).map { case (p, vs) => p -> vs.map(_._2).toSet })
     }
 
     def buildModuleCoord(r: ProjectRef): Coord = {
@@ -510,6 +562,7 @@ object SocketFactsPlugin extends AutoPlugin {
         val nodes = mutable.LinkedHashMap.empty[String, Node]
         // org:name -> component ids (caller edges are module-level).
         val midToIds = mutable.HashMap.empty[String, mutable.LinkedHashSet[String]]
+        var reachedConfs = Map.empty[String, Set[String]]
 
         confsOf(ref).find(_.name == cfg).foreach { conf =>
           // Keyed by project id, as projects need not have distinct coordinates.
@@ -522,7 +575,9 @@ object SocketFactsPlugin extends AutoPlugin {
             })
             r.project
           }
-          interProjectEdges(conf).foreach { case (p, d) =>
+          val (edges, reached) = interProjectEdges(conf)
+          reachedConfs = reached
+          edges.foreach { case (p, d) =>
             val child = buildModuleNode(d)
             if (p == ref) nodes(child).direct = true
             else nodes(buildModuleNode(p)).children += child
@@ -549,19 +604,29 @@ object SocketFactsPlugin extends AutoPlugin {
         }
 
         // Caller edges within this config: a root caller marks the child direct, any other becomes its parent.
-        cr.modules.foreach { m =>
-          if (emittable(m)) {
-            midToIds.get(moduleKey(m.module)).foreach { childIds =>
-              // lm-coursier gives a declared caller its declared revision, not the resolved one, so
-              // callers match by org:name (a configuration resolves one version per module).
-              m.callers.foreach { c =>
-                val callerKey = moduleKey(c.caller)
-                if (callerKey == rootKey) childIds.foreach(cid => nodes(cid).direct = true)
-                else
-                  midToIds.get(callerKey).foreach { parentIds =>
-                    // Drop self-edges (test → main resolving to the same coordinate), matching gradle.
-                    parentIds.foreach(pid => childIds.foreach(cid => if (pid != cid) nodes(pid).children += cid))
-                  }
+        // Coursier resolves a Maven relocation's target in place of the relocating module, but reports
+        // neither the relocating module nor who declared it, so that caller is missing from the report.
+        // Its declarers are read off the build's own declarations and the POMs instead.
+        val candidates = cr.modules.filter(emittable)
+        // Drops self-edges (test → main resolving to the same coordinate), matching gradle.
+        def link(parentIds: Iterable[String], childIds: Iterable[String]): Unit =
+          parentIds.foreach(pid => childIds.foreach(cid => if (pid != cid) nodes(pid).children += cid))
+        def declaredBy(p: String, c: ModuleID): Boolean =
+          refByProject.get(p).exists(declares(_, c, reachedConfs.getOrElse(p, Set.empty)))
+        candidates.foreach { m =>
+          midToIds.get(moduleKey(m.module)).foreach { childIds =>
+            // lm-coursier gives a declared caller its declared revision, not the resolved one, so
+            // callers match by org:name (a configuration resolves one version per module).
+            m.callers.foreach { c =>
+              val callerKey = moduleKey(c.caller)
+              if (callerKey == rootKey) childIds.foreach(cid => nodes(cid).direct = true)
+              else midToIds.get(callerKey) match {
+                case Some(parentIds) => link(parentIds, childIds)
+                case None if !resolver.ivy && resolver.poms.relocates(c.caller, m) =>
+                  if (declaredBy(ref.project, c.caller)) childIds.foreach(cid => nodes(cid).direct = true)
+                  link(nodes.collect { case (nid, n) if n.project.nonEmpty && declaredBy(n.project, c.caller) => nid }, childIds)
+                  resolver.poms.declaringModules(c.caller, candidates).foreach(p => midToIds.get(moduleKey(p)).foreach(link(_, childIds)))
+                case None =>
               }
             }
           }
@@ -592,7 +657,7 @@ object SocketFactsPlugin extends AutoPlugin {
 
   // Artifacts the resolver expected and did not fetch. Under Ivy they come from its resolution report
   // instead (see ivyUnfetchedOf).
-  private final class Resolver(val ivy: Boolean, poms: PomPackaging) {
+  private final class Resolver(val ivy: Boolean, val poms: PomPackaging) {
     def missingOf(m: ModuleReport): List[Artifact] =
       if (ivy) Nil else Option(m.missingArtifacts).toList.flatten.filterNot(poms.isUnexpectedDefault)
   }
@@ -601,15 +666,126 @@ object SocketFactsPlugin extends AutoPlugin {
   // the POM declares a jar packaging. Only the module's own POM tells whether its artifact is a jar
   // (packaging defaults to jar, so a parent's never applies); an unreadable POM counts as one.
   private final class PomPackaging(csrCacheDir: Option[File]) {
-    private val memo = mutable.HashMap.empty[String, Boolean]
+    private val pomMemo = mutable.HashMap.empty[String, Option[org.w3c.dom.Element]]
+
+    private def pom(url: String): Option[org.w3c.dom.Element] =
+      pomMemo.getOrElseUpdate(url, coursierLocalFiles(url, csrCacheDir).find(_.isFile).flatMap { f =>
+        try Some(parseXml(f).getDocumentElement)
+        catch { case _: Exception => None }
+      })
+
+    // Maven repository layout.
+    private def moduleDir(base: String, org: String, name: String): String =
+      base + org.replace('.', '/') + "/" + name + "/"
+
+    private def pomUrl(base: String, org: String, name: String, rev: String): String =
+      moduleDir(base, org, name) + rev + "/" + name + "-" + rev + ".pom"
+
+    // The repository root a module's artifacts were fetched from.
+    private def repoBase(m: ModuleReport): Option[String] = {
+      val mid = m.module
+      val marker = moduleDir("/", mid.organization, mid.name) + orEmpty(mid.revision) + "/"
+      val urls = Option(m.artifacts).toList.flatten.flatMap(_._1.url) ++
+        Option(m.missingArtifacts).toList.flatten.flatMap(_.url)
+      urls.map(_.toString).collectFirst { case u if u.contains(marker) => u.substring(0, u.indexOf(marker) + 1) }
+    }
+
+    private val modelMemo = mutable.HashMap.empty[String, PomModel]
+
+    // Maven model inheritance and interpolation of a POM, as far as its dependencies' scopes need.
+    private def model(base: String, org: String, name: String, rev: String, depth: Int): PomModel = {
+      val url = pomUrl(base, org, name, rev)
+      modelMemo.getOrElseUpdate(url, pom(url) match {
+        case None => PomModel.empty
+        case Some(e) =>
+          val parent = pomKids(e, "parent").headOption
+          val pm = parent match {
+            case Some(p) if depth < 16 =>
+              model(base, pomText(p, "groupId").getOrElse(""), pomText(p, "artifactId").getOrElse(""),
+                pomText(p, "version").getOrElse(""), depth + 1)
+            case _ => PomModel.empty
+          }
+          val groupId = pomGroupId(e)
+          val artifactId = pomText(e, "artifactId").getOrElse("")
+          val version = pomText(e, "version").orElse(parent.flatMap(pomText(_, "version"))).getOrElse("")
+          val own = pomKids(e, "properties").flatMap(ps => pomKids(ps, "*")).map(p => p.getNodeName.split(':').last -> p.getTextContent.trim)
+          val props = pm.props ++ own ++ Seq(
+            "project.groupId" -> groupId, "pom.groupId" -> groupId, "groupId" -> groupId,
+            "project.artifactId" -> artifactId, "pom.artifactId" -> artifactId, "artifactId" -> artifactId,
+            "project.version" -> version, "pom.version" -> version, "version" -> version
+          ) ++ parent.toSeq.flatMap { p =>
+            Seq("project.parent.groupId" -> pomText(p, "groupId").getOrElse(""),
+              "project.parent.version" -> pomText(p, "version").getOrElse(""))
+          }
+          def field(d: _root_.org.w3c.dom.Element, name: String) = interpolate(pomText(d, name).getOrElse(""), props)
+          def ga(d: _root_.org.w3c.dom.Element) = field(d, "groupId") + ":" + field(d, "artifactId")
+          val deps = pomKids(e, "dependencies").flatMap(ds => pomKids(ds, "dependency"))
+          val managed = pomKids(e, "dependencyManagement").flatMap(pomKids(_, "dependencies")).flatMap(pomKids(_, "dependency"))
+          val (imports, scoped) = managed.partition(d => field(d, "scope") == "import" && field(d, "type") == "pom")
+          PomModel(
+            pm.deps ++ deps.map(d => ga(d) -> ((field(d, "scope"), field(d, "optional") == "true"))),
+            pm.managed ++ scoped.map(d => ga(d) -> field(d, "scope")),
+            imports.map(d => (field(d, "groupId"), field(d, "artifactId"), field(d, "version"))) ++ pm.imports,
+            props)
+      })
+    }
+
+    private val managedMemo = mutable.HashMap.empty[String, Map[String, String]]
+
+    // Managed scopes after BOM imports: the POM's own and inherited entries win, then the first import.
+    private def managedScopes(base: String, org: String, name: String, rev: String, depth: Int): Map[String, String] =
+      managedMemo.getOrElseUpdate(pomUrl(base, org, name, rev), {
+        val m = model(base, org, name, rev, 0)
+        m.imports.reverse.foldLeft(Map.empty[String, String]) { case (acc, (g, a, v)) =>
+          if (depth < 16) acc ++ managedScopes(base, g, a, v, depth + 1) else acc
+        } ++ m.managed
+      })
+
+    // org:name of the modules each relocating module's cached POMs relocate to.
+    private val relocationsMemo = mutable.HashMap.empty[(String, String), Set[String]]
+
+    // Whether `relocating` is a POM relocated to `target`'s module. The report gives the relocating
+    // module its declared revision, which may be a range, so every cached version is tried; the
+    // target may have resolved to another version than the relocation names.
+    def relocates(relocating: ModuleID, target: ModuleReport): Boolean =
+      repoBase(target).exists { base =>
+        relocationsMemo.getOrElseUpdate((base, gavKey(relocating)), {
+          val dir = moduleDir(base, relocating.organization, relocating.name)
+          val versions = orEmpty(relocating.revision) +: coursierLocalFiles(dir, csrCacheDir)
+            .flatMap(d => Option(d.listFiles).toSeq.flatten).filter(_.isDirectory).map(_.getName)
+          versions.distinct.flatMap { v =>
+            pom(pomUrl(base, relocating.organization, relocating.name, v)).toSeq.flatMap { e =>
+              pomKids(e, "distributionManagement").flatMap(pomKids(_, "relocation")).headOption.map { r =>
+                pomText(r, "groupId").getOrElse(pomGroupId(e)) + ":" +
+                  pomText(r, "artifactId").orElse(pomText(e, "artifactId")).getOrElse("")
+              }
+            }
+          }.toSet
+        })(moduleKey(target.module))
+      }
+
+    // The modules among `candidates` whose POM passes `declared` on to their dependents: compile or
+    // runtime scope, declared or managed, and not optional.
+    def declaringModules(declared: ModuleID, candidates: Seq[ModuleReport]): Seq[ModuleID] = {
+      val key = moduleKey(declared)
+      candidates.filter { p =>
+        repoBase(p).exists { base =>
+          val m = model(base, p.module.organization, p.module.name, orEmpty(p.module.revision), 0)
+          m.deps.get(key).exists { case (scope, optional) =>
+            val effective =
+              if (scope.nonEmpty) scope
+              else managedScopes(base, p.module.organization, p.module.name, orEmpty(p.module.revision), 0).getOrElse(key, "")
+            Set("", "compile", "runtime")(effective) && !optional
+          }
+        }
+      }.map(_.module)
+    }
 
     def isUnexpectedDefault(a: Artifact): Boolean = {
       val ext = extOf(a)
       a.classifier.isEmpty && ext == "jar" && a.url.map(_.toString).exists { url =>
-        url.endsWith("." + ext) && memo.getOrElseUpdate(url, {
-          val pomUrl = url.dropRight(ext.length) + "pom"
-          coursierLocalFiles(pomUrl, csrCacheDir).find(_.isFile).flatMap(pomPackaging).exists(p => !JarPackagings(p))
-        })
+        url.endsWith("." + ext) &&
+          pom(url.dropRight(ext.length) + "pom").exists(e => !JarPackagings(pomText(e, "packaging").getOrElse("jar")))
       }
     }
   }
@@ -642,16 +818,6 @@ object SocketFactsPlugin extends AutoPlugin {
     s.flatMap { ch =>
       if (ch > 128 || " %$&+,:;=?@<>#".indexOf(ch) >= 0) "%" + "%02X".format(ch.toInt) else ch.toString
     }
-
-  // Maven's default packaging is jar.
-  private def pomPackaging(pom: File): Option[String] =
-    try {
-      val kids = parseXml(pom).getDocumentElement.getChildNodes
-      val declared = (0 until kids.getLength).map(kids.item).collectFirst {
-        case e: org.w3c.dom.Element if e.getNodeName.split(':').last == "packaging" => e.getTextContent.trim
-      }
-      Some(declared.filter(_.nonEmpty).getOrElse("jar"))
-    } catch { case _: Exception => None }
 
   // ---- config selection ---------------------------------------------------
 

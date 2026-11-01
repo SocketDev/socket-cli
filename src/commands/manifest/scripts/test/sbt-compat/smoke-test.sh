@@ -8,6 +8,8 @@
 #  - tool appears in a prod root, harness only in non-prod roots -> the assembler's dev flag;
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
 #  - both get an on-disk jar `file` record under -Dsocket.withFiles;
+#  - a Maven relocation's target, declared directly (demo.old:moved) or through a dependency
+#    (demo.old:legacy, from tool), stays in the graph although coursier leaves its caller out of the report;
 #  - a source in the base dir is a `projectSrc` file, never the base dir itself.
 #
 # Both deps are stubs generated into project/localrepo at test time (../make-stub-repo.sh, shared with
@@ -27,7 +29,13 @@ RECORDS="$PROJECT/records.tsv"
 IVY="$SOCKET_COMPAT_CACHE/ivy2"
 export COURSIER_CACHE="$SOCKET_COMPAT_CACHE/coursier"
 
-bash "$HERE/../make-stub-repo.sh" "$PROJECT/localrepo" 'demo.ext:tool:1.0' 'demo.ext:harness:1.0'
+bash "$HERE/../make-stub-repo.sh" "$PROJECT/localrepo" \
+  'demo.ext:tool:1.0+demo.old:legacy:1.0' \
+  'demo.old:legacy:1.0>demo.ext:legacy:1.0' \
+  'demo.ext:legacy:1.0' \
+  'demo.old:moved:1.0>demo.ext:moved:1.0' \
+  'demo.ext:moved:1.0' \
+  'demo.ext:harness:1.0'
 # scala-library and friends stay cached between runs; the stubs never do, so every run has to
 # resolve them from the repo just generated. Only Ivy caches them — coursier reads a `file:`
 # repository in place.
@@ -72,6 +80,9 @@ if harness in nodes and any(roots.get(rid) for rid in nodes[harness]):
 def has_jar(cid): return any(p.endswith('.jar') for p in files.get(cid, ()))
 for cid in (tool, harness):
     if not has_jar(cid): errors.append(f"{cid} missing materialized jar under --with-files: {files.get(cid)}")
+for cid in ('demo.ext:legacy:jar:1.0', 'demo.ext:moved:jar:1.0'):
+    if cid not in nodes: errors.append(f"relocation target missing: {cid}")
+    elif not any(roots.get(rid) for rid in nodes[cid]): errors.append(f"relocation target {cid} not in a prod root")
 if os.path.join(base, 'Base.scala') not in srcs: errors.append(f"base-dir source Base.scala not a projectSrc: {sorted(srcs)}")
 if base in srcs: errors.append("base dir emitted as a projectSrc root")
 

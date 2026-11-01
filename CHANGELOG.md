@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `--exclude-paths` patterns are now matched relative to the scan root in every build root. They now also exclude modules a build reaches outside its own directory (Maven `../` modules, relocated Gradle projects) and modules matched by wildcards that span a build-root boundary, such as `*/core`.
 - `--exclude-paths` patterns written with Windows `\` separators now exclude JVM build modules in single-root runs too.
 - Maven SBOMs keep the dependencies a module reaches through a sibling module's test-jar.
+- sbt SBOMs now generate for builds with relocated Maven dependencies, such as `mysql:mysql-connector-java`.
 
 ## [1.12.2](https://github.com/SocketDev/socket-cli/releases/tag/v1.12.2) - 2026-10-30
 
