@@ -1,30 +1,32 @@
 import type {
   AnyPURL,
+  ClasspathEntry,
+  OutputPaths,
   ResolvedArtifactPaths,
   SocketFactsSbom,
   SocketFactsSbomComponent,
   SocketFactsSbomProject,
 } from './facts.mts'
 
+// A build project's code by output set (`main`, `test`, `testFixtures`, ...).
+export type SidecarOutputs = Record<string, OutputPaths>
+
 export type SidecarComponentEntry = SocketFactsSbomComponent & {
-  // Classpath entries (jars, or a sibling project's own build output dirs
-  // when this component is that project). `[]` means resolved and found
-  // nothing (e.g. a pom/BOM); undefined means paths were not resolved.
+  // An external artifact's files: `[]` resolved and found nothing (a pom/BOM),
+  // undefined not resolved. `sources` is always `[]`.
   targets?: string[] | undefined
-  // First-party source roots; `[]` for a genuinely external dependency (still
-  // attempted, nothing to find), not undefined.
   sources?: string[] | undefined
+  // A sibling build project's output sets, in place of `targets`/`sources`.
+  outputs?: SidecarOutputs | undefined
 }
 
 export type SidecarProjectEntry = Omit<SocketFactsSbomProject, 'children'> & {
-  targets?: string[] | undefined
-  sources?: string[] | undefined
+  outputs?: SidecarOutputs | undefined
   // Ids of this facts file's components[] the project depends on directly.
   dependencies: string[]
-  // Ids of this facts file's components[] on the project's classpath: one
-  // version per module, main code's entries before test-only and tooling ones.
+  // The runtime classpath of each output set, the project's own code first.
   // When artifact paths were resolved, in the order the JVM searches them.
-  classpath: string[]
+  classpaths: Record<string, ClasspathEntry[]>
 }
 
 // Frozen contract with `coana run --compute-artifacts-sidecar`; change only
@@ -43,8 +45,8 @@ export type ResolvedPathsSidecar = Record<
     projects: SidecarProjectEntry[]
     // This reactor's dependency-position entries: genuinely external
     // artifacts, and dependency edges that resolve to a sibling first-party
-    // project (reported via that project's own source/target roots instead
-    // of a jar path).
+    // project (reported via that project's output sets instead of a jar
+    // path).
     components: SidecarComponentEntry[]
   }
 >
@@ -54,18 +56,26 @@ export type SidecarAccumulator = Map<
   { projects: SidecarProjectEntry[]; components: SidecarComponentEntry[] }
 >
 
-// `[]` means resolved and found nothing (e.g. a pom/BOM with no artifact); no
-// `targets` means the artifact did not resolve.
+// A build project carries its output sets; an external artifact its files,
+// `targets` absent when it did not resolve.
 function attachPaths<T extends { id: string }>(
   entry: T,
   artifactPaths: ResolvedArtifactPaths,
-): T & { targets?: string[]; sources: string[] } {
+): T & {
+  outputs?: SidecarOutputs
+  sources?: string[]
+  targets?: string[]
+} {
+  const outputs = artifactPaths.outputsByProject.get(entry.id)
+  if (outputs) {
+    return { ...entry, outputs: Object.fromEntries(outputs) }
+  }
   const paths = artifactPaths.pathsById.get(entry.id)
   const targets = paths ? paths.targets : []
   return {
     ...entry,
     ...(targets ? { targets: [...targets] } : {}),
-    sources: [...(paths?.sources ?? [])],
+    sources: [],
   }
 }
 
@@ -104,7 +114,9 @@ export function accumulateSidecar(
         dependencies: [
           ...(artifactPaths.directDependenciesByProject.get(proj.id) ?? []),
         ],
-        classpath: [...(artifactPaths.classpathByProject.get(proj.id) ?? [])],
+        classpaths: Object.fromEntries(
+          artifactPaths.classpathsByProject.get(proj.id) ?? [],
+        ),
       }),
     ),
   })

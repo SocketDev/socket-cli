@@ -14,7 +14,8 @@ import type { SidecarAccumulator } from './sidecar.mts'
 function emptyArtifactPaths(): ResolvedArtifactPaths {
   return {
     pathsById: new Map(),
-    classpathByProject: new Map(),
+    outputsByProject: new Map(),
+    classpathsByProject: new Map(),
     directDependenciesByProject: new Map(),
   }
 }
@@ -24,7 +25,7 @@ function mkComponentFixture(target: string): {
   paths: ResolvedArtifactPaths
 } {
   const paths = emptyArtifactPaths()
-  paths.pathsById.set('g:a:jar:1', { sources: [], targets: [target] })
+  paths.pathsById.set('g:a:jar:1', { targets: [target] })
   return {
     facts: {
       components: [
@@ -67,7 +68,10 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.classpathByProject.set(':app', ['g:a:jar:1'])
+    artifactPaths.classpathsByProject.set(
+      ':app',
+      new Map([['main', [{ id: 'g:a:jar:1' }]]]),
+    )
     artifactPaths.directDependenciesByProject.set(':app', ['g:a:jar:1'])
 
     const acc: SidecarAccumulator = new Map()
@@ -87,12 +91,12 @@ describe('compute-artifacts sidecar', () => {
       name: 'app',
       subprojectDir: 'app',
       dependencies: ['g:a:jar:1'],
-      classpath: ['g:a:jar:1'],
+      classpaths: { main: [{ id: 'g:a:jar:1' }] },
     })
     expect(entry.components[0]).toEqual(facts.components[0])
   })
 
-  it('carries a component through with resolved targets/sources attached, keyed by its own facts file', () => {
+  it('carries a component through with resolved targets attached, keyed by its own facts file', () => {
     const facts: SocketFactsSbom = {
       components: [
         {
@@ -107,7 +111,6 @@ describe('compute-artifacts sidecar', () => {
     }
     const artifactPaths = emptyArtifactPaths()
     artifactPaths.pathsById.set('com.example:lib:jar:da517db', {
-      sources: ['/abs/lib/src/main/java'],
       targets: ['/abs/lib.jar'],
     })
 
@@ -127,7 +130,7 @@ describe('compute-artifacts sidecar', () => {
             qualifiers: { ext: 'jar' },
             id: 'com.example:lib:jar:da517db',
             targets: ['/abs/lib.jar'],
-            sources: ['/abs/lib/src/main/java'],
+            sources: [],
           },
         ],
       },
@@ -161,7 +164,7 @@ describe('compute-artifacts sidecar', () => {
     expect(entry.sources).toEqual([])
   })
 
-  it("gives each sibling project's component that project's own paths, even when they share a coordinate", () => {
+  it("gives each sibling project's component that project's own output sets, even when they share a coordinate", () => {
     const util = {
       type: 'maven',
       namespace: 'ex',
@@ -180,14 +183,24 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.pathsById.set(':a:util', {
-      sources: ['/abs/a/util/src'],
-      targets: ['/abs/a/util/classes'],
-    })
-    artifactPaths.pathsById.set(':b:util', {
-      sources: ['/abs/b/util/src'],
-      targets: ['/abs/b/util/classes'],
-    })
+    artifactPaths.outputsByProject.set(
+      ':a:util',
+      new Map([
+        [
+          'main',
+          { sources: ['/abs/a/util/src'], targets: ['/abs/a/util/classes'] },
+        ],
+      ]),
+    )
+    artifactPaths.outputsByProject.set(
+      ':b:util',
+      new Map([
+        [
+          'main',
+          { sources: ['/abs/b/util/src'], targets: ['/abs/b/util/classes'] },
+        ],
+      ]),
+    )
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(
@@ -199,7 +212,11 @@ describe('compute-artifacts sidecar', () => {
     const entry = serializeSidecar(acc)['/root/gradle.socket.facts.json']!
 
     for (const entries of [entry.components, entry.projects]) {
-      expect(Object.fromEntries(entries.map(e => [e.id, e.sources]))).toEqual({
+      expect(
+        Object.fromEntries(
+          entries.map(e => [e.id, e.outputs?.['main']?.sources]),
+        ),
+      ).toEqual({
         ':a:util': ['/abs/a/util/src'],
         ':b:util': ['/abs/b/util/src'],
       })
@@ -234,7 +251,7 @@ describe('compute-artifacts sidecar', () => {
     expect(entry.direct).toBe(true)
   })
 
-  it('carries a first-party module (project, not a component) source/target roots, keyed by its own facts file', () => {
+  it('carries a first-party module (project, not a component) output sets, keyed by its own facts file', () => {
     const facts: SocketFactsSbom = {
       // The app module is a project but nothing depends on it, so it is absent
       // from components — its source roots must still reach the sidecar.
@@ -252,10 +269,25 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.pathsById.set('com.example:app:1.0', {
-      sources: ['/abs/app/src/main/java'],
-      targets: ['/abs/app/build/classes'],
-    })
+    artifactPaths.outputsByProject.set(
+      'com.example:app:1.0',
+      new Map([
+        [
+          'main',
+          {
+            sources: ['/abs/app/src/main/java'],
+            targets: ['/abs/app/classes'],
+          },
+        ],
+        [
+          'test',
+          {
+            sources: ['/abs/app/src/test/java'],
+            targets: ['/abs/app/test-classes'],
+          },
+        ],
+      ]),
+    )
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(acc, facts, artifactPaths, '/root/app/.socket.facts.json')
@@ -271,14 +303,22 @@ describe('compute-artifacts sidecar', () => {
         version: '1.0',
         subprojectDir: 'app',
         dependencies: [],
-        targets: ['/abs/app/build/classes'],
-        sources: ['/abs/app/src/main/java'],
-        classpath: [],
+        outputs: {
+          main: {
+            sources: ['/abs/app/src/main/java'],
+            targets: ['/abs/app/classes'],
+          },
+          test: {
+            sources: ['/abs/app/src/test/java'],
+            targets: ['/abs/app/test-classes'],
+          },
+        },
+        classpaths: {},
       },
     ])
   })
 
-  it('attaches each project its own classpath ids, keyed by project id even within one directory', () => {
+  it('attaches each project its own classpaths, keyed by project id even within one directory', () => {
     const project = {
       type: 'maven',
       namespace: 'com.example',
@@ -294,16 +334,22 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const artifactPaths = emptyArtifactPaths()
-    artifactPaths.classpathByProject.set('x/a.xml', ['g:x:jar:1'])
-    artifactPaths.classpathByProject.set('x/b.xml', ['g:x:jar:2'])
+    artifactPaths.classpathsByProject.set(
+      'x/a.xml',
+      new Map([['main', [{ id: 'g:x:jar:1' }]]]),
+    )
+    artifactPaths.classpathsByProject.set(
+      'x/b.xml',
+      new Map([['main', [{ id: 'g:x:jar:2' }]]]),
+    )
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(acc, facts, artifactPaths, '/root/.socket.facts.json')
     const projects = serializeSidecar(acc)['/root/.socket.facts.json']!.projects
 
-    expect(projects.map(p => p.classpath)).toEqual([
-      ['g:x:jar:1'],
-      ['g:x:jar:2'],
+    expect(projects.map(p => p.classpaths)).toEqual([
+      { main: [{ id: 'g:x:jar:1' }] },
+      { main: [{ id: 'g:x:jar:2' }] },
     ])
   })
 
@@ -339,15 +385,15 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const pathsA = emptyArtifactPaths()
-    pathsA.pathsById.set('com.example:shared:1.0', {
-      sources: ['/root-a/src/main/java'],
-      targets: [],
-    })
+    pathsA.outputsByProject.set(
+      'com.example:shared:1.0',
+      new Map([['main', { sources: ['/root-a/src/main/java'], targets: [] }]]),
+    )
     const pathsB = emptyArtifactPaths()
-    pathsB.pathsById.set('com.example:shared:1.0', {
-      sources: ['/root-b/src/main/java'],
-      targets: [],
-    })
+    pathsB.outputsByProject.set(
+      'com.example:shared:1.0',
+      new Map([['main', { sources: ['/root-b/src/main/java'], targets: [] }]]),
+    )
 
     const acc: SidecarAccumulator = new Map()
     accumulateSidecar(
@@ -369,10 +415,12 @@ describe('compute-artifacts sidecar', () => {
       '/root-b/.socket.facts.json',
     ])
     expect(
-      resolved['/root-a/.socket.facts.json']!.projects[0]!.sources,
+      resolved['/root-a/.socket.facts.json']!.projects[0]!.outputs?.['main']
+        ?.sources,
     ).toEqual(['/root-a/src/main/java'])
     expect(
-      resolved['/root-b/.socket.facts.json']!.projects[0]!.sources,
+      resolved['/root-b/.socket.facts.json']!.projects[0]!.outputs?.['main']
+        ?.sources,
     ).toEqual(['/root-b/src/main/java'])
   })
 

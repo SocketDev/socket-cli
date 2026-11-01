@@ -8,7 +8,7 @@
 #    inter-module edge lines up with its `project` record);
 #  - resolves a scope conflict so the retained node stays reachable from its parent root;
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
-#  - states each module's classpath in Maven's order, test scope last, keeping the dependencies Maven
+#  - states each module's main and test classpaths in Maven's order, keeping the dependencies Maven
 #    leaves only under a sibling module's test-jar (assert-classpath.py);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).

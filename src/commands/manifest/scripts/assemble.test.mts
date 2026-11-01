@@ -4,7 +4,7 @@ import { assembleFacts } from './assemble.mts'
 import { parseRecords } from './records.mts'
 import { accumulateSidecar, serializeSidecar } from './sidecar.mts'
 
-import type { SocketFactsSbom } from './facts.mts'
+import type { ClasspathEntry, SocketFactsSbom } from './facts.mts'
 import type { SidecarAccumulator } from './sidecar.mts'
 
 // Each project's tree, written out with component ids; a repeat on the current
@@ -32,9 +32,9 @@ function trees(facts: SocketFactsSbom): Record<string, string[]> {
 const RECORDS = [
   'meta\tgradle\t8.0\t17',
   'project\t:app\tcom.example\tapp\t1.0\t/abs/app',
-  'projectSrc\t:app\t/abs/app/src/main/java',
-  'projectTgt\t:app\t/abs/app/build/classes',
-  'root\tr1\t:app\truntimeClasspath\t1',
+  'projectSrc\t:app\t/abs/app/src/main/java\tmain',
+  'projectTgt\t:app\t/abs/app/build/classes\tmain',
+  'root\tr1\t:app\truntimeClasspath\t1\tmain\truntime',
   'node\tr1\tcom.example:lib:jar:1.0\tcom.example\tlib\t1.0\tjar\t\t1',
   'node\tr1\tcom.example:bom:2.0\tcom.example\tbom\t2.0\t\t\t1',
   'file\tr1\tcom.example:lib:jar:1.0\t/abs/lib.jar',
@@ -98,9 +98,19 @@ describe('records → assemble → sidecar', () => {
         version: '1.0',
         subprojectDir: '/abs/app',
         dependencies: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
-        targets: ['/abs/app/build/classes'],
-        sources: ['/abs/app/src/main/java'],
-        classpath: ['com.example:lib:jar:1.0', 'com.example:bom:2.0'],
+        outputs: {
+          main: {
+            sources: ['/abs/app/src/main/java'],
+            targets: ['/abs/app/build/classes'],
+          },
+        },
+        classpaths: {
+          main: [
+            { project: ':app', outputs: 'main' },
+            { id: 'com.example:lib:jar:1.0' },
+            { id: 'com.example:bom:2.0' },
+          ],
+        },
       },
     ])
 
@@ -119,12 +129,12 @@ describe('records → assemble → sidecar', () => {
     const records = [
       'meta\tgradle\t8.10\t17',
       'project\t:app\tg\tapp\t1\tapp',
-      'projectSrc\t:app\t/abs/app/src',
-      'projectTgt\t:app\t/abs/app/classes',
+      'projectSrc\t:app\t/abs/app/src\tmain',
+      'projectTgt\t:app\t/abs/app/classes\tmain',
       'excludedProject\t:lib',
-      'projectSrc\t:lib\t/abs/lib/src',
-      'projectTgt\t:lib\t/abs/lib/classes',
-      'root\t0\t:app\tcompileClasspath\t1',
+      'projectSrc\t:lib\t/abs/lib/src\tmain',
+      'projectTgt\t:lib\t/abs/lib/classes\tmain',
+      'root\t0\t:app\truntimeClasspath\t1\tmain\truntime',
       'node\t0\t:lib\tg\tlib\t1\tjar\t\t1\t:lib',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
@@ -132,11 +142,15 @@ describe('records → assemble → sidecar', () => {
     })
 
     expect(facts.projects?.map(p => p.id)).toEqual([':app'])
-    expect(artifactPaths.pathsById.get(':lib')).toEqual({
+    expect(artifactPaths.outputsByProject.get(':lib')?.get('main')).toEqual({
       sources: ['/abs/lib/src'],
       targets: ['/abs/lib/classes'],
     })
-    expect([...artifactPaths.classpathByProject.keys()]).toEqual([':app'])
+    expect([...artifactPaths.classpathsByProject.keys()]).toEqual([':app'])
+    expect(artifactPaths.classpathsByProject.get(':app')?.get('main')).toEqual([
+      { project: ':app', outputs: 'main' },
+      { project: ':lib', outputs: 'main' },
+    ])
   })
   it('states no targets for an artifact that failed to resolve or is gone from disk', () => {
     const records = [
@@ -220,15 +234,16 @@ describe('records → assemble → sidecar', () => {
       'meta\tgradle\t8.0\t17',
       'project\t:a\tcom.example\ta\t1.0\ta',
       'project\t:b\tcom.example\tb\t1.0\tb',
-      'root\tr1\t:a\truntimeClasspath\t1',
+      'root\tr1\t:a\truntimeClasspath\t1\tmain\truntime',
       'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
       'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
       'edge\tr1\tg:lib:jar:1\tg:dep:jar:1',
-      'root\tr2\t:b\truntimeClasspath\t1',
+      'root\tr2\t:b\truntimeClasspath\t1\tmain\truntime',
       'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
       'node\tr2\tg:dep:jar:2\tg\tdep\t2\tjar\t\t0',
       'edge\tr2\tg:lib:jar:1\tg:dep:jar:2',
-      'root\tr3\t:b\ttestRuntimeClasspath\t0',
+      'outputSet\t:b\ttest\tmain',
+      'root\tr3\t:b\ttestRuntimeClasspath\t0\ttest\truntime',
       'node\tr3\tg:junit:jar:4\tg\tjunit\t4\tjar\t\t1',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
@@ -262,12 +277,25 @@ describe('records → assemble → sidecar', () => {
         p,
       ]),
     )
-    expect(byName.get('a')?.classpath).toEqual(['g:lib:jar:1', 'g:dep:jar:1'])
-    expect(byName.get('b')?.classpath).toEqual([
-      'g:lib:jar:1',
-      'g:dep:jar:2',
-      'g:junit:jar:4',
-    ])
+    expect(byName.get('a')?.classpaths).toEqual({
+      main: [
+        { project: ':a', outputs: 'main' },
+        { id: 'g:lib:jar:1' },
+        { id: 'g:dep:jar:1' },
+      ],
+    })
+    expect(byName.get('b')?.classpaths).toEqual({
+      main: [
+        { project: ':b', outputs: 'main' },
+        { id: 'g:lib:jar:1' },
+        { id: 'g:dep:jar:2' },
+      ],
+      test: [
+        { project: ':b', outputs: 'test' },
+        { project: ':b', outputs: 'main' },
+        { id: 'g:junit:jar:4' },
+      ],
+    })
     expect(byName.get('b')?.dependencies).toEqual([
       'g:junit:jar:4',
       'g:lib:jar:1',
@@ -417,17 +445,18 @@ describe('records → assemble → sidecar', () => {
     const records = [
       'meta\tgradle\t8.0\t17',
       'project\t:a:util\tex\tutil\t1\ta/util',
-      'projectSrc\t:a:util\t/abs/a/util/src',
+      'projectSrc\t:a:util\t/abs/a/util/src\tmain',
       'project\t:b:util\tex\tutil\t1\tb/util',
-      'projectSrc\t:b:util\t/abs/b/util/src',
+      'projectSrc\t:b:util\t/abs/b/util/src\tmain',
+      'projectSrc\t:b:util\t/abs/b/util/fixtures\ttestFixtures',
       'project\t:app\tex\tapp\t1\tapp',
-      'root\tr1\t:app\truntimeClasspath\t1',
-      'node\tr1\tex:util:jar:1\tex\tutil\t1\tjar\t\t1\t:b:util',
-      'node\tr1\tex:util:jar:test-fixtures:1\tex\tutil\t1\tjar\ttest-fixtures\t1\t:b:util',
+      'root\tr1\t:app\truntimeClasspath\t1\tmain\truntime',
+      'node\tr1\tex:util:jar:1\tex\tutil\t1\tjar\t\t1\t:b:util\tmain',
+      'node\tr1\tex:util:jar:test-fixtures:1\tex\tutil\t1\tjar\ttest-fixtures\t1\t:b:util\ttestFixtures',
       'node\tr1\tg:ext:jar:2\tg\text\t2\tjar\t\t0\t',
       'edge\tr1\tex:util:jar:test-fixtures:1\tex:util:jar:1',
       'edge\tr1\tex:util:jar:1\tg:ext:jar:2',
-      'root\tr2\t:b:util\truntimeClasspath\t1',
+      'root\tr2\t:b:util\truntimeClasspath\t1\tmain\truntime',
       'node\tr2\tex:util:jar:1\tex\tutil\t1\tjar\t\t1\t:a:util',
     ].join('\n')
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
@@ -444,17 +473,24 @@ describe('records → assemble → sidecar', () => {
       ':app': [':b:util(g:ext:jar:2)'],
       ':b:util': [':a:util'],
     })
-    expect(artifactPaths.classpathByProject.get(':app')).toEqual([
-      ':b:util',
-      'g:ext:jar:2',
+    expect(artifactPaths.classpathsByProject.get(':app')?.get('main')).toEqual([
+      { project: ':app', outputs: 'main' },
+      { project: ':b:util', outputs: 'main' },
+      { project: ':b:util', outputs: 'testFixtures' },
+      { id: 'g:ext:jar:2' },
     ])
-    expect(artifactPaths.classpathByProject.get(':b:util')).toEqual([':a:util'])
-    expect(artifactPaths.pathsById.get(':a:util')?.sources).toEqual([
-      '/abs/a/util/src',
+    expect(
+      artifactPaths.classpathsByProject.get(':b:util')?.get('main'),
+    ).toEqual([
+      { project: ':b:util', outputs: 'main' },
+      { project: ':a:util', outputs: 'main' },
     ])
-    expect(artifactPaths.pathsById.get(':b:util')?.sources).toEqual([
-      '/abs/b/util/src',
-    ])
+    expect(
+      Object.fromEntries(artifactPaths.outputsByProject.get(':b:util') ?? []),
+    ).toEqual({
+      main: { sources: ['/abs/b/util/src'], targets: [] },
+      testFixtures: { sources: ['/abs/b/util/fixtures'], targets: [] },
+    })
   })
 
   it('marks each subproject with its own build files and no component with any', () => {
@@ -544,141 +580,131 @@ describe('records → assemble → sidecar', () => {
   })
 })
 
-function classpath(records: string[], project: string): string[] | undefined {
-  return assembleFacts(parseRecords(records.join('\n')), {
-    fileExists: () => true,
-  }).artifactPaths.classpathByProject.get(project)
+function classpaths(
+  records: string[],
+  project: string,
+): Record<string, ClasspathEntry[]> {
+  return Object.fromEntries(
+    assembleFacts(parseRecords(records.join('\n')), {
+      fileExists: () => true,
+    }).artifactPaths.classpathsByProject.get(project) ?? [],
+  )
 }
 
-describe('classpath', () => {
-  it("follows each root's order, runtime before compile-only, test and tooling roots", () => {
+describe('classpaths', () => {
+  it("gives each output set its runtime classpath in the root's order, then compile-only entries", () => {
     expect(
-      classpath(
+      classpaths(
         [
           'meta\tgradle\t8.10\t17',
           'project\t:app\tg\tapp\t1\tapp',
+          'outputSet\t:app\tmain\t',
+          'outputSet\t:app\ttest\tmain',
+          'outputSet\t:app\ttestFixtures\tmain',
           'root\t0\t:app\tannotationProcessor\t0',
           'node\t0\tg:proc:jar:1\tg\tproc\t1\tjar\t\t1',
-          'root\t1\t:app\tcompileClasspath\t1',
+          'root\t1\t:app\tcompileClasspath\t1\tmain\tcompile',
           'node\t1\tg:api:jar:1\tg\tapi\t1\tjar\t\t1',
           'node\t1\tg:servlet:jar:3\tg\tservlet\t3\tjar\t\t1',
-          'root\t2\t:app\truntimeClasspath\t1',
+          'root\t2\t:app\truntimeClasspath\t1\tmain\truntime',
           'node\t2\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
-          'node\t2\tg:api:jar:1\tg\tapi\t1\tjar\t\t1',
-          'root\t3\t:app\ttestRuntimeClasspath\t0',
+          'node\t2\tg:api:jar:2\tg\tapi\t2\tjar\t\t1',
+          'root\t3\t:app\ttestRuntimeClasspath\t0\ttest\truntime',
           'node\t3\tg:junit:jar:4\tg\tjunit\t4\tjar\t\t1',
-          'node\t3\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
+          'node\t3\tg:z:jar:2\tg\tz\t2\tjar\t\t1',
         ],
         ':app',
       ),
-    ).toEqual([
-      'g:z:jar:1',
-      'g:api:jar:1',
-      'g:servlet:jar:3',
-      'g:junit:jar:4',
-      'g:proc:jar:1',
-    ])
+    ).toEqual({
+      main: [
+        { project: ':app', outputs: 'main' },
+        { id: 'g:z:jar:1' },
+        { id: 'g:api:jar:2' },
+        { id: 'g:servlet:jar:3' },
+      ],
+      test: [
+        { project: ':app', outputs: 'test' },
+        { project: ':app', outputs: 'main' },
+        { id: 'g:junit:jar:4' },
+        { id: 'g:z:jar:2' },
+      ],
+      testFixtures: [
+        { project: ':app', outputs: 'testFixtures' },
+        { project: ':app', outputs: 'main' },
+      ],
+    })
   })
 
-  it('keeps the version of a module the highest-ranked root resolved, with its other artifacts', () => {
+  it("gives a set without a runtime classpath its own code, and adds no set it doesn't declare", () => {
     expect(
-      classpath(
+      classpaths(
         [
           'meta\tgradle\t8.10\t17',
           'project\t:app\tg\tapp\t1\tapp',
-          'root\t0\t:app\ttestRuntimeClasspath\t0',
-          'node\t0\tg:guava:jar:32\tg\tguava\t32\tjar\t\t1',
-          'node\t0\tg:netty:jar:linux:4.1\tg\tnetty\t4.1\tjar\tlinux\t1',
-          'root\t1\t:app\truntimeClasspath\t1',
-          'node\t1\tg:guava:jar:30\tg\tguava\t30\tjar\t\t1',
-          'node\t1\tg:netty:jar:4.1\tg\tnetty\t4.1\tjar\t\t1',
+          'outputSet\t:app\tmain\t',
+          'outputSet\t:app\tjvmTest\tjvm',
+          'root\t0\t:app\tcompileClasspath\t1\tmain\tcompile',
+          'node\t0\tg:api:jar:1\tg\tapi\t1\tjar\t\t1',
         ],
         ':app',
       ),
-    ).toEqual(['g:guava:jar:30', 'g:netty:jar:4.1', 'g:netty:jar:linux:4.1'])
+    ).toEqual({
+      main: [{ project: ':app', outputs: 'main' }],
+      jvmTest: [
+        { project: ':app', outputs: 'jvmTest' },
+        { project: ':app', outputs: 'jvm' },
+      ],
+    })
   })
 
-  it("ranks Gradle's legacy runtime and compile behind the classpath configurations", () => {
+  it('takes classpaths the build tool states as they are, by component id', () => {
     expect(
-      classpath(
-        [
-          'meta\tgradle\t6.9\t11',
-          'project\t:app\tg\tapp\t1\tapp',
-          'root\t0\t:app\tcompile\t1',
-          'node\t0\tg:foo:jar:1\tg\tfoo\t1\tjar\t\t1',
-          'root\t1\t:app\tcompileClasspath\t1',
-          'node\t1\tg:bar:jar:1\tg\tbar\t1\tjar\t\t1',
-          'root\t2\t:app\truntime\t1',
-          'node\t2\tg:foo:jar:1\tg\tfoo\t1\tjar\t\t1',
-          'root\t3\t:app\truntimeClasspath\t1',
-          'node\t3\tg:bar:jar:1\tg\tbar\t1\tjar\t\t1',
-          'node\t3\tg:foo:jar:2\tg\tfoo\t2\tjar\t\t0',
-          'edge\t3\tg:bar:jar:1\tg:foo:jar:2',
-        ],
-        ':app',
-      ),
-    ).toEqual(['g:bar:jar:1', 'g:foo:jar:2'])
-  })
-
-  it('tells test configurations by name segment, sbt it among them', () => {
-    expect(
-      classpath(
-        [
-          'meta\tgradle\t8.10\t17',
-          'project\t:app\tg\tapp\t1\tapp',
-          'root\t0\t:app\ttestRuntimeClasspath\t0',
-          'node\t0\tg:x:jar:3\tg\tx\t3\tjar\t\t1',
-          'root\t1\t:app\tlatestRuntimeClasspath\t1',
-          'node\t1\tg:x:jar:2\tg\tx\t2\tjar\t\t1',
-        ],
-        ':app',
-      ),
-    ).toEqual(['g:x:jar:2'])
-    expect(
-      classpath(
-        [
-          'meta\tsbt\t1.9.9\t17',
-          'project\tapp\tg\tapp\t1\tapp',
-          'root\t0\tapp\tscala-tool\t0',
-          'node\t0\tg:x:jar:2\tg\tx\t2\tjar\t\t1',
-          'root\t1\tapp\tit\t0',
-          'node\t1\tg:x:jar:1\tg\tx\t1\tjar\t\t1',
-        ],
-        'app',
-      ),
-    ).toEqual(['g:x:jar:1'])
-  })
-
-  it('takes a classpath the build tool states as it is, by component id', () => {
-    expect(
-      classpath(
+      classpaths(
         [
           'meta\tmaven\t3.9.6\t17',
           'project\tg:app:1\tg\tapp\t1\tapp',
           'project\tg:lib:1\tg\tlib\t1\tlib',
+          'outputSet\tg:app:1\tmain\t',
+          'outputSet\tg:app:1\ttest\tmain',
           'root\t0\tg:app:1\tcompile\t1',
           'node\t0\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
           'node\t0\tg:lib:1\tg\tlib\t1\t\t\t1\tg:lib:1',
           'root\t1\tg:app:1\ttest\t0',
           'node\t1\tg:bcpkix:jar:1\tg\tbcpkix\t1\tjar\t\t1',
-          'classpath\tg:app:1\tg:bcpkix:jar:1',
-          'classpath\tg:app:1\tg:lib:1',
-          'classpath\tg:app:1\tg:z:jar:1',
+          'classpath\tg:app:1\tmain\tg:lib:1\tmain',
+          'classpath\tg:app:1\tmain\tg:z:jar:1\t',
+          'classpath\tg:app:1\ttest\tg:bcpkix:jar:1\t',
+          'classpath\tg:app:1\ttest\tg:lib:1\tmain,test',
+          'classpath\tg:app:1\ttest\tg:z:jar:1\t',
         ],
         'g:app:1',
       ),
-    ).toEqual(['g:bcpkix:jar:1', 'g:lib:1', 'g:z:jar:1'])
+    ).toEqual({
+      main: [
+        { project: 'g:app:1', outputs: 'main' },
+        { project: 'g:lib:1', outputs: 'main' },
+        { id: 'g:z:jar:1' },
+      ],
+      test: [
+        { project: 'g:app:1', outputs: 'test' },
+        { project: 'g:app:1', outputs: 'main' },
+        { id: 'g:bcpkix:jar:1' },
+        { project: 'g:lib:1', outputs: 'main' },
+        { project: 'g:lib:1', outputs: 'test' },
+        { id: 'g:z:jar:1' },
+      ],
+    })
   })
 
   it('rejects a stated classpath entry that no root of the project resolved', () => {
     expect(() =>
-      classpath(
+      classpaths(
         [
           'meta\tmaven\t3.9.6\t17',
           'project\tg:app:1\tg\tapp\t1\tapp',
           'root\t0\tg:app:1\tcompile\t1',
           'node\t0\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
-          'classpath\tg:app:1\tg:y:jar:1',
+          'classpath\tg:app:1\tmain\tg:y:jar:1\t',
         ],
         'g:app:1',
       ),

@@ -144,9 +144,18 @@ public final class SocketFactsRecordsEngine {
         File pom = module.getFile();
         if (pom != null && pom.isFile()) rec(lines, "projectBuild", key, SocketSupport.relativePath(rootDir.toPath(), pom.toPath()));
       }
+      // Maven puts a module's main classes on its test classpath.
+      if (!excluded || opts.withFiles) {
+        rec(lines, "outputSet", key, "main", "");
+        rec(lines, "outputSet", key, "test", "main");
+      }
       if (opts.withFiles) {
-        for (String s : collectSources(module)) rec(lines, "projectSrc", key, s);
-        for (String t : collectTargets(module)) rec(lines, "projectTgt", key, t);
+        for (String set : new String[] {"main", "test"}) {
+          boolean test = "test".equals(set);
+          for (String s : collectSources(module, test)) rec(lines, "projectSrc", key, s, set);
+          String target = test ? module.getBuild().getTestOutputDirectory() : module.getBuild().getOutputDirectory();
+          if (target != null) rec(lines, "projectTgt", key, new File(target).getAbsolutePath(), set);
+        }
       }
     }
 
@@ -431,7 +440,7 @@ public final class SocketFactsRecordsEngine {
         ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version, gav)
         : upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(),
             type == null ? "" : type, classifier == null ? "" : classifier, version, "");
-    ("test".equals(scope) ? order.test : order.main).add(id);
+    order.add(id, scope, internal ? ("test-jar".equals(type) || "tests".equals(classifier) ? "test" : "main") : null);
     // Maven wrote each accepted node's resolved file back onto the node; a reactor module reports its
     // own dirs through its `project` record instead of a `file` record.
     if (!internal && opts.withFiles) {
@@ -508,13 +517,16 @@ public final class SocketFactsRecordsEngine {
     return rootIdx;
   }
 
-  // Maven builds every classpath of a module from one graph, in the pre-order its own
-  // RepositoryUtils.toArtifacts walks, filtered by each artifact's effective scope. The test scope goes
-  // last, so that a test-only artifact never shadows one main code runs with.
+  // Maven's pre-order walk of the module's graph (RepositoryUtils.toArtifacts), filtered by scope; `main`
+  // is the runtime classpath, then the compile-only (provided, system) entries.
   private static void emitClasspath(List<String> lines, String projectKey, ClasspathOrder order) {
-    for (String id : order.main) rec(lines, "classpath", projectKey, id);
-    for (String id : order.test) {
-      if (!order.main.contains(id)) rec(lines, "classpath", projectKey, id);
+    emitClasspath(lines, projectKey, "main", order.main());
+    emitClasspath(lines, projectKey, "test", order.test);
+  }
+
+  private static void emitClasspath(List<String> lines, String projectKey, String name, Map<String, Set<String>> entries) {
+    for (Map.Entry<String, Set<String>> e : entries.entrySet()) {
+      rec(lines, "classpath", projectKey, name, e.getKey(), String.join(",", e.getValue()));
     }
   }
 
@@ -592,27 +604,17 @@ public final class SocketFactsRecordsEngine {
 
   // Configured source roots, emitted unconditionally (like gradle's srcDirs / sbt's sourceDirectories):
   // the analysis never builds the project, so these need not exist yet.
-  private List<String> collectSources(MavenProject module) {
+  private List<String> collectSources(MavenProject module, boolean test) {
     Set<String> sources = new TreeSet<>();
-    addPaths(sources, module.getCompileSourceRoots());
-    addPaths(sources, module.getTestCompileSourceRoots());
-    for (Resource r : module.getBuild().getResources()) addPath(sources, r.getDirectory());
-    for (Resource r : module.getBuild().getTestResources()) addPath(sources, r.getDirectory());
+    addPaths(sources, test ? module.getTestCompileSourceRoots() : module.getCompileSourceRoots());
+    for (Resource r : test ? module.getBuild().getTestResources() : module.getBuild().getResources()) {
+      addPath(sources, r.getDirectory());
+    }
     // generated-source roots aren't on the model without a build; best-effort pick up the
     // conventional dirs only if a prior `mvn compile` already produced them (else they'd be guesses).
     String buildDir = module.getBuild().getDirectory();
-    addExisting(sources, buildDir + File.separator + "generated-sources");
-    addExisting(sources, buildDir + File.separator + "generated-test-sources");
+    addExisting(sources, buildDir + File.separator + (test ? "generated-test-sources" : "generated-sources"));
     return new ArrayList<>(sources);
-  }
-
-  // Configured compiled-output dirs, emitted unconditionally (like gradle's classesDirs / sbt's
-  // classDirectory): the analysis never builds the project, so these need not exist yet.
-  private List<String> collectTargets(MavenProject module) {
-    Set<String> targets = new TreeSet<>();
-    addPath(targets, module.getBuild().getOutputDirectory());
-    addPath(targets, module.getBuild().getTestOutputDirectory());
-    return new ArrayList<>(targets);
   }
 
   private static void addPaths(Set<String> acc, List<String> dirs) {
@@ -888,11 +890,35 @@ public final class SocketFactsRecordsEngine {
     }
   }
 
-  // Node ids in walk order, by whether the artifact reached them with the test scope. A sibling module's
-  // variants share a node, and can reach it with different scopes.
+  // Node ids in walk order by classpath, each with the output sets of a reactor module its artifacts bring in
+  // (its jar main, its test-jar test).
   private static final class ClasspathOrder {
-    final Set<String> main = new LinkedHashSet<>();
-    final Set<String> test = new LinkedHashSet<>();
+    final Map<String, Set<String>> runtime = new LinkedHashMap<>();
+    final Map<String, Set<String>> compileOnly = new LinkedHashMap<>();
+    final Map<String, Set<String>> test = new LinkedHashMap<>();
+
+    void add(String id, String scope, String outputSet) {
+      if ("compile".equals(scope) || "runtime".equals(scope)) put(runtime, id, outputSet);
+      else if (!"test".equals(scope)) put(compileOnly, id, outputSet);
+      put(test, id, outputSet);
+    }
+
+    // The runtime classpath, then the compile-only entries.
+    Map<String, Set<String>> main() {
+      Map<String, Set<String>> main = new LinkedHashMap<>();
+      for (Map<String, Set<String>> part : Arrays.asList(runtime, compileOnly)) {
+        part.forEach((id, sets) -> {
+          put(main, id, null);
+          main.get(id).addAll(sets);
+        });
+      }
+      return main;
+    }
+
+    private static void put(Map<String, Set<String>> entries, String id, String outputSet) {
+      Set<String> sets = entries.computeIfAbsent(id, k -> new LinkedHashSet<>());
+      if (outputSet != null) sets.add(outputSet);
+    }
   }
 
   private static final class Node {

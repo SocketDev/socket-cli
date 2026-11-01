@@ -10,6 +10,12 @@ import java.util.Collections
 
 // `Project.findProperty` only exists since Gradle 2.13; fall back to hasProperty/property for older Gradle.
 gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(name) : null }
+// String.uncapitalize() needs Groovy 2.4.8; Gradle 1.12 bundles Groovy 1.8.
+gradle.ext.socketDecap = { String n -> n ? n[0].toLowerCase() + n.substring(1) : n }
+// The first of the named properties `obj` has, or null.
+gradle.ext.socketFirstProp = { obj, List names ->
+  names.findResult { n -> try { obj."$n" } catch (Exception ignore) { null } }
+}
 
 // `-Psocket.excludePaths` → PRE-COMPILED, comma-joined, anchored regex pattern sources, used only
 // to skip whole excluded subprojects (source-file-level exclusion is left to the reachability
@@ -79,6 +85,11 @@ gradle.ext.socketFactsState = [
   projectGaByPath    : Collections.synchronizedMap([:]),
   // Project path -> "group:name:version", the coordinate a failed project dependency is reported by.
   projectGavByPath   : Collections.synchronizedMap([:]),
+  // Project path -> output set -> the project's other output sets its classpath holds.
+  projectOutputSets  : Collections.synchronizedMap([:]),
+  // Project path -> configuration name -> [set:, role: runtime|compile]: the output set whose classpath
+  // the configuration resolves.
+  classpathRoles     : Collections.synchronizedMap([:]),
 ]
 
 // Capture every project's identity before collectors run so they can recognize intra-project deps
@@ -115,75 +126,166 @@ gradle.projectsEvaluated { g ->
     // ALL source sets are emitted (not just main/test) so custom ones (integrationTest,
     // functionalTest, ...) reach the analysis; source-file-level exclusion is coana's job.
     // `classesDirs` (Gradle 4+) falls back to the legacy single `classesDir` on older Gradle.
-    def sources = [] as Set
-    def targets = [] as Set
+    // Output set -> its source and class dirs (--with-files only) and the project's other output sets its
+    // classpath holds.
+    def outputs = [:]
+    def output = { String set -> outputs.get(set, [sources: [] as Set, targets: [] as Set, includes: []]) }
+    def withFiles = g.ext.socketProp.call(p, 'socket.withFiles')?.toString()?.toLowerCase() == 'true'
+    def addDirs = { String set, String kind, dirs -> if (withFiles) output(set)[kind].addAll(dirs*.absolutePath) }
+    def roles = [:]
+    def classpathOf = { String set, String runtimeName, String compileName ->
+      output(set)
+      if (runtimeName) roles[runtimeName] = [set: set, role: 'runtime']
+      if (compileName) roles[compileName] = [set: set, role: 'compile']
+    }
+    def holds = { String set, List others ->
+      def o = output(set)
+      o.includes = (o.includes + others.findAll { it != null && it != set }).unique()
+    }
+    // The output sets wired into a classpath file collection directly (test's holds main's output).
+    def wiredOutputs = { fc ->
+      def found = []
+      def seen = [] as Set
+      def walk
+      walk = { x ->
+        if (x == null || !seen.add(System.identityHashCode(x))) return
+        if (x instanceof org.gradle.api.tasks.SourceSetOutput) { found << x; return }
+        if (x instanceof Collection || x instanceof Object[]) { x.each { walk(it) }; return }
+        try { if (x.metaClass.respondsTo(x, 'getFrom')) x.from.each { walk(it) } } catch (Exception ignore) {}
+      }
+      walk(fc)
+      found
+    }
     try {
       if (p.hasProperty('sourceSets')) {
         p.sourceSets.each { ss ->
           if (ss != null) {
-            ss.allSource.srcDirs.each { d -> sources << d.absolutePath }
+            classpathOf(ss.name,
+              g.ext.socketFirstProp.call(ss, ['runtimeClasspathConfigurationName', 'runtimeConfigurationName']),
+              g.ext.socketFirstProp.call(ss, ['compileClasspathConfigurationName', 'compileConfigurationName']))
+            addDirs(ss.name, 'sources', ss.allSource.srcDirs)
             try {
-              ss.output.classesDirs.each { d -> targets << d.absolutePath }
+              addDirs(ss.name, 'targets', ss.output.classesDirs)
             } catch (Exception e1) {
-              try { targets << ss.output.classesDir.absolutePath } catch (Exception ignore) {}
+              try { addDirs(ss.name, 'targets', [ss.output.classesDir]) } catch (Exception ignore) {}
             }
           }
+        }
+        p.sourceSets.each { ss ->
+          try {
+            holds(ss.name, wiredOutputs(ss.runtimeClasspath).collect { out -> p.sourceSets.find { it.output.is(out) }?.name })
+          } catch (Exception ignore) {}
         }
       }
     } catch (Exception ignore) {}
     // Kotlin compilations for the JVM (kotlin-jvm, KMP `jvm()`, Android): Kotlin source sets, shared
     // ones like commonMain included, are not java source sets. Untyped: KGP is not on this classpath.
+    // A compilation takes its java source set's output set (kotlin-jvm), its variant's (Android) or its
+    // target and name (KMP: jvm, jvmTest), and holds its associated compilations (jvmTest: jvm).
     def kotlin = p.extensions.findByName('kotlin')
     if (kotlin != null) {
       try {
+        def setOf = { t, c, String runtimeName ->
+          roles[runtimeName]?.set ?: (t.platformType.name() == 'androidJvm' || !t.name ? c.name :
+            (c.name == 'main' ? t.name : t.name + c.name.capitalize()))
+        }
         (kotlin.hasProperty('targets') ? kotlin.targets : [kotlin.target]).each { t ->
           try {
             if (t.platformType.name() in ['jvm', 'androidJvm']) {
               t.compilations.each { c ->
+                def runtimeName = g.ext.socketFirstProp.call(c, ['runtimeDependencyConfigurationName'])
+                def set = setOf(t, c, runtimeName)
+                classpathOf(set, runtimeName, g.ext.socketFirstProp.call(c, ['compileDependencyConfigurationName']))
                 c.allKotlinSourceSets.each { ks ->
-                  sources.addAll(ks.kotlin.srcDirs*.absolutePath)
-                  sources.addAll(ks.resources.srcDirs*.absolutePath)
+                  addDirs(set, 'sources', ks.kotlin.srcDirs)
+                  addDirs(set, 'sources', ks.resources.srcDirs)
                 }
-                targets.addAll(c.output.classesDirs*.absolutePath)
+                addDirs(set, 'targets', c.output.classesDirs)
+                def associated = g.ext.socketFirstProp.call(c, ['allAssociatedCompilations', 'associatedCompilations', 'associateWith'])
+                holds(set, ((associated ?: []) as List).collect { a -> setOf(t, a, null) })
               }
             }
           } catch (Exception ignore) {}
         }
       } catch (Exception ignore) {}
     }
-    // AGP keeps its source sets in the `android` extension and leaves the java ones empty.
+    // AGP keeps its source sets in the `android` extension and leaves the java ones empty. Output sets
+    // are variants (debug, debugUnitTest, debugAndroidTest); a test variant holds the variant it tests.
     def android = p.extensions.findByName('android')
     if (android != null) {
-      try {
-        android.sourceSets.each { ss ->
+      def destinationOf = { task ->
+        g.ext.socketFirstProp.call(task, ['destinationDirectory'])?.get()?.asFile ?: g.ext.socketFirstProp.call(task, ['destinationDir'])
+      }
+      def addSources = { String set, provider ->
+        ['javaDirectories', 'resourcesDirectories', 'kotlinDirectories'].each { prop ->
+          try { addDirs(set, 'sources', provider."$prop") } catch (Exception ignore) {}
+        }
+      }
+      // The variant API (AGP before 9) names each variant's source sets, classpaths, compile task and
+      // tested variant. Kotlin class dirs come from the compilations above.
+      def variants = []
+      ['applicationVariants', 'libraryVariants', 'testVariants', 'unitTestVariants'].each { prop ->
+        try { if (android.hasProperty(prop)) variants.addAll(android."$prop") } catch (Exception ignore) {}
+      }
+      if (variants) {
+        variants.each { v ->
           try {
-            sources.addAll(ss.java.srcDirs*.absolutePath)
-            sources.addAll(ss.resources.srcDirs*.absolutePath)
-            // Last: older AGP has no `kotlin`.
-            sources.addAll(ss.kotlin.srcDirs*.absolutePath)
+            classpathOf(v.name, v.runtimeConfiguration?.name, v.compileConfiguration?.name)
+            v.sourceSets.each { sp -> addSources(v.name, sp) }
+            def compile = g.ext.socketFirstProp.call(v, ['javaCompileProvider'])?.get() ?: g.ext.socketFirstProp.call(v, ['javaCompile'])
+            if (compile != null) addDirs(v.name, 'targets', [destinationOf(compile)].findAll())
+            holds(v.name, [g.ext.socketFirstProp.call(v, ['testedVariant'])?.name])
           } catch (Exception ignore) {}
         }
-      } catch (Exception ignore) {}
-      // Class dirs come from the compile tasks: AGP's built-in Kotlin (AGP 9) leaves the Kotlin
-      // compilations' classesDirs empty.
-      def compileTypes = [JavaCompile]
-      if (kotlin != null) {
-        try {
-          compileTypes << Class.forName('org.jetbrains.kotlin.gradle.tasks.KotlinCompileTool', false, kotlin.getClass().classLoader)
-        } catch (Throwable ignore) {}
-      }
-      compileTypes.each { type ->
-        try {
-          p.tasks.withType(type).each { t ->
-            try {
-              targets << t.destinationDirectory.get().asFile.absolutePath
-            } catch (Exception e1) {
-              try { targets << t.destinationDir.absolutePath } catch (Exception ignore) {}
+      } else {
+        // AGP 9 has no variant API, so AGP's naming: class dirs from the compile tasks (its built-in Kotlin
+        // leaves classesDirs empty), source sets to the variants of their kind whose name has their words.
+        def compileTypes = [JavaCompile]
+        if (kotlin != null) {
+          try {
+            compileTypes << Class.forName('org.jetbrains.kotlin.gradle.tasks.KotlinCompileTool', false, kotlin.getClass().classLoader)
+          } catch (Throwable ignore) {}
+        }
+        def androidSets = [] as LinkedHashSet
+        compileTypes.each { type ->
+          try {
+            p.tasks.withType(type).each { t ->
+              def m = t.name =~ /^compile(.+?)(JavaWithJavac|Kotlin)$/
+              if (!m.matches()) return
+              def set = g.ext.socketDecap.call(m.group(1))
+              androidSets << set
+              classpathOf(set, set + 'RuntimeClasspath', set + 'CompileClasspath')
+              try { addDirs(set, 'targets', [destinationOf(t)].findAll()) } catch (Exception ignore) {}
             }
-          }
-        } catch (Exception ignore) {}
+          } catch (Exception ignore) {}
+        }
+        def kinds = [androidTest: 'AndroidTest', testFixtures: 'TestFixtures', test: 'UnitTest']
+        androidSets.each { set ->
+          def kind = kinds.values().find { set.endsWith(it) && set.length() > it.length() }
+          def tested = kind ? set.substring(0, set.length() - kind.length()) : null
+          if (androidSets.contains(tested)) holds(set, [tested])
+        }
+        if (withFiles) {
+          def words = { String n -> (n =~ /[A-Z]?[a-z0-9]+/).collect { it.toLowerCase() } }
+          def setWords = androidSets.collectEntries { [it, words(it)] }
+          try {
+            android.sourceSets.each { ss ->
+              def kind = kinds.find { k, v -> ss.name.startsWith(k) }
+              def scope = words(kind ? ss.name.substring(kind.key.length()) : (ss.name == 'main' ? '' : ss.name))
+              androidSets.findAll { v ->
+                (kind ? v.endsWith(kind.value) : !kinds.values().any { v.endsWith(it) }) && setWords[v].containsAll(scope)
+              }.each { set ->
+                ['java', 'resources', 'kotlin'].each { prop ->
+                  try { addDirs(set, 'sources', ss."$prop".srcDirs) } catch (Exception ignore) {}
+                }
+              }
+            }
+          } catch (Exception ignore) {}
+        }
       }
     }
+    g.socketFactsState.projectOutputSets[p.path] = outputs.collectEntries { set, o -> [set, o.includes] }
+    g.socketFactsState.classpathRoles[p.path] = roles
     // `buildFile` is the configured script, absent on disk for a project configured from the root or
     // a convention plugin. Still emitted: a direct dependency's mark must name its subproject.
     def buildFiles = []
@@ -197,8 +299,9 @@ gradle.projectsEvaluated { g ->
       name   : p.name,
       version: (p.version ?: '').toString(),
       dir    : rel(p.projectDir),
-      sources: (sources as List).sort(),
-      targets: (targets as List).sort(),
+      outputs: outputs.collectEntries { set, o ->
+        [set, [sources: (o.sources as List).sort(), targets: (o.targets as List).sort(), includes: o.includes]]
+      },
       buildFiles: buildFiles,
       excluded: excluded,
     ])
@@ -283,13 +386,24 @@ allprojects { project ->
       }
 
       // A node is created once; its prod flag accumulates (OR) across the configs that reach it.
-      def upsertNode = { Map coord, boolean isProd, String projPath ->
+      // The output set a dependency on a build project brings in, by the variant it selected:
+      // `[<set>]RuntimeElements`/`ApiElements`, or `default` and the like for the main one.
+      def outputSetOf = { String projPath, String targetConfig ->
+        def m = (targetConfig ?: '') =~ /^(.+?)(RuntimeElements|ApiElements)$/
+        def set = m.matches() ? gradle.ext.socketDecap.call(m.group(1)) : 'main'
+        state.projectOutputSets[projPath]?.containsKey(set) ? set : 'main'
+      }
+
+      def upsertNode = { Map coord, boolean isProd, String projPath, String outputSet = null ->
         def id = coordId(coord)
         synchronized (nodes) {
           def node = nodes[id]
           if (node == null) {
-            node = [coord: coord, children: [] as Set, prod: false, project: projPath]
+            node = [coord: coord, children: [] as Set, prod: false, project: projPath, outputSets: [] as LinkedHashSet]
             nodes[id] = node
+          }
+          if (outputSet != null) {
+            node.outputSets << outputSet
           }
           if (isProd) {
             node.prod = true
@@ -337,6 +451,7 @@ allprojects { project ->
         def gav = "${dep.moduleGroup ?: ''}:${dep.moduleName}:${dep.moduleVersion ?: ''}".toString()
         def shouldMaterialize = withFiles && (populateGavs == null || populateGavs.contains(gav))
         def projPath = projectByGav[gav]
+        def outputSet = projPath == null ? null : outputSetOf(projPath, dep.configuration)
         def artifacts
         def artifactsError = null
         try {
@@ -360,7 +475,7 @@ allprojects { project ->
               version   : dep.moduleVersion ?: '',
               classifier: '',
               ext       : ext,
-            ], isProd, projPath)
+            ], isProd, projPath, outputSet)
           }
         } else {
           artifacts.each { a ->
@@ -375,7 +490,7 @@ allprojects { project ->
               version   : dep.moduleVersion ?: '',
               classifier: a.classifier ?: '',
               ext       : ext,
-            ], isProd, projPath)
+            ], isProd, projPath, outputSet)
             producedIds << aid
             // `a.file` downloads the artifact if not already cached, so scoping avoids fetching
             // artifacts the SBOM doesn't reference. Per-artifact try/catch: a single download can
@@ -862,9 +977,14 @@ rootProject { rp ->
           rec(['project', pi.path, pi.group ?: '', pi.name, pi.version ?: '', pi.dir])
           pi.buildFiles.each { f -> rec(['projectBuild', pi.path, f]) }
         }
+        if (!pi.excluded || withFilesProjects) {
+          pi.outputs.each { set, o -> rec(['outputSet', pi.path, set, o.includes.join(',')]) }
+        }
         if (withFilesProjects) {
-          pi.sources.each { s -> rec(['projectSrc', pi.path, s]) }
-          pi.targets.each { t -> rec(['projectTgt', pi.path, t]) }
+          pi.outputs.each { set, o ->
+            o.sources.each { s -> rec(['projectSrc', pi.path, s, set]) }
+            o.targets.each { t -> rec(['projectTgt', pi.path, t, set]) }
+          }
         }
       }
 
@@ -875,11 +995,13 @@ rootProject { rp ->
       int rootIdx = 0
       perSub.each { rootKey, tree ->
         def rootId = (rootIdx++).toString()
-        rec(['root', rootId, tree.projectPath, tree.config, tree.prod ? '1' : '0'])
+        def classpath = state.classpathRoles[tree.projectPath]?.get(tree.config)
+        rec(['root', rootId, tree.projectPath, tree.config, tree.prod ? '1' : '0', classpath?.set ?: '', classpath?.role ?: ''])
         tree.nodes.each { coordId, node ->
           def c = node.coord
           rec(['node', rootId, coordId, c.groupId ?: '', c.artifactId ?: '', c.version ?: '', c.ext ?: '',
-               c.classifier ?: '', tree.direct.contains(coordId) ? '1' : '0', node.project ?: ''])
+               c.classifier ?: '', tree.direct.contains(coordId) ? '1' : '0', node.project ?: '',
+               (node.outputSets ?: []).join(',')])
           node.children.each { childId -> rec(['edge', rootId, coordId, childId]) }
           def fs = tree.paths[coordId]
           if (fs) { (fs as List).sort().each { p -> rec(['file', rootId, coordId, p]) } }
