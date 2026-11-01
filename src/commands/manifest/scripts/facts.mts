@@ -64,8 +64,7 @@ export type SocketFactsSbomProject = AnyPURL & {
 // did not resolve; `sources` = module source roots.
 export type ResolvedArtifactPaths = {
   pathsById: Map<string, { sources: string[]; targets?: string[] | undefined }>
-  // Component ids on each project's resolved classpath (union over its
-  // configurations), keyed by project id.
+  // Component ids on each project's classpath, in order, keyed by project id.
   classpathByProject: Map<string, string[]>
   // Component ids of each project's direct dependencies, keyed by project id.
   directDependenciesByProject: Map<string, string[]>

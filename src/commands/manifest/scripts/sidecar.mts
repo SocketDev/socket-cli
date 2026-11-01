@@ -21,8 +21,9 @@ export type SidecarProjectEntry = Omit<SocketFactsSbomProject, 'children'> & {
   sources?: string[] | undefined
   // Ids of this facts file's components[] the project depends on directly.
   dependencies: string[]
-  // Ids of this facts file's components[] forming the project's full
-  // transitive classpath across all its configurations.
+  // Ids of this facts file's components[] on the project's classpath: one
+  // version per module, main code's entries before test-only and tooling ones.
+  // When artifact paths were resolved, in the order the JVM searches them.
   classpath: string[]
 }
 

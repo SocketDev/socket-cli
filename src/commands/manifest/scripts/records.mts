@@ -17,6 +17,7 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   root        rootId  projectKey  config  prod(0|1)
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
+//   classpath   projectKey  coordId                      (in order; see below)
 //   file        rootId  coordId  path                    (--with-files only)
 //   unfetched   rootId  coordId                          (--with-files only; requested artifact not fetched)
 //   scanned     config
@@ -29,6 +30,9 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 // A `root` is one (subproject, configuration) resolution root; `coordId` is the
 // coordinate key (`group:name:ext:classifier:version`, empty segments dropped),
 // used opaquely as the per-root node key. Unknown tags are ignored.
+//
+// `node` records follow the root's classpath order. `classpath` records state a
+// project's whole classpath (Maven); without them the assembler derives it.
 
 export type RawCoord = {
   group: string
@@ -85,6 +89,8 @@ export type ParsedRecords = {
   // the kept projects depending on them.
   excludedProjects: Map<string, RawProject>
   roots: Map<string, RawRoot>
+  // Keyed by projectKey; coordIds of the project's roots' nodes, in order.
+  classpaths: Map<string, string[]>
   scannedConfigs: string[]
   failures: ResolutionFailure[]
   unscannable: Unscannable[]
@@ -121,6 +127,7 @@ export function parseRecords(text: string): ParsedRecords {
     projects: new Map(),
     excludedProjects: new Map(),
     roots: new Map(),
+    classpaths: new Map(),
     scannedConfigs: [],
     failures: [],
     unscannable: [],
@@ -235,6 +242,18 @@ export function parseRecords(text: string): ParsedRecords {
         const child = f[3] ?? ''
         if (parent !== child) {
           root(f[1] ?? '').edges.push([parent, child])
+        }
+        break
+      }
+      case 'classpath': {
+        const key = f[1] ?? ''
+        let cp = result.classpaths.get(key)
+        if (!cp) {
+          cp = []
+          result.classpaths.set(key, cp)
+        }
+        if (f[2]) {
+          cp.push(f[2])
         }
         break
       }

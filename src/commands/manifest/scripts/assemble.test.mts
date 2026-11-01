@@ -100,7 +100,7 @@ describe('records → assemble → sidecar', () => {
         dependencies: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
         targets: ['/abs/app/build/classes'],
         sources: ['/abs/app/src/main/java'],
-        classpath: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
+        classpath: ['com.example:lib:jar:1.0', 'com.example:bom:2.0'],
       },
     ])
 
@@ -262,11 +262,11 @@ describe('records → assemble → sidecar', () => {
         p,
       ]),
     )
-    expect(byName.get('a')?.classpath).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
+    expect(byName.get('a')?.classpath).toEqual(['g:lib:jar:1', 'g:dep:jar:1'])
     expect(byName.get('b')?.classpath).toEqual([
+      'g:lib:jar:1',
       'g:dep:jar:2',
       'g:junit:jar:4',
-      'g:lib:jar:1',
     ])
     expect(byName.get('b')?.dependencies).toEqual([
       'g:junit:jar:4',
@@ -541,6 +541,148 @@ describe('records → assemble → sidecar', () => {
       ':': ['build.gradle.kts'],
       ':a': ['a/build.gradle.kts'],
     })
+  })
+})
+
+function classpath(records: string[], project: string): string[] | undefined {
+  return assembleFacts(parseRecords(records.join('\n')), {
+    fileExists: () => true,
+  }).artifactPaths.classpathByProject.get(project)
+}
+
+describe('classpath', () => {
+  it("follows each root's order, runtime before compile-only, test and tooling roots", () => {
+    expect(
+      classpath(
+        [
+          'meta\tgradle\t8.10\t17',
+          'project\t:app\tg\tapp\t1\tapp',
+          'root\t0\t:app\tannotationProcessor\t0',
+          'node\t0\tg:proc:jar:1\tg\tproc\t1\tjar\t\t1',
+          'root\t1\t:app\tcompileClasspath\t1',
+          'node\t1\tg:api:jar:1\tg\tapi\t1\tjar\t\t1',
+          'node\t1\tg:servlet:jar:3\tg\tservlet\t3\tjar\t\t1',
+          'root\t2\t:app\truntimeClasspath\t1',
+          'node\t2\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
+          'node\t2\tg:api:jar:1\tg\tapi\t1\tjar\t\t1',
+          'root\t3\t:app\ttestRuntimeClasspath\t0',
+          'node\t3\tg:junit:jar:4\tg\tjunit\t4\tjar\t\t1',
+          'node\t3\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
+        ],
+        ':app',
+      ),
+    ).toEqual([
+      'g:z:jar:1',
+      'g:api:jar:1',
+      'g:servlet:jar:3',
+      'g:junit:jar:4',
+      'g:proc:jar:1',
+    ])
+  })
+
+  it('keeps the version of a module the highest-ranked root resolved, with its other artifacts', () => {
+    expect(
+      classpath(
+        [
+          'meta\tgradle\t8.10\t17',
+          'project\t:app\tg\tapp\t1\tapp',
+          'root\t0\t:app\ttestRuntimeClasspath\t0',
+          'node\t0\tg:guava:jar:32\tg\tguava\t32\tjar\t\t1',
+          'node\t0\tg:netty:jar:linux:4.1\tg\tnetty\t4.1\tjar\tlinux\t1',
+          'root\t1\t:app\truntimeClasspath\t1',
+          'node\t1\tg:guava:jar:30\tg\tguava\t30\tjar\t\t1',
+          'node\t1\tg:netty:jar:4.1\tg\tnetty\t4.1\tjar\t\t1',
+        ],
+        ':app',
+      ),
+    ).toEqual(['g:guava:jar:30', 'g:netty:jar:4.1', 'g:netty:jar:linux:4.1'])
+  })
+
+  it("ranks Gradle's legacy runtime and compile behind the classpath configurations", () => {
+    expect(
+      classpath(
+        [
+          'meta\tgradle\t6.9\t11',
+          'project\t:app\tg\tapp\t1\tapp',
+          'root\t0\t:app\tcompile\t1',
+          'node\t0\tg:foo:jar:1\tg\tfoo\t1\tjar\t\t1',
+          'root\t1\t:app\tcompileClasspath\t1',
+          'node\t1\tg:bar:jar:1\tg\tbar\t1\tjar\t\t1',
+          'root\t2\t:app\truntime\t1',
+          'node\t2\tg:foo:jar:1\tg\tfoo\t1\tjar\t\t1',
+          'root\t3\t:app\truntimeClasspath\t1',
+          'node\t3\tg:bar:jar:1\tg\tbar\t1\tjar\t\t1',
+          'node\t3\tg:foo:jar:2\tg\tfoo\t2\tjar\t\t0',
+          'edge\t3\tg:bar:jar:1\tg:foo:jar:2',
+        ],
+        ':app',
+      ),
+    ).toEqual(['g:bar:jar:1', 'g:foo:jar:2'])
+  })
+
+  it('tells test configurations by name segment, sbt it among them', () => {
+    expect(
+      classpath(
+        [
+          'meta\tgradle\t8.10\t17',
+          'project\t:app\tg\tapp\t1\tapp',
+          'root\t0\t:app\ttestRuntimeClasspath\t0',
+          'node\t0\tg:x:jar:3\tg\tx\t3\tjar\t\t1',
+          'root\t1\t:app\tlatestRuntimeClasspath\t1',
+          'node\t1\tg:x:jar:2\tg\tx\t2\tjar\t\t1',
+        ],
+        ':app',
+      ),
+    ).toEqual(['g:x:jar:2'])
+    expect(
+      classpath(
+        [
+          'meta\tsbt\t1.9.9\t17',
+          'project\tapp\tg\tapp\t1\tapp',
+          'root\t0\tapp\tscala-tool\t0',
+          'node\t0\tg:x:jar:2\tg\tx\t2\tjar\t\t1',
+          'root\t1\tapp\tit\t0',
+          'node\t1\tg:x:jar:1\tg\tx\t1\tjar\t\t1',
+        ],
+        'app',
+      ),
+    ).toEqual(['g:x:jar:1'])
+  })
+
+  it('takes a classpath the build tool states as it is, by component id', () => {
+    expect(
+      classpath(
+        [
+          'meta\tmaven\t3.9.6\t17',
+          'project\tg:app:1\tg\tapp\t1\tapp',
+          'project\tg:lib:1\tg\tlib\t1\tlib',
+          'root\t0\tg:app:1\tcompile\t1',
+          'node\t0\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
+          'node\t0\tg:lib:1\tg\tlib\t1\t\t\t1\tg:lib:1',
+          'root\t1\tg:app:1\ttest\t0',
+          'node\t1\tg:bcpkix:jar:1\tg\tbcpkix\t1\tjar\t\t1',
+          'classpath\tg:app:1\tg:bcpkix:jar:1',
+          'classpath\tg:app:1\tg:lib:1',
+          'classpath\tg:app:1\tg:z:jar:1',
+        ],
+        'g:app:1',
+      ),
+    ).toEqual(['g:bcpkix:jar:1', 'g:lib:1', 'g:z:jar:1'])
+  })
+
+  it('rejects a stated classpath entry that no root of the project resolved', () => {
+    expect(() =>
+      classpath(
+        [
+          'meta\tmaven\t3.9.6\t17',
+          'project\tg:app:1\tg\tapp\t1\tapp',
+          'root\t0\tg:app:1\tcompile\t1',
+          'node\t0\tg:z:jar:1\tg\tz\t1\tjar\t\t1',
+          'classpath\tg:app:1\tg:y:jar:1',
+        ],
+        'g:app:1',
+      ),
+    ).toThrow(/names g:y:jar:1/)
   })
 })
 

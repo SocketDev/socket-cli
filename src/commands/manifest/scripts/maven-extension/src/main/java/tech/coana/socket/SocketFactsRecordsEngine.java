@@ -160,11 +160,13 @@ public final class SocketFactsRecordsEngine {
       // A wholly excluded reactor module is not resolved (matches the project-record skip above).
       if (SocketSupport.isExcludedDir(excludeBase, module.getBasedir().toPath(), excludes)) continue;
       Map<String, Node> nodes = new LinkedHashMap<>();
+      ClasspathOrder order = new ClasspathOrder();
       Set<String> directIds = new HashSet<>();
       // Which direct dependencies are prod-scoped: seeds the prod/dev root split (see emitModuleRoots).
       Set<String> directProdIds = new HashSet<>();
-      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, directProdIds, failures, unscannable);
+      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, order, directIds, directProdIds, failures, unscannable);
       rootIdx = emitModuleRoots(lines, rootIdx, projectKey(module), nodes, directIds, directProdIds);
+      emitClasspath(lines, projectKey(module), order);
     }
 
     for (Failure f : failures) rec(lines, "failure", f.coord, f.detail, f.config, f.project);
@@ -189,6 +191,7 @@ public final class SocketFactsRecordsEngine {
       Set<String> populateGavs,
       Options opts,
       Map<String, Node> nodes,
+      ClasspathOrder order,
       Set<String> directIds,
       Set<String> directProdIds,
       Set<Failure> failures,
@@ -299,7 +302,7 @@ public final class SocketFactsRecordsEngine {
     if (graph == null) return;
     Set<String> visited = new HashSet<>();
     for (DependencyNode child : graph.getChildren()) {
-      String id = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
+      String id = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, order, visited);
       if (id != null) {
         directIds.add(id);
         // A direct dependency's effective scope is its declared scope (Aether's scope selector keeps
@@ -400,6 +403,7 @@ public final class SocketFactsRecordsEngine {
       Set<String> unresolved,
       Options opts,
       Map<String, Node> nodes,
+      ClasspathOrder order,
       Set<String> visited) {
     Dependency dep = dn.getDependency();
     Artifact artifact = dn.getArtifact();
@@ -427,6 +431,7 @@ public final class SocketFactsRecordsEngine {
         ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version, gav)
         : upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(),
             type == null ? "" : type, classifier == null ? "" : classifier, version, "");
+    ("test".equals(scope) ? order.test : order.main).add(id);
     // Maven wrote each accepted node's resolved file back onto the node; a reactor module reports its
     // own dirs through its `project` record instead of a `file` record.
     if (!internal && opts.withFiles) {
@@ -435,7 +440,7 @@ public final class SocketFactsRecordsEngine {
     }
 
     for (DependencyNode child : dn.getChildren()) {
-      String childId = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
+      String childId = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, order, visited);
       if (childId != null) node.children.add(childId);
     }
     return id;
@@ -501,6 +506,16 @@ public final class SocketFactsRecordsEngine {
       rootIdx = emitRoot(lines, rootIdx, projectKey, "test", false, dev, directIds);
     }
     return rootIdx;
+  }
+
+  // Maven builds every classpath of a module from one graph, in the pre-order its own
+  // RepositoryUtils.toArtifacts walks, filtered by each artifact's effective scope. The test scope goes
+  // last, so that a test-only artifact never shadows one main code runs with.
+  private static void emitClasspath(List<String> lines, String projectKey, ClasspathOrder order) {
+    for (String id : order.main) rec(lines, "classpath", projectKey, id);
+    for (String id : order.test) {
+      if (!order.main.contains(id)) rec(lines, "classpath", projectKey, id);
+    }
   }
 
   // Every node id reachable from `seeds` by following retained child edges.
@@ -871,6 +886,13 @@ public final class SocketFactsRecordsEngine {
     public int hashCode() {
       return (detail + "|" + project).hashCode();
     }
+  }
+
+  // Node ids in walk order, by whether the artifact reached them with the test scope. A sibling module's
+  // variants share a node, and can reach it with different scopes.
+  private static final class ClasspathOrder {
+    final Set<String> main = new LinkedHashSet<>();
+    final Set<String> test = new LinkedHashSet<>();
   }
 
   private static final class Node {

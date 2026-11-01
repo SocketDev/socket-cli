@@ -9,6 +9,7 @@
     <module>lib</module>
     <module>mid</module>
     <module>app</module>
+    <module>app2</module>
   </modules>
   <properties>
     <maven.compiler.source>8</maven.compiler.source>

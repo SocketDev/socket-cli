@@ -40,6 +40,11 @@ test/fixtures/commands/fix/e2e-test-py-temp-*
 /src/commands/manifest/scripts/test/gradle-compat/project/localrepo/
 /src/commands/manifest/scripts/test/gradle-compat/project/records.tsv
 /src/commands/manifest/scripts/test/gradle-compat/project/workspaces-records.tsv
+/src/commands/manifest/scripts/test/gradle-compat/order/.gradle/
+/src/commands/manifest/scripts/test/gradle-compat/order/build/
+/src/commands/manifest/scripts/test/gradle-compat/order/classpath.txt
+/src/commands/manifest/scripts/test/gradle-compat/order/localrepo/
+/src/commands/manifest/scripts/test/gradle-compat/order/records.tsv
 /src/commands/manifest/scripts/test/maven-compat/project/localrepo/
 /src/commands/manifest/scripts/test/maven-compat/project/records.tsv
 /src/commands/manifest/scripts/test/maven-compat/project/target/

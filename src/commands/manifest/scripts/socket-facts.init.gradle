@@ -569,22 +569,111 @@ allprojects { project ->
         directIds.addAll(direct)
       }
 
+      // A lenient view of this config's artifacts, limited to the modules the walk fetched files for (and
+      // which verification kept), plus project outputs when `withProjects`.
+      def fetchedView = { cfg, withProjects ->
+        def fetched = paths.keySet().findAll { id -> nodes[id]?.project == null }.collect { id -> gavOf(nodes[id].coord) } as Set
+        cfg.incoming.artifactView {
+          lenient(true)
+          componentFilter { cid ->
+            cid instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier ?
+              fetched.contains("${cid.group}:${cid.module}:${cid.version}".toString()) : withProjects
+          }
+        }
+      }
+
+      // Node ids in the order the fetched-artifact view lists them; null before Gradle 4.0, which has no
+      // lenient artifact view.
+      def orderFromView = { cfg ->
+        def view
+        try {
+          view = fetchedView(cfg, true)
+        } catch (MissingMethodException e) {
+          return null
+        }
+        def idsOfProject = [:]
+        nodes.each { id, n -> if (n.project != null) { idsOfProject.get(n.project, []) << id } }
+        def idsByFile = [:]
+        paths.each { id, files -> files.each { f -> idsByFile.get(f, []) << id } }
+        def order = []
+        view.artifacts.each { a ->
+          def cid = a.id.componentIdentifier
+          if (cid instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
+            def b = cid.metaClass.respondsTo(cid, 'getBuild') ? cid.build : null
+            def buildPath = b == null ? ':' : b.metaClass.respondsTo(b, 'getBuildPath') ? b.buildPath : b.name
+            // An included build's project paths can repeat this build's; its artifacts are files.
+            if (buildPath == ':') {
+              order.addAll(idsOfProject[cid.projectPath] ?: [])
+              return
+            }
+          }
+          order.addAll(idsByFile[a.file.absolutePath] ?: [])
+        }
+        order
+      }
+
+      // Before Gradle 4.0. The legacy listing cannot leave out the artifacts a populateFilesFor scope
+      // excludes, so a scoped run keeps the walk's order.
+      def orderFromLegacy = { lenientCfg ->
+        if (populateGavs != null) {
+          return []
+        }
+        def artifacts
+        try {
+          artifacts = lenientCfg.artifacts
+        } catch (MissingPropertyException e) {
+          artifacts = lenientCfg.getArtifacts({ true } as org.gradle.api.specs.Spec)
+        }
+        artifacts.collect { a ->
+          def mv = a.moduleVersion.id
+          def projPath = projectByGav["${mv.group ?: ''}:${mv.name}:${mv.version ?: ''}".toString()]
+          coordId([groupId: mv.group ?: '', artifactId: mv.name, version: mv.version ?: '',
+                   classifier: a.classifier ?: '', ext: effExt(projPath, a.extension)])
+        }
+      }
+
+      // Puts this config's nodes in the order Gradle lists its artifacts: its classpath order, which no
+      // walk of the dependency graph reproduces. Listing them fetches their files, so only a --with-files
+      // run reads it, over the artifacts it fetched; a plain run keeps the walk's order.
+      def orderByArtifacts = { cfg, lenientCfg ->
+        if (!withFiles) {
+          return
+        }
+        def order
+        try {
+          order = orderFromView(cfg)
+          if (order == null) {
+            order = orderFromLegacy(lenientCfg)
+          }
+        } catch (Exception e) {
+          println "[socket-facts] could not order the classpath of ${configName}: ${rawDetail(e).readLines().find()}"
+          return
+        }
+        def listed = new LinkedHashSet(order.findAll { id -> nodes.containsKey(id) })
+        if (listed.isEmpty()) {
+          return
+        }
+        // A node the listing leaves out (a pom-only module, an artifact this run did not fetch) keeps its
+        // place in the walk; the listed nodes fill the remaining places in classpath order.
+        def next = listed.iterator()
+        def ordered = [:]
+        nodes.each { id, node ->
+          def slot = listed.contains(id) ? next.next() : id
+          ordered[slot] = nodes[slot]
+        }
+        nodes.clear()
+        nodes.putAll(ordered)
+      }
+
       // Drops the files of this config's artifacts that failed verification and reports them.
       def checkVerification = { cfg ->
         def external = paths.keySet().findAll { id -> nodes[id].project == null }
         if (external.isEmpty()) {
           return
         }
-        def fetched = external.collect { id -> gavOf(nodes[id].coord) } as Set
         def message = null
         try {
-          cfg.incoming.artifactView {
-            lenient(true)
-            componentFilter { id ->
-              id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
-                fetched.contains("${id.group}:${id.module}:${id.version}".toString())
-            }
-          }.artifacts.each { it.file }
+          fetchedView(cfg, false).artifacts.each { it.file }
         } catch (Exception e) {
           message = verificationMessage(e)
           if (message == null) {
@@ -714,6 +803,7 @@ allprojects { project ->
           if (verifyArtifacts) {
             checkVerification(cfg)
           }
+          orderByArtifacts(cfg, lenient)
           walked = true
         } catch (Exception e) {
           // A config-LEVEL resolution failure (a resolutionStrategy/beforeResolve rule that throws,

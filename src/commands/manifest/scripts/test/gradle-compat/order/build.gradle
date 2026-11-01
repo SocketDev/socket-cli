@@ -1,0 +1,24 @@
+// Ordering fixture for ../../socket-facts.init.gradle: `a` pulls `a1`, so a walk of the dependency
+// graph meets a, a1, b while Gradle puts a's dependencies after its own siblings on the classpath.
+// The `printClasspath` task writes the order Gradle itself builds the runtime classpath in.
+apply plugin: 'java'
+group = 'demo'
+version = '1.0.0'
+
+repositories {
+  maven { url file('localrepo').toURI() }
+}
+
+def modern = org.gradle.util.GradleVersion.current() >= org.gradle.util.GradleVersion.version('3.4')
+def runtimeName = modern ? 'runtimeClasspath' : 'runtime'
+dependencies {
+  add(modern ? 'implementation' : 'compile', 'demo.lib:a:1.0')
+  add(modern ? 'implementation' : 'compile', 'demo.lib:b:1.0')
+}
+
+tasks.create("printClasspath") {
+  doLast {
+    file(project.property('classpathFile')).text =
+      runtimeName + '\n' + configurations.getByName(runtimeName).files.collect { it.name }.join('\n') + '\n'
+  }
+}

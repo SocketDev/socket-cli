@@ -10,7 +10,12 @@ import {
 } from './facts.mts'
 import { moduleKey } from './resolution-report.mts'
 
-import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
+import type {
+  ParsedRecords,
+  RawCoord,
+  RawProject,
+  RawRoot,
+} from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 
 const PURL_TYPE_MAVEN = 'maven'
@@ -44,7 +49,9 @@ type SubprojectGraph = {
 
 type PerRoot = {
   projectKey: string
+  config: string
   prod: boolean
+  // In the root's classpath order.
   nodes: Map<string, RootNode>
 }
 
@@ -93,6 +100,7 @@ export function assembleFacts(
       [...parsed.projects.values()],
       [...parsed.excludedProjects.values()],
       graphs,
+      buildClasspaths(parsed, perRoot),
       fileExists,
     ),
   }
@@ -139,14 +147,19 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
         parent.children.push(childId)
       }
     }
-    out.set(rootId, { projectKey: r.projectKey, prod: r.prod, nodes })
+    out.set(rootId, {
+      projectKey: r.projectKey,
+      config: r.config,
+      prod: r.prod,
+      nodes,
+    })
   }
   return out
 }
 
 // Components are merged by id across every resolution root; which ids belong
 // to which subproject is kept separately (classpathByProject) for
-// reachability, which needs each subproject's exact classpath.
+// reachability.
 function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
   const finalNodes = new Map<string, MergedNode>()
   for (const { nodes, prod } of perRoot.values()) {
@@ -395,17 +408,121 @@ function treeRoots(
   return roots
 }
 
-function byProject(
-  projects: RawProject[],
-  graphs: Map<string, SubprojectGraph>,
-  ids: (graph: SubprojectGraph) => Iterable<string>,
-): Map<string, string[]> {
-  return new Map(
-    projects.map(p => {
-      const g = graphs.get(p.projectKey)
-      return [p.projectKey, g ? [...ids(g)].sort() : []]
-    }),
+// A test configuration: Gradle's `test…`/`…Test…` (testRuntimeClasspath,
+// integrationTestCompileClasspath, debugUnitTestRuntimeClasspath), sbt's
+// test and it configurations.
+const TEST_CONFIG = /^test|Test|^it(?:-internal)?$/
+const SBT_TEST_CONFIG = /^(?:test|it)(?:-internal)?$/
+
+// Lower ranks go first; an unrecognised configuration counts as tooling.
+function classpathRank(config: string): number {
+  const n = config.toLowerCase()
+  // Gradle's legacy `runtime`/`compile` (before Gradle 7) are a subset of the
+  // matching `…Classpath` configuration, so they rank just behind it.
+  const legacy = n.endsWith('runtime') || n.endsWith('compile') ? 0.5 : 0
+  const runtime = n.endsWith('runtimeclasspath') || n.endsWith('runtime')
+  const compile = n.endsWith('compileclasspath') || n.endsWith('compile')
+  if (TEST_CONFIG.test(config)) {
+    if (runtime || SBT_TEST_CONFIG.test(n)) {
+      return 4 + legacy
+    }
+    return compile ? 5 + legacy : 6
+  }
+  if (n === 'runtimeclasspath' || n === 'runtime' || n === 'runtime-internal') {
+    return legacy
+  }
+  if (n === 'compileclasspath' || n === 'compile' || n === 'compile-internal') {
+    return 1 + legacy
+  }
+  if (runtime) {
+    return 2 + legacy
+  }
+  if (compile || n === 'provided' || n === 'optional') {
+    return 3 + legacy
+  }
+  return 6
+}
+
+// The JVM loads a class from the first classpath entry that has it, so the
+// first root by rank to resolve a module fixes its version.
+function deriveClasspath(roots: PerRoot[]): string[] {
+  const ranked = [...roots].sort(
+    (a, b) => classpathRank(a.config) - classpathRank(b.config),
   )
+  const versionOf = new Map<string, string>()
+  const out = new Set<string>()
+  for (const { nodes } of ranked) {
+    for (const { 0: id, 1: node } of nodes) {
+      const module = node.project
+        ? `project ${node.project}`
+        : `${node.coord.group}:${node.coord.name}`
+      let version = versionOf.get(module)
+      if (version === undefined) {
+        version = node.coord.version
+        versionOf.set(module, version)
+      }
+      if (version === node.coord.version) {
+        out.add(id)
+      }
+    }
+  }
+  return [...out]
+}
+
+// A project's classpath as its build tool states it, by component id.
+function statedClasspath(
+  projectKey: string,
+  stated: string[],
+  roots: RawRoot[],
+): string[] {
+  const ids = new Map<string, string>()
+  for (const r of roots) {
+    for (const { 0: coordId, 1: n } of r.nodes) {
+      ids.set(coordId, componentId(coordId, n.project))
+    }
+  }
+  const cp = new Set<string>()
+  for (const coordId of stated) {
+    const id = ids.get(coordId)
+    if (id === undefined) {
+      throw new Error(
+        `The classpath of ${projectKey} names ${coordId}, which none of its resolution roots resolved`,
+      )
+    }
+    cp.add(id)
+  }
+  return [...cp]
+}
+
+function buildClasspaths(
+  parsed: ParsedRecords,
+  perRoot: Map<string, PerRoot>,
+): Map<string, string[]> {
+  const rootIdsByProject = new Map<string, string[]>()
+  for (const { 0: rootId, 1: r } of parsed.roots) {
+    let list = rootIdsByProject.get(r.projectKey)
+    if (!list) {
+      list = []
+      rootIdsByProject.set(r.projectKey, list)
+    }
+    list.push(rootId)
+  }
+  const out = new Map<string, string[]>()
+  for (const projectKey of parsed.projects.keys()) {
+    const rootIds = rootIdsByProject.get(projectKey) ?? []
+    const stated = parsed.classpaths.get(projectKey)
+    out.set(
+      projectKey,
+      stated
+        ? statedClasspath(
+            projectKey,
+            stated,
+            rootIds.flatMap(id => parsed.roots.get(id) ?? []),
+          )
+        : deriveClasspath(rootIds.flatMap(id => perRoot.get(id) ?? [])),
+    )
+  }
+  return out
 }
 
 function buildArtifactPaths(
@@ -413,6 +530,7 @@ function buildArtifactPaths(
   projects: RawProject[],
   excludedProjects: RawProject[],
   graphs: Map<string, SubprojectGraph>,
+  classpaths: Map<string, string[]>,
   fileExists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
@@ -454,8 +572,13 @@ function buildArtifactPaths(
   }
   return {
     pathsById,
-    classpathByProject: byProject(projects, graphs, g => g.children.keys()),
-    directDependenciesByProject: byProject(projects, graphs, g => g.direct),
+    classpathByProject: classpaths,
+    directDependenciesByProject: new Map(
+      projects.map(p => {
+        const g = graphs.get(p.projectKey)
+        return [p.projectKey, g ? [...g.direct].sort() : []]
+      }),
+    ),
   }
 }
 
