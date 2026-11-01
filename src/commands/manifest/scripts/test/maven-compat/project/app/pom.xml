@@ -8,10 +8,13 @@
   </parent>
   <artifactId>app</artifactId>
   <dependencies>
-    <!-- internal reactor module -> inter-module edge, bare-id component -->
+    <!-- internal reactor modules -> inter-module edges, bare-id components. lib's jar comes in
+         through mid, deeper than lib's test-jar further down, so Maven keeps demo.ext:libdep (with
+         its compile scope) under the test-jar node and none under the jar node, which the walk
+         reaches first. -->
     <dependency>
       <groupId>demo</groupId>
-      <artifactId>lib</artifactId>
+      <artifactId>mid</artifactId>
       <version>1.0</version>
     </dependency>
     <!-- external prod dep (stub artifact from the generated repo, no transitive deps) -->
@@ -42,6 +45,13 @@
       <groupId>demo.ext</groupId>
       <artifactId>conflict-prod</artifactId>
       <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo</groupId>
+      <artifactId>lib</artifactId>
+      <version>1.0</version>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

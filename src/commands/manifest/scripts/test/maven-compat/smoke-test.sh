@@ -8,6 +8,8 @@
 #    inter-module edge lines up with its `project` record);
 #  - resolves a scope conflict so the retained node stays reachable from its parent root;
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
+#  - keeps the dependencies Maven leaves only under a sibling module's test-jar (app reaches
+#    demo.ext:libdep under lib's test-jar node, after lib's jar node through mid);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).
 #
@@ -36,7 +38,8 @@ bash "$HERE/../make-stub-repo.sh" "$STUBS" \
   'demo.ext:harness-core:1.0' \
   'demo.ext:conflict-test:1.0+demo.ext:shared:1.0' \
   'demo.ext:conflict-prod:1.0+demo.ext:shared:1.0' \
-  'demo.ext:shared:1.0'
+  'demo.ext:shared:1.0' \
+  'demo.ext:libdep:1.0'
 # Maven's own plugin closure stays cached between runs; the stubs never do, so every run has to
 # resolve them from the repo just generated.
 rm -rf "$M2/demo" "$RECORDS" "$PROJECT"/*/target "$PROJECT"/target
@@ -52,6 +55,14 @@ echo "+ $("$MVN" -v 2>/dev/null | head -1)"
     compile )
 
 python3 "$HERE/assert-records.py" "$RECORDS"
+python3 - "$RECORDS" <<'PY'
+import sys
+rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
+app = {r[1] for r in rows if r[0] == 'root' and r[2] == 'demo:app:1.0'}
+if not any(r[0] == 'node' and r[1] in app and r[2].startswith('demo.ext:libdep:') for r in rows):
+    print("FAIL: demo.ext:libdep missing from app"); sys.exit(1)
+print("PASS: demo.ext:libdep in app through lib's test-jar")
+PY
 python3 "$HERE/../assert-reachability.py" "$RECORDS"
 
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.

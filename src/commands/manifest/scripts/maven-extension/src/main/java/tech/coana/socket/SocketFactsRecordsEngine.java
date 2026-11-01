@@ -416,14 +416,12 @@ public final class SocketFactsRecordsEngine {
     String type = artifact.getProperty(ARTIFACT_PROPERTY_TYPE, artifact.getExtension());
     String classifier = artifact.getClassifier();
     String version = artifact.getBaseVersion();
-    String id = internal
-        ? SocketSupport.bareId(artifact.getGroupId(), artifact.getArtifactId(), version)
-        : externalId(artifact);
+    String key = externalId(artifact);
+    String id = internal ? SocketSupport.bareId(artifact.getGroupId(), artifact.getArtifactId(), version) : key;
 
-    // One walk per node per module traversal: a shared subtree reached via another edge is already
-    // fully recorded (node, children, resolved file), so hand back the id without re-descending.
-    // Keeps reconverging graphs linear.
-    if (!visited.add(id)) return id;
+    // One walk per artifact: a shared subtree is already recorded. Keyed by coordinate, as a sibling's jar
+    // and test-jar share a node but Maven can keep the sibling's dependencies under either.
+    if (!visited.add(key)) return id;
 
     Node node = internal
         ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version, gav)
