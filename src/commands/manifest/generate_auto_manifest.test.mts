@@ -446,11 +446,13 @@ describe('generateAutoManifest — dotnet branch', () => {
     )
     expect(convertDotnetToFacts).toHaveBeenCalledWith(
       expect.objectContaining({
-        bin: '/opt/dotnet/dotnet',
+        config: expect.objectContaining({
+          bin: '/opt/dotnet/dotnet',
+          buildOpts: ['-p:Configuration=Release'],
+          ignoreUnresolved: true,
+          includeConfigs: 'net8.0',
+        }),
         cwd: '/tmp/repo',
-        dotnetOpts: ['-p:Configuration=Release'],
-        ignoreUnresolved: true,
-        includeConfigs: 'net8.0',
       }),
     )
   })

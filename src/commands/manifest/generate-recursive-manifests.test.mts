@@ -17,13 +17,17 @@ vi.mock('./run-manifest-facts.mts', () => ({
 }))
 vi.mock('./scripts/run.mts', async importOriginal => ({
   ...(await importOriginal<typeof import('./scripts/run.mts')>()),
+  listDotnetEntryProjects: vi.fn(async () => undefined),
   skipWithoutDotnetSdk: vi.fn(async () => false),
 }))
 
 import { buildRootPath } from './discover-manifest-roots.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
-import { skipWithoutDotnetSdk } from './scripts/run.mts'
+import {
+  listDotnetEntryProjects,
+  skipWithoutDotnetSdk,
+} from './scripts/run.mts'
 import { testPath } from '../../../test/utils.mts'
 import {
   readOrDefaultSocketJson,
@@ -545,6 +549,40 @@ describe('generateRecursiveManifests', () => {
       expect(
         vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.ecosystem),
       ).toEqual(['maven'])
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  it("does not list a solution's members for coverage another tool's builds recorded", async () => {
+    const dir = await fs.mkdtemp(path.join(tmpdir(), 'dsi-per-tool-'))
+    try {
+      await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
+      await fs.writeFile(path.join(dir, 'App.sln'), '')
+      vi.mocked(listDotnetEntryProjects).mockClear()
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, entryFile }) => ({
+          factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+          projects: [
+            {
+              type: 'maven',
+              name: 'app',
+              subprojectDir: '',
+              manifestFiles: [{ file: 'pom.xml' }],
+              children: [],
+            },
+          ],
+        }),
+      )
+      const outcomes = await generateRecursiveManifests({
+        cwd: dir,
+        verbose: false,
+      })
+
+      expect(
+        outcomes.map(o => `${o.ecosystem}:${o.entryFile}:${o.status}`).sort(),
+      ).toEqual(['dotnet:App.sln:generated', 'maven:pom.xml:generated'])
+      expect(listDotnetEntryProjects).not.toHaveBeenCalled()
     } finally {
       await fs.rm(dir, { recursive: true, force: true })
     }
