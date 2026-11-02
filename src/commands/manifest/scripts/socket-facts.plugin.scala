@@ -73,6 +73,8 @@ object SocketFactsPlugin extends AutoPlugin {
 
       // Real artifact ext per build module, so an ext-less inter-project dep gets its true coordinate.
       val moduleExts = buildModuleExts(allRefs, extracted)
+      val outputSets: Map[ProjectRef, Seq[(String, Configuration)]] =
+        allRefs.map(r => r -> sourceConfigs(r, extracted)).toMap
 
       // Every project: `update` also runs each upstream project's update, which would fail strictly.
       lazy val lenientState = extracted.append(allRefs.map(r => updateConfiguration.in(r) ~= (c => withMissingOk(c))), st)
@@ -93,15 +95,15 @@ object SocketFactsPlugin extends AutoPlugin {
           runUpdateResilient(updateTaskName, ref, extracted, st, lenientState, matcher, failures, unscannable, resolver)
             .foreach { case (report, unresolved, ivyUnfetched, updateFailed) =>
             foldReport(report, unresolved, ref, extracted, matcher, scannedConfigs, withFiles, populateScope, moduleExts,
-              resolver, ivyUnfetched, updateFailed, failures).foreach {
+              outputSets, resolver, ivyUnfetched, updateFailed, failures).foreach {
               case (rootKey, tree) => perSub(rootKey) = tree
             }
           }
         }
       }
 
-      val moduleDirs: Map[String, (Seq[String], Seq[String])] =
-        if (withFiles) buildModuleDirs(allRefs, extracted, st) else Map.empty
+      val moduleDirs: Map[String, Seq[(String, Seq[String], Seq[String])]] =
+        if (withFiles) buildModuleDirs(allRefs, outputSets, extracted, st) else Map.empty
 
       // Where sbt recorded the project's own settings as defined (the root build.sbt for a subproject
       // defined there); positions outside the build are sbt defaults, plugins or our injected base.
@@ -141,11 +143,19 @@ object SocketFactsPlugin extends AutoPlugin {
           (buildFilesByRef.getOrElse(ref, Nil) ++ baseBuildSbt(baseDir, rootCanonPath).map(relOf)).distinct.sorted
             .foreach(f => rec("projectBuild", ref.project, f))
         }
+        // A configuration's classpath holds the code of the configurations it extends (Test: Compile).
+        if (!isExcludedRef(ref) || withFiles) {
+          val sets = outputSets(ref)
+          sets.foreach { case (set, c) =>
+            val held = Classpaths.allConfigs(c).map(_.name).toSet
+            rec("outputSet", ref.project, set, sets.collect { case (o, oc) if oc.name != c.name && held(oc.name) => o }.mkString(","))
+          }
+        }
         if (withFiles) {
-          moduleDirs.get(mid.organization + ":" + mid.name + ":" + ver).foreach {
-            case (sources, targets) =>
-              sources.foreach(s => rec("projectSrc", ref.project, s))
-              targets.foreach(t => rec("projectTgt", ref.project, t))
+          moduleDirs.getOrElse(mid.organization + ":" + mid.name + ":" + ver, Nil).foreach {
+            case (set, sources, targets) =>
+              sources.foreach(s => rec("projectSrc", ref.project, s, set))
+              targets.foreach(t => rec("projectTgt", ref.project, t, set))
           }
         }
       }
@@ -157,12 +167,12 @@ object SocketFactsPlugin extends AutoPlugin {
         case (_, tree) =>
           val rootId = rootIdx.toString
           rootIdx += 1
-          rec("root", rootId, tree.projectKey, tree.config, if (tree.prod) "1" else "0")
+          rec("root", rootId, tree.projectKey, tree.config, if (tree.prod) "1" else "0", tree.outputSet, tree.role)
           tree.nodes.foreach {
             case (coordId, node) =>
               val c = node.coord
               rec("node", rootId, coordId, c.org, c.name, c.version, c.ext, c.classifier, if (node.direct) "1" else "0",
-                node.project)
+                node.project, node.outputSets.mkString(","))
               node.children.foreach(ch => rec("edge", rootId, coordId, ch))
               node.targets.foreach(p => rec("file", rootId, coordId, p))
               if (node.unfetched) rec("unfetched", rootId, coordId)
@@ -202,27 +212,36 @@ object SocketFactsPlugin extends AutoPlugin {
     }.toMap
   }
 
-  // Absolute source roots + compiled-output dirs per build module, keyed by GAV. --with-files only;
-  // absolute because reachability locates an internal module's code on THIS machine (no registry jar).
-  // ALL of the project's configurations are scanned (not just Compile/Test) so custom ones
-  // (IntegrationTest, ...) reach the analysis; source-file-level exclusion is coana's job.
+  // A project's code by output set: Compile's as `main`, and each configuration with a class directory
+  // of its own (Test, IntegrationTest, ...) under its name.
+  private def sourceConfigs(ref: ProjectRef, extracted: Extracted): Seq[(String, Configuration)] = {
+    val configs = extracted.getOpt(thisProject.in(ref)).map(_.configurations).getOrElse(Seq(Compile, Test))
+    val mainDir = extracted.getOpt(classDirectory.in(ref).in(Compile))
+    ("main" -> Compile) +: configs.filter { c =>
+      c.name != Compile.name && extracted.getOpt(classDirectory.in(ref).in(c)).exists(d => !mainDir.exists(_ == d))
+    }.map(c => c.name -> c)
+  }
+
+  // Absolute source roots + compiled-output dirs per build module and output set, keyed by GAV.
+  // --with-files only; absolute because reachability locates an internal module's code on THIS machine
+  // (no registry jar). Source-file-level exclusion is coana's job.
   private def buildModuleDirs(
       allRefs: Seq[ProjectRef],
+      outputSets: Map[ProjectRef, Seq[(String, Configuration)]],
       extracted: Extracted,
       state: State
-  ): Map[String, (Seq[String], Seq[String])] = {
+  ): Map[String, Seq[(String, Seq[String], Seq[String])]] = {
     allRefs.map { ref =>
       val mid = rootIdOf(extracted, ref)
       val ver = if (mid.revision == null) "" else mid.revision
-      val configs: Seq[Configuration] =
-        extracted.getOpt(thisProject.in(ref)).map(_.configurations).getOrElse(Seq(Compile, Test))
-      val sources = (configs.flatMap(c => extracted.getOpt(sourceDirectories.in(ref).in(c)).getOrElse(Nil)) ++
-        baseDirSources(ref, configs, extracted, state))
-        .map(_.getAbsolutePath).distinct.sorted
-      val targets = configs
-        .flatMap(c => extracted.getOpt(classDirectory.in(ref).in(c)))
-        .map(_.getAbsolutePath).distinct.sorted
-      (mid.organization + ":" + mid.name + ":" + ver) -> ((sources, targets))
+      val sets = outputSets(ref).map { case (set, c) =>
+        val sources = (extracted.getOpt(sourceDirectories.in(ref).in(c)).getOrElse(Nil) ++
+          baseDirSources(ref, Seq(c), extracted, state))
+          .map(_.getAbsolutePath).distinct.sorted
+        val targets = extracted.getOpt(classDirectory.in(ref).in(c)).toSeq.map(_.getAbsolutePath)
+        (set, sources, targets)
+      }
+      (mid.organization + ":" + mid.name + ":" + ver) -> sets
     }.toMap
   }
 
@@ -489,6 +508,7 @@ object SocketFactsPlugin extends AutoPlugin {
       withFiles: Boolean,
       populateScope: Option[Set[String]],
       moduleExts: Map[String, String],
+      outputSets: Map[ProjectRef, Seq[(String, Configuration)]],
       resolver: Resolver,
       ivyUnfetched: IvyUnfetched,
       // sbt's own update failed on artifacts alone, so one it could not fetch is a failure even
@@ -554,6 +574,19 @@ object SocketFactsPlugin extends AutoPlugin {
       case Some(gavs) => gavs.contains(gavKey(m))
     }
 
+    // The configuration sbt resolves a configuration's classpath for: the first of its internal one
+    // (compile-internal, ...), Compile and Default the report has (Defaults.findClasspathConfig).
+    val reported = report.configurations.map(confName).toSet
+    def classpathConf(c: Configuration): Option[String] = {
+      val internal = extracted.getOpt(internalConfigurationMap.in(ref)).map(_(c).name).getOrElse(c.name)
+      Seq(internal, Compile.name, "default").find(reported)
+    }
+    // Each output set's runtime classpath, and Compile's, which adds the compile-only (Provided) entries.
+    val classpathRoles: Map[String, (String, String)] =
+      outputSets(ref).flatMap { case (set, c) =>
+        classpathConf(if (set == "main") Runtime else c).map(_ -> ((set, "runtime")))
+      }.toMap ++ classpathConf(Compile).map(_ -> (("main", "compile")))
+
     report.configurations.foreach { cr =>
       val cfg = confName(cr)
       if (matcher(cfg)) {
@@ -566,13 +599,17 @@ object SocketFactsPlugin extends AutoPlugin {
 
         confsOf(ref).find(_.name == cfg).foreach { conf =>
           // Keyed by project id, as projects need not have distinct coordinates.
+          // A dependency on a build project brings in the output sets of the configurations it reaches.
           def buildModuleNode(r: ProjectRef): String = {
             midToIds.getOrElseUpdate(moduleKey(rootIdOf(extracted, r)), mutable.LinkedHashSet.empty[String]) += r.project
-            nodes.getOrElseUpdate(r.project, {
+            val node = nodes.getOrElseUpdate(r.project, {
               val node = new Node(buildModuleCoord(r))
               node.project = r.project
               node
             })
+            val confs = reachedConfs.getOrElse(r.project, Set.empty[String])
+            node.outputSets ++= outputSets.getOrElse(r, Nil)
+              .collect { case (set, c) if confs(c.name) => set }
             r.project
           }
           val (edges, reached) = interProjectEdges(conf)
@@ -632,7 +669,10 @@ object SocketFactsPlugin extends AutoPlugin {
           }
         }
 
-        if (nodes.nonEmpty) perRoot(ref.project + "::" + cfg) = new RootTree(ref.project, cfg, prod, nodes)
+        if (nodes.nonEmpty) {
+          val (set, role) = classpathRoles.getOrElse(cfg, ("", ""))
+          perRoot(ref.project + "::" + cfg) = new RootTree(ref.project, cfg, prod, set, role, nodes)
+        }
       }
     }
     perRoot
@@ -1000,6 +1040,8 @@ object SocketFactsPlugin extends AutoPlugin {
     var direct = false
     // Id of the build project this node is, when it is one.
     var project = ""
+    // That project's output sets this dependency brings in.
+    val outputSets = mutable.LinkedHashSet.empty[String]
     // External artifact's resolved jar(s); --with-files only.
     val targets = mutable.TreeSet.empty[String]
     // An expected artifact was not fetched; --with-files only.
@@ -1013,6 +1055,9 @@ object SocketFactsPlugin extends AutoPlugin {
       val projectKey: String,
       val config: String,
       val prod: Boolean,
+      // The output set whose runtime or compile classpath this root is, or "".
+      val outputSet: String,
+      val role: String,
       val nodes: mutable.LinkedHashMap[String, Node]
   )
 }

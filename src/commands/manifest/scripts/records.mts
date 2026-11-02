@@ -1,3 +1,4 @@
+import type { OutputPaths } from './facts.mts'
 import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 
 // Line-protocol the build-tool scripts emit to a records file (NOT stdout — sbt
@@ -10,13 +11,15 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   buildRoot   path                                     (absolute; the facts file's directory)
 //   entry       path                                     (file-addressed builds; build-root-relative)
 //   project     projectKey  group  name  version  dir
-//   projectSrc  projectKey  path                         (--with-files only)
-//   projectTgt  projectKey  path                         (--with-files only)
+//   projectSrc  projectKey  path  outputSet              (--with-files only)
+//   projectTgt  projectKey  path  outputSet              (--with-files only)
+//   outputSet   projectKey  outputSet  includes          (the project's own sets on its classpath)
 //   projectBuild  projectKey  path                     (build-root-relative; may be absent on disk)
 //   excludedProject  projectKey                          (--with-files only; paths without a project)
-//   root        rootId  projectKey  config  prod(0|1)
-//   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
+//   root        rootId  projectKey  config  prod(0|1)  outputSet  role(runtime|compile)
+//   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project  outputSets(brought in)
 //   edge        rootId  parentCoordId  childCoordId
+//   classpath   projectKey  outputSet  coordId  outputSets   (in order; see below)
 //   file        rootId  coordId  path                    (--with-files only)
 //   unfetched   rootId  coordId                          (--with-files only; requested artifact not fetched)
 //   scanned     config
@@ -29,6 +32,10 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 // A `root` is one (subproject, configuration) resolution root; `coordId` is the
 // coordinate key (`group:name:ext:classifier:version`, empty segments dropped),
 // used opaquely as the per-root node key. Unknown tags are ignored.
+//
+// Output sets are a project's code by source set (`main`, `test`, ...). A root
+// with one is that set's runtime or compile classpath, its nodes in classpath
+// order; `classpath` records state Maven's outright.
 
 export type RawCoord = {
   group: string
@@ -45,6 +52,8 @@ export type RawNode = {
   // projectKey of the build project this node resolves to; empty for an
   // external artifact.
   project: string
+  // The build project's output sets this dependency brings in.
+  outputSets: string[]
   // --with-files only.
   targets: string[]
   unfetched: boolean
@@ -53,8 +62,10 @@ export type RawNode = {
 export type RawRoot = {
   rootId: string
   projectKey: string
-  config: string
   prod: boolean
+  // The output set whose classpath this root is, or '' for none.
+  outputSet: string
+  role: 'runtime' | 'compile' | ''
   nodes: Map<string, RawNode>
   edges: Array<[string, string]>
 }
@@ -65,10 +76,16 @@ export type RawProject = {
   name: string
   version: string
   dir: string
-  sources: string[]
-  targets: string[]
+  outputs: Map<string, OutputPaths>
+  // Each output set, with the project's other output sets on its classpath.
+  outputSets: Map<string, string[]>
   // The project's build files, build-root-relative.
   buildFiles: string[]
+}
+
+export type StatedClasspathEntry = {
+  coordId: string
+  outputSets: string[]
 }
 
 export type ParsedRecords = {
@@ -85,6 +102,8 @@ export type ParsedRecords = {
   // the kept projects depending on them.
   excludedProjects: Map<string, RawProject>
   roots: Map<string, RawRoot>
+  // By projectKey, then output set: nodes of the project's roots, in order.
+  classpaths: Map<string, Map<string, StatedClasspathEntry[]>>
   scannedConfigs: string[]
   failures: ResolutionFailure[]
   unscannable: Unscannable[]
@@ -111,6 +130,14 @@ function bool(s: string | undefined): boolean {
   return s === '1' || s === 'true'
 }
 
+function list(s: string | undefined): string[] {
+  return s ? s.split(',') : []
+}
+
+function role(s: string | undefined): RawRoot['role'] {
+  return s === 'runtime' || s === 'compile' ? s : ''
+}
+
 export function parseRecords(text: string): ParsedRecords {
   const result: ParsedRecords = {
     tool: '',
@@ -121,6 +148,7 @@ export function parseRecords(text: string): ParsedRecords {
     projects: new Map(),
     excludedProjects: new Map(),
     roots: new Map(),
+    classpaths: new Map(),
     scannedConfigs: [],
     failures: [],
     unscannable: [],
@@ -134,8 +162,9 @@ export function parseRecords(text: string): ParsedRecords {
       r = {
         rootId: id,
         projectKey: '',
-        config: '',
         prod: false,
+        outputSet: '',
+        role: '',
         nodes: new Map(),
         edges: [],
       }
@@ -152,13 +181,23 @@ export function parseRecords(text: string): ParsedRecords {
         name: '',
         version: '',
         dir: '',
-        sources: [],
-        targets: [],
+        outputs: new Map(),
+        outputSets: new Map(),
         buildFiles: [],
       }
       result.projects.set(key, p)
     }
     return p
+  }
+
+  const outputs = (key: string, set: string): OutputPaths => {
+    const all = project(key).outputs
+    let o = all.get(set)
+    if (!o) {
+      o = { sources: [], targets: [] }
+      all.set(set, o)
+    }
+    return o
   }
 
   for (const rawLine of text.split('\n')) {
@@ -187,13 +226,18 @@ export function parseRecords(text: string): ParsedRecords {
         break
       }
       case 'projectSrc':
-        if (f[2]) {
-          project(f[1] ?? '').sources.push(f[2])
+        if (f[2] && f[3]) {
+          outputs(f[1] ?? '', f[3]).sources.push(f[2])
         }
         break
       case 'projectTgt':
+        if (f[2] && f[3]) {
+          outputs(f[1] ?? '', f[3]).targets.push(f[2])
+        }
+        break
+      case 'outputSet':
         if (f[2]) {
-          project(f[1] ?? '').targets.push(f[2])
+          project(f[1] ?? '').outputSets.set(f[2], list(f[3]))
         }
         break
       case 'excludedProject':
@@ -207,8 +251,9 @@ export function parseRecords(text: string): ParsedRecords {
       case 'root': {
         const r = root(f[1] ?? '')
         r.projectKey = f[2] ?? ''
-        r.config = f[3] ?? ''
         r.prod = bool(f[4])
+        r.outputSet = f[5] ?? ''
+        r.role = role(f[6])
         break
       }
       case 'node': {
@@ -225,6 +270,7 @@ export function parseRecords(text: string): ParsedRecords {
           },
           direct: bool(f[8]),
           project: f[9] ?? '',
+          outputSets: list(f[10]),
           targets: [],
           unfetched: false,
         })
@@ -235,6 +281,24 @@ export function parseRecords(text: string): ParsedRecords {
         const child = f[3] ?? ''
         if (parent !== child) {
           root(f[1] ?? '').edges.push([parent, child])
+        }
+        break
+      }
+      case 'classpath': {
+        const key = f[1] ?? ''
+        let byName = result.classpaths.get(key)
+        if (!byName) {
+          byName = new Map()
+          result.classpaths.set(key, byName)
+        }
+        const name = f[2] ?? ''
+        let cp = byName.get(name)
+        if (!cp) {
+          cp = []
+          byName.set(name, cp)
+        }
+        if (f[3]) {
+          cp.push({ coordId: f[3], outputSets: list(f[4]) })
         }
         break
       }

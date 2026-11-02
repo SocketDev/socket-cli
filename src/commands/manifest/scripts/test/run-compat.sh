@@ -66,6 +66,7 @@ run_gradle() {
     bash "$HERE/gradle-compat/smoke-test-workspaces.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-exclude-base.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-failures.sh" "$dir/bin/gradle"
+    bash "$HERE/gradle-compat/smoke-test-order.sh" "$dir/bin/gradle"
   done
 }
 

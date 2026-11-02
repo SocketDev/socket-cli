@@ -34,7 +34,8 @@ function okResult(buildRoot: string): ManifestRunResult {
     },
     artifactPaths: {
       pathsById: new Map(),
-      classpathByProject: new Map(),
+      outputsByProject: new Map(),
+      classpathsByProject: new Map(),
       directDependenciesByProject: new Map(),
     },
     stderr: '',

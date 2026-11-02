@@ -58,15 +58,27 @@ export type SocketFactsSbomProject = AnyPURL & {
   children: number[]
 }
 
-// Resolved on-disk paths for a --with-files run, keyed by component or project
-// id (a project and its own component share one). `targets` = classpath
-// entries (jars / module output dirs), absent when the component's artifact
-// did not resolve; `sources` = module source roots.
+export type OutputPaths = {
+  sources: string[]
+  targets: string[]
+}
+
+// One entry of a classpath, in the order the JVM searches it.
+export type ClasspathEntry =
+  // An external artifact, by component id.
+  | { id: string }
+  // One output set (`main`, `test`, `testFixtures`, ...) of a build project.
+  | { project: string; outputs: string }
+
+// Resolved on-disk paths for a --with-files run, and each project's classpaths.
 export type ResolvedArtifactPaths = {
-  pathsById: Map<string, { sources: string[]; targets?: string[] | undefined }>
-  // Component ids on each project's resolved classpath (union over its
-  // configurations), keyed by project id.
-  classpathByProject: Map<string, string[]>
+  // External artifacts by component id: `targets` are their files, absent when
+  // the artifact did not resolve.
+  pathsById: Map<string, { targets?: string[] | undefined }>
+  // Build projects' output sets by name, keyed by project id.
+  outputsByProject: Map<string, Map<string, OutputPaths>>
+  // Each project's classpaths by output set, keyed by project id.
+  classpathsByProject: Map<string, Map<string, ClasspathEntry[]>>
   // Component ids of each project's direct dependencies, keyed by project id.
   directDependenciesByProject: Map<string, string[]>
 }
