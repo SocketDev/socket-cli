@@ -24,7 +24,6 @@ import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,
 } from '../../utils/socket-json.mts'
-import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
@@ -169,12 +168,6 @@ async function runEcosystemCandidates({
 }): Promise<RecursiveManifestOutcome[]> {
   const outcomes: RecursiveManifestOutcome[] = []
   const covered = new Set<string>()
-  // Relative to the scan root: a build can reach modules outside its own
-  // directory (Maven `../x` modules, relocated Gradle projects).
-  const scanExcludePaths = projectIgnorePathsToReachExcludePaths(excludePaths, {
-    cwd: realCwd,
-    target: realCwd,
-  })
   for (const [ecosystem, roots] of candidatesByTool) {
     const disabledRoots: DisabledRoot[] = []
     const configByDir = new Map<string, EcosystemBuildConfig>()
@@ -230,8 +223,10 @@ async function runEcosystemCandidates({
         ecosystem,
         entryFile,
         excludeConfigs,
+        // Relative to the scan root: a build can reach modules outside its
+        // own directory (Maven `../x` modules, relocated Gradle projects).
         excludeBase: realCwd,
-        excludePaths: scanExcludePaths,
+        excludePaths,
         hints: {
           continueOnInstallErrorsFlag: withFiles
             ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG

@@ -121,7 +121,7 @@ describe('--exclude-paths anchoring', () => {
     ])
   })
 
-  it('defaults the base to the build root', async () => {
+  it('defaults the base to projectDir', async () => {
     expect(await excludeProps(undefined)).toEqual([
       expect.stringMatching(/^-Psocket\.excludePaths=/),
       `-Psocket.excludeBase=${path.join(path.sep, 'repo', 'app')}`,

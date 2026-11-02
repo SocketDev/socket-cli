@@ -26,10 +26,7 @@ import {
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
-import {
-  excludePathToScanIgnores,
-  projectIgnorePathsToReachExcludePaths,
-} from '../scan/exclude-paths.mts'
+import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
@@ -236,12 +233,6 @@ export async function markWorkspaceCoverage({
     return { ok: true, data: undefined }
   }
 
-  // Relative to the scan root, as generateRecursiveManifests passes them.
-  const scanExcludePaths = projectIgnorePathsToReachExcludePaths(excludePaths, {
-    cwd,
-    target: cwd,
-  })
-
   for (const root of roots) {
     if (isBuildRootCovered(covered, ecosystem, root)) {
       continue
@@ -254,7 +245,7 @@ export async function markWorkspaceCoverage({
       ecosystem,
       entryFile: root.entryFile,
       excludeBase: cwd,
-      excludePaths: scanExcludePaths,
+      excludePaths,
       javaHome,
       verbose: false,
     })

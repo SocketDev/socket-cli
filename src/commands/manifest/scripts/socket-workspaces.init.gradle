@@ -48,7 +48,10 @@ gradle.ext.socketIsExcludedDir = { java.io.File dir ->
     def base = gradle.socketProp.call(gradle.rootProject, 'socket.excludeBase')?.toString()
     gradle.ext.socketExcludeBaseCache = (base ? new java.io.File(base) : gradle.rootProject.projectDir).canonicalFile.toPath()
   }
-  def rel = gradle.ext.socketExcludeBaseCache.relativize(dir.canonicalFile.toPath()).toString().replace(File.separator, '/')
+  def path = dir.canonicalFile.toPath()
+  // On another Windows drive than the scan root, so outside it.
+  if (path.root != gradle.ext.socketExcludeBaseCache.root) { return false }
+  def rel = gradle.ext.socketExcludeBaseCache.relativize(path).toString().replace(File.separator, '/')
   !(rel == '..' || rel.startsWith('../')) && gradle.ext.socketIsExcluded.call(rel.isEmpty() ? '.' : rel)
 }
 

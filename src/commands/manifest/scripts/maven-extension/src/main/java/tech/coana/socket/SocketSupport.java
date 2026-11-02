@@ -109,7 +109,10 @@ public final class SocketSupport {
    */
   public static boolean isExcludedDir(Path base, Path dir, List<Pattern> patterns) {
     if (patterns == null || patterns.isEmpty()) return false;
-    String rel = base.relativize(canonical(dir)).toString().replace(File.separatorChar, '/');
+    Path path = canonical(dir);
+    // On another Windows drive than the scan root, so outside it.
+    if (!java.util.Objects.equals(path.getRoot(), base.getRoot())) return false;
+    String rel = base.relativize(path).toString().replace(File.separatorChar, '/');
     return !rel.equals("..") && !rel.startsWith("../") && isExcludedPath(rel.isEmpty() ? "." : rel, patterns);
   }
 

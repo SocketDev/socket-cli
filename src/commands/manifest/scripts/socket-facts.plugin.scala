@@ -51,8 +51,12 @@ object SocketFactsPlugin extends AutoPlugin {
       val excludeBase = sys.props.get("socket.excludeBase").filter(_.nonEmpty)
         .map(b => new File(b).getCanonicalFile.toPath).getOrElse(rootCanonPath)
       def isExcludedRef(ref: ProjectRef): Boolean = excludeMatchers.nonEmpty && {
-        val r = relTo(excludeBase)(extracted.get(baseDirectory.in(ref)))
-        r != ".." && !r.startsWith("../") && isExcludedPath(r, excludeMatchers)
+        val dir = extracted.get(baseDirectory.in(ref))
+        // Another Windows drive than the scan root is outside it.
+        dir.getCanonicalFile.toPath.getRoot == excludeBase.getRoot && {
+          val rel = relTo(excludeBase)(dir)
+          rel != ".." && !rel.startsWith("../") && isExcludedPath(rel, excludeMatchers)
+        }
       }
 
       // Prefer `updateFull` (coursier `update` returns empty callers); fall back to `update` (sbt 0.13).

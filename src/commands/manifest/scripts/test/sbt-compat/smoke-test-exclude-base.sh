@@ -21,9 +21,12 @@ echo "scalaVersion in ThisBuild := \"$SCALA_VERSION\"" > "$PROJECT/scala-version
 
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (exclude base)"
 projects() {
+  rm -f "$OUT/records.tsv"
   ( cd "$PROJECT" && sbt -Dsbt.global.base="$OUT/global-base" -Dsbt.server.autostart=false \
       "-Dsocket.recordsFile=$OUT/records.tsv" \
-      "-Dsocket.excludePaths=$1" "-Dsocket.excludeBase=$SCAN_ROOT" --batch socketWorkspaces >/dev/null )
+      "-Dsocket.excludePaths=$1" "-Dsocket.excludeBase=$SCAN_ROOT" --batch socketWorkspaces >&2 )
+  # A build that wrote no records keeps nothing, which check reports.
+  [ -f "$OUT/records.tsv" ] || return 0
   awk -F'\t' '$1 == "project" { print $2 }' "$OUT/records.tsv" | sort | tr '\n' ' '
 }
 check() {
