@@ -1,0 +1,4 @@
+rootProject.name = 'exclude-base'
+include 'core', 'shared'
+// A project outside the build root.
+project(':shared').projectDir = file('../shared')

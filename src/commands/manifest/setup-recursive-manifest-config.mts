@@ -26,10 +26,7 @@ import {
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
-import {
-  excludePathToScanIgnores,
-  projectIgnorePathsToReachExcludePaths,
-} from '../scan/exclude-paths.mts'
+import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
@@ -236,11 +233,6 @@ export async function markWorkspaceCoverage({
     return { ok: true, data: undefined }
   }
 
-  const excludePathsForDir = projectIgnorePathsToReachExcludePaths(
-    excludePaths,
-    { cwd, target: dir },
-  )
-
   for (const root of roots) {
     if (isBuildRootCovered(covered, ecosystem, root)) {
       continue
@@ -252,7 +244,8 @@ export async function markWorkspaceCoverage({
       cwd: dir,
       ecosystem,
       entryFile: root.entryFile,
-      excludePaths: excludePathsForDir,
+      excludeBase: cwd,
+      excludePaths,
       javaHome,
       verbose: false,
     })

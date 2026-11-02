@@ -487,7 +487,7 @@ describe('markWorkspaceCoverage', () => {
     ).toEqual(['all.pom.xml'])
   })
 
-  it('forwards --exclude-paths, re-anchored to the candidate dir, so a member excluded specifically to dodge a broken resolution is actually skipped', async () => {
+  it('forwards --exclude-paths anchored at the scan root, so a member excluded specifically to dodge a broken resolution is actually skipped', async () => {
     vi.mocked(enumerateWorkspaces).mockResolvedValue({
       buildRoot: reactor,
       projects: [],
@@ -504,7 +504,10 @@ describe('markWorkspaceCoverage', () => {
     })
 
     expect(enumerateWorkspaces).toHaveBeenCalledWith(
-      expect.objectContaining({ excludePaths: ['moduleB'] }),
+      expect.objectContaining({
+        excludeBase: cwd,
+        excludePaths: ['reactor/moduleB'],
+      }),
     )
   })
 })

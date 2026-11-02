@@ -41,6 +41,7 @@ public class CoanaWorkspacesLifecycleParticipant extends AbstractMavenLifecycleP
     SocketWorkspacesRecordsEngine.Options opts = new SocketWorkspacesRecordsEngine.Options();
     opts.recordsFile = recordsFile;
     opts.excludePaths = opt(session, "socket.excludePaths");
+    opts.excludeBase = opt(session, "socket.excludeBase");
     File rootDir = new File(session.getExecutionRootDirectory());
     try {
       SocketWorkspacesRecordsEngine.run(session.getProjects(), rootDir, opts, runtimeInformation.getMavenVersion());

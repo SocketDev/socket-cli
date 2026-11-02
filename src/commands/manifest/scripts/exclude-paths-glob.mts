@@ -129,10 +129,13 @@ export function excludePathGlobToRegexSource(glob: string): string {
   }
 }
 
+// A Windows-style `foo\bar` means the path `foo/bar`.
 export function compileExcludePathPatterns(
   paths: readonly string[] | undefined,
 ): string[] {
-  return (paths ?? []).map(excludePathGlobToRegexSource)
+  return (paths ?? []).map(p =>
+    excludePathGlobToRegexSource(p.replaceAll('\\', '/')),
+  )
 }
 
 // Transport form handed to the build-tool scripts: comma-joined pattern

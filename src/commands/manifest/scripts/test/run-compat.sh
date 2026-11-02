@@ -64,6 +64,7 @@ run_gradle() {
     fi
     bash "$HERE/gradle-compat/smoke-test.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-workspaces.sh" "$dir/bin/gradle"
+    bash "$HERE/gradle-compat/smoke-test-exclude-base.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-failures.sh" "$dir/bin/gradle"
   done
 }
@@ -89,6 +90,7 @@ run_maven() {
     fi
     bash "$HERE/maven-compat/smoke-test.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-workspaces.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-exclude-base.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-repo-inheritance.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-duplicate-failure.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-graph-failure.sh" "$dir/bin/mvn" "$jar"
@@ -110,6 +112,7 @@ run_sbt() {
     if [ -z "$resolver" ]; then
       bash "$HERE/sbt-compat/smoke-test.sh" "$ver" "$scala"
       bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
+      bash "$HERE/sbt-compat/smoke-test-exclude-base.sh" "$ver" "$scala"
     fi
     bash "$HERE/sbt-compat/smoke-test-failure.sh" "$ver" "$scala" ${resolver:+"$resolver"}
   done

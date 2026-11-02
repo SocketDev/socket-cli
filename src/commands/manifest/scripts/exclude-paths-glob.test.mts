@@ -108,6 +108,12 @@ const MATCH_VECTORS: Array<{
     matches: ['ax', '&x'],
     rejects: ['bx'],
   },
+  // A Windows path separator.
+  {
+    glob: 'app\\core',
+    matches: ['app/core', 'app/core/x'],
+    rejects: ['app', 'core'],
+  },
 ]
 
 describe('exclude-paths-glob vectors (cross-language contract)', () => {

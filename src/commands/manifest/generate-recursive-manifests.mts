@@ -24,7 +24,6 @@ import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,
 } from '../../utils/socket-json.mts'
-import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
@@ -171,10 +170,7 @@ async function runEcosystemCandidates({
   const covered = new Set<string>()
   for (const [ecosystem, roots] of candidatesByTool) {
     const disabledRoots: DisabledRoot[] = []
-    const configByDir = new Map<
-      string,
-      EcosystemBuildConfig & { excludePaths: string[] }
-    >()
+    const configByDir = new Map<string, EcosystemBuildConfig>()
     for (const { 0: rootIndex, 1: root } of roots.entries()) {
       const { dir, entryFile } = root
       if (isBuildRootCovered(covered, ecosystem, root)) {
@@ -188,13 +184,7 @@ async function runEcosystemCandidates({
         const sockJson = nearestRoot
           ? readSocketJsonCascade(dir, nearestRoot.dir, nearestRoot.sockJson)
           : readSocketJsonCascade(dir, realCwd, rootSockJson)
-        dirConfig = {
-          ...resolveEcosystemConfig(ecosystem, dir, sockJson),
-          excludePaths: projectIgnorePathsToReachExcludePaths(excludePaths, {
-            cwd: realCwd,
-            target: dir,
-          }),
-        }
+        dirConfig = resolveEcosystemConfig(ecosystem, dir, sockJson)
         configByDir.set(dir, dirConfig)
         if (dirConfig.skipReason) {
           // Only warn for a genuinely new disabled root, not one already
@@ -214,7 +204,6 @@ async function runEcosystemCandidates({
         bin,
         buildOpts,
         excludeConfigs,
-        excludePaths: excludePathsForRoot,
         ignoreUnresolved,
         includeConfigs,
         javaHome,
@@ -234,7 +223,10 @@ async function runEcosystemCandidates({
         ecosystem,
         entryFile,
         excludeConfigs,
-        excludePaths: excludePathsForRoot,
+        // Relative to the scan root: a build can reach modules outside its
+        // own directory (Maven `../x` modules, relocated Gradle projects).
+        excludeBase: realCwd,
+        excludePaths,
         hints: {
           continueOnInstallErrorsFlag: withFiles
             ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
