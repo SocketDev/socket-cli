@@ -45,10 +45,10 @@ if tool != 'maven':
     errors.append(f"meta tool {tool!r} != 'maven'")
 if build_root != sys.argv[2]:
     errors.append(f"buildRoot {build_root!r} != {sys.argv[2]!r}")
-expected_build_files = {'pom.xml', 'lib/pom.xml', 'app/pom.xml'}
+expected_build_files = {'pom.xml', 'lib/pom.xml', 'mid/pom.xml', 'app/pom.xml'}
 if build_files != expected_build_files:
     errors.append(f"projectBuild files {sorted(build_files)} != {sorted(expected_build_files)}")
-expected = {'root', 'lib', 'app'}
+expected = {'root', 'lib', 'mid', 'app'}
 if set(projects) != expected:
     errors.append(f"expected reactor modules {sorted(expected)}, got {sorted(projects)}")
 for artifact in expected & set(projects):
