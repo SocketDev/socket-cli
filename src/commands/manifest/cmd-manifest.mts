@@ -41,7 +41,7 @@ const config: CliCommandConfig = {
     configurations available. See \`manifest <language> --help\` for usage details
     per language.
 
-    Currently supported language: bazel [beta], dotnet [beta], gradle [beta],
+    Currently supported ecosystems: bazel [beta], dotnet [beta], gradle [beta],
     kotlin (through gradle) [beta], maven [beta], scala [beta].
 
     Examples

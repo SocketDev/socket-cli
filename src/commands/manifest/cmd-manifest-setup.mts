@@ -36,7 +36,7 @@ const config: CliCommandConfig = {
     dynamicSbomInference: {
       type: 'boolean',
       description:
-        'Generates dynamic SBOMs via the Gradle/sbt/Maven/.NET package manager tools for more accurate results than static resolution. Scans every build root under CWD first, so the configurator only asks about ecosystems actually found; --exclude-paths matches are bulk-disabled, others configured individually.',
+        'Uses .NET, Gradle, Maven, and sbt tools to generate dynamic SBOMs with more accurate results than static resolution. It scans build roots under CWD, asks only about detected ecosystems, then disables roots matched by --exclude-paths and configures the rest individually.',
     },
   },
   help: (command, config) => `
