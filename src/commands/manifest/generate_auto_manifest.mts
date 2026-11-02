@@ -231,16 +231,11 @@ export async function generateAutoManifest({
         'Detected a .NET solution or project, generating Socket facts...',
       )
       const outcome = await convertDotnetToFacts({
-        bin: config.bin,
+        config,
         cwd,
-        dotnetOpts: config.buildOpts,
-        excludeConfigs: config.excludeConfigs,
         excludePaths,
         hints,
-        ignoreUnresolved: config.ignoreUnresolved,
-        includeConfigs: config.includeConfigs,
         sidecarAcc,
-        verbose: config.verbose,
         withFiles: computeArtifactsSidecar,
       })
       abortFactsRunIfFailed('dotnet', outcome)

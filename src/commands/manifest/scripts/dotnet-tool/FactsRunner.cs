@@ -70,7 +70,7 @@ internal sealed partial class Session {
     _records.BuildRoot(_buildRoot);
     _records.Entry(Path.GetFileName(_opts.EntryPath));
     if (!File.Exists(_opts.EntryPath)) {
-      Fail(Path.GetFileName(_opts.EntryPath), "entry file does not exist", "");
+      _records.Failure(Path.GetFileName(_opts.EntryPath), "entry file does not exist", "");
       return;
     }
 
@@ -156,7 +156,7 @@ internal sealed partial class Session {
       _solution = new SolutionContext(entry, _opts.GlobalProperties);
       return _solution.Members.Keys.OrderBy(p => p, StringComparer.Ordinal).ToList();
     } catch (Exception e) when (e is InvalidProjectFileException or IOException or JsonException) {
-      Fail(Rel(entry), $"could not read the solution: {Text.FirstLine(e.Message)}", "");
+      _records.Failure(Rel(entry), $"could not read the solution: {Text.FirstLine(e.Message)}", "");
       return null;
     }
   }
@@ -242,7 +242,7 @@ internal sealed partial class Session {
       if (filter != null) Text.TryDelete(filter);
     }
     if (_restore.TimedOut) {
-      Fail(Rel(_opts.EntryPath), $"`dotnet restore` did not finish within {Restorer.TimeoutSec}s and was stopped", "");
+      _records.Failure(Rel(_opts.EntryPath), $"`dotnet restore` did not finish within {Restorer.TimeoutSec}s and was stopped", "");
     }
   }
 
@@ -288,10 +288,6 @@ internal sealed partial class Session {
     }
   }
 
-  private void Fail(string coord, string detail, string config, string projectKey = "") {
-    _records.Failure(coord, detail, config, projectKey);
-  }
-
   // Restore errors not already reported from an assets file, then the projects
   // left without current assets and without errors of their own.
   private void ReportRestoreErrors() {
@@ -304,11 +300,11 @@ internal sealed partial class Session {
         if (key.Length > 0 && _assetsReportedErrors.Contains(key)) continue;
         if (key.Length > 0) withErrors.Add(key);
         var code = string.IsNullOrEmpty(error.Code) ? "" : $"{error.Code}: ";
-        Fail(key.Length > 0 ? key : Rel(_opts.EntryPath), $"{code}{error.Message}", "", key);
+        _records.Failure(key.Length > 0 ? key : Rel(_opts.EntryPath), $"{code}{error.Message}", "", key);
         reported += 1;
       }
       if (reported == 0 && _assetsReportedErrors.Count == 0) {
-        Fail(
+        _records.Failure(
           Rel(_opts.EntryPath),
           $"`dotnet restore` failed with exit code {_restore.ExitCode}; run with --verbose to see its output",
           ""

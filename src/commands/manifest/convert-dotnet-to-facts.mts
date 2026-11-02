@@ -1,15 +1,10 @@
-import path from 'node:path'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { findDotnetEntries } from './detect-manifest-actions.mts'
-import {
-  addCoveredBuildFiles,
-  isRootCovered,
-  realpathOrResolved,
-} from './discover-manifest-roots.mts'
-import { runManifestFacts } from './run-manifest-facts.mts'
+import { realpathOrResolved } from './discover-manifest-roots.mts'
+import { buildUncoveredRoot } from './generate-recursive-manifests.mts'
 
+import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
 import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
 import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
@@ -18,31 +13,21 @@ import type { SidecarAccumulator } from './scripts/sidecar.mts'
 // file, or for every solution and project at the top of `cwd`. A project a
 // solution there already covers is not built again.
 export async function convertDotnetToFacts({
-  bin,
+  config,
   cwd,
-  dotnetOpts,
   entryFile,
-  excludeConfigs,
   excludePaths,
   hints,
-  ignoreUnresolved,
-  includeConfigs,
   sidecarAcc,
-  verbose,
   withFiles,
 }: {
-  bin: string
+  config: EcosystemBuildConfig
   cwd: string
-  dotnetOpts: string[]
   // Builds only this file (relative to cwd) when set.
   entryFile?: string | undefined
-  excludeConfigs: string
   excludePaths?: string[] | undefined
   hints?: BuildOptionHints | undefined
-  ignoreUnresolved: boolean
-  includeConfigs: string
   sidecarAcc?: SidecarAccumulator | undefined
-  verbose: boolean
   withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome> {
   const entries = entryFile ? [entryFile] : findDotnetEntries(cwd)
@@ -57,49 +42,28 @@ export async function convertDotnetToFacts({
   const covered = new Set<string>()
   let last: RunManifestFactsOutcome
   for (const entry of entries) {
-    const root = { dir, entryFile: entry }
-    if (
-      // eslint-disable-next-line no-await-in-loop
-      await isRootCovered(covered, 'dotnet', root, {
-        bin,
-        excludePaths,
-        toolOpts: dotnetOpts,
-      })
-    ) {
-      if (verbose) {
+    // eslint-disable-next-line no-await-in-loop
+    const outcome = await buildUncoveredRoot({
+      config,
+      covered,
+      cwd,
+      ecosystem: 'dotnet',
+      excludePaths,
+      hints,
+      root: { dir, entryFile: entry },
+      sidecarAcc,
+      withFiles,
+    })
+    if (outcome === 'covered') {
+      if (config.verbose) {
         logger.info(`Skipping \`${entry}\`: earlier builds cover its projects.`)
       }
       continue
     }
-    // eslint-disable-next-line no-await-in-loop
-    const outcome = await runManifestFacts({
-      bin,
-      buildOpts: dotnetOpts,
-      cwd,
-      ecosystem: 'dotnet',
-      entryFile: entry,
-      excludeConfigs,
-      excludePaths,
-      hints,
-      ignoreUnresolved,
-      includeConfigs,
-      sidecarAcc,
-      verbose,
-      withFiles,
-    })
     if (outcome === null) {
       return null
     }
-    if (outcome) {
-      // eslint-disable-next-line no-await-in-loop
-      await addCoveredBuildFiles(
-        covered,
-        'dotnet',
-        path.dirname(outcome.factsPath),
-        outcome.projects,
-      )
-      last = outcome
-    }
+    last = outcome ?? last
   }
   return last
 }

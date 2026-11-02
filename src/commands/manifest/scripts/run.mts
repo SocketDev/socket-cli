@@ -11,6 +11,7 @@ import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
 import { getErrorMessageOr } from '../../../utils/errors.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
+import { getOrInsert } from '../../../utils/get-or-insert.mts'
 import { camelToKebab } from '../../../utils/strings.mts'
 
 import type { BuildTool } from './build-tool.mts'
@@ -501,12 +502,9 @@ function dotnetSdkVersion(
       ? bin
       : path.resolve(opts.projectDir, bin)
   const key = `${host}\0${nearestGlobalJson(opts.projectDir)}`
-  let version = sdkVersionByPin.get(key)
-  if (!version) {
-    version = readDotnetSdkVersion(bin, opts)
-    sdkVersionByPin.set(key, version)
-  }
-  return version
+  return getOrInsert(sdkVersionByPin, key, () =>
+    readDotnetSdkVersion(bin, opts),
+  )
 }
 
 async function readDotnetSdkVersion(
@@ -618,12 +616,9 @@ export function listDotnetEntryProjects(
     opts.excludeBase,
     opts.toolOpts,
   ])
-  let listing = entryProjectsByRun.get(key)
-  if (!listing) {
-    listing = readDotnetEntryProjects(opts)
-    entryProjectsByRun.set(key, listing)
-  }
-  return listing
+  return getOrInsert(entryProjectsByRun, key, () =>
+    readDotnetEntryProjects(opts),
+  )
 }
 
 async function readDotnetEntryProjects(

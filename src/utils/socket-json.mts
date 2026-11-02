@@ -147,6 +147,10 @@ export interface SocketJson {
   }
 }
 
+export type ManifestDefaults<
+  K extends keyof NonNullable<NonNullable<SocketJson['defaults']>['manifest']>,
+> = NonNullable<NonNullable<NonNullable<SocketJson['defaults']>['manifest']>[K]>
+
 export function readOrDefaultSocketJson(cwd: string): SocketJson {
   const jsonCResult = readSocketJsonSync(cwd, true)
   return jsonCResult.ok

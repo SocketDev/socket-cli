@@ -54,16 +54,16 @@ export type RawNode = {
   unfetched: boolean
 }
 
+// dotnet: the target framework's NuGet short folder name, the runtime
+// identifier of a runtime-specific target (empty when none), and the
+// framework's alias in the project.
+export type RawTarget = { alias: string; framework: string; runtime: string }
+
 export type RawRoot = {
   rootId: string
   projectKey: string
   prod: boolean
-  // dotnet: the target framework's NuGet short folder name, the runtime
-  // identifier of a runtime-specific target, and the framework's alias in
-  // the project; empty otherwise.
-  framework: string
-  runtime: string
-  alias: string
+  target?: RawTarget | undefined
   nodes: Map<string, RawNode>
   edges: Array<[string, string]>
 }
@@ -195,9 +195,6 @@ export function parseRecords(text: string): ParsedRecords {
         rootId: id,
         projectKey: '',
         prod: false,
-        framework: '',
-        runtime: '',
-        alias: '',
         nodes: new Map(),
         edges: [],
       }
@@ -323,9 +320,9 @@ export function parseRecords(text: string): ParsedRecords {
         const r = root(f[1] ?? '')
         r.projectKey = f[2] ?? ''
         r.prod = bool(f[4])
-        r.framework = f[5] ?? ''
-        r.runtime = f[6] ?? ''
-        r.alias = f[7] ?? ''
+        if (f[5]) {
+          r.target = { alias: f[7] ?? '', framework: f[5], runtime: f[6] ?? '' }
+        }
         break
       }
       case 'node': {

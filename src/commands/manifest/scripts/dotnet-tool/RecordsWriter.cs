@@ -66,7 +66,7 @@ internal sealed class RecordsWriter : IDisposable {
 
   public void Scanned(string config) => Rec("scanned", config);
 
-  public void Failure(string coord, string detail, string config, string projectKey) =>
+  public void Failure(string coord, string detail, string config, string projectKey = "") =>
     Rec("failure", coord, detail, config, projectKey);
 
   public void Unscannable(string config, string detail, string projectKey) =>

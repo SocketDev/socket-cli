@@ -28,8 +28,12 @@ import {
 } from '../../utils/socket-json.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
+import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
-import type { BuildOption } from './scripts/resolution-report-render.mts'
+import type {
+  BuildOption,
+  BuildOptionHints,
+} from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
@@ -170,12 +174,13 @@ async function runEcosystemCandidates({
   withFiles: boolean | undefined
 }): Promise<RecursiveManifestOutcome[]> {
   const outcomes: RecursiveManifestOutcome[] = []
-  const covered = new Set<string>()
   for (const [ecosystem, roots] of candidatesByTool) {
+    // Per tool: a solution counts as covered only by .NET projects.
+    const covered = new Set<string>()
     const disabledRoots: DisabledRoot[] = []
     const configByDir = new Map<string, EcosystemBuildConfig>()
     for (const { 0: rootIndex, 1: root } of roots.entries()) {
-      const { dir, entryFile } = root
+      const { dir } = root
       if (isBuildRootCovered(covered, ecosystem, root)) {
         outcomes.push({ ...root, ecosystem, status: 'skippedCovered' })
         continue
@@ -203,49 +208,31 @@ async function runEcosystemCandidates({
           disabledRoots.push({ dir, sockJson })
         }
       }
-      const {
-        bin,
-        buildOpts,
-        excludeConfigs,
-        ignoreUnresolved,
-        includeConfigs,
-        javaHome,
-        skipReason,
-        verbose: configVerbose,
-      } = dirConfig
-      if (skipReason) {
+      if (dirConfig.skipReason) {
         outcomes.push({ ...root, ecosystem, status: 'skippedDisabled' })
         continue
       }
-      // eslint-disable-next-line no-await-in-loop
-      if (ecosystem === 'dotnet' && (await skipWithoutDotnetSdk(bin, dir))) {
+      if (
+        ecosystem === 'dotnet' &&
+        // eslint-disable-next-line no-await-in-loop
+        (await skipWithoutDotnetSdk(dirConfig.bin, dir))
+      ) {
         outcomes.push({ ...root, ecosystem, status: 'skippedNoSdk' })
         continue
       }
-      if (
-        // eslint-disable-next-line no-await-in-loop
-        await isRootCovered(covered, ecosystem, root, {
-          bin,
-          excludeBase: realCwd,
-          excludePaths,
-          toolOpts: buildOpts,
-        })
-      ) {
-        outcomes.push({ ...root, ecosystem, status: 'skippedCovered' })
-        continue
-      }
-
       // eslint-disable-next-line no-await-in-loop
-      const result = await runManifestFacts({
-        bin,
-        buildOpts,
-        cwd: dir,
+      const result = await buildUncoveredRoot({
+        config: {
+          ...dirConfig,
+          ignoreUnresolved:
+            ignoreUnresolvedOverride ?? dirConfig.ignoreUnresolved,
+          verbose: verbose || dirConfig.verbose,
+        },
+        covered,
         ecosystem,
-        entryFile,
         // Relative to the scan root: a build can reach modules outside its
         // own directory (Maven `../x` modules, relocated Gradle projects).
         excludeBase: realCwd,
-        excludeConfigs,
         excludePaths,
         hints: {
           continueOnInstallErrorsFlag: withFiles
@@ -255,15 +242,15 @@ async function runEcosystemCandidates({
           setupCommand: DSI_SETUP_COMMAND,
           socketJson: displayPath(path.join(dir, SOCKET_JSON)),
         },
-        ignoreUnresolved: ignoreUnresolvedOverride ?? ignoreUnresolved,
-        includeConfigs,
-        javaHome,
+        root,
         sidecarAcc,
         tmpDir: ecosystem === 'sbt' ? sbtTmpDir : undefined,
-        verbose: verbose || configVerbose,
         withFiles,
       })
-
+      if (result === 'covered') {
+        outcomes.push({ ...root, ecosystem, status: 'skippedCovered' })
+        continue
+      }
       if (result === null) {
         outcomes.push({ ...root, ecosystem, status: 'failed' })
         const abortedRoots = roots.slice(rootIndex + 1)
@@ -281,15 +268,6 @@ async function runEcosystemCandidates({
         outcomes.push({ ...root, ecosystem, status: 'empty' })
         continue
       }
-
-      // Gradle's `-p` can root the build away from `dir`.
-      // eslint-disable-next-line no-await-in-loop
-      await addCoveredBuildFiles(
-        covered,
-        ecosystem,
-        path.dirname(result.factsPath),
-        result.projects,
-      )
       outcomes.push({
         ...root,
         ecosystem,
@@ -299,6 +277,75 @@ async function runEcosystemCandidates({
     }
   }
   return outcomes
+}
+
+// Builds `root` unless earlier builds cover it, then adds the build files it
+// covers.
+export async function buildUncoveredRoot({
+  config,
+  covered,
+  cwd,
+  ecosystem,
+  excludeBase,
+  excludePaths,
+  hints,
+  root,
+  sidecarAcc,
+  tmpDir,
+  withFiles,
+}: {
+  config: EcosystemBuildConfig
+  covered: Set<string>
+  // Where the build runs, as the user named it; `root.dir` by default.
+  cwd?: string | undefined
+  ecosystem: BuildTool
+  excludeBase?: string | undefined
+  excludePaths?: string[] | undefined
+  hints?: BuildOptionHints | undefined
+  root: BuildRoot
+  sidecarAcc?: SidecarAccumulator | undefined
+  tmpDir?: string | undefined
+  withFiles?: boolean | undefined
+}): Promise<RunManifestFactsOutcome | 'covered'> {
+  const { bin, buildOpts } = config
+  if (
+    await isRootCovered(covered, ecosystem, root, {
+      bin,
+      excludeBase,
+      excludePaths,
+      toolOpts: buildOpts,
+    })
+  ) {
+    return 'covered'
+  }
+  const result = await runManifestFacts({
+    bin,
+    buildOpts,
+    cwd: cwd ?? root.dir,
+    ecosystem,
+    entryFile: root.entryFile,
+    excludeBase,
+    excludeConfigs: config.excludeConfigs,
+    excludePaths,
+    hints,
+    ignoreUnresolved: config.ignoreUnresolved,
+    includeConfigs: config.includeConfigs,
+    javaHome: config.javaHome,
+    sidecarAcc,
+    tmpDir,
+    verbose: config.verbose,
+    withFiles,
+  })
+  if (result) {
+    // Gradle's `-p` can root the build away from `root.dir`.
+    await addCoveredBuildFiles(
+      covered,
+      ecosystem,
+      path.dirname(result.factsPath),
+      result.projects,
+    )
+  }
+  return result
 }
 
 // A failed root aborts only its own ecosystem's remaining walk: the build
@@ -396,7 +443,7 @@ export function resolveEcosystemConfig(
   if (ecosystem === 'dotnet') {
     const config = sockJson.defaults?.manifest?.dotnet
     return {
-      bin: config?.bin ?? resolveBuildToolBin('dotnet', dir),
+      bin: config?.bin || resolveBuildToolBin('dotnet', dir),
       buildOpts: parseBuildToolOpts(config?.dotnetOpts ?? undefined),
       excludeConfigs: config?.excludeConfigs ?? '',
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),

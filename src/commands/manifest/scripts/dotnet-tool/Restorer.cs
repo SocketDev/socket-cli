@@ -5,13 +5,14 @@ namespace Socket.Facts.Dotnet;
 
 internal sealed record RestoreError(string Code, string Message, string ProjectFile);
 
+// No exit code when the restore timed out and was stopped.
 internal sealed record RestoreOutcome(
-  int ExitCode,
-  bool TimedOut,
+  int? ExitCode,
   DateTime StartedUtc,
   List<RestoreError> Errors
 ) {
-  public bool Succeeded => !TimedOut && ExitCode == 0;
+  public bool TimedOut => ExitCode == null;
+  public bool Succeeded => ExitCode == 0;
 }
 
 // Runs the user's own `dotnet restore`: the same host, SDK selection
@@ -64,7 +65,7 @@ internal static class Restorer {
     }
     var errors = ReadErrors(errorLog);
     Text.TryDelete(errorLog);
-    return new RestoreOutcome(timedOut ? -1 : process.ExitCode, timedOut, started, errors);
+    return new RestoreOutcome(timedOut ? null : process.ExitCode, started, errors);
   }
 
   private static List<RestoreError> ReadErrors(string path) {

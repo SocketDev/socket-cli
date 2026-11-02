@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs'
 
 import { NAMESPACELESS_PURL_TYPES, PURL_TYPE_BY_TOOL } from './build-tool.mts'
 import {
-  type ComponentFramework,
   type ProjectFramework,
   type ResolvedArtifactPaths,
   type SocketFactsSbom,
@@ -12,8 +11,14 @@ import {
   type SocketFactsSbomProject,
 } from './facts.mts'
 import { moduleKey } from './resolution-report.mts'
+import { getOrInsert } from '../../../utils/get-or-insert.mts'
 
-import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
+import type {
+  ParsedRecords,
+  RawCoord,
+  RawProject,
+  RawTarget,
+} from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 
 function purlBase(
@@ -56,9 +61,7 @@ type SubprojectGraph = {
 type PerRoot = {
   projectKey: string
   prod: boolean
-  framework: string
-  runtime: string
-  alias: string
+  target?: RawTarget | undefined
   nodes: Map<string, RootNode>
 }
 
@@ -174,9 +177,7 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
     out.set(rootId, {
       projectKey: r.projectKey,
       prod: r.prod,
-      framework: r.framework,
-      runtime: r.runtime,
-      alias: r.alias,
+      target: r.target,
       nodes,
     })
   }
@@ -513,7 +514,9 @@ function buildFrameworks(
   perRoot: Map<string, PerRoot>,
   exists: (path: string) => boolean,
 ): Pick<ResolvedArtifactPaths, 'frameworksByProject' | 'frameworksById'> {
-  const roots = [...perRoot.values()].filter(r => r.framework)
+  const roots = [...perRoot.values()].filter(
+    (r): r is PerRoot & { target: RawTarget } => !!r.target,
+  )
   const projects = [...parsed.projects.values()]
   if (!roots.length && !projects.some(p => p.builds.size)) {
     return {}
@@ -522,66 +525,44 @@ function buildFrameworks(
   const projectBuilds = new Map<string, Map<string, ProjectFramework>>()
   const projectFramework = (
     projectKey: string,
-    alias: string,
-    framework: string | undefined,
-    runtime: string,
-  ): ProjectFramework => {
-    let builds = projectBuilds.get(projectKey)
-    if (!builds) {
-      builds = new Map()
-      projectBuilds.set(projectKey, builds)
-    }
-    const k = frameworkKey(alias, runtime)
-    let pf = builds.get(k)
-    if (!pf) {
-      const build = parsed.projects.get(projectKey)?.builds.get(alias)
-      pf = {
-        alias,
-        framework: framework || build?.framework || alias,
-        ...(runtime ? { runtime } : {}),
-        targetFrameworkMoniker: build?.targetFrameworkMoniker,
-        language: build?.language,
-        langVersion: build?.langVersion,
-        nullable: build?.nullable,
-        assemblyName: build?.assemblyName,
-        buildError: build?.buildError,
-        frameworkReferences: sortedUnique(build?.frameworkReferences ?? []),
-        defineConstants: [...new Set(build?.defineConstants)],
-        usings: (build?.usings ?? []).map(u => ({
-          namespace: u.namespace,
-          ...(u.alias ? { alias: u.alias } : {}),
-          ...(u.static ? { static: true as const } : {}),
-        })),
-        // In compiler order, which F# depends on.
-        sources: [...new Set(build?.sources)].filter(exists),
-        references: [...new Set(build?.references)].filter(exists),
-        analyzers: [...new Set(build?.analyzers)].filter(exists),
-        targets: sortedUnique(build?.targets ?? []).filter(exists),
-        dependencies: [],
-        classpath: [],
-      }
-      builds.set(k, pf)
-    }
-    return pf
-  }
+    { alias, framework, runtime }: RawTarget,
+  ): ProjectFramework =>
+    getOrInsert(
+      getOrInsert(projectBuilds, projectKey, () => new Map()),
+      frameworkKey(alias, runtime),
+      () => {
+        const build = parsed.projects.get(projectKey)?.builds.get(alias)
+        return {
+          ...build,
+          alias,
+          framework: framework || build?.framework || alias,
+          ...(runtime ? { runtime } : {}),
+          frameworkReferences: sortedUnique(build?.frameworkReferences ?? []),
+          defineConstants: [...new Set(build?.defineConstants)],
+          usings: (build?.usings ?? []).map(u => ({
+            namespace: u.namespace,
+            ...(u.alias ? { alias: u.alias } : {}),
+            ...(u.static ? { static: true as const } : {}),
+          })),
+          // In compiler order, which F# depends on.
+          sources: [...new Set(build?.sources)].filter(exists),
+          references: [...new Set(build?.references)].filter(exists),
+          analyzers: [...new Set(build?.analyzers)].filter(exists),
+          targets: sortedUnique(build?.targets ?? []).filter(exists),
+          dependencies: [],
+          classpath: [],
+        }
+      },
+    )
 
   // Per component and framework: the roots' resolutions.
   const componentBuilds = new Map<
     string,
-    Map<
-      string,
-      Omit<ComponentFramework, 'targets' | 'compile'> & {
-        resolutions: Array<{
-          compile: string[]
-          targets: string[]
-          unfetched: boolean
-        }>
-      }
-    >
+    Map<string, { target: RawTarget; resolutions: RootNode[] }>
   >()
-  for (const r of roots) {
-    const pf = projectFramework(r.projectKey, r.alias, r.framework, r.runtime)
-    for (const { 0: id, 1: node } of r.nodes) {
+  for (const { nodes, projectKey, target } of roots) {
+    const pf = projectFramework(projectKey, target)
+    for (const { 0: id, 1: node } of nodes) {
       pf.classpath.push(id)
       if (node.direct) {
         pf.dependencies.push(id)
@@ -589,30 +570,20 @@ function buildFrameworks(
       if (node.project) {
         continue
       }
-      let byFramework = componentBuilds.get(id)
-      if (!byFramework) {
-        byFramework = new Map()
-        componentBuilds.set(id, byFramework)
-      }
-      const fk = frameworkKey(r.framework, r.runtime)
-      let cb = byFramework.get(fk)
-      if (!cb) {
-        cb = { framework: r.framework, runtime: r.runtime, resolutions: [] }
-        byFramework.set(fk, cb)
-      }
+      const cb = getOrInsert(
+        getOrInsert(componentBuilds, id, () => new Map()),
+        frameworkKey(target.framework, target.runtime),
+        () => ({ target, resolutions: [] }),
+      )
       if (node.unfetched || node.targets.length || node.compileTargets.length) {
-        cb.resolutions.push({
-          compile: node.compileTargets,
-          targets: node.targets,
-          unfetched: node.unfetched,
-        })
+        cb.resolutions.push(node)
       }
     }
   }
   // A build with nothing to resolve has no root, yet still compiles.
   for (const p of projects) {
     for (const alias of p.builds.keys()) {
-      projectFramework(p.projectKey, alias, undefined, '')
+      projectFramework(p.projectKey, { alias, framework: '', runtime: '' })
     }
   }
 
@@ -629,22 +600,26 @@ function buildFrameworks(
   const frameworksById = new Map(
     [...componentBuilds].map(({ 0: id, 1: byFramework }) => [
       id,
-      [...byFramework.values()].map(({ framework, resolutions, runtime }) => {
-        const complete = completeResolutions(resolutions, exists, r => [
-          ...r.targets,
-          ...r.compile,
-        ])
-        return {
-          framework,
-          ...(runtime ? { runtime } : {}),
-          ...(complete
-            ? {
-                targets: sortedUnique(complete.flatMap(r => r.targets)),
-                compile: sortedUnique(complete.flatMap(r => r.compile)),
-              }
-            : {}),
-        }
-      }),
+      [...byFramework.values()].map(
+        ({ resolutions, target: { framework, runtime } }) => {
+          const complete = completeResolutions(resolutions, exists, r => [
+            ...r.targets,
+            ...r.compileTargets,
+          ])
+          return {
+            framework,
+            ...(runtime ? { runtime } : {}),
+            ...(complete
+              ? {
+                  targets: sortedUnique(complete.flatMap(r => r.targets)),
+                  compile: sortedUnique(
+                    complete.flatMap(r => r.compileTargets),
+                  ),
+                }
+              : {}),
+          }
+        },
+      ),
     ]),
   )
   return { frameworksByProject, frameworksById }

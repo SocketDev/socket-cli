@@ -1,14 +1,15 @@
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
+import { useOnlySocketFactsArtifactsFlags } from '../manifest/scripts/sidecar.mts'
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
-import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
-
 export type GeneratedSocketFacts = {
+  // Coana's flags selecting what the facts files resolve.
+  artifactsFlags: string[]
   paths: string[]
   // The facts files' per-project classpaths, written outside the repository.
-  sidecar: { contents: ResolvedPathsSidecar; file: string } | undefined
+  sidecarFile: string | undefined
   remove: () => Promise<void>
   restore: () => Promise<void>
 }
@@ -54,8 +55,9 @@ export async function generateSocketFactsForFix({
     )
     await restoreAll(originals)
   }
+  let artifactsFlags: string[]
   let paths: string[]
-  let sidecar: GeneratedSocketFacts['sidecar']
+  let sidecarFile: string | undefined
   try {
     const { factsPaths, resolvedPathsSidecar } = await runDynamicSbomInference({
       cwd,
@@ -64,13 +66,11 @@ export async function generateSocketFactsForFix({
       sidecar: true,
       withFiles: false,
     })
+    artifactsFlags = useOnlySocketFactsArtifactsFlags(resolvedPathsSidecar)
     paths = factsPaths.map(p => path.resolve(cwd, p))
     if (resolvedPathsSidecar) {
-      sidecar = {
-        contents: resolvedPathsSidecar,
-        file: path.join(tmpDir, 'sidecar.json'),
-      }
-      await writeFile(sidecar.file, JSON.stringify(resolvedPathsSidecar))
+      sidecarFile = path.join(tmpDir, 'sidecar.json')
+      await writeFile(sidecarFile, JSON.stringify(resolvedPathsSidecar))
     }
   } catch (e) {
     // A failed build root aborts inference after others wrote their facts.
@@ -83,8 +83,9 @@ export async function generateSocketFactsForFix({
     ...(await backUp(paths, path.join(tmpDir, 'generated'))),
   ]
   return {
+    artifactsFlags,
     paths,
-    sidecar,
+    sidecarFile,
     remove: () => reset(paths),
     restore: () => restoreAll(backups),
   }

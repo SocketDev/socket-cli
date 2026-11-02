@@ -112,32 +112,30 @@ internal sealed partial class Session {
       assetsPath = Path.Combine(project.GetPropertyValue("MSBuildProjectExtensionsPath"), "project.assets.json");
     }
     assetsPath = Path.GetFullPath(assetsPath, project.DirectoryPath);
-    if (!RestoredByThisRun(info, assetsPath) || !File.Exists(assetsPath)) {
+    // Null detail: ReportRestoreErrors reports the project with the failed restore.
+    string[] Unscannable(string? detail) {
       EmitProject(info, project);
-      if (_restore == null || _restore.Succeeded) {
-        _records.Unscannable("", "`dotnet restore` wrote no project.assets.json for this project", info.Key);
-      } else {
+      if (detail == null) {
         _notRestored.Add(info.Key);
+      } else {
+        _records.Unscannable("", detail, info.Key);
       }
       return Array.Empty<string>();
+    }
+    if (!RestoredByThisRun(info, assetsPath) || !File.Exists(assetsPath)) {
+      return Unscannable(
+        _restore == null || _restore.Succeeded ? "`dotnet restore` wrote no project.assets.json for this project" : null
+      );
     }
 
     var lockFile = LockFileUtilities.GetLockFile(assetsPath, NullLogger.Instance);
     var spec = lockFile?.PackageSpec;
-    if (lockFile == null || spec == null) {
-      EmitProject(info, project);
-      _records.Unscannable("", $"could not read {Rel(assetsPath)}", info.Key);
-      return Array.Empty<string>();
-    }
+    if (lockFile == null || spec == null) return Unscannable($"could not read {Rel(assetsPath)}");
     var owner = spec.RestoreMetadata?.ProjectPath;
     if (!string.IsNullOrEmpty(owner) && !SamePath(owner, info.FullPath)) {
-      EmitProject(info, project);
-      _records.Unscannable(
-        "",
-        $"{Rel(assetsPath)} belongs to {Rel(owner)}: the projects share an intermediate output directory, so each overwrites the other's restore output; give each its own, e.g. <BaseIntermediateOutputPath>obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath> in Directory.Build.props",
-        info.Key
+      return Unscannable(
+        $"{Rel(assetsPath)} belongs to {Rel(owner)}: the projects share an intermediate output directory, so each overwrites the other's restore output; give each its own, e.g. <BaseIntermediateOutputPath>obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath> in Directory.Build.props"
       );
-      return Array.Empty<string>();
     }
 
     EmitProject(info, project, spec.Name, spec.Version?.ToNormalizedString());
@@ -197,7 +195,7 @@ internal sealed partial class Session {
     foreach (var message in NuGetShim.Seq<IAssetsLogMessage>(owner, "LogMessages")) {
       if (message.Level != LogLevel.Error) continue;
       _assetsReportedErrors.Add(info.Key);
-      Fail(
+      _records.Failure(
         string.IsNullOrEmpty(message.LibraryId) ? info.Key : message.LibraryId,
         $"{message.Code}: {message.Message}",
         "",
@@ -282,7 +280,7 @@ internal sealed partial class Session {
     var reached = Reach(direct, children);
     var unreached = libraries.Keys.Where(k => !reached.Contains(k)).OrderBy(k => k).ToList();
     if (unreached.Count > 0) {
-      Fail(
+      _records.Failure(
         info.Key,
         $"restore resolved packages no direct dependency leads to: {string.Join(", ", unreached)}",
         config,
@@ -370,7 +368,7 @@ internal sealed partial class Session {
       if (Resolve(item) is { } path) _records.CompileFile(rootId, id, path);
     }
     if (missing.Count > 0) {
-      Fail(
+      _records.Failure(
         $"{lib.Name}:{lib.Version?.ToNormalizedString()}",
         $"assemblies restore listed are missing from the package folders ({missing[0]}{(missing.Count > 1 ? $" and {missing.Count - 1} more" : "")}); re-run `dotnet restore`",
         config,
@@ -496,7 +494,7 @@ internal sealed partial class Session {
     }
     if (missing.Count > 0) {
       _records.Unfetched(rootId, id);
-      Fail(
+      _records.Failure(
         $"{identity.Id}:{version}",
         $"referenced assembly is not installed ({Rel(missing[0])}); restore the packages.config packages (`nuget restore`, or `msbuild -t:restore -p:RestorePackagesConfig=true`)",
         config,
@@ -533,6 +531,9 @@ internal sealed partial class Session {
   // NuGet's short folder name of a build's framework, as restore derives it
   // from the two monikers; null when unrecognized.
   private static string? ShortFrameworkName(Project build) =>
+    ShortFrameworkName(build.GetPropertyValue("TargetFrameworkMoniker"), build.GetPropertyValue("TargetPlatformMoniker"));
+
+  private static string? ShortFrameworkName(ProjectInstance build) =>
     ShortFrameworkName(build.GetPropertyValue("TargetFrameworkMoniker"), build.GetPropertyValue("TargetPlatformMoniker"));
 
   private static string? ShortFrameworkName(string moniker, string platformMoniker) {
@@ -599,7 +600,7 @@ internal sealed partial class Session {
       var error = DesignTimeBuild(project, props, out compiled);
       if (error != null) {
         _records.ProjectInfo(info.Key, config, "BuildError", error);
-        Fail(info.Key, $"the design-time build failed: {error}", config, info.Key);
+        _records.Failure(info.Key, $"the design-time build failed: {error}", config, info.Key);
       }
     }
     var instance = compiled;
@@ -625,7 +626,7 @@ internal sealed partial class Session {
       if (!string.IsNullOrEmpty(value)) _records.ProjectInfo(info.Key, config, property, value);
     }
     // Unrecognized, the alias stands in.
-    if (ShortFrameworkName(instance.GetPropertyValue("TargetFrameworkMoniker"), instance.GetPropertyValue("TargetPlatformMoniker")) is { } framework) {
+    if (ShortFrameworkName(instance) is { } framework) {
       _records.ProjectInfo(info.Key, config, "Framework", framework);
     }
     foreach (var reference in instance.GetItems("FrameworkReference").Select(i => i.EvaluatedInclude).Distinct()) {

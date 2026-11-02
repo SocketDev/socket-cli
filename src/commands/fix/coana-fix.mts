@@ -54,7 +54,6 @@ import {
 } from '../../utils/github.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
-import { useOnlySocketFactsArtifactsFlags } from '../manifest/scripts/sidecar.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
@@ -409,16 +408,14 @@ async function coanaFixWithFacts(
       spinner?.start()
     }
   }
-  const sidecar = factsSlot?.generated?.sidecar
+  const sidecarFile = factsSlot?.generated?.sidecarFile
   // Discovery only needs which artifacts the facts files resolve. Applying
   // fixes reads each project's tree; a Coana predating facts trees can only
   // tell from the sidecar's classpaths which projects resolve an artifact.
-  const discoveryFlags = factsSlot
-    ? useOnlySocketFactsArtifactsFlags(sidecar?.contents)
-    : []
+  const discoveryFlags = factsSlot?.generated?.artifactsFlags ?? []
   const factsFlags = [
     ...discoveryFlags,
-    ...(sidecar ? ['--compute-artifacts-sidecar', sidecar.file] : []),
+    ...(sidecarFile ? ['--compute-artifacts-sidecar', sidecarFile] : []),
   ]
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {

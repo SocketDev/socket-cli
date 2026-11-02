@@ -5,9 +5,9 @@ import { safeStatsSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
+import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
-import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -16,6 +16,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { camelToKebab } from '../../utils/strings.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
 
 import type {
@@ -134,51 +135,54 @@ async function run(
 
   debugFn('inspect', `override: ${SOCKET_JSON} dotnet`, defaults)
 
-  let {
-    bin,
-    dotnetOpts,
-    excludeConfigs,
-    ignoreUnresolved,
-    includeConfigs,
-    verbose,
-  } = cli.flags
-
-  function useDefault<T>(flag: string, value: T): T {
-    logger.info(`Using default --${flag} from ${SOCKET_JSON}:`, value)
-    return value
+  const dotnetConfig = resolveEcosystemConfig('dotnet', cwd, sockJson)
+  const given = cli.flags as {
+    bin?: string | undefined
+    dotnetOpts?: string | undefined
+    excludeConfigs?: string | undefined
+    ignoreUnresolved?: boolean | undefined
+    includeConfigs?: string | undefined
+    verbose?: boolean | undefined
   }
-  if (!bin) {
-    bin = defaults?.bin
-      ? useDefault('bin', defaults.bin)
-      : resolveBuildToolBin('dotnet', cwd)
+  // An empty --bin or --dotnet-opts leaves the default in place.
+  const flags = {
+    ...given,
+    bin: given.bin || undefined,
+    dotnetOpts: given.dotnetOpts || undefined,
   }
-  if (!dotnetOpts) {
-    dotnetOpts = defaults?.dotnetOpts
-      ? useDefault('dotnet-opts', defaults.dotnetOpts)
-      : ''
+  for (const key of [
+    'bin',
+    'dotnetOpts',
+    'excludeConfigs',
+    'ignoreUnresolved',
+    'includeConfigs',
+    'verbose',
+  ] as const) {
+    const configured = defaults?.[key]
+    if (
+      flags[key] === undefined &&
+      configured !== undefined &&
+      configured !== null &&
+      configured !== ''
+    ) {
+      logger.info(
+        `Using default --${camelToKebab(key)} from ${SOCKET_JSON}:`,
+        configured,
+      )
+    }
   }
-  if (includeConfigs === undefined) {
-    includeConfigs = defaults?.includeConfigs
-      ? useDefault('include-configs', defaults.includeConfigs)
-      : ''
+  dotnetConfig.bin = flags.bin ?? dotnetConfig.bin
+  if (flags.dotnetOpts) {
+    dotnetConfig.buildOpts = parseBuildToolOpts(flags.dotnetOpts)
   }
-  if (excludeConfigs === undefined) {
-    excludeConfigs = defaults?.excludeConfigs
-      ? useDefault('exclude-configs', defaults.excludeConfigs)
-      : ''
-  }
-  if (ignoreUnresolved === undefined) {
-    ignoreUnresolved =
-      defaults?.ignoreUnresolved !== undefined
-        ? useDefault('ignore-unresolved', defaults.ignoreUnresolved)
-        : false
-  }
-  if (verbose === undefined) {
-    verbose =
-      defaults?.verbose !== undefined
-        ? useDefault('verbose', defaults.verbose)
-        : false
-  }
+  dotnetConfig.excludeConfigs =
+    flags.excludeConfigs ?? dotnetConfig.excludeConfigs
+  dotnetConfig.ignoreUnresolved =
+    flags.ignoreUnresolved ?? dotnetConfig.ignoreUnresolved
+  dotnetConfig.includeConfigs =
+    flags.includeConfigs ?? dotnetConfig.includeConfigs
+  dotnetConfig.verbose = flags.verbose ?? dotnetConfig.verbose
+  const { bin, verbose } = dotnetConfig
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -202,14 +206,9 @@ async function run(
   assertValidExcludePaths(excludePaths)
 
   await convertDotnetToFacts({
-    bin: String(bin),
+    config: dotnetConfig,
     cwd,
-    dotnetOpts: parseBuildToolOpts(String(dotnetOpts || '')),
     entryFile,
-    excludeConfigs: String(excludeConfigs || ''),
     excludePaths,
-    ignoreUnresolved: Boolean(ignoreUnresolved),
-    includeConfigs: String(includeConfigs || ''),
-    verbose: Boolean(verbose),
   })
 }
