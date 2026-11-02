@@ -39,6 +39,10 @@
     <PackageReference Include="NuGet.ProjectModel" Version="6.0.6" ExcludeAssets="runtime" />
     <PackageReference Include="NuGet.Protocol" Version="6.0.6" ExcludeAssets="runtime" />
     <PackageReference Include="NuGet.Versioning" Version="6.0.6" ExcludeAssets="runtime" />
+    <!-- Patched versions of vulnerable transitive packages (CVE-2024-43485,
+         CVE-2024-38095); the net6.0 shared framework supplies both at run time. -->
+    <PackageReference Include="System.Formats.Asn1" Version="6.0.1" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Text.Json" Version="6.0.10" ExcludeAssets="runtime" />
   </ItemGroup>
 
 </Project>
