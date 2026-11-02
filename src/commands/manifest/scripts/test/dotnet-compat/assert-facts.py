@@ -177,6 +177,18 @@ def records_phase():
     analyzers = {r[4] for r in info_rows(basic, 'src/Lib/Lib.csproj', 'Analyzer', 'net6.0')}
     check(any('demo.ext.analyzer' in p.lower() for p in analyzers), f'analyzers {analyzers}')
 
+    netstandard = records('basic-netstandard.tsv')
+    built = {(r[1], r[3]) for r in netstandard if r[0] == 'projectSrc'}
+    built |= {(r[1], r[2]) for r in netstandard if r[0] == 'projectInfo'}
+    check(built and {c for _, c in built} == {'netstandard2.0'}, f'builds outside --include-configs {sorted(built)}')
+
+    stale = records('basic-stale.tsv')
+    check(any(r[0] == 'failure' and 'Demo.Ext.DoesNotExist' in '\t'.join(r) for r in stale), 'failed restore reported')
+    reused = {r[2] for r in stale if r[0] == 'root'} - {'test/App.Tests/App.Tests.csproj'}
+    check(not reused, f'projects read from a previous restore {sorted(reused)}')
+    unknown = {r[3] for r in stale if r[0] == 'unscannable' and 'did not restore this project' in r[2]}
+    check({'src/App/App.csproj', 'src/Extra/Extra.csproj', 'src/Lib/Lib.csproj'} <= unknown, f'unrestored projects reported {sorted(unknown)}')
+
     designtime = records('designtime.tsv')
     failed = [r for r in designtime if r[0] == 'failure' and 'the design-time build failed' in r[2]]
     check(len(failed) == 1 and 'generated sources unavailable' in failed[0][2], f'design-time failure {failed}')

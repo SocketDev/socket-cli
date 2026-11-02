@@ -3,7 +3,8 @@
 # the build root: a `../shared` project outside the build root is excluded by
 # its scan-root path, and a nested project by the build root's path in the scan
 # root, both from the projects --workspaces follows and from the solution
-# members --members lists.
+# members --members lists. A project outside the scan root is never excluded,
+# even by a wildcard that would match its `../` path.
 #
 # Usage: smoke-test-exclude-base.sh <dotnet> [sdk-version]
 set -euo pipefail
@@ -22,9 +23,12 @@ echo "+ dotnet SDK $SDK_VERSION (exclude base)"
 
 # The project names --workspaces keeps, or the member paths --members lists.
 kept() {
-  local mode="$1" entry="$2" pattern="$3"
+  local mode="$1" entry="$2" pattern="$3" base="${4:-$SCAN_ROOT}"
+  rm -f "$WORK/records.tsv"
   run_tool "$SCAN_ROOT/app" --records "$WORK/records.tsv" --entry "$entry" \
-    "--$mode" --exclude-paths "$pattern" --exclude-base "$SCAN_ROOT"
+    "--$mode" --exclude-paths "$pattern" --exclude-base "$base"
+  # A run that wrote no records keeps nothing, which check reports.
+  [ -f "$WORK/records.tsv" ] || return 0
   if [ "$mode" = workspaces ]; then
     awk -F'\t' '$1 == "project" { print $4 }' "$WORK/records.tsv"
   else
@@ -33,9 +37,9 @@ kept() {
 }
 check() {
   local got
-  got="$(kept "$@")"
+  got="$(kept "$1" "$2" "$3" "${5:-}")"
   if [ "$got" != "$4" ]; then
-    echo "FAIL: --$1 of $2 excluding $3 kept [$got], want [$4]" >&2
+    echo "FAIL: --$1 of $2 excluding $3 from ${5:-$SCAN_ROOT} kept [$got], want [$4]" >&2
     exit 1
   fi
 }
@@ -46,4 +50,7 @@ check workspaces App.csproj '^(?:core)(?:/.*)?$' 'App Core Shared '
 check members App.sln '^(?:shared)(?:/.*)?$' 'App.csproj core/Core.csproj '
 check members App.sln '^(?:app/core)(?:/.*)?$' '../shared/Shared.csproj App.csproj '
 check members App.sln '^(?:core)(?:/.*)?$' '../shared/Shared.csproj App.csproj core/Core.csproj '
-echo "PASS: projects inside and outside the build root are excluded by their scan-root paths"
+# `**/shared`, scanned from app: ../shared is outside the scan root.
+check workspaces App.csproj '^(?:(?:[^/]+/)*shared)(?:/.*)?$' 'App Core Shared ' "$SCAN_ROOT/app"
+check members App.sln '^(?:(?:[^/]+/)*shared)(?:/.*)?$' '../shared/Shared.csproj App.csproj core/Core.csproj ' "$SCAN_ROOT/app"
+echo "PASS: projects are excluded by their scan-root paths, never outside the scan root"

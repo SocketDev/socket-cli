@@ -18,12 +18,16 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(async () => ({ code: 0, stderr: '', stdout: '' })),
 }))
 // The Maven extension jar and the dotnet tool exist only in a built checkout.
+// Each dotnetDir() case pins its own SDK, so cases never share a probe.
 vi.mock('node:fs', async importOriginal => {
   const actual = await importOriginal<typeof import('node:fs')>()
   return {
     ...actual,
     existsSync: (p: string) =>
-      p.endsWith('.jar') || p.endsWith('.dll') || actual.existsSync(p),
+      p.endsWith('.jar') ||
+      p.endsWith('.dll') ||
+      /[\\/]repo[\\/]dotnet-\d+[\\/]global\.json$/.test(p) ||
+      actual.existsSync(p),
   }
 })
 
@@ -162,8 +166,12 @@ function mockDotnet(sdk: string, records = '', code = 0): void {
   }) as any)
 }
 
+function toolCalls() {
+  return vi.mocked(spawn).mock.calls.filter(c => c[1]?.[0] !== '--version')
+}
+
 function toolCall() {
-  return vi.mocked(spawn).mock.calls.find(c => c[1]?.[0] !== '--version')
+  return toolCalls()[0]
 }
 
 describe('dotnet tool invocation', () => {
@@ -277,6 +285,20 @@ describe('skipWithoutDotnetSdk', () => {
     mockDotnet('8.0.414')
     expect(await skipWithoutDotnetSdk('dotnet', dotnetDir())).toBe(false)
   })
+
+  it('probes the SDK once per global.json', async () => {
+    const pinned = dotnetDir()
+    mockDotnet('8.0.414')
+    for (const dir of ['a', path.join('b', 'c')]) {
+      // eslint-disable-next-line no-await-in-loop
+      expect(await skipWithoutDotnetSdk('dotnet', path.join(pinned, dir))).toBe(
+        false,
+      )
+    }
+    expect(
+      vi.mocked(spawn).mock.calls.filter(c => c[1]?.[0] === '--version'),
+    ).toHaveLength(1)
+  })
 })
 
 function solutionOpts(projectDir: string) {
@@ -310,5 +332,14 @@ describe('listDotnetEntryProjects', () => {
   it('lists nothing when the tool exits non-zero', async () => {
     mockDotnet('8.0.414', 'member\tsrc/A/A.csproj\n', 1)
     expect(await listDotnetEntryProjects(solutionOpts(dotnetDir()))).toEqual([])
+  })
+
+  it('lists an entry once for the same options', async () => {
+    const opts = solutionOpts(dotnetDir())
+    mockDotnet('8.0.414', 'member\tsrc/A/A.csproj\n')
+    await listDotnetEntryProjects(opts)
+    await listDotnetEntryProjects({ ...opts })
+    await listDotnetEntryProjects({ ...opts, excludePaths: ['src/A'] })
+    expect(toolCalls()).toHaveLength(2)
   })
 })

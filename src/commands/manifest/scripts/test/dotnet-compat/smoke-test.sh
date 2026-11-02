@@ -97,8 +97,9 @@ python3 "$HERE/assert-facts.py" "$WORK" "$SDK_VERSION" "$CPM_ENTRY" ignore-unres
 
 # --with-files: the records the reachability sidecar is built from.
 records() {
-  run_tool "$(dirname "$1")" --records "$2" --entry "$1" --with-files
+  run_tool "$(dirname "$1")" --records "$2" --entry "$1" --with-files "${@:3}"
 }
+records "$WORK/basic/Basic.sln" "$WORK/basic-netstandard.tsv" --include-configs netstandard2.0
 records "$WORK/basic/Basic.sln" "$WORK/basic.tsv"
 records "$WORK/langs/Vb/Vb.vbproj" "$WORK/langs.tsv"
 records "$WORK/failures/designtime/DesignTime.csproj" "$WORK/designtime.tsv"
@@ -112,6 +113,17 @@ for pkg_id, version, folder in (('Demo.Ext.Tool', '1.0.0', '1.0.0'), ('Demo.Ext.
     zipfile.ZipFile(nupkg).extractall(os.path.join(work, 'packages-config', 'packages', f'{pkg_id}.{folder}'))
 PY
 records "$WORK/packages-config/Mixed.sln" "$WORK/pc-present.tsv"
+# A restore failing in one project leaves the others' caches as the last
+# restore wrote them, which cannot show they are current.
+python3 - "$WORK/basic/test/App.Tests/App.Tests.csproj" <<'PY'
+import sys
+path = sys.argv[1]
+with open(path) as f:
+    project = f.read()
+with open(path, 'w') as f:
+    f.write(project.replace('</Project>', '<ItemGroup><PackageReference Include="Demo.Ext.DoesNotExist" Version="1.0.0" /></ItemGroup></Project>'))
+PY
+records "$WORK/basic/Basic.sln" "$WORK/basic-stale.tsv"
 python3 "$HERE/assert-facts.py" "$WORK" "$SDK_VERSION" "$CPM_ENTRY" records
 
 echo "dotnet compat smoke test passed: SDK $SDK_VERSION"

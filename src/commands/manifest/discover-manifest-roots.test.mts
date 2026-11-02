@@ -8,7 +8,7 @@ import {
   buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
-  isSolutionCovered,
+  isRootCovered,
   sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
 import { testPath } from '../../../test/utils.mts'
@@ -301,6 +301,7 @@ describe('sortByDepthThenPath', () => {
           { dir: '/repo', entryFile: 'App.sln' },
         ],
         '/repo',
+        'dotnet',
       ),
     ).toEqual([
       { dir: '/repo', entryFile: 'App.sln' },
@@ -322,22 +323,24 @@ async function failToList(): Promise<string[]> {
   throw new Error('listed')
 }
 
-describe('isSolutionCovered', () => {
+describe('isRootCovered', () => {
   const root = { dir: '/repo', entryFile: 'App.slnx' }
 
   it('covers a solution once every project it builds is covered', async () => {
     const covered = new Set(['/repo/src/A/A.csproj', '/repo/src/B/B.csproj'])
     expect(
-      await isSolutionCovered(
+      await isRootCovered(
         covered,
+        'dotnet',
         root,
         {},
         listing(['/repo/src/A/A.csproj', '/repo/src/B/B.csproj']),
       ),
     ).toBe(true)
     expect(
-      await isSolutionCovered(
+      await isRootCovered(
         covered,
+        'dotnet',
         root,
         {},
         listing(['/repo/src/A/A.csproj', '/repo/src/C/C.csproj']),
@@ -354,8 +357,9 @@ describe('isSolutionCovered', () => {
       const slnxUnreadable = async ({ entryFile }: { entryFile?: string }) =>
         entryFile?.endsWith('.slnx') ? undefined : []
       expect(
-        await isSolutionCovered(
+        await isRootCovered(
           covered,
+          'dotnet',
           { dir, entryFile: 'App.slnx' },
           {},
           slnxUnreadable,
@@ -363,16 +367,18 @@ describe('isSolutionCovered', () => {
       ).toBe(true)
       // Also before anything is covered, e.g. when the twin built nothing.
       expect(
-        await isSolutionCovered(
+        await isRootCovered(
           new Set(),
+          'dotnet',
           { dir, entryFile: 'App.slnx' },
           {},
           slnxUnreadable,
         ),
       ).toBe(true)
       expect(
-        await isSolutionCovered(
+        await isRootCovered(
           covered,
+          'dotnet',
           { dir, entryFile: 'Other.slnx' },
           {},
           slnxUnreadable,
@@ -390,7 +396,13 @@ describe('isSolutionCovered', () => {
       await fs.writeFile(path.join(dir, 'App.slnx'), '')
       const covered = await Promise.all(
         ['App.sln', 'App.slnx'].map(entryFile =>
-          isSolutionCovered(new Set(), { dir, entryFile }, {}, unreadable),
+          isRootCovered(
+            new Set(),
+            'dotnet',
+            { dir, entryFile },
+            {},
+            unreadable,
+          ),
         ),
       )
       expect(covered).toEqual([false, false])
@@ -401,18 +413,20 @@ describe('isSolutionCovered', () => {
 
   it('lists no members while nothing is covered and no twin exists, or for a project or a POM', async () => {
     const list = failToList
-    expect(await isSolutionCovered(new Set(), root, {}, list)).toBe(false)
+    expect(await isRootCovered(new Set(), 'dotnet', root, {}, list)).toBe(false)
     expect(
-      await isSolutionCovered(
+      await isRootCovered(
         new Set(['/x']),
+        'dotnet',
         { dir: '/repo', entryFile: 'A.csproj' },
         {},
         list,
       ),
     ).toBe(false)
     expect(
-      await isSolutionCovered(
+      await isRootCovered(
         new Set(['/x']),
+        'maven',
         { dir: '/repo', entryFile: 'pom.xml' },
         {},
         list,

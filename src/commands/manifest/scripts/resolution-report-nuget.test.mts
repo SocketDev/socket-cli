@@ -14,7 +14,7 @@ describe('classifyNugetFailure', () => {
       'repository-or-network',
     ],
     [
-      'Response status code does not indicate success: 401 (Unauthorized).',
+      'NU1301: Unable to load the service index for source https://feed/index.json. Response status code does not indicate success: 401 (Unauthorized).',
       'repository-or-network',
     ],
     [
@@ -35,7 +35,7 @@ describe('classifyNugetFailure', () => {
     ],
     [
       'could not evaluate the project: The imported project "x.props" was not found.',
-      'config-problem',
+      'other',
     ],
     [
       'the design-time build failed: MSB3644: The reference assemblies for .NETFramework,Version=v4.8 were not found.',
@@ -43,7 +43,7 @@ describe('classifyNugetFailure', () => {
     ],
     [
       'obj/project.assets.json belongs to B.csproj: the projects share an intermediate output directory, so restore output cannot be attributed',
-      'config-problem',
+      'other',
     ],
     [
       'runtime assemblies restore listed are missing from the package folders (lib/net8.0/Foo.dll); re-run `dotnet restore`',
