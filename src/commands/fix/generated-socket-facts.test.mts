@@ -68,13 +68,13 @@ describe('generateSocketFactsForFix', () => {
       return { factsPaths: [fresh], resolvedPathsSidecar: { [fresh]: {} } }
     })
 
-    const { sidecarFile } = await generate()
+    const { sidecar } = await generate()
 
     expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
       expect.objectContaining({ sidecar: true }),
     )
-    expect(path.dirname(sidecarFile!)).toBe(tmpDir)
-    expect(JSON.parse(await fs.readFile(sidecarFile!, 'utf8'))).toEqual({
+    expect(path.dirname(sidecar!.file)).toBe(tmpDir)
+    expect(JSON.parse(await fs.readFile(sidecar!.file, 'utf8'))).toEqual({
       [fresh]: {},
     })
   })

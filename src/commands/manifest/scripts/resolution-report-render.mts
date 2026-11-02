@@ -93,12 +93,11 @@ const RESOLUTION_REPORT_CONFIG_LIMIT = 20
 function dedupInfos<T extends { coord: string; projects: Set<string> }>(
   infos: T[],
 ): T[] {
-  const placesOf = (i: T): string[] =>
-    i.projects.size ? [...i.projects] : ['']
   const versioned = new Set<string>()
   for (const i of infos) {
-    if (i.coord.split(':').length >= 3) {
-      for (const project of placesOf(i)) {
+    const p = i.coord.split(':')
+    if (p.length >= 3) {
+      for (const project of i.projects) {
         versioned.add(moduleKey(project, i.coord))
       }
     }
@@ -107,7 +106,7 @@ function dedupInfos<T extends { coord: string; projects: Set<string> }>(
     .filter(
       i =>
         i.coord.split(':').length >= 3 ||
-        !placesOf(i).every(p => versioned.has(moduleKey(p, i.coord))),
+        ![...i.projects].every(p => versioned.has(moduleKey(p, i.coord))),
     )
     .sort((a, b) => (a.coord < b.coord ? -1 : a.coord > b.coord ? 1 : 0))
 }
@@ -241,6 +240,7 @@ export function renderResolutionReport(
     blocking: boolean
     detail: string
     configs: Set<string>
+    // '' for a failure that belongs to no project.
     projects: Set<string>
     // Some failure of this coord belongs to no configuration.
     configless: boolean
@@ -268,9 +268,7 @@ export function renderResolutionReport(
     } else {
       info.configless = true
     }
-    if (f.project) {
-      info.projects.add(f.project)
-    }
+    info.projects.add(f.project)
   }
   const allInfos = [...byKey.values()]
   const isInfoBlocking = (info: CoordInfo): boolean => info.blocking

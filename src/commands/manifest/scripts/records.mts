@@ -57,7 +57,6 @@ export type RawNode = {
 export type RawRoot = {
   rootId: string
   projectKey: string
-  config: string
   prod: boolean
   // dotnet: the target framework's NuGet short folder name, the runtime
   // identifier of a runtime-specific target, and the framework's alias in
@@ -73,11 +72,49 @@ export type RawUsing = { namespace: string; alias: string; static: boolean }
 
 // One dotnet target framework build of a project, by its alias.
 export type RawBuild = {
+  analyzers: string[]
+  assemblyName?: string | undefined
+  buildError?: string | undefined
+  defineConstants: string[]
+  framework?: string | undefined
+  frameworkReferences: string[]
+  langVersion?: string | undefined
+  language?: string | undefined
+  nullable?: string | undefined
+  references: string[]
   sources: string[]
+  targetFrameworkMoniker?: string | undefined
   targets: string[]
-  info: Map<string, string[]>
   usings: RawUsing[]
 }
+
+type RawBuildList = {
+  [K in keyof RawBuild]-?: RawBuild[K] extends string[] ? K : never
+}[keyof RawBuild]
+
+type RawBuildValue = {
+  [K in keyof RawBuild]-?: RawBuild[K] extends string | undefined ? K : never
+}[keyof RawBuild]
+
+// projectInfo names, as the dotnet tool's Reader.cs writes them.
+const PROJECT_INFO_LISTS = {
+  __proto__: null,
+  Analyzer: 'analyzers',
+  DefineConstant: 'defineConstants',
+  FrameworkReference: 'frameworkReferences',
+  Reference: 'references',
+} as unknown as Record<string, RawBuildList | undefined>
+
+const PROJECT_INFO_VALUES = {
+  __proto__: null,
+  AssemblyName: 'assemblyName',
+  BuildError: 'buildError',
+  Framework: 'framework',
+  LangVersion: 'langVersion',
+  Language: 'language',
+  Nullable: 'nullable',
+  TargetFrameworkMoniker: 'targetFrameworkMoniker',
+} as unknown as Record<string, RawBuildValue | undefined>
 
 export type RawProject = {
   projectKey: string
@@ -157,7 +194,6 @@ export function parseRecords(text: string): ParsedRecords {
       r = {
         rootId: id,
         projectKey: '',
-        config: '',
         prod: false,
         framework: '',
         runtime: '',
@@ -192,7 +228,15 @@ export function parseRecords(text: string): ParsedRecords {
     const builds = project(key).builds
     let b = builds.get(config)
     if (!b) {
-      b = { sources: [], targets: [], info: new Map(), usings: [] }
+      b = {
+        analyzers: [],
+        defineConstants: [],
+        frameworkReferences: [],
+        references: [],
+        sources: [],
+        targets: [],
+        usings: [],
+      }
       builds.set(config, b)
     }
     return b
@@ -248,8 +292,14 @@ export function parseRecords(text: string): ParsedRecords {
         break
       case 'projectInfo':
         if (f[2] && f[3] && f[4]) {
-          const info = build(f[1] ?? '', f[2]).info
-          info.set(f[3], [...(info.get(f[3]) ?? []), f[4]])
+          const b = build(f[1] ?? '', f[2])
+          const list = PROJECT_INFO_LISTS[f[3]]
+          const value = PROJECT_INFO_VALUES[f[3]]
+          if (list) {
+            b[list].push(f[4])
+          } else if (value) {
+            b[value] ??= f[4]
+          }
         }
         break
       case 'projectUsing':
@@ -272,7 +322,6 @@ export function parseRecords(text: string): ParsedRecords {
       case 'root': {
         const r = root(f[1] ?? '')
         r.projectKey = f[2] ?? ''
-        r.config = f[3] ?? ''
         r.prod = bool(f[4])
         r.framework = f[5] ?? ''
         r.runtime = f[6] ?? ''

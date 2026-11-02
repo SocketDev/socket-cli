@@ -51,7 +51,7 @@ export function findDotnetEntries(cwd: string): string[] {
   return entries
     .filter(e => e.isFile() && isBuildFile('dotnet', e.name))
     .map(e => e.name)
-    .sort(compareEntryFiles)
+    .sort((a, b) => compareEntryFiles('dotnet', a, b))
 }
 
 export async function detectManifestActions(

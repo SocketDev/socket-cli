@@ -59,13 +59,12 @@ internal sealed class SolutionContext {
   // A temporary solution filter over `members`, for restoring a subset of the
   // solution with the solution's own context.
   public string WriteFilter(IReadOnlyList<string> members) {
-    var solutionDir = Path.GetDirectoryName(_solutionPath)!;
     var path = Path.Combine(Path.GetTempPath(), $"socket-facts-{Guid.NewGuid():N}.slnf");
     var doc = new {
       solution = new {
         path = _solutionPath,
         projects = members
-          .Select(m => Members.TryGetValue(m, out var p) ? p.RelativePath : Path.GetRelativePath(solutionDir, m))
+          .Select(m => Members[m].RelativePath)
           .ToArray(),
       },
     };
@@ -77,8 +76,7 @@ internal sealed class SolutionContext {
   // into others) are not projects MSBuild builds on their own.
   private static bool IsMSBuildProject(ProjectInSolution project) {
     return project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat
-      || (project.ProjectType == SolutionProjectType.Unknown
-        && project.AbsolutePath.EndsWith("proj", StringComparison.OrdinalIgnoreCase));
+      || (project.ProjectType == SolutionProjectType.Unknown && Text.IsProjectFile(project.AbsolutePath));
   }
 
   // A solution filter: {"solution": {"path": <sln>, "projects": [<paths

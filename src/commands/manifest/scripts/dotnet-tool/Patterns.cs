@@ -93,6 +93,9 @@ internal sealed class PathExcludes {
 }
 
 internal static class Text {
+  // An MSBuild project file: .csproj, .fsproj, .vbproj and the like.
+  public static bool IsProjectFile(string path) => path.EndsWith("proj", StringComparison.OrdinalIgnoreCase);
+
   public static string FirstLine(string s) {
     var idx = s.IndexOfAny(new[] { '\n', '\r' });
     return idx < 0 ? s : s.Substring(0, idx);

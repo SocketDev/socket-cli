@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 
-import { PURL_TYPE_BY_TOOL } from './build-tool.mts'
+import { NAMESPACELESS_PURL_TYPES, PURL_TYPE_BY_TOOL } from './build-tool.mts'
 import {
   type ComponentFramework,
   type ProjectFramework,
@@ -16,13 +16,14 @@ import { moduleKey } from './resolution-report.mts'
 import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 
-// NuGet purls have no namespace, so the key is left out rather than empty.
 function purlBase(
   type: string,
   group: string,
   name: string,
 ): { type: string; namespace?: string; name: string } {
-  return type === 'nuget' ? { type, name } : { type, namespace: group, name }
+  return NAMESPACELESS_PURL_TYPES.has(type)
+    ? { type, name }
+    : { type, namespace: group, name }
 }
 
 export type AssembleResult = {
@@ -55,7 +56,6 @@ type SubprojectGraph = {
 type PerRoot = {
   projectKey: string
   prod: boolean
-  config: string
   framework: string
   runtime: string
   alias: string
@@ -174,7 +174,6 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
     out.set(rootId, {
       projectKey: r.projectKey,
       prod: r.prod,
-      config: r.config,
       framework: r.framework,
       runtime: r.runtime,
       alias: r.alias,
@@ -536,21 +535,18 @@ function buildFrameworks(
     let pf = builds.get(k)
     if (!pf) {
       const build = parsed.projects.get(projectKey)?.builds.get(alias)
-      const one = (name: string) => build?.info.get(name)?.[0]
       pf = {
         alias,
-        framework: framework || one('Framework') || alias,
+        framework: framework || build?.framework || alias,
         ...(runtime ? { runtime } : {}),
-        targetFrameworkMoniker: one('TargetFrameworkMoniker'),
-        language: one('Language'),
-        langVersion: one('LangVersion'),
-        nullable: one('Nullable'),
-        assemblyName: one('AssemblyName'),
-        buildError: one('BuildError'),
-        frameworkReferences: sortedUnique(
-          build?.info.get('FrameworkReference') ?? [],
-        ),
-        defineConstants: [...new Set(build?.info.get('DefineConstant'))],
+        targetFrameworkMoniker: build?.targetFrameworkMoniker,
+        language: build?.language,
+        langVersion: build?.langVersion,
+        nullable: build?.nullable,
+        assemblyName: build?.assemblyName,
+        buildError: build?.buildError,
+        frameworkReferences: sortedUnique(build?.frameworkReferences ?? []),
+        defineConstants: [...new Set(build?.defineConstants)],
         usings: (build?.usings ?? []).map(u => ({
           namespace: u.namespace,
           ...(u.alias ? { alias: u.alias } : {}),
@@ -558,8 +554,8 @@ function buildFrameworks(
         })),
         // In compiler order, which F# depends on.
         sources: [...new Set(build?.sources)].filter(exists),
-        references: [...new Set(build?.info.get('Reference'))].filter(exists),
-        analyzers: [...new Set(build?.info.get('Analyzer'))].filter(exists),
+        references: [...new Set(build?.references)].filter(exists),
+        analyzers: [...new Set(build?.analyzers)].filter(exists),
         targets: sortedUnique(build?.targets ?? []).filter(exists),
         dependencies: [],
         classpath: [],

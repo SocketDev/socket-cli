@@ -10,37 +10,23 @@ const NOT_FOUND_CODES = new Set(['NU1100', 'NU1101', 'NU1102', 'NU1103'])
 // (HTTP) sources.
 const SOURCE_CODES = new Set(['NU1301', 'NU1302'])
 
-// The socket-facts-dotnet tool reports restore errors as `<code>: <message>`
-// and its own findings as plain sentences.
+// The socket-facts-dotnet tool reports restore errors as `<code>: <message>`,
+// and a design-time build failure as `<finding>: <code>: <message>`; its
+// findings without a code count as other failures.
 export function classifyNugetFailure(detail: string): FailureCategory {
-  const text = detail || ''
-  const code = /^(NU\d{4}|NETSDK\d{4}|MSB\d{4})\b/.exec(text)?.[1]
-  if (code && NOT_FOUND_CODES.has(code)) {
+  const code = /(?:^|: )(NU\d{4}|NETSDK\d{4}|MSB\d{4}):/.exec(detail || '')?.[1]
+  if (!code) {
+    return 'other'
+  }
+  if (NOT_FOUND_CODES.has(code)) {
     return 'not-found'
   }
-  const t = text.toLowerCase()
-  if (
-    (code && SOURCE_CODES.has(code)) ||
-    t.includes('unable to load the service index') ||
-    t.includes('response status code does not indicate success') ||
-    t.includes('401 (unauthorized)') ||
-    t.includes('403 (forbidden)')
-  ) {
+  if (SOURCE_CODES.has(code)) {
     return 'repository-or-network'
   }
   // Any other NuGet, .NET SDK or MSBuild error is about the project, the
   // lock file, central package management or framework compatibility.
-  if (
-    code ||
-    t.startsWith('could not evaluate') ||
-    t.startsWith('could not read') ||
-    t.startsWith('the design-time build failed') ||
-    t.includes('share an intermediate output directory') ||
-    t.startsWith('project.json projects are not supported')
-  ) {
-    return 'config-problem'
-  }
-  return 'other'
+  return 'config-problem'
 }
 
 export const NUGET_DIALECT: ResolutionDialect = {

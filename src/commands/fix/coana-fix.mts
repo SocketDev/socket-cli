@@ -409,16 +409,16 @@ async function coanaFixWithFacts(
       spinner?.start()
     }
   }
-  const sidecarFile = factsSlot?.generated?.sidecarFile
+  const sidecar = factsSlot?.generated?.sidecar
   // Discovery only needs which artifacts the facts files resolve. Applying
   // fixes reads each project's tree; a Coana predating facts trees can only
   // tell from the sidecar's classpaths which projects resolve an artifact.
   const discoveryFlags = factsSlot
-    ? useOnlySocketFactsArtifactsFlags(factsSlot.generated?.sidecar)
+    ? useOnlySocketFactsArtifactsFlags(sidecar?.contents)
     : []
   const factsFlags = [
     ...discoveryFlags,
-    ...(sidecarFile ? ['--compute-artifacts-sidecar', sidecarFile] : []),
+    ...(sidecar ? ['--compute-artifacts-sidecar', sidecar.file] : []),
   ]
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {

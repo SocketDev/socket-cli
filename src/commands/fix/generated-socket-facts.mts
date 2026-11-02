@@ -7,9 +7,8 @@ import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 
 export type GeneratedSocketFacts = {
   paths: string[]
-  // The facts files' per-project classpaths, outside the repository.
-  sidecarFile: string | undefined
-  sidecar: ResolvedPathsSidecar | undefined
+  // The facts files' per-project classpaths, written outside the repository.
+  sidecar: { contents: ResolvedPathsSidecar; file: string } | undefined
   remove: () => Promise<void>
   restore: () => Promise<void>
 }
@@ -56,8 +55,7 @@ export async function generateSocketFactsForFix({
     await restoreAll(originals)
   }
   let paths: string[]
-  let sidecarFile: string | undefined
-  let sidecar: ResolvedPathsSidecar | undefined
+  let sidecar: GeneratedSocketFacts['sidecar']
   try {
     const { factsPaths, resolvedPathsSidecar } = await runDynamicSbomInference({
       cwd,
@@ -67,10 +65,12 @@ export async function generateSocketFactsForFix({
       withFiles: false,
     })
     paths = factsPaths.map(p => path.resolve(cwd, p))
-    sidecar = resolvedPathsSidecar
     if (resolvedPathsSidecar) {
-      sidecarFile = path.join(tmpDir, 'sidecar.json')
-      await writeFile(sidecarFile, JSON.stringify(resolvedPathsSidecar))
+      sidecar = {
+        contents: resolvedPathsSidecar,
+        file: path.join(tmpDir, 'sidecar.json'),
+      }
+      await writeFile(sidecar.file, JSON.stringify(resolvedPathsSidecar))
     }
   } catch (e) {
     // A failed build root aborts inference after others wrote their facts.
@@ -85,7 +85,6 @@ export async function generateSocketFactsForFix({
   return {
     paths,
     sidecar,
-    sidecarFile,
     remove: () => reset(paths),
     restore: () => restoreAll(backups),
   }

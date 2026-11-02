@@ -50,14 +50,14 @@ function buildFileTool(
   return tools.find(tool => isBuildFile(tool, basename))
 }
 
-function solutionsFirst(file: string): number {
-  return isDotnetSolution(file) ? 0 : 1
-}
-
-// Within one directory: solutions before projects (a solution covers the
-// projects it lists), then by name.
-export function compareEntryFiles(a: string, b: string): number {
-  return solutionsFirst(a) - solutionsFirst(b) || compareStrings(a, b)
+export function compareEntryFiles(
+  tool: BuildTool,
+  a: string,
+  b: string,
+): number {
+  const files = BUILD_FILES[tool]
+  const rank = files.byFile ? files.entryRank : undefined
+  return (rank ? rank(a) - rank(b) : 0) || compareStrings(a, b)
 }
 
 // A disabled ecosystem is skipped entirely by the glob scan below, so a
@@ -135,7 +135,7 @@ export function isBuildRootCovered(
 // A dotnet solution is covered once every project it builds is, or, when the
 // SDK cannot read it, by a same-named solution in the other format beside it
 // (`dotnet sln migrate` writes App.slnx next to App.sln) that it can read.
-export async function isSolutionCovered(
+async function isSolutionCovered(
   covered: ReadonlySet<string>,
   root: BuildRoot,
   opts: Pick<
@@ -172,13 +172,34 @@ export async function isSolutionCovered(
   return !!members.length && members.every(member => covered.has(member))
 }
 
+// Whether earlier builds cover `root`: its own build files, or every project
+// a solution builds. isBuildRootCovered alone is the cheap first half.
+export async function isRootCovered(
+  covered: ReadonlySet<string>,
+  tool: BuildTool,
+  root: BuildRoot,
+  opts: Pick<
+    ManifestScriptOptions,
+    'bin' | 'excludeBase' | 'excludePaths' | 'toolOpts'
+  >,
+  listMembers: typeof listDotnetEntryProjects = listDotnetEntryProjects,
+): Promise<boolean> {
+  return (
+    isBuildRootCovered(covered, tool, root) ||
+    (tool === 'dotnet' &&
+      (await isSolutionCovered(covered, root, opts, listMembers)))
+  )
+}
+
 function compareStrings(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0
 }
 
+// `tool` orders the entry files of one tool's builds in the same directory.
 export function sortByDepthThenPath<T extends BuildRoot>(
   roots: readonly T[],
   cwd: string,
+  tool?: BuildTool | undefined,
 ): T[] {
   return [...roots].sort((a, b) => {
     const relA = path.relative(cwd, a.dir)
@@ -188,7 +209,9 @@ export function sortByDepthThenPath<T extends BuildRoot>(
     return (
       depthA - depthB ||
       compareStrings(relA, relB) ||
-      compareEntryFiles(a.entryFile ?? '', b.entryFile ?? '')
+      (tool
+        ? compareEntryFiles(tool, a.entryFile ?? '', b.entryFile ?? '')
+        : compareStrings(a.entryFile ?? '', b.entryFile ?? ''))
     )
   })
 }
@@ -259,6 +282,7 @@ export async function findBuildToolCandidates({
       sortByDepthThenPath(
         [...(rootsByTool.get(tool)?.values() ?? [])],
         realCwd,
+        tool,
       ),
     )
   }

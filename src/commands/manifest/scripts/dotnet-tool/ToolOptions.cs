@@ -1,5 +1,11 @@
 namespace Socket.Facts.Dotnet;
 
+internal enum ToolMode {
+  Facts,
+  Members,
+  Workspaces,
+}
+
 internal sealed class ToolOptions {
   public const string Usage = """
     Usage: socket-facts-dotnet --records <file> --entry <file> [options] [-- <dotnet restore args>]
@@ -30,8 +36,7 @@ internal sealed class ToolOptions {
   public string ExcludeConfigs = "";
   public string ExcludePaths = "";
   public string ExcludeBase = "";
-  public bool Workspaces;
-  public bool Members;
+  public ToolMode Mode = ToolMode.Facts;
   public bool Verbose;
   public List<string> RestoreArgs = new();
   public Dictionary<string, string> GlobalProperties = new(StringComparer.OrdinalIgnoreCase);
@@ -71,10 +76,10 @@ internal sealed class ToolOptions {
           opts.ExcludeBase = RealPaths.Dir(Path.GetFullPath(Next(args, ref i, arg)));
           break;
         case "--workspaces":
-          opts.Workspaces = true;
+          opts.SetMode(ToolMode.Workspaces, arg);
           break;
         case "--members":
-          opts.Members = true;
+          opts.SetMode(ToolMode.Members, arg);
           break;
         case "--verbose":
           opts.Verbose = true;
@@ -108,6 +113,11 @@ internal sealed class ToolOptions {
     }
     opts.EntryPath = RealPaths.Of(opts.EntryPath);
     return opts;
+  }
+
+  private void SetMode(ToolMode mode, string arg) {
+    if (Mode != ToolMode.Facts) throw new ArgumentException($"{arg} cannot be combined with another mode");
+    Mode = mode;
   }
 
   private static string Next(string[] args, ref int i, string arg) {

@@ -67,9 +67,6 @@ internal static class Restorer {
     return new RestoreOutcome(timedOut ? -1 : process.ExitCode, timedOut, started, errors);
   }
 
-  private static bool IsProjectFile(string path) =>
-    path.EndsWith("proj", StringComparison.OrdinalIgnoreCase);
-
   private static List<RestoreError> ReadErrors(string path) {
     var errors = new List<RestoreError>();
     if (!File.Exists(path)) return errors;
@@ -81,9 +78,9 @@ internal static class Restorer {
       // solution restore is the solution.
       var origin = Regex.Replace(m.Groups["origin"].Value.Trim(), @"\(\d+(,\d+)*\)$", "");
       var built = m.Groups["project"].Value;
-      var project = IsProjectFile(origin) && File.Exists(origin)
+      var project = Text.IsProjectFile(origin) && File.Exists(origin)
         ? origin
-        : IsProjectFile(built) && File.Exists(built) ? built : "";
+        : Text.IsProjectFile(built) && File.Exists(built) ? built : "";
       errors.Add(new RestoreError(m.Groups["code"].Value, m.Groups["text"].Value, project));
     }
     return errors;

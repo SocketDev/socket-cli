@@ -124,7 +124,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
   const uploadManifestFiles = vi.fn()
   const generated = {
     paths: [FACTS],
-    sidecarFile: '/tmp/socket-fix-facts/sidecar.json',
+    sidecar: { contents: {}, file: '/tmp/socket-fix-facts/sidecar.json' },
     remove: vi.fn(),
     restore: vi.fn(),
   }
@@ -155,7 +155,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     expect(args).toContain('--maven-use-only-socket-facts')
     expect(args).toContain('--compute-artifacts-sidecar')
     expect(args[args.indexOf('--compute-artifacts-sidecar') + 1]).toBe(
-      generated.sidecarFile,
+      generated.sidecar.file,
     )
     expect(generated.remove).toHaveBeenCalledTimes(1)
   })

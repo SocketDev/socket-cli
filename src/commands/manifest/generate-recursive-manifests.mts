@@ -7,7 +7,7 @@ import {
   buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
-  isSolutionCovered,
+  isRootCovered,
   realpathOrResolved,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
@@ -224,7 +224,7 @@ async function runEcosystemCandidates({
       }
       if (
         // eslint-disable-next-line no-await-in-loop
-        await isSolutionCovered(covered, root, {
+        await isRootCovered(covered, ecosystem, root, {
           bin,
           excludeBase: realCwd,
           excludePaths,

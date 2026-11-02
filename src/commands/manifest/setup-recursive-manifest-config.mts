@@ -11,7 +11,7 @@ import {
   buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
-  isSolutionCovered,
+  isRootCovered,
   realpathOrResolved,
   sortByDepthThenPath,
   withoutDisabledFlags,
@@ -246,14 +246,13 @@ export async function markWorkspaceCoverage({
 
   for (const root of roots) {
     if (
-      isBuildRootCovered(covered, ecosystem, root) ||
       // eslint-disable-next-line no-await-in-loop
-      (await isSolutionCovered(covered, root, {
+      await isRootCovered(covered, ecosystem, root, {
         bin,
         excludeBase: cwd,
         excludePaths,
         toolOpts: buildOpts,
-      }))
+      })
     ) {
       continue
     }

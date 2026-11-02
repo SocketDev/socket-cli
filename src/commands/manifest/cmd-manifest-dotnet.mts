@@ -1,7 +1,7 @@
-import { statSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { safeStatsSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
@@ -125,10 +125,7 @@ async function run(
   }
 
   const target = path.resolve(process.cwd(), cli.input[0] ?? '.')
-  let isFile = false
-  try {
-    isFile = statSync(target).isFile()
-  } catch {}
+  const isFile = !!safeStatsSync(target)?.isFile()
   const cwd = isFile ? path.dirname(target) : target
   const entryFile = isFile ? path.basename(target) : undefined
 

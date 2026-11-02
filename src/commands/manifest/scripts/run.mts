@@ -11,6 +11,7 @@ import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
 import { getErrorMessageOr } from '../../../utils/errors.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
+import { camelToKebab } from '../../../utils/strings.mts'
 
 import type { BuildTool } from './build-tool.mts'
 import type {
@@ -187,13 +188,14 @@ function assembleRecords(
 function assertBundledAssetBuilt(
   assetPath: string,
   description: string,
+  // The package.json script that builds it, as the dist build names it too.
   buildScript: string,
 ): void {
   if (existsSync(assetPath)) {
     return
   }
   throw new Error(
-    `${description} not found at ${assetPath}. It is bundled in the published CLI; for local dev build it with: bash src/commands/manifest/scripts/${buildScript}`,
+    `${description} not found at ${assetPath}. It is bundled in the published CLI; for local dev build it with: pnpm run ${buildScript}`,
   )
 }
 
@@ -237,34 +239,53 @@ export async function enumerateWorkspaces(
   }
 }
 
+// The options every build script reads, each in its own argument syntax.
+function scriptOptions(
+  opts: ManifestScriptOptions,
+): Array<[string, string | true]> {
+  const options: Array<[string, string | true]> = []
+  if (opts.withFiles) {
+    options.push(['withFiles', true])
+  }
+  if (opts.populateFilesFor) {
+    options.push(['populateFilesFor', opts.populateFilesFor])
+  }
+  if (opts.includeConfigs) {
+    options.push(['includeConfigs', opts.includeConfigs])
+  }
+  if (opts.excludeConfigs) {
+    options.push(['excludeConfigs', opts.excludeConfigs])
+  }
+  // Globs compile to regex pattern sources HERE (exclude-paths-glob.mts is
+  // the single glob implementation); the scripts just compile what they
+  // receive.
+  const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
+  if (excludePatterns) {
+    options.push(['excludePaths', excludePatterns])
+    options.push(['excludeBase', opts.excludeBase ?? opts.projectDir])
+  }
+  return options
+}
+
 function commonProps(
   opts: ManifestScriptOptions,
   prefix: '-D' | '-P',
 ): string[] {
-  const props: string[] = []
-  if (opts.withFiles) {
-    props.push(`${prefix}socket.withFiles=true`)
-  }
+  return scriptOptions(opts).map(
+    ({ 0: name, 1: value }) =>
+      `${prefix}socket.${name}=${value === true ? 'true' : value}`,
+  )
+}
+
+// The dotnet tool's flags are the kebab-cased script option names.
+function dotnetToolArgs(opts: ManifestScriptOptions): string[] {
   if (opts.populateFilesFor) {
-    props.push(`${prefix}socket.populateFilesFor=${opts.populateFilesFor}`)
+    throw new Error('The dotnet manifest tool does not scope --with-files.')
   }
-  if (opts.includeConfigs) {
-    props.push(`${prefix}socket.includeConfigs=${opts.includeConfigs}`)
-  }
-  if (opts.excludeConfigs) {
-    props.push(`${prefix}socket.excludeConfigs=${opts.excludeConfigs}`)
-  }
-  // Globs compile to regex pattern sources HERE (exclude-paths-glob.mts is
-  // the single glob implementation); the scripts just Pattern.compile what
-  // they receive.
-  const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
-  if (excludePatterns) {
-    props.push(`${prefix}socket.excludePaths=${excludePatterns}`)
-    props.push(
-      `${prefix}socket.excludeBase=${opts.excludeBase ?? opts.projectDir}`,
-    )
-  }
-  return props
+  return scriptOptions(opts).flatMap(({ 0: name, 1: value }) => {
+    const flag = `--${camelToKebab(name)}`
+    return value === true ? [flag] : [flag, value]
+  })
 }
 
 async function invokeGradle(
@@ -407,7 +428,7 @@ async function invokeMaven(
   assertBundledAssetBuilt(
     jarPath,
     'Maven manifest extension jar',
-    'maven-extension/build-jar.sh',
+    'build:maven-extension',
   )
   return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
@@ -449,21 +470,41 @@ async function enumerateMavenWorkspaces(
   )
 }
 
-// `dotnet --version` from the build's directory: the SDK the dotnet host
-// selects there (global.json included). A host that finds none says why.
-// global.json pins the SDK per directory; every entry of a directory shares
-// it, failures included.
-const sdkVersionByDir = new Map<string, Promise<string>>()
+// The global.json the dotnet host applies in `dir`: the first one in it or
+// any parent directory, the filesystem root included, which findUp skips.
+// https://github.com/dotnet/runtime/blob/b4548da6edfce1996a1d6ffe1521c9ce6128be2e/src/native/corehost/fxr/sdk_resolver.cpp#L296-L321
+function nearestGlobalJson(dir: string): string {
+  for (let current = path.resolve(dir); ; ) {
+    const file = path.join(current, 'global.json')
+    if (existsSync(file)) {
+      return file
+    }
+    const parent = path.dirname(current)
+    if (parent === current) {
+      return ''
+    }
+    current = parent
+  }
+}
+
+// Keyed by the nearest global.json, the only per-directory input to the
+// host's SDK selection; a failed probe is shared too.
+const sdkVersionByPin = new Map<string, Promise<string>>()
 
 function dotnetSdkVersion(
   bin: string,
   opts: ManifestScriptOptions,
 ): Promise<string> {
-  const key = `${bin}\0${opts.projectDir}`
-  let version = sdkVersionByDir.get(key)
+  // A relative path names a different host in each directory.
+  const host =
+    path.isAbsolute(bin) || path.basename(bin) === bin
+      ? bin
+      : path.resolve(opts.projectDir, bin)
+  const key = `${host}\0${nearestGlobalJson(opts.projectDir)}`
+  let version = sdkVersionByPin.get(key)
   if (!version) {
     version = readDotnetSdkVersion(bin, opts)
-    sdkVersionByDir.set(key, version)
+    sdkVersionByPin.set(key, version)
   }
   return version
 }
@@ -521,11 +562,7 @@ async function invokeDotnetTool(
     throw new Error('A dotnet build needs a solution or project file.')
   }
   const toolDll = manifestScriptsPath('dotnet-tool', 'socket-facts-dotnet.dll')
-  assertBundledAssetBuilt(
-    toolDll,
-    'dotnet manifest tool',
-    'dotnet-tool/build-tool.sh',
-  )
+  assertBundledAssetBuilt(toolDll, 'dotnet manifest tool', 'build:dotnet-tool')
   const bin = resolveBuildToolBin('dotnet', opts.projectDir, opts.bin)
   const sdkVersion = await dotnetSdkVersion(bin, opts)
   // The tool runs on the newest installed runtime (RollForward=LatestMajor),
@@ -539,7 +576,6 @@ async function invokeDotnetTool(
     : opts.env
   return await withTmpDir('socket-dotnet-facts-', async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
-    const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
     const args = [
       toolDll,
       '--records',
@@ -549,17 +585,7 @@ async function invokeDotnetTool(
       '--dotnet',
       bin,
       ...(mode ? [mode] : []),
-      ...(opts.withFiles ? ['--with-files'] : []),
-      ...(opts.includeConfigs
-        ? ['--include-configs', opts.includeConfigs]
-        : []),
-      ...(opts.excludeConfigs
-        ? ['--exclude-configs', opts.excludeConfigs]
-        : []),
-      ...(excludePatterns ? ['--exclude-paths', excludePatterns] : []),
-      ...(excludePatterns && opts.excludeBase
-        ? ['--exclude-base', opts.excludeBase]
-        : []),
+      ...dotnetToolArgs(opts),
       ...(opts.stdio === 'inherit' ? ['--verbose'] : []),
       '--',
       ...(opts.toolOpts ?? []),
@@ -577,9 +603,30 @@ async function runDotnet(
   return assembleRecords('dotnet', out, records)
 }
 
+const entryProjectsByRun = new Map<string, Promise<string[] | undefined>>()
+
 // Undefined when the SDK cannot read the entry (a .slnx before SDK 9.0.200);
 // empty when the listing fails, which the build itself then reports.
-export async function listDotnetEntryProjects(
+export function listDotnetEntryProjects(
+  opts: ManifestScriptOptions,
+): Promise<string[] | undefined> {
+  const key = JSON.stringify([
+    opts.bin,
+    opts.projectDir,
+    opts.entryFile,
+    opts.excludePaths,
+    opts.excludeBase,
+    opts.toolOpts,
+  ])
+  let listing = entryProjectsByRun.get(key)
+  if (!listing) {
+    listing = readDotnetEntryProjects(opts)
+    entryProjectsByRun.set(key, listing)
+  }
+  return listing
+}
+
+async function readDotnetEntryProjects(
   opts: ManifestScriptOptions,
 ): Promise<string[] | undefined> {
   let listing

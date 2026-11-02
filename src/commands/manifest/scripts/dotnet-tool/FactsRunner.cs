@@ -19,7 +19,6 @@ internal sealed class ProjectInfo {
   public Dictionary<string, string> GlobalProperties = new();
   public bool Excluded;
   public RestoreStyle Style = RestoreStyle.Unknown;
-  public string? PackagesConfigPath;
 }
 
 // Evaluate -> `dotnet restore` -> re-evaluate and read. Never throws for a
@@ -77,7 +76,7 @@ internal sealed partial class Session {
 
     var entryProjects = EntryProjects();
     if (entryProjects == null) return;
-    if (_opts.Members) {
+    if (_opts.Mode == ToolMode.Members) {
       foreach (var path in entryProjects) {
         if (!IsExcludedProject(path)) _records.Member(Rel(path));
       }
@@ -87,7 +86,7 @@ internal sealed partial class Session {
     // Listing workspaces evaluates the projects as they are before restore;
     // a scan leaves finding them to restore, which follows every reference,
     // conditional per target framework or not.
-    if (_opts.Workspaces) {
+    if (_opts.Mode == ToolMode.Workspaces) {
       var preRestore = new ProjectCollection();
       _evaluation = EvaluationContext.Create(EvaluationContext.SharingPolicy.Shared);
       var queue = new Queue<string>(entryProjects);
@@ -96,9 +95,9 @@ internal sealed partial class Session {
         if (_projects.ContainsKey(path)) continue;
         var info = Register(path);
         if (info.Excluded) continue;
-        var project = Evaluate(info, preRestore, reportFailure: true);
+        var project = Evaluate(info, preRestore);
         if (project == null) continue;
-        info.Style = StyleOf(project, out info.PackagesConfigPath);
+        info.Style = StyleOf(project, out _);
         EmitProject(info, project);
         foreach (var reference in ProjectReferences(project, innerBuilds: true)) queue.Enqueue(reference);
       }
@@ -140,10 +139,12 @@ internal sealed partial class Session {
     return info;
   }
 
-  // Relative to --exclude-base when given; a project outside it never matches.
+  // Relative to --exclude-base when given; a project outside it, including on
+  // another Windows drive (which GetRelativePath returns as is), never matches.
   private bool IsExcludedProject(string path) {
     var rel = RelTo(_excludeBase, Path.GetDirectoryName(path)!);
-    return rel != ".." && !rel.StartsWith("../", StringComparison.Ordinal) && _excludes.IsExcluded(rel);
+    return rel != ".." && !rel.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathRooted(rel)
+      && _excludes.IsExcluded(rel);
   }
 
   // The solution's members its active configuration builds, or the entry
@@ -274,11 +275,13 @@ internal sealed partial class Session {
     return Load(project.ProjectCollection, project.FullPath, props);
   }
 
-  private Project? Evaluate(ProjectInfo info, ProjectCollection collection, bool reportFailure) {
+  // An excluded project's failure is not reported: it is only read for the
+  // paths of the kept projects depending on it.
+  private Project? Evaluate(ProjectInfo info, ProjectCollection collection) {
     try {
       return Load(collection, info.FullPath, info.GlobalProperties);
     } catch (InvalidProjectFileException e) {
-      if (reportFailure) {
+      if (!info.Excluded) {
         _records.Unscannable("", $"could not evaluate the project: {Text.FirstLine(e.Message)}", info.Key);
       }
       return null;
@@ -289,24 +292,31 @@ internal sealed partial class Session {
     _records.Failure(coord, detail, config, projectKey);
   }
 
-  // A failed restore's errors, except for projects whose assets file already
-  // recorded its own (more precise) errors.
+  // Restore errors not already reported from an assets file, then the projects
+  // left without current assets and without errors of their own.
   private void ReportRestoreErrors() {
-    if (_restore == null || _restore.Succeeded || _restore.TimedOut) return;
-    var reported = 0;
-    foreach (var error in _restore.Errors) {
-      var key = string.IsNullOrEmpty(error.ProjectFile) ? "" : Rel(Path.GetFullPath(error.ProjectFile));
-      if (key.Length > 0 && _assetsReportedErrors.Contains(key)) continue;
-      var code = string.IsNullOrEmpty(error.Code) ? "" : $"{error.Code}: ";
-      Fail(key.Length > 0 ? key : Rel(_opts.EntryPath), $"{code}{error.Message}", "", key);
-      reported += 1;
+    if (_restore == null || _restore.Succeeded) return;
+    var withErrors = new HashSet<string>(_assetsReportedErrors, StringComparer.Ordinal);
+    if (!_restore.TimedOut) {
+      var reported = 0;
+      foreach (var error in _restore.Errors) {
+        var key = string.IsNullOrEmpty(error.ProjectFile) ? "" : Rel(Path.GetFullPath(error.ProjectFile));
+        if (key.Length > 0 && _assetsReportedErrors.Contains(key)) continue;
+        if (key.Length > 0) withErrors.Add(key);
+        var code = string.IsNullOrEmpty(error.Code) ? "" : $"{error.Code}: ";
+        Fail(key.Length > 0 ? key : Rel(_opts.EntryPath), $"{code}{error.Message}", "", key);
+        reported += 1;
+      }
+      if (reported == 0 && _assetsReportedErrors.Count == 0) {
+        Fail(
+          Rel(_opts.EntryPath),
+          $"`dotnet restore` failed with exit code {_restore.ExitCode}; run with --verbose to see its output",
+          ""
+        );
+      }
     }
-    if (reported == 0 && _assetsReportedErrors.Count == 0) {
-      Fail(
-        Rel(_opts.EntryPath),
-        $"`dotnet restore` failed with exit code {_restore.ExitCode}; run with --verbose to see its output",
-        ""
-      );
+    foreach (var key in _notRestored.Where(k => !withErrors.Contains(k))) {
+      _records.Unscannable("", "`dotnet restore` did not restore this project in this run, so its dependencies are unknown", key);
     }
   }
 

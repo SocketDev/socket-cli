@@ -5,8 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { findDotnetEntries } from './detect-manifest-actions.mts'
 import {
   addCoveredBuildFiles,
-  isBuildRootCovered,
-  isSolutionCovered,
+  isRootCovered,
   realpathOrResolved,
 } from './discover-manifest-roots.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
@@ -60,13 +59,12 @@ export async function convertDotnetToFacts({
   for (const entry of entries) {
     const root = { dir, entryFile: entry }
     if (
-      isBuildRootCovered(covered, 'dotnet', root) ||
       // eslint-disable-next-line no-await-in-loop
-      (await isSolutionCovered(covered, root, {
+      await isRootCovered(covered, 'dotnet', root, {
         bin,
         excludePaths,
         toolOpts: dotnetOpts,
-      }))
+      })
     ) {
       if (verbose) {
         logger.info(`Skipping \`${entry}\`: earlier builds cover its projects.`)

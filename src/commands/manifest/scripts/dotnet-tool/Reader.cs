@@ -38,18 +38,20 @@ internal sealed partial class Session {
   // Keys of projects whose assets file recorded restore errors of its own,
   // which say more than the restore's console errors for that project.
   private readonly HashSet<string> _assetsReportedErrors = new(StringComparer.Ordinal);
+  // Read without current assets after a failed restore; see ReportRestoreErrors.
+  private readonly List<string> _notRestored = new();
 
   private IEnumerable<string> ReadProject(ProjectInfo info, ProjectCollection collection) {
     var references = new List<string>();
-    var project = Evaluate(info, collection, reportFailure: !info.Excluded);
+    var project = Evaluate(info, collection);
     if (project == null) return references;
-    info.Style = StyleOf(project, out info.PackagesConfigPath);
+    info.Style = StyleOf(project, out var packagesConfig);
     if (info.Excluded) {
       // Not resolved, but kept projects depending on it still need its paths.
       if (_opts.WithFiles) {
         EmitProject(info, project);
         _records.ExcludedProject(info.Key);
-        EmitPaths(info, project, Frameworks(project));
+        EmitPaths(info, project);
       }
       return references;
     }
@@ -58,8 +60,8 @@ internal sealed partial class Session {
       case RestoreStyle.PackageReference:
         references.AddRange(ReadAssets(info, project));
         break;
-      case RestoreStyle.PackagesConfig:
-        ReadPackagesConfig(info, project);
+      case RestoreStyle.PackagesConfig when packagesConfig != null:
+        ReadPackagesConfig(info, project, packagesConfig);
         break;
       case RestoreStyle.ProjectJson:
         EmitProject(info, project);
@@ -68,7 +70,7 @@ internal sealed partial class Session {
       default:
         // No NuGet dependencies; still a module whose sources matter.
         EmitProject(info, project);
-        if (_opts.WithFiles) EmitPaths(info, project, Frameworks(project));
+        if (_opts.WithFiles) EmitPaths(info, project);
         break;
     }
     return references;
@@ -112,10 +114,10 @@ internal sealed partial class Session {
     assetsPath = Path.GetFullPath(assetsPath, project.DirectoryPath);
     if (!RestoredByThisRun(info, assetsPath) || !File.Exists(assetsPath)) {
       EmitProject(info, project);
-      // After a failed restore, its own errors say why (reported once all
-      // projects are read).
       if (_restore == null || _restore.Succeeded) {
         _records.Unscannable("", "`dotnet restore` wrote no project.assets.json for this project", info.Key);
+      } else {
+        _notRestored.Add(info.Key);
       }
       return Array.Empty<string>();
     }
@@ -204,18 +206,23 @@ internal sealed partial class Session {
     }
   }
 
+  // FAT records write times to 2 s.
+  // https://learn.microsoft.com/en-us/windows/win32/sysinfo/file-times
+  private static readonly TimeSpan MtimeResolution = TimeSpan.FromSeconds(2);
+
   // NuGet rewrites project.nuget.cache on every restore it performs but not an
   // unchanged assets file, so only the cache says whether this run restored it.
+  // It skips the cache of a project it found up to date too, so after a failed
+  // restore an older cache cannot tell such a project from one the restore
+  // never reached: both count as not restored.
+  // https://github.com/NuGet/NuGet.Client/blob/aa539166b2ff5abf970ee44281d73c96e3dbaa1a/src/NuGet.Core/NuGet.Commands/RestoreCommand/RequestFactory/NoOpRestoreResult.cs#L34-L35
   private bool RestoredByThisRun(ProjectInfo info, string assetsPath) {
     if (_restore == null || _restore.Succeeded) return true;
     var cachePath = Path.Combine(Path.GetDirectoryName(assetsPath)!, "project.nuget.cache");
-    if (!File.Exists(cachePath)) return false;
-    CacheFile cache;
+    if (!File.Exists(cachePath) || File.GetLastWriteTimeUtc(cachePath) < _restore.StartedUtc - MtimeResolution) return false;
     using (var stream = File.OpenRead(cachePath)) {
-      cache = CacheFileFormat.Read(stream, NullLogger.Instance, cachePath);
+      ReportLogErrors(info, CacheFileFormat.Read(stream, NullLogger.Instance, cachePath));
     }
-    if (File.GetLastWriteTimeUtc(cachePath) < _restore.StartedUtc) return cache.Success;
-    ReportLogErrors(info, cache);
     return true;
   }
 
@@ -435,18 +442,18 @@ internal sealed partial class Session {
   // packages.config holds the pinned closure NuGet installed, without edges
   // or a direct/transitive split, so every package is a direct dependency of
   // a flat graph. developmentDependency="true" marks dev packages.
-  private void ReadPackagesConfig(ProjectInfo info, Project project) {
+  private void ReadPackagesConfig(ProjectInfo info, Project project, string packagesConfig) {
     EmitProject(info, project);
-    _records.ProjectBuild(info.Key, Rel(info.PackagesConfigPath!));
-    if (_opts.WithFiles) EmitPaths(info, project, Frameworks(project));
+    _records.ProjectBuild(info.Key, Rel(packagesConfig));
+    if (_opts.WithFiles) EmitPaths(info, project);
 
     List<NuGet.Packaging.PackageReference> packages;
     try {
-      packages = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(info.PackagesConfigPath!))
+      packages = new NuGet.Packaging.PackagesConfigReader(XDocument.Load(packagesConfig))
         .GetPackages(allowDuplicatePackageIds: true)
         .ToList();
     } catch (Exception e) when (e is System.Xml.XmlException or PackagingException or ArgumentException) {
-      _records.Unscannable("", $"could not read {Rel(info.PackagesConfigPath!)}: {Text.FirstLine(e.Message)}", info.Key);
+      _records.Unscannable("", $"could not read {Rel(packagesConfig)}: {Text.FirstLine(e.Message)}", info.Key);
       return;
     }
     if (packages.Count == 0) return;
@@ -557,14 +564,16 @@ internal sealed partial class Session {
   // Per inner build of a multi-targeting project, whose outer evaluation has
   // no Compile items or TargetPath, or of the project's single framework. An
   // excluded project is only evaluated, never built.
-  private void EmitPaths(ProjectInfo info, Project project, List<string> frameworks) {
-    var inner = frameworks.Where(f => _configs.Matches(new[] { f })).ToList();
-    var single = project.GetPropertyValue("TargetFramework");
-    if (inner.Count == 0 || !string.IsNullOrEmpty(single)) {
-      EmitBuild(info, project, null, string.IsNullOrEmpty(single) ? LegacyFrameworkName(project) : single);
+  // `frameworks`: the inner builds to read, when restore names them.
+  private void EmitPaths(ProjectInfo info, Project project, List<string>? frameworks = null) {
+    var multi = Frameworks(project);
+    if (multi.Count == 0) {
+      var single = project.GetPropertyValue("TargetFramework");
+      var config = string.IsNullOrEmpty(single) ? LegacyFrameworkName(project) : single;
+      if (_configs.Matches(new[] { config })) EmitBuild(info, project, null, config);
       return;
     }
-    foreach (var tfm in inner) EmitBuild(info, project, tfm, tfm);
+    foreach (var tfm in (frameworks ?? multi).Where(f => _configs.Matches(new[] { f }))) EmitBuild(info, project, tfm, tfm);
   }
 
   // Roslyn MSBuildWorkspace's design-time build, minus its command-line parsing:

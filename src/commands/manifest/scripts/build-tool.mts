@@ -17,6 +17,9 @@ export const PURL_TYPE_BY_TOOL: Record<BuildTool, PURL_Type> = {
   sbt: 'maven',
 } as unknown as Record<BuildTool, PURL_Type>
 
+// Purl types whose packages have no namespace (NuGet ids are flat).
+export const NAMESPACELESS_PURL_TYPES: ReadonlySet<string> = new Set(['nuget'])
+
 // PATH fallback when no `bin` and no project wrapper.
 const DEFAULT_BUILD_TOOL_BIN: Record<BuildTool, string> = {
   __proto__: null,
@@ -46,6 +49,8 @@ export type BuildFiles =
       // Each project restores on its own whichever build reaches it, so a build
       // covers its projects wherever they live; solution properties aside.
       projectsResolveAlone?: true
+      // Within one directory, lower runs first; by name otherwise.
+      entryRank?: (file: string) => number
     }
 
 // `settings.gradle(.kts)` covers Kotlin-DSL roots that have no root
@@ -61,6 +66,8 @@ export const BUILD_FILES: Record<BuildTool, BuildFiles> = {
       '*.{[sS][lL][nN],[sS][lL][nN][xX],[cCfFvV][sSbB][pP][rR][oO][jJ]}',
     // NuGet restores each project into its own project.assets.json.
     projectsResolveAlone: true,
+    // A solution covers the projects it lists.
+    entryRank: (file: string) => (isDotnetSolution(file) ? 0 : 1),
   },
   gradle: {
     byFile: false,
