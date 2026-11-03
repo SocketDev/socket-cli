@@ -73,7 +73,7 @@ const generalFlags: MeowFlags = {
   autoManifest: {
     type: 'boolean',
     description:
-      'Run `socket manifest auto` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See `socket manifest auto --help`. For Gradle, sbt, and Maven, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.',
+      'Run `socket manifest auto` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See `socket manifest auto --help`. For Gradle, sbt, Maven and .NET, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.',
   },
   branch: {
     type: 'string',

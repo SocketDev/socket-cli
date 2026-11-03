@@ -30,7 +30,7 @@ export async function handleManifestDynamicSbomInference({
         ok: false,
         code: 1,
         message:
-          'No Gradle, sbt, or Maven build root was found beneath the given directory.',
+          'No Gradle, sbt, Maven or .NET build root was found beneath the given directory.',
         data: outcomes,
       }
     : outcomes.some(o => o.status === 'failed')

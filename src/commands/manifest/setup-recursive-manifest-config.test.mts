@@ -914,7 +914,8 @@ describe('setupRecursiveManifestConfig', () => {
     expect(result).toEqual({
       ok: false,
       code: 1,
-      message: 'No Gradle, sbt, or Maven build root was found beneath /repo.',
+      message:
+        'No Gradle, sbt, Maven or .NET build root was found beneath /repo.',
     })
     expect(select).not.toHaveBeenCalled()
     expect(setupGradle).not.toHaveBeenCalled()

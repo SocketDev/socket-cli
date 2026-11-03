@@ -49,7 +49,7 @@ async function runScanReach(
 
   if (reachabilityOptions.dynamicSbomInference) {
     logger.info(
-      'Generating Socket facts for each Gradle, sbt, and Maven build root ...',
+      'Generating Socket facts for each Gradle, sbt, Maven and .NET build root ...',
     )
     const dynamicResult = await runDynamicSbomInference({
       cwd,
