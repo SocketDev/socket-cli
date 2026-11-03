@@ -7,6 +7,7 @@ Usage: assert-facts.py <work-dir> <sdk-version> <cpm-entry> [phase]
 """
 import json
 import os
+import re
 import sys
 
 WORK, SDK, CPM_ENTRY = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -129,7 +130,7 @@ def default_phase():
     check('Demo.Ext.DoesNotExist' in log and 'NU1101' in log, 'missing package reported')
     with open(os.path.join(WORK, 'broken.log')) as f:
         log = f.read()
-    check('could not evaluate the project' in log, 'evaluation failure reported')
+    check(re.search(r'could not evaluate the project: MSB\d{4}: ', log), 'evaluation failure reported with its code')
 
 
 def records(name):
@@ -140,18 +141,13 @@ def records(name):
     return rows
 
 
-# Some SDKs' MSBuild finds no .NET Framework reference assemblies off Windows,
-# which fails the legacy project's design-time build there, as its compile would.
-def package_failures(rows):
-    return [r for r in rows if r[0] == 'failure' and not r[2].startswith('the design-time build failed: MSB3644')]
-
-
-def info_rows(rows, project, name, config=None):
-    return [r for r in rows if r[0] == 'projectInfo' and r[1] == project and r[3] == name and config in (None, r[2])]
+def failures(rows):
+    return [r for r in rows if r[0] == 'failure']
 
 
 def records_phase():
     basic = records('basic.tsv')
+    check(not failures(basic), f'basic failures {failures(basic)}')
     files = {r[2]: r[3] for r in basic if r[0] == 'file'}
     check(any(k.startswith('demo.ext.tool:') for k in files), 'Tool assembly recorded')
     check(not any(k.startswith('demo.ext.analyzer:') for k in files), 'analyzer has no runtime assembly')
@@ -161,21 +157,11 @@ def records_phase():
     check(all(r[7] == r[3] for r in lib_roots), f'root aliases {[(r[3], r[7]) for r in lib_roots]}')
     info = {(r[2], r[3], r[4]) for r in basic if r[0] == 'projectInfo' and r[1] == 'src/Lib/Lib.csproj'}
     check(('net6.0', 'TargetFrameworkMoniker', '.NETCoreApp,Version=v6.0') in info, 'net6.0 moniker recorded')
-    check(('net6.0', 'DefineConstant', 'NET6_0_OR_GREATER') in info, 'implicit framework symbols recorded')
+    check(('net6.0', 'DefineConstant', 'DEBUG') in info, 'evaluated symbols recorded')
     check(('net6.0', 'FrameworkReference', 'Microsoft.NETCore.App') in info, 'framework reference recorded')
     check(any(r[0] == 'compileFile' and r[2].startswith('demo.ext.tool:') for r in basic), 'compile assemblies recorded')
     sources = [r[2] for r in basic if r[0] == 'projectSrc']
     check(any(s.endswith('/shared/Linked.cs') for s in sources), 'linked source recorded')
-    check(any(s.endswith('.AssemblyInfo.cs') for s in sources), 'generated source recorded')
-    errors = [r for r in basic if r[0] == 'projectInfo' and r[3] == 'BuildError']
-    check(not errors, f'design-time build errors {errors}')
-    refs = {r[4] for r in info_rows(basic, 'src/Lib/Lib.csproj', 'Reference', 'net6.0')}
-    check(any(p.endswith('/System.Runtime.dll') for p in refs), 'framework reference assemblies recorded')
-    # The stub packages' empty assemblies are not references the compiler
-    # would take; a project reference's output is, built or not.
-    check(any(p.endswith('/Extra.dll') for p in refs), 'project reference recorded')
-    analyzers = {r[4] for r in info_rows(basic, 'src/Lib/Lib.csproj', 'Analyzer', 'net6.0')}
-    check(any('demo.ext.analyzer' in p.lower() for p in analyzers), f'analyzers {analyzers}')
 
     netstandard = records('basic-netstandard.tsv')
     built = {(r[1], r[3]) for r in netstandard if r[0] == 'projectSrc'}
@@ -189,24 +175,26 @@ def records_phase():
     unknown = {r[3] for r in stale if r[0] == 'unscannable' and 'did not restore this project' in r[2]}
     check({'src/App/App.csproj', 'src/Extra/Extra.csproj', 'src/Lib/Lib.csproj'} <= unknown, f'unrestored projects reported {sorted(unknown)}')
 
-    designtime = records('designtime.tsv')
-    failed = [r for r in designtime if r[0] == 'failure' and 'the design-time build failed' in r[2]]
-    check(len(failed) == 1 and 'generated sources unavailable' in failed[0][2], f'design-time failure {failed}')
+    evaluation = records('evaluation.tsv')
+    faults = [r for r in evaluation if r[0] in ('failure', 'unscannable')]
+    check(not faults, f'evaluation faults {faults}')
+    lib = [r[2] for r in evaluation if r[0] == 'projectSrc' and r[1] == 'Lib/Lib.csproj']
+    check(len(lib) == 1 and lib[0].endswith('/Lib/Class.cs'), f'sources of a project failing any target run {lib}')
+    check(any(r[0] == 'project' and r[1] == 'Build.csproj' for r in evaluation), 'compiler-less aggregator recorded')
 
     langs = records('langs.tsv')
-    vb = {r[4] for r in info_rows(langs, 'Vb.vbproj', 'DefineConstant')}
+    vb = {r[4] for r in langs if r[0] == 'projectInfo' and r[1] == 'Vb.vbproj' and r[3] == 'DefineConstant'}
     check({'DEBUG=-1', 'TRACE=-1'} <= vb, f'VB compiler constants {vb}')
     fs = [r[2] for r in langs if r[0] == 'projectSrc' and r[1] == '../Fs/Fs.fsproj']
-    check(len(fs) >= 2 and fs[-1].endswith('/Library.fs'), f'F# sources in compile order {fs}')
-    check(not any(r[0] == 'failure' for r in basic), f'basic failures {[r for r in basic if r[0] == "failure"]}')
+    check([os.path.basename(f) for f in fs] == ['First.fs', 'Library.fs'], f'F# sources in compile order {fs}')
 
     missing = records('pc-missing.tsv')
     unfetched = {r[2] for r in missing if r[0] == 'unfetched'}
     check(unfetched == {'demo.ext.tool:1.0.0', 'demo.ext.shared:1.0.0'}, f'unfetched {unfetched}')
-    check(len(package_failures(missing)) == 2, 'missing packages.config assemblies fail')
+    check(len(failures(missing)) == 2, 'missing packages.config assemblies fail')
 
     present = records('pc-present.tsv')
-    check(not package_failures(present) and not any(r[0] == 'unfetched' for r in present), 'installed packages.config resolves')
+    check(not failures(present) and not any(r[0] == 'unfetched' for r in present), 'installed packages.config resolves')
     legacy_roots = {(r[3], r[5], r[7]) for r in present if r[0] == 'root' and r[2] == 'Legacy/Legacy.csproj'}
     check(legacy_roots == {('net48', 'net48', 'net48')}, f'Legacy roots (config, framework, alias) {legacy_roots}')
     present_files = {r[2] for r in present if r[0] == 'file'}

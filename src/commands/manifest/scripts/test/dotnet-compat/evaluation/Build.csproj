@@ -1,0 +1,9 @@
+<Project>
+  <!-- Shaped as a Microsoft.Build.Traversal project: common targets, no compiler. -->
+  <Import Project="$(MSBuildExtensionsPath)/$(MSBuildToolsVersion)/Microsoft.Common.props" />
+  <PropertyGroup><RestoreProjectStyle>PackageReference</RestoreProjectStyle></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="Lib/Lib.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)/Microsoft.Common.targets" />
+</Project>

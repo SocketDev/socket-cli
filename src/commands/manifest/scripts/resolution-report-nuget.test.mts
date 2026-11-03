@@ -10,14 +10,15 @@ const DETAILS_BY_CATEGORY = {
     'NU1109: Detected package downgrade: Polly from 8.4.2 to centrally defined 7.2.4.',
     'NU1201: Project Fs is not compatible with netstandard2.0.',
     'NETSDK1147: To build this project, the following workloads must be installed: maui',
-    'the design-time build failed: MSB3644: The reference assemblies for .NETFramework,Version=v4.8 were not found.',
+    "MSB4236: The SDK 'Microsoft.Build.Traversal/2.0.24' specified could not be found.",
+    'could not read the solution: MSB5009: Error parsing the nested project section in solution file.',
+    'could not evaluate the project: MSB4019: The imported project "/repo/x.props" was not found.  /repo/App.csproj',
   ],
   'not-found': [
     'NU1101: Unable to find package Foo. No packages exist with this id in source(s): nuget.org',
     'NU1102: Unable to find package Foo with version (>= 9.0.0)',
   ],
   other: [
-    'could not evaluate the project: The imported project "x.props" was not found.',
     'obj/project.assets.json belongs to B.csproj: the projects share an intermediate output directory, so restore output cannot be attributed',
     'runtime assemblies restore listed are missing from the package folders (lib/net8.0/Foo.dll); re-run `dotnet restore`',
   ],

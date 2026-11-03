@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk" InitialTargets="FailOutsideRestore">
+  <PropertyGroup><TargetFramework>net6.0</TargetFramework></PropertyGroup>
+  <ItemGroup><PackageReference Include="Demo.Ext.Tool" Version="1.0.0" /></ItemGroup>
+  <!-- Restores, but fails any other target run. -->
+  <Target Name="FailOutsideRestore" Condition="'$(MSBuildIsRestoring)' != 'true'">
+    <Error Text="a target ran outside restore" />
+  </Target>
+</Project>

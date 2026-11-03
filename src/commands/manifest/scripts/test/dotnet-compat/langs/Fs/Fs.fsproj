@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>net6.0</TargetFramework></PropertyGroup>
-  <ItemGroup><Compile Include="Library.fs" /></ItemGroup>
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+    <Compile Include="First.fs" CompileOrder="CompileFirst" />
+  </ItemGroup>
   <ItemGroup><PackageReference Include="Demo.Ext.Tool" Version="1.0.0" /></ItemGroup>
 </Project>

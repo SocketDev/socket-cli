@@ -546,8 +546,6 @@ function buildFrameworks(
           })),
           // In compiler order, which F# depends on.
           sources: [...new Set(build?.sources)].filter(exists),
-          references: [...new Set(build?.references)].filter(exists),
-          analyzers: [...new Set(build?.analyzers)].filter(exists),
           targets: sortedUnique(build?.targets ?? []).filter(exists),
           dependencies: [],
           classpath: [],

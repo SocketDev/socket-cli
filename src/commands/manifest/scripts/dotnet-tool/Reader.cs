@@ -1,9 +1,7 @@
-using System.Collections.Concurrent;
 using System.Xml.Linq;
 using Microsoft.Build.Construction;
 using Microsoft.Build.Evaluation;
 using Microsoft.Build.Exceptions;
-using Microsoft.Build.Execution;
 using NuGet.Common;
 using NuGet.Frameworks;
 using NuGet.LibraryModel;
@@ -164,12 +162,10 @@ internal sealed partial class Session {
     var assets = new Assets(PackageResolver(lockFile), libraries, projectKeys, projectNames);
 
     var isTest = IsTestProject(project);
-    var frameworks = new List<string>();
     foreach (var target in NuGetShim.Seq<LockFileTarget>(lockFile, "Targets")) {
-      var alias = EmitTarget(info, spec, target, assets, isTest);
-      if (alias != null && string.IsNullOrEmpty(target.RuntimeIdentifier)) frameworks.Add(alias);
+      EmitTarget(info, spec, target, assets, isTest);
     }
-    if (_opts.WithFiles) EmitPaths(info, project, frameworks);
+    if (_opts.WithFiles) EmitPaths(info, project);
     return references;
   }
 
@@ -229,9 +225,8 @@ internal sealed partial class Session {
       || project.GetPropertyValue("ProjectTypeGuids").Contains(TestProjectTypeGuid, StringComparison.OrdinalIgnoreCase);
   }
 
-  // One resolution root per (target framework [/ runtime], prod|dev). Returns
-  // the target framework alias when the target was read.
-  private string? EmitTarget(ProjectInfo info, PackageSpec spec, LockFileTarget target, Assets assets, bool isTest) {
+  // One resolution root per (target framework [/ runtime], prod|dev).
+  private void EmitTarget(ProjectInfo info, PackageSpec spec, LockFileTarget target, Assets assets, bool isTest) {
     var framework = NuGetShim.Seq<TargetFrameworkInformation>(spec, "TargetFrameworks")
       .FirstOrDefault(f => f.FrameworkName.Equals(target.TargetFramework));
     var alias = framework?.TargetAlias;
@@ -241,7 +236,7 @@ internal sealed partial class Session {
     // A runtime-specific target also answers to its framework's name, so a
     // filter on `net8.0` covers `net8.0/win-x64`.
     var names = string.IsNullOrEmpty(rid) ? new[] { config } : new[] { config, alias };
-    if (!_configs.Matches(names)) return null;
+    if (!_configs.Matches(names)) return;
     if (_scanned.Add(config)) _records.Scanned(config);
 
     var libraries = new Dictionary<string, LockFileTargetLibrary>(StringComparer.Ordinal);
@@ -333,7 +328,6 @@ internal sealed partial class Session {
     // project resolves is dev.
     EmitRoot("all", false, reached, _opts.WithFiles);
     if (!isTest) EmitRoot("prod", true, shipped, false);
-    return alias;
   }
 
   // Runtime assemblies (lib/, runtimes/<rid>/lib/) carry the method bodies an
@@ -456,7 +450,7 @@ internal sealed partial class Session {
     }
     if (packages.Count == 0) return;
     var config = LegacyFrameworkName(project);
-    if (!_configs.Matches(new[] { config })) return;
+    if (!_configs.Matches(config)) return;
     if (_scanned.Add(config)) _records.Scanned(config);
 
     var isTest = IsTestProject(project);
@@ -530,16 +524,11 @@ internal sealed partial class Session {
 
   // NuGet's short folder name of a build's framework, as restore derives it
   // from the two monikers; null when unrecognized.
-  private static string? ShortFrameworkName(Project build) =>
-    ShortFrameworkName(build.GetPropertyValue("TargetFrameworkMoniker"), build.GetPropertyValue("TargetPlatformMoniker"));
-
-  private static string? ShortFrameworkName(ProjectInstance build) =>
-    ShortFrameworkName(build.GetPropertyValue("TargetFrameworkMoniker"), build.GetPropertyValue("TargetPlatformMoniker"));
-
-  private static string? ShortFrameworkName(string moniker, string platformMoniker) {
+  private static string? ShortFrameworkName(Project build) {
+    var moniker = build.GetPropertyValue("TargetFrameworkMoniker");
     if (string.IsNullOrEmpty(moniker)) return null;
     try {
-      return NuGetFramework.ParseComponents(moniker, platformMoniker).GetShortFolderName();
+      return NuGetFramework.ParseComponents(moniker, build.GetPropertyValue("TargetPlatformMoniker")).GetShortFolderName();
     } catch (ArgumentException) {
       return null;
     }
@@ -552,104 +541,69 @@ internal sealed partial class Session {
     return string.IsNullOrEmpty(version) ? "unknown" : $"net{version.TrimStart('v').Replace(".", "")}";
   }
 
-  // The inner builds of a multi-targeting project, by target framework; none
-  // for a project with a single framework.
+  // Split as Microsoft.Common.CrossTargeting.targets does: trimmed, distinct
+  // ignoring case. Empty for a single-framework project.
   private static List<string> Frameworks(Project project) {
     var multi = project.GetPropertyValue("TargetFrameworks");
     if (string.IsNullOrEmpty(project.GetPropertyValue("TargetFramework")) && !string.IsNullOrEmpty(multi)) {
-      return multi.Split(';').Select(f => f.Trim()).Where(f => f.Length > 0).Distinct().ToList();
+      return multi.Split(';').Select(f => f.Trim()).Where(f => f.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
     return new List<string>();
   }
 
   // Per inner build of a multi-targeting project, whose outer evaluation has
-  // no Compile items or TargetPath, or of the project's single framework. An
-  // excluded project is only evaluated, never built.
-  // `frameworks`: the inner builds to read, when restore names them.
-  private void EmitPaths(ProjectInfo info, Project project, List<string>? frameworks = null) {
+  // no Compile items or TargetPath, or of the project's single framework.
+  private void EmitPaths(ProjectInfo info, Project project) {
     var multi = Frameworks(project);
     if (multi.Count == 0) {
       var single = project.GetPropertyValue("TargetFramework");
       var config = string.IsNullOrEmpty(single) ? LegacyFrameworkName(project) : single;
-      if (_configs.Matches(new[] { config })) EmitBuild(info, project, null, config);
+      if (_configs.Matches(config)) EmitBuild(info, project, config);
       return;
     }
-    foreach (var tfm in (frameworks ?? multi).Where(f => _configs.Matches(new[] { f }))) EmitBuild(info, project, tfm, tfm);
+    foreach (var tfm in multi.Where(_configs.Matches)) {
+      Project build;
+      try {
+        build = LoadInnerBuild(project, tfm);
+      } catch (InvalidProjectFileException e) {
+        _records.Unscannable(tfm, $"could not evaluate the {tfm} build: {ErrorText(e)}", info.Key);
+        continue;
+      }
+      EmitBuild(info, build, tfm);
+    }
   }
 
-  // Roslyn MSBuildWorkspace's design-time build, minus its command-line parsing:
-  // https://github.com/dotnet/roslyn/blob/d53e65ceaf037efb4f0c43c5a2ae4a3e19f5a59f/src/Workspaces/MSBuild/BuildHost/Build/ProjectBuildManager.cs#L28-L58
-  private static readonly Dictionary<string, string> DesignTimeProperties = new(StringComparer.OrdinalIgnoreCase) {
-    ["BuildingProject"] = "false",
-    ["BuildProjectReferences"] = "false",
-    ["DesignTimeBuild"] = "true",
-    ["ShouldUnsetParentConfigurationAndPlatform"] = "false",
-    ["SkipCompilerExecution"] = "true",
-  };
-
-  // WPF's, which generates the XAML code-behind sources.
-  private const string MarkupCompilationTarget = "DesignTimeMarkupCompilation";
-
-  // As the compiler task receives it; a failed design-time build fails the
-  // run, and leaves the evaluated values for --ignore-unresolved.
-  private void EmitBuild(ProjectInfo info, Project project, string? innerFramework, string config) {
-    var props = new Dictionary<string, string>(project.GlobalProperties, StringComparer.OrdinalIgnoreCase);
-    if (innerFramework != null) props["TargetFramework"] = innerFramework;
-    ProjectInstance? compiled = null;
-    if (!info.Excluded) {
-      var error = DesignTimeBuild(project, props, out compiled);
-      if (error != null) {
-        _records.ProjectInfo(info.Key, config, "BuildError", error);
-        _records.Failure(info.Key, $"the design-time build failed: {error}", config, info.Key);
-      }
-    }
-    var instance = compiled;
-    if (instance == null) {
-      try {
-        instance = EvaluatedWithImplicitDefines(innerFramework == null ? project : LoadInnerBuild(project, innerFramework));
-      } catch (InvalidProjectFileException e) {
-        _records.Unscannable(config, $"could not evaluate the {config} build: {Text.FirstLine(e.Message)}", info.Key);
-        return;
-      }
-    }
-    var language = instance.GetPropertyValue("Language");
+  // As evaluation leaves it: sources that targets generate are absent.
+  private void EmitBuild(ProjectInfo info, Project build, string config) {
+    var language = build.GetPropertyValue("Language");
     var isFSharp = string.Equals(language, "F#", StringComparison.OrdinalIgnoreCase);
     var isVb = string.Equals(language, "VB", StringComparison.OrdinalIgnoreCase);
-    var sources = isFSharp ? FSharpCompileOrder(instance) : instance.GetItems("Compile");
+    var sources = isFSharp ? FSharpCompileOrder(build) : build.GetItems("Compile");
     foreach (var source in FullPaths(sources)) _records.ProjectSrc(info.Key, source, config);
-    var targetPath = NormalizeSlashes(instance.GetPropertyValue("TargetPath"));
+    var targetPath = NormalizeSlashes(build.GetPropertyValue("TargetPath"));
     if (!string.IsNullOrEmpty(targetPath)) {
-      _records.ProjectTgt(info.Key, Path.GetFullPath(targetPath, project.DirectoryPath), config);
+      _records.ProjectTgt(info.Key, Path.GetFullPath(targetPath, build.DirectoryPath), config);
     }
     foreach (var property in new[] { "TargetFrameworkMoniker", "Language", "LangVersion", "AssemblyName", "Nullable" }) {
-      var value = instance.GetPropertyValue(property);
+      var value = build.GetPropertyValue(property);
       if (!string.IsNullOrEmpty(value)) _records.ProjectInfo(info.Key, config, property, value);
     }
     // Unrecognized, the alias stands in.
-    if (ShortFrameworkName(instance) is { } framework) {
+    if (ShortFrameworkName(build) is { } framework) {
       _records.ProjectInfo(info.Key, config, "Framework", framework);
     }
-    foreach (var reference in instance.GetItems("FrameworkReference").Select(i => i.EvaluatedInclude).Distinct()) {
+    foreach (var reference in build.GetItems("FrameworkReference").Select(i => i.EvaluatedInclude).Distinct()) {
       _records.ProjectInfo(info.Key, config, "FrameworkReference", reference);
     }
-    foreach (var item in instance.GetItems("Using")) {
+    foreach (var item in build.GetItems("Using")) {
       _records.ProjectUsing(
         info.Key, config, item.EvaluatedInclude, item.GetMetadataValue("Alias"),
         string.Equals(item.GetMetadataValue("Static"), "true", StringComparison.OrdinalIgnoreCase)
       );
     }
-    // Csc, Vbc and Fsc all take ReferencePathWithRefAssemblies; Fsc takes no
-    // Analyzer; Vbc takes FinalDefineConstants, the others DefineConstants.
-    if (compiled != null) {
-      foreach (var path in FullPaths(compiled.GetItems("ReferencePathWithRefAssemblies"))) {
-        _records.ProjectInfo(info.Key, config, "Reference", path);
-      }
-      if (!isFSharp) {
-        foreach (var path in FullPaths(compiled.GetItems("Analyzer"))) _records.ProjectInfo(info.Key, config, "Analyzer", path);
-      }
-    }
-    var finalDefines = isVb ? instance.GetPropertyValue("FinalDefineConstants") : "";
-    var defines = finalDefines.Length > 0 ? finalDefines : instance.GetPropertyValue("DefineConstants");
+    // Vbc takes FinalDefineConstants, Csc and Fsc DefineConstants.
+    var finalDefines = isVb ? build.GetPropertyValue("FinalDefineConstants") : "";
+    var defines = finalDefines.Length > 0 ? finalDefines : build.GetPropertyValue("DefineConstants");
     foreach (var symbol in defines
                .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries)
                .Select(s => s.Trim())
@@ -659,104 +613,23 @@ internal sealed partial class Session {
     }
   }
 
-  // One build session for every build of the run, so a project that several
-  // others reference is evaluated and asked for its output once.
-  private BuildManager? _designTimeBuilds;
-  private readonly FirstErrorLogger _designTimeErrors = new();
-
-  private static IEnumerable<string> FullPaths(IEnumerable<ProjectItemInstance> items) => items
+  private static IEnumerable<string> FullPaths(IEnumerable<ProjectItem> items) => items
     .Select(item => item.GetMetadataValue("FullPath"))
     .Where(full => !string.IsNullOrEmpty(full))
     .Select(full => Path.GetFullPath(full))
     .Distinct(StringComparer.Ordinal);
 
-  // As the F# SDK's FSharpSourceCodeCompileOrder target orders them for Fsc;
-  // idempotent once that target has run.
-  private static IEnumerable<ProjectItemInstance> FSharpCompileOrder(ProjectInstance instance) {
-    IEnumerable<ProjectItemInstance> Ordered(string order) =>
-      instance.GetItems("Compile").Where(item => item.GetMetadataValue("CompileOrder") == order);
+  // As the F# SDK's FSharpSourceCodeCompileOrder target orders them for Fsc.
+  private static IEnumerable<ProjectItem> FSharpCompileOrder(Project build) {
+    IEnumerable<ProjectItem> Ordered(string order) =>
+      build.GetItems("Compile").Where(item => item.GetMetadataValue("CompileOrder") == order);
     return Ordered("CompileFirst")
-      .Concat(instance.GetItems("CompileBefore"))
+      .Concat(build.GetItems("CompileBefore"))
       .Concat(Ordered("CompileBefore"))
       .Concat(Ordered(""))
       .Concat(Ordered("CompileAfter"))
-      .Concat(instance.GetItems("CompileAfter"))
+      .Concat(build.GetItems("CompileAfter"))
       .Concat(Ordered("CompileLast"));
-  }
-
-  // Null on success, else the build's first error. Any exception is one
-  // build's failure, never the run's.
-  private string? DesignTimeBuild(Project project, Dictionary<string, string> buildProperties, out ProjectInstance? instance) {
-    instance = null;
-    var props = new Dictionary<string, string>(buildProperties, StringComparer.OrdinalIgnoreCase);
-    foreach (var (key, value) in DesignTimeProperties) props[key] = value;
-    try {
-      var result = BuildSession(project.ProjectCollection).BuildRequest(new BuildRequestData(
-        project.FullPath,
-        props,
-        null,
-        project.Targets.ContainsKey(MarkupCompilationTarget) ? new[] { "Compile", MarkupCompilationTarget } : new[] { "Compile" },
-        null,
-        BuildRequestDataFlags.ProvideProjectStateAfterBuild
-      ));
-      if (result.OverallResult == BuildResultCode.Success && result.ProjectStateAfterBuild is { } state) {
-        instance = state;
-        return null;
-      }
-      return _designTimeErrors.FirstOf(result.SubmissionId)
-        ?? (result.Exception is { } failure ? Text.FirstLine(failure.Message) : "the Compile target failed");
-    } catch (Exception e) {
-      return Text.FirstLine(e.Message);
-    }
-  }
-
-  // The SDK's implicit framework symbols (NET8_0_OR_GREATER, ...) exist only
-  // once its AddImplicitDefineConstants target has run.
-  private ProjectInstance EvaluatedWithImplicitDefines(Project build) {
-    var instance = build.CreateProjectInstance();
-    if (!instance.Targets.ContainsKey("AddImplicitDefineConstants")) return instance;
-    try {
-      BuildSession(build.ProjectCollection).BuildRequest(new BuildRequestData(instance, new[] { "AddImplicitDefineConstants" }));
-    } catch (Exception e) {
-      Log($"{build.FullPath}: implicit preprocessor symbols unavailable: {Text.FirstLine(e.Message)}");
-    }
-    return instance;
-  }
-
-  private BuildManager BuildSession(ProjectCollection collection) {
-    if (_designTimeBuilds == null) {
-      _designTimeBuilds = BuildManager.DefaultBuildManager;
-      _designTimeBuilds.BeginBuild(new BuildParameters(collection) {
-        Loggers = new Microsoft.Build.Framework.ILogger[] { _designTimeErrors },
-        // Only errors are read; the engine then skips its other messages and
-        // drops the tasks' before any logger sees them.
-        OnlyLogCriticalEvents = true,
-        ProjectLoadSettings = RestoreLoadSettings,
-      });
-    }
-    return _designTimeBuilds;
-  }
-
-  private void EndDesignTimeBuilds() {
-    _designTimeBuilds?.EndBuild();
-    _designTimeBuilds = null;
-  }
-
-  private sealed class FirstErrorLogger : Microsoft.Build.Framework.ILogger {
-    private readonly ConcurrentDictionary<int, string> _first = new();
-    public Microsoft.Build.Framework.LoggerVerbosity Verbosity { get; set; } = Microsoft.Build.Framework.LoggerVerbosity.Quiet;
-    public string? Parameters { get; set; }
-
-    public string? FirstOf(int submissionId) => _first.TryGetValue(submissionId, out var e) ? e : null;
-
-    public void Initialize(Microsoft.Build.Framework.IEventSource eventSource) {
-      eventSource.ErrorRaised += (_, e) => _first.TryAdd(
-        e.BuildEventContext?.SubmissionId ?? -1,
-        string.IsNullOrEmpty(e.Code) ? e.Message : $"{e.Code}: {e.Message}"
-      );
-    }
-
-    public void Shutdown() { }
   }
 
   // The repository files declaring the project's dependencies; SDK- and

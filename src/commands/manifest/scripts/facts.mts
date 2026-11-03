@@ -71,17 +71,14 @@ export type ProjectFramework = {
   langVersion?: string | undefined
   nullable?: string | undefined
   assemblyName?: string | undefined
-  // Set when the design-time build failed; the other fields then hold the
-  // evaluated values, without generated sources, references or analyzers.
-  buildError?: string | undefined
   frameworkReferences: string[]
+  // As evaluated: the SDK's implicit framework symbols (NET8_0_OR_GREATER,
+  // ...) are absent.
   defineConstants: string[]
   usings: Array<{ namespace: string; alias?: string; static?: true }>
-  // What the compiler receives: sources in order, generated ones included,
-  // and every reference and analyzer assembly.
+  // In compiler order, as evaluated: sources that build targets generate
+  // are absent.
   sources: string[]
-  references: string[]
-  analyzers: string[]
   targets: string[]
   dependencies: string[]
   classpath: string[]

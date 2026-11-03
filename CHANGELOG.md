@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- Reachability scans of .NET projects now read your projects without running any of their build targets, so builds with compiler-less projects such as `Microsoft.Build.Traversal` aggregators no longer fail.
+
 ## [1.13.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.13.0) - 2026-11-03
 
 ### Added
