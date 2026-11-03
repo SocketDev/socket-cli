@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Modules outside the scan root can no longer be excluded with `--exclude-paths`; `**/x` used to match a `../x` module by accident. Single-root runs whose Maven or Gradle options relocate the build root (`-f`, `-p`) now match patterns relative to the current directory, as documented.
+- Updated the Coana CLI to v `15.14.1`.
 
 ### Fixed
 - `--exclude-paths` patterns are now matched relative to the scan root in every build root. They now also exclude modules a build reaches outside its own directory (Maven `../` modules, relocated Gradle projects) and modules matched by wildcards that span a build-root boundary, such as `*/core`.
