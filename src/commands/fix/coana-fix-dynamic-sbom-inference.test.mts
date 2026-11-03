@@ -123,6 +123,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
   }
   const uploadManifestFiles = vi.fn()
   const generated = {
+    artifactsFlags: ['--maven-use-only-socket-facts'],
     paths: [FACTS],
     sidecarFile: '/tmp/socket-fix-facts/sidecar.json',
     remove: vi.fn(),

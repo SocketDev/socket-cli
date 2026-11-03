@@ -392,7 +392,7 @@ async function coanaFixWithFacts(
     if (!silence) {
       spinner?.stop()
       logger.info(
-        'Generating Socket facts for Gradle, sbt and Maven builds ...',
+        'Generating Socket facts for .NET, Gradle, sbt and Maven builds ...',
       )
     }
     factsSlot.generated = await generateSocketFactsForFix({
@@ -412,7 +412,7 @@ async function coanaFixWithFacts(
   // Discovery only needs which artifacts the facts files resolve. Applying
   // fixes reads each project's tree; a Coana predating facts trees can only
   // tell from the sidecar's classpaths which projects resolve an artifact.
-  const discoveryFlags = factsSlot ? ['--maven-use-only-socket-facts'] : []
+  const discoveryFlags = factsSlot?.generated?.artifactsFlags ?? []
   const factsFlags = [
     ...discoveryFlags,
     ...(sidecarFile ? ['--compute-artifacts-sidecar', sidecarFile] : []),

@@ -1,11 +1,14 @@
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
+import { useOnlySocketFactsArtifactsFlags } from '../manifest/scripts/sidecar.mts'
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
 export type GeneratedSocketFacts = {
+  // Coana's flags selecting what the facts files resolve.
+  artifactsFlags: string[]
   paths: string[]
-  // The facts files' per-project classpaths, outside the repository.
+  // The facts files' per-project classpaths, written outside the repository.
   sidecarFile: string | undefined
   remove: () => Promise<void>
   restore: () => Promise<void>
@@ -52,6 +55,7 @@ export async function generateSocketFactsForFix({
     )
     await restoreAll(originals)
   }
+  let artifactsFlags: string[]
   let paths: string[]
   let sidecarFile: string | undefined
   try {
@@ -62,6 +66,7 @@ export async function generateSocketFactsForFix({
       sidecar: true,
       withFiles: false,
     })
+    artifactsFlags = useOnlySocketFactsArtifactsFlags(resolvedPathsSidecar)
     paths = factsPaths.map(p => path.resolve(cwd, p))
     if (resolvedPathsSidecar) {
       sidecarFile = path.join(tmpDir, 'sidecar.json')
@@ -78,6 +83,7 @@ export async function generateSocketFactsForFix({
     ...(await backUp(paths, path.join(tmpDir, 'generated'))),
   ]
   return {
+    artifactsFlags,
     paths,
     sidecarFile,
     remove: () => reset(paths),

@@ -65,17 +65,21 @@ describe('generateSocketFactsForFix', () => {
   it('writes the sidecar outside the repository', async () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(fresh, 'generated')
-      return { factsPaths: [fresh], resolvedPathsSidecar: { [fresh]: {} } }
+      return {
+        factsPaths: [fresh],
+        resolvedPathsSidecar: { [fresh]: { components: [], projects: [] } },
+      }
     })
 
-    const { sidecarFile } = await generate()
+    const { artifactsFlags, sidecarFile } = await generate()
 
     expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
       expect.objectContaining({ sidecar: true }),
     )
+    expect(artifactsFlags).toEqual(['--maven-use-only-socket-facts'])
     expect(path.dirname(sidecarFile!)).toBe(tmpDir)
     expect(JSON.parse(await fs.readFile(sidecarFile!, 'utf8'))).toEqual({
-      [fresh]: {},
+      [fresh]: { components: [], projects: [] },
     })
   })
 

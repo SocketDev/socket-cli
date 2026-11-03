@@ -1,6 +1,7 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
@@ -8,7 +9,10 @@ import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
+import { getErrorMessageOr } from '../../../utils/errors.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
+import { getOrInsert } from '../../../utils/get-or-insert.mts'
+import { camelToKebab } from '../../../utils/strings.mts'
 
 import type { BuildTool } from './build-tool.mts'
 import type {
@@ -153,9 +157,18 @@ async function assembleFromRecords(
   out: RunOutput,
   recordsFile: string,
 ): Promise<ManifestRunResult> {
-  const text = existsSync(recordsFile)
-    ? await fs.readFile(recordsFile, 'utf8')
-    : ''
+  return assembleRecords(tool, out, await readRecordsFile(recordsFile))
+}
+
+async function readRecordsFile(recordsFile: string): Promise<string> {
+  return existsSync(recordsFile) ? await fs.readFile(recordsFile, 'utf8') : ''
+}
+
+function assembleRecords(
+  tool: BuildTool,
+  out: RunOutput,
+  text: string,
+): ManifestRunResult {
   const parsed = parseRecords(text)
   const factsFileName = socketFactsFileName(tool, parsed.entry || undefined)
   const { artifactPaths, facts, report } = assembleFacts(parsed)
@@ -171,14 +184,19 @@ async function assembleFromRecords(
   }
 }
 
-// Missing only in an unbuilt local checkout. Fail loudly: without the extension,
-// Maven silently emits an empty SBOM.
-function assertMavenExtensionBuilt(jarPath: string): void {
-  if (existsSync(jarPath)) {
+// Missing only in an unbuilt local checkout. Fail loudly: without the
+// extension, Maven silently emits an empty SBOM.
+function assertBundledAssetBuilt(
+  assetPath: string,
+  description: string,
+  // The package.json script that builds it, as the dist build names it too.
+  buildScript: string,
+): void {
+  if (existsSync(assetPath)) {
     return
   }
   throw new Error(
-    `Maven manifest extension jar not found at ${jarPath}. It is bundled in the published CLI; for local dev build it with: bash src/commands/manifest/scripts/maven-extension/build-jar.sh`,
+    `${description} not found at ${assetPath}. It is bundled in the published CLI; for local dev build it with: pnpm run ${buildScript}`,
   )
 }
 
@@ -189,6 +207,8 @@ export async function runManifestScript(
   opts: ManifestScriptOptions,
 ): Promise<ManifestRunResult> {
   switch (tool) {
+    case 'dotnet':
+      return await runDotnet(opts)
     case 'gradle':
       return await runGradle(opts)
     case 'sbt':
@@ -204,11 +224,13 @@ export async function enumerateWorkspaces(
   tool: BuildTool,
   opts: ManifestScriptOptions,
 ): Promise<WorkspaceEnumerationResult> {
-  const result = await (tool === 'gradle'
-    ? enumerateGradleWorkspaces(opts)
-    : tool === 'sbt'
-      ? enumerateSbtWorkspaces(opts)
-      : enumerateMavenWorkspaces(opts))
+  const result = await (tool === 'dotnet'
+    ? runDotnet(opts, '--workspaces')
+    : tool === 'gradle'
+      ? enumerateGradleWorkspaces(opts)
+      : tool === 'sbt'
+        ? enumerateSbtWorkspaces(opts)
+        : enumerateMavenWorkspaces(opts))
   return {
     buildRoot: result.buildRoot,
     code: result.code,
@@ -218,34 +240,53 @@ export async function enumerateWorkspaces(
   }
 }
 
+// The options every build script reads, each in its own argument syntax.
+function scriptOptions(
+  opts: ManifestScriptOptions,
+): Array<[string, string | true]> {
+  const options: Array<[string, string | true]> = []
+  if (opts.withFiles) {
+    options.push(['withFiles', true])
+  }
+  if (opts.populateFilesFor) {
+    options.push(['populateFilesFor', opts.populateFilesFor])
+  }
+  if (opts.includeConfigs) {
+    options.push(['includeConfigs', opts.includeConfigs])
+  }
+  if (opts.excludeConfigs) {
+    options.push(['excludeConfigs', opts.excludeConfigs])
+  }
+  // Globs compile to regex pattern sources HERE (exclude-paths-glob.mts is
+  // the single glob implementation); the scripts just compile what they
+  // receive.
+  const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
+  if (excludePatterns) {
+    options.push(['excludePaths', excludePatterns])
+    options.push(['excludeBase', opts.excludeBase ?? opts.projectDir])
+  }
+  return options
+}
+
 function commonProps(
   opts: ManifestScriptOptions,
   prefix: '-D' | '-P',
 ): string[] {
-  const props: string[] = []
-  if (opts.withFiles) {
-    props.push(`${prefix}socket.withFiles=true`)
-  }
+  return scriptOptions(opts).map(
+    ({ 0: name, 1: value }) =>
+      `${prefix}socket.${name}=${value === true ? 'true' : value}`,
+  )
+}
+
+// The dotnet tool's flags are the kebab-cased script option names.
+function dotnetToolArgs(opts: ManifestScriptOptions): string[] {
   if (opts.populateFilesFor) {
-    props.push(`${prefix}socket.populateFilesFor=${opts.populateFilesFor}`)
+    throw new Error('The dotnet manifest tool does not scope --with-files.')
   }
-  if (opts.includeConfigs) {
-    props.push(`${prefix}socket.includeConfigs=${opts.includeConfigs}`)
-  }
-  if (opts.excludeConfigs) {
-    props.push(`${prefix}socket.excludeConfigs=${opts.excludeConfigs}`)
-  }
-  // Globs compile to regex pattern sources HERE (exclude-paths-glob.mts is
-  // the single glob implementation); the scripts just Pattern.compile what
-  // they receive.
-  const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
-  if (excludePatterns) {
-    props.push(`${prefix}socket.excludePaths=${excludePatterns}`)
-    props.push(
-      `${prefix}socket.excludeBase=${opts.excludeBase ?? opts.projectDir}`,
-    )
-  }
-  return props
+  return scriptOptions(opts).flatMap(({ 0: name, 1: value }) => {
+    const flag = `--${camelToKebab(name)}`
+    return value === true ? [flag] : [flag, value]
+  })
 }
 
 async function invokeGradle(
@@ -385,7 +426,11 @@ async function invokeMaven(
     'maven-extension',
     'coana-maven-extension.jar',
   )
-  assertMavenExtensionBuilt(jarPath)
+  assertBundledAssetBuilt(
+    jarPath,
+    'Maven manifest extension jar',
+    'build:maven-extension',
+  )
   return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
     const bin = resolveBuildToolBin('maven', opts.projectDir, opts.bin)
@@ -424,4 +469,174 @@ async function enumerateMavenWorkspaces(
     'socket-workspaces',
     'socket-maven-workspaces-',
   )
+}
+
+// The global.json the dotnet host applies in `dir`: the first one in it or
+// any parent directory, the filesystem root included, which findUp skips.
+// https://github.com/dotnet/runtime/blob/b4548da6edfce1996a1d6ffe1521c9ce6128be2e/src/native/corehost/fxr/sdk_resolver.cpp#L296-L321
+function nearestGlobalJson(dir: string): string {
+  for (let current = path.resolve(dir); ; ) {
+    const file = path.join(current, 'global.json')
+    if (existsSync(file)) {
+      return file
+    }
+    const parent = path.dirname(current)
+    if (parent === current) {
+      return ''
+    }
+    current = parent
+  }
+}
+
+// Keyed by the nearest global.json, the only per-directory input to the
+// host's SDK selection; a failed probe is shared too.
+const sdkVersionByPin = new Map<string, Promise<string>>()
+
+function dotnetSdkVersion(
+  bin: string,
+  opts: ManifestScriptOptions,
+): Promise<string> {
+  // A relative path names a different host in each directory.
+  const host =
+    path.isAbsolute(bin) || path.basename(bin) === bin
+      ? bin
+      : path.resolve(opts.projectDir, bin)
+  const key = `${host}\0${nearestGlobalJson(opts.projectDir)}`
+  return getOrInsert(sdkVersionByPin, key, () =>
+    readDotnetSdkVersion(bin, opts),
+  )
+}
+
+async function readDotnetSdkVersion(
+  bin: string,
+  opts: ManifestScriptOptions,
+): Promise<string> {
+  const out = await runNeverThrow(bin, ['--version'], {
+    ...opts,
+    stdio: 'pipe',
+  })
+  if (out.code !== 0) {
+    throw new Error(
+      out.stderr.trim() ||
+        out.stdout.trim() ||
+        `\`${bin} --version\` exited with code ${out.code}`,
+    )
+  }
+  return out.stdout.trim()
+}
+
+const noSdkWarnings = new Set<string>()
+
+// True, after a warning, when no .NET SDK runs in `dir` (none installed, or
+// none matching its global.json), so its .NET builds are skipped.
+export async function skipWithoutDotnetSdk(
+  bin: string,
+  dir: string,
+): Promise<boolean> {
+  try {
+    await dotnetSdkVersion(bin, { projectDir: dir })
+    return false
+  } catch (e) {
+    const reason = getErrorMessageOr(e, `\`${bin} --version\` failed`).split(
+      '\n',
+    )[0]!
+    if (!noSdkWarnings.has(reason)) {
+      noSdkWarnings.add(reason)
+      logger.warn(
+        `Skipping .NET builds where no .NET SDK runs (${reason}); their project files are scanned as they are.`,
+      )
+    }
+    return true
+  }
+}
+
+// Runs the bundled tool against the build's own dotnet, in `mode` (none: a
+// full facts run), and returns its exit and records.
+async function invokeDotnetTool(
+  opts: ManifestScriptOptions,
+  mode: '--members' | '--workspaces' | undefined,
+): Promise<{ out: RunOutput; records: string }> {
+  if (!opts.entryFile) {
+    throw new Error('A dotnet build needs a solution or project file.')
+  }
+  const toolDll = manifestScriptsPath('dotnet-tool', 'socket-facts-dotnet.dll')
+  assertBundledAssetBuilt(toolDll, 'dotnet manifest tool', 'build:dotnet-tool')
+  const bin = resolveBuildToolBin('dotnet', opts.projectDir, opts.bin)
+  const sdkVersion = await dotnetSdkVersion(bin, opts)
+  // The tool runs on the newest installed runtime (RollForward=LatestMajor),
+  // which must be able to load the selected SDK's MSBuild; a preview SDK
+  // needs a preview runtime, which roll-forward only picks when told to.
+  const env = sdkVersion.includes('-')
+    ? {
+        ...(opts.env ?? process.env),
+        DOTNET_ROLL_FORWARD_TO_PRERELEASE: '1',
+      }
+    : opts.env
+  return await withTmpDir('socket-dotnet-facts-', async tmp => {
+    const recordsFile = path.join(tmp, 'records.tsv')
+    const args = [
+      toolDll,
+      '--records',
+      recordsFile,
+      '--entry',
+      opts.entryFile!,
+      '--dotnet',
+      bin,
+      ...(mode ? [mode] : []),
+      ...dotnetToolArgs(opts),
+      ...(opts.stdio === 'inherit' ? ['--verbose'] : []),
+      '--',
+      ...(opts.toolOpts ?? []),
+    ]
+    const out = await runNeverThrow(bin, args, { ...opts, env })
+    return { out, records: await readRecordsFile(recordsFile) }
+  })
+}
+
+async function runDotnet(
+  opts: ManifestScriptOptions,
+  mode?: '--workspaces' | undefined,
+): Promise<ManifestRunResult> {
+  const { out, records } = await invokeDotnetTool(opts, mode)
+  return assembleRecords('dotnet', out, records)
+}
+
+const entryProjectsByRun = new Map<string, Promise<string[] | undefined>>()
+
+// Undefined when the SDK cannot read the entry (a .slnx before SDK 9.0.200);
+// empty when the listing fails, which the build itself then reports.
+export function listDotnetEntryProjects(
+  opts: ManifestScriptOptions,
+): Promise<string[] | undefined> {
+  const key = JSON.stringify([
+    opts.bin,
+    opts.projectDir,
+    opts.entryFile,
+    opts.excludePaths,
+    opts.excludeBase,
+    opts.toolOpts,
+  ])
+  return getOrInsert(entryProjectsByRun, key, () =>
+    readDotnetEntryProjects(opts),
+  )
+}
+
+async function readDotnetEntryProjects(
+  opts: ManifestScriptOptions,
+): Promise<string[] | undefined> {
+  let listing
+  try {
+    listing = await invokeDotnetTool({ ...opts, stdio: 'pipe' }, '--members')
+  } catch {
+    return []
+  }
+  const { out, records } = listing
+  if (out.code !== 0) {
+    return []
+  }
+  const parsed = parseRecords(records)
+  if (parsed.failures.length) {
+    return undefined
+  }
+  return parsed.members.map(m => path.resolve(opts.projectDir, m))
 }

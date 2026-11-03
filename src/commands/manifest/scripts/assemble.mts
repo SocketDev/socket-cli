@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs'
 
+import { NAMESPACELESS_PURL_TYPES, PURL_TYPE_BY_TOOL } from './build-tool.mts'
 import {
+  type ProjectFramework,
   type ResolvedArtifactPaths,
   type SocketFactsSbom,
   type SocketFactsSbomComponent,
@@ -9,11 +11,25 @@ import {
   type SocketFactsSbomProject,
 } from './facts.mts'
 import { moduleKey } from './resolution-report.mts'
+import { getOrInsert } from '../../../utils/get-or-insert.mts'
 
-import type { ParsedRecords, RawCoord, RawProject } from './records.mts'
+import type {
+  ParsedRecords,
+  RawCoord,
+  RawProject,
+  RawTarget,
+} from './records.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 
-const PURL_TYPE_MAVEN = 'maven'
+function purlBase(
+  type: string,
+  group: string,
+  name: string,
+): { type: string; namespace?: string; name: string } {
+  return NAMESPACELESS_PURL_TYPES.has(type)
+    ? { type, name }
+    : { type, namespace: group, name }
+}
 
 export type AssembleResult = {
   facts: SocketFactsSbom
@@ -45,12 +61,14 @@ type SubprojectGraph = {
 type PerRoot = {
   projectKey: string
   prod: boolean
+  target?: RawTarget | undefined
   nodes: Map<string, RootNode>
 }
 
 type RootNode = {
   coord: RawCoord
   children: string[]
+  compileTargets: string[]
   direct: boolean
   project: string
   targets: string[]
@@ -61,17 +79,29 @@ export function assembleFacts(
   parsed: ParsedRecords,
   opts: AssembleOptions = {},
 ): AssembleResult {
+  // Every root that fetched an artifact lists its file, so check each path once.
   const fileExists = opts.fileExists ?? existsSync
+  const existing = new Map<string, boolean>()
+  const exists = (p: string) => {
+    let e = existing.get(p)
+    if (e === undefined) {
+      e = fileExists(p)
+      existing.set(p, e)
+    }
+    return e
+  }
   const perRoot = buildPerRoot(parsed)
   const finalNodes = mergeById(perRoot)
   const graphs = buildSubprojectGraphs(perRoot)
 
   const tool = (parsed.tool || 'gradle') as SocketFactsSbomMetadata['tool']
-  const components = buildComponents(finalNodes)
+  const purlType = PURL_TYPE_BY_TOOL[tool]
+  const components = buildComponents(finalNodes, purlType)
   const { dependencies, projects } = buildDependencyGraph(
     parsed,
     graphs,
     components,
+    purlType,
   )
 
   const metadata: SocketFactsSbomMetadata = {
@@ -88,13 +118,16 @@ export function assembleFacts(
   return {
     facts,
     report: buildReport(parsed),
-    artifactPaths: buildArtifactPaths(
-      finalNodes,
-      [...parsed.projects.values()],
-      [...parsed.excludedProjects.values()],
-      graphs,
-      fileExists,
-    ),
+    artifactPaths: {
+      ...buildArtifactPaths(
+        finalNodes,
+        [...parsed.projects.values()],
+        [...parsed.excludedProjects.values()],
+        graphs,
+        exists,
+      ),
+      ...buildFrameworks(parsed, perRoot, exists),
+    },
   }
 }
 
@@ -117,6 +150,7 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
         node = {
           coord: n.project ? { ...n.coord, classifier: '', ext: '' } : n.coord,
           children: [],
+          compileTargets: [],
           direct: false,
           project: n.project,
           targets: [],
@@ -127,6 +161,7 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
       node.direct ||= n.direct
       node.unfetched ||= n.unfetched
       node.targets.push(...n.targets)
+      node.compileTargets.push(...n.compileTargets)
     }
     for (const [p, c] of r.edges) {
       if (!r.nodes.has(p) || !r.nodes.has(c)) {
@@ -139,7 +174,12 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
         parent.children.push(childId)
       }
     }
-    out.set(rootId, { projectKey: r.projectKey, prod: r.prod, nodes })
+    out.set(rootId, {
+      projectKey: r.projectKey,
+      prod: r.prod,
+      target: r.target,
+      nodes,
+    })
   }
   return out
 }
@@ -181,6 +221,7 @@ function mergeById(perRoot: Map<string, PerRoot>): Map<string, MergedNode> {
 
 function buildComponents(
   finalNodes: Map<string, MergedNode>,
+  purlType: string,
 ): SocketFactsSbomComponent[] {
   return [...finalNodes.keys()].sort().map(id => {
     const fn = finalNodes.get(id)!
@@ -195,9 +236,7 @@ function buildComponents(
       qualifiers['ext'] = c.ext
     }
     const comp: SocketFactsSbomComponent = {
-      type: PURL_TYPE_MAVEN,
-      namespace: c.group,
-      name: c.name,
+      ...purlBase(purlType, c.group, c.name),
       ...(c.version ? { version: c.version } : {}),
       ...(Object.keys(qualifiers).length ? { qualifiers } : {}),
       id,
@@ -249,6 +288,7 @@ function buildDependencyGraph(
   parsed: ParsedRecords,
   graphs: Map<string, SubprojectGraph>,
   components: SocketFactsSbomComponent[],
+  purlType: string,
 ): {
   dependencies: SocketFactsSbomDependency[]
   projects: SocketFactsSbomProject[]
@@ -349,9 +389,7 @@ function buildDependencyGraph(
     projects: projects.map(({ p, roots }) => {
       const entry: SocketFactsSbomProject = {
         id: p.projectKey,
-        type: PURL_TYPE_MAVEN,
-        namespace: p.group,
-        name: p.name,
+        ...purlBase(purlType, p.group, p.name),
         ...(p.version ? { version: p.version } : {}),
         subprojectDir: p.dir,
         children: roots
@@ -359,9 +397,7 @@ function buildDependencyGraph(
           .sort((x, y) => x - y),
       }
       if (p.buildFiles.length) {
-        entry.manifestFiles = [...new Set(p.buildFiles)]
-          .sort()
-          .map(file => ({ file }))
+        entry.manifestFiles = sortedUnique(p.buildFiles).map(file => ({ file }))
       }
       return entry
     }),
@@ -413,34 +449,24 @@ function buildArtifactPaths(
   projects: RawProject[],
   excludedProjects: RawProject[],
   graphs: Map<string, SubprojectGraph>,
-  fileExists: (path: string) => boolean,
+  exists: (path: string) => boolean,
 ): ResolvedArtifactPaths {
   const pathsById: ResolvedArtifactPaths['pathsById'] = new Map()
-  // Every root that fetched an artifact lists its file, so check each path once.
-  const existing = new Map<string, boolean>()
-  const exists = (p: string) => {
-    let e = existing.get(p)
-    if (e === undefined) {
-      e = fileExists(p)
-      existing.set(p, e)
-    }
-    return e
-  }
   for (const [id, fn] of finalNodes) {
     if (!fn.project) {
-      // Only a root that fetched every file of the artifact, all still on
-      // disk, resolved it: a partial list would claim it resolved whole.
-      const complete = fn.resolutions.filter(
-        r => !r.unfetched && r.targets.every(exists),
+      const complete = completeResolutions(
+        fn.resolutions,
+        exists,
+        r => r.targets,
       )
       pathsById.set(
         id,
-        fn.resolutions.length && !complete.length
-          ? { sources: [] }
-          : {
+        complete
+          ? {
               sources: [],
-              targets: [...new Set(complete.flatMap(r => r.targets))].sort(),
-            },
+              targets: sortedUnique(complete.flatMap(r => r.targets)),
+            }
+          : { sources: [] },
       )
     }
   }
@@ -448,8 +474,8 @@ function buildArtifactPaths(
   // edges onto a sibling project.
   for (const p of [...projects, ...excludedProjects]) {
     pathsById.set(p.projectKey, {
-      sources: [...new Set(p.sources)].filter(fileExists).sort(),
-      targets: [...new Set(p.targets)].filter(fileExists).sort(),
+      sources: sortedUnique(p.sources).filter(exists),
+      targets: sortedUnique(p.targets).filter(exists),
     })
   }
   return {
@@ -457,6 +483,146 @@ function buildArtifactPaths(
     classpathByProject: byProject(projects, graphs, g => g.children.keys()),
     directDependenciesByProject: byProject(projects, graphs, g => g.direct),
   }
+}
+
+// Only a root that fetched every file of the artifact, all still on disk,
+// resolved it: a partial list would claim it resolved whole. Undefined when
+// every root that fetched it failed.
+function completeResolutions<R extends { unfetched: boolean }>(
+  resolutions: readonly R[],
+  exists: (path: string) => boolean,
+  files: (resolution: R) => string[],
+): R[] | undefined {
+  const complete = resolutions.filter(
+    r => !r.unfetched && files(r).every(exists),
+  )
+  return resolutions.length && !complete.length ? undefined : complete
+}
+
+function frameworkKey(framework: string, runtime: string): string {
+  return `${framework}\t${runtime}`
+}
+
+function sortedUnique(ids: Iterable<string>): string[] {
+  return [...new Set(ids)].sort()
+}
+
+// Per target framework, for builds that resolve per framework (dotnet): what
+// each project's build compiles against and each package contributes to it.
+function buildFrameworks(
+  parsed: ParsedRecords,
+  perRoot: Map<string, PerRoot>,
+  exists: (path: string) => boolean,
+): Pick<ResolvedArtifactPaths, 'frameworksByProject' | 'frameworksById'> {
+  const roots = [...perRoot.values()].filter(
+    (r): r is PerRoot & { target: RawTarget } => !!r.target,
+  )
+  const projects = [...parsed.projects.values()]
+  if (!roots.length && !projects.some(p => p.builds.size)) {
+    return {}
+  }
+
+  const projectBuilds = new Map<string, Map<string, ProjectFramework>>()
+  const projectFramework = (
+    projectKey: string,
+    { alias, framework, runtime }: RawTarget,
+  ): ProjectFramework =>
+    getOrInsert(
+      getOrInsert(projectBuilds, projectKey, () => new Map()),
+      frameworkKey(alias, runtime),
+      () => {
+        const build = parsed.projects.get(projectKey)?.builds.get(alias)
+        return {
+          ...build,
+          alias,
+          framework: framework || build?.framework || alias,
+          ...(runtime ? { runtime } : {}),
+          frameworkReferences: sortedUnique(build?.frameworkReferences ?? []),
+          defineConstants: [...new Set(build?.defineConstants)],
+          usings: (build?.usings ?? []).map(u => ({
+            namespace: u.namespace,
+            ...(u.alias ? { alias: u.alias } : {}),
+            ...(u.static ? { static: true as const } : {}),
+          })),
+          // In compiler order, which F# depends on.
+          sources: [...new Set(build?.sources)].filter(exists),
+          references: [...new Set(build?.references)].filter(exists),
+          analyzers: [...new Set(build?.analyzers)].filter(exists),
+          targets: sortedUnique(build?.targets ?? []).filter(exists),
+          dependencies: [],
+          classpath: [],
+        }
+      },
+    )
+
+  // Per component and framework: the roots' resolutions.
+  const componentBuilds = new Map<
+    string,
+    Map<string, { target: RawTarget; resolutions: RootNode[] }>
+  >()
+  for (const { nodes, projectKey, target } of roots) {
+    const pf = projectFramework(projectKey, target)
+    for (const { 0: id, 1: node } of nodes) {
+      pf.classpath.push(id)
+      if (node.direct) {
+        pf.dependencies.push(id)
+      }
+      if (node.project) {
+        continue
+      }
+      const cb = getOrInsert(
+        getOrInsert(componentBuilds, id, () => new Map()),
+        frameworkKey(target.framework, target.runtime),
+        () => ({ target, resolutions: [] }),
+      )
+      if (node.unfetched || node.targets.length || node.compileTargets.length) {
+        cb.resolutions.push(node)
+      }
+    }
+  }
+  // A build with nothing to resolve has no root, yet still compiles.
+  for (const p of projects) {
+    for (const alias of p.builds.keys()) {
+      projectFramework(p.projectKey, { alias, framework: '', runtime: '' })
+    }
+  }
+
+  const frameworksByProject = new Map(
+    [...projectBuilds].map(({ 0: projectKey, 1: builds }) => [
+      projectKey,
+      [...builds.values()].map(pf => ({
+        ...pf,
+        dependencies: sortedUnique(pf.dependencies),
+        classpath: sortedUnique(pf.classpath.filter(id => id !== projectKey)),
+      })),
+    ]),
+  )
+  const frameworksById = new Map(
+    [...componentBuilds].map(({ 0: id, 1: byFramework }) => [
+      id,
+      [...byFramework.values()].map(
+        ({ resolutions, target: { framework, runtime } }) => {
+          const complete = completeResolutions(resolutions, exists, r => [
+            ...r.targets,
+            ...r.compileTargets,
+          ])
+          return {
+            framework,
+            ...(runtime ? { runtime } : {}),
+            ...(complete
+              ? {
+                  targets: sortedUnique(complete.flatMap(r => r.targets)),
+                  compile: sortedUnique(
+                    complete.flatMap(r => r.compileTargets),
+                  ),
+                }
+              : {}),
+          }
+        },
+      ),
+    ]),
+  )
+  return { frameworksByProject, frameworksById }
 }
 
 function buildReport(parsed: ParsedRecords): ResolutionReport {

@@ -11,15 +11,23 @@ import {
   buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
+  isRootCovered,
   realpathOrResolved,
   sortByDepthThenPath,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
-import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
+import { skipWithoutDotnetSdk } from './scripts/run.mts'
+import {
+  setupDotnet,
+  setupGradle,
+  setupMaven,
+  setupSbt,
+} from './setup-manifest-config.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
+import { getOrInsert } from '../../utils/get-or-insert.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,
@@ -31,16 +39,17 @@ import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { ManifestDefaults, SocketJson } from '../../utils/socket-json.mts'
 
 // One prompt per directory, as settings are per directory; Maven may have
 // several POMs, so several roots, there.
 type Candidate = { dir: string; ecosystem: BuildTool; roots: BuildRoot[] }
 
-const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt']
+const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt', 'dotnet']
 
 const ECOSYSTEM_LABELS: Record<BuildTool, string> = {
   __proto__: null,
+  dotnet: '.NET',
   gradle: 'Gradle',
   maven: 'Maven',
   sbt: 'sbt',
@@ -232,9 +241,20 @@ export async function markWorkspaceCoverage({
   if (skipReason) {
     return { ok: true, data: undefined }
   }
+  if (ecosystem === 'dotnet' && (await skipWithoutDotnetSdk(bin, dir))) {
+    return { ok: true, data: undefined }
+  }
 
   for (const root of roots) {
-    if (isBuildRootCovered(covered, ecosystem, root)) {
+    if (
+      // eslint-disable-next-line no-await-in-loop
+      await isRootCovered(covered, ecosystem, root, {
+        bin,
+        excludeBase: cwd,
+        excludePaths,
+        toolOpts: buildOpts,
+      })
+    ) {
       continue
     }
     // eslint-disable-next-line no-await-in-loop
@@ -259,6 +279,7 @@ export async function markWorkspaceCoverage({
     // eslint-disable-next-line no-await-in-loop
     await addCoveredBuildFiles(
       covered,
+      ecosystem,
       enumResult.buildRoot,
       enumResult.projects,
     )
@@ -322,27 +343,18 @@ async function runEcosystemWizard(
   ecosystem: BuildTool,
   config: Record<string, unknown>,
 ): Promise<CResult<{ canceled: boolean }>> {
+  if (ecosystem === 'dotnet') {
+    return await setupDotnet(config as ManifestDefaults<'dotnet'>)
+  }
   if (ecosystem === 'gradle') {
-    return await setupGradle(
-      config as NonNullable<
-        NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['gradle']
-      >,
-      { factsOnly: true },
-    )
+    return await setupGradle(config as ManifestDefaults<'gradle'>, {
+      factsOnly: true,
+    })
   }
   if (ecosystem === 'maven') {
-    return await setupMaven(
-      config as NonNullable<
-        NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['maven']
-      >,
-    )
+    return await setupMaven(config as ManifestDefaults<'maven'>)
   }
-  return await setupSbt(
-    config as NonNullable<
-      NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
-    >,
-    { factsOnly: true },
-  )
+  return await setupSbt(config as ManifestDefaults<'sbt'>, { factsOnly: true })
 }
 
 // Seeds the wizard with this candidate's effective (cascaded) value for any
@@ -841,14 +853,17 @@ export async function setupRecursiveManifestConfig(
   logger.log('re-run with --exclude-paths instead.')
   logger.log('')
 
-  const covered = new Set<string>()
+  // Per tool: a solution counts as covered only by .NET projects.
+  const coveredByTool = new Map<BuildTool, Set<string>>()
+  const coveredFor = (ecosystem: BuildTool) =>
+    getOrInsert(coveredByTool, ecosystem, () => new Set())
   // cwd never appears in `included`, but a reactor root often sits exactly
   // at cwd - seed coverage from it first so its declared members still get
   // recognized.
   for (const ecosystem of ROOT_ECOSYSTEMS) {
     // eslint-disable-next-line no-await-in-loop
     const coverageResult = await markWorkspaceCoverage({
-      covered,
+      covered: coveredFor(ecosystem),
       cwd: realCwd,
       dir: realCwd,
       ecosystem,
@@ -877,7 +892,7 @@ export async function setupRecursiveManifestConfig(
     const { ecosystem } = candidate
     if (
       candidate.roots.every(root =>
-        isBuildRootCovered(covered, ecosystem, root),
+        isBuildRootCovered(coveredFor(ecosystem), ecosystem, root),
       )
     ) {
       counts.covered += 1
@@ -910,7 +925,7 @@ export async function setupRecursiveManifestConfig(
     // build-tool invocation only runs for a project already prompted about.
     // eslint-disable-next-line no-await-in-loop
     const coverageResult = await markWorkspaceCoverage({
-      covered,
+      covered: coveredFor(ecosystem),
       cwd: realCwd,
       dir: candidate.dir,
       ecosystem,

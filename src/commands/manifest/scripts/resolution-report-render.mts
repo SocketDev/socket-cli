@@ -1,6 +1,7 @@
 import { GRADLE_DIALECT } from './resolution-report-gradle.mts'
 import { SBT_DIALECT } from './resolution-report-ivy.mts'
 import { MAVEN_DIALECT } from './resolution-report-maven.mts'
+import { NUGET_DIALECT } from './resolution-report-nuget.mts'
 import { moduleKey } from './resolution-report.mts'
 import constants from '../../../constants.mts'
 import { camelToKebab } from '../../../utils/strings.mts'
@@ -239,6 +240,7 @@ export function renderResolutionReport(
     blocking: boolean
     detail: string
     configs: Set<string>
+    // '' for a failure that belongs to no project.
     projects: Set<string>
     // Some failure of this coord belongs to no configuration.
     configless: boolean
@@ -266,9 +268,7 @@ export function renderResolutionReport(
     } else {
       info.configless = true
     }
-    if (f.project) {
-      info.projects.add(f.project)
-    }
+    info.projects.add(f.project)
   }
   const allInfos = [...byKey.values()]
   const isInfoBlocking = (info: CoordInfo): boolean => info.blocking
@@ -475,6 +475,8 @@ export function renderResolutionReport(
 
 function dialectFor(tool: BuildTool): ResolutionDialect {
   switch (tool) {
+    case 'dotnet':
+      return NUGET_DIALECT
     case 'gradle':
       return GRADLE_DIALECT
     case 'sbt':

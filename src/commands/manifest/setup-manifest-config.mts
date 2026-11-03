@@ -13,7 +13,45 @@ import {
 } from '../../utils/socket-json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { ManifestDefaults } from '../../utils/socket-json.mts'
+
+// Whether the prompt was canceled. A blank answer clears a value set before
+// with null rather than deleting the key, so it doesn't silently start
+// inheriting an ancestor's value again.
+function applyAnswer<K extends string>(
+  config: { [P in K]?: string | null | undefined },
+  key: K,
+  answer: string | undefined,
+): boolean {
+  if (answer === undefined) {
+    return true
+  }
+  if (answer) {
+    config[key] = answer
+  } else if (config[key] !== undefined) {
+    config[key] = null
+  } else {
+    delete config[key]
+  }
+  return false
+}
+
+// Whether the prompt was canceled.
+function applyYesNo<K extends string>(
+  config: { [P in K]?: boolean | undefined },
+  key: K,
+  answer: string | undefined,
+): boolean {
+  if (answer === undefined) {
+    return true
+  }
+  if (answer === 'yes' || answer === 'no') {
+    config[key] = answer === 'yes'
+  } else {
+    delete config[key]
+  }
+  return false
+}
 
 export async function setupManifestConfig(
   cwd: string,
@@ -53,6 +91,12 @@ export async function setupManifestConfig(
   logger.log('')
 
   const choices = [
+    {
+      name: '.NET (dotnet)'.padEnd(30, ' '),
+      value: 'dotnet',
+      description:
+        'Generate a Socket facts file for .NET solutions and projects through dotnet',
+    },
     {
       name: 'Conda'.padEnd(30, ' '),
       value: 'conda',
@@ -145,6 +189,13 @@ export async function setupManifestConfig(
       result = await setupConda(sockJson.defaults.manifest.conda)
       break
     }
+    case 'dotnet': {
+      if (!sockJson.defaults.manifest.dotnet) {
+        sockJson.defaults.manifest.dotnet = {}
+      }
+      result = await setupDotnet(sockJson.defaults.manifest.dotnet)
+      break
+    }
     case 'gradle': {
       if (!sockJson.defaults.manifest.gradle) {
         sockJson.defaults.manifest.gradle = {}
@@ -203,9 +254,7 @@ export async function setupManifestConfig(
 }
 
 async function setupConda(
-  config: NonNullable<
-    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['conda']
-  >,
+  config: ManifestDefaults<'conda'>,
 ): Promise<CResult<{ canceled: boolean }>> {
   const on = await askForEnabled(!config.disabled)
   if (on === undefined) {
@@ -257,75 +306,83 @@ async function setupConda(
     }
   }
 
-  const verbose = await askForVerboseFlag(config.verbose)
-  if (verbose === undefined) {
+  if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
-    config.verbose = verbose === 'yes'
-  } else {
-    delete config.verbose
+  }
+
+  return notCanceled()
+}
+
+export async function setupDotnet(
+  config: ManifestDefaults<'dotnet'>,
+): Promise<CResult<{ canceled: boolean }>> {
+  if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'dotnet'))) {
+    return canceledByUser()
+  }
+
+  if (
+    applyAnswer(
+      config,
+      'dotnetOpts',
+      await input({
+        message:
+          '(--dotnet-opts) Enter options to pass to `dotnet restore`, e.g. `-p:Configuration=Release --configfile nuget.config`',
+        default: config.dotnetOpts || '',
+        required: false,
+      }),
+    )
+  ) {
+    return canceledByUser()
+  }
+
+  const factsOptions = await setupFactsOptions(config, 'target framework')
+  if (!factsOptions.ok || factsOptions.data.canceled) {
+    return factsOptions
+  }
+
+  if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
+    return canceledByUser()
   }
 
   return notCanceled()
 }
 
 export async function setupGradle(
-  config: NonNullable<
-    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['gradle']
-  >,
+  config: ManifestDefaults<'gradle'>,
   // Set by the recursive dynamic-sbom-inference wizard, which has no
   // pom-mode equivalent - skips the facts/pom question entirely.
   { factsOnly = false }: { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
-  const priorBin = config.bin
-  const bin = await askForBin(config.bin || '', './gradlew')
-  if (bin === undefined) {
+  if (
+    applyAnswer(config, 'bin', await askForBin(config.bin || '', './gradlew'))
+  ) {
     return canceledByUser()
-  } else if (bin) {
-    config.bin = bin
-  } else if (priorBin !== undefined) {
-    config.bin = null
-  } else {
-    delete config.bin
   }
 
-  const priorJavaHome = config.javaHome
-  const javaHome = await askForJavaHome(config.javaHome || '')
-  if (javaHome === undefined) {
+  if (
+    applyAnswer(config, 'javaHome', await askForJavaHome(config.javaHome || ''))
+  ) {
     return canceledByUser()
-  } else if (javaHome) {
-    config.javaHome = javaHome
-  } else if (priorJavaHome !== undefined) {
-    config.javaHome = null
-  } else {
-    delete config.javaHome
   }
 
-  const priorGradleOpts = config.gradleOpts
-  const opts = await input({
-    message: '(--gradle-opts) Enter gradle options to pass through',
-    default: config.gradleOpts || '',
-    required: false,
-    // validate: async string => bool
-  })
-  if (opts === undefined) {
+  if (
+    applyAnswer(
+      config,
+      'gradleOpts',
+      await input({
+        message: '(--gradle-opts) Enter gradle options to pass through',
+        default: config.gradleOpts || '',
+        required: false,
+        // validate: async string => bool
+      }),
+    )
+  ) {
     return canceledByUser()
-  } else if (opts) {
-    config.gradleOpts = opts
-  } else if (priorGradleOpts !== undefined) {
-    config.gradleOpts = null
-  } else {
-    delete config.gradleOpts
   }
 
   if (!factsOnly) {
-    const facts = await askForFactsFlag(config.facts)
-    if (facts === undefined) {
+    if (applyYesNo(config, 'facts', await askForFactsFlag(config.facts))) {
       return canceledByUser()
-    } else if (facts === 'yes' || facts === 'no') {
-      config.facts = facts === 'yes'
-    } else {
-      delete config.facts
     }
   }
 
@@ -338,61 +395,38 @@ export async function setupGradle(
     }
   }
 
-  const verbose = await askForVerboseFlag(config.verbose)
-  if (verbose === undefined) {
+  if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
-    config.verbose = verbose === 'yes'
-  } else {
-    delete config.verbose
   }
 
   return notCanceled()
 }
 
 export async function setupMaven(
-  config: NonNullable<
-    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['maven']
-  >,
+  config: ManifestDefaults<'maven'>,
 ): Promise<CResult<{ canceled: boolean }>> {
-  const priorBin = config.bin
-  const bin = await askForBin(config.bin || '', 'mvn')
-  if (bin === undefined) {
+  if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'mvn'))) {
     return canceledByUser()
-  } else if (bin) {
-    config.bin = bin
-  } else if (priorBin !== undefined) {
-    config.bin = null
-  } else {
-    delete config.bin
   }
 
-  const priorJavaHome = config.javaHome
-  const javaHome = await askForJavaHome(config.javaHome || '')
-  if (javaHome === undefined) {
+  if (
+    applyAnswer(config, 'javaHome', await askForJavaHome(config.javaHome || ''))
+  ) {
     return canceledByUser()
-  } else if (javaHome) {
-    config.javaHome = javaHome
-  } else if (priorJavaHome !== undefined) {
-    config.javaHome = null
-  } else {
-    delete config.javaHome
   }
 
-  const priorMavenOpts = config.mavenOpts
-  const opts = await input({
-    message: '(--maven-opts) Enter maven options to pass through',
-    default: config.mavenOpts || '',
-    required: false,
-  })
-  if (opts === undefined) {
+  if (
+    applyAnswer(
+      config,
+      'mavenOpts',
+      await input({
+        message: '(--maven-opts) Enter maven options to pass through',
+        default: config.mavenOpts || '',
+        required: false,
+      }),
+    )
+  ) {
     return canceledByUser()
-  } else if (opts) {
-    config.mavenOpts = opts
-  } else if (priorMavenOpts !== undefined) {
-    config.mavenOpts = null
-  } else {
-    delete config.mavenOpts
   }
 
   // Maven only generates Socket facts (no pom path), so always ask the
@@ -402,74 +436,46 @@ export async function setupMaven(
     return factsOptions
   }
 
-  const verbose = await askForVerboseFlag(config.verbose)
-  if (verbose === undefined) {
+  if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
-    config.verbose = verbose === 'yes'
-  } else {
-    delete config.verbose
   }
 
   return notCanceled()
 }
 
 export async function setupSbt(
-  config: NonNullable<
-    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
-  >,
+  config: ManifestDefaults<'sbt'>,
   // See setupGradle's matching parameter for why.
   { factsOnly = false }: { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
-  const priorBin = config.bin
-  const bin = await askForBin(config.bin || '', 'sbt')
-  if (bin === undefined) {
+  if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'sbt'))) {
     return canceledByUser()
-  } else if (bin) {
-    config.bin = bin
-  } else if (priorBin !== undefined) {
-    config.bin = null
-  } else {
-    delete config.bin
   }
 
-  const priorJavaHome = config.javaHome
-  const javaHome = await askForJavaHome(config.javaHome || '')
-  if (javaHome === undefined) {
+  if (
+    applyAnswer(config, 'javaHome', await askForJavaHome(config.javaHome || ''))
+  ) {
     return canceledByUser()
-  } else if (javaHome) {
-    config.javaHome = javaHome
-  } else if (priorJavaHome !== undefined) {
-    config.javaHome = null
-  } else {
-    delete config.javaHome
   }
 
-  const priorSbtOpts = config.sbtOpts
-  const opts = await input({
-    message: '(--sbt-opts) Enter sbt options to pass through',
-    default: config.sbtOpts || '',
-    required: false,
-    // validate: async string => bool
-  })
-  if (opts === undefined) {
+  if (
+    applyAnswer(
+      config,
+      'sbtOpts',
+      await input({
+        message: '(--sbt-opts) Enter sbt options to pass through',
+        default: config.sbtOpts || '',
+        required: false,
+        // validate: async string => bool
+      }),
+    )
+  ) {
     return canceledByUser()
-  } else if (opts) {
-    config.sbtOpts = opts
-  } else if (priorSbtOpts !== undefined) {
-    config.sbtOpts = null
-  } else {
-    delete config.sbtOpts
   }
 
   if (!factsOnly) {
-    const facts = await askForFactsFlag(config.facts)
-    if (facts === undefined) {
+    if (applyYesNo(config, 'facts', await askForFactsFlag(config.facts))) {
       return canceledByUser()
-    } else if (facts === 'yes' || facts === 'no') {
-      config.facts = facts === 'yes'
-    } else {
-      delete config.facts
     }
   }
 
@@ -510,13 +516,8 @@ export async function setupSbt(
     }
   }
 
-  const verbose = await askForVerboseFlag(config.verbose)
-  if (verbose === undefined) {
+  if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
-  } else if (verbose === 'yes' || verbose === 'no') {
-    config.verbose = verbose === 'yes'
-  } else {
-    delete config.verbose
   }
 
   return notCanceled()
@@ -717,56 +718,50 @@ async function askForIgnoreUnresolvedFlag(
 
 // Prompts for the facts-only options shared by gradle and sbt: the config
 // include/exclude filters and --ignore-unresolved. Mutates `config` in place.
-async function setupFactsOptions(config: {
-  excludeConfigs?: string | undefined | null
-  ignoreUnresolved?: boolean | undefined
-  includeConfigs?: string | undefined | null
-}): Promise<CResult<{ canceled: boolean }>> {
-  const priorIncludeConfigs = config.includeConfigs
-  const includeConfigs = await input({
-    message:
-      '(--include-configs) Comma-separated config-name globs to resolve (blank = all configurations)',
-    default: config.includeConfigs || '',
-    required: false,
-  })
-  if (includeConfigs === undefined) {
+async function setupFactsOptions(
+  config: {
+    excludeConfigs?: string | undefined | null
+    ignoreUnresolved?: boolean | undefined
+    includeConfigs?: string | undefined | null
+  },
+  configNoun = 'config-name',
+): Promise<CResult<{ canceled: boolean }>> {
+  if (
+    applyAnswer(
+      config,
+      'includeConfigs',
+      await input({
+        message: `(--include-configs) Comma-separated ${configNoun} globs to resolve (blank = all)`,
+        default: config.includeConfigs || '',
+        required: false,
+      }),
+    )
+  ) {
     return canceledByUser()
-  } else if (includeConfigs) {
-    config.includeConfigs = includeConfigs
-  } else if (priorIncludeConfigs !== undefined) {
-    // Was previously set; clear it explicitly instead of just deleting the
-    // key, so it doesn't silently start inheriting an ancestor's value again.
-    config.includeConfigs = null
-  } else {
-    delete config.includeConfigs
   }
 
-  const priorExcludeConfigs = config.excludeConfigs
-  const excludeConfigs = await input({
-    message:
-      '(--exclude-configs) Comma-separated config-name globs to skip (blank = none)',
-    default: config.excludeConfigs || '',
-    required: false,
-  })
-  if (excludeConfigs === undefined) {
+  if (
+    applyAnswer(
+      config,
+      'excludeConfigs',
+      await input({
+        message: `(--exclude-configs) Comma-separated ${configNoun} globs to skip (blank = none)`,
+        default: config.excludeConfigs || '',
+        required: false,
+      }),
+    )
+  ) {
     return canceledByUser()
-  } else if (excludeConfigs) {
-    config.excludeConfigs = excludeConfigs
-  } else if (priorExcludeConfigs !== undefined) {
-    config.excludeConfigs = null
-  } else {
-    delete config.excludeConfigs
   }
 
-  const ignoreUnresolved = await askForIgnoreUnresolvedFlag(
-    config.ignoreUnresolved,
-  )
-  if (ignoreUnresolved === undefined) {
+  if (
+    applyYesNo(
+      config,
+      'ignoreUnresolved',
+      await askForIgnoreUnresolvedFlag(config.ignoreUnresolved),
+    )
+  ) {
     return canceledByUser()
-  } else if (ignoreUnresolved === 'yes' || ignoreUnresolved === 'no') {
-    config.ignoreUnresolved = ignoreUnresolved === 'yes'
-  } else {
-    delete config.ignoreUnresolved
   }
 
   return notCanceled()
