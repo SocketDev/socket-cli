@@ -658,7 +658,7 @@ describe('dotnet records → per-framework sidecar', () => {
     'projectSrc\tLib.csproj\t/abs/Legacy.cs\tnetstandard2.0',
     'projectTgt\tLib.csproj\t/abs/bin/net8.0/Lib.dll\tnet8.0',
     'projectInfo\tLib.csproj\tnet8.0\tTargetFrameworkMoniker\t.NETCoreApp,Version=v8.0',
-    'projectInfo\tLib.csproj\tnet8.0\tDefineConstant\tNET8_0_OR_GREATER',
+    'projectInfo\tLib.csproj\tnet8.0\tDefineConstant\tDEBUG',
     'projectInfo\tLib.csproj\tnet8.0\tFrameworkReference\tMicrosoft.NETCore.App',
     'projectInfo\tLib.csproj\tnet8.0\tNullable\tenable',
     'projectUsing\tLib.csproj\tnet8.0\tSystem.Linq\t\t0',
@@ -696,7 +696,7 @@ describe('dotnet records → per-framework sidecar', () => {
         nullable: 'enable',
         assemblyName: undefined,
         frameworkReferences: ['Microsoft.NETCore.App'],
-        defineConstants: ['NET8_0_OR_GREATER'],
+        defineConstants: ['DEBUG'],
         usings: [
           { namespace: 'System.Linq' },
           { namespace: 'System.Math', static: true },

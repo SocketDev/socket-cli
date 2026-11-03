@@ -7,6 +7,7 @@ Usage: assert-facts.py <work-dir> <sdk-version> <cpm-entry> [phase]
 """
 import json
 import os
+import re
 import sys
 
 WORK, SDK, CPM_ENTRY = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -129,7 +130,7 @@ def default_phase():
     check('Demo.Ext.DoesNotExist' in log and 'NU1101' in log, 'missing package reported')
     with open(os.path.join(WORK, 'broken.log')) as f:
         log = f.read()
-    check('could not evaluate the project' in log, 'evaluation failure reported')
+    check(re.search(r'could not evaluate the project: MSB\d{4}: ', log), 'evaluation failure reported with its code')
 
 
 def records(name):
@@ -142,10 +143,6 @@ def records(name):
 
 def failures(rows):
     return [r for r in rows if r[0] == 'failure']
-
-
-def info_rows(rows, project, name):
-    return [r for r in rows if r[0] == 'projectInfo' and r[1] == project and r[3] == name]
 
 
 def records_phase():
@@ -179,14 +176,14 @@ def records_phase():
     check({'src/App/App.csproj', 'src/Extra/Extra.csproj', 'src/Lib/Lib.csproj'} <= unknown, f'unrestored projects reported {sorted(unknown)}')
 
     evaluation = records('evaluation.tsv')
-    problems = [r for r in evaluation if r[0] in ('failure', 'unscannable')]
-    check(not problems, f'evaluation problems {problems}')
+    faults = [r for r in evaluation if r[0] in ('failure', 'unscannable')]
+    check(not faults, f'evaluation faults {faults}')
     lib = [r[2] for r in evaluation if r[0] == 'projectSrc' and r[1] == 'Lib/Lib.csproj']
     check(len(lib) == 1 and lib[0].endswith('/Lib/Class.cs'), f'sources of a project failing any target run {lib}')
     check(any(r[0] == 'project' and r[1] == 'Build.csproj' for r in evaluation), 'compiler-less aggregator recorded')
 
     langs = records('langs.tsv')
-    vb = {r[4] for r in info_rows(langs, 'Vb.vbproj', 'DefineConstant')}
+    vb = {r[4] for r in langs if r[0] == 'projectInfo' and r[1] == 'Vb.vbproj' and r[3] == 'DefineConstant'}
     check({'DEBUG=-1', 'TRACE=-1'} <= vb, f'VB compiler constants {vb}')
     fs = [r[2] for r in langs if r[0] == 'projectSrc' and r[1] == '../Fs/Fs.fsproj']
     check([os.path.basename(f) for f in fs] == ['First.fs', 'Library.fs'], f'F# sources in compile order {fs}')

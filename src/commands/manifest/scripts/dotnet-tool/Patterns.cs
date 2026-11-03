@@ -22,6 +22,8 @@ internal sealed class Globs {
     return _includes.Count == 0 || _includes.Any(p => names.Any(p.IsMatch));
   }
 
+  public bool Matches(string name) => Matches(new[] { name });
+
   private static List<Regex> Parse(string csv) {
     return csv
       .Split(',')

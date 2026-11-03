@@ -162,12 +162,10 @@ internal sealed partial class Session {
     var assets = new Assets(PackageResolver(lockFile), libraries, projectKeys, projectNames);
 
     var isTest = IsTestProject(project);
-    var frameworks = new List<string>();
     foreach (var target in NuGetShim.Seq<LockFileTarget>(lockFile, "Targets")) {
-      var alias = EmitTarget(info, spec, target, assets, isTest);
-      if (alias != null && string.IsNullOrEmpty(target.RuntimeIdentifier)) frameworks.Add(alias);
+      EmitTarget(info, spec, target, assets, isTest);
     }
-    if (_opts.WithFiles) EmitPaths(info, project, frameworks);
+    if (_opts.WithFiles) EmitPaths(info, project);
     return references;
   }
 
@@ -227,9 +225,8 @@ internal sealed partial class Session {
       || project.GetPropertyValue("ProjectTypeGuids").Contains(TestProjectTypeGuid, StringComparison.OrdinalIgnoreCase);
   }
 
-  // One resolution root per (target framework [/ runtime], prod|dev). Returns
-  // the target framework alias when the target was read.
-  private string? EmitTarget(ProjectInfo info, PackageSpec spec, LockFileTarget target, Assets assets, bool isTest) {
+  // One resolution root per (target framework [/ runtime], prod|dev).
+  private void EmitTarget(ProjectInfo info, PackageSpec spec, LockFileTarget target, Assets assets, bool isTest) {
     var framework = NuGetShim.Seq<TargetFrameworkInformation>(spec, "TargetFrameworks")
       .FirstOrDefault(f => f.FrameworkName.Equals(target.TargetFramework));
     var alias = framework?.TargetAlias;
@@ -239,7 +236,7 @@ internal sealed partial class Session {
     // A runtime-specific target also answers to its framework's name, so a
     // filter on `net8.0` covers `net8.0/win-x64`.
     var names = string.IsNullOrEmpty(rid) ? new[] { config } : new[] { config, alias };
-    if (!_configs.Matches(names)) return null;
+    if (!_configs.Matches(names)) return;
     if (_scanned.Add(config)) _records.Scanned(config);
 
     var libraries = new Dictionary<string, LockFileTargetLibrary>(StringComparer.Ordinal);
@@ -331,7 +328,6 @@ internal sealed partial class Session {
     // project resolves is dev.
     EmitRoot("all", false, reached, _opts.WithFiles);
     if (!isTest) EmitRoot("prod", true, shipped, false);
-    return alias;
   }
 
   // Runtime assemblies (lib/, runtimes/<rid>/lib/) carry the method bodies an
@@ -454,7 +450,7 @@ internal sealed partial class Session {
     }
     if (packages.Count == 0) return;
     var config = LegacyFrameworkName(project);
-    if (!_configs.Matches(new[] { config })) return;
+    if (!_configs.Matches(config)) return;
     if (_scanned.Add(config)) _records.Scanned(config);
 
     var isTest = IsTestProject(project);
@@ -528,13 +524,11 @@ internal sealed partial class Session {
 
   // NuGet's short folder name of a build's framework, as restore derives it
   // from the two monikers; null when unrecognized.
-  private static string? ShortFrameworkName(Project build) =>
-    ShortFrameworkName(build.GetPropertyValue("TargetFrameworkMoniker"), build.GetPropertyValue("TargetPlatformMoniker"));
-
-  private static string? ShortFrameworkName(string moniker, string platformMoniker) {
+  private static string? ShortFrameworkName(Project build) {
+    var moniker = build.GetPropertyValue("TargetFrameworkMoniker");
     if (string.IsNullOrEmpty(moniker)) return null;
     try {
-      return NuGetFramework.ParseComponents(moniker, platformMoniker).GetShortFolderName();
+      return NuGetFramework.ParseComponents(moniker, build.GetPropertyValue("TargetPlatformMoniker")).GetShortFolderName();
     } catch (ArgumentException) {
       return null;
     }
@@ -547,41 +541,39 @@ internal sealed partial class Session {
     return string.IsNullOrEmpty(version) ? "unknown" : $"net{version.TrimStart('v').Replace(".", "")}";
   }
 
-  // The inner builds of a multi-targeting project, by target framework; none
-  // for a project with a single framework.
+  // Split as Microsoft.Common.CrossTargeting.targets does: trimmed, distinct
+  // ignoring case. Empty for a single-framework project.
   private static List<string> Frameworks(Project project) {
     var multi = project.GetPropertyValue("TargetFrameworks");
     if (string.IsNullOrEmpty(project.GetPropertyValue("TargetFramework")) && !string.IsNullOrEmpty(multi)) {
-      return multi.Split(';').Select(f => f.Trim()).Where(f => f.Length > 0).Distinct().ToList();
+      return multi.Split(';').Select(f => f.Trim()).Where(f => f.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
     return new List<string>();
   }
 
   // Per inner build of a multi-targeting project, whose outer evaluation has
   // no Compile items or TargetPath, or of the project's single framework.
-  // `frameworks`: the inner builds to read, when restore names them.
-  private void EmitPaths(ProjectInfo info, Project project, List<string>? frameworks = null) {
+  private void EmitPaths(ProjectInfo info, Project project) {
     var multi = Frameworks(project);
     if (multi.Count == 0) {
       var single = project.GetPropertyValue("TargetFramework");
       var config = string.IsNullOrEmpty(single) ? LegacyFrameworkName(project) : single;
-      if (_configs.Matches(new[] { config })) EmitBuild(info, project, config);
+      if (_configs.Matches(config)) EmitBuild(info, project, config);
       return;
     }
-    foreach (var tfm in (frameworks ?? multi).Where(f => _configs.Matches(new[] { f }))) {
+    foreach (var tfm in multi.Where(_configs.Matches)) {
       Project build;
       try {
         build = LoadInnerBuild(project, tfm);
       } catch (InvalidProjectFileException e) {
-        _records.Unscannable(tfm, $"could not evaluate the {tfm} build: {Text.FirstLine(e.Message)}", info.Key);
+        _records.Unscannable(tfm, $"could not evaluate the {tfm} build: {ErrorText(e)}", info.Key);
         continue;
       }
       EmitBuild(info, build, tfm);
     }
   }
 
-  // As evaluation leaves it: no target runs, so neither the sources targets
-  // generate nor the references and analyzers they resolve are known.
+  // As evaluation leaves it: sources that targets generate are absent.
   private void EmitBuild(ProjectInfo info, Project build, string config) {
     var language = build.GetPropertyValue("Language");
     var isFSharp = string.Equals(language, "F#", StringComparison.OrdinalIgnoreCase);

@@ -12,13 +12,13 @@ const DETAILS_BY_CATEGORY = {
     'NETSDK1147: To build this project, the following workloads must be installed: maui',
     "MSB4236: The SDK 'Microsoft.Build.Traversal/2.0.24' specified could not be found.",
     'could not read the solution: MSB5009: Error parsing the nested project section in solution file.',
+    'could not evaluate the project: MSB4019: The imported project "/repo/x.props" was not found.  /repo/App.csproj',
   ],
   'not-found': [
     'NU1101: Unable to find package Foo. No packages exist with this id in source(s): nuget.org',
     'NU1102: Unable to find package Foo with version (>= 9.0.0)',
   ],
   other: [
-    'could not evaluate the project: The imported project "x.props" was not found.',
     'obj/project.assets.json belongs to B.csproj: the projects share an intermediate output directory, so restore output cannot be attributed',
     'runtime assemblies restore listed are missing from the package folders (lib/net8.0/Foo.dll); re-run `dotnet restore`',
   ],

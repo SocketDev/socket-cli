@@ -155,7 +155,7 @@ internal sealed partial class Session {
       _solution = new SolutionContext(entry, _opts.GlobalProperties);
       return _solution.Members.Keys.OrderBy(p => p, StringComparer.Ordinal).ToList();
     } catch (Exception e) when (e is InvalidProjectFileException or IOException or JsonException) {
-      _records.Failure(Rel(entry), $"could not read the solution: {Text.FirstLine(e.Message)}", "");
+      _records.Failure(Rel(entry), $"could not read the solution: {ErrorText(e)}", "");
       return null;
     }
   }
@@ -211,13 +211,7 @@ internal sealed partial class Session {
         }
       }
     }
-    return builds
-      .SelectMany(b => b.GetItems("ProjectReference"))
-      .Select(item => item.GetMetadataValue("FullPath"))
-      .Where(full => !string.IsNullOrEmpty(full) && File.Exists(full))
-      .Select(full => Path.GetFullPath(full))
-      .Distinct(StringComparer.Ordinal)
-      .ToList();
+    return FullPaths(builds.SelectMany(b => b.GetItems("ProjectReference"))).Where(File.Exists).ToList();
   }
 
   private void RunRestore() {
@@ -281,10 +275,16 @@ internal sealed partial class Session {
       return Load(collection, info.FullPath, info.GlobalProperties);
     } catch (InvalidProjectFileException e) {
       if (!info.Excluded) {
-        _records.Unscannable("", $"could not evaluate the project: {Text.FirstLine(e.Message)}", info.Key);
+        _records.Unscannable("", $"could not evaluate the project: {ErrorText(e)}", info.Key);
       }
       return null;
     }
+  }
+
+  // MSBuild keeps an error's code out of its message.
+  private static string ErrorText(Exception e) {
+    var line = Text.FirstLine(e.Message);
+    return e is InvalidProjectFileException { ErrorCode: { Length: > 0 } code } ? $"{code}: {line}" : line;
   }
 
   // Restore errors not already reported from an assets file, then the projects
