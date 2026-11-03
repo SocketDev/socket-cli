@@ -1,32 +1,31 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { detectManifestActions } from './detect-manifest-actions.mts'
+import {
+  detectManifestActions,
+  findDotnetEntries,
+} from './detect-manifest-actions.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
 
-function mkTmp(): string {
-  return mkdtempSync(path.join(os.tmpdir(), 'detect-manifest-bazel-'))
-}
+let cwd: string
+
+beforeEach(() => {
+  cwd = mkdtempSync(path.join(os.tmpdir(), 'detect-manifest-'))
+})
+
+afterEach(() => {
+  rmSync(cwd, { recursive: true, force: true })
+})
 
 function touch(dir: string, name: string): void {
   writeFileSync(path.join(dir, name), '')
 }
 
 describe('detectManifestActions — bazel detector', () => {
-  let cwd: string
-
-  beforeEach(() => {
-    cwd = mkTmp()
-  })
-
-  afterEach(() => {
-    rmSync(cwd, { recursive: true, force: true })
-  })
-
   it('skips bazel when defaults.manifest.bazel.disabled is true', async () => {
     touch(cwd, 'MODULE.bazel')
     const result = await detectManifestActions(
@@ -75,16 +74,6 @@ describe('detectManifestActions — bazel detector', () => {
 })
 
 describe('detectManifestActions — gradle detector', () => {
-  let cwd: string
-
-  beforeEach(() => {
-    cwd = mkTmp()
-  })
-
-  afterEach(() => {
-    rmSync(cwd, { recursive: true, force: true })
-  })
-
   it('detects build.gradle', async () => {
     touch(cwd, 'build.gradle')
     const result = await detectManifestActions(null, cwd)
@@ -140,16 +129,6 @@ describe('detectManifestActions — gradle detector', () => {
 })
 
 describe('detectManifestActions — conda detector', () => {
-  let cwd: string
-
-  beforeEach(() => {
-    cwd = mkTmp()
-  })
-
-  afterEach(() => {
-    rmSync(cwd, { recursive: true, force: true })
-  })
-
   it('detects environment.yml and reports it as the conda file', async () => {
     touch(cwd, 'environment.yml')
     const result = await detectManifestActions(null, cwd)
@@ -191,5 +170,52 @@ describe('detectManifestActions — conda detector', () => {
     expect(result.conda).toBe(false)
     expect(result.condaFile).toBe('')
     expect(result.count).toBe(0)
+  })
+})
+
+describe('detectManifestActions — dotnet detector', () => {
+  it.each([
+    'App.sln',
+    'App.slnx',
+    'App.csproj',
+    'App.fsproj',
+    'App.vbproj',
+    'APP.SLN',
+  ])('detects %s', async name => {
+    touch(cwd, name)
+    expect((await detectManifestActions(null, cwd)).dotnet).toBe(true)
+  })
+
+  it('ignores a solution filter, other files and directories named like projects', async () => {
+    touch(cwd, 'App.slnf')
+    touch(cwd, 'App.sqlproj')
+    mkdirSync(path.join(cwd, 'Lib.csproj'))
+    expect((await detectManifestActions(null, cwd)).dotnet).toBe(false)
+  })
+
+  it('skips dotnet when defaults.manifest.dotnet.disabled is true', async () => {
+    touch(cwd, 'App.sln')
+    const sockJson = {
+      defaults: { manifest: { dotnet: { disabled: true } } },
+    } as SocketJson
+    expect((await detectManifestActions(sockJson, cwd)).dotnet).toBe(false)
+  })
+
+  it('lists solutions before projects, each sorted by name', () => {
+    for (const name of [
+      'b.csproj',
+      'A.vbproj',
+      'Z.sln',
+      'M.slnx',
+      'notes.txt',
+    ]) {
+      touch(cwd, name)
+    }
+    expect(findDotnetEntries(cwd)).toEqual([
+      'M.slnx',
+      'Z.sln',
+      'A.vbproj',
+      'b.csproj',
+    ])
   })
 })

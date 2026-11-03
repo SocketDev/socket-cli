@@ -9,28 +9,35 @@ vi.mock('@socketsecurity/registry/lib/prompts', () => ({
   select: vi.fn(async ({ default: def }: { default?: string }) => def ?? ''),
 }))
 
-import { select } from '@socketsecurity/registry/lib/prompts'
+import { input, select } from '@socketsecurity/registry/lib/prompts'
 
-import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
+import {
+  setupDotnet,
+  setupGradle,
+  setupMaven,
+  setupSbt,
+} from './setup-manifest-config.mts'
+
+describe('setup wizards', () => {
+  it.for([
+    ['dotnet', setupDotnet],
+    ['gradle', setupGradle],
+    ['maven', setupMaven],
+    ['sbt', setupSbt],
+  ] as const)(
+    '%s leaves a fresh config empty when every prompt is left blank, instead of freezing the hardcoded bin fallback',
+    async ({ 1: setup }) => {
+      const config: Record<string, unknown> = {}
+
+      const result = await setup(config)
+
+      expect(result).toEqual({ ok: true, data: { canceled: false } })
+      expect(config).toEqual({})
+    },
+  )
+})
 
 describe('setupGradle/setupMaven/setupSbt', () => {
-  it('leaves bin unset on a fresh config when every prompt is left blank, instead of freezing the hardcoded fallback', async () => {
-    const gradleConfig: Record<string, unknown> = {}
-    const mavenConfig: Record<string, unknown> = {}
-    const sbtConfig: Record<string, unknown> = {}
-
-    const gradleResult = await setupGradle(gradleConfig)
-    const mavenResult = await setupMaven(mavenConfig)
-    const sbtResult = await setupSbt(sbtConfig)
-
-    expect(gradleResult).toEqual({ ok: true, data: { canceled: false } })
-    expect(mavenResult).toEqual({ ok: true, data: { canceled: false } })
-    expect(sbtResult).toEqual({ ok: true, data: { canceled: false } })
-    expect(gradleConfig['bin']).toBeUndefined()
-    expect(mavenConfig['bin']).toBeUndefined()
-    expect(sbtConfig['bin']).toBeUndefined()
-  })
-
   it('still shows and accepts a prior explicit bin value unchanged', async () => {
     const config: Record<string, unknown> = { bin: './custom-gradlew' }
 
@@ -80,5 +87,37 @@ describe('setupGradle/setupMaven/setupSbt', () => {
     // The facts-only options (config filters) still ask, just without the
     // facts/pom choice gating them.
     expect(messages.some(m => m.includes('--ignore-unresolved'))).toBe(true)
+  })
+})
+
+describe('setupDotnet', () => {
+  it('preserves explicit nulls on a blank re-prompt', async () => {
+    const config: Record<string, unknown> = { bin: null, dotnetOpts: null }
+
+    await setupDotnet(config)
+
+    expect(config).toEqual({ bin: null, dotnetOpts: null })
+  })
+
+  it('asks for target framework filters, never the facts/pom choice', async () => {
+    vi.mocked(input).mockClear()
+    vi.mocked(select).mockClear()
+
+    await setupDotnet({})
+
+    const messages = [
+      ...vi.mocked(input).mock.calls,
+      ...vi.mocked(select).mock.calls,
+    ].map(c => c[0].message)
+    expect(messages).toEqual(
+      expect.arrayContaining(
+        ['--dotnet-opts', 'target framework globs', '--ignore-unresolved'].map(
+          s => expect.stringContaining(s),
+        ),
+      ),
+    )
+    expect(messages).not.toContainEqual(
+      expect.stringContaining('--facts / --pom'),
+    )
   })
 })

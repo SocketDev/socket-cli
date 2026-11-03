@@ -6,6 +6,7 @@ import {
   hasSidecarEntries,
   mergeResolvedPathsSidecars,
   serializeSidecar,
+  useOnlySocketFactsArtifactsFlags,
 } from './sidecar.mts'
 
 import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
@@ -419,5 +420,30 @@ describe('compute-artifacts sidecar', () => {
 
   it('hasResolvedPathsSidecarEntries reports false for a wholly empty sidecar', () => {
     expect(hasResolvedPathsSidecarEntries({})).toBe(false)
+  })
+})
+
+function entryOfType(type: string) {
+  return { projects: [], components: [{ type, name: 'x', id: 'x' }] }
+}
+
+describe('useOnlySocketFactsArtifactsFlags', () => {
+  it('keeps the Maven-only flag every Coana release knows for JVM facts', () => {
+    expect(useOnlySocketFactsArtifactsFlags(undefined)).toEqual([
+      '--maven-use-only-socket-facts',
+    ])
+    expect(
+      useOnlySocketFactsArtifactsFlags({
+        '/a/pom.xml.socket.facts.json': entryOfType('maven'),
+      }),
+    ).toEqual(['--maven-use-only-socket-facts'])
+  })
+
+  it('names every ecosystem once another one has facts', () => {
+    expect(
+      useOnlySocketFactsArtifactsFlags({
+        '/a/App.sln.socket.facts.json': entryOfType('nuget'),
+      }),
+    ).toEqual(['--use-only-socket-facts-artifacts', 'maven,nuget'])
   })
 })

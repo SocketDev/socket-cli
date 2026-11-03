@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net6.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Demo.Ext.Logging" />
+    <PackageReference Include="Demo.Ext.Harness" VersionOverride="1.1.0" />
+    <ProjectReference Include="../Core/Core.csproj" />
+  </ItemGroup>
+</Project>

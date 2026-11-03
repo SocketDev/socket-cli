@@ -2,12 +2,13 @@ import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
   buildRootPath,
   findBuildToolCandidates,
   isBuildRootCovered,
+  isRootCovered,
   sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
 import { testPath } from '../../../test/utils.mts'
@@ -223,34 +224,39 @@ describe('findBuildToolCandidates', () => {
 })
 
 describe('isBuildRootCovered', () => {
-  it('covers a POM only by its own file', () => {
-    const covered = new Set(['/repo/service/pom.xml'])
-    expect(
-      isBuildRootCovered(covered, 'maven', {
-        dir: '/repo/service',
-        entryFile: 'pom.xml',
-      }),
-    ).toBe(true)
-    expect(
-      isBuildRootCovered(covered, 'maven', {
-        dir: '/repo/service',
-        entryFile: 'app-dev.pom.xml',
-      }),
-    ).toBe(false)
-  })
-
-  it('covers a root without an entry file through a marker file', () => {
-    expect(
-      isBuildRootCovered(new Set(['/repo/lib/settings.gradle.kts']), 'gradle', {
-        dir: '/repo/lib',
-      }),
-    ).toBe(true)
-    expect(
-      isBuildRootCovered(new Set(['/repo/lib/sub/build.gradle']), 'gradle', {
-        dir: '/repo/lib',
-      }),
-    ).toBe(false)
-  })
+  it.for([
+    [
+      'maven',
+      '/repo/service/pom.xml',
+      { dir: '/repo/service', entryFile: 'pom.xml' },
+      true,
+    ],
+    [
+      'maven',
+      '/repo/service/pom.xml',
+      { dir: '/repo/service', entryFile: 'app-dev.pom.xml' },
+      false,
+    ],
+    [
+      'dotnet',
+      '/repo/src/App/App.csproj',
+      { dir: '/repo/src/App', entryFile: 'App.csproj' },
+      true,
+    ],
+    [
+      'dotnet',
+      '/repo/src/App/App.csproj',
+      { dir: '/repo/src/App', entryFile: 'App.sln' },
+      false,
+    ],
+    ['gradle', '/repo/lib/settings.gradle.kts', { dir: '/repo/lib' }, true],
+    ['gradle', '/repo/lib/sub/build.gradle', { dir: '/repo/lib' }, false],
+  ] as const)(
+    '%s: %s covers %o: %s',
+    ({ 0: tool, 1: file, 2: root, 3: expected }) => {
+      expect(isBuildRootCovered(new Set([file]), tool, root)).toBe(expected)
+    },
+  )
 })
 
 describe('sortByDepthThenPath', () => {
@@ -273,5 +279,109 @@ describe('sortByDepthThenPath', () => {
       { dir: '/repo/b', entryFile: 'pom.xml' },
       { dir: '/repo/b/nested' },
     ])
+  })
+
+  it('puts the solutions of a directory before its projects', () => {
+    expect(
+      sortByDepthThenPath(
+        [
+          { dir: '/repo', entryFile: 'App.csproj' },
+          { dir: '/repo', entryFile: 'Zed.slnx' },
+          { dir: '/repo', entryFile: 'App.sln' },
+        ],
+        '/repo',
+        'dotnet',
+      ),
+    ).toEqual([
+      { dir: '/repo', entryFile: 'App.sln' },
+      { dir: '/repo', entryFile: 'Zed.slnx' },
+      { dir: '/repo', entryFile: 'App.csproj' },
+    ])
+  })
+})
+
+function listing(members: string[]) {
+  return async () => members
+}
+
+async function failToList(): Promise<string[]> {
+  throw new Error('listed')
+}
+
+async function slnxUnreadable({
+  entryFile,
+}: {
+  entryFile?: string | undefined
+}): Promise<string[] | undefined> {
+  return entryFile?.endsWith('.slnx') ? undefined : []
+}
+
+async function unreadable(): Promise<undefined> {
+  return undefined
+}
+
+describe('isRootCovered', () => {
+  const root = { dir: '/repo', entryFile: 'App.slnx' }
+  const covers = (
+    covered: string[],
+    list: Parameters<typeof isRootCovered>[4],
+    r: BuildRoot = root,
+  ) => isRootCovered(new Set(covered), 'dotnet', r, {}, list)
+
+  it('covers a solution once every project it builds is covered', async () => {
+    const covered = ['/repo/src/A/A.csproj', '/repo/src/B/B.csproj']
+    expect(await covers(covered, listing(covered))).toBe(true)
+    expect(
+      await covers(
+        covered,
+        listing(['/repo/src/A/A.csproj', '/repo/src/C/C.csproj']),
+      ),
+    ).toBe(false)
+  })
+
+  it('lists no members while nothing is covered and no twin exists, or for a project or a POM', async () => {
+    expect(await covers([], failToList)).toBe(false)
+    expect(
+      await covers(['/x'], failToList, { dir: '/repo', entryFile: 'A.csproj' }),
+    ).toBe(false)
+    expect(
+      await isRootCovered(
+        new Set(['/x']),
+        'maven',
+        { dir: '/repo', entryFile: 'pom.xml' },
+        {},
+        failToList,
+      ),
+    ).toBe(false)
+  })
+
+  describe('with an App.sln and App.slnx pair', () => {
+    let dir = ''
+    const at = (entryFile: string) => ({ dir, entryFile })
+
+    beforeAll(async () => {
+      dir = await fs.mkdtemp(path.join(tmpdir(), 'entry-covered-'))
+      await fs.writeFile(path.join(dir, 'App.sln'), '')
+      await fs.writeFile(path.join(dir, 'App.slnx'), '')
+    })
+
+    afterAll(async () => {
+      await fs.rm(dir, { recursive: true, force: true })
+    })
+
+    it('takes a solution the SDK cannot read as covered by its twin in the other format', async () => {
+      const covered = ['/repo/src/A/A.csproj']
+      expect(await covers(covered, slnxUnreadable, at('App.slnx'))).toBe(true)
+      // Also before anything is covered, e.g. when the twin built nothing.
+      expect(await covers([], slnxUnreadable, at('App.slnx'))).toBe(true)
+      expect(await covers(covered, slnxUnreadable, at('Other.slnx'))).toBe(
+        false,
+      )
+    })
+
+    it('builds an unreadable solution whose twin is unreadable too, so its failure shows', async () => {
+      expect(await covers([], unreadable, at('App.sln'))).toBe(false)
+      expect(await covers([], unreadable, at('App.slnx'))).toBe(false)
+    })
   })
 })
