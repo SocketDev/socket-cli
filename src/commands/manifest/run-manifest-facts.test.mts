@@ -52,19 +52,24 @@ const baseArgs = {
   verbose: false,
 }
 
-describe('runManifestFacts - javaHome', () => {
-  let cwd = ''
+let cwd = ''
 
-  beforeEach(async () => {
-    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
-    vi.mocked(runManifestScript).mockReset()
+beforeEach(async () => {
+  cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
+  vi.mocked(runManifestScript).mockReset()
+  process.exitCode = undefined
+})
+afterEach(async () => {
+  await fs.rm(cwd, { recursive: true, force: true })
+  process.exitCode = undefined
+})
+
+describe('runManifestFacts - javaHome', () => {
+  beforeEach(() => {
     delete process.env[ENV_VAR]
-    process.exitCode = undefined
   })
-  afterEach(async () => {
-    await fs.rm(cwd, { recursive: true, force: true })
+  afterEach(() => {
     delete process.env[ENV_VAR]
-    process.exitCode = undefined
   })
 
   it('passes a literal javaHome straight through as JAVA_HOME', async () => {
@@ -107,18 +112,6 @@ describe('runManifestFacts - javaHome', () => {
 })
 
 describe('runManifestFacts - sidecar', () => {
-  let cwd = ''
-
-  beforeEach(async () => {
-    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
-    vi.mocked(runManifestScript).mockReset()
-    process.exitCode = undefined
-  })
-  afterEach(async () => {
-    await fs.rm(cwd, { recursive: true, force: true })
-    process.exitCode = undefined
-  })
-
   it('keys the sidecar by the symlink-resolved factsPath, not the raw cwd-joined one', async () => {
     const result = okResult(cwd)
     result.facts.projects = [
@@ -166,18 +159,6 @@ describe('runManifestFacts - sidecar', () => {
 })
 
 describe('runManifestFacts - facts file naming', () => {
-  let cwd = ''
-
-  beforeEach(async () => {
-    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
-    vi.mocked(runManifestScript).mockReset()
-    process.exitCode = undefined
-  })
-  afterEach(async () => {
-    await fs.rm(cwd, { recursive: true, force: true })
-    process.exitCode = undefined
-  })
-
   it('gives builds sharing a directory distinct facts files', async () => {
     const sidecarAcc: SidecarAccumulator = new Map()
     const outcomes = []
@@ -278,18 +259,6 @@ describe('runManifestFacts - facts file naming', () => {
 })
 
 describe('runManifestFacts - sbt build detection', () => {
-  let cwd = ''
-
-  beforeEach(async () => {
-    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
-    vi.mocked(runManifestScript).mockReset()
-    process.exitCode = undefined
-  })
-  afterEach(async () => {
-    await fs.rm(cwd, { recursive: true, force: true })
-    process.exitCode = undefined
-  })
-
   it('fails without running sbt when the directory has no sbt build', async () => {
     const outcome = await runManifestFacts({
       ...baseArgs,
@@ -323,18 +292,6 @@ describe('runManifestFacts - sbt build detection', () => {
 })
 
 describe('runManifestFacts - crashed build', () => {
-  let cwd = ''
-
-  beforeEach(async () => {
-    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
-    vi.mocked(runManifestScript).mockReset()
-    process.exitCode = undefined
-  })
-  afterEach(async () => {
-    await fs.rm(cwd, { recursive: true, force: true })
-    process.exitCode = undefined
-  })
-
   it('fails closed on a dotnet tool exit, whatever it recorded before', async () => {
     vi.mocked(runManifestScript).mockResolvedValue({
       ...okResult(cwd),

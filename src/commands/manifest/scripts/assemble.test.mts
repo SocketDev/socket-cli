@@ -7,6 +7,16 @@ import { accumulateSidecar, serializeSidecar } from './sidecar.mts'
 import type { SocketFactsSbom } from './facts.mts'
 import type { SidecarAccumulator } from './sidecar.mts'
 
+function sidecarEntry(
+  facts: SocketFactsSbom,
+  artifactPaths: ReturnType<typeof assembleFacts>['artifactPaths'],
+  factsFile: string,
+) {
+  const acc: SidecarAccumulator = new Map()
+  accumulateSidecar(acc, facts, artifactPaths, factsFile)
+  return serializeSidecar(acc)[factsFile]!
+}
+
 // Each project's tree, written out with component ids; a repeat on the current
 // path (a cycle) is written without its children.
 function trees(facts: SocketFactsSbom): Record<string, string[]> {
@@ -81,10 +91,7 @@ describe('records → assemble → sidecar', () => {
     expect(facts.metadata).not.toHaveProperty('contentHash')
     expect(facts.metadata).not.toHaveProperty('schemaVersion')
 
-    const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
-    const resolved = serializeSidecar(acc)
-    const bucket = resolved['/abs/.socket.facts.json']!
+    const bucket = sidecarEntry(facts, artifactPaths, '/abs/.socket.facts.json')
     const byName = new Map(bucket.components.map(r => [r.name, r]))
 
     // First-party module: project-only (not a node), yet its source/output
@@ -162,17 +169,12 @@ describe('records → assemble → sidecar', () => {
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
       fileExists: p => p !== '/abs/gone.jar',
     })
-    const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(
-      acc,
-      facts,
-      artifactPaths,
-      '/abs/pom.xml.socket.facts.json',
-    )
     const byId = new Map(
-      serializeSidecar(acc)['/abs/pom.xml.socket.facts.json']!.components.map(
-        c => [c.id, c],
-      ),
+      sidecarEntry(
+        facts,
+        artifactPaths,
+        '/abs/pom.xml.socket.facts.json',
+      ).components.map(c => [c.id, c]),
     )
 
     expect(byId.get('g:ok:jar:1')?.targets).toEqual(['/abs/ok.jar'])
@@ -254,13 +256,12 @@ describe('records → assemble → sidecar', () => {
       ':b': ['g:junit:jar:4', 'g:lib:jar:1(g:dep:jar:2)'],
     })
 
-    const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
     const byName = new Map(
-      serializeSidecar(acc)['/abs/.socket.facts.json']!.projects.map(p => [
-        p.name,
-        p,
-      ]),
+      sidecarEntry(
+        facts,
+        artifactPaths,
+        '/abs/.socket.facts.json',
+      ).projects.map(p => [p.name, p]),
     )
     expect(byName.get('a')?.classpath).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
     expect(byName.get('b')?.classpath).toEqual([
@@ -400,14 +401,11 @@ describe('records → assemble → sidecar', () => {
       ':b': [':a(g:ext:jar:2)', 'g:b:jar:0.9'],
     })
 
-    const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(
-      acc,
+    const bucket = sidecarEntry(
       facts,
       artifactPaths,
       '/abs/gradle.socket.facts.json',
     )
-    const bucket = serializeSidecar(acc)['/abs/gradle.socket.facts.json']!
     expect(bucket.components.find(c => c.id === ':a')?.firstParty).toBe(true)
     for (const project of bucket.projects) {
       expect(project).not.toHaveProperty('firstParty')
@@ -628,14 +626,11 @@ describe('dotnet records → sidecar', () => {
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
       fileExists: () => true,
     })
-    const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(
-      acc,
+    const entry = sidecarEntry(
       facts,
       artifactPaths,
       '/abs/App.csproj.socket.facts.json',
     )
-    const entry = serializeSidecar(acc)['/abs/App.csproj.socket.facts.json']!
     expect(entry.components.map(c => [c.type, c.name, c.targets])).toEqual([
       ['nuget', 'Analyzer', []],
       ['nuget', 'Gone', undefined],
@@ -690,14 +685,11 @@ describe('dotnet records → per-framework sidecar', () => {
     const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
       fileExists: () => true,
     })
-    const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(
-      acc,
+    const entry = sidecarEntry(
       facts,
       artifactPaths,
       '/abs/Lib.csproj.socket.facts.json',
     )
-    const entry = serializeSidecar(acc)['/abs/Lib.csproj.socket.facts.json']!
     expect(entry.projects[0]!.frameworks).toEqual([
       {
         alias: 'net8.0',

@@ -11,25 +11,21 @@ import {
 
 import type { SocketJson } from '../../utils/socket-json.mts'
 
-function mkTmp(): string {
-  return mkdtempSync(path.join(os.tmpdir(), 'detect-manifest-bazel-'))
-}
+let cwd: string
+
+beforeEach(() => {
+  cwd = mkdtempSync(path.join(os.tmpdir(), 'detect-manifest-'))
+})
+
+afterEach(() => {
+  rmSync(cwd, { recursive: true, force: true })
+})
 
 function touch(dir: string, name: string): void {
   writeFileSync(path.join(dir, name), '')
 }
 
 describe('detectManifestActions — bazel detector', () => {
-  let cwd: string
-
-  beforeEach(() => {
-    cwd = mkTmp()
-  })
-
-  afterEach(() => {
-    rmSync(cwd, { recursive: true, force: true })
-  })
-
   it('skips bazel when defaults.manifest.bazel.disabled is true', async () => {
     touch(cwd, 'MODULE.bazel')
     const result = await detectManifestActions(
@@ -78,16 +74,6 @@ describe('detectManifestActions — bazel detector', () => {
 })
 
 describe('detectManifestActions — gradle detector', () => {
-  let cwd: string
-
-  beforeEach(() => {
-    cwd = mkTmp()
-  })
-
-  afterEach(() => {
-    rmSync(cwd, { recursive: true, force: true })
-  })
-
   it('detects build.gradle', async () => {
     touch(cwd, 'build.gradle')
     const result = await detectManifestActions(null, cwd)
@@ -143,16 +129,6 @@ describe('detectManifestActions — gradle detector', () => {
 })
 
 describe('detectManifestActions — conda detector', () => {
-  let cwd: string
-
-  beforeEach(() => {
-    cwd = mkTmp()
-  })
-
-  afterEach(() => {
-    rmSync(cwd, { recursive: true, force: true })
-  })
-
   it('detects environment.yml and reports it as the conda file', async () => {
     touch(cwd, 'environment.yml')
     const result = await detectManifestActions(null, cwd)
@@ -198,16 +174,6 @@ describe('detectManifestActions — conda detector', () => {
 })
 
 describe('detectManifestActions — dotnet detector', () => {
-  let cwd: string
-
-  beforeEach(() => {
-    cwd = mkTmp()
-  })
-
-  afterEach(() => {
-    rmSync(cwd, { recursive: true, force: true })
-  })
-
   it.each([
     'App.sln',
     'App.slnx',
@@ -231,7 +197,7 @@ describe('detectManifestActions — dotnet detector', () => {
     touch(cwd, 'App.sln')
     const sockJson = {
       defaults: { manifest: { dotnet: { disabled: true } } },
-    } as unknown as SocketJson
+    } as SocketJson
     expect((await detectManifestActions(sockJson, cwd)).dotnet).toBe(false)
   })
 

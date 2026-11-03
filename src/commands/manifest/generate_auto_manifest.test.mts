@@ -412,9 +412,16 @@ describe('generateAutoManifest — conda branch', () => {
   })
 })
 
-describe('generateAutoManifest — dotnet branch', () => {
-  const detected = { ...baseDetected, dotnet: true, count: 1 }
+function generateForDotnet() {
+  return generateAutoManifest({
+    cwd: '/tmp/repo',
+    detected: { ...baseDetected, dotnet: true, count: 1 },
+    outputKind: 'text',
+    verbose: false,
+  })
+}
 
+describe('generateAutoManifest — dotnet branch', () => {
   beforeEach(() => {
     vi.mocked(convertDotnetToFacts).mockClear()
     vi.mocked(skipWithoutDotnetSdk).mockReset()
@@ -434,12 +441,7 @@ describe('generateAutoManifest — dotnet branch', () => {
         },
       },
     } as SocketJson)
-    await generateAutoManifest({
-      cwd: '/tmp/repo',
-      detected,
-      outputKind: 'text',
-      verbose: false,
-    })
+    await generateForDotnet()
     expect(skipWithoutDotnetSdk).toHaveBeenCalledWith(
       '/opt/dotnet/dotnet',
       '/tmp/repo',
@@ -459,12 +461,7 @@ describe('generateAutoManifest — dotnet branch', () => {
 
   it('skips the build where no .NET SDK runs', async () => {
     vi.mocked(skipWithoutDotnetSdk).mockResolvedValue(true)
-    await generateAutoManifest({
-      cwd: '/tmp/repo',
-      detected,
-      outputKind: 'text',
-      verbose: false,
-    })
+    await generateForDotnet()
     expect(convertDotnetToFacts).not.toHaveBeenCalled()
   })
 
@@ -472,25 +469,15 @@ describe('generateAutoManifest — dotnet branch', () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({
       defaults: { manifest: { dotnet: { disabled: true } } },
     } as SocketJson)
-    await generateAutoManifest({
-      cwd: '/tmp/repo',
-      detected,
-      outputKind: 'text',
-      verbose: false,
-    })
+    await generateForDotnet()
     expect(skipWithoutDotnetSdk).not.toHaveBeenCalled()
     expect(convertDotnetToFacts).not.toHaveBeenCalled()
   })
 
   it('aborts the run when the facts generator fails', async () => {
     vi.mocked(convertDotnetToFacts).mockResolvedValueOnce(null)
-    await expect(
-      generateAutoManifest({
-        cwd: '/tmp/repo',
-        detected,
-        outputKind: 'text',
-        verbose: false,
-      }),
-    ).rejects.toThrow(/Auto-manifest generation failed for the dotnet project/)
+    await expect(generateForDotnet()).rejects.toThrow(
+      /Auto-manifest generation failed for the dotnet project/,
+    )
   })
 })

@@ -31,6 +31,10 @@ vi.mock('node:fs', async importOriginal => {
   }
 })
 
+beforeEach(() => {
+  vi.mocked(spawn).mockReset()
+})
+
 describe('build tool output', () => {
   it.each([
     ['inherit', ['inherit', 2, 'inherit']],
@@ -166,19 +170,19 @@ function mockDotnet(sdk: string, records = '', code = 0): void {
   }) as any)
 }
 
-function toolCalls() {
-  return vi.mocked(spawn).mock.calls.filter(c => c[1]?.[0] !== '--version')
+function solutionOpts(projectDir: string) {
+  return { bin: 'dotnet', entryFile: 'App.sln', projectDir }
 }
 
 function toolCall() {
   return toolCalls()[0]
 }
 
-describe('dotnet tool invocation', () => {
-  beforeEach(() => {
-    vi.mocked(spawn).mockReset()
-  })
+function toolCalls() {
+  return vi.mocked(spawn).mock.calls.filter(c => c[1]?.[0] !== '--version')
+}
 
+describe('dotnet tool invocation', () => {
   it('runs the bundled tool on the build entry with the given options', async () => {
     const projectDir = dotnetDir()
     mockDotnet('8.0.414', 'buildRoot\t/repo\nentry\tApp.sln\n')
@@ -255,10 +259,6 @@ describe('dotnet tool invocation', () => {
 })
 
 describe('skipWithoutDotnetSdk', () => {
-  beforeEach(() => {
-    vi.mocked(spawn).mockReset()
-  })
-
   it('skips, warning once per reason, where no SDK runs', async () => {
     // Warnings are deduplicated for the whole run, so the reason is unique
     // to this case.
@@ -301,15 +301,7 @@ describe('skipWithoutDotnetSdk', () => {
   })
 })
 
-function solutionOpts(projectDir: string) {
-  return { bin: 'dotnet', entryFile: 'App.sln', projectDir }
-}
-
 describe('listDotnetEntryProjects', () => {
-  beforeEach(() => {
-    vi.mocked(spawn).mockReset()
-  })
-
   it('resolves the members against the build directory', async () => {
     const projectDir = dotnetDir()
     mockDotnet('8.0.414', 'member\tsrc/A/A.csproj\nmember\tsrc/B/B.csproj\n')

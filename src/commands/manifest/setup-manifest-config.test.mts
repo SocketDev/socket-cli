@@ -18,24 +18,26 @@ import {
   setupSbt,
 } from './setup-manifest-config.mts'
 
+describe('setup wizards', () => {
+  it.for([
+    ['dotnet', setupDotnet],
+    ['gradle', setupGradle],
+    ['maven', setupMaven],
+    ['sbt', setupSbt],
+  ] as const)(
+    '%s leaves a fresh config empty when every prompt is left blank, instead of freezing the hardcoded bin fallback',
+    async ({ 1: setup }) => {
+      const config: Record<string, unknown> = {}
+
+      const result = await setup(config)
+
+      expect(result).toEqual({ ok: true, data: { canceled: false } })
+      expect(config).toEqual({})
+    },
+  )
+})
+
 describe('setupGradle/setupMaven/setupSbt', () => {
-  it('leaves bin unset on a fresh config when every prompt is left blank, instead of freezing the hardcoded fallback', async () => {
-    const gradleConfig: Record<string, unknown> = {}
-    const mavenConfig: Record<string, unknown> = {}
-    const sbtConfig: Record<string, unknown> = {}
-
-    const gradleResult = await setupGradle(gradleConfig)
-    const mavenResult = await setupMaven(mavenConfig)
-    const sbtResult = await setupSbt(sbtConfig)
-
-    expect(gradleResult).toEqual({ ok: true, data: { canceled: false } })
-    expect(mavenResult).toEqual({ ok: true, data: { canceled: false } })
-    expect(sbtResult).toEqual({ ok: true, data: { canceled: false } })
-    expect(gradleConfig['bin']).toBeUndefined()
-    expect(mavenConfig['bin']).toBeUndefined()
-    expect(sbtConfig['bin']).toBeUndefined()
-  })
-
   it('still shows and accepts a prior explicit bin value unchanged', async () => {
     const config: Record<string, unknown> = { bin: './custom-gradlew' }
 
@@ -89,22 +91,12 @@ describe('setupGradle/setupMaven/setupSbt', () => {
 })
 
 describe('setupDotnet', () => {
-  it('leaves a fresh config empty when every prompt is left blank', async () => {
-    const config: Record<string, unknown> = {}
-
-    const result = await setupDotnet(config)
-
-    expect(result).toEqual({ ok: true, data: { canceled: false } })
-    expect(config).toEqual({})
-  })
-
   it('preserves explicit nulls on a blank re-prompt', async () => {
     const config: Record<string, unknown> = { bin: null, dotnetOpts: null }
 
     await setupDotnet(config)
 
-    expect(config['bin']).toBeNull()
-    expect(config['dotnetOpts']).toBeNull()
+    expect(config).toEqual({ bin: null, dotnetOpts: null })
   })
 
   it('asks for target framework filters, never the facts/pom choice', async () => {
@@ -117,9 +109,15 @@ describe('setupDotnet', () => {
       ...vi.mocked(input).mock.calls,
       ...vi.mocked(select).mock.calls,
     ].map(c => c[0].message)
-    expect(messages.some(m => m.includes('--dotnet-opts'))).toBe(true)
-    expect(messages.some(m => m.includes('target framework globs'))).toBe(true)
-    expect(messages.some(m => m.includes('--ignore-unresolved'))).toBe(true)
-    expect(messages.some(m => m.includes('--facts / --pom'))).toBe(false)
+    expect(messages).toEqual(
+      expect.arrayContaining(
+        ['--dotnet-opts', 'target framework globs', '--ignore-unresolved'].map(
+          s => expect.stringContaining(s),
+        ),
+      ),
+    )
+    expect(messages).not.toContainEqual(
+      expect.stringContaining('--facts / --pom'),
+    )
   })
 })
