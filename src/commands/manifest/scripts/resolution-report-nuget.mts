@@ -11,8 +11,8 @@ const NOT_FOUND_CODES = new Set(['NU1100', 'NU1101', 'NU1102', 'NU1103'])
 const SOURCE_CODES = new Set(['NU1301', 'NU1302'])
 
 // The socket-facts-dotnet tool reports restore errors as `<code>: <message>`,
-// and a design-time build failure as `<finding>: <code>: <message>`; its
-// findings without a code count as other failures.
+// and some findings as `<finding>: <code>: <message>`; its findings without a
+// code count as other failures.
 export function classifyNugetFailure(detail: string): FailureCategory {
   const code = /(?:^|: )(NU\d{4}|NETSDK\d{4}|MSB\d{4}):/.exec(detail || '')?.[1]
   if (!code) {

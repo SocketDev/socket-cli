@@ -124,7 +124,6 @@ internal sealed partial class Session {
       }
       foreach (var loaded in postRestore.GetLoadedProjects(path).ToList()) postRestore.UnloadProject(loaded);
     }
-    EndDesignTimeBuilds();
     ReportRestoreErrors();
   }
 

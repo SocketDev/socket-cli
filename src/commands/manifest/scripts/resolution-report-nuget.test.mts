@@ -10,7 +10,8 @@ const DETAILS_BY_CATEGORY = {
     'NU1109: Detected package downgrade: Polly from 8.4.2 to centrally defined 7.2.4.',
     'NU1201: Project Fs is not compatible with netstandard2.0.',
     'NETSDK1147: To build this project, the following workloads must be installed: maui',
-    'the design-time build failed: MSB3644: The reference assemblies for .NETFramework,Version=v4.8 were not found.',
+    "MSB4236: The SDK 'Microsoft.Build.Traversal/2.0.24' specified could not be found.",
+    'could not read the solution: MSB5009: Error parsing the nested project section in solution file.',
   ],
   'not-found': [
     'NU1101: Unable to find package Foo. No packages exist with this id in source(s): nuget.org',

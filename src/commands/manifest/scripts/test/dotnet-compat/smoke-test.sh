@@ -102,7 +102,7 @@ records() {
 records "$WORK/basic/Basic.sln" "$WORK/basic-netstandard.tsv" --include-configs netstandard2.0
 records "$WORK/basic/Basic.sln" "$WORK/basic.tsv"
 records "$WORK/langs/Vb/Vb.vbproj" "$WORK/langs.tsv"
-records "$WORK/failures/designtime/DesignTime.csproj" "$WORK/designtime.tsv"
+records "$WORK/evaluation/Build.csproj" "$WORK/evaluation.tsv"
 records "$WORK/packages-config/Mixed.sln" "$WORK/pc-missing.tsv"
 # What `nuget restore` lays out for packages.config: <Id>.<Version as written>.
 python3 - "$WORK" <<'PY'

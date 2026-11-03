@@ -74,16 +74,13 @@ export type RawUsing = { namespace: string; alias: string; static: boolean }
 
 // One dotnet target framework build of a project, by its alias.
 export type RawBuild = {
-  analyzers: string[]
   assemblyName?: string | undefined
-  buildError?: string | undefined
   defineConstants: string[]
   framework?: string | undefined
   frameworkReferences: string[]
   langVersion?: string | undefined
   language?: string | undefined
   nullable?: string | undefined
-  references: string[]
   sources: string[]
   targetFrameworkMoniker?: string | undefined
   targets: string[]
@@ -101,16 +98,13 @@ type RawBuildValue = {
 // projectInfo names, as the dotnet tool's Reader.cs writes them.
 const PROJECT_INFO_LISTS = {
   __proto__: null,
-  Analyzer: 'analyzers',
   DefineConstant: 'defineConstants',
   FrameworkReference: 'frameworkReferences',
-  Reference: 'references',
 } as unknown as Record<string, RawBuildList | undefined>
 
 const PROJECT_INFO_VALUES = {
   __proto__: null,
   AssemblyName: 'assemblyName',
-  BuildError: 'buildError',
   Framework: 'framework',
   LangVersion: 'langVersion',
   Language: 'language',
@@ -228,10 +222,8 @@ export function parseRecords(text: string): ParsedRecords {
     let b = builds.get(config)
     if (!b) {
       b = {
-        analyzers: [],
         defineConstants: [],
         frameworkReferences: [],
-        references: [],
         sources: [],
         targets: [],
         usings: [],
