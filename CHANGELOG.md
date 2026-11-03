@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.13.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.13.0) - 2026-11-03
 
 ### Added
 - `socket manifest dotnet` [beta] generates Socket facts files for .NET solutions and projects from your own `dotnet restore`, covering PackageReference (central package management and lock files included) and packages.config projects.
