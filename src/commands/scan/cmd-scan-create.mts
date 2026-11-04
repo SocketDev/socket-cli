@@ -13,7 +13,9 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { resolveReachAdvisories } from './reach-advisories.mts'
 import {
   DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  dynamicSbomInferenceEcosystemsFlags,
   excludePathsFlag,
+  parseDynamicSbomInferenceEcosystems,
   reachabilityFlags,
 } from './reachability-flags.mts'
 import {
@@ -115,6 +117,7 @@ const generalFlags: MeowFlags = {
     default: false,
     description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Combine with --reach to split the reachability analysis per project/module.`,
   },
+  ...dynamicSbomInferenceEcosystemsFlags,
   interactive: {
     type: 'boolean',
     default: true,
@@ -355,6 +358,13 @@ async function run(
     cmdFlagValueToArray(cli.flags['reachEcosystems']),
   )
 
+  const dynamicSbomInferenceEcosystemsRaw = cmdFlagValueToArray(
+    cli.flags['dynamicSbomInferenceEcosystems'],
+  )
+  const dynamicSbomInferenceEcosystems = parseDynamicSbomInferenceEcosystems(
+    dynamicSbomInferenceEcosystemsRaw,
+  )
+
   warnSocketJsonOnlyFlags(cli.flags, `${parentName} ${CMD_NAME}`)
 
   const dryRun = !!cli.flags['dryRun']
@@ -589,6 +599,13 @@ async function run(
     outputKind,
     {
       nook: true,
+      test: dynamicSbomInference || !dynamicSbomInferenceEcosystemsRaw.length,
+      message:
+        '--dynamic-sbom-inference-ecosystems requires --dynamic-sbom-inference',
+      fail: 'add --dynamic-sbom-inference',
+    },
+    {
+      nook: true,
       test: !!orgSlug,
       message: 'Org name by default setting, --org, or auto-discovered',
       fail: 'missing',
@@ -694,6 +711,7 @@ async function run(
     pullRequest: Number(pullRequest),
     reach: {
       dynamicSbomInference: Boolean(dynamicSbomInference),
+      dynamicSbomInferenceEcosystems,
       excludePaths,
       reachAdvisories,
       reachAnalysisMemoryLimit,

@@ -391,13 +391,12 @@ async function coanaFixWithFacts(
   if (factsSlot) {
     if (!silence) {
       spinner?.stop()
-      logger.info(
-        'Generating Socket facts for .NET, Gradle, sbt and Maven builds ...',
-      )
+      logger.info('Generating Socket facts for each build ...')
     }
     factsSlot.generated = await generateSocketFactsForFix({
       cwd,
       excludePaths,
+      purlTypes: fixConfig.dynamicSbomInferenceEcosystems,
       findFactsPaths: async () =>
         (await findScanFilepaths()).filter(isSocketFactsFile),
       tmpDir: factsSlot.tmpDir,

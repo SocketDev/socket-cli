@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Choose which ecosystems `--dynamic-sbom-inference` covers with `--dynamic-sbom-inference-ecosystems` (`maven` for Gradle, sbt and Maven; `nuget` for .NET) on `socket scan create`, `socket scan reach` and `socket fix`. Ecosystems left out keep their manifest files as they are.
+
 ### Changed
 - With `--dynamic-sbom-inference`, reachability analysis and `socket fix` now take the dependencies of every Gradle, sbt, Maven and .NET build they find from Socket facts only, so results no longer depend on which other builds produced facts.
 - `--dynamic-sbom-inference` and its setup now stop with clear next steps when a .NET build cannot be read because no .NET SDK is installed, instead of skipping it. With it, reachability analysis and `socket fix` warn that builds skipped in `socket.json` are left out, and reachability analysis stops with next steps when no build produced Socket facts.

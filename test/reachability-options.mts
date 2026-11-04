@@ -1,3 +1,5 @@
+import { FACTS_PURL_TYPES } from '../src/commands/manifest/scripts/build-tool.mts'
+
 import type { ReachabilityOptions } from '../src/commands/scan/perform-reachability-analysis.mts'
 
 // Mirrors the CLI flag defaults, so a test spreads this and sets only what it
@@ -5,6 +7,7 @@ import type { ReachabilityOptions } from '../src/commands/scan/perform-reachabil
 export function makeReachabilityOptions(): ReachabilityOptions {
   return {
     dynamicSbomInference: false,
+    dynamicSbomInferenceEcosystems: FACTS_PURL_TYPES,
     excludePaths: [],
     reachAdvisories: [],
     reachAnalysisMemoryLimit: '8192',

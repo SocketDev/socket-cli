@@ -13,6 +13,7 @@ export type FixConfig = {
   disableExternalToolChecks: boolean
   disableMajorUpdates: boolean
   dynamicSbomInference: boolean
+  dynamicSbomInferenceEcosystems: readonly PURL_Type[]
   ecosystems: PURL_Type[]
   exclude: string[]
   excludePaths: string[]

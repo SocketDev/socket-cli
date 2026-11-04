@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
 
 import type { FactsConsumer } from './run-dynamic-sbom-inference.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 
 const { mockGenerateRecursiveManifests, mockWarn } = vi.hoisted(() => ({
   mockGenerateRecursiveManifests: vi.fn(),
@@ -24,11 +25,15 @@ const generated = {
   status: 'generated',
 }
 
-function run(consumer: FactsConsumer) {
+function run(
+  consumer: FactsConsumer,
+  purlTypes: readonly PURL_Type[] = ['maven', 'nuget'],
+) {
   return runDynamicSbomInference({
     consumer,
     cwd: '/repo',
     excludePaths: ['vendor/**'],
+    purlTypes,
     sbtTmpDir: '/tmp/sbt',
   })
 }
@@ -69,6 +74,7 @@ describe('runDynamicSbomInference', () => {
       expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
         cwd: '/repo',
         excludePaths: ['vendor/**'],
+        purlTypes: ['maven', 'nuget'],
         sbtTmpDir,
         sidecarAcc: sidecar ? expect.any(Map) : undefined,
         verbose: false,
@@ -150,6 +156,26 @@ describe('runDynamicSbomInference', () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
 
     await expect(run('reach')).rejects.toThrow(error)
+  })
+
+  it.for([
+    {
+      name: 'no build root of the selected ecosystems was found',
+      outcomes: [],
+      error: /No build root for nuget was found/,
+    },
+    {
+      name: 'the selected ecosystems produced no facts',
+      outcomes: [{ dir: '/repo/a', ecosystem: 'dotnet', status: 'empty' }],
+      error: /select other ecosystems with --dynamic-sbom-inference-ecosystems/,
+    },
+  ])('names the selection when $name', async ({ error, outcomes }) => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
+
+    await expect(run('reach', ['nuget'])).rejects.toThrow(error)
+    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
+      expect.objectContaining({ purlTypes: ['nuget'] }),
+    )
   })
 
   it.for([

@@ -7,7 +7,9 @@ import { handleScanReach } from './handle-scan-reach.mts'
 import { resolveReachAdvisories } from './reach-advisories.mts'
 import {
   DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  dynamicSbomInferenceEcosystemsFlags,
   excludePathsFlag,
+  parseDynamicSbomInferenceEcosystems,
   reachabilityFlags,
 } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
@@ -49,6 +51,7 @@ const reachabilityFlagsForReach: MeowFlags = {
     default: false,
     description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} The reachability analysis is split per project/module accordingly.`,
   },
+  ...dynamicSbomInferenceEcosystemsFlags,
   // Fallback targets scan creation, which this command never performs.
   reachFallbackToRegularScan: {
     type: 'boolean',
@@ -210,6 +213,12 @@ async function run(
 
   // Validate ecosystem values against the reachability-supported set.
   const reachEcosystems = parseReachEcosystems(reachEcosystemsRaw)
+  const dynamicSbomInferenceEcosystemsRaw = cmdFlagValueToArray(
+    cli.flags['dynamicSbomInferenceEcosystems'],
+  )
+  const dynamicSbomInferenceEcosystems = parseDynamicSbomInferenceEcosystems(
+    dynamicSbomInferenceEcosystemsRaw,
+  )
 
   const processCwd = process.cwd()
   const cwd =
@@ -236,6 +245,13 @@ async function run(
 
   const wasValidInput = checkCommandInput(
     outputKind,
+    {
+      nook: true,
+      test: dynamicSbomInference || !dynamicSbomInferenceEcosystemsRaw.length,
+      message:
+        '--dynamic-sbom-inference-ecosystems requires --dynamic-sbom-inference',
+      fail: 'add --dynamic-sbom-inference',
+    },
     {
       nook: true,
       test: !!orgSlug,
@@ -304,6 +320,7 @@ async function run(
     outputPath: outputPath || '',
     reachabilityOptions: {
       dynamicSbomInference: Boolean(dynamicSbomInference),
+      dynamicSbomInferenceEcosystems,
       excludePaths,
       reachAdvisories,
       reachAnalysisMemoryLimit,

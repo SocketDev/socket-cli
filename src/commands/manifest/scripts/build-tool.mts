@@ -7,6 +7,13 @@ import type { PURL_Type } from '../../../utils/ecosystem.mts'
 
 export type BuildTool = 'dotnet' | 'gradle' | 'maven' | 'sbt'
 
+export const BUILD_TOOLS: readonly BuildTool[] = [
+  'dotnet',
+  'gradle',
+  'maven',
+  'sbt',
+]
+
 // The purl type of the packages each tool resolves; exhaustive, so a new tool
 // cannot silently produce another ecosystem's purls.
 export const PURL_TYPE_BY_TOOL: Record<BuildTool, PURL_Type> = {
@@ -16,6 +23,14 @@ export const PURL_TYPE_BY_TOOL: Record<BuildTool, PURL_Type> = {
   maven: 'maven',
   sbt: 'maven',
 } as unknown as Record<BuildTool, PURL_Type>
+
+export const FACTS_PURL_TYPES: readonly PURL_Type[] = [
+  ...new Set(Object.values(PURL_TYPE_BY_TOOL)),
+].sort()
+
+export function buildToolsFor(purlTypes: readonly PURL_Type[]): BuildTool[] {
+  return BUILD_TOOLS.filter(tool => purlTypes.includes(PURL_TYPE_BY_TOOL[tool]))
+}
 
 // Purl types whose packages have no namespace (NuGet ids are flat).
 export const NAMESPACELESS_PURL_TYPES: ReadonlySet<string> = new Set(['nuget'])

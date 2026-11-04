@@ -152,6 +152,26 @@ describe('findBuildToolCandidates', () => {
     expect(candidates.get('gradle')?.length).toBeGreaterThan(0)
   })
 
+  it('drops the build tools of unselected purl types', async () => {
+    const maven = await findBuildToolCandidates({
+      cwd: monorepo,
+      purlTypes: ['maven'],
+      socketConfig: undefined,
+      sockJson: {} as SocketJson,
+    })
+    expect(maven.get('maven')?.length).toBeGreaterThan(0)
+    expect(maven.get('gradle')?.length).toBeGreaterThan(0)
+    expect(maven.has('dotnet')).toBe(false)
+
+    const nuget = await findBuildToolCandidates({
+      cwd: monorepo,
+      purlTypes: ['nuget'],
+      socketConfig: undefined,
+      sockJson: {} as SocketJson,
+    })
+    expect([...nuget.keys()]).toEqual(['dotnet'])
+  })
+
   it('respects --exclude-paths', async () => {
     const candidates = await findBuildToolCandidates({
       cwd: monorepo,

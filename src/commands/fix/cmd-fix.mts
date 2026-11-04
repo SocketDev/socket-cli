@@ -33,7 +33,11 @@ import {
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
-import { DYNAMIC_SBOM_INFERENCE_DESCRIPTION } from '../scan/reachability-flags.mts'
+import {
+  DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  dynamicSbomInferenceEcosystemsFlags,
+  parseDynamicSbomInferenceEcosystems,
+} from '../scan/reachability-flags.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -190,6 +194,7 @@ Available styles:
     default: false,
     description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Fixes are then attributed to the projects/modules that actually resolve each vulnerable dependency. The generated files are removed afterwards.`,
   },
+  ...dynamicSbomInferenceEcosystemsFlags,
   ecosystems: {
     type: 'string',
     default: [],
@@ -398,6 +403,13 @@ async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
+  const dynamicSbomInferenceEcosystemsRaw = cmdFlagValueToArray(
+    cli.flags['dynamicSbomInferenceEcosystems'],
+  )
+  const dynamicSbomInferenceEcosystems = parseDynamicSbomInferenceEcosystems(
+    dynamicSbomInferenceEcosystemsRaw,
+  )
+
   // Process comma-separated values for ecosystems flag.
   // ALL_ECOSYSTEMS is lowercase, so normalize input for a case-insensitive
   // match (mirrors --package-managers behavior).
@@ -446,6 +458,13 @@ async function run(
 
   const wasValidInput = checkCommandInput(
     outputKind,
+    {
+      nook: true,
+      test: dynamicSbomInference || !dynamicSbomInferenceEcosystemsRaw.length,
+      message:
+        '--dynamic-sbom-inference-ecosystems requires --dynamic-sbom-inference',
+      fail: 'add --dynamic-sbom-inference',
+    },
     {
       test: RangeStyles.includes(rangeStyle),
       message: `Expecting range style of ${joinOr(RangeStyles)}`,
@@ -538,6 +557,7 @@ async function run(
     disableExternalToolChecks,
     disableMajorUpdates,
     dynamicSbomInference,
+    dynamicSbomInferenceEcosystems,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,
     excludePaths: excludePathsPatterns,

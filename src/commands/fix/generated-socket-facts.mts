@@ -4,6 +4,8 @@ import path from 'node:path'
 import { useOnlySocketFactsArtifactsFlags } from '../../utils/coana.mts'
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
+import type { PURL_Type } from '../../utils/ecosystem.mts'
+
 export type GeneratedSocketFacts = {
   // Coana's flags selecting what the facts files resolve.
   artifactsFlags: string[]
@@ -39,11 +41,13 @@ export async function generateSocketFactsForFix({
   cwd,
   excludePaths,
   findFactsPaths,
+  purlTypes,
   tmpDir,
 }: {
   cwd: string
   excludePaths: string[]
   findFactsPaths: () => Promise<string[]>
+  purlTypes: readonly PURL_Type[]
   tmpDir: string
 }): Promise<GeneratedSocketFacts> {
   const existingPaths = await findFactsPaths()
@@ -64,6 +68,7 @@ export async function generateSocketFactsForFix({
         consumer: 'fix',
         cwd,
         excludePaths,
+        purlTypes,
         sbtTmpDir: undefined,
       })
     artifactsFlags = useOnlySocketFactsArtifactsFlags(factsOnlyTypes)

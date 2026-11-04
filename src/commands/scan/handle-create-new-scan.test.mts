@@ -419,6 +419,30 @@ describe('handleCreateNewScan excludePaths', () => {
     )
   })
 
+  it('leaves auto-manifest the build tools --dynamic-sbom-inference-ecosystems does not select', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([
+      {
+        dir: '/repo/app',
+        ecosystem: 'dotnet',
+        factsPath: '/repo/app/App.csproj.socket.facts.json',
+        status: 'generated',
+      },
+    ])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInferenceEcosystems = ['nuget']
+
+    await handleCreateNewScan(config)
+
+    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
+      expect.objectContaining({ purlTypes: ['nuget'] }),
+    )
+    expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
+      expect.objectContaining({ detected: { count: 0, dotnet: false } }),
+    )
+  })
+
   it('aborts instead of silently uploading a partial scan when a recursive build root fails', async () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([
       {

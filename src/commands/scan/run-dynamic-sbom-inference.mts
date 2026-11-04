@@ -1,8 +1,12 @@
+import { joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { InputError } from '../../utils/errors.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
-import { PURL_TYPE_BY_TOOL } from '../manifest/scripts/build-tool.mts'
+import {
+  FACTS_PURL_TYPES,
+  PURL_TYPE_BY_TOOL,
+} from '../manifest/scripts/build-tool.mts'
 import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
 import {
   hasSidecarEntries,
@@ -30,11 +34,17 @@ export type DynamicSbomInferenceResult = {
 
 // Coana takes the discovered ecosystems' artifacts only from facts files, so a
 // build root without them is one it leaves out.
-function checkFactsForCoana(
-  outcomes: RecursiveManifestOutcome[],
-  consumer: Exclude<FactsConsumer, 'upload'>,
-  hasFacts: boolean,
-): void {
+function checkFactsForCoana({
+  consumer,
+  hasFacts,
+  narrowed,
+  outcomes,
+}: {
+  consumer: Exclude<FactsConsumer, 'upload'>
+  hasFacts: boolean
+  narrowed: boolean
+  outcomes: RecursiveManifestOutcome[]
+}): void {
   const hasDisabled = outcomes.some(o => o.status === 'skippedDisabled')
   // Coana (15.14.1) refuses a facts-only reachability run without any facts.
   if (consumer === 'reach' && !hasFacts) {
@@ -45,6 +55,11 @@ function checkFactsForCoana(
         ...(hasDisabled
           ? [
               `- Re-enable the builds that socket.json skips (\`${DSI_SETUP_COMMAND}\` walks you through it).`,
+            ]
+          : []),
+        ...(narrowed
+          ? [
+              '- Or select other ecosystems with --dynamic-sbom-inference-ecosystems.',
             ]
           : []),
         '- Or remove --dynamic-sbom-inference to analyze the manifest files as they are.',
@@ -59,18 +74,20 @@ function checkFactsForCoana(
 }
 
 // Recursively discovers and generates Socket facts for every independent
-// dotnet/gradle/sbt/maven build root under `cwd`, returning the generated
+// build root of the selected ecosystems under `cwd`, returning the generated
 // facts paths plus the resolved-paths sidecar that reachability forwards to
 // Coana.
 export async function runDynamicSbomInference({
   consumer,
   cwd,
   excludePaths,
+  purlTypes,
   sbtTmpDir,
 }: {
   consumer: FactsConsumer
   cwd: string
   excludePaths: string[]
+  purlTypes: readonly PURL_Type[]
   // sbt provisions its Scala toolchain under this directory and reach's
   // artifactPaths point into it, so it must outlive whoever consumes them.
   // Only meaningful for `reach`.
@@ -84,20 +101,30 @@ export async function runDynamicSbomInference({
   const outcomes = await generateRecursiveManifests({
     cwd,
     excludePaths,
+    purlTypes,
     sbtTmpDir: withFiles ? sbtTmpDir : undefined,
     sidecarAcc,
     verbose: false,
     withFiles,
   })
+  const narrowed = purlTypes.length < FACTS_PURL_TYPES.length
   // No candidates discovered at all (distinct from candidates that were found
   // but produced no generated facts - empty/skippedDisabled are already warned
   // about elsewhere and are not this kind of mistake).
   if (!outcomes.length) {
     throw new InputError(
       [
-        'No Gradle, sbt, Maven or .NET build root was found.',
-        '',
-        '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
+        ...(narrowed
+          ? [
+              `No build root for ${joinOr(purlTypes)} was found.`,
+              '',
+              '- Select other ecosystems with --dynamic-sbom-inference-ecosystems, or remove --dynamic-sbom-inference.',
+            ]
+          : [
+              'No Gradle, sbt, Maven or .NET build root was found.',
+              '',
+              '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
+            ]),
         '- Make sure to run it from the correct dir (use --cwd to target another dir).',
       ].join('\n'),
     )
@@ -113,7 +140,12 @@ export async function runDynamicSbomInference({
     .filter(o => o.status === 'generated')
     .map(o => o.factsPath!)
   if (coanaReadsFacts) {
-    checkFactsForCoana(outcomes, consumer, !!factsPaths.length)
+    checkFactsForCoana({
+      consumer,
+      hasFacts: !!factsPaths.length,
+      narrowed,
+      outcomes,
+    })
   }
   return {
     factsPaths,

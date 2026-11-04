@@ -10,6 +10,7 @@ import {
   gitBranch,
 } from '../../utils/git.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { FACTS_PURL_TYPES } from '../manifest/scripts/build-tool.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 /**
@@ -66,6 +67,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     pullRequest: detectCiPullRequestNumber(),
     reach: {
       dynamicSbomInference: false,
+      dynamicSbomInferenceEcosystems: FACTS_PURL_TYPES,
       excludePaths: [],
       reachAdvisories: [],
       reachAnalysisMemoryLimit: '',

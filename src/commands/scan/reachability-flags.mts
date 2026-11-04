@@ -1,13 +1,43 @@
 import { COANA_CLI_VERSION } from '../../constants.mts'
-import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
+import {
+  getReachabilityEcosystemChoices,
+  parseEcosystemChoices,
+} from '../../utils/ecosystem.mts'
+import { FACTS_PURL_TYPES } from '../manifest/scripts/build-tool.mts'
 
 import type { MeowFlags } from '../../flags.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 
 // Shared prefix so each command can append what the SBOMs are used for, which
 // differs: reachability is optional on `scan create` and always on for
 // `scan reach`.
 export const DYNAMIC_SBOM_INFERENCE_DESCRIPTION =
   'For Gradle, sbt, Maven and .NET: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root.'
+
+// Not in reachabilityFlags: it applies to a `scan create` without --reach too.
+export const dynamicSbomInferenceEcosystemsFlags: MeowFlags = {
+  dynamicSbomInferenceEcosystems: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'With --dynamic-sbom-inference: generate Socket facts only for these ecosystems, as either a comma separated value or as multiple flags; the others keep their manifest files as they are. Supported: maven (Gradle, sbt and Maven) and nuget (.NET). Defaults to both.',
+  },
+}
+
+export function parseDynamicSbomInferenceEcosystems(
+  raw: readonly string[],
+): readonly PURL_Type[] {
+  return raw.length
+    ? [
+        ...new Set(
+          parseEcosystemChoices(
+            raw.map(e => e.toLowerCase()),
+            FACTS_PURL_TYPES,
+          ),
+        ),
+      ]
+    : FACTS_PURL_TYPES
+}
 
 export const reachabilityFlags: MeowFlags = {
   reachVersion: {

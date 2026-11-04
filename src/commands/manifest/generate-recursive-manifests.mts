@@ -36,6 +36,7 @@ import type {
   BuildOptionHints,
 } from './scripts/resolution-report-render.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 export type RecursiveManifestOutcomeStatus =
@@ -362,6 +363,7 @@ export async function generateRecursiveManifests({
   excludePaths,
   ignoreUnresolved,
   optionFlags = new Set(),
+  purlTypes,
   sbtTmpDir,
   sidecarAcc,
   verbose,
@@ -374,6 +376,7 @@ export async function generateRecursiveManifests({
   // Options the invoking command takes as flags; hints send the rest to each
   // build root's socket.json.
   optionFlags?: ReadonlySet<BuildOption> | undefined
+  purlTypes?: readonly PURL_Type[] | undefined
   // Reachability path only: caller-supplied directory to use as sbt's shared
   // global base across every sbt root in this run. sbt provisions the Scala
   // toolchain under `<base>/boot`, which withFiles' artifactPaths point into,
@@ -401,6 +404,7 @@ export async function generateRecursiveManifests({
   const candidatesByTool = await findBuildToolCandidates({
     cwd,
     excludePaths,
+    purlTypes,
     socketConfig: loadSocketConfig(cwd),
     sockJson: withoutDisabledFlags(rootSockJson),
   })

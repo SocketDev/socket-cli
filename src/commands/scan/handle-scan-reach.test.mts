@@ -380,6 +380,7 @@ describe('handleScanReach', () => {
         consumer: 'reach',
         cwd: '/repo',
         excludePaths: ['vendor/**'],
+        purlTypes: ['maven', 'nuget'],
         // A caller-owned dir that outlives the analysis consuming its paths.
         sbtTmpDir: expect.any(String),
       })

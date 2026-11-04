@@ -37,6 +37,7 @@ describe('generateSocketFactsForFix', () => {
       cwd,
       excludePaths: [],
       findFactsPaths: async () => [existing, fresh].filter(p => existsSync(p)),
+      purlTypes: ['maven'],
       tmpDir,
     })
   }
@@ -75,7 +76,7 @@ describe('generateSocketFactsForFix', () => {
     const { artifactsFlags, sidecarFile } = await generate()
 
     expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
-      expect.objectContaining({ consumer: 'fix' }),
+      expect.objectContaining({ consumer: 'fix', purlTypes: ['maven'] }),
     )
     expect(artifactsFlags).toEqual([
       '--use-only-socket-facts-artifacts',

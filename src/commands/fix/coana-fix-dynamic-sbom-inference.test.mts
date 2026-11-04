@@ -103,6 +103,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     disableExternalToolChecks: false,
     disableMajorUpdates: false,
     dynamicSbomInference: true,
+    dynamicSbomInferenceEcosystems: ['maven'],
     ecosystems: [],
     exclude: [],
     excludePaths: [],
@@ -147,6 +148,9 @@ describe('socket fix --dynamic-sbom-inference', () => {
     const result = await coanaFix(baseConfig)
 
     expect(result.ok).toBe(true)
+    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledWith(
+      expect.objectContaining({ purlTypes: ['maven'] }),
+    )
     expect(uploadManifestFiles).toHaveBeenCalledWith(
       'test-org',
       ['/test/cwd/app/build.gradle', FACTS],

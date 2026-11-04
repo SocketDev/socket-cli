@@ -28,6 +28,7 @@ import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {
   dynamicSbomInference: boolean
+  dynamicSbomInferenceEcosystems: readonly PURL_Type[]
   excludePaths: string[]
   // GHSA IDs. Empty means all advisories.
   reachAdvisories: string[]

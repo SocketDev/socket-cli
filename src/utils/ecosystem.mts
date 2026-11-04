@@ -133,16 +133,20 @@ export function parseEcosystems(
   return values.filter(isValidEcosystem)
 }
 
-export function parseReachEcosystems(raw: readonly string[]): PURL_Type[] {
-  const choices = getReachabilityEcosystemChoices()
-  const result: PURL_Type[] = []
+export function parseEcosystemChoices(
+  raw: readonly string[],
+  choices: readonly string[],
+): PURL_Type[] {
   for (const ecosystem of raw) {
     if (!choices.includes(ecosystem)) {
       throw new InputError(
         `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(choices)}`,
       )
     }
-    result.push(ecosystem as PURL_Type)
   }
-  return result
+  return [...raw] as PURL_Type[]
+}
+
+export function parseReachEcosystems(raw: readonly string[]): PURL_Type[] {
+  return parseEcosystemChoices(raw, getReachabilityEcosystemChoices())
 }
