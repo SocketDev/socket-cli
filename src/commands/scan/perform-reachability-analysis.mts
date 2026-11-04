@@ -57,6 +57,8 @@ export type ReachabilityOptions = {
 export type ReachabilityAnalysisOptions = {
   branchName?: string | undefined
   cwd?: string | undefined
+  // Purl types whose artifacts Coana takes only from facts files.
+  factsOnlyTypes?: PURL_Type[] | undefined
   // Required: the manifest upload they drive produces the tar hash Coana needs
   // to run without Docker.
   orgSlug: string
@@ -83,6 +85,7 @@ export async function performReachabilityAnalysis(
   const {
     branchName,
     cwd = process.cwd(),
+    factsOnlyTypes,
     orgSlug,
     outputKind = 'text',
     outputPath,
@@ -269,10 +272,10 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
-    // sidecarPath is always set above when this is true - Coana rejects this
-    // flag without one.
-    ...(reachabilityOptions.dynamicSbomInference
-      ? useOnlySocketFactsArtifactsFlags(resolvedPathsSidecar)
+    // Only dynamicSbomInference sets these, and sidecarPath is always set above
+    // then; Coana rejects this flag without one.
+    ...(factsOnlyTypes?.length
+      ? useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
       : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms

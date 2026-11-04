@@ -391,6 +391,7 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
       expect.objectContaining({
         cwd: '/repo',
+        requireDotnetSdk: false,
         sbtTmpDir: undefined,
         withFiles: false,
       }),
@@ -504,6 +505,7 @@ describe('handleCreateNewScan excludePaths', () => {
 
     expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
       expect.objectContaining({
+        requireDotnetSdk: true,
         sbtTmpDir: expect.any(String),
         withFiles: true,
       }),

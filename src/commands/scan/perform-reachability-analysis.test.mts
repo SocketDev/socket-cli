@@ -319,7 +319,7 @@ describe('performReachabilityAnalysis flag forwarding', () => {
   })
 })
 
-describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () => {
+describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating', () => {
   let scanCwd: string
 
   beforeEach(() => {
@@ -353,17 +353,20 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
         ...makeReachabilityOptions(),
         dynamicSbomInference: true,
       },
+      factsOnlyTypes: ['maven', 'nuget'],
       resolvedPathsSidecar: undefined,
       target: scanCwd,
     })
 
     const args = mockSpawnCoana.mock.calls[0]![0] as string[]
-    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args[args.indexOf('--use-only-socket-facts-artifacts') + 1]).toBe(
+      'maven,nuget',
+    )
     expect(args).toContain('--compute-artifacts-sidecar')
     expect(sidecarContentAtSpawnTime).toEqual({})
   })
 
-  it('passes --maven-use-only-socket-facts alongside --compute-artifacts-sidecar when dynamicSbomInference is on and a sidecar was generated', async () => {
+  it('passes --use-only-socket-facts-artifacts alongside --compute-artifacts-sidecar when dynamicSbomInference is on and a sidecar was generated', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
       orgSlug: TEST_ORG_SLUG,
@@ -372,6 +375,7 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
         ...makeReachabilityOptions(),
         dynamicSbomInference: true,
       },
+      factsOnlyTypes: ['maven', 'nuget'],
       resolvedPathsSidecar: {
         '/repo/reactor/.socket.facts.json': {
           components: [],
@@ -382,11 +386,31 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
     })
 
     const args = mockSpawnCoana.mock.calls[0]![0] as string[]
-    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args[args.indexOf('--use-only-socket-facts-artifacts') + 1]).toBe(
+      'maven,nuget',
+    )
     expect(args).toContain('--compute-artifacts-sidecar')
   })
 
-  it('never passes --maven-use-only-socket-facts when dynamicSbomInference is off, even if a sidecar happens to be present', async () => {
+  it('keeps the Maven-only flag older Coana releases know when only JVM builds were found', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      factsOnlyTypes: ['maven'],
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
+      reachabilityOptions: {
+        ...makeReachabilityOptions(),
+        dynamicSbomInference: true,
+      },
+      target: scanCwd,
+    })
+
+    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
+    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args).not.toContain('--use-only-socket-facts-artifacts')
+  })
+
+  it('never passes --use-only-socket-facts-artifacts when dynamicSbomInference is off, even if a sidecar happens to be present', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
       orgSlug: TEST_ORG_SLUG,
@@ -405,6 +429,7 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
     })
 
     const args = mockSpawnCoana.mock.calls[0]![0] as string[]
+    expect(args).not.toContain('--use-only-socket-facts-artifacts')
     expect(args).not.toContain('--maven-use-only-socket-facts')
     expect(args).toContain('--compute-artifacts-sidecar')
   })

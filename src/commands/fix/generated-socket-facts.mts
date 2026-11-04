@@ -59,14 +59,14 @@ export async function generateSocketFactsForFix({
   let paths: string[]
   let sidecarFile: string | undefined
   try {
-    const { factsPaths, resolvedPathsSidecar } = await runDynamicSbomInference({
-      cwd,
-      excludePaths,
-      sbtTmpDir: undefined,
-      sidecar: true,
-      withFiles: false,
-    })
-    artifactsFlags = useOnlySocketFactsArtifactsFlags(resolvedPathsSidecar)
+    const { factsOnlyTypes, factsPaths, resolvedPathsSidecar } =
+      await runDynamicSbomInference({
+        consumer: 'fix',
+        cwd,
+        excludePaths,
+        sbtTmpDir: undefined,
+      })
+    artifactsFlags = useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
     paths = factsPaths.map(p => path.resolve(cwd, p))
     if (resolvedPathsSidecar) {
       sidecarFile = path.join(tmpDir, 'sidecar.json')

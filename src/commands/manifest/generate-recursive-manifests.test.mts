@@ -18,6 +18,7 @@ vi.mock('./run-manifest-facts.mts', () => ({
 vi.mock('./scripts/run.mts', async importOriginal => ({
   ...(await importOriginal<typeof import('./scripts/run.mts')>()),
   listDotnetEntryProjects: vi.fn(async () => undefined),
+  noDotnetSdkReason: vi.fn(async () => undefined),
   skipWithoutDotnetSdk: vi.fn(async () => false),
 }))
 
@@ -26,6 +27,7 @@ import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import {
   listDotnetEntryProjects,
+  noDotnetSdkReason,
   skipWithoutDotnetSdk,
 } from './scripts/run.mts'
 import { testPath } from '../../../test/utils.mts'
@@ -525,6 +527,28 @@ describe('generateRecursiveManifests', () => {
       excludeBase: await fs.realpath(monorepo),
       excludePaths: ['reactor/moduleB'],
     })
+  })
+
+  it('fails before building anything when a .NET build root needs an SDK that does not run', async () => {
+    const dir = await fs.mkdtemp(path.join(tmpdir(), 'dsi-require-sdk-'))
+    try {
+      await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
+      await fs.writeFile(path.join(dir, 'App.csproj'), '')
+      vi.mocked(noDotnetSdkReason).mockResolvedValueOnce('dotnet not found')
+      vi.mocked(runManifestFacts).mockClear()
+
+      await expect(
+        generateRecursiveManifests({
+          cwd: dir,
+          requireDotnetSdk: true,
+          verbose: false,
+        }),
+      ).rejects.toThrow(/No .NET SDK runs for .* \(dotnet not found\)/)
+      expect(skipWithoutDotnetSdk).not.toHaveBeenCalled()
+      expect(runManifestFacts).not.toHaveBeenCalled()
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true })
+    }
   })
 
   it('skips .NET builds, without failing, where no .NET SDK runs', async () => {

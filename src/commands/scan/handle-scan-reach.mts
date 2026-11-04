@@ -15,6 +15,7 @@ import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 
 export type HandleScanReachConfig = {
@@ -46,21 +47,23 @@ async function runScanReach(
   let scanTargets = targets
   // Sidecar forwarded to reachability; populated by dynamic SBOM inference.
   let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
+  let factsOnlyTypes: PURL_Type[] | undefined
 
   if (reachabilityOptions.dynamicSbomInference) {
     logger.info(
       'Generating Socket facts for each Gradle, sbt, Maven and .NET build root ...',
     )
     const dynamicResult = await runDynamicSbomInference({
+      consumer: 'reach',
       cwd,
       excludePaths: reachabilityOptions.excludePaths,
       sbtTmpDir,
-      withFiles: true,
     })
     scanTargets = Array.from(
       new Set([...scanTargets, ...dynamicResult.factsPaths]),
     )
     resolvedPathsSidecar = dynamicResult.resolvedPathsSidecar
+    factsOnlyTypes = dynamicResult.factsOnlyTypes
   }
 
   // Get supported file names.
@@ -129,6 +132,7 @@ async function runScanReach(
 
   const result = await performReachabilityAnalysis({
     cwd,
+    factsOnlyTypes,
     orgSlug,
     outputKind,
     outputPath,
