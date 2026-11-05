@@ -153,6 +153,9 @@ describe('socket scan create', async () => {
           - Defaults to the current dir (cwd) if none given
           - Multiple targets can be specified
           - If a target is a file, only that file is checked
+          - If it is a .jar, .war or .ear, the Maven libraries identified by the
+            pom.properties bundled in it are written to "<archive>.socket.facts.json"
+            next to it and scanned (needs Java 8+; not with --reach)
           - If it is a dir, the dir is scanned for any supported manifest files
           - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
           - Supports globbing such as "**/package.json", "**/requirements.txt", etc.

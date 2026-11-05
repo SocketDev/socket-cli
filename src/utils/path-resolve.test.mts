@@ -14,7 +14,7 @@ import {
   PNPM_LOCK_YAML,
   YARN_LOCK,
 } from '../constants.mjs'
-import { getPackageFilesForScan } from './path-resolve.mts'
+import { getPackageFilesForScan, isPathInside } from './path-resolve.mts'
 
 import type FileSystem from 'mock-fs/lib/filesystem'
 
@@ -440,5 +440,19 @@ describe('Path Resolve', () => {
         ])
       })
     })
+  })
+})
+
+describe('isPathInside', () => {
+  const dir = path.resolve('/repo')
+
+  it.for([
+    ['the dir itself', '/repo', true],
+    ['a child', '/repo/build/app.jar', true],
+    ['a child named like a parent reference', '/repo/..cache.jar', true],
+    ['the parent', '/', false],
+    ['a sibling', '/other/app.jar', false],
+  ] as const)('%s', ([, target, expected]) => {
+    expect(isPathInside(path.resolve(target), dir)).toBe(expected)
   })
 })

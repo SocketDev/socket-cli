@@ -88,7 +88,7 @@ export type WorkspaceEnumerationResult = {
 }
 
 // Bundled emitter assets, copied into dist by the rollup build.
-function manifestScriptsPath(...parts: string[]): string {
+export function manifestScriptsPath(...parts: string[]): string {
   return path.join(constants.distPath, 'manifest-scripts', ...parts)
 }
 
@@ -185,7 +185,7 @@ function assembleRecords(
 
 // Missing only in an unbuilt local checkout. Fail loudly: without the
 // extension, Maven silently emits an empty SBOM.
-function assertBundledAssetBuilt(
+export function assertBundledAssetBuilt(
   assetPath: string,
   description: string,
   // The package.json script that builds it, as the dist build names it too.

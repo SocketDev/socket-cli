@@ -23,6 +23,7 @@ const {
   mockFetchCreateOrgFullScan,
   mockFetchSupportedScanFileNames,
   mockFindSocketYmlSync,
+  mockGenerateArchiveTargetFacts,
   mockGenerateAutoManifest,
   mockGenerateRecursiveManifests,
   mockGetPackageFilesForScan,
@@ -32,6 +33,7 @@ const {
   mockFetchCreateOrgFullScan: vi.fn(),
   mockFetchSupportedScanFileNames: vi.fn(),
   mockFindSocketYmlSync: vi.fn(),
+  mockGenerateArchiveTargetFacts: vi.fn(),
   mockGenerateAutoManifest: vi.fn(),
   mockGenerateRecursiveManifests: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
@@ -49,6 +51,10 @@ vi.mock('./fetch-supported-scan-file-names.mts', () => ({
 
 vi.mock('./finalize-tier1-scan.mts', () => ({
   finalizeTier1Scan: vi.fn(),
+}))
+
+vi.mock('./generate-archive-facts.mts', () => ({
+  generateArchiveTargetFacts: mockGenerateArchiveTargetFacts,
 }))
 
 vi.mock('./handle-scan-report.mts', () => ({
@@ -134,6 +140,7 @@ describe('handleCreateNewScan excludePaths', () => {
       data: { parsed: { projectIgnorePaths: ['fixtures/**'] } },
       ok: true,
     })
+    mockGenerateArchiveTargetFacts.mockResolvedValue([])
     mockGenerateAutoManifest.mockResolvedValue({ generatedFiles: [] })
     mockGenerateRecursiveManifests.mockResolvedValue([])
     mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
@@ -332,6 +339,27 @@ describe('handleCreateNewScan excludePaths', () => {
       },
     )
     expect(mockFetchCreateOrgFullScan).toHaveBeenCalled()
+  })
+
+  it('uploads facts for an archive target even when discovery would ignore them', async () => {
+    mockGenerateArchiveTargetFacts.mockResolvedValueOnce([
+      '/repo/target/app.war.socket.facts.json',
+    ])
+
+    await handleCreateNewScan(
+      createConfig({ targets: ['/repo', '/repo/target/app.war'] }),
+    )
+
+    expect(mockGenerateArchiveTargetFacts).toHaveBeenCalledWith(
+      ['/repo', '/repo/target/app.war'],
+      { cwd: '/repo', excludeGlobs: [] },
+    )
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      ['package.json', '/repo/target/app.war.socket.facts.json'],
+      'fakeOrg',
+      expect.anything(),
+      expect.anything(),
+    )
   })
 
   it('generates nothing beyond Gradle/sbt/Maven when --dynamic-sbom-inference is used without --auto-manifest', async () => {

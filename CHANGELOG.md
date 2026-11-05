@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- `socket scan create` now scans a `.jar`, `.war` or `.ear` you pass as a target, reporting the Maven libraries it ships as identified by their bundled `pom.properties` (requires Java 8 or newer).
+
 ## [1.14.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.14.0) - 2026-11-05
 
 ### Added
