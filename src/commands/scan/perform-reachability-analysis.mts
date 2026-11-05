@@ -12,14 +12,12 @@ import { spawnCoana } from '../../utils/coana-release.mts'
 import {
   extractTier1ReachabilityScanId,
   isReachabilityReportPath,
+  useOnlySocketFactsArtifactsFlags,
 } from '../../utils/coana.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
-import {
-  hasResolvedPathsSidecarEntries,
-  useOnlySocketFactsArtifactsFlags,
-} from '../manifest/scripts/sidecar.mts'
+import { hasResolvedPathsSidecarEntries } from '../manifest/scripts/sidecar.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -57,6 +55,8 @@ export type ReachabilityOptions = {
 export type ReachabilityAnalysisOptions = {
   branchName?: string | undefined
   cwd?: string | undefined
+  // Purl types whose artifacts Coana takes only from facts files.
+  factsOnlyTypes?: readonly PURL_Type[] | undefined
   // Required: the manifest upload they drive produces the tar hash Coana needs
   // to run without Docker.
   orgSlug: string
@@ -83,6 +83,7 @@ export async function performReachabilityAnalysis(
   const {
     branchName,
     cwd = process.cwd(),
+    factsOnlyTypes,
     orgSlug,
     outputKind = 'text',
     outputPath,
@@ -191,11 +192,11 @@ export async function performReachabilityAnalysis(
   spinner?.infoAndStop('Running reachability analysis with Coana...')
 
   // Temp file for --compute-artifacts-sidecar, removed in the finally below.
-  // Written even when empty under dynamicSbomInference, since the
-  // facts-only flag below requires one to be present.
+  // Written even when empty with factsOnlyTypes, since the facts-only flag
+  // below requires one to be present.
   let sidecarPath: string | undefined
   if (
-    reachabilityOptions.dynamicSbomInference ||
+    factsOnlyTypes?.length ||
     (resolvedPathsSidecar &&
       hasResolvedPathsSidecarEntries(resolvedPathsSidecar))
   ) {
@@ -269,10 +270,9 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
-    // sidecarPath is always set above when this is true - Coana rejects this
-    // flag without one.
-    ...(reachabilityOptions.dynamicSbomInference
-      ? useOnlySocketFactsArtifactsFlags(resolvedPathsSidecar)
+    // sidecarPath is always set above then; Coana rejects this flag without one.
+    ...(factsOnlyTypes?.length
+      ? useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
       : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms

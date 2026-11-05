@@ -45,7 +45,7 @@ describe('generateSocketFactsForFix', () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(existing, 'regenerated')
       await fs.writeFile(fresh, 'generated')
-      return { factsPaths: [existing, fresh] }
+      return { factsOnlyTypes: ['maven'], factsPaths: [existing, fresh] }
     })
 
     const generated = await generate()
@@ -66,6 +66,7 @@ describe('generateSocketFactsForFix', () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(fresh, 'generated')
       return {
+        factsOnlyTypes: ['maven', 'nuget'],
         factsPaths: [fresh],
         resolvedPathsSidecar: { [fresh]: { components: [], projects: [] } },
       }
@@ -74,9 +75,12 @@ describe('generateSocketFactsForFix', () => {
     const { artifactsFlags, sidecarFile } = await generate()
 
     expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
-      expect.objectContaining({ sidecar: true }),
+      expect.objectContaining({ consumer: 'fix' }),
     )
-    expect(artifactsFlags).toEqual(['--maven-use-only-socket-facts'])
+    expect(artifactsFlags).toEqual([
+      '--use-only-socket-facts-artifacts',
+      'maven,nuget',
+    ])
     expect(path.dirname(sidecarFile!)).toBe(tmpDir)
     expect(JSON.parse(await fs.readFile(sidecarFile!, 'utf8'))).toEqual({
       [fresh]: { components: [], projects: [] },
@@ -86,7 +90,7 @@ describe('generateSocketFactsForFix', () => {
   it('restores an existing facts file that generation does not rewrite', async () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(fresh, 'generated')
-      return { factsPaths: [fresh] }
+      return { factsOnlyTypes: ['maven'], factsPaths: [fresh] }
     })
 
     const generated = await generate()

@@ -18,9 +18,10 @@ import {
   DSI_SETUP_COMMAND,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
 } from './scripts/resolution-report-render.mts'
-import { skipWithoutDotnetSdk } from './scripts/run.mts'
+import { noDotnetSdkReason } from './scripts/run.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
+import { InputError } from '../../utils/errors.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import {
   readOrDefaultSocketJson,
@@ -44,7 +45,6 @@ export type RecursiveManifestOutcomeStatus =
   | 'generated'
   | 'skippedCovered'
   | 'skippedDisabled'
-  | 'skippedNoSdk'
 
 export type RecursiveManifestOutcome = BuildRoot & {
   ecosystem: BuildTool
@@ -212,13 +212,20 @@ async function runEcosystemCandidates({
         outcomes.push({ ...root, ecosystem, status: 'skippedDisabled' })
         continue
       }
-      if (
-        ecosystem === 'dotnet' &&
+      const socketJson = displayPath(path.join(dir, SOCKET_JSON))
+      if (ecosystem === 'dotnet') {
         // eslint-disable-next-line no-await-in-loop
-        (await skipWithoutDotnetSdk(dirConfig.bin, dir))
-      ) {
-        outcomes.push({ ...root, ecosystem, status: 'skippedNoSdk' })
-        continue
+        const reason = await noDotnetSdkReason(dirConfig.bin, dir)
+        if (reason !== undefined) {
+          throw new InputError(
+            [
+              `No .NET SDK runs for ${displayPath(buildRootPath(root))} (${reason}), so its Socket facts cannot be generated.`,
+              '',
+              `- Install the .NET SDK, or point defaults.manifest.dotnet.bin in ${socketJson} at one (\`${DSI_SETUP_COMMAND}\` walks you through it).`,
+              `- Or leave it out with --exclude-paths, or with defaults.manifest.dotnet.disabled in ${socketJson}.`,
+            ].join('\n'),
+          )
+        }
       }
       // eslint-disable-next-line no-await-in-loop
       const result = await buildUncoveredRoot({
@@ -240,7 +247,7 @@ async function runEcosystemCandidates({
             : undefined,
           flags: optionFlags,
           setupCommand: DSI_SETUP_COMMAND,
-          socketJson: displayPath(path.join(dir, SOCKET_JSON)),
+          socketJson,
         },
         root,
         sidecarAcc,

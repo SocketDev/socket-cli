@@ -30,6 +30,8 @@ import { readJsonSync } from '@socketsecurity/registry/lib/fs'
 
 import constants from '../constants.mts'
 
+import type { PURL_Type } from './ecosystem.mts'
+
 const { DOT_SOCKET_DOT_FACTS_JSON } = constants
 
 export type CompressedScanPaths = {
@@ -299,4 +301,14 @@ export async function snapshotSocketFacts(
       ])
     },
   }
+}
+
+// Maven alone keeps the older flag, which Coana releases before 15.14.1 also
+// know.
+export function useOnlySocketFactsArtifactsFlags(
+  types: readonly PURL_Type[],
+): string[] {
+  return types.length === 1 && types[0] === 'maven'
+    ? ['--maven-use-only-socket-facts']
+    : ['--use-only-socket-facts-artifacts', [...types].sort().join(',')]
 }

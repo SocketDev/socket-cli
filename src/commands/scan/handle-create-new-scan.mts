@@ -35,6 +35,7 @@ import type { ReachabilityFallback } from './output-create-new-scan.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -158,9 +159,10 @@ async function createNewScan(
 
   // Sidecar forwarded to reachability; populated only when reach runs.
   let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
+  let factsOnlyTypes: PURL_Type[] | undefined
 
   // sbt provisions its Scala toolchain under the directory passed as its
-  // isolated global base; withFiles' artifactPaths point into it, so it must
+  // isolated global base; reach's artifactPaths point into it, so it must
   // stay on disk until the reachability analysis below has consumed those
   // paths. Always allocated (even when unused) to keep this uniform rather
   // than conditional on autoManifest/reach.
@@ -175,20 +177,21 @@ async function createNewScan(
         // one at cwd. This runs on its own, so nothing outside those
         // ecosystems is generated unless --auto-manifest also asked for it.
         const dynamicResult = await runDynamicSbomInference({
+          consumer: reach.runReachabilityAnalysis ? 'reach' : 'upload',
           cwd,
           excludePaths: reach.excludePaths,
           // sbt's Scala toolchain lives under its shared global base;
-          // withFiles' resolved paths point into it, so when reachability
+          // reach's artifactPaths point into it, so when reachability
           // will consume them afterward, reuse manifestTmpDir (kept alive
           // until reach finishes below) instead of letting the call clean
           // its own ephemeral base up before reach ever reads those paths.
           sbtTmpDir: manifestTmpDir,
-          withFiles: reach.runReachabilityAnalysis,
         })
         scanTargets = Array.from(
           new Set([...scanTargets, ...dynamicResult.factsPaths]),
         )
         resolvedPathsSidecar = dynamicResult.resolvedPathsSidecar
+        factsOnlyTypes = dynamicResult.factsOnlyTypes
       }
 
       if (autoManifest) {
@@ -327,6 +330,7 @@ async function createNewScan(
       const reachResult = await performReachabilityAnalysis({
         branchName,
         cwd,
+        factsOnlyTypes,
         orgSlug,
         outputKind,
         packagePaths,

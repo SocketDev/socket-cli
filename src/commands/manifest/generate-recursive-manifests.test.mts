@@ -18,16 +18,13 @@ vi.mock('./run-manifest-facts.mts', () => ({
 vi.mock('./scripts/run.mts', async importOriginal => ({
   ...(await importOriginal<typeof import('./scripts/run.mts')>()),
   listDotnetEntryProjects: vi.fn(async () => undefined),
-  skipWithoutDotnetSdk: vi.fn(async () => false),
+  noDotnetSdkReason: vi.fn(async () => undefined),
 }))
 
 import { buildRootPath } from './discover-manifest-roots.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
-import {
-  listDotnetEntryProjects,
-  skipWithoutDotnetSdk,
-} from './scripts/run.mts'
+import { listDotnetEntryProjects, noDotnetSdkReason } from './scripts/run.mts'
 import { testPath } from '../../../test/utils.mts'
 import {
   readOrDefaultSocketJson,
@@ -527,28 +524,21 @@ describe('generateRecursiveManifests', () => {
     })
   })
 
-  it('skips .NET builds, without failing, where no .NET SDK runs', async () => {
-    const dir = await fs.mkdtemp(path.join(tmpdir(), 'dsi-no-sdk-'))
+  it('fails before building anything when no .NET SDK runs for a .NET build root', async () => {
+    const dir = await fs.mkdtemp(path.join(tmpdir(), 'dsi-require-sdk-'))
     try {
       await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
-      await fs.mkdir(path.join(dir, 'samples'))
-      await fs.writeFile(path.join(dir, 'samples', 'Stray.csproj'), '')
-      vi.mocked(skipWithoutDotnetSdk).mockResolvedValueOnce(true)
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
-        factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
-        projects: [],
-      }))
-      const outcomes = await generateRecursiveManifests({
-        cwd: dir,
-        verbose: false,
-      })
+      await fs.writeFile(path.join(dir, 'App.csproj'), '')
+      vi.mocked(noDotnetSdkReason).mockResolvedValueOnce('dotnet not found')
+      vi.mocked(runManifestFacts).mockClear()
 
-      expect(
-        outcomes.map(o => `${o.ecosystem}:${o.entryFile}:${o.status}`).sort(),
-      ).toEqual(['dotnet:Stray.csproj:skippedNoSdk', 'maven:pom.xml:generated'])
-      expect(
-        vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.ecosystem),
-      ).toEqual(['maven'])
+      await expect(
+        generateRecursiveManifests({
+          cwd: dir,
+          verbose: false,
+        }),
+      ).rejects.toThrow(/No .NET SDK runs for .* \(dotnet not found\)/)
+      expect(runManifestFacts).not.toHaveBeenCalled()
     } finally {
       await fs.rm(dir, { recursive: true, force: true })
     }

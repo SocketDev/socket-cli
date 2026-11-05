@@ -353,6 +353,7 @@ describe('handleScanReach', () => {
 
     it('generates per-build-root facts, merges them into manifest discovery, and forwards the sidecar', async () => {
       mockRunDynamicSbomInference.mockResolvedValueOnce({
+        factsOnlyTypes: ['maven'],
         factsPaths: [
           '/repo/service-a/.socket.facts.json',
           '/repo/service-b/.socket.facts.json',
@@ -376,11 +377,11 @@ describe('handleScanReach', () => {
       })
 
       expect(mockRunDynamicSbomInference).toHaveBeenCalledWith({
+        consumer: 'reach',
         cwd: '/repo',
         excludePaths: ['vendor/**'],
         // A caller-owned dir that outlives the analysis consuming its paths.
         sbtTmpDir: expect.any(String),
-        withFiles: true,
       })
       expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
         [
@@ -393,6 +394,7 @@ describe('handleScanReach', () => {
       )
       expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
         expect.objectContaining({
+          factsOnlyTypes: ['maven'],
           resolvedPathsSidecar: {
             '/repo/service-a/.socket.facts.json': {
               projects: [],

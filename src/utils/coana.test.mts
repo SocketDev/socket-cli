@@ -10,6 +10,7 @@
  *   single-root and absent-path cases.
  * - snapshotSocketFacts: restores overwritten facts files and removes ones
  *   the analysis created.
+ * - useOnlySocketFactsArtifactsFlags: the facts-only flag per purl type list.
  *
  * Related Files:
  * - utils/coana.mts (implementation)
@@ -36,6 +37,7 @@ import {
   isReachabilityReportPath,
   isSocketFactsFile,
   snapshotSocketFacts,
+  useOnlySocketFactsArtifactsFlags,
 } from './coana.mts'
 
 describe('coana facts-file utils', () => {
@@ -476,5 +478,22 @@ describe('coana facts-file utils', () => {
         rmSync(wrapDir, { recursive: true, force: true })
       }
     })
+  })
+})
+
+describe('useOnlySocketFactsArtifactsFlags', () => {
+  it.for([
+    // Maven alone keeps the flag Coana releases before 15.14.1 also know.
+    { types: ['maven'], expected: ['--maven-use-only-socket-facts'] },
+    {
+      types: ['nuget', 'maven'],
+      expected: ['--use-only-socket-facts-artifacts', 'maven,nuget'],
+    },
+    {
+      types: ['nuget'],
+      expected: ['--use-only-socket-facts-artifacts', 'nuget'],
+    },
+  ] as const)('$types -> $expected', ({ expected, types }) => {
+    expect(useOnlySocketFactsArtifactsFlags(types)).toEqual(expected)
   })
 })
