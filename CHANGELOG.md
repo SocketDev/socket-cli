@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.14.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.14.0) - 2026-11-05
 
 ### Added
 - Choose which ecosystems `--dynamic-sbom-inference` covers with `--dynamic-sbom-inference-ecosystems` (`maven` for Gradle, sbt and Maven; `nuget` for .NET) on `socket scan create`, `socket scan reach` and `socket fix`. Ecosystems left out keep their manifest files as they are.
