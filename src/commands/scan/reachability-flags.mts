@@ -1,13 +1,51 @@
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+
 import { COANA_CLI_VERSION } from '../../constants.mts'
-import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { isFactsOnlyTypes } from '../../utils/coana.mts'
+import {
+  getReachabilityEcosystemChoices,
+  parseEcosystemChoices,
+} from '../../utils/ecosystem.mts'
+import { InputError } from '../../utils/errors.mts'
+import {
+  FACTS_PURL_TYPES,
+  buildToolLabelsFor,
+} from '../manifest/scripts/build-tool.mts'
 
 import type { MeowFlags } from '../../flags.mts'
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 
 // Shared prefix so each command can append what the SBOMs are used for, which
 // differs: reachability is optional on `scan create` and always on for
 // `scan reach`.
 export const DYNAMIC_SBOM_INFERENCE_DESCRIPTION =
   'For Gradle, sbt, Maven and .NET: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root.'
+
+// Not in reachabilityFlags: it applies to a `scan create` without --reach too.
+export const dynamicSbomInferenceEcosystemsFlags: MeowFlags = {
+  dynamicSbomInferenceEcosystems: {
+    type: 'string',
+    isMultiple: true,
+    description: `With --dynamic-sbom-inference: generate Socket facts only for these ecosystems, as either a comma separated value or as multiple flags; the others keep their manifest files as they are. Supported: ${joinAnd(FACTS_PURL_TYPES.map(t => `${t} (${joinAnd(buildToolLabelsFor([t]))})`))}. Defaults to all of them.`,
+  },
+}
+
+export function parseDynamicSbomInferenceFlags(flags: {
+  [flag: string]: unknown
+}): FactsOnlyTypes | undefined {
+  const raw = cmdFlagValueToArray(flags['dynamicSbomInferenceEcosystems'])
+  if (!flags['dynamicSbomInference']) {
+    if (raw.length) {
+      throw new InputError(
+        '--dynamic-sbom-inference-ecosystems requires --dynamic-sbom-inference',
+      )
+    }
+    return undefined
+  }
+  const selected = parseEcosystemChoices(raw, FACTS_PURL_TYPES)
+  return isFactsOnlyTypes(selected) ? selected : FACTS_PURL_TYPES
+}
 
 export const reachabilityFlags: MeowFlags = {
   reachVersion: {

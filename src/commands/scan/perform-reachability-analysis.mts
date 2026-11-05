@@ -21,13 +21,15 @@ import { hasResolvedPathsSidecarEntries } from '../manifest/scripts/sidecar.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {
-  dynamicSbomInference: boolean
+  // The ecosystems to generate Socket facts for; undefined when off.
+  dynamicSbomInference: FactsOnlyTypes | undefined
   excludePaths: string[]
   // GHSA IDs. Empty means all advisories.
   reachAdvisories: string[]
@@ -56,7 +58,7 @@ export type ReachabilityAnalysisOptions = {
   branchName?: string | undefined
   cwd?: string | undefined
   // Purl types whose artifacts Coana takes only from facts files.
-  factsOnlyTypes?: readonly PURL_Type[] | undefined
+  factsOnlyTypes?: FactsOnlyTypes | undefined
   // Required: the manifest upload they drive produces the tar hash Coana needs
   // to run without Docker.
   orgSlug: string
@@ -192,11 +194,11 @@ export async function performReachabilityAnalysis(
   spinner?.infoAndStop('Running reachability analysis with Coana...')
 
   // Temp file for --compute-artifacts-sidecar, removed in the finally below.
-  // Written even when empty with factsOnlyTypes, since the facts-only flag
-  // below requires one to be present.
+  // Written even when empty with factsOnlyTypes: `coana run` rejects the
+  // facts-only flag without one.
   let sidecarPath: string | undefined
   if (
-    factsOnlyTypes?.length ||
+    factsOnlyTypes ||
     (resolvedPathsSidecar &&
       hasResolvedPathsSidecarEntries(resolvedPathsSidecar))
   ) {
@@ -204,11 +206,7 @@ export async function performReachabilityAnalysis(
       tmpdir(),
       `socket-compute-artifacts-sidecar-${randomUUID()}.json`,
     )
-    await fs.writeFile(
-      sidecarPath,
-      JSON.stringify(resolvedPathsSidecar ?? {}),
-      'utf8',
-    )
+    await fs.writeFile(sidecarPath, JSON.stringify(resolvedPathsSidecar ?? {}))
   }
 
   // Build Coana arguments.
@@ -270,10 +268,7 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
-    // sidecarPath is always set above then; Coana rejects this flag without one.
-    ...(factsOnlyTypes?.length
-      ? useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
-      : []),
+    ...(factsOnlyTypes ? useOnlySocketFactsArtifactsFlags(factsOnlyTypes) : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
       ? ['--use-only-pregenerated-sboms']

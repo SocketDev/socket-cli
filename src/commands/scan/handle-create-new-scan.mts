@@ -29,13 +29,14 @@ import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
+import { buildToolsFor } from '../manifest/scripts/build-tool.mts'
 import { mergeResolvedPathsSidecars } from '../manifest/scripts/sidecar.mts'
 
 import type { ReachabilityFallback } from './output-create-new-scan.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -159,7 +160,7 @@ async function createNewScan(
 
   // Sidecar forwarded to reachability; populated only when reach runs.
   let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
-  let factsOnlyTypes: PURL_Type[] | undefined
+  let factsOnlyTypes: FactsOnlyTypes | undefined
 
   // sbt provisions its Scala toolchain under the directory passed as its
   // isolated global base; reach's artifactPaths point into it, so it must
@@ -180,6 +181,7 @@ async function createNewScan(
           consumer: reach.runReachabilityAnalysis ? 'reach' : 'upload',
           cwd,
           excludePaths: reach.excludePaths,
+          purlTypes: reach.dynamicSbomInference,
           // sbt's Scala toolchain lives under its shared global base;
           // reach's artifactPaths point into it, so when reachability
           // will consume them afterward, reuse manifestTmpDir (kept alive
@@ -202,10 +204,9 @@ async function createNewScan(
         if (reach.dynamicSbomInference) {
           // Already generated recursively above; resolving cwd's own build
           // root a second time would race on the same facts file.
-          detected.dotnet = false
-          detected.gradle = false
-          detected.sbt = false
-          detected.maven = false
+          for (const tool of buildToolsFor(reach.dynamicSbomInference)) {
+            detected[tool] = false
+          }
         }
 
         const autoManifestResult = await generateAutoManifest({

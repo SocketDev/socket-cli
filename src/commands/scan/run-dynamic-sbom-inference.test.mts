@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
 
 import type { FactsConsumer } from './run-dynamic-sbom-inference.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 
 const { mockGenerateRecursiveManifests, mockWarn } = vi.hoisted(() => ({
   mockGenerateRecursiveManifests: vi.fn(),
@@ -24,11 +25,15 @@ const generated = {
   status: 'generated',
 }
 
-function run(consumer: FactsConsumer) {
+function run(
+  consumer: FactsConsumer,
+  purlTypes: readonly PURL_Type[] = ['maven', 'nuget'],
+) {
   return runDynamicSbomInference({
     consumer,
     cwd: '/repo',
     excludePaths: ['vendor/**'],
+    purlTypes,
     sbtTmpDir: '/tmp/sbt',
   })
 }
@@ -69,6 +74,7 @@ describe('runDynamicSbomInference', () => {
       expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
         cwd: '/repo',
         excludePaths: ['vendor/**'],
+        purlTypes: ['maven', 'nuget'],
         sbtTmpDir,
         sidecarAcc: sidecar ? expect.any(Map) : undefined,
         verbose: false,
@@ -124,11 +130,22 @@ describe('runDynamicSbomInference', () => {
     ])
   })
 
-  it.for([
+  it.for<{
+    error: RegExp
+    name: string
+    outcomes: object[]
+    purlTypes?: PURL_Type[]
+  }>([
     {
       name: 'no build root was discovered',
       outcomes: [],
-      error: /No Gradle, sbt, Maven or .NET build root was found/,
+      error: /No .NET, Gradle, Maven, or sbt build root was found/,
+    },
+    {
+      name: 'no build root of the selected ecosystems was discovered',
+      outcomes: [],
+      purlTypes: ['nuget'],
+      error: /No .NET build root was found/,
     },
     {
       name: 'a discovered build root failed to generate facts',
@@ -146,10 +163,16 @@ describe('runDynamicSbomInference', () => {
       ],
       error: /Re-enable the builds that socket.json skips/,
     },
-  ])('throws when $name', async ({ error, outcomes }) => {
+    {
+      name: 'the selected ecosystems produced no facts for reachability',
+      outcomes: [{ dir: '/repo/a', ecosystem: 'dotnet', status: 'empty' }],
+      purlTypes: ['nuget'],
+      error: /select other ecosystems with --dynamic-sbom-inference-ecosystems/,
+    },
+  ])('throws when $name', async ({ error, outcomes, purlTypes }) => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
 
-    await expect(run('reach')).rejects.toThrow(error)
+    await expect(run('reach', purlTypes)).rejects.toThrow(error)
   })
 
   it.for([

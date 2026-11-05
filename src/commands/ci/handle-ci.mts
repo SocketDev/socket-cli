@@ -65,7 +65,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     pendingHead: true,
     pullRequest: detectCiPullRequestNumber(),
     reach: {
-      dynamicSbomInference: false,
+      dynamicSbomInference: undefined,
       excludePaths: [],
       reachAdvisories: [],
       reachAnalysisMemoryLimit: '',

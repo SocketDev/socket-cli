@@ -19,7 +19,10 @@ import constants, {
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
+import {
+  getEcosystemChoicesForMeow,
+  parseEcosystemChoices,
+} from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -33,10 +36,13 @@ import {
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
-import { DYNAMIC_SBOM_INFERENCE_DESCRIPTION } from '../scan/reachability-flags.mts'
+import {
+  DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  dynamicSbomInferenceEcosystemsFlags,
+  parseDynamicSbomInferenceFlags,
+} from '../scan/reachability-flags.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -190,6 +196,7 @@ Available styles:
     default: false,
     description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Fixes are then attributed to the projects/modules that actually resolve each vulnerable dependency. The generated files are removed afterwards.`,
   },
+  ...dynamicSbomInferenceEcosystemsFlags,
   ecosystems: {
     type: 'string',
     default: [],
@@ -339,7 +346,6 @@ async function run(
     autopilot,
     debug,
     disableExternalToolChecks,
-    dynamicSbomInference,
     ecosystems,
     exclude,
     excludePaths,
@@ -367,7 +373,6 @@ async function run(
     autopilot: boolean
     debug: boolean
     disableExternalToolChecks: boolean
-    dynamicSbomInference: boolean
     ecosystems: string[]
     exclude: string[]
     excludePaths: string[]
@@ -398,26 +403,13 @@ async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  // Process comma-separated values for ecosystems flag.
-  // ALL_ECOSYSTEMS is lowercase, so normalize input for a case-insensitive
-  // match (mirrors --package-managers behavior).
-  const ecosystemsRaw = cmdFlagValueToArray(ecosystems).map(s =>
-    s.toLowerCase(),
-  )
+  const dynamicSbomInference = parseDynamicSbomInferenceFlags(cli.flags)
 
   // Validate ecosystem values early, before dry-run check.
-  const validatedEcosystems: PURL_Type[] = []
-  const validEcosystemChoices = getEcosystemChoicesForMeow()
-  for (const ecosystem of ecosystemsRaw) {
-    if (!validEcosystemChoices.includes(ecosystem)) {
-      logger.fail(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystemChoices)}`,
-      )
-      process.exitCode = 1
-      return
-    }
-    validatedEcosystems.push(ecosystem as PURL_Type)
-  }
+  const validatedEcosystems = parseEcosystemChoices(
+    cmdFlagValueToArray(ecosystems),
+    getEcosystemChoicesForMeow(),
+  )
 
   // Process and validate package manager values early, before dry-run check.
   // Coana normalizes input to uppercase and rejects unknown values, so do the

@@ -5,7 +5,13 @@ import micromatch from 'micromatch'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { BUILD_FILES, isDotnetSolution } from './scripts/build-tool.mts'
+import {
+  BUILD_FILES,
+  BUILD_TOOLS,
+  FACTS_PURL_TYPES,
+  buildToolsFor,
+  isDotnetSolution,
+} from './scripts/build-tool.mts'
 import { listDotnetEntryProjects } from './scripts/run.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
@@ -14,10 +20,9 @@ import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
 import type { ManifestScriptOptions } from './scripts/run.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 import type { SocketYml } from '@socketsecurity/config'
-
-const BUILD_TOOLS: BuildTool[] = ['dotnet', 'gradle', 'maven', 'sbt']
 
 const BUILD_FILE_MATCHERS = new Map(
   BUILD_TOOLS.map(tool => {
@@ -222,17 +227,19 @@ export function sortByDepthThenPath<T extends BuildRoot>(
 export async function findBuildToolCandidates({
   cwd,
   excludePaths,
+  purlTypes = FACTS_PURL_TYPES,
   sockJson,
   socketConfig,
 }: {
   cwd: string
   excludePaths?: string[] | undefined
+  purlTypes?: readonly PURL_Type[] | undefined
   // The socket.yml a scan applies to its upload, so a build file a scan would
   // not upload is not built either.
   socketConfig: SocketYml | undefined
   sockJson: SocketJson
 }): Promise<Map<BuildTool, BuildRoot[]>> {
-  const enabledTools = BUILD_TOOLS.filter(
+  const enabledTools = buildToolsFor(purlTypes).filter(
     tool => !sockJson.defaults?.manifest?.[tool]?.disabled,
   )
   const result = new Map<BuildTool, BuildRoot[]>()

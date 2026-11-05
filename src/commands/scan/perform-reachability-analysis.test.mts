@@ -410,7 +410,9 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
   )
 
   it('writes no sidecar without facts-only types or sidecar entries', async () => {
-    const args = await coanaArgsFor(scanCwd, { dynamicSbomInference: true })
+    const args = await coanaArgsFor(scanCwd, {
+      dynamicSbomInference: ['maven', 'nuget'],
+    })
     expect(args).not.toContain('--compute-artifacts-sidecar')
   })
 })

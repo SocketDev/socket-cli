@@ -4,14 +4,12 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import {
   enumerateWorkspaces,
   listDotnetEntryProjects,
   runManifestScript,
-  skipWithoutDotnetSdk,
 } from './run.mts'
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
@@ -255,49 +253,6 @@ describe('dotnet tool invocation', () => {
     await expect(
       runManifestScript('dotnet', { bin: 'dotnet', projectDir: dotnetDir() }),
     ).rejects.toThrow(/solution or project file/)
-  })
-})
-
-describe('skipWithoutDotnetSdk', () => {
-  it('skips, warning once per reason, where no SDK runs', async () => {
-    // Warnings are deduplicated for the whole run, so the reason is unique
-    // to this case.
-    const reason = `No .NET SDK matches ${dotnetDir()}.`
-    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
-    vi.mocked(spawn).mockImplementation((async () => {
-      throw Object.assign(new Error('exit 145'), {
-        code: 145,
-        stderr: `${reason}\nRequested SDK version: 99.0.100`,
-        stdout: '',
-      })
-    }) as any)
-    try {
-      expect(await skipWithoutDotnetSdk('dotnet', dotnetDir())).toBe(true)
-      expect(await skipWithoutDotnetSdk('dotnet', dotnetDir())).toBe(true)
-      expect(warn).toHaveBeenCalledOnce()
-      expect(warn.mock.calls[0]?.[0]).toContain(reason)
-    } finally {
-      warn.mockRestore()
-    }
-  })
-
-  it('runs the build where an SDK answers', async () => {
-    mockDotnet('8.0.414')
-    expect(await skipWithoutDotnetSdk('dotnet', dotnetDir())).toBe(false)
-  })
-
-  it('probes the SDK once per global.json', async () => {
-    const pinned = dotnetDir()
-    mockDotnet('8.0.414')
-    for (const dir of ['a', path.join('b', 'c')]) {
-      // eslint-disable-next-line no-await-in-loop
-      expect(await skipWithoutDotnetSdk('dotnet', path.join(pinned, dir))).toBe(
-        false,
-      )
-    }
-    expect(
-      vi.mocked(spawn).mock.calls.filter(c => c[1]?.[0] === '--version'),
-    ).toHaveLength(1)
   })
 })
 

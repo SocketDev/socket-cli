@@ -18,7 +18,7 @@ import {
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
-import { noDotnetSdkReason } from './scripts/run.mts'
+import { ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -46,14 +46,6 @@ import type { ManifestDefaults, SocketJson } from '../../utils/socket-json.mts'
 type Candidate = { dir: string; ecosystem: BuildTool; roots: BuildRoot[] }
 
 const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt', 'dotnet']
-
-const ECOSYSTEM_LABELS: Record<BuildTool, string> = {
-  __proto__: null,
-  dotnet: '.NET',
-  gradle: 'Gradle',
-  maven: 'Maven',
-  sbt: 'sbt',
-} as unknown as Record<BuildTool, string>
 
 // The shallowest directory matching `--exclude-paths`, not necessarily a
 // project dir itself - one write here covers every project beneath it.
@@ -240,17 +232,6 @@ export async function markWorkspaceCoverage({
   )
   if (skipReason) {
     return { ok: true, data: undefined }
-  }
-  if (ecosystem === 'dotnet') {
-    const reason = await noDotnetSdkReason(bin, dir)
-    if (reason !== undefined) {
-      return {
-        ok: false,
-        message: `No .NET SDK runs in ${path.relative(cwd, dir) || '.'} (${reason})`,
-        cause:
-          'Install the .NET SDK, or point defaults.manifest.dotnet.bin at one; or leave the directory out with --exclude-paths.',
-      }
-    }
   }
 
   for (const root of roots) {

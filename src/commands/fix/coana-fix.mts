@@ -60,6 +60,7 @@ import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-n
 import type { GeneratedSocketFacts } from './generated-socket-facts.mts'
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -283,15 +284,17 @@ function formatNotAppliedFixes(notApplied: NotAppliedFix[]): string {
 
 type GeneratedSocketFactsSlot = {
   generated?: GeneratedSocketFacts | undefined
+  purlTypes: FactsOnlyTypes
   tmpDir: string
 }
 
 export async function coanaFix(fixConfig: FixConfig): Promise<CoanaFixResult> {
-  if (!fixConfig.dynamicSbomInference) {
+  const purlTypes = fixConfig.dynamicSbomInference
+  if (!purlTypes) {
     return await coanaFixWithFacts(fixConfig, undefined)
   }
   return await withTmpDir('socket-fix-facts-', async tmpDir => {
-    const slot: GeneratedSocketFactsSlot = { tmpDir }
+    const slot: GeneratedSocketFactsSlot = { purlTypes, tmpDir }
     try {
       return await coanaFixWithFacts(fixConfig, slot)
     } finally {
@@ -391,13 +394,12 @@ async function coanaFixWithFacts(
   if (factsSlot) {
     if (!silence) {
       spinner?.stop()
-      logger.info(
-        'Generating Socket facts for .NET, Gradle, sbt and Maven builds ...',
-      )
+      logger.info('Generating Socket facts for each build ...')
     }
     factsSlot.generated = await generateSocketFactsForFix({
       cwd,
       excludePaths,
+      purlTypes: factsSlot.purlTypes,
       findFactsPaths: async () =>
         (await findScanFilepaths()).filter(isSocketFactsFile),
       tmpDir: factsSlot.tmpDir,

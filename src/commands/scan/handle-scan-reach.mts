@@ -47,13 +47,12 @@ async function runScanReach(
   let dynamicResult: DynamicSbomInferenceResult | undefined
 
   if (reachabilityOptions.dynamicSbomInference) {
-    logger.info(
-      'Generating Socket facts for each Gradle, sbt, Maven and .NET build root ...',
-    )
+    logger.info('Generating Socket facts for each build root ...')
     dynamicResult = await runDynamicSbomInference({
       consumer: 'reach',
       cwd,
       excludePaths: reachabilityOptions.excludePaths,
+      purlTypes: reachabilityOptions.dynamicSbomInference,
       sbtTmpDir,
     })
     scanTargets = Array.from(

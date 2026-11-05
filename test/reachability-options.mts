@@ -4,7 +4,7 @@ import type { ReachabilityOptions } from '../src/commands/scan/perform-reachabil
 // exercises.
 export function makeReachabilityOptions(): ReachabilityOptions {
   return {
-    dynamicSbomInference: false,
+    dynamicSbomInference: undefined,
     excludePaths: [],
     reachAdvisories: [],
     reachAnalysisMemoryLimit: '8192',

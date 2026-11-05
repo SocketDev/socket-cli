@@ -32,6 +32,8 @@ import constants from '../constants.mts'
 
 import type { PURL_Type } from './ecosystem.mts'
 
+export type FactsOnlyTypes = readonly [PURL_Type, ...PURL_Type[]]
+
 const { DOT_SOCKET_DOT_FACTS_JSON } = constants
 
 export type CompressedScanPaths = {
@@ -303,10 +305,16 @@ export async function snapshotSocketFacts(
   }
 }
 
+export function isFactsOnlyTypes(
+  types: readonly PURL_Type[],
+): types is FactsOnlyTypes {
+  return !!types.length
+}
+
 // Maven alone keeps the older flag, which Coana releases before 15.14.1 also
 // know.
 export function useOnlySocketFactsArtifactsFlags(
-  types: readonly PURL_Type[],
+  types: FactsOnlyTypes,
 ): string[] {
   return types.length === 1 && types[0] === 'maven'
     ? ['--maven-use-only-socket-facts']

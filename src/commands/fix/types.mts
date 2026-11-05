@@ -1,3 +1,4 @@
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -12,7 +13,8 @@ export type FixConfig = {
   debug: boolean
   disableExternalToolChecks: boolean
   disableMajorUpdates: boolean
-  dynamicSbomInference: boolean
+  // The ecosystems to generate Socket facts for; undefined when off.
+  dynamicSbomInference: FactsOnlyTypes | undefined
   ecosystems: PURL_Type[]
   exclude: string[]
   excludePaths: string[]

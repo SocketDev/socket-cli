@@ -15,6 +15,8 @@ import { testPath } from '../../../test/utils.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
+import type { BuildTool } from './scripts/build-tool.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 const monorepo = path.join(
@@ -140,17 +142,41 @@ describe('findBuildToolCandidates', () => {
     expect(dirsOf(candidates.get('gradle'))).toContain(dualDir)
   })
 
-  it('drops a disabled ecosystem entirely', async () => {
-    const candidates = await findBuildToolCandidates({
-      cwd: monorepo,
-      socketConfig: undefined,
+  it.for<{
+    name: string
+    purlTypes?: PURL_Type[]
+    sockJson?: SocketJson
+    tools: BuildTool[]
+  }>([
+    {
+      name: 'a disabled ecosystem',
       sockJson: {
         defaults: { manifest: { maven: { disabled: true } } },
       } as SocketJson,
-    })
-    expect(candidates.has('maven')).toBe(false)
-    expect(candidates.get('gradle')?.length).toBeGreaterThan(0)
-  })
+      tools: ['dotnet', 'gradle', 'sbt'],
+    },
+    {
+      name: 'purl types other than maven',
+      purlTypes: ['maven'],
+      tools: ['gradle', 'maven', 'sbt'],
+    },
+    {
+      name: 'purl types other than nuget',
+      purlTypes: ['nuget'],
+      tools: ['dotnet'],
+    },
+  ])(
+    'drops the build tools of $name',
+    async ({ purlTypes, sockJson = {} as SocketJson, tools }) => {
+      const candidates = await findBuildToolCandidates({
+        cwd: monorepo,
+        purlTypes,
+        socketConfig: undefined,
+        sockJson,
+      })
+      expect([...candidates.keys()]).toEqual(tools)
+    },
+  )
 
   it('respects --exclude-paths', async () => {
     const candidates = await findBuildToolCandidates({

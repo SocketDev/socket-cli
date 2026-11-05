@@ -102,7 +102,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     debug: false,
     disableExternalToolChecks: false,
     disableMajorUpdates: false,
-    dynamicSbomInference: true,
+    dynamicSbomInference: ['maven'],
     ecosystems: [],
     exclude: [],
     excludePaths: [],
@@ -147,6 +147,9 @@ describe('socket fix --dynamic-sbom-inference', () => {
     const result = await coanaFix(baseConfig)
 
     expect(result.ok).toBe(true)
+    expect(mockGenerateSocketFactsForFix).toHaveBeenCalledWith(
+      expect.objectContaining({ purlTypes: ['maven'] }),
+    )
     expect(uploadManifestFiles).toHaveBeenCalledWith(
       'test-org',
       ['/test/cwd/app/build.gradle', FACTS],
@@ -196,7 +199,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
 
     const result = await coanaFix({
       ...baseConfig,
-      dynamicSbomInference: false,
+      dynamicSbomInference: undefined,
     })
 
     expect(result.ok).toBe(true)
@@ -211,7 +214,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
       FACTS,
     ])
 
-    await coanaFix({ ...baseConfig, dynamicSbomInference: false })
+    await coanaFix({ ...baseConfig, dynamicSbomInference: undefined })
 
     expect(uploadManifestFiles).toHaveBeenCalledWith('test-org', [FACTS], {
       pathsRelativeTo: '/test/cwd',
@@ -219,7 +222,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
   })
 
   it('does not pass the facts restriction without the flag', async () => {
-    await coanaFix({ ...baseConfig, dynamicSbomInference: false })
+    await coanaFix({ ...baseConfig, dynamicSbomInference: undefined })
 
     expect(mockGenerateSocketFactsForFix).not.toHaveBeenCalled()
     expect(coanaCalls('compute-fixes-and-upgrade-purls')[0]).not.toContain(

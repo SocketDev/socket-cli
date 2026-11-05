@@ -345,7 +345,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await handleCreateNewScan(config)
 
@@ -384,7 +384,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: true, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await handleCreateNewScan(config)
 
@@ -419,6 +419,29 @@ describe('handleCreateNewScan excludePaths', () => {
     )
   })
 
+  it('leaves auto-manifest the build tools --dynamic-sbom-inference-ecosystems does not select', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([
+      {
+        dir: '/repo/app',
+        ecosystem: 'dotnet',
+        factsPath: '/repo/app/App.csproj.socket.facts.json',
+        status: 'generated',
+      },
+    ])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = ['nuget']
+
+    await handleCreateNewScan(config)
+
+    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
+      expect.objectContaining({ purlTypes: ['nuget'] }),
+    )
+    expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
+      expect.objectContaining({ detected: { count: 0, dotnet: false } }),
+    )
+  })
+
   it('aborts instead of silently uploading a partial scan when a recursive build root fails', async () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([
       {
@@ -431,7 +454,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await expect(handleCreateNewScan(config)).rejects.toThrow(
       /one or more independent build roots failed/i,
@@ -444,10 +467,10 @@ describe('handleCreateNewScan excludePaths', () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await expect(handleCreateNewScan(config)).rejects.toThrow(
-      /No Gradle, sbt, Maven or .NET build root was found/,
+      /No .NET, Gradle, Maven, or sbt build root was found/,
     )
     expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
     expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
@@ -460,7 +483,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await handleCreateNewScan(config)
 
@@ -497,7 +520,7 @@ describe('handleCreateNewScan excludePaths', () => {
     )
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
     config.reach.runReachabilityAnalysis = true
 
     await handleCreateNewScan(config)

@@ -1,14 +1,20 @@
+import { joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { isFactsOnlyTypes } from '../../utils/coana.mts'
 import { InputError } from '../../utils/errors.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
-import { PURL_TYPE_BY_TOOL } from '../manifest/scripts/build-tool.mts'
+import {
+  PURL_TYPE_BY_TOOL,
+  buildToolLabelsFor,
+} from '../manifest/scripts/build-tool.mts'
 import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
 import {
   hasSidecarEntries,
   serializeSidecar,
 } from '../manifest/scripts/sidecar.mts'
 
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { RecursiveManifestOutcome } from '../manifest/generate-recursive-manifests.mts'
 import type {
@@ -21,10 +27,10 @@ import type {
 export type FactsConsumer = 'fix' | 'reach' | 'upload'
 
 export type DynamicSbomInferenceResult = {
-  factsPaths: string[]
   // Each discovered build root's purl type, generated or not: Coana takes
   // these types' artifacts only from facts files.
-  factsOnlyTypes: PURL_Type[]
+  factsOnlyTypes: FactsOnlyTypes
+  factsPaths: string[]
   resolvedPathsSidecar: ResolvedPathsSidecar | undefined
 }
 
@@ -47,6 +53,7 @@ function checkFactsForCoana(
               `- Re-enable the builds that socket.json skips (\`${DSI_SETUP_COMMAND}\` walks you through it).`,
             ]
           : []),
+        '- Or select other ecosystems with --dynamic-sbom-inference-ecosystems.',
         '- Or remove --dynamic-sbom-inference to analyze the manifest files as they are.',
       ].join('\n'),
     )
@@ -59,18 +66,20 @@ function checkFactsForCoana(
 }
 
 // Recursively discovers and generates Socket facts for every independent
-// dotnet/gradle/sbt/maven build root under `cwd`, returning the generated
+// build root of the selected ecosystems under `cwd`, returning the generated
 // facts paths plus the resolved-paths sidecar that reachability forwards to
 // Coana.
 export async function runDynamicSbomInference({
   consumer,
   cwd,
   excludePaths,
+  purlTypes,
   sbtTmpDir,
 }: {
   consumer: FactsConsumer
   cwd: string
   excludePaths: string[]
+  purlTypes: readonly PURL_Type[]
   // sbt provisions its Scala toolchain under this directory and reach's
   // artifactPaths point into it, so it must outlive whoever consumes them.
   // Only meaningful for `reach`.
@@ -84,20 +93,24 @@ export async function runDynamicSbomInference({
   const outcomes = await generateRecursiveManifests({
     cwd,
     excludePaths,
+    purlTypes,
     sbtTmpDir: withFiles ? sbtTmpDir : undefined,
     sidecarAcc,
     verbose: false,
     withFiles,
   })
+  const factsOnlyTypes = [
+    ...new Set(outcomes.map(o => PURL_TYPE_BY_TOOL[o.ecosystem])),
+  ]
   // No candidates discovered at all (distinct from candidates that were found
   // but produced no generated facts - empty/skippedDisabled are already warned
   // about elsewhere and are not this kind of mistake).
-  if (!outcomes.length) {
+  if (!isFactsOnlyTypes(factsOnlyTypes)) {
     throw new InputError(
       [
-        'No Gradle, sbt, Maven or .NET build root was found.',
+        `No ${joinOr(buildToolLabelsFor(purlTypes))} build root was found.`,
         '',
-        '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
+        '- Select other ecosystems with --dynamic-sbom-inference-ecosystems, or remove --dynamic-sbom-inference.',
         '- Make sure to run it from the correct dir (use --cwd to target another dir).',
       ].join('\n'),
     )
@@ -116,10 +129,8 @@ export async function runDynamicSbomInference({
     checkFactsForCoana(outcomes, consumer, !!factsPaths.length)
   }
   return {
+    factsOnlyTypes,
     factsPaths,
-    factsOnlyTypes: [
-      ...new Set(outcomes.map(o => PURL_TYPE_BY_TOOL[o.ecosystem])),
-    ],
     resolvedPathsSidecar:
       sidecarAcc && hasSidecarEntries(sidecarAcc)
         ? serializeSidecar(sidecarAcc)

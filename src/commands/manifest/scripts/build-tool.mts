@@ -3,6 +3,7 @@ import { basename, resolve } from 'node:path'
 
 import constants from '../../../constants.mts'
 
+import type { FactsOnlyTypes } from '../../../utils/coana.mts'
 import type { PURL_Type } from '../../../utils/ecosystem.mts'
 
 export type BuildTool = 'dotnet' | 'gradle' | 'maven' | 'sbt'
@@ -16,6 +17,28 @@ export const PURL_TYPE_BY_TOOL: Record<BuildTool, PURL_Type> = {
   maven: 'maven',
   sbt: 'maven',
 } as unknown as Record<BuildTool, PURL_Type>
+
+export const BUILD_TOOLS = Object.keys(PURL_TYPE_BY_TOOL) as BuildTool[]
+
+export const ECOSYSTEM_LABELS: Record<BuildTool, string> = {
+  __proto__: null,
+  dotnet: '.NET',
+  gradle: 'Gradle',
+  maven: 'Maven',
+  sbt: 'sbt',
+} as unknown as Record<BuildTool, string>
+
+export const FACTS_PURL_TYPES = [
+  ...new Set(Object.values(PURL_TYPE_BY_TOOL)),
+].sort() as unknown as FactsOnlyTypes
+
+export function buildToolsFor(purlTypes: readonly PURL_Type[]): BuildTool[] {
+  return BUILD_TOOLS.filter(tool => purlTypes.includes(PURL_TYPE_BY_TOOL[tool]))
+}
+
+export function buildToolLabelsFor(purlTypes: readonly PURL_Type[]): string[] {
+  return buildToolsFor(purlTypes).map(tool => ECOSYSTEM_LABELS[tool])
+}
 
 // Purl types whose packages have no namespace (NuGet ids are flat).
 export const NAMESPACELESS_PURL_TYPES: ReadonlySet<string> = new Set(['nuget'])

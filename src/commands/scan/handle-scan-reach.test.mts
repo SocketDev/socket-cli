@@ -347,7 +347,7 @@ describe('handleScanReach', () => {
   describe('dynamic SBOM inference', () => {
     const baseReachabilityOptions = {
       ...makeReachabilityOptions(),
-      dynamicSbomInference: true,
+      dynamicSbomInference: ['maven', 'nuget'],
       excludePaths: ['vendor/**'],
     }
 
@@ -380,6 +380,7 @@ describe('handleScanReach', () => {
         consumer: 'reach',
         cwd: '/repo',
         excludePaths: ['vendor/**'],
+        purlTypes: ['maven', 'nuget'],
         // A caller-owned dir that outlives the analysis consuming its paths.
         sbtTmpDir: expect.any(String),
       })
@@ -436,7 +437,7 @@ describe('handleScanReach', () => {
         outputPath: '',
         reachabilityOptions: {
           ...baseReachabilityOptions,
-          dynamicSbomInference: false,
+          dynamicSbomInference: undefined,
         },
         targets: ['/repo'],
       })

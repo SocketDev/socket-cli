@@ -13,7 +13,9 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { resolveReachAdvisories } from './reach-advisories.mts'
 import {
   DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  dynamicSbomInferenceEcosystemsFlags,
   excludePathsFlag,
+  parseDynamicSbomInferenceFlags,
   reachabilityFlags,
 } from './reachability-flags.mts'
 import {
@@ -115,6 +117,7 @@ const generalFlags: MeowFlags = {
     default: false,
     description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Combine with --reach to split the reachability analysis per project/module.`,
   },
+  ...dynamicSbomInferenceEcosystemsFlags,
   interactive: {
     type: 'boolean',
     default: true,
@@ -279,7 +282,6 @@ async function run(
     committers,
     cwd: cwdOverride,
     defaultBranch,
-    dynamicSbomInference,
     interactive = true,
     json,
     markdown,
@@ -316,7 +318,6 @@ async function run(
     committers: string
     cwd: string
     defaultBranch: boolean
-    dynamicSbomInference: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -354,6 +355,8 @@ async function run(
   const reachEcosystems = parseReachEcosystems(
     cmdFlagValueToArray(cli.flags['reachEcosystems']),
   )
+
+  const dynamicSbomInference = parseDynamicSbomInferenceFlags(cli.flags)
 
   warnSocketJsonOnlyFlags(cli.flags, `${parentName} ${CMD_NAME}`)
 
@@ -693,7 +696,7 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     reach: {
-      dynamicSbomInference: Boolean(dynamicSbomInference),
+      dynamicSbomInference,
       excludePaths,
       reachAdvisories,
       reachAnalysisMemoryLimit,
