@@ -1,6 +1,7 @@
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { isFactsOnlyTypes } from '../../utils/coana.mts'
 import { InputError } from '../../utils/errors.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import {
@@ -13,6 +14,7 @@ import {
   serializeSidecar,
 } from '../manifest/scripts/sidecar.mts'
 
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { RecursiveManifestOutcome } from '../manifest/generate-recursive-manifests.mts'
 import type {
@@ -25,10 +27,10 @@ import type {
 export type FactsConsumer = 'fix' | 'reach' | 'upload'
 
 export type DynamicSbomInferenceResult = {
-  factsPaths: string[]
   // Each discovered build root's purl type, generated or not: Coana takes
   // these types' artifacts only from facts files.
-  factsOnlyTypes: PURL_Type[]
+  factsOnlyTypes: FactsOnlyTypes
+  factsPaths: string[]
   resolvedPathsSidecar: ResolvedPathsSidecar | undefined
 }
 
@@ -108,10 +110,13 @@ export async function runDynamicSbomInference({
     withFiles,
   })
   const narrowed = purlTypes.length < FACTS_PURL_TYPES.length
+  const factsOnlyTypes = [
+    ...new Set(outcomes.map(o => PURL_TYPE_BY_TOOL[o.ecosystem])),
+  ]
   // No candidates discovered at all (distinct from candidates that were found
   // but produced no generated facts - empty/skippedDisabled are already warned
   // about elsewhere and are not this kind of mistake).
-  if (!outcomes.length) {
+  if (!isFactsOnlyTypes(factsOnlyTypes)) {
     throw new InputError(
       [
         ...(narrowed
@@ -148,10 +153,8 @@ export async function runDynamicSbomInference({
     })
   }
   return {
+    factsOnlyTypes,
     factsPaths,
-    factsOnlyTypes: [
-      ...new Set(outcomes.map(o => PURL_TYPE_BY_TOOL[o.ecosystem])),
-    ],
     resolvedPathsSidecar:
       sidecarAcc && hasSidecarEntries(sidecarAcc)
         ? serializeSidecar(sidecarAcc)

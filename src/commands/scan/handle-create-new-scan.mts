@@ -36,7 +36,7 @@ import type { ReachabilityFallback } from './output-create-new-scan.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -160,7 +160,7 @@ async function createNewScan(
 
   // Sidecar forwarded to reachability; populated only when reach runs.
   let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
-  let factsOnlyTypes: PURL_Type[] | undefined
+  let factsOnlyTypes: FactsOnlyTypes | undefined
 
   // sbt provisions its Scala toolchain under the directory passed as its
   // isolated global base; reach's artifactPaths point into it, so it must

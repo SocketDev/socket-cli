@@ -18,7 +18,6 @@ import {
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
-import { noDotnetSdkReason } from './scripts/run.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -240,17 +239,6 @@ export async function markWorkspaceCoverage({
   )
   if (skipReason) {
     return { ok: true, data: undefined }
-  }
-  if (ecosystem === 'dotnet') {
-    const reason = await noDotnetSdkReason(bin, dir)
-    if (reason !== undefined) {
-      return {
-        ok: false,
-        message: `No .NET SDK runs in ${path.relative(cwd, dir) || '.'} (${reason})`,
-        cause:
-          'Install the .NET SDK, or point defaults.manifest.dotnet.bin at one; or leave the directory out with --exclude-paths.',
-      }
-    }
   }
 
   for (const root of roots) {

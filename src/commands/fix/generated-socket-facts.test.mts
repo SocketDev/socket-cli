@@ -82,10 +82,22 @@ describe('generateSocketFactsForFix', () => {
       '--use-only-socket-facts-artifacts',
       'maven,nuget',
     ])
-    expect(path.dirname(sidecarFile!)).toBe(tmpDir)
-    expect(JSON.parse(await fs.readFile(sidecarFile!, 'utf8'))).toEqual({
+    expect(path.dirname(sidecarFile)).toBe(tmpDir)
+    expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual({
       [fresh]: { components: [], projects: [] },
     })
+  })
+
+  it('writes an empty sidecar when no build root resolved any paths', async () => {
+    mockRunDynamicSbomInference.mockResolvedValue({
+      factsOnlyTypes: ['maven'],
+      factsPaths: [],
+    })
+
+    const { artifactsFlags, sidecarFile } = await generate()
+
+    expect(artifactsFlags).toEqual(['--maven-use-only-socket-facts'])
+    expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual({})
   })
 
   it('restores an existing facts file that generation does not rewrite', async () => {

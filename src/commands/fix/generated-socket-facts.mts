@@ -11,7 +11,7 @@ export type GeneratedSocketFacts = {
   artifactsFlags: string[]
   paths: string[]
   // The facts files' per-project classpaths, written outside the repository.
-  sidecarFile: string | undefined
+  sidecarFile: string
   remove: () => Promise<void>
   restore: () => Promise<void>
 }
@@ -61,7 +61,7 @@ export async function generateSocketFactsForFix({
   }
   let artifactsFlags: string[]
   let paths: string[]
-  let sidecarFile: string | undefined
+  const sidecarFile = path.join(tmpDir, 'sidecar.json')
   try {
     const { factsOnlyTypes, factsPaths, resolvedPathsSidecar } =
       await runDynamicSbomInference({
@@ -73,10 +73,9 @@ export async function generateSocketFactsForFix({
       })
     artifactsFlags = useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
     paths = factsPaths.map(p => path.resolve(cwd, p))
-    if (resolvedPathsSidecar) {
-      sidecarFile = path.join(tmpDir, 'sidecar.json')
-      await writeFile(sidecarFile, JSON.stringify(resolvedPathsSidecar))
-    }
+    // Written even when empty, as for reach; applying fixes looks each facts
+    // file up in it, so an empty one is the same as none.
+    await writeFile(sidecarFile, JSON.stringify(resolvedPathsSidecar ?? {}))
   } catch (e) {
     // A failed build root aborts inference after others wrote their facts.
     await reset(await findFactsPaths())
