@@ -14,9 +14,8 @@ import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type { DynamicSbomInferenceResult } from './run-dynamic-sbom-inference.mts'
 import type { OutputKind } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
-import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 
 export type HandleScanReachConfig = {
   cwd: string
@@ -45,15 +44,13 @@ async function runScanReach(
   // Extra discovery targets beyond the user's own; the reachability target
   // itself stays `targets[0]`.
   let scanTargets = targets
-  // Sidecar forwarded to reachability; populated by dynamic SBOM inference.
-  let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
-  let factsOnlyTypes: PURL_Type[] | undefined
+  let dynamicResult: DynamicSbomInferenceResult | undefined
 
   if (reachabilityOptions.dynamicSbomInference) {
     logger.info(
       'Generating Socket facts for each Gradle, sbt, Maven and .NET build root ...',
     )
-    const dynamicResult = await runDynamicSbomInference({
+    dynamicResult = await runDynamicSbomInference({
       consumer: 'reach',
       cwd,
       excludePaths: reachabilityOptions.excludePaths,
@@ -62,8 +59,6 @@ async function runScanReach(
     scanTargets = Array.from(
       new Set([...scanTargets, ...dynamicResult.factsPaths]),
     )
-    resolvedPathsSidecar = dynamicResult.resolvedPathsSidecar
-    factsOnlyTypes = dynamicResult.factsOnlyTypes
   }
 
   // Get supported file names.
@@ -132,13 +127,13 @@ async function runScanReach(
 
   const result = await performReachabilityAnalysis({
     cwd,
-    factsOnlyTypes,
+    factsOnlyTypes: dynamicResult?.factsOnlyTypes,
     orgSlug,
     outputKind,
     outputPath,
     packagePaths,
     reachabilityOptions: mergedReachabilityOptions,
-    resolvedPathsSidecar,
+    resolvedPathsSidecar: dynamicResult?.resolvedPathsSidecar,
     spinner,
     target: targets[0]!,
   })

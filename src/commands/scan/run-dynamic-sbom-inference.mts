@@ -3,6 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { InputError } from '../../utils/errors.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import { PURL_TYPE_BY_TOOL } from '../manifest/scripts/build-tool.mts'
+import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
 import {
   hasSidecarEntries,
   serializeSidecar,
@@ -15,8 +16,9 @@ import type {
   SidecarAccumulator,
 } from '../manifest/scripts/sidecar.mts'
 
-// Who runs Coana on the facts: `reach` also resolves artifact paths.
-export type FactsConsumer = 'fix' | 'reach'
+// Who consumes the facts: Coana for `fix` and `reach` (which also resolves
+// artifact paths), or only the scan upload.
+export type FactsConsumer = 'fix' | 'reach' | 'upload'
 
 export type DynamicSbomInferenceResult = {
   factsPaths: string[]
@@ -30,17 +32,20 @@ export type DynamicSbomInferenceResult = {
 // build root without them is one it leaves out.
 function checkFactsForCoana(
   outcomes: RecursiveManifestOutcome[],
-  consumer: FactsConsumer,
+  consumer: Exclude<FactsConsumer, 'upload'>,
+  hasFacts: boolean,
 ): void {
   const hasDisabled = outcomes.some(o => o.status === 'skippedDisabled')
   // Coana (15.14.1) refuses a facts-only reachability run without any facts.
-  if (consumer === 'reach' && !outcomes.some(o => o.status === 'generated')) {
+  if (consumer === 'reach' && !hasFacts) {
     throw new InputError(
       [
         'No build root produced Socket facts, which reachability analysis with --dynamic-sbom-inference needs.',
         '',
         ...(hasDisabled
-          ? ['- Re-enable the builds that socket.json skips.']
+          ? [
+              `- Re-enable the builds that socket.json skips (\`${DSI_SETUP_COMMAND}\` walks you through it).`,
+            ]
           : []),
         '- Or remove --dynamic-sbom-inference to analyze the manifest files as they are.',
       ].join('\n'),
@@ -63,7 +68,7 @@ export async function runDynamicSbomInference({
   excludePaths,
   sbtTmpDir,
 }: {
-  consumer: FactsConsumer | undefined
+  consumer: FactsConsumer
   cwd: string
   excludePaths: string[]
   // sbt provisions its Scala toolchain under this directory and reach's
@@ -72,13 +77,13 @@ export async function runDynamicSbomInference({
   sbtTmpDir: string | undefined
 }): Promise<DynamicSbomInferenceResult> {
   const withFiles = consumer === 'reach'
-  const sidecarAcc: SidecarAccumulator | undefined = consumer
+  const coanaReadsFacts = consumer === 'fix' || consumer === 'reach'
+  const sidecarAcc: SidecarAccumulator | undefined = coanaReadsFacts
     ? new Map()
     : undefined
   const outcomes = await generateRecursiveManifests({
     cwd,
     excludePaths,
-    requireDotnetSdk: !!consumer,
     sbtTmpDir: withFiles ? sbtTmpDir : undefined,
     sidecarAcc,
     verbose: false,
@@ -107,8 +112,8 @@ export async function runDynamicSbomInference({
   const factsPaths = outcomes
     .filter(o => o.status === 'generated')
     .map(o => o.factsPath!)
-  if (consumer) {
-    checkFactsForCoana(outcomes, consumer)
+  if (coanaReadsFacts) {
+    checkFactsForCoana(outcomes, consumer, !!factsPaths.length)
   }
   return {
     factsPaths,

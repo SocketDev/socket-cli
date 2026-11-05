@@ -23,7 +23,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
 
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type {
+  ReachabilityAnalysisOptions,
+  ReachabilityOptions,
+} from './perform-reachability-analysis.mts'
 
 // The manifest upload is mandatory, so every call below runs through it and
 // gets this tar hash back.
@@ -242,6 +245,35 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
   })
 })
 
+async function coanaArgsFor(
+  cwd: string,
+  reachabilityOptions: Partial<ReachabilityOptions>,
+  options: Partial<ReachabilityAnalysisOptions> = {},
+): Promise<string[]> {
+  await performReachabilityAnalysis({
+    cwd,
+    orgSlug: TEST_ORG_SLUG,
+    packagePaths: TEST_PACKAGE_PATHS,
+    reachabilityOptions: {
+      ...makeReachabilityOptions(),
+      ...reachabilityOptions,
+    },
+    target: cwd,
+    ...options,
+  })
+  return mockSpawnCoana.mock.calls[0]![0] as string[]
+}
+
+function factsOnlyArgs(args: string[]): string[] {
+  return args.flatMap((arg, i) =>
+    arg === '--maven-use-only-socket-facts'
+      ? [arg]
+      : arg === '--use-only-socket-facts-artifacts'
+        ? [arg, args[i + 1]!]
+        : [],
+  )
+}
+
 describe('performReachabilityAnalysis flag forwarding', () => {
   let scanCwd: string
 
@@ -260,21 +292,8 @@ describe('performReachabilityAnalysis flag forwarding', () => {
     rmSync(scanCwd, { force: true, recursive: true })
   })
 
-  async function coanaArgsFor(
-    overrides: Partial<ReachabilityOptions>,
-  ): Promise<string[]> {
-    await performReachabilityAnalysis({
-      cwd: scanCwd,
-      orgSlug: TEST_ORG_SLUG,
-      packagePaths: TEST_PACKAGE_PATHS,
-      reachabilityOptions: { ...makeReachabilityOptions(), ...overrides },
-      target: scanCwd,
-    })
-    return mockSpawnCoana.mock.calls[0]![0] as string[]
-  }
-
   it('forwards unit-bearing values to Coana verbatim', async () => {
-    const args = await coanaArgsFor({
+    const args = await coanaArgsFor(scanCwd, {
       reachAnalysisTimeout: '90s',
       reachAnalysisMemoryLimit: '8GB',
     })
@@ -285,7 +304,7 @@ describe('performReachabilityAnalysis flag forwarding', () => {
   })
 
   it('omits both flags for empty values so Coana applies its defaults', async () => {
-    const args = await coanaArgsFor({
+    const args = await coanaArgsFor(scanCwd, {
       reachAnalysisTimeout: '',
       reachAnalysisMemoryLimit: '',
     })
@@ -294,7 +313,7 @@ describe('performReachabilityAnalysis flag forwarding', () => {
   })
 
   it('omits flags for zero-magnitude values (back-compat sentinel)', async () => {
-    const args = await coanaArgsFor({
+    const args = await coanaArgsFor(scanCwd, {
       reachAnalysisTimeout: '0',
       reachAnalysisMemoryLimit: '0',
     })
@@ -303,7 +322,7 @@ describe('performReachabilityAnalysis flag forwarding', () => {
   })
 
   it('passes --reach-advisories to Coana as --ghsas', async () => {
-    const args = await coanaArgsFor({
+    const args = await coanaArgsFor(scanCwd, {
       reachAdvisories: ['GHSA-35jh-r3h4-6jhm', 'GHSA-r5fr-rjxr-66jc'],
     })
     const ghsasIndex = args.indexOf('--ghsas')
@@ -314,7 +333,7 @@ describe('performReachabilityAnalysis flag forwarding', () => {
   })
 
   it('omits --ghsas when no advisories are given', async () => {
-    const args = await coanaArgsFor({ reachAdvisories: [] })
+    const args = await coanaArgsFor(scanCwd, { reachAdvisories: [] })
     expect(args).not.toContain('--ghsas')
   })
 })
@@ -337,101 +356,62 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
     rmSync(scanCwd, { force: true, recursive: true })
   })
 
-  it('writes an empty sidecar and still passes both flags when dynamicSbomInference is on but no build root produced one (e.g. none found, or all empty/disabled)', async () => {
-    let sidecarContentAtSpawnTime: unknown
-    mockSpawnCoana.mockImplementationOnce(async (args: string[]) => {
-      const sidecarPath = args[args.indexOf('--compute-artifacts-sidecar') + 1]!
-      sidecarContentAtSpawnTime = JSON.parse(readFileSync(sidecarPath, 'utf8'))
-      return { ok: true, data: '' }
-    })
+  const sidecar = {
+    '/repo/reactor/.socket.facts.json': { components: [], projects: [] },
+  }
 
-    await performReachabilityAnalysis({
-      cwd: scanCwd,
-      orgSlug: TEST_ORG_SLUG,
-      packagePaths: TEST_PACKAGE_PATHS,
-      reachabilityOptions: {
-        ...makeReachabilityOptions(),
-        dynamicSbomInference: true,
-      },
+  it.for([
+    {
+      name: 'names every facts-only type next to the sidecar',
       factsOnlyTypes: ['maven', 'nuget'],
-      resolvedPathsSidecar: undefined,
-      target: scanCwd,
-    })
-
-    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
-    expect(args[args.indexOf('--use-only-socket-facts-artifacts') + 1]).toBe(
-      'maven,nuget',
-    )
-    expect(args).toContain('--compute-artifacts-sidecar')
-    expect(sidecarContentAtSpawnTime).toEqual({})
-  })
-
-  it('passes --use-only-socket-facts-artifacts alongside --compute-artifacts-sidecar when dynamicSbomInference is on and a sidecar was generated', async () => {
-    await performReachabilityAnalysis({
-      cwd: scanCwd,
-      orgSlug: TEST_ORG_SLUG,
-      packagePaths: TEST_PACKAGE_PATHS,
-      reachabilityOptions: {
-        ...makeReachabilityOptions(),
-        dynamicSbomInference: true,
-      },
-      factsOnlyTypes: ['maven', 'nuget'],
-      resolvedPathsSidecar: {
-        '/repo/reactor/.socket.facts.json': {
-          components: [],
-          projects: [],
-        },
-      },
-      target: scanCwd,
-    })
-
-    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
-    expect(args[args.indexOf('--use-only-socket-facts-artifacts') + 1]).toBe(
-      'maven,nuget',
-    )
-    expect(args).toContain('--compute-artifacts-sidecar')
-  })
-
-  it('keeps the Maven-only flag older Coana releases know when only JVM builds were found', async () => {
-    await performReachabilityAnalysis({
-      cwd: scanCwd,
+      resolvedPathsSidecar: sidecar,
+      expected: ['--use-only-socket-facts-artifacts', 'maven,nuget'],
+      expectedSidecar: sidecar,
+    },
+    {
+      name: 'keeps the Maven-only flag older Coana releases know, with an empty sidecar',
       factsOnlyTypes: ['maven'],
-      orgSlug: TEST_ORG_SLUG,
-      packagePaths: TEST_PACKAGE_PATHS,
-      reachabilityOptions: {
-        ...makeReachabilityOptions(),
-        dynamicSbomInference: true,
-      },
-      target: scanCwd,
-    })
+      resolvedPathsSidecar: undefined,
+      expected: ['--maven-use-only-socket-facts'],
+      expectedSidecar: {},
+    },
+    {
+      name: 'passes no facts-only flag without facts-only types, even with a sidecar',
+      factsOnlyTypes: undefined,
+      resolvedPathsSidecar: sidecar,
+      expected: [],
+      expectedSidecar: sidecar,
+    },
+  ] as const)(
+    '$name',
+    async ({
+      expected,
+      expectedSidecar,
+      factsOnlyTypes,
+      resolvedPathsSidecar,
+    }) => {
+      let sidecarAtSpawn: unknown
+      mockSpawnCoana.mockImplementationOnce(async (args: string[]) => {
+        const sidecarPath =
+          args[args.indexOf('--compute-artifacts-sidecar') + 1]!
+        sidecarAtSpawn = JSON.parse(readFileSync(sidecarPath, 'utf8'))
+        return { ok: true, data: '' }
+      })
 
-    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
-    expect(args).toContain('--maven-use-only-socket-facts')
-    expect(args).not.toContain('--use-only-socket-facts-artifacts')
-  })
+      const args = await coanaArgsFor(
+        scanCwd,
+        {},
+        { factsOnlyTypes, resolvedPathsSidecar },
+      )
 
-  it('never passes --use-only-socket-facts-artifacts when dynamicSbomInference is off, even if a sidecar happens to be present', async () => {
-    await performReachabilityAnalysis({
-      cwd: scanCwd,
-      orgSlug: TEST_ORG_SLUG,
-      packagePaths: TEST_PACKAGE_PATHS,
-      reachabilityOptions: {
-        ...makeReachabilityOptions(),
-        dynamicSbomInference: false,
-      },
-      resolvedPathsSidecar: {
-        '/repo/reactor/.socket.facts.json': {
-          components: [],
-          projects: [],
-        },
-      },
-      target: scanCwd,
-    })
+      expect(factsOnlyArgs(args)).toEqual(expected)
+      expect(sidecarAtSpawn).toEqual(expectedSidecar)
+    },
+  )
 
-    const args = mockSpawnCoana.mock.calls[0]![0] as string[]
-    expect(args).not.toContain('--use-only-socket-facts-artifacts')
-    expect(args).not.toContain('--maven-use-only-socket-facts')
-    expect(args).toContain('--compute-artifacts-sidecar')
+  it('writes no sidecar without facts-only types or sidecar entries', async () => {
+    const args = await coanaArgsFor(scanCwd, { dynamicSbomInference: true })
+    expect(args).not.toContain('--compute-artifacts-sidecar')
   })
 })
 

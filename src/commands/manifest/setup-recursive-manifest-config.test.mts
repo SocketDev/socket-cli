@@ -25,6 +25,10 @@ vi.mock('./discover-manifest-roots.mts', async importOriginal => {
 vi.mock('./enumerate-workspaces.mts', () => ({
   enumerateWorkspaces: vi.fn(),
 }))
+vi.mock('./scripts/run.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./scripts/run.mts')>()),
+  noDotnetSdkReason: vi.fn(async () => undefined),
+}))
 vi.mock('@socketsecurity/registry/lib/prompts', () => ({
   select: vi.fn(),
 }))
@@ -48,6 +52,7 @@ import {
   findBuildToolCandidates,
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
+import { noDotnetSdkReason } from './scripts/run.mts'
 import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
 import {
   configureCandidate,
@@ -453,6 +458,25 @@ describe('markWorkspaceCoverage', () => {
 
     expect(result.ok).toBe(false)
     expect(covered.size).toBe(0)
+  })
+
+  it('fails closed when no .NET SDK runs for a .NET root', async () => {
+    vi.mocked(noDotnetSdkReason).mockResolvedValueOnce('dotnet not found')
+
+    const result = await markWorkspaceCoverage({
+      covered: new Set<string>(),
+      cwd,
+      dir: reactor,
+      ecosystem: 'dotnet',
+      rootSockJson: emptySockJson(),
+      roots: [{ dir: reactor, entryFile: 'App.csproj' }],
+    })
+
+    expect(result).toMatchObject({
+      ok: false,
+      message: 'No .NET SDK runs in reactor (dotnet not found)',
+    })
+    expect(enumerateWorkspaces).not.toHaveBeenCalled()
   })
 
   it('resolves settings once per directory and skips a POM an earlier one covers', async () => {

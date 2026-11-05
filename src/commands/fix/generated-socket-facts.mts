@@ -1,7 +1,7 @@
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { useOnlySocketFactsArtifactsFlags } from '../manifest/scripts/sidecar.mts'
+import { useOnlySocketFactsArtifactsFlags } from '../../utils/coana.mts'
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
 export type GeneratedSocketFacts = {

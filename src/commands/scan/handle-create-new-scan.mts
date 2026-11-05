@@ -162,7 +162,7 @@ async function createNewScan(
   let factsOnlyTypes: PURL_Type[] | undefined
 
   // sbt provisions its Scala toolchain under the directory passed as its
-  // isolated global base; withFiles' artifactPaths point into it, so it must
+  // isolated global base; reach's artifactPaths point into it, so it must
   // stay on disk until the reachability analysis below has consumed those
   // paths. Always allocated (even when unused) to keep this uniform rather
   // than conditional on autoManifest/reach.
@@ -177,11 +177,11 @@ async function createNewScan(
         // one at cwd. This runs on its own, so nothing outside those
         // ecosystems is generated unless --auto-manifest also asked for it.
         const dynamicResult = await runDynamicSbomInference({
-          consumer: reach.runReachabilityAnalysis ? 'reach' : undefined,
+          consumer: reach.runReachabilityAnalysis ? 'reach' : 'upload',
           cwd,
           excludePaths: reach.excludePaths,
           // sbt's Scala toolchain lives under its shared global base;
-          // withFiles' resolved paths point into it, so when reachability
+          // reach's artifactPaths point into it, so when reachability
           // will consume them afterward, reuse manifestTmpDir (kept alive
           // until reach finishes below) instead of letting the call clean
           // its own ephemeral base up before reach ever reads those paths.

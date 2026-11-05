@@ -157,13 +157,3 @@ export function serializeSidecar(
   }
   return result
 }
-
-// Facts-only whether or not any facts were generated. Maven alone keeps the
-// older flag, which Coana releases before 15.14.1 also know.
-export function useOnlySocketFactsArtifactsFlags(
-  types: readonly string[],
-): string[] {
-  return types.length === 1 && types[0] === 'maven'
-    ? ['--maven-use-only-socket-facts']
-    : ['--use-only-socket-facts-artifacts', [...types].sort().join(',')]
-}

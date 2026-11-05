@@ -18,7 +18,7 @@ import {
   DSI_SETUP_COMMAND,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
 } from './scripts/resolution-report-render.mts'
-import { noDotnetSdkReason, skipWithoutDotnetSdk } from './scripts/run.mts'
+import { noDotnetSdkReason } from './scripts/run.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 import { InputError } from '../../utils/errors.mts'
@@ -45,7 +45,6 @@ export type RecursiveManifestOutcomeStatus =
   | 'generated'
   | 'skippedCovered'
   | 'skippedDisabled'
-  | 'skippedNoSdk'
 
 export type RecursiveManifestOutcome = BuildRoot & {
   ecosystem: BuildTool
@@ -153,7 +152,6 @@ async function runEcosystemCandidates({
   ignoreUnresolved: ignoreUnresolvedOverride,
   optionFlags,
   realCwd,
-  requireDotnetSdk,
   rootSockJson,
   sbtTmpDir,
   sidecarAcc,
@@ -165,7 +163,6 @@ async function runEcosystemCandidates({
   ignoreUnresolved: boolean | undefined
   optionFlags: ReadonlySet<BuildOption>
   realCwd: string
-  requireDotnetSdk: boolean | undefined
   rootSockJson: SocketJson
   // sbt only: a shared global base reused across every sbt root in this run,
   // so sbt's own Scala-toolchain cache under <base>/boot survives between
@@ -215,26 +212,20 @@ async function runEcosystemCandidates({
         outcomes.push({ ...root, ecosystem, status: 'skippedDisabled' })
         continue
       }
-      if (ecosystem === 'dotnet' && requireDotnetSdk) {
+      const socketJson = displayPath(path.join(dir, SOCKET_JSON))
+      if (ecosystem === 'dotnet') {
         // eslint-disable-next-line no-await-in-loop
         const reason = await noDotnetSdkReason(dirConfig.bin, dir)
         if (reason !== undefined) {
           throw new InputError(
             [
-              `No .NET SDK runs for ${displayPath(buildRootPath(root))} (${reason}), so it has no Socket facts, and the analysis takes .NET dependencies only from them.`,
+              `No .NET SDK runs for ${displayPath(buildRootPath(root))} (${reason}), so its Socket facts cannot be generated.`,
               '',
-              '- Install the .NET SDK, or point defaults.manifest.dotnet.bin in socket.json at one.',
-              '- Or leave it out with --exclude-paths, or with defaults.manifest.dotnet.disabled in socket.json.',
+              `- Install the .NET SDK, or point defaults.manifest.dotnet.bin in ${socketJson} at one (\`${DSI_SETUP_COMMAND}\` walks you through it).`,
+              `- Or leave it out with --exclude-paths, or with defaults.manifest.dotnet.disabled in ${socketJson}.`,
             ].join('\n'),
           )
         }
-      } else if (
-        ecosystem === 'dotnet' &&
-        // eslint-disable-next-line no-await-in-loop
-        (await skipWithoutDotnetSdk(dirConfig.bin, dir))
-      ) {
-        outcomes.push({ ...root, ecosystem, status: 'skippedNoSdk' })
-        continue
       }
       // eslint-disable-next-line no-await-in-loop
       const result = await buildUncoveredRoot({
@@ -256,7 +247,7 @@ async function runEcosystemCandidates({
             : undefined,
           flags: optionFlags,
           setupCommand: DSI_SETUP_COMMAND,
-          socketJson: displayPath(path.join(dir, SOCKET_JSON)),
+          socketJson,
         },
         root,
         sidecarAcc,
@@ -371,7 +362,6 @@ export async function generateRecursiveManifests({
   excludePaths,
   ignoreUnresolved,
   optionFlags = new Set(),
-  requireDotnetSdk,
   sbtTmpDir,
   sidecarAcc,
   verbose,
@@ -384,8 +374,6 @@ export async function generateRecursiveManifests({
   // Options the invoking command takes as flags; hints send the rest to each
   // build root's socket.json.
   optionFlags?: ReadonlySet<BuildOption> | undefined
-  // Fail instead of skipping a .NET build root no .NET SDK can build.
-  requireDotnetSdk?: boolean | undefined
   // Reachability path only: caller-supplied directory to use as sbt's shared
   // global base across every sbt root in this run. sbt provisions the Scala
   // toolchain under `<base>/boot`, which withFiles' artifactPaths point into,
@@ -424,7 +412,6 @@ export async function generateRecursiveManifests({
       ignoreUnresolved,
       optionFlags,
       realCwd,
-      requireDotnetSdk,
       rootSockJson,
       sbtTmpDir: resolvedSbtTmpDir,
       sidecarAcc,

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
 
+import type { FactsConsumer } from './run-dynamic-sbom-inference.mts'
+
 const { mockGenerateRecursiveManifests, mockWarn } = vi.hoisted(() => ({
   mockGenerateRecursiveManifests: vi.fn(),
   mockWarn: vi.fn(),
@@ -22,10 +24,58 @@ const generated = {
   status: 'generated',
 }
 
+function run(consumer: FactsConsumer) {
+  return runDynamicSbomInference({
+    consumer,
+    cwd: '/repo',
+    excludePaths: ['vendor/**'],
+    sbtTmpDir: '/tmp/sbt',
+  })
+}
+
 describe('runDynamicSbomInference', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
+
+  it.for([
+    // sbtTmpDir only matters for reach; withheld otherwise so the callee
+    // allocates and cleans up its own ephemeral base.
+    {
+      consumer: 'upload',
+      sbtTmpDir: undefined,
+      sidecar: false,
+      withFiles: false,
+    },
+    {
+      consumer: 'fix',
+      sbtTmpDir: undefined,
+      sidecar: true,
+      withFiles: false,
+    },
+    {
+      consumer: 'reach',
+      sbtTmpDir: '/tmp/sbt',
+      sidecar: true,
+      withFiles: true,
+    },
+  ] as const)(
+    'generates for $consumer',
+    async ({ consumer, sbtTmpDir, sidecar, withFiles }) => {
+      mockGenerateRecursiveManifests.mockResolvedValueOnce([generated])
+
+      await run(consumer)
+
+      expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
+        cwd: '/repo',
+        excludePaths: ['vendor/**'],
+        sbtTmpDir,
+        sidecarAcc: sidecar ? expect.any(Map) : undefined,
+        verbose: false,
+        withFiles,
+      })
+    },
+  )
 
   it('returns only the generated facts paths, ignoring empty and skipped roots', async () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([
@@ -35,32 +85,14 @@ describe('runDynamicSbomInference', () => {
       { dir: '/repo/d', ecosystem: 'maven', status: 'skippedCovered' },
     ])
 
-    const result = await runDynamicSbomInference({
-      consumer: undefined,
-      cwd: '/repo',
-      excludePaths: ['vendor/**'],
-      sbtTmpDir: '/tmp/sbt',
-    })
-
-    expect(result).toEqual({
+    expect(await run('upload')).toEqual({
       factsOnlyTypes: ['maven'],
       factsPaths: ['/repo/a/.socket.facts.json'],
       resolvedPathsSidecar: undefined,
     })
-    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
-      cwd: '/repo',
-      excludePaths: ['vendor/**'],
-      requireDotnetSdk: false,
-      // Only meaningful for reach; withheld otherwise so the callee
-      // allocates and cleans up its own ephemeral base.
-      sbtTmpDir: undefined,
-      sidecarAcc: undefined,
-      verbose: false,
-      withFiles: false,
-    })
   })
 
-  it('accumulates and serializes a sidecar for reachability', async () => {
+  it('serializes the accumulated sidecar', async () => {
     mockGenerateRecursiveManifests.mockImplementationOnce(
       async ({ sidecarAcc }) => {
         sidecarAcc.set('/repo/a/.socket.facts.json', {
@@ -71,74 +103,12 @@ describe('runDynamicSbomInference', () => {
       },
     )
 
-    const result = await runDynamicSbomInference({
-      consumer: 'reach',
-      cwd: '/repo',
-      excludePaths: [],
-      sbtTmpDir: '/tmp/sbt',
-    })
-
-    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
-      expect.objectContaining({
-        requireDotnetSdk: true,
-        sbtTmpDir: '/tmp/sbt',
-        withFiles: true,
-      }),
-    )
-    expect(result.resolvedPathsSidecar).toEqual({
+    expect((await run('reach')).resolvedPathsSidecar).toEqual({
       '/repo/a/.socket.facts.json': {
         projects: [{ name: 'app' }],
         components: [],
       },
     })
-  })
-
-  it('collects a sidecar for fix without resolving artifact paths', async () => {
-    mockGenerateRecursiveManifests.mockResolvedValueOnce([generated])
-
-    await runDynamicSbomInference({
-      consumer: 'fix',
-      cwd: '/repo',
-      excludePaths: [],
-      sbtTmpDir: undefined,
-    })
-
-    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
-      expect.objectContaining({
-        requireDotnetSdk: true,
-        sidecarAcc: expect.any(Map),
-        withFiles: false,
-      }),
-    )
-  })
-
-  it('throws when no build root was discovered at all', async () => {
-    mockGenerateRecursiveManifests.mockResolvedValueOnce([])
-
-    await expect(
-      runDynamicSbomInference({
-        consumer: 'reach',
-        cwd: '/repo',
-        excludePaths: [],
-        sbtTmpDir: undefined,
-      }),
-    ).rejects.toThrow(/No Gradle, sbt, Maven or .NET build root was found/)
-  })
-
-  it('throws when a discovered build root failed to generate facts', async () => {
-    mockGenerateRecursiveManifests.mockResolvedValueOnce([
-      generated,
-      { dir: '/repo/b', ecosystem: 'maven', status: 'failed' },
-    ])
-
-    await expect(
-      runDynamicSbomInference({
-        consumer: 'reach',
-        cwd: '/repo',
-        excludePaths: [],
-        sbtTmpDir: undefined,
-      }),
-    ).rejects.toThrow(/one or more independent build roots failed/i)
   })
 
   it('makes every discovered ecosystem facts-only, generated or not', async () => {
@@ -148,46 +118,61 @@ describe('runDynamicSbomInference', () => {
       { dir: '/repo/c', ecosystem: 'sbt', status: 'empty' },
     ])
 
-    const result = await runDynamicSbomInference({
-      consumer: 'reach',
-      cwd: '/repo',
-      excludePaths: [],
-      sbtTmpDir: undefined,
-    })
-
-    expect(result.factsOnlyTypes.sort()).toEqual(['maven', 'nuget'])
+    expect((await run('reach')).factsOnlyTypes.sort()).toEqual([
+      'maven',
+      'nuget',
+    ])
   })
 
-  it('throws for reachability when no build root produced facts', async () => {
-    mockGenerateRecursiveManifests.mockResolvedValueOnce([
-      { dir: '/repo/a', ecosystem: 'maven', status: 'empty' },
-      { dir: '/repo/b', ecosystem: 'gradle', status: 'skippedDisabled' },
-    ])
+  it.for([
+    {
+      name: 'no build root was discovered',
+      outcomes: [],
+      error: /No Gradle, sbt, Maven or .NET build root was found/,
+    },
+    {
+      name: 'a discovered build root failed to generate facts',
+      outcomes: [
+        generated,
+        { dir: '/repo/b', ecosystem: 'maven', status: 'failed' },
+      ],
+      error: /one or more independent build roots failed/i,
+    },
+    {
+      name: 'no build root produced facts for reachability',
+      outcomes: [
+        { dir: '/repo/a', ecosystem: 'maven', status: 'empty' },
+        { dir: '/repo/b', ecosystem: 'gradle', status: 'skippedDisabled' },
+      ],
+      error: /Re-enable the builds that socket.json skips/,
+    },
+  ])('throws when $name', async ({ error, outcomes }) => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
 
-    await expect(
-      runDynamicSbomInference({
-        consumer: 'reach',
-        cwd: '/repo',
-        excludePaths: [],
-        sbtTmpDir: undefined,
-      }),
-    ).rejects.toThrow(/Re-enable the builds/)
+    await expect(run('reach')).rejects.toThrow(error)
   })
 
-  it('lets fix proceed when no build root produced facts', async () => {
-    mockGenerateRecursiveManifests.mockResolvedValueOnce([
-      { dir: '/repo/a', ecosystem: 'maven', status: 'empty' },
-    ])
-
-    const result = await runDynamicSbomInference({
+  it.for([
+    {
       consumer: 'fix',
-      cwd: '/repo',
-      excludePaths: [],
-      sbtTmpDir: undefined,
-    })
+      outcomes: [{ dir: '/repo/a', ecosystem: 'maven', status: 'empty' }],
+    },
+    // Without Coana, the roots socket.json skips are not left out of anything.
+    {
+      consumer: 'upload',
+      outcomes: [
+        { dir: '/repo/a', ecosystem: 'maven', status: 'skippedDisabled' },
+      ],
+    },
+  ] as const)(
+    'lets $consumer proceed quietly without facts',
+    async ({ consumer, outcomes }) => {
+      mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
 
-    expect(result.factsPaths).toEqual([])
-  })
+      expect((await run(consumer)).factsPaths).toEqual([])
+      expect(mockWarn).not.toHaveBeenCalled()
+    },
+  )
 
   it('warns that build roots socket.json skips are left out', async () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([
@@ -195,31 +180,10 @@ describe('runDynamicSbomInference', () => {
       { dir: '/repo/b', ecosystem: 'maven', status: 'skippedDisabled' },
     ])
 
-    await runDynamicSbomInference({
-      consumer: 'reach',
-      cwd: '/repo',
-      excludePaths: [],
-      sbtTmpDir: undefined,
-    })
+    await run('reach')
 
     expect(mockWarn).toHaveBeenCalledWith(
       expect.stringMatching(/leaves out the build roots socket.json skips/),
     )
-  })
-
-  it('neither throws nor warns for roots without facts when Coana does not consume them', async () => {
-    mockGenerateRecursiveManifests.mockResolvedValueOnce([
-      { dir: '/repo/a', ecosystem: 'maven', status: 'skippedDisabled' },
-    ])
-
-    const result = await runDynamicSbomInference({
-      consumer: undefined,
-      cwd: '/repo',
-      excludePaths: [],
-      sbtTmpDir: undefined,
-    })
-
-    expect(result.factsPaths).toEqual([])
-    expect(mockWarn).not.toHaveBeenCalled()
   })
 })
