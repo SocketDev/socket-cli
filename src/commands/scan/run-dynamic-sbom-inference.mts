@@ -5,8 +5,8 @@ import { isFactsOnlyTypes } from '../../utils/coana.mts'
 import { InputError } from '../../utils/errors.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import {
-  FACTS_PURL_TYPES,
   PURL_TYPE_BY_TOOL,
+  buildToolLabelsFor,
 } from '../manifest/scripts/build-tool.mts'
 import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
 import {
@@ -36,17 +36,11 @@ export type DynamicSbomInferenceResult = {
 
 // Coana takes the discovered ecosystems' artifacts only from facts files, so a
 // build root without them is one it leaves out.
-function checkFactsForCoana({
-  consumer,
-  hasFacts,
-  narrowed,
-  outcomes,
-}: {
-  consumer: Exclude<FactsConsumer, 'upload'>
-  hasFacts: boolean
-  narrowed: boolean
-  outcomes: RecursiveManifestOutcome[]
-}): void {
+function checkFactsForCoana(
+  outcomes: RecursiveManifestOutcome[],
+  consumer: Exclude<FactsConsumer, 'upload'>,
+  hasFacts: boolean,
+): void {
   const hasDisabled = outcomes.some(o => o.status === 'skippedDisabled')
   // Coana (15.14.1) refuses a facts-only reachability run without any facts.
   if (consumer === 'reach' && !hasFacts) {
@@ -59,11 +53,7 @@ function checkFactsForCoana({
               `- Re-enable the builds that socket.json skips (\`${DSI_SETUP_COMMAND}\` walks you through it).`,
             ]
           : []),
-        ...(narrowed
-          ? [
-              '- Or select other ecosystems with --dynamic-sbom-inference-ecosystems.',
-            ]
-          : []),
+        '- Or select other ecosystems with --dynamic-sbom-inference-ecosystems.',
         '- Or remove --dynamic-sbom-inference to analyze the manifest files as they are.',
       ].join('\n'),
     )
@@ -109,7 +99,6 @@ export async function runDynamicSbomInference({
     verbose: false,
     withFiles,
   })
-  const narrowed = purlTypes.length < FACTS_PURL_TYPES.length
   const factsOnlyTypes = [
     ...new Set(outcomes.map(o => PURL_TYPE_BY_TOOL[o.ecosystem])),
   ]
@@ -119,17 +108,9 @@ export async function runDynamicSbomInference({
   if (!isFactsOnlyTypes(factsOnlyTypes)) {
     throw new InputError(
       [
-        ...(narrowed
-          ? [
-              `No build root for ${joinOr(purlTypes)} was found.`,
-              '',
-              '- Select other ecosystems with --dynamic-sbom-inference-ecosystems, or remove --dynamic-sbom-inference.',
-            ]
-          : [
-              'No Gradle, sbt, Maven or .NET build root was found.',
-              '',
-              '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
-            ]),
+        `No ${joinOr(buildToolLabelsFor(purlTypes))} build root was found.`,
+        '',
+        '- Select other ecosystems with --dynamic-sbom-inference-ecosystems, or remove --dynamic-sbom-inference.',
         '- Make sure to run it from the correct dir (use --cwd to target another dir).',
       ].join('\n'),
     )
@@ -145,12 +126,7 @@ export async function runDynamicSbomInference({
     .filter(o => o.status === 'generated')
     .map(o => o.factsPath!)
   if (coanaReadsFacts) {
-    checkFactsForCoana({
-      consumer,
-      hasFacts: !!factsPaths.length,
-      narrowed,
-      outcomes,
-    })
+    checkFactsForCoana(outcomes, consumer, !!factsPaths.length)
   }
   return {
     factsOnlyTypes,

@@ -347,7 +347,7 @@ describe('handleScanReach', () => {
   describe('dynamic SBOM inference', () => {
     const baseReachabilityOptions = {
       ...makeReachabilityOptions(),
-      dynamicSbomInference: true,
+      dynamicSbomInference: ['maven', 'nuget'],
       excludePaths: ['vendor/**'],
     }
 
@@ -437,7 +437,7 @@ describe('handleScanReach', () => {
         outputPath: '',
         reachabilityOptions: {
           ...baseReachabilityOptions,
-          dynamicSbomInference: false,
+          dynamicSbomInference: undefined,
         },
         targets: ['/repo'],
       })

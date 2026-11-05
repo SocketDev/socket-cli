@@ -28,10 +28,6 @@ vi.mock('./convert-sbt-to-facts.mts', () => ({
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
 }))
-vi.mock('./scripts/run.mts', async importOriginal => ({
-  ...(await importOriginal<typeof import('./scripts/run.mts')>()),
-  skipWithoutDotnetSdk: vi.fn(async () => false),
-}))
 vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
 }))
@@ -44,7 +40,6 @@ import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import { skipWithoutDotnetSdk } from './scripts/run.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -424,7 +419,6 @@ function generateForDotnet() {
 describe('generateAutoManifest — dotnet branch', () => {
   beforeEach(() => {
     vi.mocked(convertDotnetToFacts).mockClear()
-    vi.mocked(skipWithoutDotnetSdk).mockReset()
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
   })
 
@@ -442,10 +436,6 @@ describe('generateAutoManifest — dotnet branch', () => {
       },
     } as SocketJson)
     await generateForDotnet()
-    expect(skipWithoutDotnetSdk).toHaveBeenCalledWith(
-      '/opt/dotnet/dotnet',
-      '/tmp/repo',
-    )
     expect(convertDotnetToFacts).toHaveBeenCalledWith(
       expect.objectContaining({
         config: expect.objectContaining({
@@ -459,18 +449,11 @@ describe('generateAutoManifest — dotnet branch', () => {
     )
   })
 
-  it('skips the build where no .NET SDK runs', async () => {
-    vi.mocked(skipWithoutDotnetSdk).mockResolvedValue(true)
-    await generateForDotnet()
-    expect(convertDotnetToFacts).not.toHaveBeenCalled()
-  })
-
   it('does not run when defaults.manifest.dotnet.disabled is true', async () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({
       defaults: { manifest: { dotnet: { disabled: true } } },
     } as SocketJson)
     await generateForDotnet()
-    expect(skipWithoutDotnetSdk).not.toHaveBeenCalled()
     expect(convertDotnetToFacts).not.toHaveBeenCalled()
   })
 

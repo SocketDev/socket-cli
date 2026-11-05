@@ -25,7 +25,6 @@ import {
   isGitHubBlockingError,
 } from '../../utils/github-errors.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
-import { FACTS_PURL_TYPES } from '../manifest/scripts/build-tool.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -324,8 +323,7 @@ async function scanOneRepo(
     pendingHead: true,
     pullRequest: 0,
     reach: {
-      dynamicSbomInference: false,
-      dynamicSbomInferenceEcosystems: FACTS_PURL_TYPES,
+      dynamicSbomInference: undefined,
       excludePaths: [],
       reachAdvisories: [],
       reachAnalysisMemoryLimit: '',

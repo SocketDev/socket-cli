@@ -14,7 +14,6 @@ import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './scripts/resolution-report-render.mts'
-import { skipWithoutDotnetSdk } from './scripts/run.mts'
 import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
 import {
   ENVIRONMENT_YML,
@@ -225,21 +224,18 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.dotnet?.disabled && detected.dotnet) {
-    const config = resolveEcosystemConfig('dotnet', cwd, sockJson)
-    if (!(await skipWithoutDotnetSdk(config.bin, cwd))) {
-      logger.log(
-        'Detected a .NET solution or project, generating Socket facts...',
-      )
-      const outcome = await convertDotnetToFacts({
-        config,
-        cwd,
-        excludePaths,
-        hints,
-        sidecarAcc,
-        withFiles: computeArtifactsSidecar,
-      })
-      abortFactsRunIfFailed('dotnet', outcome)
-    }
+    logger.log(
+      'Detected a .NET solution or project, generating Socket facts...',
+    )
+    const outcome = await convertDotnetToFacts({
+      config: resolveEcosystemConfig('dotnet', cwd, sockJson),
+      cwd,
+      excludePaths,
+      hints,
+      sidecarAcc,
+      withFiles: computeArtifactsSidecar,
+    })
+    abortFactsRunIfFailed('dotnet', outcome)
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {

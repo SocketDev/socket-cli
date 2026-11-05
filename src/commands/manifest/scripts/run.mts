@@ -1,7 +1,6 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
@@ -9,7 +8,6 @@ import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
-import { getErrorMessageOr } from '../../../utils/errors.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
 import { getOrInsert } from '../../../utils/get-or-insert.mts'
 import { camelToKebab } from '../../../utils/strings.mts'
@@ -524,31 +522,6 @@ async function readDotnetSdkVersion(
     )
   }
   return out.stdout.trim()
-}
-
-const noSdkWarnings = new Set<string>()
-
-// True, after a warning, when no .NET SDK runs in `dir` (none installed, or
-// none matching its global.json), so its .NET builds are skipped.
-export async function skipWithoutDotnetSdk(
-  bin: string,
-  dir: string,
-): Promise<boolean> {
-  try {
-    await dotnetSdkVersion(bin, { projectDir: dir })
-    return false
-  } catch (e) {
-    const reason = getErrorMessageOr(e, `\`${bin} --version\` failed`).split(
-      '\n',
-    )[0]!
-    if (!noSdkWarnings.has(reason)) {
-      noSdkWarnings.add(reason)
-      logger.warn(
-        `Skipping .NET builds where no .NET SDK runs (${reason}); their project files are scanned as they are.`,
-      )
-    }
-    return true
-  }
 }
 
 // Runs the bundled tool against the build's own dotnet, in `mode` (none: a

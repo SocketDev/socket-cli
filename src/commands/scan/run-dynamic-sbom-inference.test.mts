@@ -130,11 +130,22 @@ describe('runDynamicSbomInference', () => {
     ])
   })
 
-  it.for([
+  it.for<{
+    error: RegExp
+    name: string
+    outcomes: object[]
+    purlTypes?: PURL_Type[]
+  }>([
     {
       name: 'no build root was discovered',
       outcomes: [],
-      error: /No Gradle, sbt, Maven or .NET build root was found/,
+      error: /No .NET, Gradle, Maven, or sbt build root was found/,
+    },
+    {
+      name: 'no build root of the selected ecosystems was discovered',
+      outcomes: [],
+      purlTypes: ['nuget'],
+      error: /No .NET build root was found/,
     },
     {
       name: 'a discovered build root failed to generate facts',
@@ -152,30 +163,16 @@ describe('runDynamicSbomInference', () => {
       ],
       error: /Re-enable the builds that socket.json skips/,
     },
-  ])('throws when $name', async ({ error, outcomes }) => {
-    mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
-
-    await expect(run('reach')).rejects.toThrow(error)
-  })
-
-  it.for([
     {
-      name: 'no build root of the selected ecosystems was found',
-      outcomes: [],
-      error: /No build root for nuget was found/,
-    },
-    {
-      name: 'the selected ecosystems produced no facts',
+      name: 'the selected ecosystems produced no facts for reachability',
       outcomes: [{ dir: '/repo/a', ecosystem: 'dotnet', status: 'empty' }],
+      purlTypes: ['nuget'],
       error: /select other ecosystems with --dynamic-sbom-inference-ecosystems/,
     },
-  ])('names the selection when $name', async ({ error, outcomes }) => {
+  ])('throws when $name', async ({ error, outcomes, purlTypes }) => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
 
-    await expect(run('reach', ['nuget'])).rejects.toThrow(error)
-    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
-      expect.objectContaining({ purlTypes: ['nuget'] }),
-    )
+    await expect(run('reach', purlTypes)).rejects.toThrow(error)
   })
 
   it.for([

@@ -22,7 +22,7 @@
  * - Ensures type safety for ecosystem operations
  */
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+import { arrayUnique, joinAnd } from '@socketsecurity/registry/lib/arrays'
 
 import { NPM } from '../constants.mts'
 import { InputError } from './errors.mts'
@@ -137,14 +137,15 @@ export function parseEcosystemChoices(
   raw: readonly string[],
   choices: readonly string[],
 ): PURL_Type[] {
-  for (const ecosystem of raw) {
+  const ecosystems = arrayUnique(raw.map(e => e.toLowerCase()))
+  for (const ecosystem of ecosystems) {
     if (!choices.includes(ecosystem)) {
       throw new InputError(
         `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(choices)}`,
       )
     }
   }
-  return [...raw] as PURL_Type[]
+  return ecosystems as PURL_Type[]
 }
 
 export function parseReachEcosystems(raw: readonly string[]): PURL_Type[] {

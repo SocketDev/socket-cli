@@ -52,7 +52,7 @@ async function runScanReach(
       consumer: 'reach',
       cwd,
       excludePaths: reachabilityOptions.excludePaths,
-      purlTypes: reachabilityOptions.dynamicSbomInferenceEcosystems,
+      purlTypes: reachabilityOptions.dynamicSbomInference,
       sbtTmpDir,
     })
     scanTargets = Array.from(

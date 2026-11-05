@@ -28,8 +28,8 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {
-  dynamicSbomInference: boolean
-  dynamicSbomInferenceEcosystems: readonly PURL_Type[]
+  // The ecosystems to generate Socket facts for; undefined when off.
+  dynamicSbomInference: FactsOnlyTypes | undefined
   excludePaths: string[]
   // GHSA IDs. Empty means all advisories.
   reachAdvisories: string[]

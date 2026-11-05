@@ -9,7 +9,7 @@ import {
   DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
   dynamicSbomInferenceEcosystemsFlags,
   excludePathsFlag,
-  parseDynamicSbomInferenceEcosystems,
+  parseDynamicSbomInferenceFlags,
   reachabilityFlags,
 } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
@@ -148,7 +148,6 @@ async function run(
 
   const {
     cwd: cwdOverride,
-    dynamicSbomInference,
     interactive = true,
     json,
     markdown,
@@ -175,7 +174,6 @@ async function run(
     reachVersion,
   } = cli.flags as {
     cwd: string
-    dynamicSbomInference: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -213,12 +211,7 @@ async function run(
 
   // Validate ecosystem values against the reachability-supported set.
   const reachEcosystems = parseReachEcosystems(reachEcosystemsRaw)
-  const dynamicSbomInferenceEcosystemsRaw = cmdFlagValueToArray(
-    cli.flags['dynamicSbomInferenceEcosystems'],
-  )
-  const dynamicSbomInferenceEcosystems = parseDynamicSbomInferenceEcosystems(
-    dynamicSbomInferenceEcosystemsRaw,
-  )
+  const dynamicSbomInference = parseDynamicSbomInferenceFlags(cli.flags)
 
   const processCwd = process.cwd()
   const cwd =
@@ -245,13 +238,6 @@ async function run(
 
   const wasValidInput = checkCommandInput(
     outputKind,
-    {
-      nook: true,
-      test: dynamicSbomInference || !dynamicSbomInferenceEcosystemsRaw.length,
-      message:
-        '--dynamic-sbom-inference-ecosystems requires --dynamic-sbom-inference',
-      fail: 'add --dynamic-sbom-inference',
-    },
     {
       nook: true,
       test: !!orgSlug,
@@ -319,8 +305,7 @@ async function run(
     outputKind,
     outputPath: outputPath || '',
     reachabilityOptions: {
-      dynamicSbomInference: Boolean(dynamicSbomInference),
-      dynamicSbomInferenceEcosystems,
+      dynamicSbomInference,
       excludePaths,
       reachAdvisories,
       reachAnalysisMemoryLimit,

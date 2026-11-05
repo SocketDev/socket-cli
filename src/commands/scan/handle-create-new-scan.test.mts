@@ -345,7 +345,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await handleCreateNewScan(config)
 
@@ -384,7 +384,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: true, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await handleCreateNewScan(config)
 
@@ -430,8 +430,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: true, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
-    config.reach.dynamicSbomInferenceEcosystems = ['nuget']
+    config.reach.dynamicSbomInference = ['nuget']
 
     await handleCreateNewScan(config)
 
@@ -455,7 +454,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await expect(handleCreateNewScan(config)).rejects.toThrow(
       /one or more independent build roots failed/i,
@@ -468,10 +467,10 @@ describe('handleCreateNewScan excludePaths', () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await expect(handleCreateNewScan(config)).rejects.toThrow(
-      /No Gradle, sbt, Maven or .NET build root was found/,
+      /No .NET, Gradle, Maven, or sbt build root was found/,
     )
     expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
     expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
@@ -484,7 +483,7 @@ describe('handleCreateNewScan excludePaths', () => {
     ])
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
 
     await handleCreateNewScan(config)
 
@@ -521,7 +520,7 @@ describe('handleCreateNewScan excludePaths', () => {
     )
 
     const config = createConfig({ autoManifest: false, targets: ['/repo'] })
-    config.reach.dynamicSbomInference = true
+    config.reach.dynamicSbomInference = ['maven', 'nuget']
     config.reach.runReachabilityAnalysis = true
 
     await handleCreateNewScan(config)

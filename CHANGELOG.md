@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - With `--dynamic-sbom-inference`, reachability analysis and `socket fix` now take the dependencies of every Gradle, sbt, Maven and .NET build they find from Socket facts only, so results no longer depend on which other builds produced facts.
-- `--dynamic-sbom-inference` and its setup now fail a .NET build that has no usable .NET SDK, as they do a Maven build without Maven, instead of skipping it. With it, reachability analysis and `socket fix` warn that builds skipped in `socket.json` are left out, and reachability analysis stops with next steps when no build produced Socket facts.
+- `socket manifest auto`, `--auto-manifest` and `--dynamic-sbom-inference` (with its setup) now fail a .NET build that has no usable .NET SDK, as they do a Maven build without Maven, instead of skipping it. With `--dynamic-sbom-inference`, reachability analysis and `socket fix` warn that builds skipped in `socket.json` are left out, and reachability analysis stops with next steps when no build produced Socket facts.
 
 ## [1.13.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.13.1) - 2026-11-03
 

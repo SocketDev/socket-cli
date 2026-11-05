@@ -105,7 +105,7 @@ describe('socket scan create', async () => {
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
             --dynamic-sbom-inference  For Gradle, sbt, Maven and .NET: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root. Combine with --reach to split the reachability analysis per project/module.
-            --dynamic-sbom-inference-ecosystems  With --dynamic-sbom-inference: generate Socket facts only for these ecosystems, as either a comma separated value or as multiple flags; the others keep their manifest files as they are. Supported: maven (Gradle, sbt and Maven) and nuget (.NET). Defaults to both.
+            --dynamic-sbom-inference-ecosystems  With --dynamic-sbom-inference: generate Socket facts only for these ecosystems, as either a comma separated value or as multiple flags; the others keep their manifest files as they are. Supported: maven (Gradle, Maven, and sbt) and nuget (.NET). Defaults to all of them.
             --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. An excluded JVM build module or .NET project is not analysed as a project of its own, but where a project that is not excluded depends on it, its code is analysed as part of that project. A build module or project outside the scan root cannot be excluded.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
@@ -430,61 +430,6 @@ describe('socket scan create', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code).toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'create',
-      FLAG_ORG,
-      'fakeOrg',
-      'target',
-      FLAG_DRY_RUN,
-      '--repo',
-      'xyz',
-      '--branch',
-      'abc',
-      '--dynamic-sbom-inference-ecosystems',
-      'maven',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should fail when --dynamic-sbom-inference-ecosystems is used without --dynamic-sbom-inference',
-    async cmd => {
-      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
-      expect(stderr).toContain(
-        '--dynamic-sbom-inference-ecosystems requires --dynamic-sbom-inference',
-      )
-      expect(code).not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'create',
-      FLAG_ORG,
-      'fakeOrg',
-      'target',
-      FLAG_DRY_RUN,
-      '--repo',
-      'xyz',
-      '--branch',
-      'abc',
-      '--dynamic-sbom-inference',
-      '--dynamic-sbom-inference-ecosystems',
-      'maven,npm',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should fail when --dynamic-sbom-inference-ecosystems names an ecosystem without a facts generator',
-    async cmd => {
-      const { code, stderr } = await spawnSocketCli(binCliPath, cmd)
-      expect(stderr).toContain(
-        'Invalid ecosystem: "npm". Valid values are: maven and nuget',
-      )
-      expect(code).not.toBe(0)
     },
   )
 

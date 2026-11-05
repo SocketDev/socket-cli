@@ -181,7 +181,7 @@ async function createNewScan(
           consumer: reach.runReachabilityAnalysis ? 'reach' : 'upload',
           cwd,
           excludePaths: reach.excludePaths,
-          purlTypes: reach.dynamicSbomInferenceEcosystems,
+          purlTypes: reach.dynamicSbomInference,
           // sbt's Scala toolchain lives under its shared global base;
           // reach's artifactPaths point into it, so when reachability
           // will consume them afterward, reuse manifestTmpDir (kept alive
@@ -204,9 +204,7 @@ async function createNewScan(
         if (reach.dynamicSbomInference) {
           // Already generated recursively above; resolving cwd's own build
           // root a second time would race on the same facts file.
-          for (const tool of buildToolsFor(
-            reach.dynamicSbomInferenceEcosystems,
-          )) {
+          for (const tool of buildToolsFor(reach.dynamicSbomInference)) {
             detected[tool] = false
           }
         }

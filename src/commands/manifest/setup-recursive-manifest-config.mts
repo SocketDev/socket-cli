@@ -18,6 +18,7 @@ import {
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
+import { ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -45,14 +46,6 @@ import type { ManifestDefaults, SocketJson } from '../../utils/socket-json.mts'
 type Candidate = { dir: string; ecosystem: BuildTool; roots: BuildRoot[] }
 
 const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt', 'dotnet']
-
-const ECOSYSTEM_LABELS: Record<BuildTool, string> = {
-  __proto__: null,
-  dotnet: '.NET',
-  gradle: 'Gradle',
-  maven: 'Maven',
-  sbt: 'sbt',
-} as unknown as Record<BuildTool, string>
 
 // The shallowest directory matching `--exclude-paths`, not necessarily a
 // project dir itself - one write here covers every project beneath it.
