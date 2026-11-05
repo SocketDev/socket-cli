@@ -36,6 +36,7 @@
   },
   "scripts": {
     "build": "pnpm build:dist",
+    "build:archive-loader": "bash src/commands/manifest/scripts/archive-loader/build-jar.sh",
     "build:dist": "pnpm build:dist:src && pnpm build:dist:types",
     "build:dist:src": "run-p -c clean:dist clean:external && dotenvx -q run -f .env.local -- rollup -c .config/rollup.dist.config.mjs",
     "build:dist:types": "pnpm clean:dist:types && tsgo --project tsconfig.dts.json",

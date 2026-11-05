@@ -105,7 +105,7 @@ async function copyInitGradle() {
 }
 
 // Copy the build-tool resolution assets (Gradle init script, sbt plugin,
-// Maven extension jar, dotnet tool) into dist/manifest-scripts, where run.mts resolves them
+// Maven extension and archive loader jars, dotnet tool) into dist/manifest-scripts, where run.mts resolves them
 // at runtime. The Maven jar is compiled by maven-extension/build-jar.sh (run in
 // CI / local dev) and is absent from a fresh checkout — copy it only if present;
 // run.mts surfaces a build hint when it's missing.
@@ -113,6 +113,7 @@ async function copyManifestScripts() {
   const srcDir = path.join(constants.srcPath, 'commands/manifest/scripts')
   const destDir = path.join(constants.distPath, 'manifest-scripts')
   await fs.mkdir(path.join(destDir, 'maven-extension'), { recursive: true })
+  await fs.mkdir(path.join(destDir, 'archive-loader'), { recursive: true })
   await Promise.all([
     fs.copyFile(
       path.join(srcDir, 'socket-facts.init.gradle'),
@@ -145,25 +146,34 @@ async function copyManifestScripts() {
         ' for a published build. Build it first: pnpm run build:dotnet-tool',
     )
   }
-  const jarPath = path.join(
-    srcDir,
-    'maven-extension',
-    'coana-maven-extension.jar',
+  await copyBuiltJar(
+    'Archive loader jar',
+    path.join('archive-loader', 'archive-loader.jar'),
+    'build:archive-loader',
   )
-  if (existsSync(jarPath)) {
+  await copyBuiltJar(
+    'Maven manifest extension jar',
+    path.join('maven-extension', 'coana-maven-extension.jar'),
+    'build:maven-extension',
+  )
+}
+
+// Absent from a fresh checkout: a published build fails closed rather than ship
+// a feature that silently produces nothing; run.mts hints for a dev build.
+async function copyBuiltJar(description, relativePath, buildScript) {
+  const srcPath = path.join(
+    constants.srcPath,
+    'commands/manifest/scripts',
+    relativePath,
+  )
+  if (existsSync(srcPath)) {
     await fs.copyFile(
-      jarPath,
-      path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
+      srcPath,
+      path.join(constants.distPath, 'manifest-scripts', relativePath),
     )
   } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
-    // Fail closed: a published build without the jar would ship a package whose
-    // `socket manifest maven` / Maven reachability silently produces an empty
-    // SBOM. Run `pnpm run build:maven-extension` before `build:dist`. (A local
-    // dev build tolerates a missing jar; run.mts surfaces a hint at runtime.)
     throw new Error(
-      'Maven manifest extension jar not found at ' +
-        jarPath +
-        ' for a published build. Build it first: pnpm run build:maven-extension',
+      `${description} not found at ${srcPath} for a published build. Build it first: pnpm run ${buildScript}`,
     )
   }
 }

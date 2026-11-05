@@ -379,12 +379,13 @@ jobs:
       # download outside the shimmed process tree. The org action allowlist forbids
       # actions/setup-java, so use a JDK pre-installed on the runner image
       # (JAVA_HOME_17_X64), falling back to the runner's default `java`.
-      - name: Build Maven manifest extension jar
+      - name: Build Maven manifest extension and archive loader jars
         run: |
           if [ -n "${JAVA_HOME_17_X64:-}" ]; then
             export JAVA_HOME="$JAVA_HOME_17_X64"
           fi
           bash src/commands/manifest/scripts/maven-extension/build-jar.sh
+          bash src/commands/manifest/scripts/archive-loader/build-jar.sh
 
       # Same for the dotnet manifest tool: built here, bundled into
       # dist/manifest-scripts, never committed. The runner image's preinstalled

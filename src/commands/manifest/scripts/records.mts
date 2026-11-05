@@ -145,6 +145,18 @@ export type ParsedRecords = {
   unscannable: Unscannable[]
 }
 
+// One field array per non-empty line; tolerates an emitter that writes CRLF.
+export function splitRecords(text: string): string[][] {
+  const records: string[][] = []
+  for (const line of text.split('\n')) {
+    const rawLine = line.endsWith('\r') ? line.slice(0, -1) : line
+    if (rawLine) {
+      records.push(rawLine.split('\t').map(unescapeField))
+    }
+  }
+  return records
+}
+
 export function unescapeField(s: string): string {
   if (!s.includes('\\')) {
     return s
@@ -233,13 +245,7 @@ export function parseRecords(text: string): ParsedRecords {
     return b
   }
 
-  for (const line of text.split('\n')) {
-    // Tolerates an emitter that writes CRLF line endings.
-    const rawLine = line.endsWith('\r') ? line.slice(0, -1) : line
-    if (!rawLine) {
-      continue
-    }
-    const f = rawLine.split('\t').map(unescapeField)
+  for (const f of splitRecords(text)) {
     switch (f[0]) {
       case 'meta':
         result.tool = f[1] ?? ''

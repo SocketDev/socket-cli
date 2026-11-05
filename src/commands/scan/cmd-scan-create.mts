@@ -4,6 +4,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
+import { findArchiveTargets } from './generate-archive-facts.mts'
 import {
   generateUvMemberSboms,
   resolveUvMemberDirs,
@@ -44,6 +45,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
+import { isPathInside } from '../../utils/path-resolve.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJsonUp } from '../../utils/socket-json.mts'
 import { socketDashboardLink } from '../../utils/terminal-link.mts'
@@ -240,6 +242,9 @@ async function run(
     - Defaults to the current dir (cwd) if none given
     - Multiple targets can be specified
     - If a target is a file, only that file is checked
+    - If it is a .jar, .war or .ear, the Maven libraries identified by the
+      pom.properties bundled in it are written to "<archive>.socket.facts.json"
+      next to it and scanned (needs Java 8+; not with --reach)
     - If it is a dir, the dir is scanned for any supported manifest files
     - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
     - Supports globbing such as "**/package.json", "**/${REQUIREMENTS_TXT}", etc.
@@ -664,6 +669,15 @@ async function run(
       message:
         'Target directory must be inside the current working directory when --reach is enabled',
       fail: 'provide a path inside the working directory',
+    },
+    {
+      nook: true,
+      test: findArchiveTargets(targets, cwd).every(archive =>
+        isPathInside(archive, cwd),
+      ),
+      message:
+        'A .jar, .war or .ear target must be inside the current working directory',
+      fail: 'provide a path inside the working directory, or use --cwd',
     },
   )
   if (!wasValidInput) {

@@ -120,13 +120,10 @@ function normalizeScanInputPath(pathToNormalize: string, cwd: string): string {
   if (!path.isAbsolute(pathToNormalize)) {
     return pathToNormalize
   }
-  const relativePath = path.relative(cwd, pathToNormalize)
-  const isInsideCwd =
-    relativePath === '' ||
-    (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
-  if (!isInsideCwd) {
+  if (!isPathInside(pathToNormalize, cwd)) {
     return pathToNormalize
   }
+  const relativePath = path.relative(cwd, pathToNormalize)
   return stripTrailingSlash(relativePath.replaceAll('\\', '/')) || '.'
 }
 
@@ -161,5 +158,14 @@ export async function getPackageFilesForScan(
       filter,
       socketConfig,
     },
+  )
+}
+
+export function isPathInside(target: string, dir: string): boolean {
+  const relativePath = path.relative(dir, target)
+  return (
+    relativePath !== '..' &&
+    !relativePath.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativePath)
   )
 }

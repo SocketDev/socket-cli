@@ -11,6 +11,7 @@ import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
+import { generateArchiveTargetFacts } from './generate-archive-facts.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
@@ -235,6 +236,13 @@ async function createNewScan(
       logger.info('Auto-generation finished. Proceeding with Scan creation.')
     }
 
+    const { additionalScaIgnores, mergedReachabilityOptions } =
+      applyFullExcludePaths({
+        cwd,
+        reachabilityOptions: reach,
+        target: targets[0]!,
+      })
+
     const { spinner } = constants
 
     const supportedFilesCResult = await fetchSupportedScanFileNames({
@@ -255,6 +263,11 @@ async function createNewScan(
       `Fetched ${supportedFilesCResult.data['size']} supported file types`,
     )
 
+    const archiveFactsPaths = await generateArchiveTargetFacts(targets, {
+      cwd,
+      excludeGlobs: additionalScaIgnores,
+    })
+
     spinner.start('Searching for local files to include in scan...')
 
     const supportedFiles = supportedFilesCResult.data
@@ -265,20 +278,19 @@ async function createNewScan(
       ? socketYmlResult.data?.parsed
       : undefined
 
-    const { additionalScaIgnores, mergedReachabilityOptions } =
-      applyFullExcludePaths({
-        cwd,
-        reachabilityOptions: reach,
-        target: targets[0]!,
-      })
-
-    const packagePaths =
-      scanFiles ??
-      (await getPackageFilesForScan(scanTargets, supportedFiles, {
-        additionalIgnores: additionalScaIgnores,
-        config: socketConfig,
-        cwd,
-      }))
+    // An archive the user named is scanned even where .gitignore or
+    // projectIgnorePaths would hide it, so its facts bypass discovery.
+    const packagePaths = Array.from(
+      new Set([
+        ...(scanFiles ??
+          (await getPackageFilesForScan(scanTargets, supportedFiles, {
+            additionalIgnores: additionalScaIgnores,
+            config: socketConfig,
+            cwd,
+          }))),
+        ...archiveFactsPaths,
+      ]),
+    )
 
     spinner.successAndStop(
       `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
