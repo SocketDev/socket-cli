@@ -311,7 +311,7 @@ internal sealed partial class Session {
       }
     }
     foreach (var key in _notRestored.Where(k => !withErrors.Contains(k))) {
-      _records.Unscannable("", "`dotnet restore` did not restore this project in this run, so its dependencies are unknown", key);
+      _records.Unscannable("", "the failed `dotnet restore` may have skipped this project as up to date, or never reached it, so its dependencies are unknown", key);
     }
   }
 
