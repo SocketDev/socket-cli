@@ -31,6 +31,7 @@ import constants, {
   FLAG_DRY_RUN,
 } from '../../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../../test/utils.mts'
+import * as socketJsonUtils from '../../../utils/socket-json.mts'
 
 import type { EcosystemOutcome } from './cmd-manifest-bazel.mts'
 import type { CliCommandContext } from '../../../utils/meow-with-subcommands.mts'
@@ -270,5 +271,41 @@ describe('perRepoTimeout flag wiring', () => {
     expect(extractBazelToMaven).toHaveBeenCalledWith(
       expect.objectContaining({ perRepoTimeoutMs: 45_000 }),
     )
+  })
+
+  it('refuses an executable from socket.json before calling the extractor', async () => {
+    const socketJsonSpy = vi
+      .spyOn(socketJsonUtils, 'readOrDefaultSocketJson')
+      .mockReturnValue({
+        defaults: { manifest: { bazel: { bin: '/socket-json/bazel' } } },
+      } as ReturnType<typeof socketJsonUtils.readOrDefaultSocketJson>)
+    try {
+      await cmdManifestBazel.run(['.'], importMeta, {
+        parentName: 'manifest',
+      } as CliCommandContext)
+      expect(extractBazelToMaven).not.toHaveBeenCalled()
+      expect(process.exitCode).toBe(1)
+    } finally {
+      socketJsonSpy.mockRestore()
+      process.exitCode = 0
+    }
+  })
+
+  it('accepts an executable from socket.json with --trust-socket-json', async () => {
+    const socketJsonSpy = vi
+      .spyOn(socketJsonUtils, 'readOrDefaultSocketJson')
+      .mockReturnValue({
+        defaults: { manifest: { bazel: { bin: '/socket-json/bazel' } } },
+      } as ReturnType<typeof socketJsonUtils.readOrDefaultSocketJson>)
+    try {
+      await cmdManifestBazel.run(['--trust-socket-json', '.'], importMeta, {
+        parentName: 'manifest',
+      } as CliCommandContext)
+      expect(extractBazelToMaven).toHaveBeenCalledWith(
+        expect.objectContaining({ bin: '/socket-json/bazel' }),
+      )
+    } finally {
+      socketJsonSpy.mockRestore()
+    }
   })
 })
