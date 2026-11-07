@@ -104,6 +104,26 @@ Socket reachability analysis comes in three forms:
 - **Precomputed reachability** (formerly Tier 2): Determines whether vulnerable code in transitive dependencies is reachable through your direct dependencies, using precomputed static analysis of dependency chains (no access to your application code required). In the CLI this is the fallback used when full application reachability cannot complete (see the `--reach-continue-on-*` flags).
 - **Dependency reachability** (formerly Tier 3): Package-level filtering that detects which dependencies are actually used, so CVEs in unused/dead dependencies can be filtered out.
 
+#### Network access
+
+Full application reachability (`socket scan reach`, `socket scan create --reach`) downloads its analysis engine, the Coana CLI, on first use and installs your project's dependencies to analyze them. On a restricted network, allow:
+
+| Host | Used for | If blocked |
+|---|---|---|
+| `api.socket.dev` | Socket API calls, and a signed URL for the engine download | The command fails |
+| `storage.googleapis.com` | Downloading the engine and its analyzers (about 120 MB) | The command fails with `Failed to get the Coana CLI <version>: getaddrinfo ENOTFOUND storage.googleapis.com` |
+| The package registry of each scanned ecosystem, for example `registry.npmjs.org` | Installing your project's dependencies for analysis | The analysis still completes, but the affected vulnerabilities are reported as `INSTALL ERROR` with no reachability result |
+
+The engine comes from Socket, not npm, so an npm mirror or registry proxy does not cover the engine download. The registry row does not apply when your dependencies are already installed in the scanned directory, for example a `node_modules` directory from an earlier `npm ci`.
+
+The engine is cached in `$XDG_CACHE_HOME/socket/coana` (`~/.cache/socket/coana` by default). Persist that directory between CI runs to skip the download; with a warm cache, `storage.googleapis.com` is not contacted.
+
+**Behind an HTTP(S) proxy**, set `NODE_USE_ENV_PROXY=1` along with `HTTPS_PROXY`. The CLI does not currently route its own requests through `HTTPS_PROXY` or `SOCKET_CLI_API_PROXY`, and fails with `getaddrinfo EAI_AGAIN api.socket.dev`. `NODE_USE_ENV_PROXY=1` (Node.js 22.21 or later) makes Node.js send them through the proxy:
+
+```bash
+HTTPS_PROXY=http://proxy.example.com:3128 NODE_USE_ENV_PROXY=1 socket scan reach .
+```
+
 ### Flags
 
 #### Output flags
@@ -158,7 +178,7 @@ npm exec socket
 ### Development environment variables
 
 - `SOCKET_CLI_API_BASE_URL` - API base URL (default: `https://api.socket.dev/v0/`)
-- `SOCKET_CLI_API_PROXY` - Proxy for API requests (aliases: `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, `http_proxy`)
+- `SOCKET_CLI_API_PROXY` - Proxy for API requests (aliases: `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, `http_proxy`). Currently not applied to API requests; see [Network access](#network-access) for the `NODE_USE_ENV_PROXY=1` workaround
 - `SOCKET_CLI_API_TIMEOUT` - API request timeout in milliseconds
 - `SOCKET_CLI_DEBUG` - Enable debug logging
 - `DEBUG` - Enable [`debug`](https://socket.dev/npm/package/debug) package logging
