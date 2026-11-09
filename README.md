@@ -169,6 +169,7 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ### See also
 
+- [Organization dependency inventory guide](docs/organization-dependencies.md)
 - [Socket API Reference](https://docs.socket.dev/reference)
 - [Socket GitHub App](https://github.com/apps/socket-security)
 - [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js)
