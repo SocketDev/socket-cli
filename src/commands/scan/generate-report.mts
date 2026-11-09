@@ -3,9 +3,8 @@ import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.m
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { ALERT_ACTION, SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type AlertKey = string
 type EcoMap = Map<string, ReportLeafNode | PackageMap>
@@ -40,7 +39,6 @@ export type ReportLeafNode = {
 //       failed. It won't reflect the healthy state.
 export function generateReport(
   scan: SocketArtifact[],
-  securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data'],
   {
     fold,
     orgSlug,
@@ -72,7 +70,7 @@ export function generateReport(
 
   // In the context of a report;
   // - the alert.severity is irrelevant
-  // - the securityPolicyDefault is irrelevant
+  // - policy defaults are irrelevant because the API resolves actions per alert
   // - the report defaults to healthy:true with no alerts
   // - the appearance of an alert will trigger the policy action;
   //   - error: healthy will end up as false, add alerts to report
@@ -92,22 +90,19 @@ export function generateReport(
 
   let healthy = true
 
-  const securityRules = securityPolicy.securityPolicyRules
-  if (securityRules) {
-    // Note: reportLevel: error > warn > monitor > ignore > defer
-    scan.forEach(artifact => {
-      const {
-        alerts,
-        name: pkgName = UNKNOWN_VALUE,
-        type: ecosystem,
-        version = UNKNOWN_VALUE,
-      } = artifact
+  // Note: reportLevel: error > warn > monitor > ignore > defer
+  scan.forEach(artifact => {
+    const {
+      alerts,
+      name: pkgName = UNKNOWN_VALUE,
+      type: ecosystem,
+      version = UNKNOWN_VALUE,
+    } = artifact
 
-      alerts?.forEach(
-        (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
-          const alertName = alert.type as keyof typeof securityRules // => policy[type]
-          const action = securityRules[alertName]?.action || ''
-          switch (action) {
+    alerts?.forEach(
+      (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
+        const action = alert.action as ALERT_ACTION | undefined
+        switch (action) {
             case constants.REPORT_LEVEL_ERROR: {
               healthy = false
               if (!short) {
@@ -180,31 +175,13 @@ export function generateReport(
               break
             }
 
-            case constants.REPORT_LEVEL_DEFER: {
-              // Not sure but ignore for now. Defer to later ;)
-              if (!short && reportLevel === constants.REPORT_LEVEL_DEFER) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
             default: {
-              // This value was not emitted from the Socket API at the time of writing.
+              // Alerts without a resolved policy action are not reportable.
             }
-          }
-        },
-      )
-    })
-  }
+        }
+      },
+    )
+  })
 
   spinner?.successAndStop(`Generated reported in ${Date.now() - now} ms`)
 
