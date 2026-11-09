@@ -3,7 +3,8 @@
  * @file The dependency update entry point. Three passes, in order, so nothing
  *   races and every run is reproducible:
  *
- *     1. Third party — taze, governed by taze.config.mts, which holds the
+ *     1. Third party — taze, governed by .config/taze.config.mts, re-exported
+ *        from root taze.config.mts for Taze's config discovery.
  *        7-day maturity window and the exclude list. A package published in
  *        the last week is not picked up.
  *     2. Socket-owned scopes — @socketsecurity/* and @socketregistry/*, taken
@@ -76,7 +77,7 @@ export function isDryRun(argv: readonly string[]): boolean {
 
 /**
  * The argv for a taze pass. `write` false is spelled `--no-write` so a preview
- * cannot be undone by taze.config.mts, which sets `write: true` for the live
+ * cannot be undone by .config/taze.config.mts, which sets `write: true` for the live
  * run. `include` narrows the pass to a set of name globs, and `maturityPeriod`
  * overrides the config's soak window for the Socket scopes. Pure — exported for
  * tests.
@@ -234,7 +235,7 @@ function main(): number {
     `[update] ${dryRun ? 'previewing' : 'applying'} dependency updates.\n`,
   )
 
-  // Pass 1 — third party, soak-gated by taze.config.mts.
+  // Pass 1 — third party, soak-gated by .config/taze.config.mts.
   process.stdout.write(
     '[update] pass 1/3: third-party packages (7-day soak).\n',
   )
@@ -301,7 +302,7 @@ const SCRIPT_META: ScriptMeta = {
   --dry-run   report what would move without writing package.json or the
               lockfile, then verify that nothing was written
 
-  Pass 1 runs taze under taze.config.mts (7-day maturity window, exclude list).
+  Pass 1 runs taze under .config/taze.config.mts (7-day maturity window, exclude list).
   Pass 2 takes @socketsecurity/* and @socketregistry/* to latest with no soak.
   Pass 3 runs pnpm install so pnpm-lock.yaml matches the new package.json.`,
 }

@@ -13,7 +13,8 @@ vi.mock('@socketsecurity/registry/lib/bin', () => ({
   whichBin: whichBinMock,
 }))
 
-vi.mock('../src/utils/fs.mts', () => ({
+vi.mock('../src/utils/fs.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../src/utils/fs.mts')>()),
   findUp: vi.fn(async () => undefined),
 }))
 

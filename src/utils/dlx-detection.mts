@@ -2,8 +2,7 @@
  * Temporary package executor detection utilities for Socket CLI.
  * Identifies and handles temporary execution contexts.
  *
- * Key Functions:
- * - isRunningInTemporaryExecutor: Detects if running in npx/dlx/exec context
+ * Key Function:
  * - shouldSkipShadow: Determines if shadow installation should be skipped
  *
  * Temporary Execution Contexts:
@@ -27,50 +26,6 @@ import path from 'node:path'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 import constants from '../constants.mts'
-
-/**
- * Detects if the current process is running in a temporary package execution context
- * such as npm exec, npx, pnpm dlx, or yarn dlx.
- *
- * When package managers run commands via exec/npx/dlx, they execute in temporary directories
- * that are cleaned up after execution. Creating persistent shadows or modifying PATH
- * in these contexts can break subsequent package manager commands.
- *
- * @returns true if running in an exec/npx/dlx context, false otherwise
- */
-export function isRunningInTemporaryExecutor(): boolean {
-  // Check environment variable for exec/npx/dlx indicators.
-  const userAgent = constants.ENV.npm_config_user_agent
-  if (
-    userAgent?.includes('exec') ||
-    userAgent?.includes('npx') ||
-    userAgent?.includes('dlx')
-  ) {
-    return true
-  }
-
-  // Normalize the __dirname path for consistent checking across platforms.
-  const normalizedDirname = normalizePath(__dirname)
-
-  // Check if running from npm's npx cache.
-  const npmCache = constants.ENV.npm_config_cache
-  if (npmCache && normalizedDirname.includes(normalizePath(npmCache))) {
-    return true
-  }
-
-  // Check common temporary execution path patterns.
-  const tempPatterns = [
-    '_npx', // npm's npx cache directory
-    '.pnpm-store', // pnpm dlx temporary store
-    'dlx-', // Common dlx directory prefix
-    '.yarn/$$', // Yarn Berry PnP virtual packages
-    path.sep === '\\'
-      ? 'AppData\\Local\\Temp\\xfs-'
-      : 'AppData/Local/Temp/xfs-', // Yarn on Windows
-  ]
-
-  return tempPatterns.some(pattern => normalizedDirname.includes(pattern))
-}
 
 export type ShadowInstallationOptions = {
   cwd?: string | undefined

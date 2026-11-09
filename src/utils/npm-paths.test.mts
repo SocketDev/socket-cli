@@ -1,10 +1,20 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
+
 import { resolveBinPathToJsEntry } from './npm-paths.mts'
+import { findNpmDirPathSync } from './path-resolve.mts'
 
 // A bash wrapper of the shape mise writes so it can run `mise reshim` after a
 // global install. It carries none of the `NPM_CLI_JS=` markers npm's own shim
@@ -91,4 +101,50 @@ describe('resolveBinPathToJsEntry', () => {
 
     expect(resolveBinPathToJsEntry(binPath, 'npm-cli.js')).toBe(binPath)
   })
+
+  it.skipIf(process.platform === 'win32')(
+    'resolves a shell npm symlink into its installed package before finding npm',
+    () => {
+      const install = path.join(tmpDir, 'share', 'nodejs', 'npm')
+      const binDir = path.join(install, 'bin')
+      mkdirSync(binDir, { recursive: true })
+      mkdirSync(path.join(install, 'node_modules'), { recursive: true })
+      writeFileSync(path.join(binDir, 'npm-cli.js'), '')
+      const linkDir = path.join(tmpDir, 'usr-bin')
+      mkdirSync(linkDir)
+      const link = path.join(linkDir, 'npm')
+      symlinkSync(path.join(binDir, 'npm-cli.js'), link)
+
+      const resolved = resolveBinPathSync(link)
+      expect(resolved).toBe(
+        realpathSync.native(path.join(binDir, 'npm-cli.js')),
+      )
+      expect(findNpmDirPathSync(resolved)).toBe(realpathSync.native(install))
+    },
+  )
+
+  it.skipIf(process.platform === 'win32')(
+    'resolves a symlinked POSIX npm shell shim relative to the actual shim',
+    () => {
+      const install = path.join(tmpDir, 'share', 'nodejs', 'npm')
+      const binDir = path.join(install, 'bin')
+      mkdirSync(binDir, { recursive: true })
+      mkdirSync(path.join(install, 'node_modules'), { recursive: true })
+      writeFileSync(
+        path.join(binDir, 'npm'),
+        '#!/bin/sh\nNPM_CLI_JS="$CLI_BASEDIR/npm-cli.js"\n',
+      )
+      writeFileSync(path.join(binDir, 'npm-cli.js'), '')
+      const linkDir = path.join(tmpDir, 'usr-bin')
+      mkdirSync(linkDir)
+      const link = path.join(linkDir, 'npm')
+      symlinkSync(path.join(binDir, 'npm'), link)
+
+      const resolved = resolveBinPathSync(link)
+      expect(resolved).toBe(
+        realpathSync.native(path.join(binDir, 'npm-cli.js')),
+      )
+      expect(findNpmDirPathSync(resolved)).toBe(realpathSync.native(install))
+    },
+  )
 })

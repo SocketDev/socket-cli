@@ -2,12 +2,24 @@ name: CI
 
 on:
   push:
-    branches: [main, v1.x]
+    branches:
+      - main
+      - v1.x
+      - 'feat/v1x-node27-sea-vfs-socket'
+      - 'test/native-terminal-validation-*'
   pull_request:
     branches: [main, v1.x]
+  workflow_dispatch:
+    inputs:
+      refresh-native-cache:
+        description: Refresh native download cache
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
+cache-mode: read
 
 jobs:
   lint:
@@ -126,7 +138,7 @@ jobs:
       - name: Install Node.js
         shell: bash
         env:
-          NODE_VERSION: 25.9.0
+          NODE_VERSION: 26.13.0
         run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
 
       - name: Download sfw
@@ -320,7 +332,7 @@ jobs:
       - name: Install Node.js
         shell: bash
         env:
-          NODE_VERSION: 25.9.0
+          NODE_VERSION: 26.13.0
         run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
 
       - name: Download sfw
@@ -456,7 +468,7 @@ jobs:
       fail-fast: true
       matrix:
         # Node 20 reached end-of-life 2026-03-24; test supported majors only.
-        node-version: [22, 24]
+        node-version: [22, 24, 26.13.0]
         os: [ubuntu-latest]
     steps:
       - name: Checkout source
@@ -645,3 +657,160 @@ jobs:
 
       - name: Build and run unit tests
         run: pnpm test-ci
+
+  native-cli-pr:
+    name: Native CLI tests (PR)
+    if: github.event_name == 'pull_request' && github.base_ref == 'v1.x'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    concurrency: &native_concurrency
+      group: native-cli-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ matrix.target }}
+      cancel-in-progress: true
+    strategy: &native_strategy
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: linux-x64
+          - os: macos-15
+            target: darwin-arm64
+          - os: windows-2025
+            target: win-x64
+    steps: &native_steps
+      - name: Checkout source
+        shell: bash
+        env:
+          CHECKOUT_REF: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          AUTH_B64="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
+          git checkout -q --detach FETCH_HEAD
+
+      - name: Install Node.js 26.13.0 (checksum verified)
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=26.13.0
+          base="https://nodejs.org/dist/v${version}"
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            archive="node-v${version}-win-x64.zip"
+            curl -fsSLO "$base/$archive"
+            curl -fsSLO "$base/SHASUMS256.txt"
+            grep "  $archive$" SHASUMS256.txt | sha256sum -c -
+            mkdir -p "$RUNNER_TEMP/node"
+            unzip -q "$archive" -d "$RUNNER_TEMP/node"
+            cygpath -w "$RUNNER_TEMP/node/node-v${version}-win-x64" >> "$GITHUB_PATH"
+          else
+            if [[ "$RUNNER_OS" == macOS ]]; then platform=darwin-arm64; else platform=linux-x64; fi
+            archive="node-v${version}-${platform}.tar.xz"
+            curl -fsSLO "$base/$archive"
+            curl -fsSLO "$base/SHASUMS256.txt"
+            grep "  $archive$" SHASUMS256.txt | shasum -a 256 -c -
+            mkdir -p "$RUNNER_TEMP/node"
+            tar -xJf "$archive" -C "$RUNNER_TEMP/node" --strip-components=1
+            echo "$RUNNER_TEMP/node/bin" >> "$GITHUB_PATH"
+          fi
+          if [[ "$RUNNER_OS" == Windows ]]; then "$RUNNER_TEMP/node/node-v${version}-win-x64/node.exe" -e 'if(process.versions.node!=="26.13.0")process.exit(1)'; else "$RUNNER_TEMP/node/bin/node" -e 'if(process.versions.node!=="26.13.0")process.exit(1)'; fi
+
+      - name: Install pinned pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=10.33.0
+          case "$RUNNER_OS/$RUNNER_ARCH" in
+            Linux/X64) asset=pnpm-linux-x64; sha=8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5 ;;
+            macOS/ARM64) asset=pnpm-macos-arm64; sha=ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae ;;
+            Windows/X64) asset=pnpm-win-x64.exe; sha=afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f ;;
+            *) echo "Unsupported runner: $RUNNER_OS/$RUNNER_ARCH" >&2; exit 1 ;;
+          esac
+          dir="$RUNNER_TEMP/pnpm-bin"
+          mkdir -p "$dir"
+          curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v${version}/${asset}" -o "$dir/$asset"
+          actual=$( (sha256sum "$dir/$asset" 2>/dev/null || shasum -a 256 "$dir/$asset") | cut -d' ' -f1 | tr -d '\134')
+          [[ "$actual" == "$sha" ]] || { echo "pnpm checksum mismatch" >&2; exit 1; }
+          if [[ "$asset" == *.exe ]]; then cp "$dir/$asset" "$dir/pnpm.exe"; else chmod +x "$dir/$asset"; ln -sf "$asset" "$dir/pnpm"; fi
+          if [[ "$RUNNER_OS" == Windows ]]; then dir=$(cygpath -w "$dir"); fi
+          echo "$dir" >> "$GITHUB_PATH"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore pinned SEA download cache
+        id: sea-download-cache
+        uses: ./.github/actions/repo/cache-downloads
+        with:
+          mode: restore
+          path: ~/.cache/socket-sea/downloads/v1/blobs
+          key: sea-downloads-v1-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml', 'src/sea/uv-pins.json', 'src/sea/build-sea.mts') }}${{ inputs.refresh-native-cache && format('-refresh-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+          restore-keys: |
+            sea-downloads-v1-${{ matrix.target }}-
+
+      - name: Test screenshot and signing helpers
+        shell: bash
+        run: |
+          pnpm exec vitest run --config .config/vitest.config.mts test/unit/scripts/test/apple-signing.test.mts
+          pnpm exec vitest run --config .config/vitest.terminal.config.mts
+
+      - name: Verify .NET SDK
+        shell: bash
+        run: dotnet --list-sdks | awk -F. '$1 >= 8 { found=1 } END { exit !found }'
+
+      - name: Build prototype native executable
+        env:
+          NODE_OPTIONS: ${{ matrix.target == 'darwin-arm64' && '--max-old-space-size=4096' || '' }}
+        run: pnpm build:sea --prototype
+
+      - name: Save pinned SEA download cache
+        if: success() && steps.sea-download-cache.outputs.cache-hit != 'true' && github.repository == 'SocketDev/socket-cli' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-'))
+        uses: ./.github/actions/repo/cache-downloads
+        with:
+          mode: save
+          path: ~/.cache/socket-sea/downloads/v1/blobs
+          key: sea-downloads-v1-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml', 'src/sea/uv-pins.json', 'src/sea/build-sea.mts') }}${{ inputs.refresh-native-cache && format('-refresh-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+
+      - name: Run native screenshot tests
+        shell: bash
+        env:
+          SOCKET_CLI_NATIVE_TEST_ARTIFACTS: build/native-test-artifacts/${{ matrix.target }}
+          APPLE_DEVELOPER_ID_IDENTITY: ${{ matrix.target == 'darwin-arm64' && github.event_name != 'pull_request' && github.repository == 'SocketDev/socket-cli' && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-')) && secrets.APPLE_DEVELOPER_ID_IDENTITY || '' }}
+          APPLE_TEAM_ID: ${{ matrix.target == 'darwin-arm64' && github.event_name != 'pull_request' && github.repository == 'SocketDev/socket-cli' && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-')) && secrets.APPLE_TEAM_ID || '' }}
+          APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12: ${{ matrix.target == 'darwin-arm64' && github.event_name != 'pull_request' && github.repository == 'SocketDev/socket-cli' && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-')) && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12 || '' }}
+          APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS: ${{ matrix.target == 'darwin-arm64' && github.event_name != 'pull_request' && github.repository == 'SocketDev/socket-cli' && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-')) && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS || '' }}
+          SOCKET_CLI_NATIVE_TEST_REQUIRE_APPLE_SIGNATURE: ${{ matrix.target == 'darwin-arm64' && github.event_name != 'pull_request' && github.repository == 'SocketDev/socket-cli' && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-')) && (secrets.APPLE_DEVELOPER_ID_IDENTITY != '' || secrets.APPLE_TEAM_ID != '' || secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12 != '' || secrets.APPLE_DEVELOPER_ID_APPLICATION_CERTS_P12_PASS != '') && '1' || '' }}
+        run: |
+          set -euo pipefail
+          export SOCKET_CLI_NATIVE_TEST_ARTIFACTS
+          rm -rf "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS"
+          mkdir -p "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS"
+          if pnpm test:native test/native/commands/cli.native.test.mts test/native/commands/cli-behavior.native.test.mts test/native/commands/tui.native.test.mts; then result=0; else result=$?; fi
+          if [[ $result == 0 ]]; then status=passed; else status=failed; fi
+          export TEST_STATUS="$status" TEST_EXIT_CODE="$result" TEST_PLATFORM="$RUNNER_OS/$RUNNER_ARCH"
+          node -e 'const fs=require("node:fs"); let receipt={}; try { receipt=JSON.parse(fs.readFileSync(process.env.SOCKET_CLI_NATIVE_TEST_ARTIFACTS+"/signing-receipt.json","utf8")); } catch {} process.stdout.write(JSON.stringify({status:process.env.TEST_STATUS,exitCode:Number(process.env.TEST_EXIT_CODE),platform:process.env.TEST_PLATFORM,sourceCommit:process.env.GITHUB_SHA||"unknown",signingMode:receipt.mode||"unknown",sourceSha256:receipt.sourceSha256,binarySha256:receipt.stagedSha256})+"\n")' > "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS/test-result.json"
+          exit "$result"
+
+      - name: Generate self-contained report
+        if: always()
+        shell: bash
+        env:
+          SOCKET_CLI_NATIVE_TEST_ARTIFACTS: build/native-test-artifacts/${{ matrix.target }}
+        run: node scripts/test/terminal-report.mts --artifacts "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS" --output "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS/index.html"
+
+  native-cli-writer:
+    name: Native CLI tests (trusted push)
+    cache-mode: write
+    if: github.repository == 'SocketDev/socket-cli' && ((github.event_name == 'push' && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-'))) || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-'))))
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    concurrency: *native_concurrency
+    strategy: *native_strategy
+    steps: *native_steps

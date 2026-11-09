@@ -35,6 +35,7 @@ import { Octokit } from '@octokit/rest'
 
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import {
+  type JsonContent,
   readJson,
   safeStatsSync,
   writeJson,
@@ -46,7 +47,6 @@ import { formatErrorWithDetail } from './errors.mts'
 import constants from '../constants.mts'
 
 import type { components } from '@octokit/openapi-types'
-import type { JsonContent } from '@socketsecurity/registry/lib/fs'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
 export type Pr = components['schemas']['pull-request']
@@ -59,9 +59,9 @@ async function readCache(
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
-    const isExpired = Date.now() - stat.mtimeMs > ttlMs
+    const isExpired = Date.now() - Number(stat.mtimeMs) > ttlMs
     if (!isExpired) {
-      return await readJson(cacheJsonPath)
+      return (await readJson(cacheJsonPath)) ?? undefined
     }
   }
   return undefined

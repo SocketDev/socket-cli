@@ -15,31 +15,40 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('../../utils/fs.mts', () => ({
+vi.mock('../../utils/fs.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../utils/fs.mts')>()),
   findUp: mockFindUp,
 }))
 
 vi.mock('../../constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
+  const mockDefault = {
+    ...actual?.default,
+    shadowBinPath: '/mock/shadow-bin',
+    shadowNpmInjectPath: '/mock/inject.js',
+    execPath: '/usr/bin/node',
+    npmGlobalPrefix: '/usr/local',
+    npmCachePath: '/usr/local/.npm',
+    nodeNoWarningsFlags: [],
+    nodeDebugFlags: [],
+    nodeHardenFlags: [],
+    nodeMemoryFlags: [],
+    processEnv: {},
+    ENV: { INLINED_SOCKET_CLI_SENTRY_BUILD: false },
+    SUPPORTS_NODE_PERMISSION_FLAG: false,
+  }
+  const internalKey = actual?.default?.kInternalsSymbol
+  if (internalKey) {
+    Object.defineProperty(mockDefault, 'kInternalsSymbol', {
+      value: internalKey,
+    })
+    Object.defineProperty(mockDefault, internalKey, {
+      value: actual.default[internalKey],
+    })
+  }
   return {
     ...actual,
-    default: {
-      ...actual?.default,
-      shadowBinPath: '/mock/shadow-bin',
-      shadowNpmInjectPath: '/mock/inject.js',
-      execPath: '/usr/bin/node',
-      npmGlobalPrefix: '/usr/local',
-      npmCachePath: '/usr/local/.npm',
-      nodeNoWarningsFlags: [],
-      nodeDebugFlags: [],
-      nodeHardenFlags: [],
-      nodeMemoryFlags: [],
-      processEnv: {},
-      ENV: {
-        INLINED_SOCKET_CLI_SENTRY_BUILD: false,
-      },
-      SUPPORTS_NODE_PERMISSION_FLAG: false,
-    },
+    default: mockDefault,
   }
 })
 

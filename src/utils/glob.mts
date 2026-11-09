@@ -59,7 +59,7 @@ async function getWorkspaceGlobs(
     const yml = await safeReadFile(workspacePath)
     if (yml) {
       try {
-        workspacePatterns = yamlParse(yml)?.packages
+        workspacePatterns = yamlParse(yml.toString())?.packages
       } catch {}
     }
   } else {
@@ -104,6 +104,19 @@ function ignoreFileToGlobPatterns(
   return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd)
 }
 
+function escapeMinimatchGroupStarts(pattern: string): string {
+  let escaped = ''
+  let previousWasOddBackslash = false
+  for (const char of pattern) {
+    if ((char === '{' || char === '(') && !previousWasOddBackslash) {
+      escaped += '\\'
+    }
+    escaped += char
+    previousWasOddBackslash = char === '\\' ? !previousWasOddBackslash : false
+  }
+  return escaped
+}
+
 // Based on `@eslint/compat` convertIgnorePatternToMinimatch.
 // Apache v2.0 licensed
 // Copyright Nicholas C. Zakas
@@ -135,11 +148,9 @@ function ignorePatternToMinimatch(pattern: string): string {
   // For example, gitignore pattern `src/{a,b}.js` ignores file `src/{a,b}.js`.
   // But, the same minimatch pattern `src/{a,b}.js` ignores files `src/a.js` and `src/b.js`.
   // Minimatch pattern `src/\{a,b}.js` is equivalent to gitignore pattern `src/{a,b}.js`.
-  const escapedPatternWithoutLeadingSlash =
-    patternWithoutLeadingSlash.replaceAll(
-      /(?=((?:\\.|[^{(])*))\1([{(])/guy,
-      '$1\\$2',
-    )
+  const escapedPatternWithoutLeadingSlash = escapeMinimatchGroupStarts(
+    patternWithoutLeadingSlash,
+  )
   const matchInsideSuffix = patternToTest.endsWith('/**') ? '/*' : ''
   return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
 }
@@ -364,8 +375,16 @@ export async function globWithGitIgnore(
       suppressErrors: true,
     },
   )
-  for await (const found of transform(
-    discoveryStream,
+  for await (const found of transform<
+    string,
+    {
+      content: string
+      dir: string
+      patterns: string[]
+      venv: boolean
+    }
+  >(
+    discoveryStream as unknown as AsyncIterable<string>,
     async (filepath: string) => {
       const dirRel = normalizePath(path.relative(cwd, path.dirname(filepath)))
       if (path.basename(filepath) === PYVENV_CFG) {
@@ -379,7 +398,7 @@ export async function globWithGitIgnore(
           venv: true,
         }
       }
-      const content = (await safeReadFile(filepath)) ?? ''
+      const content = ((await safeReadFile(filepath)) ?? '').toString()
       return {
         content,
         dir: dirRel,
@@ -506,7 +525,7 @@ export async function globWorkspace(
         absolute: true,
         cwd,
         dot: true,
-        ignore: defaultIgnore,
+        ignore: [...defaultIgnore],
       })
     : []
 }

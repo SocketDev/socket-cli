@@ -23,8 +23,6 @@
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
-import { getManifestData } from '@socketsecurity/registry'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -35,7 +33,7 @@ import { ALERT_SEVERITY } from './alert/severity.mts'
 import { ColorOrMarkdown } from './color-or-markdown.mts'
 import { toFilterConfig } from './filter-config.mts'
 import { createEnum } from './objects.mts'
-import { createPurlObject, getPurlObject } from './purl.mts'
+import { getPurlObject } from './purl.mts'
 import { getMajor } from './semver.mts'
 import { getSocketDevPackageOverviewUrl } from './socket-url.mts'
 import { getTranslations } from './translations.mts'
@@ -347,97 +345,6 @@ export function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
         : alertsHaveSeverity(alerts, ALERT_SEVERITY.low)
           ? 3
           : 4
-}
-
-export type CveFilter = {
-  upgradable?: boolean | undefined
-}
-
-export type CveInfoByAlertKey = Map<
-  string,
-  {
-    firstPatchedVersionIdentifier: string
-    vulnerableVersionRange: string
-  }
->
-
-export type CveInfoByPartialPurl = Map<string, CveInfoByAlertKey>
-
-export type GetCveInfoByPackageOptions = {
-  filter?: CveFilter | undefined
-}
-
-export function getCveInfoFromAlertsMap(
-  alertsMap: AlertsByPurl,
-  options?: GetCveInfoByPackageOptions | undefined,
-): CveInfoByPartialPurl | null {
-  const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
-
-  let infoByPartialPurl: CveInfoByPartialPurl | null = null
-  alertsMapLoop: for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
-    const purlObj = getPurlObject(purl, { throws: false })
-    if (!purlObj) {
-      debugFn('error', 'invalid PURL')
-      debugDir('inspect', { purl })
-      continue alertsMapLoop
-    }
-    const partialPurl = createPurlObject({
-      type: purlObj.type,
-      namespace: purlObj.namespace,
-      name: purlObj.name,
-    }).toString()
-    const name = resolvePackageName(purlObj)
-    sockPkgAlertsLoop: for (const sockPkgAlert of sockPkgAlerts) {
-      const alert = sockPkgAlert.raw
-      if (
-        alert.fix?.type !== ALERT_FIX_TYPE.cve ||
-        (filterConfig.upgradable === false &&
-          getManifestData(sockPkgAlert.ecosystem as any, name))
-      ) {
-        continue sockPkgAlertsLoop
-      }
-      if (!infoByPartialPurl) {
-        infoByPartialPurl = new Map()
-      }
-      let infos = infoByPartialPurl.get(partialPurl)
-      if (!infos) {
-        infos = new Map()
-        infoByPartialPurl.set(partialPurl, infos)
-      }
-      const { key } = alert
-      if (!infos.has(key)) {
-        // An alert with alert.fix.type of 'cve' should have a
-        // alert.props.firstPatchedVersionIdentifier property value.
-        // We're just being cautious.
-        const firstPatchedVersionIdentifier = (alert.props as CveProps)
-          ?.firstPatchedVersionIdentifier
-        const vulnerableVersionRange = (alert.props as CveProps)
-          ?.vulnerableVersionRange
-        let error: unknown
-        if (firstPatchedVersionIdentifier && vulnerableVersionRange) {
-          try {
-            infos.set(key, {
-              firstPatchedVersionIdentifier,
-              vulnerableVersionRange: new semver.Range(
-                // Replace ', ' in a range like '>= 1.0.0, < 1.8.2' with ' ' so that
-                // semver.Range will parse it without erroring.
-                vulnerableVersionRange
-                  .replace(/, +/g, ' ')
-                  .replace(/; +/g, ' || '),
-              ).format(),
-            })
-            continue sockPkgAlertsLoop
-          } catch (e) {
-            error = e
-          }
-        }
-        debugFn('error', 'fail: invalid SocketPackageAlert')
-        debugDir('inspect', { alert })
-        debugDir('error', error)
-      }
-    }
-  }
-  return infoByPartialPurl
 }
 
 export function getSeverityLabel(

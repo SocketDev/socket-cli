@@ -40,26 +40,36 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
 
 vi.mock('../../constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
+  const mockDefault = {
+    ...actual?.default,
+    shadowBinPath: '/mock/shadow-bin',
+    ENV: new Proxy(
+      {},
+      {
+        get(_target, prop) {
+          if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
+            return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
+          }
+          if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
+            return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
+          }
+          return ''
+        },
+      },
+    ),
+  }
+  const internalKey = actual?.default?.kInternalsSymbol
+  if (internalKey) {
+    Object.defineProperty(mockDefault, 'kInternalsSymbol', {
+      value: internalKey,
+    })
+    Object.defineProperty(mockDefault, internalKey, {
+      value: actual.default[internalKey],
+    })
+  }
   return {
     ...actual,
-    default: {
-      ...actual?.default,
-      shadowBinPath: '/mock/shadow-bin',
-      ENV: new Proxy(
-        {},
-        {
-          get(_target, prop) {
-            if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
-              return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
-            }
-            if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
-              return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
-            }
-            return ''
-          },
-        },
-      ),
-    },
+    default: mockDefault,
   }
 })
 

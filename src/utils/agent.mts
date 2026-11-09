@@ -1,92 +1,55 @@
-/**
- * Package manager agent utilities for Socket CLI.
- * Manages package installation via different package managers.
- *
- * Key Functions:
- * - runAgentInstall: Execute package installation with detected agent
- *
- * Supported Agents:
- * - npm: Node Package Manager
- * - pnpm: Fast, disk space efficient package manager
- * - yarn: Alternative package manager
- *
- * Features:
- * - Automatic agent detection
- * - Shadow installation for security scanning
- * - Spinner support for progress indication
- */
+/** Run detected package manager install commands with Socket's safe defaults. */
 
-import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants, { NPM, PNPM } from '../constants.mts'
-import { cmdFlagsToString } from './cmd.mts'
-import { shadowNpmInstall } from '../shadow/npm/install.mts'
 
 import type { EnvDetails } from './package-environment.mts'
+import type {
+  SpawnExtra,
+  SpawnOptions,
+  SpawnResult,
+} from '@socketsecurity/registry/lib/spawn'
 
-type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
-
-export type AgentInstallOptions = SpawnOption & {
-  args?: string[] | readonly string[] | undefined
-  spinner?: Spinner | undefined
-}
-
-export type AgentSpawnResult = ReturnType<typeof spawn>
-
+/** Run the detected package manager's install command with Socket's safe defaults. */
 export function runAgentInstall(
   pkgEnvDetails: EnvDetails,
-  options?: AgentInstallOptions | undefined,
-): AgentSpawnResult {
+  options: SpawnOptions & { args?: string[] | readonly string[] } = {},
+): SpawnResult<string, SpawnExtra | undefined> {
   const { agent, agentExecPath, pkgPath } = pkgEnvDetails
+  const { args = [], spinner, ...spawnOptions } = options
   const isNpm = agent === NPM
   const isPnpm = agent === PNPM
-  // All package managers support the "install" command.
-  if (isNpm) {
-    return shadowNpmInstall({
-      agentExecPath,
-      cwd: pkgPath,
-      ...options,
-    })
-  }
-  const {
-    args = [],
-    spinner,
-    ...spawnOpts
-  } = { __proto__: null, ...options } as AgentInstallOptions
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
-  // In CI mode, pnpm uses --frozen-lockfile by default, which prevents lockfile updates.
-  // We need to explicitly disable it when updating the lockfile with overrides.
-  // Also add --config.confirmModulesPurge=false to avoid interactive prompts.
-  const installArgs = isPnpm
-    ? [
-        'install',
-        '--config.confirmModulesPurge=false',
-        '--no-frozen-lockfile',
-        ...args,
-      ]
-    : ['install', ...args]
-
+  const installArgs = isNpm
+    ? ['install', '--no-audit', '--no-fund', ...args]
+    : isPnpm
+      ? [
+          'install',
+          '--config.confirmModulesPurge=false',
+          '--no-frozen-lockfile',
+          ...args,
+        ]
+      : ['install', ...args]
+  const nodeOptions = [
+    process.env['NODE_OPTIONS'],
+    ...(skipNodeHardenFlags ? [] : constants.nodeHardenFlags),
+    ...constants.nodeNoWarningsFlags,
+    '--disable-sigusr1',
+  ]
+    .filter(Boolean)
+    .join(' ')
   return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
-    // On Windows, package managers are often .cmd files that require shell execution.
-    // The spawn function from @socketsecurity/registry will handle this properly
-    // when shell is true.
     shell: constants.WIN32,
     spinner,
     stdio: 'inherit',
-    ...spawnOpts,
+    ...spawnOptions,
     env: {
       ...process.env,
-      ...constants.processEnv,
-      // Set CI for pnpm to ensure non-interactive mode and consistent behavior.
       ...(isPnpm ? { CI: '1' } : {}),
-      NODE_OPTIONS: cmdFlagsToString([
-        ...(skipNodeHardenFlags ? [] : constants.nodeHardenFlags),
-        ...constants.nodeNoWarningsFlags,
-      ]),
-      ...getOwn(spawnOpts, 'env'),
+      NODE_OPTIONS: nodeOptions,
+      ...spawnOptions.env,
     },
   })
 }

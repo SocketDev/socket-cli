@@ -115,7 +115,7 @@ export async function addOverrides(
 
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(
-    manifestNpmOverrides,
+    manifestNpmOverrides ?? [],
     async ({ 1: data }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
       const major = getMajor(version)!

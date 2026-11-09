@@ -17,7 +17,7 @@ export function isYarnBerry(): boolean {
       })
 
       if (result.status === 0 && result.stdout) {
-        const version = result.stdout
+        const version = result.stdout.toString()
         // Yarn Berry starts from version 2.x
         const majorVersion = parseInt(version.split('.')[0]!, 10)
         _isYarnBerry = majorVersion >= 2

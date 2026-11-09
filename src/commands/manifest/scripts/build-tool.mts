@@ -1,4 +1,9 @@
-import { existsSync } from 'node:fs'
+import {
+  accessSync,
+  existsSync,
+  constants as fsConstants,
+  statSync,
+} from 'node:fs'
 import { basename, resolve } from 'node:path'
 
 import constants from '../../../constants.mts'
@@ -42,6 +47,46 @@ export function buildToolLabelsFor(purlTypes: readonly PURL_Type[]): string[] {
 
 // Purl types whose packages have no namespace (NuGet ids are flat).
 export const NAMESPACELESS_PURL_TYPES: ReadonlySet<string> = new Set(['nuget'])
+
+const BUILD_TOOL_PATH_ENV: Record<BuildTool, string> = {
+  __proto__: null,
+  gradle: 'SOCKET_CLI_GRADLE_PATH',
+  maven: 'SOCKET_CLI_MAVEN_PATH',
+  sbt: 'SOCKET_CLI_SBT_PATH',
+} as unknown as Record<BuildTool, string>
+
+function validatedEnvBuildToolPath(
+  tool: BuildTool,
+  projectDir: string,
+): string {
+  const envName = BUILD_TOOL_PATH_ENV[tool]
+  const selected = process.env[envName]
+  if (!selected) {
+    throw new Error(
+      `Standalone Socket does not support ${tool} manifest execution without ${envName}: JVM runtime and toolchain assets are not bundled.`,
+    )
+  }
+  const executable = resolve(projectDir, selected)
+  return validateExecutablePath(envName, selected, executable)
+}
+
+function validateExecutablePath(
+  envName: string,
+  selected: string,
+  executable: string,
+): string {
+  try {
+    if (!statSync(executable).isFile()) {
+      throw new Error('not a regular file')
+    }
+    accessSync(executable, fsConstants.X_OK)
+    return executable
+  } catch {
+    throw new Error(
+      `${envName} must point to a regular executable file; received '${selected}'.`,
+    )
+  }
+}
 
 // PATH fallback when no `bin` and no project wrapper.
 const DEFAULT_BUILD_TOOL_BIN: Record<BuildTool, string> = {
@@ -123,7 +168,19 @@ export function resolveBuildToolBin(
   tool: BuildTool,
   projectDir: string,
   bin?: string | undefined,
+  standalone = false,
 ): string {
+  if (standalone) {
+    return validatedEnvBuildToolPath(tool, projectDir)
+  }
+  const envOverride = process.env[BUILD_TOOL_PATH_ENV[tool]]
+  if (envOverride) {
+    return validateExecutablePath(
+      BUILD_TOOL_PATH_ENV[tool],
+      envOverride,
+      resolve(projectDir, envOverride),
+    )
+  }
   if (bin) {
     return bin
   }

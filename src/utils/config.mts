@@ -33,6 +33,7 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import { debugConfig } from './debug.mts'
 import { getEditableJsonClass } from './editable-json.mts'
+import { getErrorCause } from './errors.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -43,7 +44,6 @@ import constants, {
   SOCKET_YAML,
   SOCKET_YML,
 } from '../constants.mts'
-import { getErrorCause } from './errors.mts'
 
 import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -106,7 +106,12 @@ function getConfigValues(): LocalConfig {
         try {
           Object.assign(
             _cachedConfig,
-            JSON.parse(Buffer.from(raw, 'base64').toString()),
+            JSON.parse(
+              Buffer.from(
+                Buffer.isBuffer(raw) ? raw.toString('utf8') : raw,
+                'base64',
+              ).toString(),
+            ),
           )
           debugConfig(configFilePath, true)
         } catch (e) {

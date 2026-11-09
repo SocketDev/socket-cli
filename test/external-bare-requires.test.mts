@@ -14,9 +14,7 @@ const rootPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const externalPath = path.join(rootPath, 'external')
 
 // Mirrors EXTERNAL_PACKAGES in .config/rollup.base.config.mjs. Scoped to what
-// the build vendors into external/, because unbundled optional peers reached by
-// bare name there (blessed's pty.js/term.js terminal widget, node-gyp under
-// @socketsecurity/registry) are a separate, longstanding question.
+// the build vendors into external/.
 const bundledNames = new Set([
   '@socketsecurity/registry',
   'blessed',

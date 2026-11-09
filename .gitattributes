@@ -1,1 +1,5 @@
 * text=auto eol=lfs
+
+# Generated terminal image baselines are reviewed through the screenshot report.
+test/native-snapshots/**/*.svg binary linguist-generated=true
+test/native-snapshots/**/*.png binary linguist-generated=true

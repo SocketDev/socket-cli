@@ -1,8 +1,7 @@
 diff --git a/lib/packages.d.ts b/lib/packages.d.ts
-index 44f7e66fdbc7a99838936910e906bb204f7106eb..83fb429de31700d19c6e0453653e3acae2db98f2 100644
 --- a/lib/packages.d.ts
 +++ b/lib/packages.d.ts
-@@ -16,6 +16,7 @@ declare namespace Packages {
+@@ -16,6 +16,7 @@
    >
    export class EditablePackageJson extends NPMCliPackageJson {
      content: Readonly<PackageJson>
@@ -10,3 +9,48 @@ index 44f7e66fdbc7a99838936910e906bb204f7106eb..83fb429de31700d19c6e0453653e3aca
      override update: (content: Partial<PackageJson>) => this
      // @ts-ignore TypeScript doesn't like an override with a different return type.
      override save: (options?: SaveOptions | undefined) => Promise<boolean>
+diff --git a/lib/packages.js b/lib/packages.js
+--- a/lib/packages.js
++++ b/lib/packages.js
+@@ -222,9 +222,10 @@
+           return false
+         }
+
+-        const format = indent === undefined ? '  ' : indent
+-        const eol = newline === undefined ? '\n' : newline
+-        const fileContent = `${JSON.stringify(
++        const format = this._readFileJson?.[identSymbol] ?? indent ?? '  '
++        const eol = this._readFileJson?.[newlineSymbol] ?? newline ?? '\n'
++        const bom = this._readFileContent.charCodeAt(0) === 0xfeff ? '\uFEFF' : ''
++        const fileContent = bom + `${JSON.stringify(
+           content,
+           null,
+           format
+@@ -266,9 +267,10 @@
+           return false
+         }
+
+-        const format = indent === undefined ? '  ' : indent
+-        const eol = newline === undefined ? '\n' : newline
+-        const fileContent = `${JSON.stringify(
++        const format = this._readFileJson?.[identSymbol] ?? indent ?? '  '
++        const eol = this._readFileJson?.[newlineSymbol] ?? newline ?? '\n'
++        const bom = this._readFileContent.charCodeAt(0) === 0xfeff ? '\uFEFF' : ''
++        const fileContent = bom + `${JSON.stringify(
+           content,
+           null,
+           format
+@@ -315,9 +317,10 @@
+           return false
+         }
+
+-        const format = indent === undefined ? '  ' : indent
+-        const eol = newline === undefined ? '\n' : newline
+-        const fileContent = `${JSON.stringify(
++        const format = this._readFileJson?.[identSymbol] ?? indent ?? '  '
++        const eol = this._readFileJson?.[newlineSymbol] ?? newline ?? '\n'
++        const bom = this._readFileContent.charCodeAt(0) === 0xfeff ? '\uFEFF' : ''
++        const fileContent = bom + `${JSON.stringify(
+           content,
+           null,
+           format

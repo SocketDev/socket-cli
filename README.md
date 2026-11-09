@@ -147,16 +147,19 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 
 ### Environment variables
 
+- `NO_UPDATE_NOTIFIER` - Disable the startup update check and notice
+- `SOCKET_CLI_ACCEPT_RISKS` - Accept npm/npx risks
 - `SOCKET_CLI_API_TOKEN` - Socket API token
 - `SOCKET_CLI_CONFIG` - JSON configuration object
+- `SOCKET_CLI_FORCE_UPDATE_NOTIFIER` - Bypass the startup update-check cache
 - `SOCKET_CLI_GITHUB_API_URL` - GitHub API base URL
+- `SOCKET_CLI_GITHUB_TOKEN` - GitHub token with repo access (alias: `GITHUB_TOKEN`)
 - `SOCKET_CLI_GIT_USER_EMAIL` - Git user email (default: `github-actions[bot]@users.noreply.github.com`)
 - `SOCKET_CLI_GIT_USER_NAME` - Git user name (default: `github-actions[bot]`)
-- `SOCKET_CLI_GITHUB_TOKEN` - GitHub token with repo access (alias: `GITHUB_TOKEN`)
 - `SOCKET_CLI_NO_API_TOKEN` - Disable default API token
 - `SOCKET_CLI_NPM_PATH` - Path to npm directory
 - `SOCKET_CLI_ORG_SLUG` - Socket organization slug
-- `SOCKET_CLI_ACCEPT_RISKS` - Accept npm/npx risks
+- `SOCKET_CLI_SOCKET_PATCH_PATH` - Path to an executable socket-patch binary for standalone builds
 - `SOCKET_CLI_VIEW_ALL_RISKS` - Show all npm/npx risks
 
 ### See also

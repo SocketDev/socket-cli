@@ -101,9 +101,11 @@ vi.mock('./config.mts', () => ({
 }))
 
 // Mock debug functions.
-vi.mock('./debug.mts', () => ({
+vi.mock('@socketsecurity/registry/lib/debug', () => ({
   debugApiRequest: vi.fn(),
   debugApiResponse: vi.fn(),
+  debugFn: vi.fn(),
+  debugDir: vi.fn(),
 }))
 
 // Mock requirements.
