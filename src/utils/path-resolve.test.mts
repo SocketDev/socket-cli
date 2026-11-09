@@ -1,14 +1,12 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-import mockFs from 'mock-fs'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 import {
-  NODE_MODULES,
   PACKAGE_JSON,
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
@@ -16,62 +14,23 @@ import {
 } from '../constants.mjs'
 import { getPackageFilesForScan } from './path-resolve.mts'
 
-import type FileSystem from 'mock-fs/lib/filesystem'
+let mockFixturePath = ''
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const rootNmPath = path.join(__dirname, '../..', NODE_MODULES)
-const mockFixturePath = normalizePath(path.join(__dirname, 'mock'))
-const mockNmPath = normalizePath(rootNmPath)
-
-// Remove broken symlinks in node_modules before loading to prevent mock-fs errors.
-function cleanupBrokenSymlinks(dirPath: string): void {
-  try {
-    if (!existsSync(dirPath)) {
+function mockTestFs(config: Record<string, unknown>): void {
+  const writeEntry = (filename: string, value: unknown): void => {
+    if (value && typeof value === 'object' && !Buffer.isBuffer(value)) {
+      mkdirSync(filename, { recursive: true })
+      for (const [name, child] of Object.entries(value)) {
+        writeEntry(path.join(filename, name), child)
+      }
       return
     }
-    const entries = readdirSync(dirPath, { withFileTypes: true })
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name)
-      try {
-        if (entry.isSymbolicLink() && !existsSync(fullPath)) {
-          // Symlink exists but target does not, remove it.
-          rmSync(fullPath, { force: true })
-        } else if (entry.isDirectory()) {
-          // Recursively check subdirectories.
-          cleanupBrokenSymlinks(fullPath)
-        }
-      } catch {
-        // Ignore errors for individual entries.
-      }
-    }
-  } catch {
-    // If we cannot read the directory, skip cleanup.
+    mkdirSync(path.dirname(filename), { recursive: true })
+    writeFileSync(filename, value as string | Uint8Array)
   }
-}
-
-// Clean up broken symlinks before loading node_modules.
-cleanupBrokenSymlinks(rootNmPath)
-
-// Load node_modules with error handling for any remaining issues.
-const mockedNmCallback = (() => {
-  try {
-    return mockFs.load(rootNmPath)
-  } catch (e) {
-    // If loading fails due to broken symlinks or missing files, return empty mock.
-    console.warn(
-      `Warning: Failed to load node_modules for mock-fs: ${e instanceof Error ? e.message : String(e)}`,
-    )
-    return {}
+  for (const [filename, value] of Object.entries(config)) {
+    writeEntry(filename, value)
   }
-})()
-
-function mockTestFs(config: FileSystem.DirectoryItems) {
-  return mockFs({
-    ...config,
-    [mockNmPath]: mockedNmCallback,
-  })
 }
 
 const globPatterns = {
@@ -135,7 +94,13 @@ const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
 describe('Path Resolve', () => {
   afterEach(() => {
-    mockFs.restore()
+    rmSync(mockFixturePath, { recursive: true, force: true })
+  })
+
+  beforeEach(() => {
+    mockFixturePath = normalizePath(
+      mkdtempSync(path.join(os.tmpdir(), 'path-resolve-test-')),
+    )
   })
 
   describe('getPackageFilesForScan()', () => {

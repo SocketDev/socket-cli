@@ -32,6 +32,24 @@ describe('release registry preflight', () => {
     }
   })
 
+  it('checks only socket for the configured prerelease track', async () => {
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response('', { status: 404 }),
+    )
+    await expect(
+      assertReleaseVersionsAvailable('2.1.0-rc.2', fetcher, {
+        mode: 'prerelease-only',
+        versionHint: '2.1.0',
+        identifier: 'rc',
+        distTag: 'rc-2.1.0',
+      }),
+    ).resolves.toEqual({ packages: ['socket'], version: '2.1.0-rc.2' })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://registry.npmjs.org/socket/2.1.0-rc.2',
+    )
+  })
+
   it.each(RELEASE_PACKAGES)(
     'refuses a version already published as %s',
     async publishedPackage => {

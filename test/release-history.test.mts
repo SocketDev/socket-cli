@@ -95,6 +95,8 @@ describe('release history and version reservations', () => {
     const history = await readReleaseHistory(
       repository.cwd,
       '1.1.11-prerelease',
+      undefined,
+      '1.1.10',
     )
     expect(history).toEqual({
       anchorRef: 'v1.1.10',
@@ -132,6 +134,8 @@ describe('release history and version reservations', () => {
     const history = await readReleaseHistory(
       repository.cwd,
       '1.1.11-prerelease',
+      undefined,
+      '1.1.10',
     )
     const commits = parseConventionalCommits(
       await readReleaseCommits(repository.cwd, history.anchorRef),
@@ -172,7 +176,12 @@ describe('release history and version reservations', () => {
       squash,
     )
     repository.git(['update-ref', 'refs/heads/fixture-release', head])
-    const history = await readReleaseHistory(repository.cwd, '1.4.2')
+    const history = await readReleaseHistory(
+      repository.cwd,
+      '1.4.2',
+      undefined,
+      '1.4.2',
+    )
     expect(history).toEqual({
       anchorRef: squash,
       reservedVersions: ['v1.4.1', 'v1.4.2'],
@@ -209,5 +218,57 @@ describe('release history and version reservations', () => {
         await readReleaseCommits(repository.cwd, history.anchorRef),
       ).map(commit => commit.hash),
     ).toEqual([head])
+  })
+
+  it('carries burned tagged attempts forward from the last published tag', async () => {
+    const repository = createReleaseRepository()
+    const publicRelease = repository.commitManifest(
+      'chore(release): 2.1.0-rc.0',
+      '2.1.0-rc.0',
+    )
+    const firstChange = repository.commitManifest(
+      'fix(cli): add first change',
+      '2.1.0-rc.0',
+      publicRelease,
+    )
+    const burned = repository.commitManifest(
+      'chore(release): 2.1.0-rc.1',
+      '2.1.0-rc.1',
+      firstChange,
+    )
+    const secondChange = repository.commitManifest(
+      'fix(cli): add second change',
+      '2.1.0-rc.1',
+      burned,
+    )
+    repository.git(['update-ref', 'refs/heads/fixture-release', secondChange])
+    repository.git(['tag', 'v2.1.0-rc.0', publicRelease])
+    repository.git(['tag', 'v2.1.0-rc.1', burned])
+
+    const history = await readReleaseHistory(
+      repository.cwd,
+      '2.1.0-rc.1',
+      2,
+      '2.1.0-rc.0',
+    )
+    expect(history.anchorRef).toBe('v2.1.0-rc.0')
+    const commits = parseConventionalCommits(
+      await readReleaseCommits(repository.cwd, history.anchorRef),
+    )
+    expect(commits.map(commit => commit.description)).toContain(
+      'add first change',
+    )
+    expect(commits.map(commit => commit.description)).toContain(
+      'add second change',
+    )
+  })
+
+  it('fails closed if a published version has no tag', async () => {
+    const repository = createReleaseRepository()
+    const head = repository.commitManifest('fix(cli): a change', '1.2.3')
+    repository.git(['update-ref', 'refs/heads/fixture-release', head])
+    await expect(
+      readReleaseHistory(repository.cwd, '1.2.3', 1, '1.2.2'),
+    ).rejects.toThrow('Published release 1.2.2 has no matching git tag')
   })
 })

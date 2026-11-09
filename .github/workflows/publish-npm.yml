@@ -1,13 +1,13 @@
 name: Publish to npm registry
 
-# Release process for the v1.x line — three packages from one source
-# (socket, @socketsecurity/cli, @socketsecurity/cli-with-sentry):
+# Release process for v1.x and the configured Socket prerelease. Stable v1.x
+# publishes all three packages; the 2.1.0-rc track publishes only `socket`.
 #
 #   1. Between releases nobody touches the version. package.json keeps the
 #      last released number and user-facing notes accrue under the
 #      CHANGELOG's `## [Unreleased]` section as they land.
-#   2. Dispatch with mode=release-pr. The `derive` job runs
-#      scripts/release/bump.mts to pick the next version and rewrite
+#   2. Dispatch with mode=release-pr. The `prepare` job runs
+#      scripts/release/prepare.mts to pick the next version and rewrite
 #      package.json + CHANGELOG.md. With dry-run=true (the default) it only
 #      prints the version. With dry-run=false the `release-pr` job commits the
 #      pair via the release App onto `npm-publish-v<X.Y.Z>` and opens a
@@ -17,22 +17,23 @@ name: Publish to npm registry
 #   4. Dispatch with mode=publish. A dry run builds, packs, and smoke-tests
 #      HEAD and creates nothing. With dry-run=false the `verify` job checks out
 #      the newest commit that changed package.json's version (the merged
-#      release PR) and builds that. This branch is the line customers consume,
-#      so it owns `latest`. The guard below refuses that tag from anywhere else.
-#   5. `publish` cuts the v<X.Y.Z> tag + the immutable GitHub release at that
-#      commit, then STAGES the exact tarballs `verify` packed.
-#   6. A human promotes each staged upload (`pnpm stage approve` with web
-#      2FA, or the npm web UI). Nothing is public until then.
+#      release PR) and builds that. Stable v1.x owns `latest`; the prerelease
+#      uses the tag declared by `.config/release.json`.
+#   5. `publish` reserves the v<X.Y.Z> tag, then STAGES the exact tarballs
+#      `verify` packed. It never creates a GitHub release.
+#   6. A human approves each stage by ID with `pnpm run approve:npm <id>`.
+#      That command checks the full package set is public, then dispatches
+#      `release-github.yml` to finalize the matching GitHub release.
 #
-# Stable tags from this major version reserve their versions, including tags
-# on unlanded bump commits. Reachable tags anchor the changelog history.
-# The next release must exceed every reserved version on this major line.
+# Tags reserve versions, including burned attempts. The changelog starts at the
+# last publicly released version; a first prerelease starts at the latest stable
+# release. The next release must exceed every reserved version on its track.
 #
 # THE VERSION DECISION IS THE COMMITS'. Patch by default; a `feat:` in range
 # makes it minor. A MAJOR is never derived — a breaking commit stops the bump
 # and asks a human to pass release-as.
 #
-# CREDENTIAL BOUNDARIES. `derive` and `verify` install and build, and hold no
+# CREDENTIAL BOUNDARIES. `prepare` and `verify` install and build, and hold no
 # write credential of any kind. `release-pr` holds the release App token and
 # runs no installed code. `publish` holds the registry credential and does
 # almost nothing: no checkout, no install, no build. It publishes the exact
@@ -41,13 +42,8 @@ name: Publish to npm registry
 on:
   workflow_dispatch:
     inputs:
-      dist-tag:
-        description: 'npm dist-tag (latest, next, beta, canary, backport, etc.)'
-        required: false
-        default: 'latest'
-        type: string
       mode:
-        description: 'release-pr opens the version bump PR. publish releases the newest merged release PR.'
+        description: 'release-pr opens the version bump PR. publish stages the newest merged release preparation.'
         required: false
         default: 'publish'
         type: choice
@@ -63,12 +59,15 @@ on:
         description: 'release-pr only. Force the bump level instead of deriving it from the commits. MAJOR is never derived — a breaking change stops the bump until a human picks major here.'
         required: false
         default: ''
+        type: string
+      release-major:
+        description: 'release-pr only. Select the release line (2 selects the configured Socket prerelease track).'
+        required: false
+        default: '1'
         type: choice
         options:
-          - ''
-          - major
-          - minor
-          - patch
+          - '1'
+          - '2'
       debug:
         description: 'Enable debug output'
         required: false
@@ -102,36 +101,16 @@ jobs:
       artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
       sha: ${{ steps.release-meta.outputs.sha }}
       version: ${{ steps.release-meta.outputs.version }}
+      dist-tag: ${{ steps.release-policy.outputs.dist-tag }}
 
     steps:
       # npm trusted publishing authorizes on repository + workflow filename +
       # GitHub environment. It does NOT pin a branch. The `publish-npm`
-      # environment's deployment-branch policy (main + v1.x) is the outer
-      # gate; this guard is the in-repo half.
+      # environment's deployment-branch policy is the outer gate; this guard
+      # is the in-repo half.
       #
-      # `latest` is what an untagged install of the package resolves to, so it
-      # belongs to the line customers consume — and that is THIS branch. The
-      # default branch carries the 2.x PRERELEASE line and is refused `latest`
-      # by its own copy of this workflow, which reads the owning branch from
-      # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json.
-      #
-      # Dry runs pass regardless of dist-tag: they upload nothing.
-      - name: Guard the latest dist-tag to the consumable release line
-        if: ${{ inputs.dry-run == false && inputs.dist-tag == 'latest' }}
-        env:
-          LATEST_BRANCH: v1.x
-          REF: ${{ github.ref }}
-        run: |
-          if [ "$REF" != "refs/heads/$LATEST_BRANCH" ]; then
-            echo "Refusing to publish dist-tag 'latest' from $REF." >&2
-            echo "Only refs/heads/$LATEST_BRANCH may publish 'latest' — it is the line customers consume." >&2
-            echo "Re-dispatch from $LATEST_BRANCH, or pick a prerelease dist-tag (next, beta, canary, rc)." >&2
-            exit 1
-          fi
-          echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
-
       # Full history locates the release commit here and anchors the changelog
-      # in `derive`. All tags expose reserved versions, including release tags
+      # in `prepare`. All tags expose reserved versions, including release tags
       # on bump commits that did not land.
       - &checkout-full-history
         name: Checkout source
@@ -173,6 +152,20 @@ jobs:
           echo "::error::No commit on this branch changed the package.json version." >&2
           echo "::error::Fix: dispatch with mode=release-pr, merge that PR, then dispatch mode=publish." >&2
           exit 1
+
+      - name: Verify the release commit before staging
+        if: ${{ inputs.dry-run == false }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse --verify 'HEAD^{commit}')"
+          VERIFIED="$(gh api "repos/${REPOSITORY}/commits/${SHA}" --jq '.commit.verification.verified')"
+          if [ "$VERIFIED" != true ]; then
+            echo "::error::Release commit ${SHA} is not GitHub-verified; npm staging stopped." >&2
+            exit 1
+          fi
 
       - &install-pnpm
         name: Install pnpm
@@ -352,23 +345,26 @@ jobs:
         name: Install dependencies
         run: pnpm install --loglevel error
 
-      # The version must be a bare X.Y.Z before anything reaches the registry. A
-      # prerelease-suffixed version is a work-in-progress marker, not a
-      # releasable one, so fail closed rather than publish it.
-      - name: Refuse a publish on a non-release version
+      # Validate the version and dist-tag against the checked-in release policy.
+      - name: Validate release policy and choose npm dist-tag
+        id: release-policy
         if: ${{ inputs.dry-run == false }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          case "$VERSION" in
-            *-*)
-              echo "::error::package.json version is '$VERSION' — a prerelease version, not a releasable one." >&2
-              echo "::error::Where: the tree this run will pack." >&2
-              echo "::error::Saw: a prerelease suffix; wanted a bare X.Y.Z." >&2
-              echo "::error::Fix: land a release-shaped version on v1.x, then re-dispatch." >&2
-              exit 1
-              ;;
-          esac
-          echo "Version $VERSION is release-shaped."
+          node scripts/release/validate-npm-policy.mts "$VERSION"
+          if [[ "$VERSION" == *-* ]]; then
+            echo "NPM_PRERELEASE_RELEASE=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Restrict latest releases to v1.x
+        if: ${{ inputs.dry-run == false && steps.release-policy.outputs.dist-tag == 'latest' }}
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$REF" != "refs/heads/v1.x" ]; then
+            echo "Refusing to publish the latest dist-tag outside refs/heads/v1.x." >&2
+            exit 1
+          fi
 
       # Compile the Maven manifest extension jar so the dist build bundles it
       # into dist/manifest-scripts (the jar is never committed; it ships only in
@@ -421,6 +417,7 @@ jobs:
         run: bash .github/scripts/smoke-test-tarball.sh
 
       - name: Build and pack @socketsecurity/cli (legacy)
+        if: ${{ env.NPM_PRERELEASE_RELEASE != 'true' }}
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
         run: |
@@ -428,11 +425,13 @@ jobs:
           pnpm pack --pack-destination "$RUNNER_TEMP/dist"
 
       - name: Smoke test @socketsecurity/cli
+        if: ${{ env.NPM_PRERELEASE_RELEASE != 'true' }}
         env:
           PKG: '@socketsecurity/cli'
         run: bash .github/scripts/smoke-test-tarball.sh
 
       - name: Build and pack @socketsecurity/cli-with-sentry
+        if: ${{ env.NPM_PRERELEASE_RELEASE != 'true' }}
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
         run: |
@@ -440,6 +439,7 @@ jobs:
           pnpm pack --pack-destination "$RUNNER_TEMP/dist"
 
       - name: Smoke test @socketsecurity/cli-with-sentry
+        if: ${{ env.NPM_PRERELEASE_RELEASE != 'true' }}
         env:
           PKG: '@socketsecurity/cli-with-sentry'
         run: bash .github/scripts/smoke-test-tarball.sh
@@ -517,12 +517,13 @@ jobs:
           version = os.environ["VERSION"]
           if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", version):
               raise SystemExit("Invalid release version.")
-          expected = {f"{name}-{version}.tgz" for name in
-                      ("socket", "socketsecurity-cli", "socketsecurity-cli-with-sentry")}
+          packages = ("socket",) if "-" in version else (
+              "socket", "socketsecurity-cli", "socketsecurity-cli-with-sentry")
+          expected = {f"{name}-{version}.tgz" for name in packages}
           with zipfile.ZipFile(archive) as bundle:
               entries = bundle.infolist()
-              if len(entries) != 3 or {entry.filename for entry in entries} != expected:
-                  raise SystemExit("Artifact must contain exactly the three release tarballs.")
+              if len(entries) != len(expected) or {entry.filename for entry in entries} != expected:
+                  raise SystemExit("Artifact package set does not match the selected release track.")
               if any(entry.file_size > 512 * 1024 * 1024
                      or stat.S_ISLNK(entry.external_attr >> 16) for entry in entries):
                   raise SystemExit("Artifact contains an invalid tarball entry.")
@@ -597,20 +598,15 @@ jobs:
           DIST_DIRECTORY: ${{ runner.temp }}/dist
         run: *download-verified-tarballs
 
-      # ORDER RULE (markers first): the v<version> tag and the immutable
-      # GitHub release are cut BEFORE the staged uploads, so the uploads'
-      # provenance binds markers that exist. Exactly ONE tag and ONE release
-      # per run, and they belong to the `socket` package — the two variants
-      # ride the same version without markers of their own.
-      #
-      # The trade is the BURN RULE: a stage rejected after the markers burns
-      # the version. The next release is a patch bump, never a re-publish of
-      # the burned number — the different-SHA hard-fail below enforces it,
-      # while a same-SHA re-run is a no-op tag plus a fresh stage attempt.
+      # Reserve one immutable tag before npm staging so provenance can refer
+      # to it. An existing tag always stops this run, even at the same SHA:
+      # recover its stage ID from workflow logs/npm, or keep the burned version
+      # and prepare the next one. Never stage the same version twice. GitHub
+      # release creation happens only after local npm approval.
       #
       # Uses gh api rather than git so the token lives only in this step's
       # env; the job has no checkout at all.
-      - name: Tag release (idempotent)
+      - name: Reserve release tag once
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISHED_SHA: ${{ needs.verify.outputs.sha }}
@@ -630,47 +626,16 @@ jobs:
             else
               EXISTING_SHA="$REF_OBJECT_SHA"
             fi
-            if [ "$EXISTING_SHA" = "$PUBLISHED_SHA" ]; then
-              echo "Tag $TAG already exists at $PUBLISHED_SHA — no-op."
-              exit 0
-            fi
-            echo "::error::Tag $TAG exists at $EXISTING_SHA but this run's SHA is $PUBLISHED_SHA." >&2
-            echo "::error::That version is spent. Bump to the next patch instead of re-releasing it." >&2
+            echo "::error::Tag $TAG is already reserved at $EXISTING_SHA (requested SHA: $PUBLISHED_SHA)." >&2
+            echo "::error::Do not stage this version again. Recover its stage ID from workflow logs/npm, or keep the tag and prepare the next version." >&2
             exit 1
           fi
           gh api "repos/$REPO/git/refs" -X POST -f "ref=refs/tags/$TAG" -f "sha=$PUBLISHED_SHA"
           echo "Created tag $TAG at $PUBLISHED_SHA"
 
-      # Create-as-draft then publish: immutable releases attest the locked
-      # asset set at publish time, so the release goes live in a separate
-      # `--draft=false` flip. That flip carries `--latest=false` — v1.x is the
-      # maintenance line and its releases never take the repository's Latest
-      # badge from the newer line. Re-runs skip a published release and flip a
-      # stranded draft live.
-      - name: Cut GitHub release (idempotent)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-        run: |
-          IS_DRAFT=$(gh release view "$TAG" --repo "$REPO" --json isDraft --jq '.isDraft' 2>/dev/null || echo "absent")
-          if [ "$IS_DRAFT" = "false" ]; then
-            echo "Release $TAG already exists — no-op."
-            exit 0
-          fi
-          if [ "$IS_DRAFT" = "absent" ]; then
-            gh release create "$TAG" \
-              --repo "$REPO" \
-              --title "$TAG" \
-              --verify-tag \
-              --generate-notes \
-              --draft
-          fi
-          gh release edit "$TAG" --repo "$REPO" --draft=false --latest=false
-          echo "Published GitHub release $TAG"
-
       # STAGED uploads: the tarball and its provenance land in npm's staging
-      # area and NOTHING is public until a human promotes each stage
-      # (`pnpm stage approve` with web 2FA, or the npm web UI). The
+      # area and NOTHING is public until a human approves each stage by ID
+      # with `pnpm run approve:npm <stage-id>`. The
       # per-package trusted publishers allow "stage publish" ONLY — a direct
       # `npm publish` dies at the OIDC token exchange.
       #
@@ -679,31 +644,56 @@ jobs:
       # manifest, and the firewall shim guards inbound package fetches while
       # a stage upload is outbound. This job has neither a checkout nor a
       # shim, so both hazards are structurally absent.
-      - name: Stage all three packages
+      - name: Stage release packages
         working-directory: ${{ runner.temp }}
         env:
-          NPM_DIST_TAG: ${{ inputs.dist-tag }}
+          NPM_DIST_TAG: ${{ needs.verify.outputs.dist-tag }}
+          VERSION: ${{ needs.verify.outputs.version }}
         run: |
           shopt -s nullglob
           TARBALLS=("$RUNNER_TEMP"/dist/*.tgz)
-          if [ "${#TARBALLS[@]}" -ne 3 ]; then
-            echo "::error::Expected 3 verified tarballs, found ${#TARBALLS[@]}." >&2
+          EXPECTED=3
+          if [[ "$VERSION" == *-* ]]; then EXPECTED=1; fi
+          if [ "${#TARBALLS[@]}" -ne "$EXPECTED" ]; then
+            echo "::error::Expected $EXPECTED verified tarballs, found ${#TARBALLS[@]}." >&2
             exit 1
           fi
+          SUMMARY="$RUNNER_TEMP/npm-stage-summary.md"
+          : > "$SUMMARY"
           for tarball in "${TARBALLS[@]}"; do
             echo "Staging $(basename "$tarball")"
             "${RUNNER_TEMP}/pnpm-bin/pnpm" stage publish "$tarball" \
               --provenance \
               --access public \
-              --tag "$NPM_DIST_TAG"
+              --tag "$NPM_DIST_TAG" \
+              --json > "$RUNNER_TEMP/npm-stage.json"
+            node --input-type=module - "$RUNNER_TEMP/npm-stage.json" "$SUMMARY" "$tarball" <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs'
+          import { basename } from 'node:path'
+          const output = readFileSync(process.argv[2], 'utf8')
+          const start = output.search(/^(?:\{|\[)/mu)
+          const value = JSON.parse(start < 0 ? output : output.slice(start))
+          const rows = Array.isArray(value) ? value : Object.values(value ?? {})
+          const matches = rows.filter(row => row && typeof row === 'object' &&
+            typeof row.name === 'string' && typeof row.version === 'string' &&
+            typeof row.stageId === 'string' &&
+            /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/iu.test(row.stageId))
+          if (matches.length !== 1) throw new Error('Expected one npm stage ID in pnpm JSON output.')
+          const stage = matches[0]
+          const artifactName = `${stage.name.replace(/^@/u, '').replace('/', '-')}-${stage.version}.tgz`
+          if (basename(process.argv[4]) !== artifactName) throw new Error('Stage identity does not match the verified tarball.')
+          appendFileSync(process.argv[3], `- ${stage.name}@${stage.version} — stage ID: \`${stage.stageId}\`\n`)
+          process.stdout.write(`Stage ID: ${stage.stageId}\n`)
+          NODE
           done
-          echo "All three packages staged. Promote each with: pnpm stage approve <id>"
+          cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+          echo "Staged $EXPECTED package(s). Approve each ID locally with: pnpm run approve:npm <stage-id>"
 
-  # Derive the next version and write package.json + CHANGELOG.md. Runs the
-  # installed toolchain, so it holds no write credential. The bump leaves this
-  # job as a patch limited to those two files.
-  derive:
-    name: Derive the release bump
+  # Prepare the next version and changelog. This job runs the installed
+  # toolchain without write credentials and changes only package.json and
+  # CHANGELOG.md.
+  prepare:
+    name: Prepare the release version
     if: ${{ inputs.mode == 'release-pr' }}
     runs-on: ubuntu-latest
 
@@ -722,12 +712,13 @@ jobs:
       - *create-sfw-shims
       - *install-dependencies
 
-      - name: Bump version and changelog
+      - name: Prepare version and changelog
         id: bump
         env:
           RELEASE_AS: ${{ inputs.release-as }}
+          SOCKET_CLI_RELEASE_MAJOR: ${{ inputs.release-major }}
         run: |
-          node scripts/release/bump.mts \
+          node scripts/release/prepare.mts \
             ${RELEASE_AS:+--release-as "$RELEASE_AS"} \
             ${{ inputs.dry-run && '--dry-run' || '' }}
 
@@ -742,7 +733,7 @@ jobs:
   # installs nothing, so no third-party code shares a job with the App token.
   release-pr:
     name: Open the release PR
-    needs: derive
+    needs: prepare
     if: ${{ inputs.mode == 'release-pr' && inputs.dry-run == false }}
     runs-on: ubuntu-latest
 
@@ -775,7 +766,7 @@ jobs:
 
       - name: Apply the bump
         env:
-          PATCH_B64: ${{ needs.derive.outputs.patch }}
+          PATCH_B64: ${{ needs.prepare.outputs.patch }}
         run: printf '%s' "$PATCH_B64" | base64 -d | git apply
 
       - name: Mint release App token
@@ -791,5 +782,5 @@ jobs:
       - name: Commit the bump and open the release PR
         env:
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
-          VERSION: ${{ needs.derive.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: node scripts/release/open-release-pr.mts --version "$VERSION"

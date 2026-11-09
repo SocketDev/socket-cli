@@ -6,7 +6,9 @@ import {
   COMMIT_RECORD_SEP,
   bumpLevelFor,
   deriveNextVersion,
+  maxPrereleaseVersion,
   maxReleaseVersion,
+  nextPrereleaseVersion,
   parseConventionalCommit,
   parseConventionalCommits,
   resolveBumpBase,
@@ -139,6 +141,17 @@ describe('maxReleaseVersion', () => {
   })
 })
 
+describe('maxPrereleaseVersion', () => {
+  it('chooses the newest published version on the exact prerelease track', () => {
+    expect(
+      maxPrereleaseVersion(
+        ['2.1.0-rc.2', '2.1.0-rc.10', '2.1.0-beta.99', '2.2.0-rc.1'],
+        '2.1.0-rc.',
+      ),
+    ).toBe('2.1.0-rc.10')
+  })
+})
+
 describe('resolveBumpBase', () => {
   it('prefers the highest consumed version over the manifest', () => {
     expect(
@@ -199,6 +212,18 @@ describe('resolveBumpBase', () => {
 })
 
 describe('deriveNextVersion', () => {
+  it('keeps the v1 release bump on v1 when the manifest holds the SEA prerelease', () => {
+    expect(
+      deriveNextVersion({
+        commits: [],
+        manifestVersion: '2.1.0-rc.0',
+        releaseMajor: 1,
+        publishedVersion: '1.14.1',
+        tagVersions: ['v1.14.1'],
+      }),
+    ).toMatchObject({ base: '1.14.1', version: '1.14.2' })
+  })
+
   it('keeps another release line and prereleases out of the reserved floor', () => {
     expect(
       deriveNextVersion({
@@ -280,6 +305,22 @@ describe('deriveNextVersion', () => {
         releaseAs: 'prerelease',
       }),
     ).toThrow(/release-as must be major, minor, or patch/)
+  })
+})
+
+describe('nextPrereleaseVersion', () => {
+  it('increments the highest configured prerelease and skips unrelated versions', () => {
+    expect(
+      nextPrereleaseVersion(
+        {
+          mode: 'prerelease-only',
+          versionHint: '2.1.0',
+          identifier: 'rc',
+          distTag: 'rc-2.1.0',
+        },
+        ['2.1.0-rc.0', '2.1.0-rc.2', '2.1.0-beta.9', '2.2.0-rc.5'],
+      ),
+    ).toBe('2.1.0-rc.3')
   })
 })
 

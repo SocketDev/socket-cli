@@ -2,7 +2,7 @@
 /**
  * @file Accrue one note under CHANGELOG.md's `## [Unreleased]` heading from the
  *   command line, so automation that bumps a dependency here writes its note
- *   the way a human does. The counterpart to `bump.mts`, which promotes the
+ *   the way a human does. The counterpart to `prepare.mts`, which promotes the
  *   block at release time.
  *
  *   This exists so a caller never has to reimplement the shape.

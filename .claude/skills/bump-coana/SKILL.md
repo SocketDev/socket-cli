@@ -47,7 +47,7 @@ PRs.
 
 🚨 **Do NOT touch `package.json`'s top-level `version` field.** The release workflow owns it:
 between releases the manifest holds the last released version, and
-`scripts/release/bump.mts` derives and writes the next one in-run. Hand-writing
+`scripts/release/prepare.mts` derives and writes the next one in-run. Hand-writing
 it invents a version that never releases and breaks the next release — a manifest
 already sitting on the version being released has no line for the bump to
 advance.

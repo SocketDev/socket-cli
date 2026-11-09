@@ -36,7 +36,7 @@ describe('assertBumpOnly', () => {
   it.each([
     [[]],
     [['package.json']],
-    [['CHANGELOG.md', 'package.json', 'scripts/release/bump.mts']],
+    [['CHANGELOG.md', 'package.json', 'scripts/release/prepare.mts']],
     [['CHANGELOG.md', 'pnpm-lock.yaml']],
   ])('refuses %j', files => {
     expect(() => assertBumpOnly(files)).toThrow(/exactly CHANGELOG.md/)
@@ -168,6 +168,6 @@ describe('releasePullRequestBody', () => {
     expect(body).toContain('1.5.1')
     expect(body).toContain('squash-merge')
     expect(body).toContain('`v1.x`')
-    expect(body).toContain('pnpm stage approve')
+    expect(body).toContain('pnpm run approve:npm <stage-id>')
   })
 })

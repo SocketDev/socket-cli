@@ -130,7 +130,7 @@ export function releasePullRequestBody(
     '',
     '1. Review the CHANGELOG section and squash-merge this PR.',
     `2. Dispatch **Publish to npm registry** on \`${releaseLine}\` with \`dry-run: false\`. It tags the merge commit, cuts the GitHub release, and stages all three packages.`,
-    '3. Approve each staged package with `pnpm stage approve`.',
+    '3. Approve each staged package with `pnpm run approve:npm <stage-id>`.',
     '',
     `If ${releaseLine} moves before this merges, re-dispatch with \`mode: release-pr\` to rebuild the bump on the new tip.`,
   ].join('\n')

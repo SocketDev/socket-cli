@@ -200,7 +200,7 @@ describe('entry scripts', () => {
     'scripts/check.mts',
     'scripts/lint.mts',
     'scripts/update.mts',
-    'scripts/release/bump.mts',
+    'scripts/release/prepare.mts',
     'scripts/release/open-release-pr.mts',
   ]
 

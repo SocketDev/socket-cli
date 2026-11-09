@@ -3,6 +3,7 @@ import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import {
   getOwn,
@@ -23,8 +24,8 @@ import {
   overrideCachedConfig,
   overrideConfigApiToken,
 } from './config.mts'
-import { isDebug } from './debug.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
+import { getVisibleTokenPrefix } from './sdk.mts'
 import { socketPackageLink } from './terminal-link.mts'
 import constants, {
   API_V0_URL,
@@ -40,7 +41,6 @@ import constants, {
   // YARN,
 } from '../constants.mts'
 import { commonFlags } from '../flags.mts'
-import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'
 
 import type { MeowFlag, MeowFlags } from '../flags.mts'
@@ -701,6 +701,7 @@ export async function meowWithSubcommands(
         `                              ${colors.italic('Aliases:')} GITHUB_TOKEN`,
         '  SOCKET_CLI_NO_API_TOKEN     Make the default API token `undefined`',
         '  SOCKET_CLI_NPM_PATH         The absolute location of the npm directory',
+        '  SOCKET_CLI_SOCKET_PATCH_PATH  Executable socket-patch path for standalone builds',
         '  SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug',
         '',
         '  SOCKET_CLI_ACCEPT_RISKS     Accept risks of a Socket wrapped npm/npx run',

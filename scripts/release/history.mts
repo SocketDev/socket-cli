@@ -1,11 +1,7 @@
 import { execFile as execFileCallback } from 'node:child_process'
 import { promisify } from 'node:util'
 
-import {
-  COMMIT_LOG_FORMAT,
-  maxReleaseVersion,
-  releaseVersionsForLine,
-} from './version.mts'
+import { COMMIT_LOG_FORMAT, releaseVersionsForLine } from './version.mts'
 
 const execFile = promisify(execFileCallback)
 
@@ -77,30 +73,50 @@ async function findSquashLandedReleases(
 export async function readReleaseHistory(
   cwd: string,
   manifestVersion: string,
+  releaseMajor?: number,
+  publishedVersion?: string,
 ): Promise<ReleaseHistory> {
   const [allTags, landedTags] = await Promise.all([
     readReleaseGit(cwd, ['tag', '--list', 'v*']),
     readReleaseGit(cwd, ['tag', '--merged', 'HEAD', '--list', 'v*']),
   ])
+  const allTagNames = allTags.trim().split('\n').filter(Boolean)
+  const landedTagNames = landedTags.trim().split('\n').filter(Boolean)
   const reservedVersions = releaseVersionsForLine(
-    allTags.trim().split('\n'),
+    allTagNames,
     manifestVersion,
+    releaseMajor,
   )
   const reachableTags = releaseVersionsForLine(
-    landedTags.trim().split('\n'),
+    landedTagNames,
     manifestVersion,
+    releaseMajor,
   )
+  const publishedTag = publishedVersion ? `v${publishedVersion}` : undefined
   const squashLanded = await findSquashLandedReleases(
     cwd,
-    reservedVersions.filter(tag => !reachableTags.includes(tag)),
+    [...reservedVersions, ...(publishedTag ? [publishedTag] : [])].filter(
+      tag => !landedTagNames.includes(tag),
+    ),
   )
   const tagVersions = [...reachableTags, ...squashLanded.keys()]
-  const anchorVersion = maxReleaseVersion(tagVersions)
-  const anchorTag = anchorVersion ? `v${anchorVersion}` : undefined
+  const anchorTag = publishedTag
+  if (anchorTag && !allTagNames.includes(anchorTag)) {
+    throw new Error(
+      `Published release ${publishedVersion} has no matching git tag. Refusing to generate a partial changelog.`,
+    )
+  }
+  const anchorLanded = anchorTag
+    ? (squashLanded.get(anchorTag) ??
+      (landedTagNames.includes(anchorTag) ? anchorTag : undefined))
+    : undefined
+  if (anchorTag && !anchorLanded) {
+    throw new Error(
+      `Published release ${publishedVersion} is not reachable from this branch. Refusing to generate a partial changelog.`,
+    )
+  }
   return {
-    anchorRef: anchorTag
-      ? (squashLanded.get(anchorTag) ?? anchorTag)
-      : undefined,
+    anchorRef: anchorLanded,
     reservedVersions,
     tagVersions,
   }
@@ -116,4 +132,16 @@ export async function readReleaseCommits(
     range,
     `--format=${COMMIT_LOG_FORMAT}`,
   ])
+}
+
+export async function readTaggedPrereleaseVersions(
+  cwd: string,
+  versionHint: string,
+  identifier: string,
+): Promise<string[]> {
+  const prefix = `${versionHint}-${identifier}.`
+  return (await readReleaseGit(cwd, ['tag', '--list', `v${prefix}*`]))
+    .split('\n')
+    .filter(Boolean)
+    .map(tag => tag.replace(/^v/u, ''))
 }

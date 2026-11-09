@@ -1,0 +1,119 @@
+name: Finalize GitHub release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Reserved release tag whose npm version is approved
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-release-${{ github.repository }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Verify npm publication and finalize release
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    steps:
+      - name: Check out default branch and reserved tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release tag: $TAG" >&2
+            exit 1
+          fi
+          if [[ ! "$DEFAULT_BRANCH" =~ ^[A-Za-z0-9._/-]+$ || "$DEFAULT_BRANCH" == -* ]]; then
+            echo "Invalid default branch name." >&2
+            exit 1
+          fi
+          git init -q
+          git config --local advice.detachedHead false
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          AUTH_B64="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH_B64}"
+          git fetch --no-tags origin \
+            "refs/tags/${TAG}:refs/tags/${TAG}" \
+            "refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
+          git checkout -q --detach "refs/tags/${TAG}"
+          TAG_SHA="$(git rev-parse --verify "${TAG}^{commit}")"
+          git merge-base --is-ancestor "$TAG_SHA" "refs/remotes/origin/${DEFAULT_BRANCH}"
+          VERIFIED="$(gh api "repos/${REPOSITORY}/commits/${TAG_SHA}" --jq '.commit.verification.verified')"
+          if [ "$VERIFIED" != true ]; then
+            echo "Tag $TAG does not point to a GitHub-verified commit." >&2
+            exit 1
+          fi
+
+      - name: Validate release policy and wait for npm publication
+        id: metadata
+        working-directory: ${{ runner.temp }}
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          cd "$GITHUB_WORKSPACE"
+          MANIFEST_NAME="$(node -p "require('./package.json').name")"
+          MANIFEST_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$MANIFEST_NAME" != socket ] || [ "$VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "Tag $TAG does not contain socket@$VERSION." >&2
+            exit 1
+          fi
+          node scripts/release/validate-npm-policy.mts "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Anonymous HEAD only shows whether npm serves this version. It cannot
+          # distinguish validating, blocked, deleted, or missing versions; a
+          # timeout preserves the reserved version for retry and creates no release.
+          node scripts/release/availability.mts "$VERSION"
+
+      - name: Create or retry GitHub release finalization
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          IS_PRERELEASE=false
+          if [[ "$VERSION" == *-* ]]; then IS_PRERELEASE=true; fi
+          gh release view "${TAG}" --json databaseId --jq '.databaseId' > "$RUNNER_TEMP/release-id" 2>/dev/null || true
+          RELEASE_ID="$(cat "$RUNNER_TEMP/release-id" 2>/dev/null || true)"
+          if [[ ! "$RELEASE_ID" =~ ^[0-9]+$ ]]; then
+            awk -v version="$VERSION" 'index($0, "## [" version "]") == 1 { found=1; print; next } found && /^## / { exit } found { print }' \
+              "$GITHUB_WORKSPACE/CHANGELOG.md" > "$RUNNER_TEMP/release-notes.md"
+            if [ ! -s "$RUNNER_TEMP/release-notes.md" ]; then
+              echo "CHANGELOG.md has no section for $VERSION." >&2
+              exit 1
+            fi
+            RELEASE_FLAGS=()
+            if [ "$IS_PRERELEASE" = true ]; then RELEASE_FLAGS+=(--prerelease); fi
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --verify-tag \
+              --notes-file "$RUNNER_TEMP/release-notes.md" \
+              --draft \
+              "${RELEASE_FLAGS[@]}"
+            RELEASE_ID="$(gh release view "${TAG}" --json databaseId --jq '.databaseId')"
+          fi
+          gh api "repos/${REPOSITORY}/releases/${RELEASE_ID}" -X PATCH \
+            -F draft=false \
+            -F "prerelease=${IS_PRERELEASE}" \
+            -F make_latest=false >/dev/null
+          echo "GitHub release $TAG is public."

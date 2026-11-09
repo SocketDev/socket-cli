@@ -30,6 +30,10 @@ import {
   isBuiltin,
   normalizeId,
 } from '../scripts/utils/packages.js'
+import {
+  includedModulesInventoryPlugin,
+  writeCopiedPackageInventory,
+} from '../src/sea/rollup-provenance.mjs'
 
 const {
   CONSTANTS,
@@ -68,10 +72,11 @@ const BLESSED_CONTRIB = 'blessed-contrib'
 const FLAGS = 'flags'
 const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
+const SEA_BUILD_ENV = 'SOCKET_SEA_BUILD'
 const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
-const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 const UTILS = 'utils'
+const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 const VENDOR = 'vendor'
 
 // A fresh regexp per call: socketModifyPlugin advances lastIndex, so a shared
@@ -106,9 +111,8 @@ async function copyInitGradle() {
 
 // Copy the build-tool resolution assets (Gradle init script, sbt plugin,
 // Maven extension jar, dotnet tool) into dist/manifest-scripts, where run.mts resolves them
-// at runtime. The Maven jar is compiled by maven-extension/build-jar.sh (run in
-// CI / local dev) and is absent from a fresh checkout — copy it only if present;
-// run.mts surfaces a build hint when it's missing.
+// at runtime. The Maven jar is compiled by maven-extension/build-jar.sh. Local
+// dev builds may omit it; published builds fail here if it is missing.
 async function copyManifestScripts() {
   const srcDir = path.join(constants.srcPath, 'commands/manifest/scripts')
   const destDir = path.join(constants.distPath, 'manifest-scripts')
@@ -155,7 +159,9 @@ async function copyManifestScripts() {
       jarPath,
       path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
     )
-  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
+  } else if (
+    constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
+  ) {
     // Fail closed: a published build without the jar would ship a package whose
     // `socket manifest maven` / Maven reachability silently produces an empty
     // SBOM. Run `pnpm run build:maven-extension` before `build:dist`. (A local
@@ -191,9 +197,7 @@ async function copyExternalPackages() {
       // Copy the other packages over to ./external/.
       .map(n =>
         copyPackage(n, {
-          strict:
-            // Skip adding 'use strict' directives to Socket packages.
-            n !== SOCKET_SECURITY_REGISTRY,
+          strict: n !== SOCKET_SECURITY_REGISTRY,
         }),
       ),
     // Copy 'blessed-contrib' license over to
@@ -257,6 +261,24 @@ async function copyExternalPackages() {
       )
     }),
   )
+}
+
+function blessedContribInventoryPlugin(filepath) {
+  if (process.env[SEA_BUILD_ENV] !== 'true') {
+    return undefined
+  }
+  const relativeEntry = path
+    .relative(constants.srcPath, filepath)
+    .split(path.sep)
+    .join('/')
+    .replace(/\.mjs$/, '')
+  return includedModulesInventoryPlugin({
+    root: constants.rootPath,
+    inventoryFile: `THIRD-PARTY-NOTICES-${relativeEntry.replaceAll('/', '-')}.json`,
+    bundleId: `external-${relativeEntry}`,
+    outputRoot: constants.distPath,
+    mode: 'stage',
+  })
 }
 
 async function copyPackage(pkgName, options) {
@@ -555,19 +577,47 @@ export default async () => {
         }),
         {
           async writeBundle() {
+            const updatePackageMetadata = process.env[SEA_BUILD_ENV] !== 'true'
             await Promise.all([
               copyCoanaCache(),
               copyInitGradle(),
               copyManifestScripts(),
               copyBashCompletion(),
-              updatePackageJson(),
+              ...(updatePackageMetadata ? [updatePackageJson()] : []),
               // Remove dist/vendor.js.map file.
               trash([path.join(distPath, `${VENDOR}.js.map`)]),
             ])
             // Copy external packages AFTER other operations to avoid conflicts.
             await copyExternalPackages()
+            if (process.env[SEA_BUILD_ENV] === 'true') {
+              await writeCopiedPackageInventory({
+                root: rootPath,
+                packageName: SOCKET_SECURITY_REGISTRY,
+                packageRoot: path.join(
+                  rootPath,
+                  NODE_MODULES,
+                  SOCKET_SECURITY_REGISTRY,
+                ),
+                outputPackageRoot: constants.socketRegistryPath,
+                outputRoot: distPath,
+                inventoryFile:
+                  'THIRD-PARTY-NOTICES-external-socket-registry.json',
+                bundleId: 'external-socket-registry',
+              })
+              await writeCopiedPackageInventory({
+                root: rootPath,
+                packageName: BLESSED,
+                packageRoot: path.join(rootPath, NODE_MODULES, BLESSED),
+                outputPackageRoot: path.join(constants.externalPath, BLESSED),
+                outputRoot: distPath,
+                inventoryFile: 'THIRD-PARTY-NOTICES-external-blessed.json',
+                bundleId: 'external-blessed',
+              })
+            }
             // Update package-lock.json AFTER package.json.
-            await updatePackageLockFile()
+            if (updatePackageMetadata) {
+              await updatePackageLockFile()
+            }
           },
         },
       ],
@@ -581,11 +631,19 @@ export default async () => {
       })
     ).map(filepath => {
       const relPath = `${path.relative(srcPath, filepath).slice(0, -4 /*.mjs*/)}.js`
+      const relParts = relPath.split(path.sep)
+      if (relParts[0] !== 'external') {
+        throw new Error(
+          `Unexpected Blessed source path outside src/external: ${filepath}`,
+        )
+      }
+      const outputFile = path.join(constants.externalPath, ...relParts.slice(1))
+      const provenancePlugin = blessedContribInventoryPlugin(filepath)
       return {
         input: filepath,
         output: [
           {
-            file: path.join(rootPath, relPath),
+            file: outputFile,
             exports: 'auto',
             externalLiveBindings: false,
             format: 'cjs',
@@ -606,10 +664,11 @@ export default async () => {
           )
         },
         plugins: [
+          ...(provenancePlugin ? [provenancePlugin] : []),
           // Runs after copyExternalPackages() and overwrites what it rewired.
           socketModifyPlugin({
             find: newBareBlessedRequireRegExp(),
-            replace: () => relativeBlessedPath(path.join(rootPath, relPath)),
+            replace: () => relativeBlessedPath(outputFile),
           }),
           nodeResolve({
             exportConditions: ['node'],

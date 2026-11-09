@@ -1,0 +1,6 @@
+{
+  "mode": "prerelease-only",
+  "versionHint": "2.1.0",
+  "identifier": "rc",
+  "distTag": "rc-2.1.0"
+}

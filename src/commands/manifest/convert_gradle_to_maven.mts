@@ -5,6 +5,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
+import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import { isStandaloneSea } from '../../sea/runtime.mts'
 
 export async function convertGradleToMaven({
   bin,
@@ -21,9 +23,18 @@ export async function convertGradleToMaven({
 }) {
   // TODO: Implement json/md.
 
+  let selectedBin: string
+  try {
+    selectedBin = resolveBuildToolBin('gradle', cwd, bin, isStandaloneSea())
+  } catch (error) {
+    process.exitCode = 1
+    logger.fail(error instanceof Error ? error.message : String(error))
+    return
+  }
+
   // Note: use resolve because the bin could be an absolute path, away from cwd
   // TODO: what about $PATH resolved commands? (`gradlew` without dir prefix)
-  const rBin = path.resolve(cwd, bin)
+  const rBin = path.resolve(cwd, selectedBin)
   const binExists = fs.existsSync(rBin)
   const cwdExists = fs.existsSync(cwd)
 
@@ -64,9 +75,11 @@ export async function convertGradleToMaven({
       'pom',
     ]
     if (verbose) {
-      logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
+      logger.log('[VERBOSE] Executing:', [selectedBin], ', args:', commandArgs)
     }
-    logger.log(`Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`)
+    logger.log(
+      `Converting gradle to maven from \`${selectedBin}\` on \`${cwd}\` ...`,
+    )
     const output = await execGradle(rBin, commandArgs, cwd, verbose)
     if (output.code) {
       process.exitCode = 1

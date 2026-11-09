@@ -122,10 +122,10 @@ Each command follows a consistent pattern:
 
 ### Configuration Files
 - **`biome.json`** - Biome formatter and linter configuration
-- **`vitest.config.mts`** - Vitest test runner configuration
+- **`.config/vitest.config.mts`** - Vitest test runner configuration
 - **`eslint.config.js`** - ESLint configuration
 - **`tsconfig.json`** - Main TypeScript configuration
-- **`tsconfig.dts.json`** - TypeScript configuration for type definitions
+- **`.config/tsconfig.dts.json`** - TypeScript configuration for type definitions
 - **`knip.json`** - Knip unused code detection configuration
 
 ### Shadow Binaries
@@ -162,7 +162,7 @@ Validate all three bindings after a workflow or environment rename.
 - Dispatch with `mode: release-pr` and `dry-run: true` (the default) to see
   which version the next release would get. Nothing is written.
 - Dispatch with `mode: release-pr` and `dry-run: false` to open the release
-  PR. `scripts/release/bump.mts` picks the version and writes `package.json` +
+  PR. `scripts/release/prepare.mts` picks the version and writes `package.json` +
   `CHANGELOG.md`, and `scripts/release/open-release-pr.mts` commits them via
   the release App onto `npm-publish-v<X.Y.Z>` and opens a
   `chore(release): X.Y.Z` PR into `v1.x`. Review it and squash-merge it.

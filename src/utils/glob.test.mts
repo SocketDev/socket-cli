@@ -1,29 +1,22 @@
 import {
   chmodSync,
-  existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-import mockFs from 'mock-fs'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import { NODE_MODULES } from '../constants.mjs'
 import {
   createSupportedFilesFilter,
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
-
-import type FileSystem from 'mock-fs/lib/filesystem'
 
 // Filter functions defined at module scope to satisfy linting rules.
 function filterJsonFiles(filepath: string): boolean {
@@ -34,65 +27,34 @@ function filterTsFiles(filepath: string): boolean {
   return filepath.endsWith('.ts')
 }
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+let mockFixturePath = ''
 
-const rootNmPath = path.join(__dirname, '../..', NODE_MODULES)
-const mockFixturePath = normalizePath(path.join(__dirname, 'glob-mock'))
-const mockNmPath = normalizePath(rootNmPath)
-
-// Remove broken symlinks in node_modules before loading to prevent mock-fs errors.
-function cleanupBrokenSymlinks(dirPath: string): void {
-  try {
-    if (!existsSync(dirPath)) {
+function mockTestFs(config: Record<string, unknown>): void {
+  const writeEntry = (filename: string, value: unknown): void => {
+    if (value && typeof value === 'object' && !Buffer.isBuffer(value)) {
+      mkdirSync(filename, { recursive: true })
+      for (const [name, child] of Object.entries(value)) {
+        writeEntry(path.join(filename, name), child)
+      }
       return
     }
-    const entries = readdirSync(dirPath, { withFileTypes: true })
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name)
-      try {
-        if (entry.isSymbolicLink() && !existsSync(fullPath)) {
-          // Symlink exists but target does not, remove it.
-          rmSync(fullPath, { force: true })
-        } else if (entry.isDirectory()) {
-          // Recursively check subdirectories.
-          cleanupBrokenSymlinks(fullPath)
-        }
-      } catch {
-        // Ignore errors for individual entries.
-      }
-    }
-  } catch {
-    // If we cannot read the directory, skip cleanup.
+    mkdirSync(path.dirname(filename), { recursive: true })
+    writeFileSync(filename, value as string | Uint8Array)
   }
-}
-
-// Clean up broken symlinks before loading node_modules.
-cleanupBrokenSymlinks(rootNmPath)
-
-// Load node_modules with error handling for any remaining issues.
-const mockedNmCallback = (() => {
-  try {
-    return mockFs.load(rootNmPath)
-  } catch (e) {
-    // If loading fails due to broken symlinks or missing files, return empty mock.
-    console.warn(
-      `Warning: Failed to load node_modules for mock-fs: ${e instanceof Error ? e.message : String(e)}`,
-    )
-    return {}
+  for (const [filename, value] of Object.entries(config)) {
+    writeEntry(filename, value)
   }
-})()
-
-function mockTestFs(config: FileSystem.DirectoryItems) {
-  return mockFs({
-    ...config,
-    [mockNmPath]: mockedNmCallback,
-  })
 }
 
 describe('glob utilities', () => {
   afterEach(() => {
-    mockFs.restore()
+    rmSync(mockFixturePath, { recursive: true, force: true })
+  })
+
+  beforeEach(() => {
+    mockFixturePath = normalizePath(
+      mkdtempSync(path.join(os.tmpdir(), 'glob-test-')),
+    )
   })
 
   describe('globWithGitIgnore()', () => {
@@ -129,6 +91,23 @@ describe('glob utilities', () => {
       ])
     })
 
+    it('treats gitignore braces and parentheses literally', async () => {
+      mockTestFs({
+        [`${mockFixturePath}/.gitignore`]: 'literal{a,b}.txt\nliteral(a).txt',
+        [`${mockFixturePath}/literal{a,b}.txt`]: '',
+        [`${mockFixturePath}/literal(a).txt`]: '',
+        [`${mockFixturePath}/literal-a.txt`]: '',
+      })
+
+      const results = await globWithGitIgnore(['**/*.txt'], {
+        cwd: mockFixturePath,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/literal-a.txt`,
+      ])
+    })
+
     it('should handle negated patterns in .gitignore', async () => {
       mockTestFs({
         [`${mockFixturePath}/.gitignore`]: 'ignored/**\n!ignored/keep.json',
@@ -150,7 +129,7 @@ describe('glob utilities', () => {
 
     it('should apply filter function during streaming to reduce memory', async () => {
       // Create a mock filesystem with many files.
-      const files: FileSystem.DirectoryItems = {}
+      const files: Record<string, unknown> = {}
       const fileCount = 100
       for (let i = 0; i < fileCount; i += 1) {
         files[`${mockFixturePath}/file${i}.txt`] = 'content'
@@ -292,7 +271,7 @@ describe('glob utilities', () => {
     it.skipIf(skipUnreadableDirTest)(
       'skips an unreadable directory instead of throwing EACCES',
       async () => {
-        const realTmp = mkdtempSync(path.join(tmpdir(), 'socket-glob-perm-'))
+        const realTmp = mkdtempSync(path.join(os.tmpdir(), 'socket-glob-perm-'))
         const unreadable = path.join(realTmp, 'data/postgres/pgdata')
         try {
           mkdirSync(unreadable, { recursive: true })
