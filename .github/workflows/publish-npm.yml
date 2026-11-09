@@ -223,7 +223,7 @@ jobs:
         name: Install Node.js
         shell: bash
         env:
-          NODE_VERSION: 25.9.0
+          NODE_VERSION: 26.13.0
         run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
 
       - &download-sfw

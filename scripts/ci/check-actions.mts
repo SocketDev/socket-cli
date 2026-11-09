@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { lstatSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -38,6 +39,18 @@ export function checkWorkflowActions(directory: string): string[] {
   const findings: string[] = []
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const filename = path.join(directory, entry.name)
+    // Ignore local workspace files that Git excludes from this checkout. This
+    // keeps the policy check scoped to repository content in working trees
+    // that share directories with other projects.
+    const ignored = spawnSync('git', [
+      'check-ignore',
+      '-q',
+      '--',
+      path.resolve(filename),
+    ])
+    if (ignored.status === 0) {
+      continue
+    }
     if (entry.isSymbolicLink()) {
       findings.push(`${filename}: symbolic links are not permitted`)
     } else if (entry.isDirectory()) {

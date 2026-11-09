@@ -142,7 +142,7 @@ const sharedRulesForNode = {
         'test',
         'test.describe',
       ],
-      version: constants.maintainedNodeVersions.current,
+      version: '22.19.0',
     },
   ],
   'n/prefer-node-protocol': 'error',
@@ -216,15 +216,31 @@ module.exports = [
           allowDefaultProject: [
             // Allow configs.
             '*.config.mts',
+            '.config/*.config.mts',
+            '.github/actions/repo/cache-downloads/*.mts',
             // Allow paths like src/utils/*.test.mts.
             'src/*/*.test.mts',
             // Allow paths like src/commands/optimize/*.test.mts.
             'src/*/*/*.test.mts',
             // Allow paths like src/commands/manifest/bazel/*.test.mts.
             'src/*/*/*/*.test.mts',
+            'test/unit/*.test.mts',
             'test/*.mts',
+            'test/unit/utils/*.test.mts',
+            'test/unit/github/actions/repo/cache-downloads/*.test.mts',
+            'test/lib/native/*.mts',
+            'test/lib/optimize-svg.mts',
+            'test/lib/terminal/*.mts',
+            'test/unit/lib/*.test.mts',
+            'test/unit/lib/native/*.test.mts',
+            'test/unit/lib/terminal/*.test.mts',
+            'test/unit/sea/*.test.mts',
+            'test/unit/sea/build/*.test.mts',
+            'test/native/commands/*.native.test.mts',
+            'test/unit/scripts/test/*.test.mts',
             // Allow loose one-off scripts.
             'scripts/*.mts',
+            'scripts/test/*.mts',
           ],
           defaultProject: 'tsconfig.json',
           tsconfigRootDir: rootPath,

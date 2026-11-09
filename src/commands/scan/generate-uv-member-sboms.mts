@@ -1,4 +1,11 @@
-import { existsSync, promises as fs, rmSync } from 'node:fs'
+import {
+  accessSync,
+  existsSync,
+  promises as fs,
+  constants as fsConstants,
+  rmSync,
+  statSync,
+} from 'node:fs'
 import path from 'node:path'
 
 import { isDirSync } from '@socketsecurity/registry/lib/fs'
@@ -6,6 +13,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
+import {
+  cleanupBundledTool,
+  getBundledTool,
+  isStandaloneSea,
+} from '../../sea/runtime.mts'
 import { InputError, getErrorMessage } from '../../utils/errors.mts'
 
 import type { GeneratedScanFiles } from './handle-create-new-scan.mts'
@@ -13,6 +25,32 @@ import type { GeneratedScanFiles } from './handle-create-new-scan.mts'
 const CLEANUP_SIGNALS: NodeJS.Signals[] = ['SIGHUP', 'SIGINT', 'SIGTERM']
 
 const UV_SBOM_FILENAME = 'socket-uv-cdx.json'
+const UV_PATH_ENV = 'SOCKET_CLI_UV_PATH'
+
+function resolveUvExecutable(): string {
+  if (!isStandaloneSea()) {
+    return 'uv'
+  }
+  const override = process.env[UV_PATH_ENV]
+  if (!override) {
+    return ''
+  }
+  const executable = path.resolve(process.cwd(), override)
+  try {
+    accessSync(
+      executable,
+      process.platform === 'win32' ? fsConstants.F_OK : fsConstants.X_OK,
+    )
+    if (!statSync(executable).isFile()) {
+      throw new Error('not a file')
+    }
+  } catch {
+    throw new InputError(
+      `${UV_PATH_ENV} must point to an executable uv binary, but '${executable}' is missing or not executable.`,
+    )
+  }
+  return executable
+}
 
 type Component = {
   name: string
@@ -52,9 +90,15 @@ async function exportSbom(
   groups: '--all-groups' | '--no-default-groups',
 ): Promise<Sbom> {
   let content: string
+  const uvExecutable = resolveUvExecutable()
+  let bundledExecutable: string | undefined
+  let childClosed: Promise<void> | undefined
   try {
-    const { stdout } = await spawn(
-      'uv',
+    if (!uvExecutable) {
+      bundledExecutable = await getBundledTool('uv')
+    }
+    const child = spawn(
+      uvExecutable || bundledExecutable!,
       [
         'export',
         '--project',
@@ -73,6 +117,10 @@ async function exportSbom(
         stdio: 'pipe',
       },
     )
+    if (child.process) {
+      childClosed = new Promise(resolve => child.process.once('close', resolve))
+    }
+    const { stdout } = await child
     content = stdout
   } catch (e) {
     throw new InputError(
@@ -81,6 +129,11 @@ async function exportSbom(
         ? String(e.stderr).trim() || getErrorMessage(e)
         : getErrorMessage(e),
     )
+  } finally {
+    await childClosed
+    if (bundledExecutable) {
+      await cleanupBundledTool(bundledExecutable)
+    }
   }
   return parseSbom(content, memberDir)
 }

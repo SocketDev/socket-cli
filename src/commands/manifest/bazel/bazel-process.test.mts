@@ -1,17 +1,16 @@
 import childProcess from 'node:child_process'
 import {
   chmodSync,
-  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
-  rmSync,
   statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
+import { rm as rmAsync } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
@@ -70,21 +69,27 @@ describe('Bazel process invocation', () => {
     writeFileSync(launcher, LAUNCHER)
   })
 
-  afterEach(() => {
+  afterEach(async () => {
     for (const pid of servers.splice(0)) {
       if (isAlive(pid)) {
         process.kill(pid, 'SIGKILL')
+        // eslint-disable-next-line no-await-in-loop -- Wait for each server to release Windows file handles.
+        expect(await waitForExit(pid)).toBe(true)
       }
     }
-    rmSync(cwd, { recursive: true, force: true, maxRetries: 5 })
+    await rmAsync(cwd, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 100,
+    })
   })
 
   it('passes arguments unchanged to a native executable', async () => {
-    const executable = path.join(
-      cwd,
-      process.platform === 'win32' ? 'native launcher.exe' : 'native launcher',
-    )
-    copyFileSync(process.execPath, executable)
+    // Use the actual Node executable rather than copying it. Node 26 builds on
+    // macOS dynamically link libnode via @rpath, which a copied binary cannot
+    // resolve from this temporary directory.
+    const executable = process.execPath
     const result = await spawnBazel(executable, [launcher, ...ARGUMENTS], {
       cwd,
     })
@@ -427,8 +432,10 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
       expect(Date.now() - startedAt).toBeLessThan(15_000)
     } finally {
       const pid = readChildPid(record)
-      process.kill(pid, 'SIGKILL')
-      // Windows keeps the temporary directory locked until the process has exited.
+      if (isAlive(pid)) {
+        process.kill(pid, 'SIGKILL')
+      }
+      // Windows can report process exit before inherited handles release the cwd.
       expect(await waitForExit(pid)).toBe(true)
     }
   }, 30_000)

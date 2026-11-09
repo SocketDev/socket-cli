@@ -8,6 +8,7 @@ import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
+import { isStandaloneSea } from '../../../sea/runtime.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
 import { getOrInsert } from '../../../utils/get-or-insert.mts'
 import { camelToKebab } from '../../../utils/strings.mts'
@@ -294,10 +295,15 @@ async function invokeGradle(
   task: string,
   tmpDirPrefix: string,
 ): Promise<ManifestRunResult> {
+  const bin = resolveBuildToolBin(
+    'gradle',
+    opts.projectDir,
+    opts.bin,
+    isStandaloneSea(),
+  )
   const initScript = manifestScriptsPath(initScriptFilename)
   return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
-    const bin = resolveBuildToolBin('gradle', opts.projectDir, opts.bin)
     // Disable the configuration cache: the init script's legacy
     // resolvedConfiguration API and shared accumulator aren't cache-safe.
     const args = [
@@ -348,12 +354,17 @@ async function invokeSbtIn(
   pluginDestFilename: string,
   task: string,
 ): Promise<ManifestRunResult> {
+  const bin = resolveBuildToolBin(
+    'sbt',
+    opts.projectDir,
+    opts.bin,
+    isStandaloneSea(),
+  )
   await writeSbtPlugin(globalBase, pluginSourceFilename, pluginDestFilename)
   const recordsFile = path.join(globalBase, 'records.tsv')
   // The global base is shared across sbt roots: a build that dies before
   // writing must not be read as the previous root's records.
   await fs.rm(recordsFile, { force: true })
-  const bin = resolveBuildToolBin('sbt', opts.projectDir, opts.bin)
   // Fresh per-run global base (not ~/.sbt): sbt executes everything under
   // plugins/, so a shared path is a code-injection surface. BSP off for this
   // run. sbt also provisions the project's Scala toolchain under
@@ -421,6 +432,12 @@ async function invokeMaven(
   coanaTask: string,
   tmpDirPrefix: string,
 ): Promise<ManifestRunResult> {
+  const bin = resolveBuildToolBin(
+    'maven',
+    opts.projectDir,
+    opts.bin,
+    isStandaloneSea(),
+  )
   const jarPath = manifestScriptsPath(
     'maven-extension',
     'coana-maven-extension.jar',
@@ -432,7 +449,6 @@ async function invokeMaven(
   )
   return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
-    const bin = resolveBuildToolBin('maven', opts.projectDir, opts.bin)
     // `validate` is the cheapest phase that triggers the extension; no compile
     // needed (analysis uses configured paths, not classes).
     const props = [

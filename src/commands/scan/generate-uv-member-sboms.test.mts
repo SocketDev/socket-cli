@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events'
 import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -9,9 +10,20 @@ import {
   resolveUvMemberDirs,
 } from './generate-uv-member-sboms.mts'
 
-const { mockSpawn } = vi.hoisted(() => ({ mockSpawn: vi.fn() }))
+const { mockCleanupBundledTool, mockGetBundledTool, mockSea, mockSpawn } =
+  vi.hoisted(() => ({
+    mockSpawn: vi.fn(),
+    mockGetBundledTool: vi.fn(),
+    mockCleanupBundledTool: vi.fn(),
+    mockSea: vi.fn(),
+  }))
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({ spawn: mockSpawn }))
+vi.mock('../../sea/runtime.mts', () => ({
+  cleanupBundledTool: mockCleanupBundledTool,
+  getBundledTool: mockGetBundledTool,
+  isStandaloneSea: mockSea,
+}))
 
 const sbom = JSON.stringify({
   bomFormat: 'CycloneDX',
@@ -28,6 +40,9 @@ describe('uv member SBOM export', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
+    mockSea.mockReturnValue(false)
+    mockGetBundledTool.mockResolvedValue('/tmp/bundled-uv')
+    mockCleanupBundledTool.mockResolvedValue(undefined)
     cwd = await fs.mkdtemp(path.join(tmpdir(), 'socket-uv-unit-'))
     apiDir = path.join(cwd, 'packages/api')
     workerDir = path.join(cwd, 'packages/worker')
@@ -74,6 +89,63 @@ describe('uv member SBOM export', () => {
       'uv',
       [...mockSpawn.mock.calls[0]![1].slice(0, -1), '--no-default-groups'],
       expect.objectContaining({ cwd: apiDir, stdio: 'pipe' }),
+    )
+  })
+
+  it('cleans an extracted uv only after the child closes', async () => {
+    mockSea.mockReturnValue(true)
+    const closed: boolean[] = []
+    mockSpawn.mockImplementation(() => {
+      const child = new EventEmitter()
+      const promise = Promise.resolve({ stdout: sbom }) as Promise<{
+        stdout: string
+      }> & { process: EventEmitter }
+      Object.defineProperty(promise, 'process', { value: child })
+      setTimeout(() => {
+        closed.push(true)
+        child.emit('close')
+      }, 0)
+      return promise
+    })
+    mockCleanupBundledTool.mockImplementation(async () => {
+      expect(closed.length).toBeGreaterThan(0)
+    })
+
+    await generateUvMemberSboms([apiDir])
+    expect(mockGetBundledTool).toHaveBeenCalledTimes(2)
+    expect(mockCleanupBundledTool).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not extract or clean uv when SOCKET_CLI_UV_PATH overrides it', async () => {
+    mockSea.mockReturnValue(true)
+    const override = path.join(cwd, 'uv')
+    await fs.writeFile(override, 'external uv')
+    await fs.chmod(override, 0o700)
+    const previous = process.env['SOCKET_CLI_UV_PATH']
+    process.env['SOCKET_CLI_UV_PATH'] = override
+    try {
+      await generateUvMemberSboms([apiDir])
+      expect(mockSpawn).toHaveBeenCalledWith(
+        override,
+        expect.any(Array),
+        expect.any(Object),
+      )
+      expect(mockGetBundledTool).not.toHaveBeenCalled()
+      expect(mockCleanupBundledTool).not.toHaveBeenCalled()
+    } finally {
+      if (previous === undefined) {
+        delete process.env['SOCKET_CLI_UV_PATH']
+      } else {
+        process.env['SOCKET_CLI_UV_PATH'] = previous
+      }
+    }
+  })
+
+  it('surfaces failure to remove an extracted uv payload', async () => {
+    mockSea.mockReturnValue(true)
+    mockCleanupBundledTool.mockRejectedValueOnce(new Error('cleanup failed'))
+    await expect(generateUvMemberSboms([apiDir])).rejects.toThrow(
+      'cleanup failed',
     )
   })
 

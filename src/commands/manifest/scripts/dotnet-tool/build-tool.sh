@@ -6,7 +6,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 # Publish into a fresh dir and swap it in, so no stale file survives.
 staging="$(mktemp -d "${TMPDIR:-/tmp}/socket-facts-dotnet.XXXXXX")"
-dotnet restore socket-facts-dotnet.csproj --locked-mode --nologo -v quiet
+# Vulnerability-feed auditing runs in the dedicated security workflow; restore
+# this locked build input without making the helper build depend on that feed.
+dotnet restore socket-facts-dotnet.csproj --locked-mode -p:NuGetAudit=false --nologo -v quiet
 dotnet publish socket-facts-dotnet.csproj -c Release -o "$staging" --no-restore --nologo -v quiet
 rm -f "$staging"/*.pdb
 if [ -d publish ]; then

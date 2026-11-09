@@ -7,6 +7,10 @@ on:
       - .github/workflows/bazel-windows.yml
       - package.json
       - pnpm-lock.yaml
+      - .config/rollup.sea.config.mjs
+      - src/sea/**
+      - scripts/build-package-matrix.mts
+      - test/package-matrix.test.mts
       - src/commands/manifest/bazel/**
       - test/fixtures/manifest-bazel/**
   push:
@@ -15,6 +19,10 @@ on:
       - .github/workflows/bazel-windows.yml
       - package.json
       - pnpm-lock.yaml
+      - .config/rollup.sea.config.mjs
+      - src/sea/**
+      - scripts/build-package-matrix.mts
+      - test/package-matrix.test.mts
       - src/commands/manifest/bazel/**
       - test/fixtures/manifest-bazel/**
 
@@ -101,7 +109,7 @@ jobs:
       - name: Test executable handling and prerequisites
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
-          pnpm test:unit src/commands/manifest/bazel/bazel-bin-detect.test.mts src/commands/manifest/bazel/bazel-process.test.mts src/commands/manifest/bazel/bazel-java-shim.test.mts src/commands/manifest/bazel/bazel-python-shim.test.mts src/commands/manifest/bazel/bazel-query-runner.test.mts src/commands/manifest/bazel/bazel-cquery.test.mts
+          pnpm test:unit src/commands/manifest/bazel/bazel-bin-detect.test.mts src/commands/manifest/bazel/bazel-process.test.mts src/commands/manifest/bazel/bazel-java-shim.test.mts src/commands/manifest/bazel/bazel-python-shim.test.mts src/commands/manifest/bazel/bazel-query-runner.test.mts src/commands/manifest/bazel/bazel-cquery.test.mts test/unit/sea/build-sea.test.mts test/package-matrix.test.mts
 
       - name: Install the packaged CLI
         run: |
@@ -118,4 +126,4 @@ jobs:
           SOCKET_BAZEL_INTEGRATION: '1'
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
-          pnpm exec vitest run --config vitest.e2e.config.mts src/commands/manifest/bazel/bazel-native.e2e.test.mts
+          pnpm exec vitest run --config .config/vitest.e2e.config.mts src/commands/manifest/bazel/bazel-native.e2e.test.mts

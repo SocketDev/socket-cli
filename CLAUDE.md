@@ -122,10 +122,10 @@ Each command follows a consistent pattern:
 
 ### Configuration Files
 - **`biome.json`** - Biome formatter and linter configuration
-- **`vitest.config.mts`** - Vitest test runner configuration
+- **`.config/vitest.config.mts`** - Vitest test runner configuration
 - **`eslint.config.js`** - ESLint configuration
 - **`tsconfig.json`** - Main TypeScript configuration
-- **`tsconfig.dts.json`** - TypeScript configuration for type definitions
+- **`.config/tsconfig.dts.json`** - TypeScript configuration for type definitions
 - **`knip.json`** - Knip unused code detection configuration
 
 ### Shadow Binaries

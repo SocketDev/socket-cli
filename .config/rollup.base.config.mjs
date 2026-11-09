@@ -21,6 +21,7 @@ import {
   isBuiltin,
   normalizeId,
 } from '../scripts/utils/packages.js'
+import { includedModulesInventoryPlugin } from '../src/sea/rollup-provenance.mjs'
 
 const {
   INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
@@ -289,6 +290,15 @@ export default function baseConfig(extendConfig = {}) {
         },
       }),
       ...extendPlugins,
+      ...(process.env.SOCKET_SEA_BUILD === 'true'
+        ? [
+            includedModulesInventoryPlugin({
+              root: rootPath,
+              inventoryFile: 'THIRD-PARTY-NOTICES.json',
+              bundleId: 'core-rollup',
+            }),
+          ]
+        : []),
     ],
   }
 }

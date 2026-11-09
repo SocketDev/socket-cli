@@ -119,7 +119,7 @@ describe('socket scan create', async () => {
             --report-level      Which policy level alerts should be reported (default 'error')
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
-            --uv-members        Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH.
+            --uv-members        Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH; standalone builds use SOCKET_CLI_UV_PATH.
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)

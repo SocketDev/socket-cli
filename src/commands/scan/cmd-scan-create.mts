@@ -186,7 +186,7 @@ const generalFlags: MeowFlags = {
     type: 'boolean',
     default: false,
     description:
-      'Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH.',
+      'Scan each TARGET directory as a uv project, using the versions pinned in its uv.lock or its workspace root uv.lock. Uploads a CycloneDX dependency graph per TARGET in place of manifest discovery, including all extras and dependency groups. Requires uv on PATH; standalone builds use SOCKET_CLI_UV_PATH.',
   },
 }
 

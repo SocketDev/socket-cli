@@ -1,0 +1,22 @@
+name: Cache SEA downloads
+description: Restore and save verified content-addressed SEA download blobs
+outputs:
+  cache-hit:
+    description: Whether the exact SEA download cache key was restored
+inputs:
+  mode:
+    description: restore verified blobs or save newly downloaded blobs
+    required: true
+  key:
+    description: Exact content-addressed cache key
+    required: true
+  path:
+    description: Content-addressed blob directory
+    required: true
+  restore-keys:
+    description: Optional newline-separated fallback keys
+    required: false
+    default: ''
+runs:
+  using: node24
+  main: index.mts

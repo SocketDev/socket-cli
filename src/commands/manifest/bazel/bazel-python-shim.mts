@@ -1,9 +1,17 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, symlinkSync } from 'node:fs'
+import {
+  accessSync,
+  constants as fsConstants,
+  mkdtempSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 import { findBazelExecutable, prependBazelPath } from './bazel-process.mts'
+import { isStandaloneSea } from '../../../sea/runtime.mts'
 import { InputError } from '../../../utils/errors.mts'
 
 export type PythonShimResult = {
@@ -37,7 +45,7 @@ function isPython3(
 
 function notPython3Error(executable: string): InputError {
   return new InputError(
-    `Python 3 is required for Bazel manifest extraction. ${executable} did not run as Python 3. Install Python 3 and ensure python${process.platform === 'win32' ? '.exe' : ''} is on PATH.`,
+    `Python 3 is required for Bazel manifest extraction. ${executable} did not run as Python 3. Install Python 3 and ensure python${process.platform === 'win32' ? '.exe' : ''} is on PATH or set SOCKET_CLI_PYTHON_PATH in a standalone build.`,
   )
 }
 
@@ -45,6 +53,61 @@ export async function provisionPythonShim(
   env: NodeJS.ProcessEnv,
   cwd: string,
 ): Promise<PythonShimResult> {
+  if (isStandaloneSea()) {
+    const override = env['SOCKET_CLI_PYTHON_PATH']
+    if (!override) {
+      throw new InputError(
+        'Python is not bundled with this standalone Socket CLI. Set SOCKET_CLI_PYTHON_PATH to an installed Python 3 executable for Bazel manifest extraction.',
+      )
+    }
+    const executable = path.resolve(cwd, override)
+    try {
+      accessSync(
+        executable,
+        process.platform === 'win32' ? fsConstants.F_OK : fsConstants.X_OK,
+      )
+      if (!statSync(executable).isFile()) {
+        throw new Error('not a file')
+      }
+    } catch {
+      throw new InputError(
+        `SOCKET_CLI_PYTHON_PATH must point to an executable Python 3 binary, but '${executable}' is missing or not executable.`,
+      )
+    }
+    if (
+      process.platform === 'win32' &&
+      path.extname(executable).toLowerCase() !== '.exe'
+    ) {
+      throw new InputError(
+        'Bazel on Windows requires SOCKET_CLI_PYTHON_PATH to point to a native Python 3 python.exe.',
+      )
+    }
+    if (!isPython3(executable, env, cwd)) {
+      throw notPython3Error(executable)
+    }
+    if (process.platform === 'win32') {
+      if (path.basename(executable).toLowerCase() !== 'python.exe') {
+        throw new InputError(
+          "SOCKET_CLI_PYTHON_PATH must name python.exe on Windows so its adjacent DLLs and standard library remain available. Point it to the Python installation's python.exe.",
+        )
+      }
+      return {
+        env: prependBazelPath(env, path.dirname(executable)),
+        shimDir: undefined,
+      }
+    }
+    const shimDir = mkdtempSync(path.join(os.tmpdir(), 'socket-bazel-python-'))
+    try {
+      for (const name of ['python', 'python3']) {
+        const alias = path.join(shimDir, name)
+        symlinkSync(executable, alias)
+      }
+    } catch (error) {
+      rmSync(shimDir, { recursive: true, force: true })
+      throw error
+    }
+    return { env: prependBazelPath(env, shimDir), shimDir }
+  }
   const python = await findBazelExecutable('python', env, cwd)
   if (python) {
     if (
