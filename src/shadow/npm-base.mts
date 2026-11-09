@@ -16,10 +16,11 @@ import constants, {
   NODE_MODULES,
   NPM,
   NPX,
+  SOCKET_PUBLIC_API_TOKEN,
 } from '../constants.mts'
-import { cmdFlagsToString } from '../utils/cmd.mts'
+import { cmdFlagsToString, isNpmLockfileScanCommand } from '../utils/cmd.mts'
 import { findUp } from '../utils/fs.mts'
-import { getPublicApiToken } from '../utils/sdk.mts'
+import { resolvePublicApiToken } from '../utils/sdk.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
 
 import type { IpcObject } from '../constants.mts'
@@ -126,6 +127,17 @@ export default async function shadowNpmBase(
     useAudit || !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
       ? []
       : ['--no-audit']
+  const command = rawBinArgs[0]
+  const needsSocketApiToken =
+    binName === NPX
+      ? rawBinArgs.length > 0 &&
+        !rawBinArgs.some(arg =>
+          ['--help', '-h', '--version', '-v'].includes(arg),
+        )
+      : isNpmLockfileScanCommand(command ?? '')
+  const shadowApiToken = needsSocketApiToken
+    ? await resolvePublicApiToken()
+    : SOCKET_PUBLIC_API_TOKEN
 
   const stdio = ensureIpcInStdio(getOwn(spawnOpts, 'stdio'))
 
@@ -179,7 +191,7 @@ export default async function shadowNpmBase(
 
   spawnPromise.process.send({
     [constants.SOCKET_IPC_HANDSHAKE]: {
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: shadowApiToken,
       [constants.SOCKET_CLI_SHADOW_BIN]: binName,
       [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
       ...ipc,

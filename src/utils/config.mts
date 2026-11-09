@@ -37,6 +37,7 @@ import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_AUTH_TYPE,
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
@@ -49,6 +50,7 @@ import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
 
 export interface LocalConfig {
+  authType?: 'api-token' | 'oauth' | null | undefined
   apiBaseUrl?: string | null | undefined
   // @deprecated ; use apiToken. when loading a config, if this prop exists it
   //               is deleted and set to apiToken instead, and then persisted.
@@ -140,7 +142,10 @@ function normalizeConfigKey(
       : key === CONFIG_KEY_ORG
         ? CONFIG_KEY_DEFAULT_ORG
         : key
-  if (!isSupportedConfigKey(normalizedKey)) {
+  if (
+    normalizedKey !== CONFIG_KEY_AUTH_TYPE &&
+    !isSupportedConfigKey(normalizedKey)
+  ) {
     return {
       ok: false,
       message: `Invalid config key: ${normalizedKey}`,

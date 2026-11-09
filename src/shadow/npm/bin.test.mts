@@ -6,6 +6,7 @@ import shadowNpmBin from './bin.mts'
 const mockInstallNpmLinks = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockFindUp = vi.hoisted(() => vi.fn())
+const mockResolvePublicApiToken = vi.hoisted(() => vi.fn())
 
 vi.mock('../../utils/shadow-links.mts', () => ({
   installNpmLinks: mockInstallNpmLinks,
@@ -17,6 +18,10 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
 
 vi.mock('../../utils/fs.mts', () => ({
   findUp: mockFindUp,
+}))
+
+vi.mock('../../utils/sdk.mts', () => ({
+  resolvePublicApiToken: mockResolvePublicApiToken,
 }))
 
 vi.mock('../../constants.mts', async importOriginal => {
@@ -50,6 +55,7 @@ describe('shadowNpmBin', () => {
     // Default mock implementations.
     mockInstallNpmLinks.mockResolvedValue('/usr/bin/npm')
     mockFindUp.mockResolvedValue(null)
+    mockResolvePublicApiToken.mockResolvedValue('public-token')
     mockSpawn.mockReturnValue({
       process: {
         send: vi.fn(),
@@ -92,6 +98,26 @@ describe('shadowNpmBin', () => {
 
     expect(result).toHaveProperty('spawnPromise')
     expect(mockSpawn).toHaveBeenCalled()
+  })
+
+  it('should not resolve OAuth for local npm commands', async () => {
+    mockResolvePublicApiToken.mockRejectedValue(
+      new Error('The saved session expired.'),
+    )
+
+    await expect(shadowNpmBin(['--version'])).resolves.toHaveProperty(
+      'spawnPromise',
+    )
+    await expect(shadowNpmBin(['run', 'test'])).resolves.toHaveProperty(
+      'spawnPromise',
+    )
+    expect(mockResolvePublicApiToken).not.toHaveBeenCalled()
+  })
+
+  it('should resolve OAuth for npm install scans', async () => {
+    await shadowNpmBin(['install'])
+
+    expect(mockResolvePublicApiToken).toHaveBeenCalledOnce()
   })
 
   it('should handle readonly array correctly', async () => {

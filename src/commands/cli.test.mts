@@ -28,7 +28,7 @@ describe('socket root command', async () => {
           Note: All commands have their own --help
 
           Main commands
-            socket login                Setup Socket CLI with an API token and defaults
+            socket login                Sign in to Socket and configure the CLI
             socket scan create          Create a new Socket scan and report
             socket npm/lodash@4.17.21   Request the Socket score of a package
             socket fix                  Fix CVEs in dependencies

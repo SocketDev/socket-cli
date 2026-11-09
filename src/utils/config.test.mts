@@ -12,6 +12,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
   findSocketYmlSync,
+  getConfigValueOrUndef,
+  getSupportedConfigKeys,
   isConfigFromFlag,
   overrideCachedConfig,
   overrideConfigApiToken,
@@ -54,6 +56,12 @@ describe('utils/config', () => {
           "ok": false,
         }
       `)
+    })
+
+    it('stores the active OAuth mode without exposing it as a user config key', () => {
+      expect(updateConfigValue('authType', 'oauth').ok).toBe(true)
+      expect(getConfigValueOrUndef('authType')).toBe('oauth')
+      expect(getSupportedConfigKeys()).not.toContain('authType')
     })
   })
 

@@ -18,7 +18,7 @@ import type {
 
 export const CMD_NAME = 'login'
 
-const description = 'Setup Socket CLI with an API token and defaults'
+const description = 'Sign in to Socket and configure the CLI'
 
 const hidden = false
 
@@ -39,10 +39,15 @@ async function run(
     hidden,
     flags: {
       ...commonFlags,
+      apiToken: {
+        type: 'boolean',
+        default: false,
+        description: 'Use masked API-token login for scans and write commands',
+      },
       apiBaseUrl: {
         type: 'string',
         default: '',
-        description: 'API server to connect to for login',
+        description: 'API server for API-token login',
       },
       apiProxy: {
         type: 'string',
@@ -57,13 +62,16 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Logs into the Socket API by prompting for an API token
+    By default, opens a browser for read-only package, alert, and threat-feed
+    access. Use --api-token for scans and write operations. A sign-in URL is
+    printed so you can open it manually if the browser does not launch.
 
     Options
       ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command}
+      $ ${command} --api-token
       $ ${command} --api-proxy=http://localhost:1234
   `,
   }
@@ -82,9 +90,10 @@ async function run(
     return
   }
 
+  const apiTokenMode = !!cli.flags['apiToken']
   if (!isInteractive()) {
     throw new InputError(
-      'Cannot prompt for credentials in a non-interactive shell. Use SOCKET_CLI_API_TOKEN environment variable instead',
+      'Login requires an interactive terminal. Set SOCKET_CLI_API_TOKEN for automation.',
     )
   }
 
@@ -93,5 +102,5 @@ async function run(
     apiProxy?: string | undefined
   }
 
-  await attemptLogin(apiBaseUrl, apiProxy)
+  await attemptLogin(apiBaseUrl, apiProxy, apiTokenMode)
 }

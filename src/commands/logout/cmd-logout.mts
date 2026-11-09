@@ -53,5 +53,5 @@ async function run(
     return
   }
 
-  attemptLogout()
+  await attemptLogout()
 }

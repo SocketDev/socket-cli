@@ -3,9 +3,13 @@ import { fileURLToPath } from 'node:url'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { YARN } from '../../constants.mts'
+import constants, {
+  FLAG_DRY_RUN,
+  SOCKET_PUBLIC_API_TOKEN,
+  YARN,
+} from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
-import { getPublicApiToken } from '../../utils/sdk.mts'
+import { resolvePublicApiToken } from '../../utils/sdk.mts'
 import { installYarnLinks } from '../../utils/shadow-links.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
@@ -103,6 +107,13 @@ export default async function shadowYarnBin(
 
   // Set up stdio with IPC channel.
   const stdio = ensureIpcInStdio(spawnOpts.stdio)
+  const needsScanning =
+    command !== undefined &&
+    (DLX_COMMANDS.has(command) || INSTALL_COMMANDS.has(command)) &&
+    !rawYarnArgs.includes(FLAG_DRY_RUN)
+  const shadowApiToken = needsScanning
+    ? await resolvePublicApiToken()
+    : SOCKET_PUBLIC_API_TOKEN
 
   const spawnPromise = spawn(
     realYarnPath,
@@ -126,7 +137,7 @@ export default async function shadowYarnBin(
   // Send IPC handshake.
   spawnPromise.process.send({
     [constants.SOCKET_IPC_HANDSHAKE]: {
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: shadowApiToken,
       [constants.SOCKET_CLI_SHADOW_BIN]: YARN,
       [constants.SOCKET_CLI_SHADOW_PROGRESS]: true,
       ...ipc,

@@ -24,27 +24,28 @@
  * - Includes CLI version and platform information
  */
 
-import { readFileSync } from 'node:fs'
 import { Agent as HttpAgent } from 'node:http'
 import { Agent as HttpsAgent } from 'node:https'
-import { rootCertificates } from 'node:tls'
 
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
-import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
-import { getConfigValueOrUndef } from './config.mts'
+import { getExtraCaCerts } from './api-transport.mts'
+import { getConfigValueOrUndef, isConfigFromFlag } from './config.mts'
 import { debugApiRequest, debugApiResponse } from './debug.mts'
+import {
+  readOAuthCredentials,
+  resolveOAuthAccessToken,
+} from './oauth.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_AUTH_TYPE,
 } from '../constants.mts'
 import { trackCliEvent } from './telemetry/integration.mts'
 
@@ -105,68 +106,70 @@ export function getDefaultProxyUrl(): string | undefined {
   return isUrl(apiProxy) ? apiProxy : undefined
 }
 
-// Cached extra CA certificates for SSL_CERT_FILE support.
-let _extraCaCerts: string[] | undefined
-let _extraCaCertsResolved = false
-
-// Returns combined root and extra CA certificates when SSL_CERT_FILE is set
-// but NODE_EXTRA_CA_CERTS is not. Node.js loads NODE_EXTRA_CA_CERTS at process
-// startup, so setting SSL_CERT_FILE alone does not affect the current process.
-// This function reads the certificate file manually and combines it with the
-// default root certificates for use in HTTPS agents.
-export function getExtraCaCerts(): string[] | undefined {
-  if (_extraCaCertsResolved) {
-    return _extraCaCerts
-  }
-  _extraCaCertsResolved = true
-  // Node.js already loaded extra CA certs at startup.
-  if (process.env['NODE_EXTRA_CA_CERTS']) {
-    return undefined
-  }
-  // Check for SSL_CERT_FILE fallback via constants.
-  const certPath = constants.ENV.NODE_EXTRA_CA_CERTS
-  if (!certPath) {
-    return undefined
-  }
-  try {
-    const extraCerts = readFileSync(certPath, 'utf-8')
-    // Combine default root certificates with extra certificates. Specifying ca
-    // in an agent replaces the default trust store, so both must be included.
-    _extraCaCerts = [...rootCertificates, extraCerts]
-    return _extraCaCerts
-  } catch (e) {
-    debugFn('warn', `Failed to read certificate file: ${certPath}`, e)
-    return undefined
-  }
-}
-
-// This Socket API token should be stored globally for the duration of the CLI execution.
-let _defaultToken: string | undefined
+export { getExtraCaCerts }
 
 export function getDefaultApiToken(): string | undefined {
   if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
-    _defaultToken = undefined
-    return _defaultToken
+    return undefined
   }
 
-  const key =
-    constants.ENV.SOCKET_CLI_API_TOKEN ||
-    getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
-    _defaultToken
+  const environmentToken = constants.ENV.SOCKET_CLI_API_TOKEN
+  if (isNonEmptyString(environmentToken)) {
+    return environmentToken
+  }
+  if (getConfigValueOrUndef(CONFIG_KEY_AUTH_TYPE) === 'oauth') {
+    return undefined
+  }
+  const key = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
 
-  _defaultToken = isNonEmptyString(key) ? key : undefined
-  return _defaultToken
+  return isNonEmptyString(key) ? key : undefined
 }
 
 export function getPublicApiToken(): string {
+  if (
+    !isConfigFromFlag() &&
+    !constants.ENV.SOCKET_CLI_NO_API_TOKEN &&
+    !constants.ENV.SOCKET_CLI_API_TOKEN &&
+    getConfigValueOrUndef(CONFIG_KEY_AUTH_TYPE) === 'oauth'
+  ) {
+    throw new Error(
+      'OAuth credentials must be resolved asynchronously before launching a Socket helper.',
+    )
+  }
   return (
     getDefaultApiToken() ||
-    constants.ENV.SOCKET_CLI_API_TOKEN ||
     constants.SOCKET_PUBLIC_API_TOKEN
   )
 }
 
+export async function resolvePublicApiToken(options?: {
+  apiBaseUrl?: string | undefined
+  apiProxy?: string | undefined
+  signal?: AbortSignal | undefined
+}): Promise<string> {
+  const token = await resolveDefaultApiToken(options)
+  if (token) {
+    return token
+  }
+  if (
+    !constants.ENV.SOCKET_CLI_NO_API_TOKEN &&
+    getConfigValueOrUndef(CONFIG_KEY_AUTH_TYPE) === 'oauth'
+  ) {
+    throw new Error(
+      'Browser sign-in has no usable access token. Run `socket login` to sign in again.',
+    )
+  }
+  return constants.SOCKET_PUBLIC_API_TOKEN
+}
+
 export function getVisibleTokenPrefix(): string {
+  if (
+    !constants.ENV.SOCKET_CLI_NO_API_TOKEN &&
+    getConfigValueOrUndef(CONFIG_KEY_AUTH_TYPE) === 'oauth' &&
+    !constants.ENV.SOCKET_CLI_API_TOKEN
+  ) {
+    return 'oauth'
+  }
   const apiToken = getDefaultApiToken()
   return apiToken
     ? apiToken.slice(
@@ -177,7 +180,81 @@ export function getVisibleTokenPrefix(): string {
 }
 
 export function hasDefaultApiToken(): boolean {
-  return !!getDefaultApiToken()
+  if (getDefaultApiToken()) {
+    return true
+  }
+  const directory = constants.socketAppDataPath
+  return Boolean(
+    !isConfigFromFlag() &&
+      !constants.ENV.SOCKET_CLI_NO_API_TOKEN &&
+      !constants.ENV.SOCKET_CLI_API_TOKEN &&
+      getConfigValueOrUndef(CONFIG_KEY_AUTH_TYPE) === 'oauth' &&
+      directory && hasOAuthCredentialFile(directory),
+  )
+}
+
+function hasOAuthCredentialFile(directory: string): boolean {
+  try {
+    return Boolean(readOAuthCredentials(directory))
+  } catch {
+    // Keep preflight from crashing; async token resolution reports a useful
+    // error and must not fall back to another credential.
+    return true
+  }
+}
+
+export async function resolveDefaultApiToken(options?: {
+  apiBaseUrl?: string | undefined
+  apiProxy?: string | undefined
+  signal?: AbortSignal | undefined
+}): Promise<string | undefined> {
+  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
+    return undefined
+  }
+  const environmentToken = constants.ENV.SOCKET_CLI_API_TOKEN
+  if (isNonEmptyString(environmentToken)) {
+    return environmentToken
+  }
+  if (getConfigValueOrUndef(CONFIG_KEY_AUTH_TYPE) !== 'oauth') {
+    const configured = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
+    return isNonEmptyString(configured) ? configured : undefined
+  }
+
+  // Explicit config is read-only and must never consult persisted OAuth state.
+  if (isConfigFromFlag()) {
+    return undefined
+  }
+
+  const directory = constants.socketAppDataPath
+  if (!directory) {
+    throw new Error(
+      'OAuth credentials are unavailable in this environment. Run `socket login` in a supported user session.',
+    )
+  }
+  const credentials = readOAuthCredentials(directory)
+  if (!credentials) {
+    throw new Error(
+      'Browser sign-in is selected but its credentials are missing or invalid. Run `socket login` to sign in again.',
+    )
+  }
+  const apiBaseUrl = options?.apiBaseUrl ?? getDefaultApiBaseUrl()
+  if (apiBaseUrl) {
+    let origin: string
+    try {
+      origin = new URL(apiBaseUrl).origin
+    } catch {
+      throw new Error('The configured Socket API URL is invalid for OAuth.')
+    }
+    if (origin !== credentials.apiOrigin) {
+      throw new Error(
+        'Browser sign-in can only be used with Socket’s trusted API origin. Use `socket login --api-token` for a custom API URL.',
+      )
+    }
+  }
+  return await resolveOAuthAccessToken(directory, {
+    apiProxy: options?.apiProxy ?? getDefaultProxyUrl(),
+    signal: options?.signal,
+  })
 }
 
 export type SetupSdkOptions = {
@@ -190,15 +267,12 @@ export async function setupSdk(
   options?: SetupSdkOptions | undefined,
 ): Promise<CResult<SocketSdk>> {
   const opts = { __proto__: null, ...options } as SetupSdkOptions
-  let { apiToken = getDefaultApiToken() } = opts
-
-  if (typeof apiToken !== 'string' && isInteractive()) {
-    apiToken = await password({
-      message:
-        'Enter your Socket.dev API token (not saved, use socket login to persist)',
-    })
-    _defaultToken = apiToken
-  }
+  const apiToken =
+    opts.apiToken ??
+    (await resolveDefaultApiToken({
+      apiBaseUrl: opts.apiBaseUrl,
+      apiProxy: opts.apiProxy,
+    }))
 
   if (!apiToken) {
     return {
