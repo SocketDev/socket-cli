@@ -2,7 +2,7 @@ name: E2E Tests
 
 on:
   pull_request:
-    branches: [main, v1.x]
+    branches: [v1.x]
   workflow_dispatch:
 
 permissions:
