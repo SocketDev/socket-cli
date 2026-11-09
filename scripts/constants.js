@@ -75,9 +75,15 @@ const lazyBlessedPath = () => path.join(constants.externalPath, 'blessed')
 
 const lazyConfigPath = () => path.join(constants.rootPath, '.config')
 
-const lazyDistPath = () => path.join(constants.rootPath, 'dist')
+const lazyDistPath = () =>
+  process.env.SOCKET_SEA_DIST_DIR
+    ? path.resolve(process.env.SOCKET_SEA_DIST_DIR)
+    : path.join(constants.rootPath, 'dist')
 
-const lazyExternalPath = () => path.join(constants.rootPath, 'external')
+const lazyExternalPath = () =>
+  process.env.SOCKET_SEA_EXTERNAL_DIR
+    ? path.resolve(process.env.SOCKET_SEA_EXTERNAL_DIR)
+    : path.join(constants.rootPath, 'external')
 
 const lazyRootPackageJsonPath = () =>
   path.join(constants.rootPath, 'package.json')

@@ -17,7 +17,7 @@ jobs:
       fail-fast: true
       matrix:
         # Node 20 reached end-of-life 2026-03-24; test supported majors only.
-        node-version: [22, 24]
+        node-version: [22, 24, 26.13.0]
         os: [ubuntu-latest]
         # os: [ubuntu-latest, windows-latest] - Windows tests disbaled (see project https://linear.app/socketdev/project/autofixes-windows-support-fc2f2a45f759)
     steps:

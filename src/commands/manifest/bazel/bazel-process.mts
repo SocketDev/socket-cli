@@ -98,11 +98,11 @@ export function resolveBazelExecutable(file: string): string {
   }
 }
 
-function isNodeScript(bin: string): boolean {
+export function isNodeScript(bin: string): boolean {
   if (/\.[cm]?js$/i.test(bin)) {
     return true
   }
-  if (path.extname(bin) || process.platform !== 'win32' || !existsSync(bin)) {
+  if (path.extname(bin) || !existsSync(bin)) {
     return false
   }
   const fd = openSync(bin, 'r')

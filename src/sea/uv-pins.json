@@ -1,0 +1,56 @@
+{
+  "package": "uv",
+  "version": "0.12.15",
+  "license": "MIT OR Apache-2.0",
+  "repository": "https://github.com/astral-sh/uv",
+  "releaseBaseUrl": "https://github.com/astral-sh/uv/releases/download/0.12.15",
+  "licenseBaseUrl": "https://raw.githubusercontent.com/astral-sh/uv/0.12.15",
+  "licenseFiles": [
+    {
+      "name": "LICENSE-MIT",
+      "sha256": "860e3d7a86b84e6a7012c7a635fc64df475cebc6cce34dfeb73a5982ec58176c"
+    },
+    {
+      "name": "LICENSE-APACHE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    }
+  ],
+  "targets": {
+    "darwin-arm64": {
+      "archive": "uv-aarch64-apple-darwin.tar.gz",
+      "sha256": "dc304b9ed1b24174572290fba60ac3f6fe63c73a671f0439e62a91375841964d",
+      "executable": "uv-aarch64-apple-darwin/uv",
+      "binary": "uv"
+    },
+    "darwin-x64": {
+      "archive": "uv-x86_64-apple-darwin.tar.gz",
+      "sha256": "e9ca61775532368fe518ab03e7a354c7ecab8ccb3c7d941c775fcc4a362b801b",
+      "executable": "uv-x86_64-apple-darwin/uv",
+      "binary": "uv"
+    },
+    "linux-arm64": {
+      "archive": "uv-aarch64-unknown-linux-gnu.tar.gz",
+      "sha256": "0e9a3499b0587d449c9ff684c0160da607826e4af1cee220bc87f378702d3e08",
+      "executable": "uv-aarch64-unknown-linux-gnu/uv",
+      "binary": "uv"
+    },
+    "linux-x64": {
+      "archive": "uv-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "f97935763c04be3e692460a7aaeaaab8fc3b78fcf8b389da820b38ae7423a638",
+      "executable": "uv-x86_64-unknown-linux-gnu/uv",
+      "binary": "uv"
+    },
+    "win32-arm64": {
+      "archive": "uv-aarch64-pc-windows-msvc.zip",
+      "sha256": "a37c8e96cb1260488c8510b64c848533a3a82a2fdf9e905de7c2700ceebf6437",
+      "executable": "uv.exe",
+      "binary": "uv.exe"
+    },
+    "win32-x64": {
+      "archive": "uv-x86_64-pc-windows-msvc.zip",
+      "sha256": "477bd99a84e34891f2bd4c9152ddeb74e971accccbc59c0f0301f11f08a32d46",
+      "executable": "uv.exe",
+      "binary": "uv.exe"
+    }
+  }
+}

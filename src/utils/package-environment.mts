@@ -167,7 +167,19 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
     }
   }
 
-  const binaryReader = wrapReader(readFileBinary)
+  const binaryReader = wrapReader(async (lockPath: string) => {
+    // registry 1.1.17 declares Buffer but decodes with `binary`, returning a
+    // Latin-1 string at runtime. Restore the original byte buffer for Bun's
+    // binary lockfile parser.
+    const content: unknown = await readFileBinary(lockPath)
+    if (Buffer.isBuffer(content)) {
+      return content
+    }
+    if (typeof content === 'string') {
+      return Buffer.from(content, 'latin1')
+    }
+    throw new TypeError('Expected binary lockfile content')
+  })
 
   const defaultReader = wrapReader(
     async (lockPath: string) => await readFileUtf8(lockPath),
