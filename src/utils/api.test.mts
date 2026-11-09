@@ -31,18 +31,28 @@ import type { EventEmitter } from 'node:events'
 // Mock getExtraCaCerts from sdk.mts.
 const mockGetExtraCaCerts = vi.hoisted(() => vi.fn(() => undefined))
 const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-api-token'))
+const mockResolveDefaultApiToken = vi.hoisted(() =>
+  vi.fn(async () => 'test-api-token'),
+)
 const mockGetCliUserAgent = vi.hoisted(() =>
   vi.fn(() => 'socket-cli/1.0.0 node/v20.0.0 test/x64'),
 )
 const mockGetDefaultProxyUrl = vi.hoisted(() =>
   vi.fn((): string | undefined => undefined),
 )
+const mockIsOAuthLoginActive = vi.hoisted(() => vi.fn(() => false))
+const mockGetConfigValueOrUndef = vi.hoisted(() =>
+  vi.fn((_key: string): unknown => undefined),
+)
+const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false))
 vi.mock('./sdk.mts', () => ({
   getCliUserAgent: mockGetCliUserAgent,
   getDefaultApiToken: mockGetDefaultApiToken,
   getDefaultApiBaseUrl: vi.fn(() => undefined),
   getDefaultProxyUrl: mockGetDefaultProxyUrl,
   getExtraCaCerts: mockGetExtraCaCerts,
+  isOAuthLoginActive: mockIsOAuthLoginActive,
+  resolveDefaultApiToken: mockResolveDefaultApiToken,
 }))
 
 // Mock node:https request function.
@@ -78,6 +88,8 @@ vi.mock('../constants.mts', () => ({
       NODE_EXTRA_CA_CERTS: '',
       SOCKET_CLI_API_BASE_URL: 'https://api.socket.dev/v0/',
       SOCKET_CLI_API_TIMEOUT: 30_000,
+      SOCKET_CLI_API_TOKEN: '',
+      SOCKET_CLI_NO_API_TOKEN: false,
     },
     spinner: {
       failAndStop: vi.fn(),
@@ -89,6 +101,7 @@ vi.mock('../constants.mts', () => ({
   CONFIG_KEY_API_BASE_URL: 'apiBaseUrl',
   EMPTY_VALUE: '<empty>',
   HTTP_STATUS_BAD_REQUEST: 400,
+  CONFIG_KEY_AUTH_TYPE: 'authType',
   HTTP_STATUS_FORBIDDEN: 403,
   HTTP_STATUS_INTERNAL_SERVER_ERROR: 500,
   HTTP_STATUS_NOT_FOUND: 404,
@@ -97,7 +110,12 @@ vi.mock('../constants.mts', () => ({
 
 // Mock config.
 vi.mock('./config.mts', () => ({
-  getConfigValueOrUndef: vi.fn(() => undefined),
+  getConfigValueOrUndef: mockGetConfigValueOrUndef,
+  isConfigFromFlag: mockIsConfigFromFlag,
+}))
+vi.mock('./errors.mts', () => ({
+  getErrorCause: (error: unknown) =>
+    error instanceof Error ? error.message : 'Unknown error',
 }))
 
 // Mock debug functions.
@@ -119,6 +137,41 @@ vi.mock('./telemetry/integration.mts', () => ({
 
 // Store original fetch for restoration.
 const originalFetch = globalThis.fetch
+
+describe('OAuth API error guidance', () => {
+  afterEach(() => mockIsOAuthLoginActive.mockReturnValue(false))
+
+  it('explains read-only scopes and organization capabilities', async () => {
+    mockIsOAuthLoginActive.mockReturnValue(true)
+    const { getErrorMessageForHttpStatusCode } = await import('./api.mts')
+
+    await expect(
+      getErrorMessageForHttpStatusCode(403, 'missing_scope'),
+    ).resolves.toMatch(/read-only.*socket login --api-token/i)
+    await expect(
+      getErrorMessageForHttpStatusCode(403, 'missing_capability'),
+    ).resolves.toMatch(/organization.*admin/i)
+  })
+
+  it('keeps the generic forbidden message when OAuth is inactive', async () => {
+    mockIsOAuthLoginActive.mockReturnValue(false)
+    const { getErrorMessageForHttpStatusCode } = await import('./api.mts')
+
+    await expect(
+      getErrorMessageForHttpStatusCode(403, 'missing_scope'),
+    ).resolves.toMatch(/API token may not have the required permissions/i)
+  })
+
+  it('keeps OAuth-specific guidance behind its shared classifier', async () => {
+    const { getOAuth403Guidance } = await import('./api.mts')
+
+    expect(getOAuth403Guidance('missing_scope')).toMatch(/read-only/)
+    expect(getOAuth403Guidance('missing_capability')).toMatch(
+      /organization.*admin/i,
+    )
+    expect(getOAuth403Guidance('unrelated')).toBeUndefined()
+  })
+})
 
 function stubHttpsResponse() {
   const mockReq = {
@@ -153,6 +206,8 @@ describe('apiFetch with extra CA certificates', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.resetModules()
+    mockGetConfigValueOrUndef.mockReturnValue(undefined)
+    mockIsConfigFromFlag.mockReturnValue(false)
     mockGetExtraCaCerts.mockReturnValue(undefined)
     mockGetDefaultProxyUrl.mockReturnValue(undefined)
   })
@@ -670,6 +725,8 @@ describe('apiFetch proxy support', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.resetModules()
+    mockGetConfigValueOrUndef.mockReturnValue(undefined)
+    mockIsConfigFromFlag.mockReturnValue(false)
     mockGetExtraCaCerts.mockReturnValue(undefined)
     mockGetDefaultProxyUrl.mockReturnValue(undefined)
   })

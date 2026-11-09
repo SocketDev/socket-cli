@@ -26,6 +26,7 @@ const mockParsePnpmLockfile = vi.hoisted(() => vi.fn())
 const mockReadPnpmLockfile = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
 const mockExistsSync = vi.hoisted(() => vi.fn())
+const mockResolvePublicApiToken = vi.hoisted(() => vi.fn())
 
 vi.mock('../../utils/alerts-map.mts', () => ({
   getAlertsMapFromPnpmLockfile: mockGetAlertsMapFromPnpmLockfile,
@@ -35,6 +36,10 @@ vi.mock('../../utils/alerts-map.mts', () => ({
 vi.mock('../../utils/pnpm.mts', () => ({
   parsePnpmLockfile: mockParsePnpmLockfile,
   readPnpmLockfile: mockReadPnpmLockfile,
+}))
+
+vi.mock('../../utils/sdk.mts', () => ({
+  resolvePublicApiToken: mockResolvePublicApiToken,
 }))
 
 vi.mock('../../utils/socket-package-alert.mts', () => ({
@@ -96,6 +101,7 @@ describe('shadowPnpm', () => {
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockExistsSync.mockReturnValue(false)
+    mockResolvePublicApiToken.mockResolvedValue('public-token')
 
     // Mock process.env
     process.env.SOCKET_CLI_ACCEPT_RISKS = ''
@@ -218,6 +224,17 @@ describe('shadowPnpm', () => {
     await shadowPnpm(['run', 'test'])
 
     expect(mockGetAlertsMapFromPurls).not.toHaveBeenCalled()
+  })
+
+  it('should not resolve OAuth for local package-manager commands', async () => {
+    mockResolvePublicApiToken.mockRejectedValue(
+      new Error('The saved session expired.'),
+    )
+
+    await expect(shadowPnpm(['run', 'test'])).resolves.toHaveProperty(
+      'spawnPromise',
+    )
+    expect(mockResolvePublicApiToken).not.toHaveBeenCalled()
   })
 
   it('should filter out command line flags from package names', async () => {

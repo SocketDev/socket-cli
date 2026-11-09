@@ -10,6 +10,7 @@ import constants, {
   FLAG_DRY_RUN,
   PNPM,
   PNPM_LOCK_YAML,
+  SOCKET_PUBLIC_API_TOKEN,
 } from '../../constants.mts'
 import { getAlertsMapFromPnpmLockfile } from '../../utils/alerts-map.mts'
 import {
@@ -18,7 +19,7 @@ import {
   isPnpmLockfileScanCommand,
 } from '../../utils/cmd.mts'
 import { parsePnpmLockfile, readPnpmLockfile } from '../../utils/pnpm.mts'
-import { getPublicApiToken } from '../../utils/sdk.mts'
+import { resolvePublicApiToken } from '../../utils/sdk.mts'
 import { installPnpmLinks } from '../../utils/shadow-links.mts'
 import { logAlertsMap } from '../../utils/socket-package-alert.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
@@ -219,6 +220,10 @@ export default async function shadowPnpmBin(
 
   // Set up stdio with IPC channel.
   const stdio = ensureIpcInStdio(spawnOpts.stdio)
+  const shadowApiToken =
+    needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)
+      ? await resolvePublicApiToken()
+      : SOCKET_PUBLIC_API_TOKEN
 
   const spawnPromise = spawn(
     realPnpmPath,
@@ -242,7 +247,7 @@ export default async function shadowPnpmBin(
   // Send IPC handshake.
   spawnPromise.process.send({
     [constants.SOCKET_IPC_HANDSHAKE]: {
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: shadowApiToken,
       [constants.SOCKET_CLI_SHADOW_BIN]: PNPM,
       [constants.SOCKET_CLI_SHADOW_PROGRESS]: true,
       ...ipc,

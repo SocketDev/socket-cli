@@ -21,6 +21,7 @@ const mockInstallYarnLinks = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
+const mockResolvePublicApiToken = vi.hoisted(() => vi.fn())
 
 vi.mock('../../utils/alerts-map.mts', () => ({
   getAlertsMapFromPurls: mockGetAlertsMapFromPurls,
@@ -28,6 +29,10 @@ vi.mock('../../utils/alerts-map.mts', () => ({
 
 vi.mock('../../utils/socket-package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
+}))
+
+vi.mock('../../utils/sdk.mts', () => ({
+  resolvePublicApiToken: mockResolvePublicApiToken,
 }))
 
 vi.mock('../../utils/shadow-links.mts', () => ({
@@ -85,6 +90,7 @@ describe('shadowYarn', () => {
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockReadPackageJson.mockResolvedValue({ dependencies: {} })
+    mockResolvePublicApiToken.mockResolvedValue('public-token')
 
     // Mock process.env
     process.env.SOCKET_CLI_ACCEPT_RISKS = ''
@@ -235,6 +241,17 @@ describe('shadowYarn', () => {
     await shadowYarn(['run', 'test'])
 
     expect(mockGetAlertsMapFromPurls).not.toHaveBeenCalled()
+  })
+
+  it('should not resolve OAuth for local package-manager commands', async () => {
+    mockResolvePublicApiToken.mockRejectedValue(
+      new Error('The saved session expired.'),
+    )
+
+    await expect(shadowYarn(['run', 'test'])).resolves.toHaveProperty(
+      'spawnPromise',
+    )
+    expect(mockResolvePublicApiToken).not.toHaveBeenCalled()
   })
 
   it('should filter out command line flags from package names', async () => {

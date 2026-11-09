@@ -223,6 +223,8 @@ module.exports = [
             // Allow paths like src/commands/manifest/bazel/*.test.mts.
             'src/*/*/*/*.test.mts',
             'test/*.mts',
+            'test/src/utils/*.test.mts',
+            'test/src/commands/logout/*.test.mts',
             // Allow loose one-off scripts.
             'scripts/*.mts',
           ],

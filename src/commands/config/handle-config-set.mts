@@ -1,6 +1,7 @@
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 
 import { outputConfigSet } from './output-config-set.mts'
+import { CONFIG_KEY_API_TOKEN, CONFIG_KEY_AUTH_TYPE } from '../../constants.mts'
 import { updateConfigValue } from '../../utils/config.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -19,6 +20,11 @@ export async function handleConfigSet({
   debugDir('inspect', { key, value, outputKind })
 
   const result = updateConfigValue(key, value)
+  if (result.ok && !result.data && key === CONFIG_KEY_API_TOKEN) {
+    // An explicit API-token update must take precedence over a saved OAuth
+    // session, which otherwise remains the active credential source.
+    updateConfigValue(CONFIG_KEY_AUTH_TYPE, 'api-token')
+  }
 
   // `config set` is a one-shot command: an in-memory-only change is a no-op
   // because the process exits before anything reads it. updateConfigValue only

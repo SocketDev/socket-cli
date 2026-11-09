@@ -192,7 +192,12 @@ export function isHelpFlag(cmdArg: string): boolean {
  * npm uses: install, i, update
  */
 export function isNpmLockfileScanCommand(command: string): boolean {
-  return command === 'install' || command === 'i' || command === 'update'
+  return (
+    command === 'install' ||
+    command === 'i' ||
+    command === 'ci' ||
+    command === 'update'
+  )
 }
 
 /**
