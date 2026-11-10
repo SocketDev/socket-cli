@@ -4,8 +4,6 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import {
   getCiBranch,
   gitBranch,
@@ -13,6 +11,7 @@ import {
   gitUnstagedModifiedFiles,
   gitUntrackedFiles,
 } from './git.mts'
+import { spawn } from './spawn.mts'
 
 // GitHub Actions sets these in its own runs, so they have to be cleared for
 // the tests to exercise anything other than the CI job they run inside.

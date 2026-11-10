@@ -18,8 +18,11 @@ const unicornPlugin = require('eslint-plugin-unicorn')
 const globals = require('globals')
 const tsEslint = require('typescript-eslint')
 
-const constants = require('@socketsecurity/registry/lib/constants')
-const { BIOME_JSON, GITIGNORE, LATEST, TSCONFIG_JSON } = constants
+const BIOME_JSON = 'biome.json'
+const GITIGNORE = '.gitignore'
+const LATEST = 'latest'
+const MAINTAINED_NODE_CURRENT = '22.19.0'
+const TSCONFIG_JSON = 'tsconfig.json'
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
@@ -142,7 +145,7 @@ const sharedRulesForNode = {
         'test',
         'test.describe',
       ],
-      version: constants.maintainedNodeVersions.current,
+      version: MAINTAINED_NODE_CURRENT,
     },
   ],
   'n/prefer-node-protocol': 'error',
@@ -223,6 +226,8 @@ module.exports = [
             // Allow paths like src/commands/manifest/bazel/*.test.mts.
             'src/*/*/*/*.test.mts',
             'test/*.mts',
+            // Allow focused helper tests under the unit test tree.
+            'test/unit/utils/*.test.mts',
             // Allow loose one-off scripts.
             'scripts/*.mts',
           ],

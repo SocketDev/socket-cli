@@ -1,7 +1,5 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   addCoveredBuildFiles,
   buildRootPath,
@@ -21,6 +19,7 @@ import {
 import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,

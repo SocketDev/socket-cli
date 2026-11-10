@@ -1,5 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { logger } from './logger.mts'
 import { YARN } from '../constants.mts'
 import { findBinPathDetailsSync } from './path-resolve.mts'
 

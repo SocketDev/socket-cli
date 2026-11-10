@@ -9,11 +9,6 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-import { spawnSync } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
-
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
@@ -21,6 +16,12 @@ import {
   isBuiltin,
   normalizeId,
 } from '../scripts/utils/packages.js'
+import {
+  escapeRegExp,
+  readPackageJsonSync,
+  spawnSync,
+  stripAnsi,
+} from '../scripts/utils/registry-helpers.js'
 
 const {
   INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
@@ -38,11 +39,7 @@ const {
   VITEST,
 } = constants
 
-export const EXTERNAL_PACKAGES = [
-  '@socketsecurity/registry',
-  'blessed',
-  'blessed-contrib',
-]
+export const EXTERNAL_PACKAGES = ['blessed', 'blessed-contrib']
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   if (!n.startsWith('node:')) {

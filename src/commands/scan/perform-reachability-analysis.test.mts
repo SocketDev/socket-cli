@@ -89,7 +89,7 @@ vi.mock('../../constants.mts', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('../../utils/logger.mts', () => ({
   logger: {
     error: vi.fn(),
     info: vi.fn(),

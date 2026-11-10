@@ -31,7 +31,7 @@ import url from 'node:url'
 
 import trash from 'trash'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '../utils/spawn.mts'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 

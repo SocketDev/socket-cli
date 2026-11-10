@@ -19,8 +19,7 @@
 
 import { createRequire } from 'node:module'
 
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-
+import { getOwn } from './objects.mts'
 import constants, {
   FLAG_QUIET,
   FLAG_SILENT,
@@ -31,8 +30,8 @@ import constants, {
 import { findUp } from './fs.mts'
 import { isYarnBerry } from './yarn-version.mts'
 
+import type { SpawnExtra } from './spawn.mts'
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
-import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
 

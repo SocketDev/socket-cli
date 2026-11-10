@@ -1,7 +1,6 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { fetchDependencies } from './fetch-dependencies.mts'
 import { outputDependencies } from './output-dependencies.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 
 import type { OutputKind } from '../../types.mts'
 

@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   CONVENTIONAL_MAVEN_REPO_NAMES,
   classifyProbeResult,
@@ -9,6 +7,7 @@ import {
   parseShowExtensionOutput,
   probeCandidate,
 } from './bazel-repo-discovery.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type {
   ProbeResult,

@@ -1,19 +1,18 @@
+import constants, { FLAG_LOGLEVEL, NPM } from '../../constants.mts'
 import {
   isNpmAuditFlag,
   isNpmFundFlag,
   isNpmLoglevelFlag,
   isNpmProgressFlag,
-  resolveBinPathSync,
-} from '@socketsecurity/registry/lib/agent'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
-import constants, { FLAG_LOGLEVEL, NPM } from '../../constants.mts'
+} from '../../utils/agent.mts'
+import { resolveBinPathSync } from '../../utils/bin.mts'
+import { isDebug } from '../../utils/debug.mts'
 import { getNpmBinPath } from '../../utils/npm-paths.mts'
+import { getOwn, isObject } from '../../utils/objects.mts'
+import { spawn } from '../../utils/spawn.mts'
 
-import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { SpawnResult } from '../../utils/spawn.mts'
+import type { Spinner } from '../../utils/spinner.mts'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 

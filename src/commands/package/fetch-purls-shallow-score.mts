@@ -1,7 +1,6 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleApiCall } from '../../utils/api.mts'
+import { joinAnd } from '../../utils/arrays.mts'
+import { logger } from '../../utils/logger.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'

@@ -5,8 +5,6 @@ import path from 'node:path'
 import trash from 'trash'
 import { describe, expect, it, vi } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
@@ -16,8 +14,9 @@ import constants, {
   PNPM,
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
+import { spawn } from '../../utils/spawn.mts'
 
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type { SpawnOptions } from '../../utils/spawn.mts'
 
 // TODO: Several exec/install tests fail due to config flag handling.
 describe('socket pnpm', async () => {

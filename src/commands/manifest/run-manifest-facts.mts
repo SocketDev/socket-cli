@@ -1,8 +1,6 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { buildRootPath } from './discover-manifest-roots.mts'
 import {
   expandEnvVarRefs,
@@ -19,6 +17,7 @@ import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'

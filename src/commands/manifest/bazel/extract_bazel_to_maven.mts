@@ -1,8 +1,6 @@
 import { existsSync, promises as fs, mkdirSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import {
   BAZEL_OUTPUT_ROOT_PREFIX,
@@ -33,6 +31,7 @@ import {
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
 import { IGNORED_DIRS } from '../../../utils/glob.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'

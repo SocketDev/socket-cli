@@ -3,10 +3,6 @@ import path from 'node:path'
 
 import micromatch from 'micromatch'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -23,10 +19,13 @@ import {
   snapshotSocketFacts,
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { withTmpDir } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
+import { pluralize } from '../../utils/words.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import { buildToolsFor } from '../manifest/scripts/build-tool.mts'
@@ -37,8 +36,8 @@ import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
+import type { Remap } from '../../utils/objects.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
-import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Supported-files response keys whose files count as pre-generated SBOMs:

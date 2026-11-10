@@ -1,7 +1,5 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
 import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
@@ -10,6 +8,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,

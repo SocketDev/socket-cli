@@ -1,9 +1,8 @@
 import fs from 'node:fs/promises'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { fileLink } from '../../utils/terminal-link.mts'

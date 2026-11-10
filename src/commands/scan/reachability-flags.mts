@@ -1,6 +1,5 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-
 import { COANA_CLI_VERSION } from '../../constants.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { isFactsOnlyTypes } from '../../utils/coana.mts'
 import {

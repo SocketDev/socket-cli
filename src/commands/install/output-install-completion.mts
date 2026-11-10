@@ -1,6 +1,5 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { CResult } from '../../types.mts'
 

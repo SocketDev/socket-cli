@@ -11,35 +11,40 @@ vi.mock('../../utils/shadow-links.mts', () => ({
   installNpmLinks: mockInstallNpmLinks,
 }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../../utils/spawn.mts', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('../../utils/fs.mts', () => ({
+vi.mock('../../utils/fs.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../utils/fs.mts')>()),
   findUp: mockFindUp,
 }))
 
 vi.mock('../../constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
+  const defaultConstants = {
+    ...actual.default,
+    shadowBinPath: '/mock/shadow-bin',
+    shadowNpmInjectPath: '/mock/inject.js',
+    execPath: '/usr/bin/node',
+    npmGlobalPrefix: '/usr/local',
+    npmCachePath: '/home/.npm',
+    nodeNoWarningsFlags: [],
+    nodeDebugFlags: [],
+    nodeHardenFlags: [],
+    nodeMemoryFlags: [],
+    processEnv: {},
+    ENV: { INLINED_SOCKET_CLI_SENTRY_BUILD: false },
+    SUPPORTS_NODE_PERMISSION_FLAG: false,
+  }
+  const internalsSymbol = actual.default.kInternalsSymbol
+  Object.defineProperties(defaultConstants, {
+    kInternalsSymbol: { value: internalsSymbol },
+    [internalsSymbol]: { value: actual.default[internalsSymbol] },
+  })
   return {
     ...actual,
-    default: {
-      ...actual?.default,
-      shadowBinPath: '/mock/shadow-bin',
-      shadowNpmInjectPath: '/mock/inject.js',
-      execPath: '/usr/bin/node',
-      npmGlobalPrefix: '/usr/local',
-      npmCachePath: '/home/.npm',
-      nodeNoWarningsFlags: [],
-      nodeDebugFlags: [],
-      nodeHardenFlags: [],
-      nodeMemoryFlags: [],
-      processEnv: {},
-      ENV: {
-        INLINED_SOCKET_CLI_SENTRY_BUILD: false,
-      },
-      SUPPORTS_NODE_PERMISSION_FLAG: false,
-    },
+    default: defaultConstants,
   }
 })
 

@@ -10,7 +10,7 @@ const { mockGenerateRecursiveManifests, mockWarn } = vi.hoisted(() => ({
   mockWarn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('../../utils/logger.mts', () => ({
   logger: { warn: mockWarn },
 }))
 

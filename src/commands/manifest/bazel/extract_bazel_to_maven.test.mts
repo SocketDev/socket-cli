@@ -11,8 +11,6 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 // Mock collaborators BEFORE importing the orchestrator. The orchestrator
 // composes pure-function discovery + the metadata cquery + a workspace
 // walker; mocking these lets us drive end-to-end behaviour without a
@@ -58,7 +56,7 @@ vi.mock('./bazel-cquery.mts', () => ({
   runMetadataCqueryForRepo: vi.fn(),
 }))
 // Quiet the spawn calls reapBazelServer makes during cleanup.
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../../../utils/spawn.mts', () => ({
   spawn: vi.fn(async () => ({ code: 0, stdout: '', stderr: '' })),
 }))
 
@@ -75,6 +73,7 @@ import {
   extractBazelToMaven,
   normalizeToMavenInstallJson,
 } from './extract_bazel_to_maven.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
 

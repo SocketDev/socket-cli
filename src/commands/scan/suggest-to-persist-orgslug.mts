@@ -1,7 +1,6 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
-
 import { getConfigValue, updateConfigValue } from '../../utils/config.mts'
+import { logger } from '../../utils/logger.mts'
+import { select } from '../../utils/prompts.mts'
 
 export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
   const skipAsk = getConfigValue('skipAskToPersistDefaultOrg')

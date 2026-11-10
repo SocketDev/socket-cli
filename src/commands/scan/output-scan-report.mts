@@ -1,15 +1,14 @@
 import fs from 'node:fs/promises'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { generateReport } from './generate-report.mts'
 import constants, {
   EXT_JSON,
   OUTPUT_JSON,
   OUTPUT_TEXT,
 } from '../../constants.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { mapToObject } from '../../utils/map-to-object.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'

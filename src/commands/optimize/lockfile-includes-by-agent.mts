@@ -1,6 +1,5 @@
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-
 import constants from '../../constants.mts'
+import { escapeRegExp } from '../../utils/escape-regexp.mts'
 
 import type { EnvDetails } from '../../utils/package-environment.mts'
 

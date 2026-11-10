@@ -1,6 +1,5 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { queryApiSafeTextWithStatus } from '../../utils/api.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'

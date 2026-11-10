@@ -1,15 +1,14 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { confirm } from '@socketsecurity/registry/lib/prompts'
-
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
+import { confirm } from '../../utils/prompts.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '../../utils/spinner.mts'
 import type { FullScanResult } from '@socketsecurity/sdk'
 
 export type ReachabilityFallback = {

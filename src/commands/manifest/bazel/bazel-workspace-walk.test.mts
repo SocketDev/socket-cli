@@ -10,9 +10,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
+import { logger } from '../../../utils/logger.mts'
 
 function touch(file: string): void {
   mkdirSync(path.dirname(file), { recursive: true })

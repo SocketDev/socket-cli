@@ -3,9 +3,6 @@ import path from 'node:path'
 
 import micromatch from 'micromatch'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
-
 import {
   addCoveredBuildFiles,
   buildRootPath,
@@ -28,6 +25,8 @@ import {
 import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
+import { logger } from '../../utils/logger.mts'
+import { select } from '../../utils/prompts.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,

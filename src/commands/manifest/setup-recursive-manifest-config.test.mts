@@ -25,7 +25,7 @@ vi.mock('./discover-manifest-roots.mts', async importOriginal => {
 vi.mock('./enumerate-workspaces.mts', () => ({
   enumerateWorkspaces: vi.fn(),
 }))
-vi.mock('@socketsecurity/registry/lib/prompts', () => ({
+vi.mock('../../utils/prompts.mts', () => ({
   select: vi.fn(),
 }))
 vi.mock('./setup-manifest-config.mts', () => ({
@@ -39,9 +39,6 @@ vi.mock('../../utils/socket-json.mts', () => ({
   readSocketJsonSync: vi.fn(),
   writeSocketJson: vi.fn(),
 }))
-
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
 
 import {
   buildRootPath,
@@ -58,6 +55,8 @@ import {
   scanBuildRoots,
   setupRecursiveManifestConfig,
 } from './setup-recursive-manifest-config.mts'
+import { logger } from '../../utils/logger.mts'
+import { select } from '../../utils/prompts.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,

@@ -8,7 +8,7 @@ import { FLAG_DRY_RUN } from '../../constants.mts'
 // Mock readPackageJson from registry
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/registry/lib/packages', async importOriginal => {
+vi.mock('../../utils/packages.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
   return {
     ...actual,
@@ -34,32 +34,38 @@ vi.mock('../../utils/shadow-links.mts', () => ({
   installYarnLinks: mockInstallYarnLinks,
 }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../../utils/spawn.mts', () => ({
   spawn: mockSpawn,
 }))
 
 vi.mock('../../constants.mts', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, any>
+  const defaultConstants = {
+    ...actual.default,
+    shadowBinPath: '/mock/shadow-bin',
+    ENV: new Proxy(
+      {},
+      {
+        get(_target, prop) {
+          if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
+            return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
+          }
+          if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
+            return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
+          }
+          return ''
+        },
+      },
+    ),
+  }
+  const internalsSymbol = actual.default.kInternalsSymbol
+  Object.defineProperties(defaultConstants, {
+    kInternalsSymbol: { value: internalsSymbol },
+    [internalsSymbol]: { value: actual.default[internalsSymbol] },
+  })
   return {
     ...actual,
-    default: {
-      ...actual?.default,
-      shadowBinPath: '/mock/shadow-bin',
-      ENV: new Proxy(
-        {},
-        {
-          get(_target, prop) {
-            if (prop === 'SOCKET_CLI_ACCEPT_RISKS') {
-              return process.env.SOCKET_CLI_ACCEPT_RISKS || ''
-            }
-            if (prop === 'SOCKET_CLI_VIEW_ALL_RISKS') {
-              return process.env.SOCKET_CLI_VIEW_ALL_RISKS || ''
-            }
-            return ''
-          },
-        },
-      ),
-    },
+    default: defaultConstants,
   }
 })
 

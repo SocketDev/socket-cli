@@ -32,15 +32,14 @@ import { rootCertificates } from 'node:tls'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { password } from '@socketsecurity/registry/lib/prompts'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import { getConfigValueOrUndef } from './config.mts'
-import { debugApiRequest, debugApiResponse } from './debug.mts'
+import { debugApiRequest, debugApiResponse, debugFn } from './debug.mts'
+import { logger } from './logger.mts'
+import { password } from './prompts.mts'
+import { isNonEmptyString } from './strings.mts'
+import { isUrl } from './url.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,

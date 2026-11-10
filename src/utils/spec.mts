@@ -3,7 +3,7 @@ import semver from 'semver'
 import { NPM } from '../constants.mts'
 import { stripPnpmPeerSuffix } from './pnpm.mts'
 
-import type { PackageURL } from '@socketregistry/packageurl-js'
+import type { PackageURL } from './purl.mts'
 
 export function idToNpmPurl(id: string): string {
   return `pkg:${NPM}/${id}`

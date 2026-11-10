@@ -95,7 +95,12 @@
     "check:actions": "node scripts/ci/check-actions.mts"
   },
   "dependencies": {
+    "@inquirer/confirm": "5.1.16",
+    "@inquirer/input": "4.2.2",
+    "@inquirer/password": "4.0.18",
+    "@inquirer/select": "4.3.2",
     "@socketsecurity/socket-patch": "2.0.0",
+    "cross-spawn": "7.0.6",
     "form-data": "4.0.6"
   },
   "devDependencies": {
@@ -130,12 +135,11 @@
     "@socketregistry/hyrious__bun.lockb": "1.0.18",
     "@socketregistry/indent-string": "1.0.13",
     "@socketregistry/is-interactive": "1.0.6",
-    "@socketregistry/packageurl-js": "1.0.9",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/registry": "1.1.17",
     "@socketsecurity/sdk": "4.0.3",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
+    "@types/cross-spawn": "6.0.6",
     "@types/js-yaml": "4.0.9",
     "@types/mdast": "4.0.4",
     "@types/micromatch": "4.0.9",
@@ -232,7 +236,6 @@
       "@octokit/request-error": "$@octokit/request-error",
       "@rollup/plugin-commonjs": "28.0.6",
       "@sigstore/core": "3.2.1",
-      "@socketsecurity/registry": "$@socketsecurity/registry",
       "aggregate-error": "npm:@socketregistry/aggregate-error@^1.0.14",
       "ansi-regex": "6.1.0",
       "ansi-term": "0.0.2",
@@ -260,7 +263,6 @@
       "lodash": "4.17.21",
       "meow": "13.2.0",
       "npm-package-arg": "$npm-package-arg",
-      "packageurl-js": "npm:@socketregistry/packageurl-js@^1.0.9",
       "path-parse": "npm:@socketregistry/path-parse@^1.0.7",
       "rollup": "4.50.1",
       "safe-buffer": "npm:@socketregistry/safe-buffer@^1.0.8",
@@ -295,8 +297,7 @@
       "bresenham@0.0.3": "patches/bresenham@0.0.3.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "rollup@4.50.1": "patches/rollup@4.50.1.patch",
-      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch",
-      "@socketsecurity/registry@1.1.17": "patches/@socketsecurity__registry@1.1.17.patch"
+      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch"
     }
   },
   "typeCoverage": {
@@ -309,5 +310,8 @@
     "ignore-type-assertion": true,
     "ignore-files": "test/*",
     "strict": true
+  },
+  "optionalDependencies": {
+    "supports-color": "7.2.0"
   }
 }

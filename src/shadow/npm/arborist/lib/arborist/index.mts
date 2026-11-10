@@ -1,10 +1,9 @@
 // @ts-ignore
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants, { NODE_MODULES, NPX } from '../../../../../constants.mts'
 import { findUp } from '../../../../../utils/fs.mts'
+import { logger } from '../../../../../utils/logger.mts'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert.mts'
 import {
   getAlertsMapFromArborist,

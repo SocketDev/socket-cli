@@ -42,12 +42,11 @@
 import { homedir } from 'node:os'
 import process from 'node:process'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-
-import { TelemetryService } from './service.mts'
 import constants, { CONFIG_KEY_DEFAULT_ORG } from '../../constants.mts'
 import { getConfigValueOrUndef } from '../config.mts'
+import { debugFn } from '../debug.mts'
+import { escapeRegExp } from '../escape-regexp.mts'
+import { TelemetryService } from './service.mts'
 
 import type { TelemetryContext } from './types.mts'
 

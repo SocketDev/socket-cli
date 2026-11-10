@@ -1,6 +1,5 @@
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants, { FLAG_PROD } from '../../constants.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 import type { EnvDetails } from '../../utils/package-environment.mts'
 

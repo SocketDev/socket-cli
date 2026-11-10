@@ -3,13 +3,6 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import {
-  arrayUnique,
-  joinAnd,
-  joinOr,
-} from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleFix } from './handle-fix.mts'
 import constants, {
   COANA_CLI_VERSION,
@@ -17,6 +10,7 @@ import constants, {
   FLAG_ID,
 } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { arrayUnique, joinAnd, joinOr } from '../../utils/arrays.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import {
@@ -24,6 +18,7 @@ import {
   parseEcosystemChoices,
 } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,

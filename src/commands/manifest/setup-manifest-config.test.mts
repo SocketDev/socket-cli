@@ -4,12 +4,10 @@ import { describe, expect, it, vi } from 'vitest'
 // whatever `default` was shown - the same contract inquirer honors. This is
 // exactly the behavior that made `askForBin` freeze a hardcoded tool
 // fallback (e.g. 'mvn') into socket.json when the user never typed anything.
-vi.mock('@socketsecurity/registry/lib/prompts', () => ({
+vi.mock('../../utils/prompts.mts', () => ({
   input: vi.fn(async ({ default: def }: { default?: string }) => def ?? ''),
   select: vi.fn(async ({ default: def }: { default?: string }) => def ?? ''),
 }))
-
-import { input, select } from '@socketsecurity/registry/lib/prompts'
 
 import {
   setupDotnet,
@@ -17,6 +15,7 @@ import {
   setupMaven,
   setupSbt,
 } from './setup-manifest-config.mts'
+import { input, select } from '../../utils/prompts.mts'
 
 describe('setup wizards', () => {
   it.for([

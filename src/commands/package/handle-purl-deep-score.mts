@@ -1,7 +1,6 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
 import { outputPurlsDeepScore } from './output-purls-deep-score.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 
 import type { OutputKind } from '../../types.mts'
 

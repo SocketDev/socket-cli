@@ -3,8 +3,6 @@ import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { isOmittedReachValue } from './reachability-units.mts'
 import constants, { COANA_CLI_VERSION } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
@@ -14,6 +12,7 @@ import {
   isReachabilityReportPath,
   useOnlySocketFactsArtifactsFlags,
 } from '../../utils/coana.mts'
+import { logger } from '../../utils/logger.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
@@ -23,8 +22,8 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
+import type { Spinner } from '../../utils/spinner.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {

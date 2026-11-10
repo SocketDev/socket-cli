@@ -3,14 +3,13 @@ import { fileURLToPath } from 'node:url'
 
 import { it } from 'vitest'
 
-import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
-
 import constants, {
   COANA_CLI_VERSION,
   FLAG_HELP,
   FLAG_VERSION,
 } from '../src/constants.mts'
+import { SpawnOptions, spawn } from '../src/utils/spawn.mts'
+import { stripAnsi } from '../src/utils/strings.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -55,6 +54,13 @@ function normalizeCoanaVersion(str: string): string {
   return str.replaceAll(COANA_CLI_VERSION, '<coana-version>')
 }
 
+function normalizeWorkspacePaths(str: string): string {
+  return str
+    .replaceAll(testPath, '<redacted>')
+    .replaceAll(process.cwd(), '<redacted>')
+    .replace(/<redacted>(?:[/\\][^\s"'/:\\]+)+/g, '<redacted>')
+}
+
 // Normalize CLI banner output for stable snapshots.
 // The banner contains environment-specific values (version, token, org, cwd)
 // that differ across machines and CI environments.
@@ -91,9 +97,11 @@ function toAsciiSafeString(str: string): string {
 export function cleanOutput(output: string): string {
   return toAsciiSafeString(
     normalizeBanner(
-      normalizeCoanaVersion(
-        normalizeLogSymbols(
-          normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+      normalizeWorkspacePaths(
+        normalizeCoanaVersion(
+          normalizeLogSymbols(
+            normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+          ),
         ),
       ),
     ),

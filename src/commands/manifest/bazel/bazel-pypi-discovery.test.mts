@@ -5,14 +5,13 @@ import { fileURLToPath } from 'node:url'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   discoverPypiHubs,
   parseBazelModPipExtensionCandidates,
   parsePypiHubCandidates,
   validatePypiHub,
 } from './bazel-pypi-discovery.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type { RepoProbe } from './bazel-repo-discovery.mts'
 

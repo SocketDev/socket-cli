@@ -1,9 +1,8 @@
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { msAtHome } from '../../utils/ms-at-home.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 

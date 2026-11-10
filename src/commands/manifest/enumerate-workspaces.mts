@@ -1,11 +1,10 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   expandEnvVarRefs,
   formatMissingEnvVarRefs,
 } from './expand-env-var-refs.mts'
 import { enumerateWorkspaces as enumerateWorkspacesScript } from './scripts/run.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'

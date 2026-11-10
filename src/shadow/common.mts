@@ -1,18 +1,16 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-
 import constants, { FLAG_DRY_RUN, PACKAGE_JSON } from '../constants.mts'
 import { getAlertsMapFromPurls } from '../utils/alerts-map.mts'
 import { isAddCommand } from '../utils/cmd.mts'
-import { debugScan } from '../utils/debug.mts'
+import { debugDir, debugFn, debugScan } from '../utils/debug.mts'
+import { logger } from '../utils/logger.mts'
 import { safeNpmSpecToPurl } from '../utils/npm-spec.mts'
+import { readPackageJson } from '../utils/packages.mts'
 import { logAlertsMap } from '../utils/socket-package-alert.mts'
 
 import type { AlertsByPurl } from '../utils/socket-package-alert.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '../utils/spinner.mts'
 
 function extractPackagePurlsFromCommandArgs(
   rawArgs: string[] | readonly string[],
@@ -107,10 +105,10 @@ async function extractPackagePurlsFromPackageJson(
     const pkgJson = await readPackageJson(cwd)
 
     const allDeps = {
-      ...pkgJson.dependencies,
-      ...pkgJson.devDependencies,
-      ...pkgJson.optionalDependencies,
-      ...pkgJson.peerDependencies,
+      ...pkgJson?.dependencies,
+      ...pkgJson?.devDependencies,
+      ...pkgJson?.optionalDependencies,
+      ...pkgJson?.peerDependencies,
     }
 
     for (const { 0: name, 1: version } of Object.entries(allDeps)) {

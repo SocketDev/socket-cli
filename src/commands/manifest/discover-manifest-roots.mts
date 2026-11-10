@@ -3,8 +3,6 @@ import path from 'node:path'
 
 import micromatch from 'micromatch'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   BUILD_FILES,
   BUILD_TOOLS,
@@ -15,6 +13,7 @@ import {
 import { listDotnetEntryProjects } from './scripts/run.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
+import { logger } from '../../utils/logger.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'

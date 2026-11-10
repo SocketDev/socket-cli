@@ -21,8 +21,7 @@ import path from 'node:path'
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
+import { spawn } from './spawn.mts'
 import constants from '../constants.mts'
 import { spawnCoana } from './coana-release.mts'
 import { getCliUserAgent } from './sdk.mts'

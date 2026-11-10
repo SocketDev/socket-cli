@@ -2,12 +2,6 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { readJsonSync } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import {
   cleanupErrorBranches,
   cleanupFailedPrBranches,
@@ -28,14 +22,16 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 import { spawnCoana } from '../../utils/coana-release.mts'
 import {
   isReachabilityReportPath,
   isSocketFactsFile,
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { getErrorCause } from '../../utils/errors.mts'
-import { withTmpDir } from '../../utils/fs.mts'
+import { readJsonSync, withTmpDir } from '../../utils/fs.mts'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -52,8 +48,10 @@ import {
   fetchGhsaDetails,
   setGitRemoteGithubRepoUrl,
 } from '../../utils/github.mts'
+import { logger } from '../../utils/logger.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import { pluralize } from '../../utils/words.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
@@ -62,7 +60,7 @@ import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '../../utils/spinner.mts'
 
 type DiscoverGhsaIdsOptions = {
   coanaVersion?: string | undefined

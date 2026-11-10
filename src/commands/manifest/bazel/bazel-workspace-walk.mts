@@ -28,7 +28,7 @@
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '../../../utils/logger.mts'
 
 // Hard ceiling on workspace roots; 16 sits well above realistic monorepo
 // counts while tightening the guard against pathological inputs.

@@ -5,10 +5,6 @@ import path from 'node:path'
 import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
@@ -25,6 +21,9 @@ import constants, {
   PNPM_LOCK_YAML,
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { logger } from '../../utils/logger.mts'
+import { readPackageJson } from '../../utils/packages.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 const npmFixtureDir = path.join(fixtureBaseDir, NPM)

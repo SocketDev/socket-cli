@@ -4,7 +4,7 @@ import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '../../utils/spinner.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchSupportedScanFileNamesOptions = {

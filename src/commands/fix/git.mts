@@ -1,6 +1,5 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-
 import constants from '../../constants.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 
 import type { GhsaDetails } from '../../utils/github.mts'
 

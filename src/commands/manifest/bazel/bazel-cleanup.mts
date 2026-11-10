@@ -11,14 +11,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   buildBazelStartupFlags,
   getBazelEnvironmentValue,
   spawnBazel,
 } from './bazel-process.mts'
 import { getErrorCause, isErrnoException } from '../../../utils/errors.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
 

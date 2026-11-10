@@ -5,10 +5,9 @@
  * Critical distinction: Remote branches are sacred when a PR exists, disposable when they don't.
  */
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { debugFn } from '../../utils/debug.mts'
 import { gitDeleteBranch, gitDeleteRemoteBranch } from '../../utils/git.mts'
+import { logger } from '../../utils/logger.mts'
 
 /**
  * Clean up a stale branch (both remote and local).

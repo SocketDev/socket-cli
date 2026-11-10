@@ -1,16 +1,15 @@
 import path from 'node:path'
 
-import { debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { debugDir } from '../../utils/debug.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'

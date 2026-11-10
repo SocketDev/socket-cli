@@ -1,11 +1,10 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { applyOptimization } from './apply-optimization.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
 import { CMD_NAME } from './shared.mts'
 import constants from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
+import { logger } from '../../utils/logger.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
 import type { OutputKind } from '../../types.mts'

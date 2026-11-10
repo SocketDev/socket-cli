@@ -33,21 +33,16 @@ import {
 } from '@octokit/graphql'
 import { Octokit } from '@octokit/rest'
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
-import {
-  readJson,
-  safeStatsSync,
-  writeJson,
-} from '@socketsecurity/registry/lib/fs'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { parseUrl } from '@socketsecurity/registry/lib/url'
-
+import { debugDir, debugFn, isDebug } from './debug.mts'
 import { formatErrorWithDetail } from './errors.mts'
+import { readJson, safeStatsSync, writeJson } from './fs.mts'
+import { spawn } from './spawn.mts'
+import { parseUrl } from './url.mts'
 import constants from '../constants.mts'
 
+import type { JsonContent } from './fs.mts'
+import type { SpawnOptions } from './spawn.mts'
 import type { components } from '@octokit/openapi-types'
-import type { JsonContent } from '@socketsecurity/registry/lib/fs'
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
 export type Pr = components['schemas']['pull-request']
 
@@ -59,9 +54,9 @@ async function readCache(
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
-    const isExpired = Date.now() - stat.mtimeMs > ttlMs
+    const isExpired = Date.now() - Number(stat.mtimeMs) > ttlMs
     if (!isExpired) {
-      return await readJson(cacheJsonPath)
+      return (await readJson(cacheJsonPath)) ?? undefined
     }
   }
   return undefined

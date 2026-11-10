@@ -11,17 +11,6 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import fastGlob from 'fast-glob'
 import trash from 'trash'
 
-import { isDirEmptySync } from '@socketsecurity/registry/lib/fs'
-import { hasKeys } from '@socketsecurity/registry/lib/objects'
-import {
-  fetchPackageManifest,
-  readPackageJson,
-} from '@socketsecurity/registry/lib/packages'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
@@ -30,6 +19,16 @@ import {
   isBuiltin,
   normalizeId,
 } from '../scripts/utils/packages.js'
+import {
+  escapeRegExp,
+  fetchPackageManifest,
+  hasKeys,
+  isDirEmptySync,
+  naturalCompare,
+  normalizePath,
+  readPackageJson,
+  spawnAsync,
+} from '../scripts/utils/registry-helpers.js'
 
 const {
   CONSTANTS,
@@ -70,7 +69,6 @@ const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
-const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 const UTILS = 'utils'
 const VENDOR = 'vendor'
 
@@ -178,7 +176,7 @@ async function copyBashCompletion() {
 }
 
 async function copyExternalPackages() {
-  const { blessedContribPath, blessedPath, socketRegistryPath } = constants
+  const { blessedContribPath, blessedPath } = constants
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
 
@@ -191,9 +189,7 @@ async function copyExternalPackages() {
       // Copy the other packages over to ./external/.
       .map(n =>
         copyPackage(n, {
-          strict:
-            // Skip adding 'use strict' directives to Socket packages.
-            n !== SOCKET_SECURITY_REGISTRY,
+          strict: true,
         }),
       ),
     // Copy 'blessed-contrib' license over to
@@ -218,16 +214,6 @@ async function copyExternalPackages() {
       // would be dropped too).
       [blessedPath, ['lib/**/*.js', 'usr/*', 'vendor/**/*.js']],
       [blessedContribPath, ['lib/**/*.js', 'index.js']],
-      [
-        socketRegistryPath,
-        [
-          'external/**/*.js',
-          'lib/**/*.js',
-          'index.js',
-          'extensions.json',
-          'manifest.json',
-        ],
-      ],
     ].map(async ({ 0: thePath, 1: ignorePatterns }) => {
       await removeFiles(thePath, {
         exclude: [...alwaysIgnoredPatterns, ...ignorePatterns],
@@ -347,7 +333,7 @@ async function updatePackageLockFile() {
     return
   }
   try {
-    await spawn(
+    await spawnAsync(
       'pnpm',
       [
         'install',
@@ -502,6 +488,14 @@ export default async () => {
             switch (id) {
               case constantsSrcPath:
                 return CONSTANTS
+              case normalizePath(path.join(srcPath, 'registry-constants.mts')):
+                return 'registry-constants'
+              case normalizePath(path.join(utilsSrcPath, 'env.mts')):
+                return 'env-helpers'
+              case normalizePath(path.join(utilsSrcPath, 'spawn-sync.mts')):
+                return 'spawn-sync'
+              case normalizePath(path.join(utilsSrcPath, 'spinner.mts')):
+                return 'spinner'
               case flagsSrcPath:
                 return FLAGS
               case shadowNpmBinSrcPath:

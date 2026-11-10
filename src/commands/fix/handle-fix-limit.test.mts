@@ -4,9 +4,8 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { coanaFix } from './coana-fix.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { FixConfig } from './types.mts'
 

@@ -27,17 +27,13 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { readJson } from '@socketsecurity/registry/lib/fs'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
-import constants from '../constants.mts'
 import { apiFetch } from './api.mts'
 import { InputError } from './errors.mts'
+import { readJson } from './fs.mts'
+import { spawn } from './spawn.mts'
+import constants from '../constants.mts'
 
-import type {
-  SpawnExtra,
-  SpawnOptions,
-} from '@socketsecurity/registry/lib/spawn'
+import type { SpawnExtra, SpawnOptions } from './spawn.mts'
 
 export interface DlxBinaryOptions {
   /** URL to download the binary from. */

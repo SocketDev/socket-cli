@@ -24,8 +24,7 @@
 
 import path from 'node:path'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-
+import { normalizePath } from './path.mts'
 import constants from '../constants.mts'
 
 /**

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '../../../utils/logger.mts'
 
 // Mock the extractor so the `run` wiring test can assert which timeout reaches
 // it without a real Bazel toolchain. The `cmdit`/spawnSocketCli tests below

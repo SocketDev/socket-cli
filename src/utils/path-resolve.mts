@@ -1,12 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import {
-  resolveBinPathSync,
-  whichBinSync,
-} from '@socketsecurity/registry/lib/bin'
-import { isDirSync } from '@socketsecurity/registry/lib/fs'
-
+import { resolveBinPathSync, whichBinSync } from './bin.mts'
+import { isDirSync } from './fs.mts'
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import {
   createSupportedFilesFilter,

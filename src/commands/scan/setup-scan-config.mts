@@ -1,9 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { input, select } from '@socketsecurity/registry/lib/prompts'
-
 import constants, { SOCKET_JSON } from '../../constants.mts'
 import {
   detectDefaultBranch,
@@ -11,6 +8,8 @@ import {
   getRepoOwner,
   gitBranch,
 } from '../../utils/git.mts'
+import { logger } from '../../utils/logger.mts'
+import { input, select } from '../../utils/prompts.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,

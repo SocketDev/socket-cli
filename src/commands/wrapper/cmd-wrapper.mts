@@ -1,7 +1,5 @@
 import { existsSync } from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { postinstallWrapper } from './postinstall-wrapper.mts'
@@ -10,6 +8,7 @@ import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 

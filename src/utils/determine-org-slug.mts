@@ -1,5 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { logger } from './logger.mts'
 import {
   CONFIG_KEY_DEFAULT_ORG,
   V1_MIGRATION_GUIDE_URL,

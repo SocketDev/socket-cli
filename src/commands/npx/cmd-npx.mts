@@ -1,9 +1,8 @@
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants, { FLAG_DRY_RUN, FLAG_HELP, NPX } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
 import {

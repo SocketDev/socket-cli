@@ -80,10 +80,6 @@ const mockDebugApiResponse = vi.hoisted(() => vi.fn())
 vi.mock('./debug.mts', () => ({
   debugApiRequest: mockDebugApiRequest,
   debugApiResponse: mockDebugApiResponse,
-}))
-
-// Mock registry debug functions used by getExtraCaCerts.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
   debugDir: vi.fn(),
   debugFn: vi.fn(),
 }))

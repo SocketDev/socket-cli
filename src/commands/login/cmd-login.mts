@@ -1,10 +1,10 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { attemptLogin } from './attempt-login.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { InputError } from '../../utils/errors.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,

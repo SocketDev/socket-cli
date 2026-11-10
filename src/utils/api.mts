@@ -25,12 +25,22 @@ import { ReadableStream } from 'node:stream/web'
 import { HttpsProxyAgent } from 'hpagent'
 import { messageWithCauses } from 'pony-cause'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-
 import { getConfigValueOrUndef } from './config.mts'
-import { debugApiRequest, debugApiResponse } from './debug.mts'
+import {
+  debugApiRequest,
+  debugApiResponse,
+  debugDir,
+  debugFn,
+} from './debug.mts'
+import { logger } from './logger.mts'
+import { getRequirements, getRequirementsKey } from './requirements.mts'
+import {
+  getCliUserAgent,
+  getDefaultApiToken,
+  getDefaultProxyUrl,
+  getExtraCaCerts,
+} from './sdk.mts'
+import { isNonEmptyString } from './strings.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   EMPTY_VALUE,
@@ -40,16 +50,9 @@ import constants, {
   HTTP_STATUS_NOT_FOUND,
   HTTP_STATUS_UNAUTHORIZED,
 } from '../constants.mts'
-import { getRequirements, getRequirementsKey } from './requirements.mts'
-import {
-  getCliUserAgent,
-  getDefaultApiToken,
-  getDefaultProxyUrl,
-  getExtraCaCerts,
-} from './sdk.mts'
 
 import type { CResult } from '../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from './spinner.mts'
 
 const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'

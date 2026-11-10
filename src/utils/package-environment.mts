@@ -31,17 +31,16 @@ import browserslist from 'browserslist'
 import semver from 'semver'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
-import { resolveBinPathSync, whichBin } from '@socketsecurity/registry/lib/bin'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
-import { Logger } from '@socketsecurity/registry/lib/logger'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+import { resolveBinPathSync, whichBin } from './bin.mts'
 import { cmdPrefixMessage } from './cmd.mts'
-import { findUp } from './fs.mts'
+import { debugDir, debugFn } from './debug.mts'
+import { findUp, readFileBinary, readFileUtf8 } from './fs.mts'
+import { Logger } from './logger.mts'
+import { readPackageJson } from './packages.mts'
+import { naturalCompare } from './sorts.mts'
+import { spawn } from './spawn.mts'
+import { isNonEmptyString } from './strings.mts'
 import constants, {
   FLAG_VERSION,
   PACKAGE_LOCK_JSON,
@@ -50,8 +49,8 @@ import constants, {
 } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
-import type { Remap } from '@socketsecurity/registry/lib/objects'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
+import type { Remap } from './objects.mts'
+import type { EditablePackageJson } from './packages.mts'
 import type { SemVer } from 'semver'
 
 const {
@@ -390,8 +389,9 @@ export async function detectPackageEnvironment({
     : undefined
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
-  const pkgManager = isNonEmptyString(editablePkgJson?.content?.packageManager)
-    ? editablePkgJson.content.packageManager
+  const packageManager = editablePkgJson?.content['packageManager']
+  const pkgManager = isNonEmptyString(packageManager)
+    ? packageManager
     : undefined
 
   let agent: Agent | undefined
@@ -436,7 +436,9 @@ export async function detectPackageEnvironment({
   let pkgMinAgentVersion = minSupportedAgentVersion
   let pkgMinNodeVersion = minSupportedNodeVersion
   if (editablePkgJson?.content) {
-    const { engines } = editablePkgJson.content
+    const engines = editablePkgJson.content['engines'] as
+      | Record<string, unknown>
+      | undefined
     const engineAgentRange = engines?.[agent]
     const engineNodeRange = engines?.['node']
     if (isNonEmptyString(engineAgentRange)) {

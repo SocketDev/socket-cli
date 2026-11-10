@@ -1,6 +1,3 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
@@ -11,7 +8,9 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
+import { pluralize } from '../../utils/words.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { DynamicSbomInferenceResult } from './run-dynamic-sbom-inference.mts'

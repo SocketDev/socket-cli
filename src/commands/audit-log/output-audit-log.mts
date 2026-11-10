@@ -1,14 +1,13 @@
 import { createRequire } from 'node:module'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants, {
   FLAG_JSON,
   OUTPUT_JSON,
   OUTPUT_MARKDOWN,
 } from '../../constants.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { msAtHome } from '../../utils/ms-at-home.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'

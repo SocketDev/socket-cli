@@ -13,8 +13,7 @@
 
 import path from 'node:path'
 
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-
+import { escapeRegExp } from './escape-regexp.mts'
 import constants from '../constants.mts'
 
 export function tildify(cwd: string) {

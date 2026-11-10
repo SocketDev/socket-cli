@@ -1,12 +1,11 @@
 import { existsSync, promises as fs, rmSync } from 'node:fs'
 import path from 'node:path'
 
-import { isDirSync } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants from '../../constants.mts'
 import { InputError, getErrorMessage } from '../../utils/errors.mts'
+import { isDirSync } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 import type { GeneratedScanFiles } from './handle-create-new-scan.mts'
 

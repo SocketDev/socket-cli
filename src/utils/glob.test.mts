@@ -14,8 +14,7 @@ import { fileURLToPath } from 'node:url'
 import mockFs from 'mock-fs'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-
+import { normalizePath } from './path.mts'
 import { NODE_MODULES } from '../constants.mjs'
 import {
   createSupportedFilesFilter,

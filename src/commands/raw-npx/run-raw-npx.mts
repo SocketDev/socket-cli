@@ -1,7 +1,6 @@
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants from '../../constants.mts'
 import { getNpxBinPath } from '../../utils/npm-paths.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 export async function runRawNpx(
   argv: string[] | readonly string[],

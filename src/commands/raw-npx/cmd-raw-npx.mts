@@ -1,8 +1,7 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { runRawNpx } from './run-raw-npx.mts'
 import constants, { FLAG_DRY_RUN, FLAG_HELP } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
 import type {

@@ -1,7 +1,6 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { buildRootPath } from './discover-manifest-roots.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { RecursiveManifestOutcome } from './generate-recursive-manifests.mts'

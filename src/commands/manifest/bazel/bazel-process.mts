@@ -10,13 +10,12 @@ import path from 'node:path'
 
 import which from 'which'
 
-import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants from '../../../constants.mts'
+import { resolveBinPathSync } from '../../../utils/bin.mts'
 import { InputError, isErrnoException } from '../../../utils/errors.mts'
+import { spawn } from '../../../utils/spawn.mts'
 
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import type { SpawnOptions } from '../../../utils/spawn.mts'
 import type { ChildProcess } from 'node:child_process'
 
 function findEnvironmentKey(

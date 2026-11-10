@@ -1,8 +1,7 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { findDotnetEntries } from './detect-manifest-actions.mts'
 import { realpathOrResolved } from './discover-manifest-roots.mts'
 import { buildUncoveredRoot } from './generate-recursive-manifests.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
 import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'

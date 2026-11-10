@@ -1,22 +1,21 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants, { YARN } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
+import { debugFn } from '../../utils/debug.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
 import { installYarnLinks } from '../../utils/shadow-links.mts'
+import { spawn } from '../../utils/spawn.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
 import type { IpcObject } from '../../constants.mts'
-import type { DlxFlags } from '../common.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '../../utils/spawn.mts'
+import type { DlxFlags } from '../common.mts'
 
 export type ShadowYarnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

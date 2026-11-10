@@ -1,16 +1,15 @@
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isPath } from '@socketsecurity/registry/lib/path'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import { runCdxgen } from './run-cdxgen.mts'
 import constants, { FLAG_HELP } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { isPath } from '../../utils/path.mts'
+import { pluralize } from '../../utils/words.mts'
 
 import type {
   CliCommandConfig,

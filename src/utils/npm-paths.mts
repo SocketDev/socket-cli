@@ -2,9 +2,8 @@ import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
 
-import { resolveBinPathSync } from '@socketsecurity/registry/lib/bin'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { resolveBinPathSync } from './bin.mts'
+import { logger } from './logger.mts'
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import { findBinPathDetailsSync, findNpmDirPathSync } from './path-resolve.mts'
 

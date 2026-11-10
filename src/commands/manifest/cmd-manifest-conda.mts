@@ -1,7 +1,5 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { findCondaFile } from './detect-manifest-actions.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import constants, {
@@ -15,6 +13,7 @@ import constants, {
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'

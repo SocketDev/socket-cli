@@ -1,10 +1,9 @@
-import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
-
 import constants from '../../constants.mts'
+import { hasKeys, isObject } from '../../utils/objects.mts'
 
 import type { Overrides } from './types.mts'
 import type { Agent } from '../../utils/package-environment.mts'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
+import type { EditablePackageJson } from '../../utils/packages.mts'
 
 const {
   BUN,

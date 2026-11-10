@@ -4,10 +4,9 @@ import path from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-
 import { updateManifest } from './update-manifest-by-agent.mts'
 import { NPM, PNPM, YARN_BERRY, YARN_CLASSIC } from '../../constants.mts'
+import { readPackageJson } from '../../utils/packages.mts'
 
 const directories: string[] = []
 const overrides = { 'fixture-package': 'npm:fixture-replacement@2.0.0' }

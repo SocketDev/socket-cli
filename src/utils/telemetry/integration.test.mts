@@ -53,7 +53,7 @@ vi.mock('./service.mts', () => ({
 
 // Mock debug functions.
 const mockDebugFn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
+vi.mock('../debug.mts', () => ({
   debugFn: mockDebugFn,
 }))
 

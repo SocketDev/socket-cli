@@ -23,21 +23,18 @@
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
-import { getManifestData } from '@socketsecurity/registry'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
-import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-
 import { isArtifactAlertCve } from './alert/artifact.mts'
 import { ALERT_FIX_TYPE } from './alert/fix.mts'
 import { ALERT_SEVERITY } from './alert/severity.mts'
 import { ColorOrMarkdown } from './color-or-markdown.mts'
+import { debugDir, debugFn } from './debug.mts'
 import { toFilterConfig } from './filter-config.mts'
-import { createEnum } from './objects.mts'
+import { createEnum, getOwn, hasOwn } from './objects.mts'
+import { getManifestData, resolvePackageName } from './packages.mts'
 import { createPurlObject, getPurlObject } from './purl.mts'
 import { getMajor } from './semver.mts'
 import { getSocketDevPackageOverviewUrl } from './socket-url.mts'
+import { naturalCompare } from './sorts.mts'
 import { getTranslations } from './translations.mts'
 
 import type {
@@ -47,8 +44,8 @@ import type {
   CveProps,
 } from './alert/artifact.mts'
 import type { PURL_Type } from './ecosystem.mts'
+import type { Spinner } from './spinner.mts'
 import type { SocketYml } from '@socketsecurity/config'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export const ALERT_SEVERITY_COLOR = createEnum({
   critical: 'magenta',

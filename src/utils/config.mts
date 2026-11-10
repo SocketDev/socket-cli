@@ -26,13 +26,13 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import { debugConfig } from './debug.mts'
+import { debugConfig, debugDir, debugFn } from './debug.mts'
 import { getEditableJsonClass } from './editable-json.mts'
+import { getErrorCause } from './errors.mts'
+import { safeReadFileSync } from './fs.mts'
+import { logger } from './logger.mts'
+import { naturalCompare } from './sorts.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -43,7 +43,6 @@ import constants, {
   SOCKET_YAML,
   SOCKET_YML,
 } from '../constants.mts'
-import { getErrorCause } from './errors.mts'
 
 import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -106,7 +105,12 @@ function getConfigValues(): LocalConfig {
         try {
           Object.assign(
             _cachedConfig,
-            JSON.parse(Buffer.from(raw, 'base64').toString()),
+            JSON.parse(
+              Buffer.from(
+                Buffer.isBuffer(raw) ? raw.toString('utf8') : raw,
+                'base64',
+              ).toString(),
+            ),
           )
           debugConfig(configFilePath, true)
         } catch (e) {

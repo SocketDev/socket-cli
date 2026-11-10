@@ -19,14 +19,12 @@
  * - Handles kebab-case conversion for flags
  */
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { isObject } from '@socketsecurity/registry/lib/objects'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { indentString } from '@socketsecurity/registry/lib/strings'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
+import { joinAnd } from './arrays.mts'
+import { isObject } from './objects.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
-import { camelToKebab } from './strings.mts'
+import { naturalCompare } from './sorts.mts'
+import { camelToKebab, indentString } from './strings.mts'
+import { pluralize } from './words.mts'
 
 import type { MeowFlags } from '../flags.mts'
 

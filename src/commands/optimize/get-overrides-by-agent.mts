@@ -2,7 +2,7 @@ import constants from '../../constants.mts'
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
 import type { Agent, EnvDetails } from '../../utils/package-environment.mts'
-import type { PackageJson } from '@socketsecurity/registry/lib/packages'
+import type { PackageJson } from '../../utils/packages.mts'
 
 const {
   BUN,

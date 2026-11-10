@@ -2,18 +2,17 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import { testPath } from '../../../test/utils.mts'
 import constants, {
   FLAG_DRY_RUN,
   FLAG_HELP,
   FLAG_SILENT,
 } from '../../constants.mts'
+import { isDebug } from '../../utils/debug.mts'
+import { logger } from '../../utils/logger.mts'
+import { spawn } from '../../utils/spawn.mts'
 
-import type { SpawnError } from '@socketsecurity/registry/lib/spawn'
+import type { SpawnError } from '../../utils/spawn.mts'
 
 const npmFixturesPath = path.join(testPath, 'fixtures/commands/npm')
 

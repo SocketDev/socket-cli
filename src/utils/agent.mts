@@ -16,15 +16,37 @@
  * - Spinner support for progress indication
  */
 
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
-import constants, { NPM, PNPM } from '../constants.mts'
 import { cmdFlagsToString } from './cmd.mts'
+import { getOwn } from './objects.mts'
+import { spawn } from './spawn.mts'
+import { Spinner } from './spinner.mts'
+import constants, { NPM, PNPM } from '../constants.mts'
 import { shadowNpmInstall } from '../shadow/npm/install.mts'
 
 import type { EnvDetails } from './package-environment.mts'
+
+const auditFlags = new Set(['--audit', '--no-audit'])
+const fundFlags = new Set(['--fund', '--no-fund'])
+const logFlags = new Set([
+  '--loglevel',
+  '-d',
+  '--dd',
+  '--ddd',
+  '-q',
+  '--quiet',
+  '-s',
+  '--silent',
+])
+const progressFlags = new Set(['--progress', '--no-progress'])
+
+export const isNpmAuditFlag = (arg: string): boolean => auditFlags.has(arg)
+export const isNpmFundFlag = (arg: string): boolean => fundFlags.has(arg)
+export const isNpmLoglevelFlag = (arg: string): boolean =>
+  arg.startsWith('--loglevel=') || logFlags.has(arg)
+export const isNpmNodeOptionsFlag = (arg: string): boolean =>
+  arg.startsWith('--node-options=')
+export const isNpmProgressFlag = (arg: string): boolean =>
+  progressFlags.has(arg)
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 

@@ -4,16 +4,17 @@ const spawnMock = vi.fn(async () => ({ stdout: '11.6.0' }))
 const resolveBinPathSyncMock = vi.fn(() => '/fake/npm-cli.js')
 const whichBinMock = vi.fn(async () => 'npm')
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../src/utils/spawn.mts', () => ({
   spawn: spawnMock,
 }))
 
-vi.mock('@socketsecurity/registry/lib/bin', () => ({
+vi.mock('../src/utils/bin.mts', () => ({
   resolveBinPathSync: resolveBinPathSyncMock,
   whichBin: whichBinMock,
 }))
 
-vi.mock('../src/utils/fs.mts', () => ({
+vi.mock('../src/utils/fs.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../src/utils/fs.mts')>()),
   findUp: vi.fn(async () => undefined),
 }))
 

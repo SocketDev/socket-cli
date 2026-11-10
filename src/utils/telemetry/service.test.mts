@@ -57,7 +57,7 @@ vi.mock('../sdk.mts', () => ({
 const mockDebugFn = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
+vi.mock('../debug.mts', () => ({
   debugDir: mockDebugDir,
   debugFn: mockDebugFn,
 }))

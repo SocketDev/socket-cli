@@ -4,8 +4,6 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
   // Default: no per-root override found, fall back to the root config - matches
@@ -25,6 +23,7 @@ import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { listDotnetEntryProjects } from './scripts/run.mts'
 import { testPath } from '../../../test/utils.mts'
+import { logger } from '../../utils/logger.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,

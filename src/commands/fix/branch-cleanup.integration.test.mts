@@ -5,8 +5,6 @@ import path from 'node:path'
 import trash from 'trash'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import {
   cleanupErrorBranches,
   cleanupFailedPrBranches,
@@ -19,6 +17,7 @@ import {
   gitDeleteRemoteBranch,
   gitRemoteBranchExists,
 } from '../../utils/git.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 describe('branch-cleanup integration tests', () => {
   let tempDir: string

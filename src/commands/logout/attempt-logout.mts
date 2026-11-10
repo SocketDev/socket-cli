@@ -1,7 +1,6 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { applyLogout } from './apply-logout.mts'
 import { isConfigFromFlag } from '../../utils/config.mts'
+import { logger } from '../../utils/logger.mts'
 
 export function attemptLogout() {
   try {

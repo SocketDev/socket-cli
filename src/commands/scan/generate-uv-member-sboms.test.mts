@@ -11,7 +11,7 @@ import {
 
 const { mockSpawn } = vi.hoisted(() => ({ mockSpawn: vi.fn() }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({ spawn: mockSpawn }))
+vi.mock('../../utils/spawn.mts', () => ({ spawn: mockSpawn }))
 
 const sbom = JSON.stringify({
   bomFormat: 'CycloneDX',

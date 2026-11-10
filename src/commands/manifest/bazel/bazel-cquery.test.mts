@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../../../utils/spawn.mts', () => ({
   spawn: vi.fn(),
 }))
-
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import {
   buildMetadataCqueryArgv,
@@ -12,6 +10,7 @@ import {
   runMetadataCqueryForRepo,
   versionlessCoordinate,
 } from './bazel-cquery.mts'
+import { spawn } from '../../../utils/spawn.mts'
 
 // Sample envelope shape Bazel 5+ emits: `{ "results": [ { "target": {...} } ] }`.
 // Two rules: one with `tags`/`maven_coordinates` (rules_jvm_external shape)

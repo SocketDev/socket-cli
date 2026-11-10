@@ -1,12 +1,11 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { safeReadFile } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants from '../../constants.mts'
 import { getErrorCause } from '../../utils/errors.mts'
+import { safeReadFile } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 // Walk up from a pom path to find a `target` directory ancestor and return
 // its parent (the project root). Returns undefined if no `target` ancestor

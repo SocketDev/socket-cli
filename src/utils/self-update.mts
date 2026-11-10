@@ -1,8 +1,7 @@
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { logger } from './logger.mts'
 import constants from '../constants.mts'
 import { socketPackageLink } from './terminal-link.mts'
 

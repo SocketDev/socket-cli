@@ -1,9 +1,8 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateLockfile } from './update-lockfile.mts'
 import constants from '../../constants.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'

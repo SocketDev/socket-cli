@@ -1,11 +1,10 @@
 import fs from 'node:fs/promises'
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from '../../constants.mts'
 import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { mdTableStringNumber } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { fileLink } from '../../utils/terminal-link.mts'

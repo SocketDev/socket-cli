@@ -5,13 +5,12 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
-import { isDirSync, safeReadFile } from '@socketsecurity/registry/lib/fs'
-import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { transform } from '@socketsecurity/registry/lib/streams'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-
+import { isDirSync, safeReadFile } from './fs.mts'
+import { defaultIgnore } from './globs.mts'
+import { readPackageJson } from './packages.mts'
+import { normalizePath } from './path.mts'
+import { transform } from './streams.mts'
+import { isNonEmptyString } from './strings.mts'
 import { NODE_MODULES, PNPM } from '../constants.mts'
 
 import type { Agent } from './package-environment.mts'
@@ -59,7 +58,7 @@ async function getWorkspaceGlobs(
     const yml = await safeReadFile(workspacePath)
     if (yml) {
       try {
-        workspacePatterns = yamlParse(yml)?.packages
+        workspacePatterns = yamlParse(yml.toString())?.packages
       } catch {}
     }
   } else {
@@ -364,8 +363,16 @@ export async function globWithGitIgnore(
       suppressErrors: true,
     },
   )
-  for await (const found of transform(
-    discoveryStream,
+  for await (const found of transform<
+    string,
+    {
+      content: string
+      dir: string
+      patterns: string[]
+      venv: boolean
+    }
+  >(
+    discoveryStream as unknown as AsyncIterable<string>,
     async (filepath: string) => {
       const dirRel = normalizePath(path.relative(cwd, path.dirname(filepath)))
       if (path.basename(filepath) === PYVENV_CFG) {
@@ -379,7 +386,7 @@ export async function globWithGitIgnore(
           venv: true,
         }
       }
-      const content = (await safeReadFile(filepath)) ?? ''
+      const content = ((await safeReadFile(filepath)) ?? '').toString()
       return {
         content,
         dir: dirRel,
@@ -506,7 +513,7 @@ export async function globWorkspace(
         absolute: true,
         cwd,
         dot: true,
-        ignore: defaultIgnore,
+        ignore: [...defaultIgnore],
       })
     : []
 }

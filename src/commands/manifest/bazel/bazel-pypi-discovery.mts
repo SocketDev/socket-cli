@@ -1,9 +1,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { getErrorCause } from '../../../utils/errors.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type { RepoProbe } from './bazel-repo-discovery.mts'
 

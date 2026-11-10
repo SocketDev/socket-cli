@@ -22,27 +22,15 @@
  * - Ensures type safety for ecosystem operations
  */
 
-import { arrayUnique, joinAnd } from '@socketsecurity/registry/lib/arrays'
-
+import { arrayUnique, joinAnd } from './arrays.mts'
 import { NPM } from '../constants.mts'
 import { InputError } from './errors.mts'
 
-import type { EcosystemString } from '@socketsecurity/registry'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export type PURL_Type = components['schemas']['SocketPURL_Type']
 
 type ExpectNever<T extends never> = T
-
-// Temporarily commented out due to dependency version mismatch.
-// SDK has "alpm" but registry's EcosystemString doesn't yet.
-// type MissingInEcosystemString = Exclude<PURL_Type, EcosystemString>
-type ExtraInEcosystemString = Exclude<EcosystemString, PURL_Type>
-
-// export type _Check_EcosystemString_has_all_purl_types =
-//   ExpectNever<MissingInEcosystemString>
-export type _Check_EcosystemString_has_no_extras =
-  ExpectNever<ExtraInEcosystemString>
 
 export const ALL_ECOSYSTEMS = [
   'alpm',

@@ -3,10 +3,9 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { fileLink } from '../../utils/terminal-link.mts'
 
