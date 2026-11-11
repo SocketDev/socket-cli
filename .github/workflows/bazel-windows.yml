@@ -2,7 +2,7 @@ name: Bazel on Windows
 
 on:
   pull_request:
-    branches: [main, v1.x]
+    branches: [v1.x]
     paths:
       - .github/workflows/bazel-windows.yml
       - package.json
@@ -10,7 +10,7 @@ on:
       - src/commands/manifest/bazel/**
       - test/fixtures/manifest-bazel/**
   push:
-    branches: [main, v1.x]
+    branches: [v1.x]
     paths:
       - .github/workflows/bazel-windows.yml
       - package.json
