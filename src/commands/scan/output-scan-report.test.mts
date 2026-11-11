@@ -169,7 +169,7 @@ describe('output-scan-report', () => {
       await outputScanReport(
         {
           ok: true,
-          data: { scan: [], securityPolicy: {} },
+          data: { scan: [] },
         } as any,
         {
           orgSlug: 'test-org',
@@ -195,7 +195,7 @@ describe('output-scan-report', () => {
       await outputScanReport(
         {
           ok: true,
-          data: { scan: [], securityPolicy: {} },
+          data: { scan: [] },
         } as any,
         {
           orgSlug: 'test-org',

@@ -19,7 +19,6 @@ import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type OutputScanReportConfig = {
   orgSlug: string
@@ -35,7 +34,6 @@ export type OutputScanReportConfig = {
 export async function outputScanReport(
   result: CResult<{
     scan: SocketArtifact[]
-    securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
   }>,
   {
     filepath,
@@ -63,7 +61,6 @@ export async function outputScanReport(
 
   const scanReport = generateReport(
     result.data.scan,
-    result.data.securityPolicy,
     {
       orgSlug,
       scanId,
