@@ -209,8 +209,13 @@ describe('toPlainTextReport', () => {
     expect(text).toContain('package-199999')
   })
 
-  it('keeps package versions accurate across fold modes', () => {
-    const leaf = alert('error', 'envVars', 'package.json', '')
+  it('keeps report fields aligned across formats and fold modes', () => {
+    const leaf = alert(
+      'error',
+      'envVars',
+      'package.json',
+      'https://socket.dev/npm/package/demo-transitive',
+    )
     const versionFoldAlerts: ScanReport['alerts'] = new Map([
       ['npm', new Map([['demo-transitive', new Map([['2.3.4', leaf]])]])],
     ])
@@ -227,7 +232,12 @@ describe('toPlainTextReport', () => {
                   ['package.json', leaf],
                   [
                     'src/index.js',
-                    alert('warn', 'telemetry', 'package-lock.json', ''),
+                    alert(
+                      'warn',
+                      'telemetry',
+                      'package-lock.json',
+                      'https://socket.dev/npm/package/demo-transitive',
+                    ),
                   ],
                 ]),
               ],
@@ -247,7 +257,15 @@ describe('toPlainTextReport', () => {
             'demo-transitive',
             new Map([
               ['2.3.4', leaf],
-              ['2.3.5', alert('warn', 'telemetry', 'package.json', '')],
+              [
+                '2.3.5',
+                alert(
+                  'warn',
+                  'telemetry',
+                  'package.json',
+                  'https://socket.dev/npm/package/demo-transitive',
+                ),
+              ],
             ]),
           ],
         ]),
@@ -267,6 +285,11 @@ describe('toPlainTextReport', () => {
       alerts: packageFoldAlerts,
       fold: FOLD_SETTING_PKG,
       healthy: false,
+    })
+    const defaultFoldReport = buildReport({ alerts: buildAlerts() })
+    const twoVersionReport = buildReport({
+      alerts: twoVersionAlerts,
+      fold: 'version',
     })
 
     expect(flattenReportAlerts(versionFoldReport)[0]?.packageVersion).toBe(
@@ -291,11 +314,38 @@ describe('toPlainTextReport', () => {
       '<unknown>',
     )
     expect(toPlainTextReport(packageFoldReport)).toContain('<unknown>')
-    expect(
-      flattenReportAlerts(
-        buildReport({ alerts: twoVersionAlerts, fold: 'version' }),
-      ).map(row => row.packageVersion),
-    ).toEqual(['2.3.4', '2.3.5'])
+    expect(flattenReportAlerts(twoVersionReport).map(row => row.packageVersion))
+      .toEqual(['2.3.4', '2.3.5'])
+    const reports = [
+      defaultFoldReport,
+      versionFoldReport,
+      fileFoldReport,
+      packageFoldReport,
+      twoVersionReport,
+    ]
+
+    for (const report of reports) {
+      const rows = flattenReportAlerts(report)
+      const text = toPlainTextReport(report)
+      const markdown = toMarkdownReport(report)
+      const markdownHeader = markdown
+        .split('\n')
+        .find(line => line.includes('| Policy |'))
+
+      expect(text).toContain('VERSION')
+      expect(markdownHeader).toContain('Version')
+      expect(markdownHeader).toContain('URL')
+      for (const row of rows) {
+        expect(text).toContain(row.packageVersion)
+        expect(markdown).toContain(row.packageVersion)
+        expect(text).toContain(row.manifest)
+        expect(markdown).toContain(row.manifest)
+        if (row.url) {
+          expect(text).toContain(row.url)
+          expect(markdown).toContain(row.url)
+        }
+      }
+    }
   })
 })
 
