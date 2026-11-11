@@ -31,6 +31,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
 import { debugApiRequest, debugApiResponse } from './debug.mts'
+import { getErrorCause } from './errors.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   EMPTY_VALUE,
@@ -43,9 +44,10 @@ import constants, {
 import { getRequirements, getRequirementsKey } from './requirements.mts'
 import {
   getCliUserAgent,
-  getDefaultApiToken,
   getDefaultProxyUrl,
   getExtraCaCerts,
+  isOAuthLoginActive,
+  resolveDefaultApiToken,
 } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
@@ -53,6 +55,24 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'
+
+function getApiErrorText(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+  if (!value || typeof value !== 'object') {
+    return ''
+  }
+  const record = value as Record<string, unknown>
+  const details = record['details']
+  const nestedCode =
+    details && typeof details === 'object'
+      ? (details as Record<string, unknown>)['code']
+      : undefined
+  return [record['code'], nestedCode, record['message'], record['error']]
+    .filter((part): part is string => typeof part === 'string')
+    .join(' ')
+}
 
 // Cached HTTPS agent for direct API calls. Undefined only until the first
 // getHttpsAgent() call lazily creates it.
@@ -223,14 +243,23 @@ async function describeApiFailure(
   response: Response,
   path: string,
 ): Promise<string> {
-  let serverMessage: unknown
+  let serverMessage = ''
+  let serverCode = ''
   try {
-    serverMessage = (JSON.parse(await response.text()) as any)?.error?.message
+    const payload = JSON.parse(await response.text()) as any
+    const serverError = payload?.error
+    serverMessage = getApiErrorText(serverError)
+    serverCode = [payload?.code, serverError?.code, serverError?.details?.code]
+      .filter((part): part is string => typeof part === 'string')
+      .join(' ')
   } catch {
     // A body that isn't JSON carries no message.
   }
-  const reason = await getErrorMessageForHttpStatusCode(response.status)
-  return typeof serverMessage === 'string' && serverMessage
+  const reason = await getErrorMessageForHttpStatusCode(
+    response.status,
+    [serverCode, serverMessage].filter(Boolean).join(' '),
+  )
+  return serverMessage
     ? `${response.statusText}: ${serverMessage} (reason: ${reason}) (path: ${path})`
     : `${response.statusText} (reason: ${reason}) (path: ${path})`
 }
@@ -265,7 +294,16 @@ function getCommandRequirements(
 /**
  * Log required permissions for a command when encountering 403 errors.
  */
-function logPermissionsFor403(cmdPath?: string | undefined): void {
+function logPermissionsFor403(
+  cmdPath?: string | undefined,
+  apiError?: string | undefined,
+): void {
+  if (isOAuthLoginActive()) {
+    const guidance = getOAuth403Guidance(apiError)
+    if (guidance) {
+      logger.error(guidance)
+    }
+  }
   const requirements = getCommandRequirements(cmdPath)
   if (!requirements?.permissions?.length) {
     return
@@ -275,7 +313,9 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
   for (const permission of requirements.permissions) {
     logger.error(`  - ${permission}`)
   }
-  logger.error('Please ensure your API token has the required permissions.')
+  if (!isOAuthLoginActive()) {
+    logger.error('Please ensure your API token has the required permissions.')
+  }
 }
 
 // The Socket API server that should be used for operations.
@@ -293,7 +333,22 @@ export function getDefaultApiBaseUrl(): string {
 /**
  * Get user-friendly error message for HTTP status codes.
  */
-export async function getErrorMessageForHttpStatusCode(code: number) {
+export function getOAuth403Guidance(
+  apiError: string | undefined,
+): string | undefined {
+  if (/missing[_ -]capability/i.test(apiError ?? '')) {
+    return 'This organization does not grant the capability required for this command. Ask an organization admin to enable it.'
+  }
+  if (/missing[_ -]scope/i.test(apiError ?? '')) {
+    return 'Browser sign-in is read-only. Use `socket login --api-token` or SOCKET_CLI_API_TOKEN for scans and write operations.'
+  }
+  return undefined
+}
+
+export async function getErrorMessageForHttpStatusCode(
+  code: number,
+  apiError?: string,
+) {
   if (code === HTTP_STATUS_BAD_REQUEST) {
     return 'One of the options passed might be incorrect'
   }
@@ -301,6 +356,13 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
     return 'Your Socket API token appears to be invalid, expired, or revoked. Please verify your token is correct and active'
   }
   if (code === HTTP_STATUS_FORBIDDEN) {
+    if (isOAuthLoginActive()) {
+      const guidance = getOAuth403Guidance(apiError)
+      if (guidance) {
+        return guidance
+      }
+      return 'Browser sign-in is read-only and does not support this operation. Use `socket login --api-token` or SOCKET_CLI_API_TOKEN'
+    }
     return 'Your Socket API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API token you are logged in with'
   }
   if (code === HTTP_STATUS_NOT_FOUND) {
@@ -428,9 +490,16 @@ export async function handleApiCall<R extends SocketSdkReturnedResult>(
     debugApiResponse('API', endpoint, sdkResult.status)
     debugDir('inspect', { sdkResult })
 
-    const errStr = sdkResult.error ? String(sdkResult.error).trim() : ''
+    const errStr = getApiErrorText(sdkResult.error)
     const message = errStr || NO_ERROR_MESSAGE
-    const reason = sdkResult.cause || NO_ERROR_MESSAGE
+    const reason = getApiErrorText(sdkResult.cause) || NO_ERROR_MESSAGE
+    const statusReason =
+      sdkResult.status === HTTP_STATUS_FORBIDDEN && isOAuthLoginActive()
+        ? await getErrorMessageForHttpStatusCode(
+            sdkResult.status,
+            `${errStr} ${reason}`,
+          )
+        : undefined
     const baseCause =
       reason && message !== reason ? `${message} (reason: ${reason})` : message
     const cause = sdkResult.url
@@ -439,7 +508,7 @@ export async function handleApiCall<R extends SocketSdkReturnedResult>(
     const socketSdkErrorResult: ApiCallResult<R> = {
       ok: false,
       message: 'Socket API error',
-      cause,
+      cause: statusReason ? `${cause} (reason: ${statusReason})` : cause,
       data: {
         code: sdkResult.status,
       },
@@ -447,7 +516,7 @@ export async function handleApiCall<R extends SocketSdkReturnedResult>(
 
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && sdkResult.status === 403) {
-      logPermissionsFor403(commandPath)
+      logPermissionsFor403(commandPath, `${errStr} ${reason}`)
     }
 
     return socketSdkErrorResult
@@ -548,13 +617,24 @@ export async function queryApiSafeTextWithStatus(
   description?: string | undefined,
   commandPath?: string | undefined,
 ): Promise<CResult<ApiTextResult>> {
-  const apiToken = getDefaultApiToken()
+  let apiToken: string | undefined
+  try {
+    apiToken = await resolveDefaultApiToken({
+      apiBaseUrl: getDefaultApiBaseUrl(),
+    })
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause: getErrorCause(error),
+    }
+  }
   if (!apiToken) {
     return {
       ok: false,
       message: 'Authentication Error',
       cause:
-        'User must be authenticated to run this command. Run `socket login` and enter your Socket API token.',
+        'User must be authenticated to run this command. Run `socket login` or set SOCKET_CLI_API_TOKEN.',
     }
   }
 
@@ -702,17 +782,25 @@ export async function sendApiRequest<T>(
   path: string,
   options?: SendApiRequestOptions | undefined,
 ): Promise<CResult<T>> {
-  const apiToken = getDefaultApiToken()
+  const baseUrl = getDefaultApiBaseUrl()
+  let apiToken: string | undefined
+  try {
+    apiToken = await resolveDefaultApiToken({ apiBaseUrl: baseUrl })
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause: getErrorCause(error),
+    }
+  }
   if (!apiToken) {
     return {
       ok: false,
       message: 'Authentication Error',
       cause:
-        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your Socket API token.',
+        'User must be authenticated to run this command. Run `socket login` or set SOCKET_CLI_API_TOKEN.',
     }
   }
-
-  const baseUrl = getDefaultApiBaseUrl()
 
   const { body, commandPath, description, method } = {
     __proto__: null,

@@ -34,8 +34,8 @@ import { getErrorCause } from './errors.mts'
 import { withTmpDir } from './fs.mts'
 import {
   getCliUserAgent,
-  getDefaultApiToken,
   getDefaultProxyUrl,
+  resolveDefaultApiToken,
 } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
@@ -415,7 +415,16 @@ export async function spawnCoana(
     // outbound axios User-Agent header.
     SOCKET_CALLER_USER_AGENT: getCliUserAgent(),
   }
-  const defaultApiToken = getDefaultApiToken()
+  let defaultApiToken: string | undefined
+  try {
+    defaultApiToken = await resolveDefaultApiToken()
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Socket authentication failed',
+      cause: error instanceof Error ? error.message : String(error),
+    }
+  }
   if (defaultApiToken) {
     mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
   }

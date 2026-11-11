@@ -17,7 +17,7 @@ describe('socket login', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Setup Socket CLI with an API token and defaults
+        "Sign in to Socket and configure the CLI
 
           Usage
             $ socket login [options]
@@ -25,14 +25,18 @@ describe('socket login', async () => {
           API Token Requirements
             - Quota: 1 unit
 
-          Logs into the Socket API by prompting for an API token
+          By default, opens a browser for read-only package, alert, and threat-feed
+          access. Use --api-token for scans and write operations. A sign-in URL is
+          printed so you can open it manually if the browser does not launch.
 
           Options
-            --api-base-url      API server to connect to for login
+            --api-base-url      API server for API-token login
             --api-proxy         Proxy to use when making connection to API server
+            --api-token         Use masked API-token login for scans and write commands
 
           Examples
             $ socket login
+            $ socket login --api-token
             $ socket login --api-proxy=http://localhost:1234"
       `,
       )

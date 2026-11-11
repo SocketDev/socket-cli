@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -159,6 +165,40 @@ describe('socket config get', async () => {
         expect(saved.defaultOrg).toBe('my-test-org')
         // The env token must never be written to disk.
         expect(saved.apiToken).toBeUndefined()
+      } finally {
+        rmSync(dataHome, { recursive: true, force: true })
+      }
+    },
+  )
+
+  cmdit(
+    ['config', 'set', 'apiToken', 'skt_faketoken'],
+    'should activate API-token auth when replacing a saved OAuth login',
+    async cmd => {
+      const dataHome = mkdtempSync(path.join(os.tmpdir(), 'socket-cfg-'))
+      const configPath = path.join(
+        dataHome,
+        'socket',
+        'settings',
+        'config.json',
+      )
+      mkdirSync(path.dirname(configPath), { recursive: true })
+      writeFileSync(
+        configPath,
+        Buffer.from(JSON.stringify({ authType: 'oauth' })).toString('base64'),
+      )
+
+      try {
+        const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          env: { XDG_DATA_HOME: dataHome },
+        })
+        expect(code, 'a persistable set should exit 0').toBe(0)
+        expect(stdout).toContain('OK')
+
+        const raw = readFileSync(configPath, 'utf8')
+        const saved = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'))
+        expect(saved.apiToken).toBe('skt_faketoken')
+        expect(saved.authType).toBe('api-token')
       } finally {
         rmSync(dataHome, { recursive: true, force: true })
       }

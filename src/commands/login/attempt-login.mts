@@ -7,6 +7,7 @@ import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_AUTH_TYPE,
   CONFIG_KEY_DEFAULT_ORG,
 } from '../../constants.mts'
 import {
@@ -15,8 +16,18 @@ import {
   updateConfigValue,
 } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import {
+  OAUTH_ISSUER,
+  beginOAuthLogin,
+  logoutOAuth,
+  saveOAuthCredentials,
+} from '../../utils/oauth.mts'
 import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
-import { setupSdk } from '../../utils/sdk.mts'
+import {
+  getDefaultApiBaseUrl,
+  getDefaultProxyUrl,
+  setupSdk,
+} from '../../utils/sdk.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
@@ -29,9 +40,21 @@ type OrgChoices = Array<Separator | OrgChoice>
 export async function attemptLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined,
+  apiTokenMode = false,
+) {
+  if (!apiTokenMode) {
+    return await attemptOAuthLogin(apiBaseUrl, apiProxy)
+  }
+
+  return await attemptApiTokenLogin(apiBaseUrl, apiProxy)
+}
+
+async function attemptApiTokenLogin(
+  apiBaseUrl: string | undefined,
+  apiProxy: string | undefined,
 ) {
   apiBaseUrl ??= getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ?? undefined
-  apiProxy ??= getConfigValueOrUndef(CONFIG_KEY_API_PROXY) ?? undefined
+  apiProxy ||= getDefaultProxyUrl()
   const apiTokenInput = await password({
     message: `Enter your ${socketDocsLink('/docs/api-keys', 'Socket.dev API token')} (leave blank to use a limited public token)`,
   })
@@ -154,6 +177,18 @@ export async function attemptLogin(
   const previousPersistedToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
+    if (constants.socketAppDataPath && !isConfigFromFlag()) {
+      try {
+        const result = await logoutOAuth(constants.socketAppDataPath, {
+          apiProxy,
+        })
+        if (result.warning) {
+          logger.warn(result.warning)
+        }
+      } catch {
+        logger.warn('The previous browser sign-in could not be removed.')
+      }
+    }
     logger.success(
       `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`,
     )
@@ -165,6 +200,109 @@ export async function attemptLogin(
     }
   } catch {
     process.exitCode = 1
-    logger.fail(`API login failed`)
+    logger.fail('API login failed')
+  }
+}
+
+async function attemptOAuthLogin(
+  apiBaseUrl: string | undefined,
+  apiProxy: string | undefined,
+) {
+  if (isConfigFromFlag()) {
+    throw new Error(
+      'Browser sign-in cannot be saved while --config or SOCKET_CLI_CONFIG is active. Remove the config override and run `socket login` again.',
+    )
+  }
+  const configuredBaseUrl = apiBaseUrl || getDefaultApiBaseUrl()
+  if (configuredBaseUrl) {
+    let configuredOrigin: string
+    try {
+      configuredOrigin = new URL(configuredBaseUrl).origin
+    } catch {
+      throw new Error('The configured Socket API URL is invalid for OAuth.')
+    }
+    if (configuredOrigin !== OAUTH_ISSUER) {
+      throw new Error(
+        'Browser sign-in is only available with Socket’s trusted API URL. Use `socket login --api-token --api-base-url <url>` for a custom API URL.',
+      )
+    }
+  }
+
+  const existingToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
+  const activeAuthType = getConfigValueOrUndef(CONFIG_KEY_AUTH_TYPE)
+  if (existingToken && activeAuthType !== 'oauth') {
+    const choice = await select({
+      message:
+        'An API token is already saved. Keep using it or switch to read-only browser sign-in?',
+      choices: [
+        { name: 'Keep the saved API token', value: 'keep' },
+        {
+          name: 'Switch to browser sign-in (read-only)',
+          value: 'oauth',
+        },
+      ],
+    })
+    if (choice === undefined) {
+      logger.fail('Canceled by user')
+      return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
+    }
+    if (choice === 'keep') {
+      logger.success('Kept the saved API token login')
+      return { ok: true }
+    }
+  }
+
+  apiProxy ||= getDefaultProxyUrl()
+  const result = await beginOAuthLogin({
+    apiProxy,
+    openBrowser: true,
+    onAuthorizationUrl(url) {
+      logger.log('Open this URL in your browser to sign in:')
+      logger.log(url)
+    },
+  })
+  const baseUrl = new URL('/v0/', result.apiOrigin).href
+  const sdkResult = await setupSdk({
+    apiBaseUrl: baseUrl,
+    apiProxy,
+    apiToken: result.accessToken,
+  })
+  if (!sdkResult.ok) {
+    process.exitCode = 1
+    logger.fail(failMsgWithBadge(sdkResult.message, sdkResult.cause))
+    return
+  }
+  const orgsResult = await fetchOrganization({
+    description: 'browser sign-in validation',
+    sdk: sdkResult.data,
+  })
+  if (!orgsResult.ok) {
+    process.exitCode = 1
+    logger.fail(failMsgWithBadge(orgsResult.message, orgsResult.cause))
+    return
+  }
+  const orgSlugs = getOrgSlugs(orgsResult.data.organizations)
+  if (orgSlugs.length === 0) {
+    process.exitCode = 1
+    logger.fail(
+      'Browser sign-in succeeded, but no accessible organization was returned. Check your organization membership and try again; existing credentials were kept.',
+    )
+    return
+  }
+
+  await saveOAuthCredentials(constants.socketAppDataPath!, result)
+  updateConfigValue(CONFIG_KEY_API_TOKEN, null)
+  updateConfigValue(CONFIG_KEY_DEFAULT_ORG, orgSlugs[0])
+  updateConfigValue(CONFIG_KEY_API_BASE_URL, null)
+  updateConfigValue(CONFIG_KEY_API_PROXY, apiProxy)
+  updateConfigValue(CONFIG_KEY_AUTH_TYPE, 'oauth')
+  logger.success(`Browser sign-in saved for ${joinAnd(orgSlugs)}`)
+  logger.warn(
+    'This sign-in is read-only and supports package, alert, and threat-feed queries. Write and scan commands require API-token credentials; use `socket login --api-token` or SOCKET_CLI_API_TOKEN.',
+  )
+  if (constants.ENV.SOCKET_CLI_API_TOKEN) {
+    logger.warn(
+      'SOCKET_CLI_API_TOKEN remains active and takes precedence over browser sign-in for this session.',
+    )
   }
 }

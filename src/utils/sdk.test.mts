@@ -29,6 +29,9 @@ import {
   clampApiTimeout,
   getCliUserAgent,
   getExtraCaCerts,
+  hasDefaultApiToken,
+  isOAuthLoginActive,
+  resolveDefaultApiToken,
   setupSdk,
 } from './sdk.mts'
 
@@ -89,9 +92,29 @@ vi.mock('@socketsecurity/registry/lib/debug', () => ({
 }))
 
 // Mock config.
-const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn(() => undefined))
+const mockGetConfigValueOrUndef = vi.hoisted(() =>
+  vi.fn((_key: string): unknown => undefined),
+)
+const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false))
 vi.mock('./config.mts', () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
+  isConfigFromFlag: mockIsConfigFromFlag,
+}))
+
+vi.mock('./errors.mts', () => ({
+  getErrorCause: (error: unknown) =>
+    error instanceof Error ? error.message : 'Unknown error',
+}))
+
+const mockReadOAuthCredentials = vi.hoisted(() =>
+  vi.fn((): unknown => undefined),
+)
+const mockResolveOAuthAccessToken = vi.hoisted(() =>
+  vi.fn(async () => 'oauth-access-token'),
+)
+vi.mock('./oauth.mts', () => ({
+  readOAuthCredentials: mockReadOAuthCredentials,
+  resolveOAuthAccessToken: mockResolveOAuthAccessToken,
 }))
 
 // Mock SocketSdk.
@@ -121,18 +144,27 @@ vi.mock('../constants.mts', () => ({
       NODE_EXTRA_CA_CERTS: '',
       SOCKET_CLI_API_TIMEOUT: 30_000,
       SOCKET_CLI_DEBUG: false,
+      SOCKET_CLI_NO_API_TOKEN: false,
+      SOCKET_CLI_API_TOKEN: '',
     },
+    socketAppDataPath: '/tmp/socket-sdk-test',
   },
   CONFIG_KEY_API_BASE_URL: 'apiBaseUrl',
   CONFIG_KEY_API_PROXY: 'apiProxy',
   CONFIG_KEY_API_TOKEN: 'apiToken',
+  CONFIG_KEY_AUTH_TYPE: 'authType',
 }))
 
 describe('SDK setup with telemetry hooks', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetConfigValueOrUndef.mockReturnValue(undefined)
+    mockIsConfigFromFlag.mockReturnValue(false)
+    mockReadOAuthCredentials.mockReturnValue(undefined)
+    mockResolveOAuthAccessToken.mockResolvedValue('oauth-access-token')
     constants.ENV.SOCKET_CLI_DEBUG = false
+    constants.ENV.SOCKET_CLI_NO_API_TOKEN = false
+    constants.ENV.SOCKET_CLI_API_TOKEN = ''
   })
 
   describe('setupSdk', () => {
@@ -163,6 +195,150 @@ describe('SDK setup with telemetry hooks', () => {
         expect(result.message).toBe('Auth Error')
         expect(result.cause).toContain('socket login')
       }
+    })
+
+    it('uses the active OAuth access token for SDK requests', async () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      mockReadOAuthCredentials.mockReturnValue({
+        apiOrigin: 'https://api.socket.dev',
+        accessToken: 'stored-access-token',
+      })
+
+      const result = await setupSdk()
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.token).toBe('oauth-access-token')
+      }
+      expect(mockResolveOAuthAccessToken).toHaveBeenCalledWith(
+        '/tmp/socket-sdk-test',
+        expect.objectContaining({ apiProxy: undefined }),
+      )
+    })
+
+    it('keeps an explicit environment API token ahead of active OAuth', async () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      constants.ENV.SOCKET_CLI_API_TOKEN = 'explicit-env-token'
+
+      const result = await setupSdk()
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.token).toBe('explicit-env-token')
+      }
+      expect(mockResolveOAuthAccessToken).not.toHaveBeenCalled()
+    })
+
+    it('does not fall back when an active OAuth session cannot refresh', async () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      mockReadOAuthCredentials.mockReturnValue({
+        apiOrigin: 'https://api.socket.dev',
+        accessToken: 'stale-token',
+      })
+      mockResolveOAuthAccessToken.mockRejectedValueOnce(
+        new Error('refresh failed'),
+      )
+
+      const result = await setupSdk()
+
+      expect(result).toMatchObject({
+        ok: false,
+        message: 'Auth Error',
+        cause: 'refresh failed',
+      })
+      expect(MockSocketSdk).not.toHaveBeenCalled()
+    })
+
+    it('returns OAuth credential read errors as an auth result', async () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      mockReadOAuthCredentials.mockImplementationOnce(() => {
+        throw new Error('saved credentials are corrupt')
+      })
+
+      const result = await setupSdk()
+
+      expect(result).toMatchObject({
+        ok: false,
+        message: 'Auth Error',
+        cause: 'saved credentials are corrupt',
+      })
+      expect(MockSocketSdk).not.toHaveBeenCalled()
+    })
+
+    it('recognizes a stored OAuth session for command preflight', () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      mockReadOAuthCredentials.mockReturnValue({ accessToken: 'oauth-token' })
+      expect(hasDefaultApiToken()).toBe(true)
+    })
+
+    it('classifies OAuth only when config and explicit token overrides are absent', () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      expect(isOAuthLoginActive()).toBe(true)
+
+      mockIsConfigFromFlag.mockReturnValue(true)
+      expect(isOAuthLoginActive()).toBe(false)
+      mockIsConfigFromFlag.mockReturnValue(false)
+
+      constants.ENV.SOCKET_CLI_API_TOKEN = 'explicit-env-token'
+      expect(isOAuthLoginActive()).toBe(false)
+      constants.ENV.SOCKET_CLI_API_TOKEN = ''
+
+      constants.ENV.SOCKET_CLI_NO_API_TOKEN = true
+      expect(isOAuthLoginActive()).toBe(false)
+    })
+
+    it('does not read persisted OAuth credentials for a config override', async () => {
+      mockIsConfigFromFlag.mockReturnValue(true)
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+
+      expect(hasDefaultApiToken()).toBe(false)
+      await expect(resolveDefaultApiToken()).resolves.toBeUndefined()
+      expect(mockReadOAuthCredentials).not.toHaveBeenCalled()
+      expect(mockResolveOAuthAccessToken).not.toHaveBeenCalled()
+    })
+
+    it('keeps corrupt OAuth state from crashing preflight or falling back', async () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      mockReadOAuthCredentials.mockImplementation(() => {
+        throw new Error('Saved OAuth credentials are corrupt')
+      })
+
+      expect(hasDefaultApiToken()).toBe(true)
+      await expect(resolveDefaultApiToken()).rejects.toThrow(
+        'Saved OAuth credentials are corrupt',
+      )
+      expect(mockResolveOAuthAccessToken).not.toHaveBeenCalled()
+    })
+
+    it('refuses to send the OAuth access token to a custom API origin', async () => {
+      mockGetConfigValueOrUndef.mockImplementation((key: string) =>
+        key === 'authType' ? 'oauth' : undefined,
+      )
+      mockReadOAuthCredentials.mockReturnValue({
+        apiOrigin: 'https://api.socket.dev',
+        accessToken: 'oauth-token',
+      })
+
+      await expect(
+        resolveDefaultApiToken({ apiBaseUrl: 'https://example.test/v0/' }),
+      ).rejects.toThrow(/trusted API origin/)
+      expect(mockResolveOAuthAccessToken).not.toHaveBeenCalled()
     })
 
     it('should configure hooks for telemetry and debugging', async () => {

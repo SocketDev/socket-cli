@@ -57,6 +57,11 @@ socket patch setup --yes
 
 Free patches work without authentication. For paid patches, set `SOCKET_CLI_API_TOKEN` and `SOCKET_CLI_ORG_SLUG`.
 
+`socket login` uses browser OAuth for read-only package, alert, and threat-feed
+access. Open the printed authorization URL manually if a browser does not open.
+Use `socket login --api-token` or `SOCKET_CLI_API_TOKEN` for scans and write
+commands.
+
 ### Aliases
 
 All aliases support the flags and arguments of the commands they alias.
