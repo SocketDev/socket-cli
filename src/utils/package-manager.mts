@@ -4,7 +4,7 @@
  * within an ecosystem (e.g. only PNPM artifacts in a mixed pnpm/yarn/npm repo).
  *
  * Mirrors the list returned by Coana's `getFilterablePackageManagers()` in
- * packages/web-compat-utils/src/package-manager-utils.ts.
+ * packages/utils/src/package-manager-utils.ts.
  */
 
 export const ALL_PACKAGE_MANAGERS = [
@@ -22,6 +22,7 @@ export const ALL_PACKAGE_MANAGERS = [
   'RUBYGEMS',
   'RUSH',
   'SBT',
+  'UV',
   'YARN',
 ] as const
 

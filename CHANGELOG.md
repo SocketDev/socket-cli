@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `socket fix --package-managers` accepts `UV`, to include or leave out uv projects.
+
 ### Fixed
 - When `dotnet restore` fails in one .NET project, the projects it may have skipped as up to date are no longer reported as not restored.
 
