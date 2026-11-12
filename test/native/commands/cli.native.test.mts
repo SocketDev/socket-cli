@@ -1,3 +1,4 @@
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -150,6 +151,20 @@ for (const patchCommand of [
     })
   }, 60_000)
 }
+
+it('captures bundled socket-patch version', async () => {
+  const packageMetadata = JSON.parse(
+    await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf8'),
+  ) as { dependencies: { '@socketsecurity/socket-patch': string } }
+  await captureFlow({
+    flow: 'socket-patch-version',
+    args: ['patch', '--version'],
+    expectedText: `socket-patch ${packageMetadata.dependencies['@socketsecurity/socket-patch']}`,
+    exitCode: 0,
+    rows: 12,
+    checkpointName: 'version',
+  })
+}, 30_000)
 
 describe('native Socket CLI', () => {
   it('reports the version embedded in the SEA manifest', async () => {

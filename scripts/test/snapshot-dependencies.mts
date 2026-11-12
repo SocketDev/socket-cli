@@ -8,6 +8,7 @@ export interface SnapshotDependency {
   readonly source: string
   readonly versionPattern: RegExp
   readonly snapshots: readonly string[]
+  readonly versionSnapshots?: readonly string[]
   readonly testNamePattern: string
 }
 
@@ -23,9 +24,29 @@ export const SNAPSHOT_DEPENDENCIES = {
     ],
     testNamePattern: 'captures native help for (fix|scan create|scan reach)',
   },
+  patch: {
+    packageName: '@socketsecurity/socket-patch',
+    source: 'package.json',
+    versionPattern: /"@socketsecurity\/socket-patch"\s*:\s*"([^"]+)"/,
+    snapshots: [
+      'test/native-snapshots/socket-patch-apply-help.help.svg',
+      'test/native-snapshots/socket-patch-rollback-help.help.svg',
+      'test/native-snapshots/socket-patch-get-help.help.svg',
+      'test/native-snapshots/socket-patch-scan-help.help.svg',
+      'test/native-snapshots/socket-patch-list-help.help.svg',
+      'test/native-snapshots/socket-patch-remove-help.help.svg',
+      'test/native-snapshots/socket-patch-setup-help.help.svg',
+      'test/native-snapshots/socket-patch-repair-help.help.svg',
+      'test/native-snapshots/socket-patch-version.version.svg',
+    ],
+    versionSnapshots: ['test/native-snapshots/socket-patch-version.version.svg'],
+    testNamePattern:
+      'captures bundled patch help for (apply|rollback|get|scan|list|remove|setup|repair)|captures bundled socket-patch version',
+  },
 } as const satisfies Record<string, SnapshotDependency>
 
-export type SnapshotDependencyName = keyof typeof SNAPSHOT_DEPENDENCIES
+export type SnapshotDependencyName = 'coana' | 'patch' | 'socket-patch'
+type SnapshotDependencyMapName = keyof typeof SNAPSHOT_DEPENDENCIES
 
 export interface StaleSnapshotDependency {
   readonly dependencyName: SnapshotDependencyName
@@ -38,7 +59,10 @@ export async function findStaleSnapshotDependencies(): Promise<
   StaleSnapshotDependency[]
 > {
   const findings = await Promise.all(
-    Object.entries(SNAPSHOT_DEPENDENCIES).map(async ([name, dependency]) => {
+    (Object.entries(SNAPSHOT_DEPENDENCIES) as Array<[
+      string,
+      SnapshotDependency,
+    ]>).map(async ([name, dependency]) => {
       const source = await fs.readFile(
         path.join(ROOT, dependency.source),
         'utf8',
@@ -49,8 +73,9 @@ export async function findStaleSnapshotDependencies(): Promise<
           `Could not read ${dependency.packageName} version from ${dependency.source}`,
         )
       }
+      const versionSnapshots = dependency.versionSnapshots ?? dependency.snapshots
       const snapshots = await Promise.all(
-        dependency.snapshots.map(async snapshot => ({
+        versionSnapshots.map(async snapshot => ({
           path: snapshot,
           contents: await fs.readFile(path.join(ROOT, snapshot), 'utf8'),
         })),
@@ -60,10 +85,13 @@ export async function findStaleSnapshotDependencies(): Promise<
         .map(snapshot => snapshot.path)
       if (staleSnapshots.length) {
         return {
-          dependencyName: name as SnapshotDependencyName,
+          dependencyName:
+            name === 'patch' ? 'socket-patch' : (name as SnapshotDependencyName),
           packageName: dependency.packageName,
           version,
-          snapshots: staleSnapshots,
+          snapshots: dependency.versionSnapshots
+            ? dependency.snapshots
+            : staleSnapshots,
         }
       }
       return undefined
@@ -76,6 +104,14 @@ export async function findStaleSnapshotDependencies(): Promise<
     }
   }
   return stale
+}
+
+export function normalizeSnapshotDependencyName(
+  name: string,
+): SnapshotDependencyMapName | undefined {
+  if (name === 'socket-patch') {return 'patch'}
+  if (name === 'coana' || name === 'patch') {return name}
+  return undefined
 }
 
 export function snapshotDependencyUpdateHint(

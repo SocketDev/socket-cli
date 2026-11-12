@@ -25,11 +25,19 @@ describe('native snapshot runner', () => {
       update: true,
       dependencyName: 'coana',
     })
+    expect(parseSnapshotArgs(['--update', '--dep', 'patch'])).toEqual({
+      update: true,
+      dependencyName: 'patch',
+    })
+    expect(parseSnapshotArgs(['--update', '--dep', 'socket-patch'])).toEqual({
+      update: true,
+      dependencyName: 'socket-patch',
+    })
     expect(() => parseSnapshotArgs(['--dep', 'unknown', '--update'])).toThrow(
       'Unknown snapshot dependency',
     )
     expect(() => parseSnapshotArgs(['--update', '--dep'])).toThrow(
-      'Partner names to map: socket-patch, socket-python-cli',
+      'pnpm snapshots:update:dep socket-patch',
     )
     expect(() => parseSnapshotArgs(['--update', '--dep='])).toThrow(
       'Provide a dependency name',
@@ -51,6 +59,18 @@ describe('native snapshot runner', () => {
       'captures native help for (fix|scan create|scan reach)',
       '--update',
     ])
+  })
+
+  it('selects patch help and version snapshots for a socket-patch refresh', () => {
+    const patchArgs = [
+      '--build',
+      'test/native/commands/cli.native.test.mts',
+      '--testNamePattern',
+      'captures bundled patch help for (apply|rollback|get|scan|list|remove|setup|repair)|captures bundled socket-patch version',
+      '--update',
+    ]
+    expect(dependencySnapshotArgs('socket-patch')).toEqual(patchArgs)
+    expect(dependencySnapshotArgs('patch')).toEqual(patchArgs)
   })
 
   it('builds and runs only the native screenshot suites', () => {
@@ -108,6 +128,7 @@ describe('native snapshot runner', () => {
     expect(events).toEqual([
       'acquire',
       'create-artifacts',
+      'assert-dependencies-current',
       'native:false:/artifacts/run-a',
       'release',
     ])
@@ -145,14 +166,17 @@ function workflowDependencies(
       events.push('create-artifacts')
       return '/artifacts/run-a'
     },
+    async assertDependenciesCurrent() {
+      events.push('assert-dependencies-current')
+    },
     runNative(update, artifactsDir) {
       events.push(`native:${update}:${artifactsDir}`)
       if (nativeFails) {
         throw new Error('native failed')
       }
     },
-    runDependencyNative(dependency, artifactsDir) {
-      events.push(`dependency-native:${dependency}:${artifactsDir}`)
+    runDependencyNative(dependencyName, artifactsDir) {
+      events.push(`dependency-native:${dependencyName}:${artifactsDir}`)
     },
     runTerminal(update, artifactsDir) {
       events.push(`terminal:${update}:${artifactsDir}`)

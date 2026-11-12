@@ -6,6 +6,7 @@ import process from 'node:process'
 import {
   SNAPSHOT_DEPENDENCIES,
   assertSnapshotDependenciesCurrent,
+  normalizeSnapshotDependencyName,
 } from './snapshot-dependencies.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
@@ -31,9 +32,9 @@ export interface SnapshotOptions {
 function missingSnapshotDependencyError(): Error {
   return new Error(
     'Provide a dependency name. Usage: pnpm snapshots:update:dep <name>. ' +
-      'Current example: pnpm snapshots:update:dep coana. ' +
-      'Partner names to map: socket-patch, socket-python-cli. ' +
-      `Currently mapped: ${Object.keys(SNAPSHOT_DEPENDENCIES).join(', ')}.`,
+      'Examples: pnpm snapshots:update:dep coana, pnpm snapshots:update:dep socket-patch, or pnpm snapshots:update:dep patch. ' +
+      'Socket Python CLI still needs a snapshot mapping. ' +
+      `Currently mapped: ${Object.keys(SNAPSHOT_DEPENDENCIES).join(', ')}, socket-patch.`,
   )
 }
 
@@ -49,9 +50,10 @@ export function parseSnapshotArgs(args: readonly string[]): SnapshotOptions {
       if (!value?.trim()) {
         throw missingSnapshotDependencyError()
       }
-      if (!(value in SNAPSHOT_DEPENDENCIES)) {
+      const normalizedName = normalizeSnapshotDependencyName(value)
+      if (!normalizedName) {
         throw new Error(
-          `Unknown snapshot dependency: ${value}; available: ${Object.keys(SNAPSHOT_DEPENDENCIES).join(', ')}`,
+          `Unknown snapshot dependency: ${value}; available: coana, socket-patch, patch`,
         )
       }
       if (dependencyName) {
@@ -75,7 +77,8 @@ export function nativeSnapshotArgs(update: boolean): string[] {
 export function dependencySnapshotArgs(
   dependencyName: SnapshotDependencyName,
 ): string[] {
-  const config = SNAPSHOT_DEPENDENCIES[dependencyName]
+  const config =
+    SNAPSHOT_DEPENDENCIES[normalizeSnapshotDependencyName(dependencyName)!]
   return [
     '--build',
     'test/native/commands/cli.native.test.mts',
@@ -165,6 +168,7 @@ export interface SnapshotWorkflowDependencies {
   acquireLock(): Promise<void>
   releaseLock(): Promise<void>
   createArtifactsDir(): Promise<string>
+  assertDependenciesCurrent(): Promise<void>
   runNative(update: boolean, artifactsDir: string): void
   runDependencyNative(dependencyName: SnapshotDependencyName, artifactsDir: string): void
   runTerminal(update: boolean, artifactsDir: string): void
@@ -198,6 +202,7 @@ const DEFAULT_DEPENDENCIES: SnapshotWorkflowDependencies = {
       ),
     )
   },
+  assertDependenciesCurrent: assertSnapshotDependenciesCurrent,
   runNative(update, artifactsDir) {
     run(['scripts/test/native.mts', ...nativeSnapshotArgs(update)], {
       env: { ...process.env, SOCKET_CLI_NATIVE_TEST_ARTIFACTS: artifactsDir },
@@ -246,7 +251,7 @@ export async function runSnapshotWorkflow(
       dependencies.runDependencyNative(selectedDependencyName, artifactsDir)
     } else {
       if (!update) {
-        await assertSnapshotDependenciesCurrent()
+        await dependencies.assertDependenciesCurrent()
       }
       dependencies.runNative(update, artifactsDir)
       dependencies.runTerminal(update, artifactsDir)
@@ -269,13 +274,13 @@ const SCRIPT_META: ScriptMeta = {
   describe: 'builds, runs, and reports native terminal snapshot tests',
   help: `Usage: pnpm snapshots [--update|-u]
        pnpm snapshots:update
-       pnpm snapshots:update:dep <name>
+       pnpm snapshots:update:dep <name>  (coana, socket-patch, patch)
 
   Builds the native CLI, runs the focused terminal screenshot tests, and writes
   a self-contained HTML report into a fresh build/native-test-artifacts folder.
   Pass --update or -u to update the native screenshot baselines. Use the dep
   command to rebuild and update only snapshots affected by a pinned tool, for
-  example: pnpm snapshots:update:dep coana.`,
+  example: pnpm snapshots:update:dep socket-patch.`,
 }
 
 if (isMainModule(import.meta.url)) {
