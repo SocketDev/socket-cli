@@ -33,9 +33,7 @@ cat > "$EXT_DIR/META-INF/plexus/components.xml" <<'XML'
       <configuration>
         <type>fat</type>
         <extension>jar</extension>
-        <language>java</language>
         <includesDependencies>true</includesDependencies>
-        <addedToClasspath>true</addedToClasspath>
       </configuration>
     </component>
   </components>

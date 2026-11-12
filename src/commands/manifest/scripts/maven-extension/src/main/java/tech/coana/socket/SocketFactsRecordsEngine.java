@@ -168,8 +168,6 @@ public final class SocketFactsRecordsEngine {
       if (SocketSupport.isExcludedDir(excludeBase, module.getBasedir().toPath(), excludes)) continue;
       Map<String, Node> nodes = new LinkedHashMap<>();
       Set<String> directIds = new HashSet<>();
-      // As in Maven's LifecycleDependencyResolver: artifact types the build extensions contribute are
-      // only found from inside the project's class realm.
       ClassLoader previous = Thread.currentThread().getContextClassLoader();
       if (module.getClassRealm() != null) Thread.currentThread().setContextClassLoader(module.getClassRealm());
       try {
@@ -194,6 +192,8 @@ public final class SocketFactsRecordsEngine {
 
   // ---- resolution ----
 
+  // Run inside the module's class realm, as Maven's LifecycleDependencyResolver does: artifact types
+  // the build extensions contribute are only found from there.
   private void collectModule(
       MavenSession session,
       MavenProject module,
