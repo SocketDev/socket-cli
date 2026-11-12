@@ -81,6 +81,12 @@ const MED_UTIL = 'demo.ext:med-util:jar:1.0'
 const CONTAINER_LIB = 'demo.ext:container-lib:jar:1.0'
 const CONTAINER_API = 'demo.ext:container-api:jar:1.0'
 const MID_JAR = 'demo:mid:jar:1.0'
+// The reactor module each sibling artifact's coordinate resolves to, by artifactId.
+const SIBLING_PROJECTS: Record<string, string> = {
+  __proto__: null,
+  lib: 'demo:lib:1.0',
+  mid: 'demo:mid:1.0',
+} as unknown as Record<string, string>
 const LIB_JAR = 'demo:lib:jar:1.0'
 const LIB_TESTS = 'demo:lib:test-jar:tests:1.0'
 const MGD_TEST = 'demo.ext:mgd-test:jar:1.0'
@@ -129,9 +135,8 @@ type RecordsOptions = {
 /**
  * Records in the extension's root layout: per module, a compile root with the
  * nodes Maven kept with a prod scope and a test root with the whole
- * resolution. `dev`, `prod`, `extraNodes`, `omitEdges`, `omitNodes`,
- * `libProject` and `toggleDirect` alter it into outputs the assertions must
- * reject.
+ * resolution. `dev`, `extraNodes`, `libProject`, `omitEdges`, `omitNodes`,
+ * `prod` and `toggleDirect` alter it into outputs the assertions must reject.
  */
 function buildRecords({
   dev = [],
@@ -187,9 +192,7 @@ function buildRecords({
         if (inRoot(coord)) {
           const project = coord.startsWith('demo:lib:')
             ? libProject
-            : coord.startsWith('demo:mid:')
-              ? 'demo:mid:1.0'
-              : ''
+            : (SIBLING_PROJECTS[coord.split(':')[1] ?? ''] ?? '')
           rows.push(
             nodeRow(rootId, coord, {
               direct: direct !== toggleDirect.includes(coord),
@@ -254,6 +257,11 @@ describe('maven-compat assert-records.py', () => {
       message: 'sibling demo:lib emitted under its bare id',
     },
     {
+      name: "a missing edge onto the sibling's jar",
+      options: { omitEdges: [EDGES.midLib] },
+      message: "edge demo:mid -> demo:lib's jar missing from app",
+    },
+    {
       name: 'a missing sibling jar',
       options: { omitNodes: [LIB_JAR] },
       message: "sibling demo:lib's jar or test-jar missing",
@@ -272,7 +280,7 @@ describe('maven-compat assert-records.py', () => {
     {
       name: 'a sibling jar left dev',
       options: { dev: [LIB_JAR] },
-      message: "sibling demo:lib's jar not in a prod root",
+      message: "sibling demo:lib's jar not in app's prod root",
     },
     {
       name: 'a sibling test-jar in a prod root',

@@ -57,19 +57,22 @@ elif not has_jar(harness): errors.append(f"demo.ext:harness jar not materialized
 if not harness_core: errors.append("missing transitive test dep demo.ext:harness-core")
 elif in_prod(harness_core): errors.append("transitive test dep demo.ext:harness-core wrongly in a prod root")
 
+def edge_roots(parent, child):
+    return edges.get((parent, child), set())
+
 def direct_in(cid, project): return any(root_projects.get(rid) == project for rid in direct.get(cid, ()))
 
 if 'demo:lib:1.0' in nodes: errors.append("sibling demo:lib emitted under its bare id")
 elif not lib_jar or not lib_tests: errors.append("sibling demo:lib's jar or test-jar missing")
-elif projects[lib_jar] | projects[lib_tests] != {'demo:lib:1.0'}:
+elif projects.get(lib_jar, set()) | projects.get(lib_tests, set()) != {'demo:lib:1.0'}:
     errors.append("sibling demo:lib's artifacts do not name demo:lib:1.0 as their project")
-elif not in_prod(lib_jar): errors.append("sibling demo:lib's jar not in a prod root")
+elif not any(roots.get(rid) and root_projects.get(rid) == 'demo:app:1.0' for rid in nodes.get(lib_jar, ())):
+    errors.append("sibling demo:lib's jar not in app's prod root")
+elif not any(root_projects.get(rid) == 'demo:app:1.0' for rid in edge_roots(coord('demo:mid:jar:'), lib_jar)):
+    errors.append("edge demo:mid -> demo:lib's jar missing from app")
 elif in_prod(lib_tests): errors.append("sibling demo:lib's test-jar wrongly in a prod root")
 elif direct_in(lib_jar, 'demo:app:1.0'): errors.append("sibling demo:lib's jar wrongly direct in app")
 elif not direct_in(lib_tests, 'demo:app:1.0'): errors.append("sibling demo:lib's test-jar not direct in app")
-
-def edge_roots(parent, child):
-    return edges.get((parent, child), set())
 
 def edge_pair(parent, child):
     """Both coordinates, or None after reporting the missing ones."""

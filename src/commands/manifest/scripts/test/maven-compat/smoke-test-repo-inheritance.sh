@@ -46,7 +46,8 @@ roots, nodes, projects, files, edges, failures = {}, {}, {}, {}, set(), []
 for r in rows:
     if r[0] == 'root': roots[r[1]] = r[2]                            # rootId -> projectKey
     elif r[0] == 'node':
-        nodes.setdefault(r[2], set()).add(r[1])                      # coordId -> {rootId}
+        # coordId to the roots that hold it.
+        nodes.setdefault(r[2], set()).add(r[1])
         # coordId to the build project it resolves to, if any.
         if len(r) > 9 and r[9]: projects[r[2]] = r[9]
     elif r[0] == 'file': files.setdefault(r[2], set()).add(r[3])     # coordId -> {path}
@@ -83,7 +84,9 @@ if not jars:
     errors.append(f"{WIDGET} jar not materialized: {files.get(WIDGET)}")
 
 # A reactor sibling reports its dirs through its `project` record, never a `file` record.
-liba_files = {p for c, ps in files.items() if projects.get(c) == LIBA for p in ps}
+if projects.get(LIBA_JAR) != LIBA:
+    errors.append(f"{LIBA_JAR} does not name {LIBA} as its project")
+liba_files = {p for c, ps in files.items() if c == LIBA_JAR or projects.get(c) == LIBA for p in ps}
 if liba_files:
     errors.append(f"reactor module {LIBA} should have no file records, got {sorted(liba_files)}")
 
