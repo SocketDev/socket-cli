@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo</groupId>
+  <artifactId>unsolvable-conflict</artifactId>
+  <version>1.0</version>
+  <properties>
+    <stub.repo.url>file://${maven.multiModuleProjectDirectory}/localrepo</stub.repo.url>
+  </properties>
+  <repositories>
+    <repository>
+      <id>socket-stubs</id>
+      <url>${stub.repo.url}</url>
+      <releases>
+        <enabled>true</enabled>
+        <checksumPolicy>ignore</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  <!-- left and right pin demo.unsolvable:shared to [1.0] and [2.0], which no version satisfies. -->
+  <dependencies>
+    <dependency>
+      <groupId>demo.unsolvable</groupId>
+      <artifactId>left</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.unsolvable</groupId>
+      <artifactId>right</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.unsolvable</groupId>
+      <artifactId>harness</artifactId>
+      <version>1.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

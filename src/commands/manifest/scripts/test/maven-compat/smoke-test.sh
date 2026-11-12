@@ -6,10 +6,12 @@
 #    its transitive demo.ext:harness-core (only in a non-prod root -> the assembler's dev flag);
 #  - emits the internal reactor module demo:lib by its bare groupId:artifactId:version id (so the
 #    inter-module edge lines up with its `project` record);
-#  - resolves a scope conflict so the retained node stays reachable from its parent root;
+#  - marks a node prod by the scope Maven kept it with, and keeps it reachable in the prod root;
+#  - records every resolved edge, pointing at the node Maven kept: onto a direct dependency, onto a
+#    mediated version, and from a prod node onto a provided one;
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
-#  - keeps the dependencies Maven leaves only under a sibling module's test-jar (app reaches
-#    demo.ext:libdep under lib's test-jar node, after lib's jar node through mid);
+#  - keeps a dependency only a sibling module's test-jar brings (mid excludes demo.ext:libdep from
+#    lib, and app reaches lib's jar through mid before lib's test-jar);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).
 #
@@ -39,7 +41,14 @@ bash "$HERE/../make-stub-repo.sh" "$STUBS" \
   'demo.ext:conflict-test:1.0+demo.ext:shared:1.0' \
   'demo.ext:conflict-prod:1.0+demo.ext:shared:1.0' \
   'demo.ext:shared:1.0' \
-  'demo.ext:libdep:1.0'
+  'demo.ext:libdep:1.0' \
+  'demo.ext:dup-util:1.0' \
+  'demo.ext:dup-io:1.0+demo.ext:dup-util:1.0' \
+  'demo.ext:med-util:1.0' \
+  'demo.ext:med-util:2.0' \
+  'demo.ext:med-io:1.0+demo.ext:med-util:2.0' \
+  'demo.ext:container-api:1.0' \
+  'demo.ext:container-lib:1.0+demo.ext:container-api:1.0'
 # Maven's own plugin closure stays cached between runs; the stubs never do, so every run has to
 # resolve them from the repo just generated.
 rm -rf "$M2/demo" "$RECORDS" "$PROJECT"/*/target "$PROJECT"/target

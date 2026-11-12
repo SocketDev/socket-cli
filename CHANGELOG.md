@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - When `dotnet restore` fails in one .NET project, the projects it may have skipped as up to date are no longer reported as not restored.
+- Maven Socket facts now include every dependency edge Maven resolves, as Gradle and sbt facts do, so dependency chains show each path to a package. A dependency Maven puts on the runtime classpath is no longer marked as a dev dependency because Maven kept it under a test or provided dependency.
+- With `--ignore-unresolved`, a Maven module with unresolvable version conflicts no longer adds a partial dependency list.
 
 ## [1.14.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.14.1) - 2026-11-06
 

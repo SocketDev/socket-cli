@@ -6,14 +6,20 @@
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 tool = None
-roots, nodes, files, direct = {}, {}, {}, {}
+roots, root_projects, nodes, files, direct, edges = {}, {}, {}, {}, {}, {}
 for r in rows:
     if r[0] == 'meta': tool = r[1]
-    elif r[0] == 'root': roots[r[1]] = (r[4] == '1')                 # rootId -> prod
+    elif r[0] == 'root':
+        # rootId to prod and to projectKey.
+        roots[r[1]] = (r[4] == '1')
+        root_projects[r[1]] = r[2]
     elif r[0] == 'node':
         nodes.setdefault(r[2], set()).add(r[1])                      # coordId -> {rootId}
         if r[8] == '1': direct.setdefault(r[2], set()).add(r[1])     # coordId -> {rootId where direct}
     elif r[0] == 'file': files.setdefault(r[2], set()).add(r[3])     # coordId -> {path}
+    elif r[0] == 'edge':
+        # (parent, child) to the roots that hold the edge.
+        edges.setdefault((r[2], r[3]), set()).add(r[1])
 
 errors = []
 
@@ -61,15 +67,48 @@ if not lib: errors.append("internal module demo:lib not emitted by its bare id")
 elif not in_prod(lib): errors.append("internal module demo:lib not in app's prod root")
 elif not direct.get(lib): errors.append("internal module demo:lib not marked direct")
 
-# Scope conflict: Maven keeps demo.ext:shared under the test parent while its effective
-# scope is compile, so it must land in the dev root. Reachability (checked by
-# ../assert-reachability.py) additionally proves it kept its parent edge.
-shared = coord('demo.ext:shared:jar:')
-if not shared: errors.append("missing scope-conflict dep demo.ext:shared")
-elif in_prod(shared): errors.append("scope-conflict demo.ext:shared wrongly in a prod root")
+def edge_roots(parent, child):
+    return edges.get((parent, child), set())
+
+def edge_pair(parent, child):
+    """Both coordinates, or None after reporting the missing ones."""
+    found = (coord(parent), coord(child))
+    missing = [p for p, c in zip((parent, child), found) if not c]
+    if missing:
+        errors.append(f"missing {', '.join(m.rstrip(':') for m in missing)}")
+        return None
+    return found
+
+# Scope conflict: Maven keeps demo.ext:shared under the test parent but selects compile, the
+# scope conflict-prod's path gives it, so it is on the runtime classpath. Its edge from
+# conflict-prod, onto the copy Maven kept under the test parent, keeps it reachable in the prod root.
+pair = edge_pair('demo.ext:conflict-prod:jar:', 'demo.ext:shared:jar:')
+if pair:
+    if not in_prod(pair[1]): errors.append("scope-conflict demo.ext:shared not in a prod root")
+    elif not any(roots.get(rid) for rid in edge_roots(*pair)):
+        errors.append("edge demo.ext:conflict-prod -> demo.ext:shared missing from a prod root")
+
+# An edge onto a dependency Maven kept elsewhere: dup-io's dup-util is the direct one.
+pair = edge_pair('demo.ext:dup-io:jar:', 'demo.ext:dup-util:jar:')
+if pair and not edge_roots(*pair): errors.append("edge demo.ext:dup-io -> demo.ext:dup-util missing")
+
+# A mediated edge: med-io asks for another med-util than mid declares, and points at mid's.
+# coord() fails if the med-util version med-io asked for is also emitted.
+pair = edge_pair('demo.ext:med-io:jar:', 'demo.ext:med-util:jar:')
+if pair and not any(root_projects.get(rid) == 'demo:mid:1.0' for rid in edge_roots(*pair)):
+    errors.append("edge demo.ext:med-io -> demo.ext:med-util missing from mid")
+
+# An edge across the prod/dev split: container-lib (compile) onto container-api, which app
+# declares provided. The edge is kept and container-api stays dev.
+pair = edge_pair('demo.ext:container-lib:jar:', 'demo.ext:container-api:jar:')
+if pair:
+    if in_prod(pair[1]): errors.append("provided demo.ext:container-api wrongly in a prod root")
+    elif not in_prod(pair[0]): errors.append("demo.ext:container-lib not in a prod root")
+    elif not edge_roots(*pair):
+        errors.append("edge demo.ext:container-lib -> demo.ext:container-api missing")
 
 if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; internal demo:lib (bare id, direct); {shared} dev")
+print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; internal demo:lib (bare id, direct); demo.ext:shared prod; edges onto kept dependencies")

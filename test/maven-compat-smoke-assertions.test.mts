@@ -5,8 +5,11 @@
  * their bare groupId:artifactId:version id, distinct from the typed
  * groupId:artifactId:type:version form used for external artifacts. The lookup
  * that checks this has to reject the typed form, or a regression that stopped
- * emitting the bare id would still pass. The fixture itself needs Maven and a
- * JDK, so these run its assertions over synthetic records instead.
+ * emitting the bare id would still pass. The fixture also checks that the
+ * extension records every resolved edge and marks a node prod by the scope
+ * Maven kept it with.
+ * The fixture itself needs Maven and a JDK, so these run its assertions over
+ * synthetic records instead.
  *
  * Implementation: src/commands/manifest/scripts/test/maven-compat/assert-records.py
  */
@@ -26,12 +29,13 @@ const ASSERT_RECORDS_PATH = path.join(
   '../src/commands/manifest/scripts/test/maven-compat/assert-records.py',
 )
 
-const PROD_ROOT = 'app'
-const TEST_ROOT = 'testroot'
-
-/** A `root` row: the assertions read the id from field 2 and prod-ness from field 5. */
-function rootRow(rootId: string, options: { prod: boolean }): string {
-  return ['root', rootId, '', '', options.prod ? '1' : '0'].join('\t')
+/** A `root` row: the assertions read the id (field 2), project (field 3) and prod-ness (field 5). */
+function rootRow(
+  rootId: string,
+  projectKey: string,
+  options: { prod: boolean },
+): string {
+  return ['root', rootId, projectKey, '', options.prod ? '1' : '0'].join('\t')
 }
 
 /** A `node` row: root id in field 2, coordinate in field 3, directness in field 9. */
@@ -63,78 +67,116 @@ function edgeRow(rootId: string, parent: string, child: string): string {
   return ['edge', rootId, parent, child].join('\t')
 }
 
-/**
- * A records file the assertions accept, apart from the internal module's
- * coordinate, which each test supplies. Every non-direct node carries a parent
- * edge in its own root (the reachability invariant now asserted).
- */
-function buildRecords(internalModuleCoord: string): string {
-  return [
-    ['meta', 'maven'].join('\t'),
-    rootRow(PROD_ROOT, { prod: true }),
-    rootRow(TEST_ROOT, { prod: false }),
-    // External prod dependency, materialized as a jar.
-    nodeRow(PROD_ROOT, 'demo.ext:tool:jar:1.0', { direct: true }),
-    fileRow(PROD_ROOT, 'demo.ext:tool:jar:1.0', '/repo/tool-1.0.jar'),
-    // Test-scope dependency and its transitive, kept out of the prod root.
-    nodeRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', { direct: true }),
-    fileRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', '/repo/harness-1.0.jar'),
-    edgeRow(
-      TEST_ROOT,
-      'demo.ext:harness:jar:1.0',
-      'demo.ext:harness-core:jar:1.0',
-    ),
-    nodeRow(TEST_ROOT, 'demo.ext:harness-core:jar:1.0', { direct: false }),
-    // Scope-conflict shape: shared's effective scope is prod, but Maven kept it under a
-    // test parent, so it belongs in the dev root and must keep that parent edge.
-    nodeRow(TEST_ROOT, 'demo.ext:conflict-test:jar:1.0', { direct: true }),
-    edgeRow(
-      TEST_ROOT,
-      'demo.ext:conflict-test:jar:1.0',
-      'demo.ext:shared:jar:1.0',
-    ),
-    nodeRow(TEST_ROOT, 'demo.ext:shared:jar:1.0', { direct: false }),
-    // The internal reactor module under test.
-    nodeRow(PROD_ROOT, internalModuleCoord, { direct: true }),
-    '',
-  ].join('\n')
+const TOOL = 'demo.ext:tool:jar:1.0'
+const HARNESS = 'demo.ext:harness:jar:1.0'
+const HARNESS_CORE = 'demo.ext:harness-core:jar:1.0'
+const SHARED = 'demo.ext:shared:jar:1.0'
+const CONFLICT_PROD = 'demo.ext:conflict-prod:jar:1.0'
+const CONFLICT_TEST = 'demo.ext:conflict-test:jar:1.0'
+const DUP_IO = 'demo.ext:dup-io:jar:1.0'
+const DUP_UTIL = 'demo.ext:dup-util:jar:1.0'
+const MED_IO = 'demo.ext:med-io:jar:1.0'
+const MED_UTIL = 'demo.ext:med-util:jar:1.0'
+const CONTAINER_LIB = 'demo.ext:container-lib:jar:1.0'
+const CONTAINER_API = 'demo.ext:container-api:jar:1.0'
+
+const DEV_NODES = new Set([CONFLICT_TEST, CONTAINER_API, HARNESS, HARNESS_CORE])
+
+type Edge = { child: string; module: string; parent: string }
+
+const EDGES = {
+  conflictProdShared: { module: 'app', parent: CONFLICT_PROD, child: SHARED },
+  conflictTestShared: { module: 'app', parent: CONFLICT_TEST, child: SHARED },
+  containerLibApi: {
+    module: 'app',
+    parent: CONTAINER_LIB,
+    child: CONTAINER_API,
+  },
+  dupIoUtil: { module: 'app', parent: DUP_IO, child: DUP_UTIL },
+  harnessCore: { module: 'app', parent: HARNESS, child: HARNESS_CORE },
+  medIoUtil: { module: 'mid', parent: MED_IO, child: MED_UTIL },
+} satisfies Record<string, Edge>
+
+function rootIdOf(module: string, prodRoot: boolean): string {
+  return `${module}-${prodRoot ? 'compile' : 'test'}`
+}
+
+type RecordsOptions = {
+  dev?: string[]
+  internalModuleCoord?: string
+  omitEdges?: Edge[]
+  omitNodes?: string[]
+  prod?: string[]
 }
 
 /**
- * The buggy pre-fix shape: `demo.ext:shared`'s effective scope is prod, so a
- * scope-based split put it in the prod root while its only parent stayed in the
- * test root. `withEdge=false` drops the prod-root parent edge, producing exactly
- * the unreachable, non-direct component the validation flags.
+ * Records in the extension's root layout: per module, a compile root with the
+ * nodes Maven kept with a prod scope and a test root with the whole
+ * resolution. `dev`, `prod`, `omitEdges` and `omitNodes` alter it into outputs the
+ * assertions must reject.
  */
-function scopeConflictRecords(sharedRoot: string, withEdge: boolean): string {
-  return [
-    ['meta', 'maven'].join('\t'),
-    rootRow(PROD_ROOT, { prod: true }),
-    rootRow(TEST_ROOT, { prod: false }),
-    nodeRow(PROD_ROOT, 'demo.ext:tool:jar:1.0', { direct: true }),
-    fileRow(PROD_ROOT, 'demo.ext:tool:jar:1.0', '/repo/tool-1.0.jar'),
-    nodeRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', { direct: true }),
-    fileRow(TEST_ROOT, 'demo.ext:harness:jar:1.0', '/repo/harness-1.0.jar'),
-    edgeRow(
-      TEST_ROOT,
-      'demo.ext:harness:jar:1.0',
-      'demo.ext:harness-core:jar:1.0',
-    ),
-    nodeRow(TEST_ROOT, 'demo.ext:harness-core:jar:1.0', { direct: false }),
-    nodeRow(TEST_ROOT, 'demo.ext:conflict-test:jar:1.0', { direct: true }),
-    ...(withEdge
-      ? [
-          edgeRow(
-            TEST_ROOT,
-            'demo.ext:conflict-test:jar:1.0',
-            'demo.ext:shared:jar:1.0',
-          ),
-        ]
-      : []),
-    nodeRow(sharedRoot, 'demo.ext:shared:jar:1.0', { direct: false }),
-    nodeRow(PROD_ROOT, 'demo:lib:1.0', { direct: true }),
-    '',
-  ].join('\n')
+function buildRecords({
+  dev = [],
+  internalModuleCoord = 'demo:lib:1.0',
+  omitEdges = [],
+  omitNodes = [],
+  prod = [],
+}: RecordsOptions = {}): string {
+  // Coordinate and directness of each module's nodes.
+  const modules: Array<[string, Array<[string, boolean]>]> = [
+    [
+      'app',
+      [
+        [TOOL, true],
+        [HARNESS, true],
+        [HARNESS_CORE, false],
+        [CONFLICT_TEST, true],
+        [CONFLICT_PROD, true],
+        [SHARED, false],
+        [DUP_UTIL, true],
+        [DUP_IO, true],
+        [CONTAINER_API, true],
+        [CONTAINER_LIB, true],
+        [internalModuleCoord, true],
+      ],
+    ],
+    [
+      'mid',
+      [
+        [MED_UTIL, true],
+        [MED_IO, true],
+      ],
+    ],
+  ]
+  const isProd = (coord: string) =>
+    prod.includes(coord) || (!DEV_NODES.has(coord) && !dev.includes(coord))
+  const rows = [['meta', 'maven'].join('\t')]
+  for (const { 0: module, 1: nodes } of modules) {
+    for (const prodRoot of [true, false]) {
+      const rootId = rootIdOf(module, prodRoot)
+      const inRoot = (coord: string) =>
+        !omitNodes.includes(coord) && (!prodRoot || isProd(coord))
+      rows.push(rootRow(rootId, `demo:${module}:1.0`, { prod: prodRoot }))
+      for (const { 0: coord, 1: direct } of nodes) {
+        if (inRoot(coord)) {
+          rows.push(nodeRow(rootId, coord, { direct }))
+        }
+      }
+      for (const edge of Object.values(EDGES)) {
+        if (
+          edge.module === module &&
+          !omitEdges.includes(edge) &&
+          inRoot(edge.parent) &&
+          inRoot(edge.child)
+        ) {
+          rows.push(edgeRow(rootId, edge.parent, edge.child))
+        }
+      }
+    }
+  }
+  rows.push(fileRow(rootIdOf('app', true), TOOL, '/repo/tool-1.0.jar'))
+  rows.push(fileRow(rootIdOf('app', false), HARNESS, '/repo/harness-1.0.jar'))
+  return `${rows.join('\n')}\n`
 }
 
 describe('maven-compat assert-records.py', () => {
@@ -148,21 +190,12 @@ describe('maven-compat assert-records.py', () => {
     rmSync(workDir, { force: true, recursive: true })
   })
 
-  /** Run the fixture's assertions over a records file naming `internalModuleCoord`. */
-  function assertRecords(internalModuleCoord: string): {
-    status: number | null
-    output: string
-  } {
-    return assertRecordsText(buildRecords(internalModuleCoord))
-  }
-
-  /** Run the fixture's assertions over a raw records file. */
-  function assertRecordsText(text: string): {
+  function assertRecords(options?: RecordsOptions): {
     status: number | null
     output: string
   } {
     const recordsPath = path.join(workDir, 'records.tsv')
-    writeFileSync(recordsPath, text)
+    writeFileSync(recordsPath, buildRecords(options))
 
     const result = spawnSync('python3', [ASSERT_RECORDS_PATH, recordsPath], {
       cwd: workDir,
@@ -171,54 +204,75 @@ describe('maven-compat assert-records.py', () => {
     return { output: `${result.stdout}${result.stderr}`, status: result.status }
   }
 
-  it('accepts an internal module emitted under its bare id', () => {
-    const { output, status } = assertRecords('demo:lib:1.0')
+  it('accepts the extension output', () => {
+    const { output, status } = assertRecords()
 
     expect(output).toContain('PASS')
     expect(status).toBe(0)
   })
 
-  it('rejects an internal module emitted only under a typed id', () => {
-    // 'demo:lib:' is a prefix of 'demo:lib:jar:1.0', so a lookup that matched
-    // on the prefix alone would report bare-id coverage it does not have.
-    const { output, status } = assertRecords('demo:lib:jar:1.0')
+  it.for([
+    {
+      // 'demo:lib:' is a prefix of 'demo:lib:jar:1.0', so a lookup that matched
+      // on the prefix alone would report bare-id coverage it does not have.
+      name: 'an internal module emitted only under a typed id',
+      options: { internalModuleCoord: 'demo:lib:jar:1.0' },
+      message: 'internal module demo:lib not emitted by its bare id',
+    },
+    {
+      name: 'an internal module that is missing entirely',
+      options: { internalModuleCoord: 'demo:unrelated:1.0' },
+      message: 'internal module demo:lib not emitted by its bare id',
+    },
+    {
+      name: 'a compile-scoped node kept under a test parent left dev',
+      options: { dev: [SHARED] },
+      message: 'scope-conflict demo.ext:shared not in a prod root',
+    },
+    {
+      name: 'a missing edge onto a node kept under another parent',
+      options: { omitEdges: [EDGES.conflictProdShared] },
+      message:
+        'edge demo.ext:conflict-prod -> demo.ext:shared missing from a prod root',
+    },
+    {
+      name: 'a missing edge onto a direct dependency',
+      options: { omitEdges: [EDGES.dupIoUtil] },
+      message: 'edge demo.ext:dup-io -> demo.ext:dup-util missing',
+    },
+    {
+      name: 'a missing mediated edge',
+      options: { omitEdges: [EDGES.medIoUtil] },
+      message: 'edge demo.ext:med-io -> demo.ext:med-util missing from mid',
+    },
+    {
+      name: 'a missing edge from a prod node onto a provided one',
+      options: { omitEdges: [EDGES.containerLibApi] },
+      message: 'edge demo.ext:container-lib -> demo.ext:container-api missing',
+    },
+    {
+      name: 'a missing end of an edge',
+      options: { omitNodes: [CONFLICT_PROD] },
+      message: 'missing demo.ext:conflict-prod:jar',
+    },
+    {
+      name: 'a provided dependency in a prod root',
+      options: { prod: [CONTAINER_API] },
+      message: 'provided demo.ext:container-api wrongly in a prod root',
+    },
+    {
+      name: 'a compile dependency of a provided one left dev',
+      options: { dev: [CONTAINER_LIB] },
+      message: 'demo.ext:container-lib not in a prod root',
+    },
+  ] satisfies Array<{
+    name: string
+    options: RecordsOptions
+    message: string
+  }>)('rejects $name', ({ message, options }) => {
+    const { output, status } = assertRecords(options)
 
-    expect(output).toContain(
-      'internal module demo:lib not emitted by its bare id',
-    )
-    expect(status).not.toBe(0)
-  })
-
-  it('rejects an internal module that is missing entirely', () => {
-    const { output, status } = assertRecords('demo:unrelated:1.0')
-
-    expect(output).toContain(
-      'internal module demo:lib not emitted by its bare id',
-    )
-    expect(status).not.toBe(0)
-  })
-
-  it('accepts a scope-conflict node kept in its parent root', () => {
-    // Fixed extension output: shared's effective scope is prod, but the retained
-    // parent is test, so it must land in the dev root with the edge that reaches it.
-    const { output, status } = assertRecordsText(
-      scopeConflictRecords(TEST_ROOT, true),
-    )
-
-    expect(output).toContain('PASS')
-    expect(status).toBe(0)
-  })
-
-  it('rejects a scope-conflict node stranded in the prod root', () => {
-    // Pre-fix output: shared sorted into the prod root by its effective scope. Reachability (the
-    // shared helper) would also flag it; here we assert the Maven-specific root classification.
-    const { output, status } = assertRecordsText(
-      scopeConflictRecords(PROD_ROOT, false),
-    )
-
-    expect(output).toContain(
-      'scope-conflict demo.ext:shared wrongly in a prod root',
-    )
+    expect(output).toContain(message)
     expect(status).not.toBe(0)
   })
 })
