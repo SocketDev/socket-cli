@@ -20,9 +20,9 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
-    <!-- internal reactor modules -> inter-module edges, bare-id components. lib's jar comes in
+    <!-- internal reactor modules -> inter-module edges onto their artifacts. lib's jar comes in
          through mid, which excludes demo.ext:libdep, so only lib's test-jar further down brings
-         libdep, and the walk reaches the jar first. -->
+         libdep. -->
     <dependency>
       <groupId>demo</groupId>
       <artifactId>mid</artifactId>

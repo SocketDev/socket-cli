@@ -1,13 +1,10 @@
 /**
  * Unit tests for the maven-compat fixture's record assertions.
  *
- * The fixture proves the Maven extension emits internal reactor modules under
- * their bare groupId:artifactId:version id, distinct from the typed
- * groupId:artifactId:type:version form used for external artifacts. The lookup
- * that checks this has to reject the typed form, or a regression that stopped
- * emitting the bare id would still pass. The fixture also checks that the
- * extension records every resolved edge and marks a node prod by the scope
- * Maven kept it with.
+ * The fixture proves the Maven extension emits a sibling module's jar and
+ * test-jar under their own coordinates, each naming the module as its project,
+ * that it records every resolved edge, and that it marks a node prod by the
+ * scope Maven kept it with.
  * The fixture itself needs Maven and a JDK, so these run its assertions over
  * synthetic records instead.
  *
@@ -38,11 +35,14 @@ function rootRow(
   return ['root', rootId, projectKey, '', options.prod ? '1' : '0'].join('\t')
 }
 
-/** A `node` row: root id in field 2, coordinate in field 3, directness in field 9. */
+/**
+ * A `node` row: root id in field 2, coordinate in field 3, directness in field
+ * 9, the build project it resolves to in field 10.
+ */
 function nodeRow(
   rootId: string,
   coordId: string,
-  options: { direct: boolean },
+  options: { direct: boolean; project: string },
 ): string {
   return [
     'node',
@@ -54,6 +54,7 @@ function nodeRow(
     '',
     '',
     options.direct ? '1' : '0',
+    options.project,
   ].join('\t')
 }
 
@@ -79,6 +80,15 @@ const MED_IO = 'demo.ext:med-io:jar:1.0'
 const MED_UTIL = 'demo.ext:med-util:jar:1.0'
 const CONTAINER_LIB = 'demo.ext:container-lib:jar:1.0'
 const CONTAINER_API = 'demo.ext:container-api:jar:1.0'
+const MID_JAR = 'demo:mid:jar:1.0'
+// The reactor module each sibling artifact's coordinate resolves to, by artifactId.
+const SIBLING_PROJECTS: Record<string, string> = {
+  __proto__: null,
+  lib: 'demo:lib:1.0',
+  mid: 'demo:mid:1.0',
+} as unknown as Record<string, string>
+const LIB_JAR = 'demo:lib:jar:1.0'
+const LIB_TESTS = 'demo:lib:test-jar:tests:1.0'
 const MGD_TEST = 'demo.ext:mgd-test:jar:1.0'
 const MANAGED = 'demo.ext:managed:jar:1.0'
 
@@ -87,6 +97,7 @@ const DEV_NODES = new Set([
   CONTAINER_API,
   HARNESS,
   HARNESS_CORE,
+  LIB_TESTS,
   MGD_TEST,
 ])
 
@@ -104,6 +115,7 @@ const EDGES = {
   harnessCore: { module: 'app', parent: HARNESS, child: HARNESS_CORE },
   medIoUtil: { module: 'mid', parent: MED_IO, child: MED_UTIL },
   mgdTestManaged: { module: 'app', parent: MGD_TEST, child: MANAGED },
+  midLib: { module: 'app', parent: MID_JAR, child: LIB_JAR },
 } satisfies Record<string, Edge>
 
 function rootIdOf(module: string, prodRoot: boolean): string {
@@ -112,24 +124,28 @@ function rootIdOf(module: string, prodRoot: boolean): string {
 
 type RecordsOptions = {
   dev?: string[]
-  internalModuleCoord?: string
+  extraNodes?: string[]
+  libProject?: string
   omitEdges?: Edge[]
   omitNodes?: string[]
   prod?: string[]
+  toggleDirect?: string[]
 }
 
 /**
  * Records in the extension's root layout: per module, a compile root with the
  * nodes Maven kept with a prod scope and a test root with the whole
- * resolution. `dev`, `prod`, `omitEdges` and `omitNodes` alter it into outputs the
- * assertions must reject.
+ * resolution. `dev`, `extraNodes`, `libProject`, `omitEdges`, `omitNodes`,
+ * `prod` and `toggleDirect` alter it into outputs the assertions must reject.
  */
 function buildRecords({
   dev = [],
-  internalModuleCoord = 'demo:lib:1.0',
+  extraNodes = [],
+  libProject = 'demo:lib:1.0',
   omitEdges = [],
   omitNodes = [],
   prod = [],
+  toggleDirect = [],
 }: RecordsOptions = {}): string {
   // Coordinate and directness of each module's nodes.
   const modules: Array<[string, Array<[string, boolean]>]> = [
@@ -148,7 +164,10 @@ function buildRecords({
         [CONTAINER_LIB, true],
         [MGD_TEST, true],
         [MANAGED, false],
-        [internalModuleCoord, true],
+        [MID_JAR, true],
+        [LIB_JAR, false],
+        [LIB_TESTS, true],
+        ...extraNodes.map(coord => [coord, true] as [string, boolean]),
       ],
     ],
     [
@@ -156,6 +175,7 @@ function buildRecords({
       [
         [MED_UTIL, true],
         [MED_IO, true],
+        [LIB_JAR, true],
       ],
     ],
   ]
@@ -170,7 +190,15 @@ function buildRecords({
       rows.push(rootRow(rootId, `demo:${module}:1.0`, { prod: prodRoot }))
       for (const { 0: coord, 1: direct } of nodes) {
         if (inRoot(coord)) {
-          rows.push(nodeRow(rootId, coord, { direct }))
+          const project = coord.startsWith('demo:lib:')
+            ? libProject
+            : (SIBLING_PROJECTS[coord.split(':')[1] ?? ''] ?? '')
+          rows.push(
+            nodeRow(rootId, coord, {
+              direct: direct !== toggleDirect.includes(coord),
+              project,
+            }),
+          )
         }
       }
       for (const edge of Object.values(EDGES)) {
@@ -224,16 +252,50 @@ describe('maven-compat assert-records.py', () => {
 
   it.for([
     {
-      // 'demo:lib:' is a prefix of 'demo:lib:jar:1.0', so a lookup that matched
-      // on the prefix alone would report bare-id coverage it does not have.
-      name: 'an internal module emitted only under a typed id',
-      options: { internalModuleCoord: 'demo:lib:jar:1.0' },
-      message: 'internal module demo:lib not emitted by its bare id',
+      name: 'a sibling emitted under its bare id',
+      options: { extraNodes: ['demo:lib:1.0'] },
+      message: 'sibling demo:lib emitted under its bare id',
     },
     {
-      name: 'an internal module that is missing entirely',
-      options: { internalModuleCoord: 'demo:unrelated:1.0' },
-      message: 'internal module demo:lib not emitted by its bare id',
+      name: "a missing edge onto the sibling's jar",
+      options: { omitEdges: [EDGES.midLib] },
+      message: "edge demo:mid -> demo:lib's jar missing from app",
+    },
+    {
+      name: 'a missing sibling jar',
+      options: { omitNodes: [LIB_JAR] },
+      message: "sibling demo:lib's jar or test-jar missing",
+    },
+    {
+      name: 'a missing sibling test-jar',
+      options: { omitNodes: [LIB_TESTS] },
+      message: "sibling demo:lib's jar or test-jar missing",
+    },
+    {
+      name: 'sibling artifacts that do not name their project',
+      options: { libProject: '' },
+      message:
+        "sibling demo:lib's artifacts do not name demo:lib:1.0 as their project",
+    },
+    {
+      name: 'a sibling jar left dev',
+      options: { dev: [LIB_JAR] },
+      message: "sibling demo:lib's jar not in app's prod root",
+    },
+    {
+      name: 'a sibling test-jar in a prod root',
+      options: { prod: [LIB_TESTS] },
+      message: "sibling demo:lib's test-jar wrongly in a prod root",
+    },
+    {
+      name: 'a sibling jar marked direct',
+      options: { toggleDirect: [LIB_JAR] },
+      message: "sibling demo:lib's jar wrongly direct in app",
+    },
+    {
+      name: 'a sibling test-jar not marked direct',
+      options: { toggleDirect: [LIB_TESTS] },
+      message: "sibling demo:lib's test-jar not direct in app",
     },
     {
       name: 'a compile-scoped node kept under a test parent left dev',

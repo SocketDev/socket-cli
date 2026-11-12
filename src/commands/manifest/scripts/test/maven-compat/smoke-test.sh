@@ -4,15 +4,15 @@
 # tested separately in `nx test utils`). Guards, across the supported Maven range, that the extension:
 #  - emits the external prod dep demo.ext:tool (in a prod root) and the test dep demo.ext:harness +
 #    its transitive demo.ext:harness-core (only in a non-prod root -> the assembler's dev flag);
-#  - emits the internal reactor module demo:lib by its bare groupId:artifactId:version id (so the
-#    inter-module edge lines up with its `project` record);
+#  - emits a sibling module's jar and test-jar under their own coordinates, each naming the module
+#    as its project (the assembler merges them into the module's component);
 #  - marks a node prod by the scope Maven kept it with, also one whose scope dependencyManagement
 #    sets under a test parent;
 #  - records every resolved edge, pointing at the node Maven kept: onto a direct dependency, onto a
 #    mediated version, and from a prod node onto a provided one;
 #  - its records assemble into facts with no orphaned components;
-#  - keeps a dependency only a sibling module's test-jar brings (mid excludes demo.ext:libdep from
-#    lib, and app reaches lib's jar through mid before lib's test-jar);
+#  - keeps a dependency only a sibling module's test-jar brings under that test-jar, not its jar
+#    (mid excludes demo.ext:libdep from lib);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).
 #
@@ -71,9 +71,14 @@ python3 - "$RECORDS" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 app = {r[1] for r in rows if r[0] == 'root' and r[2] == 'demo:app:1.0'}
-if not any(r[0] == 'node' and r[1] in app and r[2].startswith('demo.ext:libdep:') for r in rows):
-    print("FAIL: demo.ext:libdep missing from app"); sys.exit(1)
-print("PASS: demo.ext:libdep in app through lib's test-jar")
+def libdep_edge(parent):
+    return any(r[0] == 'edge' and r[1] in app and r[2].startswith(parent)
+               and r[3].startswith('demo.ext:libdep:') for r in rows)
+if not libdep_edge('demo:lib:test-jar:'):
+    print("FAIL: no demo:lib test-jar -> demo.ext:libdep edge in app"); sys.exit(1)
+if libdep_edge('demo:lib:jar:'):
+    print("FAIL: demo:lib jar -> demo.ext:libdep edge in app, though mid excludes it"); sys.exit(1)
+print("PASS: demo.ext:libdep in app through lib's test-jar only")
 PY
 assemble_records "$RECORDS"
 

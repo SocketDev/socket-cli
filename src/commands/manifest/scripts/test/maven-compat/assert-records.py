@@ -6,7 +6,7 @@
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
 tool = None
-roots, root_projects, nodes, files, direct, edges = {}, {}, {}, {}, {}, {}
+roots, root_projects, nodes, projects, files, direct, edges = {}, {}, {}, {}, {}, {}, {}
 for r in rows:
     if r[0] == 'meta': tool = r[1]
     elif r[0] == 'root':
@@ -16,6 +16,8 @@ for r in rows:
     elif r[0] == 'node':
         nodes.setdefault(r[2], set()).add(r[1])                      # coordId -> {rootId}
         if r[8] == '1': direct.setdefault(r[2], set()).add(r[1])     # coordId -> {rootId where direct}
+        # coordId to the build projects its rows resolve it to.
+        projects.setdefault(r[2], set()).add(r[9] if len(r) > 9 else '')
     elif r[0] == 'file': files.setdefault(r[2], set()).add(r[3])     # coordId -> {path}
     elif r[0] == 'edge':
         # (parent, child) to the roots that hold the edge.
@@ -27,17 +29,9 @@ errors = []
 # orphaned component. What remains here is Maven-specific: which coordinate lands in which root,
 # and jar materialization.
 
-def coord(prefix, fields=None):
-    """The one emitted coordId starting with prefix, or None. Keeps assertions version-agnostic.
-
-    fields pins the count of colon-separated fields. Without it a prefix that stops before the
-    type, as the bare-id lookup below does, would also match the typed form it is meant to rule
-    out: 'demo:lib:' is a prefix of both 'demo:lib:1.0' and 'demo:lib:jar:1.0'.
-    """
-    hits = sorted(
-        c for c in set(nodes) | set(files)
-        if c.startswith(prefix) and (fields is None or c.count(':') + 1 == fields)
-    )
+def coord(prefix):
+    """The one emitted coordId starting with prefix, or None. Keeps assertions version-agnostic."""
+    hits = sorted(c for c in set(nodes) | set(files) if c.startswith(prefix))
     if len(hits) > 1:
         errors.append(f"expected one coordinate for {prefix!r}, got {hits}")
     return hits[0] if hits else None
@@ -45,8 +39,8 @@ def coord(prefix, fields=None):
 ext = coord('demo.ext:tool:jar:')
 harness = coord('demo.ext:harness:jar:')
 harness_core = coord('demo.ext:harness-core:jar:')
-# Internal module: bare groupId:artifactId:version, no type field.
-lib = coord('demo:lib:', fields=3)
+# Sibling module demo:lib: app reaches its jar through mid and declares its test-jar.
+lib_jar, lib_tests = coord('demo:lib:jar:'), coord('demo:lib:test-jar:')
 
 if tool != 'maven': errors.append(f"meta tool {tool!r} != 'maven'")
 
@@ -63,12 +57,22 @@ elif not has_jar(harness): errors.append(f"demo.ext:harness jar not materialized
 if not harness_core: errors.append("missing transitive test dep demo.ext:harness-core")
 elif in_prod(harness_core): errors.append("transitive test dep demo.ext:harness-core wrongly in a prod root")
 
-if not lib: errors.append("internal module demo:lib not emitted by its bare id")
-elif not in_prod(lib): errors.append("internal module demo:lib not in app's prod root")
-elif not direct.get(lib): errors.append("internal module demo:lib not marked direct")
-
 def edge_roots(parent, child):
     return edges.get((parent, child), set())
+
+def direct_in(cid, project): return any(root_projects.get(rid) == project for rid in direct.get(cid, ()))
+
+if 'demo:lib:1.0' in nodes: errors.append("sibling demo:lib emitted under its bare id")
+elif not lib_jar or not lib_tests: errors.append("sibling demo:lib's jar or test-jar missing")
+elif projects.get(lib_jar, set()) | projects.get(lib_tests, set()) != {'demo:lib:1.0'}:
+    errors.append("sibling demo:lib's artifacts do not name demo:lib:1.0 as their project")
+elif not any(roots.get(rid) and root_projects.get(rid) == 'demo:app:1.0' for rid in nodes.get(lib_jar, ())):
+    errors.append("sibling demo:lib's jar not in app's prod root")
+elif not any(root_projects.get(rid) == 'demo:app:1.0' for rid in edge_roots(coord('demo:mid:jar:'), lib_jar)):
+    errors.append("edge demo:mid -> demo:lib's jar missing from app")
+elif in_prod(lib_tests): errors.append("sibling demo:lib's test-jar wrongly in a prod root")
+elif direct_in(lib_jar, 'demo:app:1.0'): errors.append("sibling demo:lib's jar wrongly direct in app")
+elif not direct_in(lib_tests, 'demo:app:1.0'): errors.append("sibling demo:lib's test-jar not direct in app")
 
 def edge_pair(parent, child):
     """Both coordinates, or None after reporting the missing ones."""
@@ -119,4 +123,4 @@ if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; internal demo:lib (bare id, direct); demo.ext:shared prod; edges onto kept dependencies")
+print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; sibling demo:lib jar prod, test-jar direct; demo.ext:shared prod; edges onto kept dependencies")

@@ -42,16 +42,22 @@ echo "+ $("$MVN" -v 2>/dev/null | head -1) (repo inheritance)"
 python3 - "$RECORDS" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
-roots, nodes, files, edges, failures = {}, {}, {}, set(), []
+roots, nodes, projects, files, edges, failures = {}, {}, {}, {}, set(), []
 for r in rows:
     if r[0] == 'root': roots[r[1]] = r[2]                            # rootId -> projectKey
-    elif r[0] == 'node': nodes.setdefault(r[2], set()).add(r[1])     # coordId -> {rootId}
+    elif r[0] == 'node':
+        # coordId to the roots that hold it.
+        nodes.setdefault(r[2], set()).add(r[1])
+        # coordId to the build project it resolves to, if any.
+        if len(r) > 9 and r[9]: projects[r[2]] = r[9]
     elif r[0] == 'file': files.setdefault(r[2], set()).add(r[3])     # coordId -> {path}
     elif r[0] == 'edge': edges.add((r[1], r[2], r[3]))               # (rootId, parent, child)
     elif r[0] == 'failure': failures.append(r[1:])
 
 WIDGET = 'demo.scoped:widget:jar:1.0'
 LIBA = 'demo:liba:1.0'
+# liba's jar, which names liba as its project.
+LIBA_JAR = 'demo:liba:jar:1.0'
 LIBB = 'demo:libb:1.0'
 errors = []
 
@@ -70,16 +76,19 @@ for project_key in (LIBA, LIBB):
         errors.append(f"{WIDGET} missing from {project_key}'s graph")
 
 # The point of the fixture: libb reaches widget only through the reactor module liba.
-if not any(rid in roots_for(LIBB) and p == LIBA and c == WIDGET for rid, p, c in edges):
-    errors.append(f"no {LIBA} -> {WIDGET} edge in libb's root")
+if not any(rid in roots_for(LIBB) and p == LIBA_JAR and c == WIDGET for rid, p, c in edges):
+    errors.append(f"no {LIBA_JAR} -> {WIDGET} edge in libb's root")
 
 jars = [p for p in files.get(WIDGET, ()) if p.endswith('.jar')]
 if not jars:
     errors.append(f"{WIDGET} jar not materialized: {files.get(WIDGET)}")
 
 # A reactor sibling reports its dirs through its `project` record, never a `file` record.
-if files.get(LIBA):
-    errors.append(f"reactor module {LIBA} should have no file records, got {files[LIBA]}")
+if projects.get(LIBA_JAR) != LIBA:
+    errors.append(f"{LIBA_JAR} does not name {LIBA} as its project")
+liba_files = {p for c, ps in files.items() if c == LIBA_JAR or projects.get(c) == LIBA for p in ps}
+if liba_files:
+    errors.append(f"reactor module {LIBA} should have no file records, got {sorted(liba_files)}")
 
 if errors:
     print("FAIL:")

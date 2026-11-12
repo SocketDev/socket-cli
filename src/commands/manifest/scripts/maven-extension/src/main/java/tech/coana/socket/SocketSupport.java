@@ -38,11 +38,6 @@ public final class SocketSupport {
     return sb.toString();
   }
 
-  /** Bare {@code groupId:artifactId:version} id used for reactor (internal) module components. */
-  public static String bareId(String groupId, String artifactId, String version) {
-    return coordId(groupId, artifactId, null, null, version);
-  }
-
   /**
    * Translate a config-name glob to a case-sensitive regex. Supports {@code *}, {@code ?}, and
    * {@code [...]} character classes: enumerations ({@code [cC]}), ranges ({@code [a-z]}), and

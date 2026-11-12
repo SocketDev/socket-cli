@@ -53,7 +53,7 @@ import java.util.regex.Pattern;
  * (same contract as the Gradle/SBT scripts; no JSON/hashing here). Per module: a test root with the
  * whole resolution and a compile root with the nodes kept with a prod scope (compile/runtime/system),
  * each with the resolved edges between its own nodes. A reactor module becomes a component only
- * where another depends on it, by its bare {@code groupId:artifactId:version} id.
+ * where another depends on one of its artifacts, each of which names the module as its project.
  *
  * <p>Resolution goes through {@link ProjectDependenciesResolver} — the same component Maven's own
  * lifecycle uses to build a project's classpath — so the graph, the scope and management semantics,
@@ -317,9 +317,8 @@ public final class SocketFactsRecordsEngine {
       reportUnscannable(unscannable, moduleCoord, "dependencies resolved without the socket-facts graph transformer");
     }
     if (graph == null) return;
-    Set<String> visited = new HashSet<>();
     for (DependencyNode child : edges.get(graph)) {
-      String id = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
+      String id = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes);
       if (id != null) directIds.add(id);
     }
     for (String id : unfetched) {
@@ -418,8 +417,7 @@ public final class SocketFactsRecordsEngine {
       Set<String> reactorGavs,
       Set<String> unresolved,
       Options opts,
-      Map<String, Node> nodes,
-      Set<String> visited) {
+      Map<String, Node> nodes) {
     Dependency dep = dn.getDependency();
     Artifact artifact = dn.getArtifact();
     if (dep == null || artifact == null) return null;
@@ -431,20 +429,17 @@ public final class SocketFactsRecordsEngine {
     boolean internal = reactorGavs.contains(gav);
     String type = artifact.getProperty(ARTIFACT_PROPERTY_TYPE, artifact.getExtension());
     String classifier = artifact.getClassifier();
-    String version = artifact.getBaseVersion();
-    String key = externalId(artifact);
-    String id = internal ? SocketSupport.bareId(artifact.getGroupId(), artifact.getArtifactId(), version) : key;
+    String id = externalId(artifact);
 
-    // One walk per artifact: a shared subtree is already recorded. Keyed by coordinate, as a sibling's jar
-    // and test-jar share a node but can collect different children, e.g. when one declaration has exclusions.
-    if (!visited.add(key)) return id;
+    // One walk per artifact: a shared subtree is already recorded.
+    if (nodes.containsKey(id)) return id;
 
-    Node node = internal
-        ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version, gav)
-        : upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(),
-            type == null ? "" : type, classifier == null ? "" : classifier, version, "");
-    // A sibling's jar and test-jar share a node, each kept with its own scope.
-    if (isProd(scope)) node.prod = true;
+    // A sibling module's artifacts, such as its jar and test-jar, name the module as their project; the
+    // assembler merges them into its component.
+    Node node = new Node(id, artifact.getGroupId(), artifact.getArtifactId(),
+        type == null ? "" : type, classifier == null ? "" : classifier, artifact.getBaseVersion(), internal ? gav : "");
+    node.prod = isProd(scope);
+    nodes.put(id, node);
 
     // Maven wrote each accepted node's resolved file back onto the node; a reactor module reports its
     // own dirs through its `project` record instead of a `file` record.
@@ -454,7 +449,7 @@ public final class SocketFactsRecordsEngine {
     }
 
     for (DependencyNode child : edges.get(dn)) {
-      String childId = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
+      String childId = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes);
       if (childId != null) node.children.add(childId);
     }
     return id;
@@ -482,17 +477,6 @@ public final class SocketFactsRecordsEngine {
 
   private static boolean isProd(String scope) {
     return scope.equals("compile") || scope.equals("runtime") || scope.equals("system");
-  }
-
-  private static Node upsert(
-      Map<String, Node> nodes, String id, String groupId, String artifactId, String type, String classifier, String version,
-      String project) {
-    Node node = nodes.get(id);
-    if (node == null) {
-      node = new Node(id, groupId, artifactId, type, classifier, version, project);
-      nodes.put(id, node);
-    }
-    return node;
   }
 
   // ---- emission ----
