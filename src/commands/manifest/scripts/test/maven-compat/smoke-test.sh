@@ -6,16 +6,17 @@
 #    its transitive demo.ext:harness-core (only in a non-prod root -> the assembler's dev flag);
 #  - emits the internal reactor module demo:lib by its bare groupId:artifactId:version id (so the
 #    inter-module edge lines up with its `project` record);
-#  - marks a node prod by the scope Maven kept it with, and keeps it reachable in the prod root;
+#  - marks a node prod by the scope Maven kept it with, also one whose scope dependencyManagement
+#    sets under a test parent;
 #  - records every resolved edge, pointing at the node Maven kept: onto a direct dependency, onto a
 #    mediated version, and from a prod node onto a provided one;
-#  - every component is reachable from a direct dependency of its own root (no orphaned components);
+#  - its records assemble into facts with no orphaned components;
 #  - keeps a dependency only a sibling module's test-jar brings (mid excludes demo.ext:libdep from
 #    lib, and app reaches lib's jar through mid before lib's test-jar);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).
 #
-# The three external artifacts are stubs generated into a file-based repo at test time (see
+# The external artifacts are stubs generated into a file-based repo at test time (see
 # ../make-stub-repo.sh, shared with the Gradle fixture): the fixture only needs their graph shape, it
 # never compiles against or runs them, so nothing here can age into a CVE alert or a version bump.
 #
@@ -48,7 +49,9 @@ bash "$HERE/../make-stub-repo.sh" "$STUBS" \
   'demo.ext:med-util:2.0' \
   'demo.ext:med-io:1.0+demo.ext:med-util:2.0' \
   'demo.ext:container-api:1.0' \
-  'demo.ext:container-lib:1.0+demo.ext:container-api:1.0'
+  'demo.ext:container-lib:1.0+demo.ext:container-api:1.0' \
+  'demo.ext:mgd-test:1.0+demo.ext:managed:1.0' \
+  'demo.ext:managed:1.0'
 # Maven's own plugin closure stays cached between runs; the stubs never do, so every run has to
 # resolve them from the repo just generated.
 rm -rf "$M2/demo" "$RECORDS" "$PROJECT"/*/target "$PROJECT"/target
@@ -72,7 +75,7 @@ if not any(r[0] == 'node' and r[1] in app and r[2].startswith('demo.ext:libdep:'
     print("FAIL: demo.ext:libdep missing from app"); sys.exit(1)
 print("PASS: demo.ext:libdep in app through lib's test-jar")
 PY
-python3 "$HERE/../assert-reachability.py" "$RECORDS"
+assemble_records "$RECORDS"
 
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
 # The GAV comes from the records the first run just emitted, so it always matches the fixture pom.
@@ -121,4 +124,4 @@ if errors:
 print("PASS (populateFilesFor scoping): demo.ext:tool materialized, demo.ext:harness skipped")
 PY
 
-python3 "$HERE/../assert-reachability.py" "$RECORDS"
+assemble_records "$RECORDS"

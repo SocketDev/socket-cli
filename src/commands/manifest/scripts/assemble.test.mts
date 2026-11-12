@@ -373,6 +373,74 @@ describe('records → assemble → sidecar', () => {
       'Resolved dependencies of a are not reachable from its direct dependencies: g:dep:jar:1, g:loose:jar:1',
     )
   })
+  it.for([
+    {
+      name: 'an edge through a node its root does not hold',
+      records: [
+        'project\ta\tg\ta\t1\ta',
+        'root\tr1\ta\tcompile\t1',
+        'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+        'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+        'edge\tr1\tg:lib:jar:1\tg:ghost:jar:1',
+        'edge\tr1\tg:ghost:jar:1\tg:dep:jar:1',
+      ],
+      unreached:
+        'a are not reachable from its direct dependencies: g:dep:jar:1',
+    },
+    {
+      name: "an edge in another project's root",
+      records: [
+        'project\ta\tg\ta\t1\ta',
+        'project\tb\tg\tb\t1\tb',
+        'root\tr1\ta\tcompile\t1',
+        'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+        'node\tr1\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+        'root\tr2\tb\tcompile\t1',
+        'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+        'node\tr2\tg:dep:jar:1\tg\tdep\t1\tjar\t\t0',
+        'edge\tr2\tg:lib:jar:1\tg:dep:jar:1',
+      ],
+      unreached:
+        'a are not reachable from its direct dependencies: g:dep:jar:1',
+    },
+    {
+      // Maven: dependencyManagement makes `managed` compile under a test parent,
+      // so the compile root holds it without a parent.
+      name: "a node whose parent edge only the project's other root holds",
+      records: [
+        'project\ta\tg\ta\t1\ta',
+        'root\tr1\ta\tcompile\t1',
+        'node\tr1\tg:managed:jar:1\tg\tmanaged\t1\tjar\t\t0',
+        'root\tr2\ta\ttest\t0',
+        'node\tr2\tg:harness:jar:1\tg\tharness\t1\tjar\t\t1',
+        'node\tr2\tg:managed:jar:1\tg\tmanaged\t1\tjar\t\t0',
+        'edge\tr2\tg:harness:jar:1\tg:managed:jar:1',
+      ],
+      unreached: undefined,
+    },
+    {
+      name: "a build project's artifacts, direct in one root only",
+      records: [
+        'project\ta\tg\ta\t1\ta',
+        'project\tg:lib:1\tg\tlib\t1\tlib',
+        'root\tr1\ta\tcompile\t1',
+        'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1\tg:lib:1',
+        'root\tr2\ta\ttest\t0',
+        'node\tr2\tg:lib:test-jar:tests:1\tg\tlib\t1\ttest-jar\ttests\t0\tg:lib:1',
+      ],
+      unreached: undefined,
+    },
+  ])('checks reachability for $name', ({ records, unreached }) => {
+    const assemble = () =>
+      assembleFacts(
+        parseRecords(['meta\tmaven\t3.9.9\t17', ...records].join('\n')),
+      )
+    if (unreached) {
+      expect(assemble).toThrow(`Resolved dependencies of ${unreached}`)
+    } else {
+      expect(assemble).not.toThrow()
+    }
+  })
   it("gives a dependency on a build project that project's id, and marks only it firstParty", () => {
     const records = [
       'meta\tgradle\t8.0\t17',

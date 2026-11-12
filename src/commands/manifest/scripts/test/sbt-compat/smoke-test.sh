@@ -6,7 +6,7 @@
 # ConfigRef, updateFull-vs-update) keep producing correct facts:
 #  - the two expected dependency nodes are present (demo.ext:tool prod, demo.ext:harness test);
 #  - tool appears in a prod root, harness only in non-prod roots -> the assembler's dev flag;
-#  - every component is reachable from a direct dependency of its own root (no orphaned components);
+#  - its records assemble into facts with no orphaned components;
 #  - both get an on-disk jar `file` record under -Dsocket.withFiles;
 #  - a Maven relocation's target, declared directly (demo.old:moved) or through a dependency
 #    (demo.old:legacy, from tool), stays in the graph although coursier leaves its caller out of the report;
@@ -93,4 +93,4 @@ if errors:
 print(f"PASS: demo.ext:tool prod+jar; demo.ext:harness dev+jar ({len(nodes)} nodes)")
 PY
 
-python3 "$HERE/../assert-reachability.py" "$RECORDS"
+assemble_records "$RECORDS"
