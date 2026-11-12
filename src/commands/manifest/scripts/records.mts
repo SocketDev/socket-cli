@@ -18,6 +18,7 @@ import type { ResolutionFailure, Unscannable } from './resolution-report.mts'
 //   projectBuild  projectKey  path                     (build-root-relative; may be absent on disk)
 //   excludedProject  projectKey                          (--with-files only; paths without a project)
 //   root        rootId  projectKey  config  prod(0|1)  [framework  runtime  alias]   (dotnet: NuGet short folder name, RID, TargetFrameworks entry)
+//   noClasspath rootId                                   (its nodes are on no classpath: in the SBOM, not on a reachability classpath)
 //   node        rootId  coordId  group  name  version  ext  classifier  direct(0|1)  project
 //   edge        rootId  parentCoordId  childCoordId
 //   file        rootId  coordId  path                    (--with-files only)
@@ -65,6 +66,7 @@ export type RawRoot = {
   rootId: string
   projectKey: string
   prod: boolean
+  onClasspath: boolean
   target?: RawTarget | undefined
   nodes: Map<string, RawNode>
   edges: Array<[string, string]>
@@ -191,6 +193,7 @@ export function parseRecords(text: string): ParsedRecords {
         rootId: id,
         projectKey: '',
         prod: false,
+        onClasspath: true,
         nodes: new Map(),
         edges: [],
       }
@@ -345,6 +348,10 @@ export function parseRecords(text: string): ParsedRecords {
         if (parent !== child) {
           root(f[1] ?? '').edges.push([parent, child])
         }
+        break
+      }
+      case 'noClasspath': {
+        root(f[1] ?? '').onClasspath = false
         break
       }
       case 'unfetched': {

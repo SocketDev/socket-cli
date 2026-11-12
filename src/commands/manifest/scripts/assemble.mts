@@ -55,12 +55,15 @@ type MergedNode = {
 
 type SubprojectGraph = {
   children: Map<string, Set<string>>
+  // The nodes of the roots on a classpath: reachability analyses only these.
+  classpath: Set<string>
   direct: Set<string>
 }
 
 type PerRoot = {
   projectKey: string
   prod: boolean
+  onClasspath: boolean
   target?: RawTarget | undefined
   nodes: Map<string, RootNode>
 }
@@ -177,6 +180,7 @@ function buildPerRoot(parsed: ParsedRecords): Map<string, PerRoot> {
     out.set(rootId, {
       projectKey: r.projectKey,
       prod: r.prod,
+      onClasspath: r.onClasspath,
       target: r.target,
       nodes,
     })
@@ -259,13 +263,16 @@ function buildSubprojectGraphs(
   perRoot: Map<string, PerRoot>,
 ): Map<string, SubprojectGraph> {
   const graphs = new Map<string, SubprojectGraph>()
-  for (const { nodes, projectKey } of perRoot.values()) {
+  for (const { nodes, onClasspath, projectKey } of perRoot.values()) {
     let g = graphs.get(projectKey)
     if (!g) {
-      g = { children: new Map(), direct: new Set() }
+      g = { children: new Map(), classpath: new Set(), direct: new Set() }
       graphs.set(projectKey, g)
     }
     for (const [coordId, node] of nodes) {
+      if (onClasspath) {
+        g.classpath.add(coordId)
+      }
       let set = g.children.get(coordId)
       if (!set) {
         set = new Set()
@@ -480,8 +487,10 @@ function buildArtifactPaths(
   }
   return {
     pathsById,
-    classpathByProject: byProject(projects, graphs, g => g.children.keys()),
-    directDependenciesByProject: byProject(projects, graphs, g => g.direct),
+    classpathByProject: byProject(projects, graphs, g => g.classpath),
+    directDependenciesByProject: byProject(projects, graphs, g =>
+      [...g.direct].filter(id => g.classpath.has(id)),
+    ),
   }
 }
 

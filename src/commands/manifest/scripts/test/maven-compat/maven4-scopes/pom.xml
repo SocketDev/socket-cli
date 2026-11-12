@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.1.0" root="true">
+  <modelVersion>4.1.0</modelVersion>
+  <groupId>demo</groupId>
+  <artifactId>maven4-scopes</artifactId>
+  <version>1.0</version>
+  <properties>
+    <stub.repo.url>file://${maven.multiModuleProjectDirectory}/localrepo</stub.repo.url>
+  </properties>
+  <repositories>
+    <repository>
+      <id>socket-stubs</id>
+      <url>${stub.repo.url}</url>
+      <releases>
+        <enabled>true</enabled>
+        <checksumPolicy>ignore</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  <!-- Maven 4's own scopes: each on a compile or test path only, or, for none, on no path. -->
+  <dependencies>
+    <dependency>
+      <groupId>demo.scopes</groupId>
+      <artifactId>compile-only</artifactId>
+      <version>1.0</version>
+      <scope>compile-only</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.scopes</groupId>
+      <artifactId>test-only</artifactId>
+      <version>1.0</version>
+      <scope>test-only</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.scopes</groupId>
+      <artifactId>test-runtime</artifactId>
+      <version>1.0</version>
+      <scope>test-runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.scopes</groupId>
+      <artifactId>lib</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.scopes</groupId>
+      <artifactId>none</artifactId>
+      <version>1.0</version>
+      <scope>none</scope>
+    </dependency>
+  </dependencies>
+</project>
