@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo</groupId>
+  <artifactId>extension-type</artifactId>
+  <version>1.0</version>
+  <properties>
+    <stub.repo.url>file://${maven.multiModuleProjectDirectory}/localrepo</stub.repo.url>
+  </properties>
+  <repositories>
+    <repository>
+      <id>socket-stubs</id>
+      <url>${stub.repo.url}</url>
+      <releases>
+        <enabled>true</enabled>
+        <checksumPolicy>ignore</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>socket-stubs</id>
+      <url>${stub.repo.url}</url>
+      <releases>
+        <enabled>true</enabled>
+        <checksumPolicy>ignore</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+  <!-- types-ext defines type fat: a jar that includes its dependencies, so Maven does not resolve
+       demo.ext:inner below demo.ext:fat. -->
+  <dependencies>
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>fat</artifactId>
+      <version>1.0</version>
+      <type>fat</type>
+    </dependency>
+  </dependencies>
+  <build>
+    <extensions>
+      <extension>
+        <groupId>demo.ext</groupId>
+        <artifactId>types-ext</artifactId>
+        <version>1.0</version>
+      </extension>
+    </extensions>
+  </build>
+</project>
