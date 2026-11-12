@@ -55,6 +55,19 @@ export interface StaleSnapshotDependency {
   readonly snapshots: readonly string[]
 }
 
+export async function readPinnedVersion(
+  dependency: SnapshotDependency,
+): Promise<string> {
+  const source = await fs.readFile(path.join(ROOT, dependency.source), 'utf8')
+  const version = dependency.versionPattern.exec(source)?.[1]
+  if (!version) {
+    throw new Error(
+      `Could not read ${dependency.packageName} version from ${dependency.source}`,
+    )
+  }
+  return version
+}
+
 export async function findStaleSnapshotDependencies(): Promise<
   StaleSnapshotDependency[]
 > {
@@ -63,16 +76,7 @@ export async function findStaleSnapshotDependencies(): Promise<
       string,
       SnapshotDependency,
     ]>).map(async ([name, dependency]) => {
-      const source = await fs.readFile(
-        path.join(ROOT, dependency.source),
-        'utf8',
-      )
-      const version = dependency.versionPattern.exec(source)?.[1]
-      if (!version) {
-        throw new Error(
-          `Could not read ${dependency.packageName} version from ${dependency.source}`,
-        )
-      }
+      const version = await readPinnedVersion(dependency)
       const versionSnapshots = dependency.versionSnapshots ?? dependency.snapshots
       const snapshots = await Promise.all(
         versionSnapshots.map(async snapshot => ({
