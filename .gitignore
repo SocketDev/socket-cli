@@ -133,6 +133,7 @@
 !/src/commands/manifest/scripts/test/maven-compat/exclude-base/app/
 !/src/commands/manifest/scripts/test/maven-compat/exclude-base/app/core/
 !/src/commands/manifest/scripts/test/maven-compat/exclude-base/shared/
+!/src/commands/manifest/scripts/test/maven-compat/excluded-scope/
 !/src/commands/manifest/scripts/test/maven-compat/graph-failure/
 !/src/commands/manifest/scripts/test/maven-compat/project/
 !/src/commands/manifest/scripts/test/maven-compat/project/app/
@@ -760,6 +761,7 @@
 !/src/commands/manifest/scripts/test/maven-compat/exclude-base/app/core/pom.xml
 !/src/commands/manifest/scripts/test/maven-compat/exclude-base/app/pom.xml
 !/src/commands/manifest/scripts/test/maven-compat/exclude-base/shared/pom.xml
+!/src/commands/manifest/scripts/test/maven-compat/excluded-scope/pom.xml
 !/src/commands/manifest/scripts/test/maven-compat/graph-failure/pom.xml
 !/src/commands/manifest/scripts/test/maven-compat/project/app/pom.xml
 !/src/commands/manifest/scripts/test/maven-compat/project/app/src/main/java/demo/App.java
@@ -774,6 +776,7 @@
 !/src/commands/manifest/scripts/test/maven-compat/smoke-test-descriptor-failure.sh
 !/src/commands/manifest/scripts/test/maven-compat/smoke-test-duplicate-failure.sh
 !/src/commands/manifest/scripts/test/maven-compat/smoke-test-exclude-base.sh
+!/src/commands/manifest/scripts/test/maven-compat/smoke-test-excluded-scope.sh
 !/src/commands/manifest/scripts/test/maven-compat/smoke-test-graph-failure.sh
 !/src/commands/manifest/scripts/test/maven-compat/smoke-test-repo-inheritance.sh
 !/src/commands/manifest/scripts/test/maven-compat/smoke-test-workspaces.sh

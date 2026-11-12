@@ -317,6 +317,7 @@ public final class SocketFactsRecordsEngine {
       String id = visit(child, edges, scopes, reactorGavs, unresolved, opts, nodes);
       if (id != null) directIds.add(id);
     }
+    dropSkipped(nodes, directIds);
     for (String id : unfetched) {
       Node node = nodes.get(id);
       if (node != null) node.unfetched = true;
@@ -420,7 +421,6 @@ public final class SocketFactsRecordsEngine {
     Artifact artifact = dn.getArtifact();
     if (dep == null || artifact == null) return null;
     String scope = scopeOf(dep);
-    if (!scopes.passes(scope)) return null;
 
     String gav = gav(artifact);
     if (unresolved.contains(gav)) return null;
@@ -436,6 +436,7 @@ public final class SocketFactsRecordsEngine {
     // assembler merges them into its component.
     Node node = new Node(id, artifact.getGroupId(), artifact.getArtifactId(),
         type == null ? "" : type, classifier == null ? "" : classifier, artifact.getBaseVersion(), internal ? gav : "");
+    node.skipped = !scopes.passes(scope);
     node.prod = scopes.prod(scope);
     node.onClasspath = scopes.onClasspath(scope);
     scopes.scanned(scope);
@@ -453,6 +454,51 @@ public final class SocketFactsRecordsEngine {
       if (childId != null) node.children.add(childId);
     }
     return id;
+  }
+
+  // A node is kept by its own scope: Maven walks past the nodes its scope filter drops (maven-core
+  // RepositoryUtils.toArtifacts). A kept node reached only through dropped ones, as a managed scope
+  // allows (maven-resolver ConflictResolver.deriveScope; ClassicConflictResolver in 2.x), is linked to
+  // its nearest kept ancestors, the module making it direct.
+  private static void dropSkipped(Map<String, Node> nodes, Set<String> directIds) {
+    if (nodes.values().stream().noneMatch(n -> n.skipped)) return;
+    Map<String, Set<String>> parents = new HashMap<>();
+    for (Node n : nodes.values()) {
+      for (String child : n.children) parents.computeIfAbsent(child, k -> new HashSet<>()).add(n.id);
+    }
+    Set<String> reached = new HashSet<>();
+    Deque<String> queue = new ArrayDeque<>();
+    for (String id : directIds) {
+      if (!nodes.get(id).skipped && reached.add(id)) queue.add(id);
+    }
+    while (!queue.isEmpty()) {
+      for (String child : nodes.get(queue.poll()).children) {
+        if (!nodes.get(child).skipped && reached.add(child)) queue.add(child);
+      }
+    }
+    for (Node orphan : nodes.values()) {
+      if (orphan.skipped || reached.contains(orphan.id)) continue;
+      Set<String> seen = new HashSet<>();
+      Deque<String> up = new ArrayDeque<>();
+      for (String parent : parents.getOrDefault(orphan.id, Collections.emptySet())) {
+        if (nodes.get(parent).skipped && seen.add(parent)) up.add(parent);
+      }
+      while (!up.isEmpty()) {
+        String skipped = up.poll();
+        if (directIds.contains(skipped)) directIds.add(orphan.id);
+        for (String parent : parents.getOrDefault(skipped, Collections.emptySet())) {
+          Node node = nodes.get(parent);
+          if (!node.skipped) {
+            if (!parent.equals(orphan.id)) node.children.add(orphan.id);
+          } else if (seen.add(parent)) {
+            up.add(parent);
+          }
+        }
+      }
+    }
+    directIds.removeIf(id -> nodes.get(id).skipped);
+    nodes.values().removeIf(n -> n.skipped);
+    for (Node n : nodes.values()) n.children.retainAll(nodes.keySet());
   }
 
   private static String externalId(Artifact artifact) {
@@ -1001,6 +1047,8 @@ public final class SocketFactsRecordsEngine {
     final String project;
     final TreeSet<String> children = new TreeSet<>();
     final TreeSet<String> files = new TreeSet<>();
+    // Its scope is filtered out by --include-configs/--exclude-configs.
+    boolean skipped;
     boolean prod;
     boolean onClasspath = true;
     boolean unfetched;

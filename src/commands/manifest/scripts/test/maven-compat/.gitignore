@@ -26,3 +26,5 @@ unknown-scopes/localrepo/
 unknown-scopes/records.tsv
 maven4-scopes/localrepo/
 maven4-scopes/records.tsv
+excluded-scope/localrepo/
+excluded-scope/records.tsv

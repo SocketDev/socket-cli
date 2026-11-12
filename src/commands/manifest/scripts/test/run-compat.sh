@@ -120,6 +120,7 @@ run_maven() {
     bash "$HERE/maven-compat/smoke-test-unsolvable-conflict.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-extension-type.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-scopes.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-excluded-scope.sh" "$dir/bin/mvn" "$jar"
   done
 }
 

@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Maven Socket facts honor artifact types that build extensions define, so they no longer list dependencies Maven doesn't resolve, or fetch files under the wrong extension.
 - Maven Socket facts no longer drop dependencies whose scope Maven 3 doesn't define, such as Maven 4's `compile-only` or `none`.
+- Maven Socket facts with `--exclude-configs` or `--include-configs` keep dependencies Maven ships even when they sit below a skipped dependency.
 
 ## [1.15.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.15.0) - 2026-11-12
 
