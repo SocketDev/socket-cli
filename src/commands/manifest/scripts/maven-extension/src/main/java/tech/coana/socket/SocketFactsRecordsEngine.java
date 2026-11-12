@@ -9,9 +9,13 @@ import org.apache.maven.project.DependencyResolutionRequest;
 import org.apache.maven.project.DependencyResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositoryException;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RequestTrace;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.DependencyGraphTransformationContext;
+import org.eclipse.aether.collection.DependencyGraphTransformer;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.graph.DependencyNode;
@@ -46,8 +50,9 @@ import java.util.regex.Pattern;
 
 /**
  * Emits each reactor module's resolved dependency graph as line-protocol records for the TS assembler
- * (same contract as the Gradle/SBT scripts; no JSON/hashing here). Per module: a prod root
- * (compile/runtime/system) and a dev root (test/provided). A reactor module becomes a component only
+ * (same contract as the Gradle/SBT scripts; no JSON/hashing here). Per module: a test root with the
+ * whole resolution and a compile root with the nodes kept with a prod scope (compile/runtime/system),
+ * both with every resolved edge. A reactor module becomes a component only
  * where another depends on it, by its bare {@code groupId:artifactId:version} id.
  *
  * <p>Resolution goes through {@link ProjectDependenciesResolver} — the same component Maven's own
@@ -79,6 +84,8 @@ public final class SocketFactsRecordsEngine {
   private static final String ARTIFACT_PROPERTY_TYPE = "type";
   // ConflictResolver.NODE_DATA_WINNER, inlined so nothing here needs maven-resolver-util.
   private static final String NODE_DATA_CONFLICT_WINNER = "conflict.winner";
+  // TransformationContextKeys.CONFLICT_IDS, inlined for the same reason.
+  private static final String CONTEXT_CONFLICT_IDS = "conflictIds";
 
   private final ProjectDependenciesResolver dependenciesResolver;
   private final RepositorySystem repositorySystem;
@@ -161,10 +168,8 @@ public final class SocketFactsRecordsEngine {
       if (SocketSupport.isExcludedDir(excludeBase, module.getBasedir().toPath(), excludes)) continue;
       Map<String, Node> nodes = new LinkedHashMap<>();
       Set<String> directIds = new HashSet<>();
-      // Which direct dependencies are prod-scoped: seeds the prod/dev root split (see emitModuleRoots).
-      Set<String> directProdIds = new HashSet<>();
-      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, directProdIds, failures, unscannable);
-      rootIdx = emitModuleRoots(lines, rootIdx, projectKey(module), nodes, directIds, directProdIds);
+      collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, failures, unscannable);
+      rootIdx = emitModuleRoots(lines, rootIdx, projectKey(module), nodes, directIds);
     }
 
     for (Failure f : failures) rec(lines, "failure", f.coord, f.detail, f.config, f.project);
@@ -190,7 +195,6 @@ public final class SocketFactsRecordsEngine {
       Options opts,
       Map<String, Node> nodes,
       Set<String> directIds,
-      Set<String> directProdIds,
       Set<Failure> failures,
       Set<Unscannable> unscannable) {
     String moduleCoord = module.getGroupId() + ":" + module.getArtifactId() + ":" + module.getVersion();
@@ -198,9 +202,11 @@ public final class SocketFactsRecordsEngine {
     DependencyResolutionException thrown = null;
     DependencyFilter resolutionFilter = materializationFilter(opts, passingScopes, reactorGavs, populateGavs);
     observer.reset();
+    EdgeRecorder recorder = new EdgeRecorder(session.getRepositorySession().getDependencyGraphTransformer());
+    DefaultRepositorySystemSession recording = new DefaultRepositorySystemSession(session.getRepositorySession());
+    recording.setDependencyGraphTransformer(recorder);
     try {
-      DependencyResolutionRequest request =
-          new DefaultDependencyResolutionRequest(module, session.getRepositorySession());
+      DependencyResolutionRequest request = new DefaultDependencyResolutionRequest(module, recording);
       request.setResolutionFilter(resolutionFilter);
       result = dependenciesResolver.resolve(request);
     } catch (DependencyResolutionException e) {
@@ -215,7 +221,8 @@ public final class SocketFactsRecordsEngine {
       }
     }
     boolean reported = false;
-    DependencyNode graph = result.getDependencyGraph();
+    // Conflict resolution threw: the result holds only the collected candidates, not a resolved graph.
+    DependencyNode graph = recorder.resolved() ? result.getDependencyGraph() : null;
     List<FailedRequest> collectionFailures = new ArrayList<>();
     for (Exception e : result.getCollectionErrors()) {
       FailedRequest failed = failedRequest(e);
@@ -297,17 +304,11 @@ public final class SocketFactsRecordsEngine {
       log.warn("[socket-facts] could not resolve dependencies for " + moduleCoord + ": " + rootMessage(thrown));
     }
     if (graph == null) return;
+    Map<DependencyNode, List<DependencyNode>> edges = recorder.resolvedEdges(graph);
     Set<String> visited = new HashSet<>();
-    for (DependencyNode child : graph.getChildren()) {
-      String id = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
-      if (id != null) {
-        directIds.add(id);
-        // A direct dependency's effective scope is its declared scope (Aether's scope selector keeps
-        // a depth-1 item's scope), so it reliably seeds the prod/dev split. The node's own `prod` flag
-        // does NOT: conflict resolution can keep a node under a dev parent while its effective scope
-        // is prod (or vice versa).
-        if (isProd(scopeOf(child.getDependency()))) directProdIds.add(id);
-      }
+    for (DependencyNode child : edges.get(graph)) {
+      String id = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
+      if (id != null) directIds.add(id);
     }
     for (String id : unfetched) {
       Node node = nodes.get(id);
@@ -395,6 +396,7 @@ public final class SocketFactsRecordsEngine {
 
   private String visit(
       DependencyNode dn,
+      Map<DependencyNode, List<DependencyNode>> edges,
       Set<String> passingScopes,
       Set<String> reactorGavs,
       Set<String> unresolved,
@@ -404,9 +406,6 @@ public final class SocketFactsRecordsEngine {
     Dependency dep = dn.getDependency();
     Artifact artifact = dn.getArtifact();
     if (dep == null || artifact == null) return null;
-    // A verbose collect — Maven's -X turns one on — keeps conflict-losing nodes in the graph, tagged
-    // with the winner they lost to. Only the winner is on the classpath Maven would build.
-    if (dn.getData().get(NODE_DATA_CONFLICT_WINNER) != null) return null;
     String scope = scopeOf(dep);
     if (!passingScopes.contains(scope)) return null;
 
@@ -419,14 +418,17 @@ public final class SocketFactsRecordsEngine {
     String key = externalId(artifact);
     String id = internal ? SocketSupport.bareId(artifact.getGroupId(), artifact.getArtifactId(), version) : key;
 
-    // One walk per artifact: a shared subtree is already recorded. Keyed by coordinate, as a sibling's jar
-    // and test-jar share a node but Maven can keep the sibling's dependencies under either.
-    if (!visited.add(key)) return id;
-
     Node node = internal
         ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version, gav)
         : upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(),
             type == null ? "" : type, classifier == null ? "" : classifier, version, "");
+    // A sibling's jar and test-jar share a node, each kept with its own scope.
+    if (isProd(scope)) node.prod = true;
+
+    // One walk per artifact: a shared subtree is already recorded. Keyed by coordinate, as a sibling's jar
+    // and test-jar share a node but Maven can keep the sibling's dependencies under either.
+    if (!visited.add(key)) return id;
+
     // Maven wrote each accepted node's resolved file back onto the node; a reactor module reports its
     // own dirs through its `project` record instead of a `file` record.
     if (!internal && opts.withFiles) {
@@ -434,9 +436,10 @@ public final class SocketFactsRecordsEngine {
       if (file != null) node.files.add(file);
     }
 
-    for (DependencyNode child : dn.getChildren()) {
-      String childId = visit(child, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
-      if (childId != null) node.children.add(childId);
+    for (DependencyNode child : edges.get(dn)) {
+      String childId = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
+      // A cycle back onto the node's own artifact, or a sibling's jar and test-jar, which share an id.
+      if (childId != null && !childId.equals(id)) node.children.add(childId);
     }
     return id;
   }
@@ -478,43 +481,19 @@ public final class SocketFactsRecordsEngine {
 
   // ---- emission ----
 
-  // Split a module's resolved nodes into a prod root and a dev root. Membership is decided by which
-  // direct dependency a node is REACHABLE from, not by the node's own effective scope: Maven's
-  // conflict resolution can retain a node under a dev parent while its effective scope is prod (the
-  // retained path came from a test/provided dep, but a removed deeper path had a compile scope, so
-  // Aether's scope selector unions them to compile). Partitioning by scope would put that node in the
-  // prod root while its only parent sits in the dev root, and emitRoot drops the cross-root edge —
-  // leaving the node unreachable and non-direct (the "orphaned component" defect). Reachability also
-  // keeps edges intra-root, because a node reached from a prod direct dependency stays prod.
-  // Empty roots are skipped.
+  // Shaped like Gradle's runtime and test classpaths. An edge from a prod node onto a dev one, such as
+  // onto a dependency the module declares `provided`, lives in the test root only.
   private int emitModuleRoots(
-      List<String> lines, int rootIdx, String projectKey, Map<String, Node> nodes,
-      Set<String> directIds, Set<String> directProdIds) {
-    Set<String> prodReachable = reachable(nodes, directProdIds);
+      List<String> lines, int rootIdx, String projectKey, Map<String, Node> nodes, Set<String> directIds) {
     Map<String, Node> prod = new LinkedHashMap<>();
-    Map<String, Node> dev = new LinkedHashMap<>();
-    for (Node n : nodes.values()) (prodReachable.contains(n.id) ? prod : dev).put(n.id, n);
+    for (Node n : nodes.values()) if (n.prod) prod.put(n.id, n);
     if (!prod.isEmpty()) {
       rootIdx = emitRoot(lines, rootIdx, projectKey, "compile", true, prod, directIds);
     }
-    if (!dev.isEmpty()) {
-      rootIdx = emitRoot(lines, rootIdx, projectKey, "test", false, dev, directIds);
+    if (!nodes.isEmpty()) {
+      rootIdx = emitRoot(lines, rootIdx, projectKey, "test", false, nodes, directIds);
     }
     return rootIdx;
-  }
-
-  // Every node id reachable from `seeds` by following retained child edges.
-  private static Set<String> reachable(Map<String, Node> nodes, Set<String> seeds) {
-    Set<String> seen = new HashSet<>();
-    Deque<String> stack = new ArrayDeque<>(seeds);
-    while (!stack.isEmpty()) {
-      String id = stack.pop();
-      if (!seen.add(id)) continue;
-      Node node = nodes.get(id);
-      if (node == null) continue;
-      for (String child : node.children) stack.push(child);
-    }
-    return seen;
   }
 
   private int emitRoot(
@@ -873,6 +852,90 @@ public final class SocketFactsRecordsEngine {
     }
   }
 
+  // Records each node's children before conflict resolution removes the losers: every resolved edge,
+  // including one onto a dependency Maven kept elsewhere, possibly at another version.
+  private static final class EdgeRecorder implements DependencyGraphTransformer {
+    private final DependencyGraphTransformer delegate;
+    private Map<DependencyNode, List<DependencyNode>> collected;
+    private Map<?, ?> conflictIds;
+    private boolean resolved;
+
+    EdgeRecorder(DependencyGraphTransformer delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public DependencyNode transformGraph(DependencyNode root, DependencyGraphTransformationContext context)
+        throws RepositoryException {
+      // Resolver 2 may collect again when a DependencyCollectionChecker asks; the last run is the result.
+      resolved = false;
+      Map<DependencyNode, List<DependencyNode>> children = new IdentityHashMap<>();
+      // The collector gives nodes of one artifact and context one shared child list.
+      Map<List<DependencyNode>, List<DependencyNode>> copies = new IdentityHashMap<>();
+      Deque<DependencyNode> todo = new ArrayDeque<>();
+      todo.push(root);
+      while (!todo.isEmpty()) {
+        DependencyNode n = todo.pop();
+        if (children.containsKey(n)) continue;
+        List<DependencyNode> copy = copies.get(n.getChildren());
+        if (copy == null) {
+          copy = new ArrayList<>(n.getChildren());
+          copies.put(n.getChildren(), copy);
+          todo.addAll(copy);
+        }
+        children.put(n, copy);
+      }
+      DependencyNode transformed = delegate.transformGraph(root, context);
+      collected = children;
+      conflictIds = (Map<?, ?>) context.get(CONTEXT_CONFLICT_IDS);
+      resolved = true;
+      return transformed;
+    }
+
+    /** Whether Maven's conflict resolution completed, so the resolution result holds its graph. */
+    boolean resolved() {
+      return resolved;
+    }
+
+    /**
+     * The root and each node Maven kept, mapped to its children by every resolved edge, a child that
+     * lost its conflict replaced by the node kept for its conflict id. Releases the recorded graph.
+     */
+    Map<DependencyNode, List<DependencyNode>> resolvedEdges(DependencyNode graph) {
+      if (conflictIds == null) throw new IllegalStateException("Maven's graph transformer assigned no conflict ids");
+      Set<DependencyNode> classpath = onClasspath(graph);
+      Map<Object, DependencyNode> kept = new HashMap<>();
+      for (DependencyNode n : classpath) {
+        if (n == graph) continue;
+        DependencyNode other = kept.put(conflictId(n), n);
+        if (other != null) {
+          throw new IllegalStateException("Maven kept two nodes for one conflict: " + other + " and " + n);
+        }
+      }
+      Map<DependencyNode, List<DependencyNode>> edges = new IdentityHashMap<>();
+      for (DependencyNode parent : classpath) {
+        List<DependencyNode> children = collected.get(parent);
+        if (children == null) throw new IllegalStateException(parent + " was kept but never collected");
+        List<DependencyNode> resolved = new ArrayList<>();
+        for (DependencyNode child : children) {
+          // None kept: the resolved graph has no such dependency, so neither has the edge.
+          DependencyNode winner = kept.get(conflictId(child));
+          if (winner != null) resolved.add(winner);
+        }
+        edges.put(parent, resolved);
+      }
+      collected = null;
+      conflictIds = null;
+      return edges;
+    }
+
+    private Object conflictId(DependencyNode n) {
+      Object id = conflictIds.get(n);
+      if (id == null) throw new IllegalStateException("Maven's graph transformer assigned " + n + " no conflict id");
+      return id;
+    }
+  }
+
   private static final class Node {
     final String id;
     final String groupId;
@@ -884,6 +947,7 @@ public final class SocketFactsRecordsEngine {
     final String project;
     final TreeSet<String> children = new TreeSet<>();
     final TreeSet<String> files = new TreeSet<>();
+    boolean prod;
     boolean unfetched;
 
     Node(String id, String groupId, String artifactId, String type, String classifier, String version, String project) {

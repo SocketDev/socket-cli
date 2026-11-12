@@ -13,5 +13,16 @@
       <artifactId>lib</artifactId>
       <version>1.0</version>
     </dependency>
+    <!-- med-io asks for med-util 2.0; Maven mediates it to the 1.0 declared here. -->
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>med-util</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>med-io</artifactId>
+      <version>1.0</version>
+    </dependency>
   </dependencies>
 </project>

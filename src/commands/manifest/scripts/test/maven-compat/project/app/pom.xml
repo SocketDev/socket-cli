@@ -31,10 +31,9 @@
       <scope>test</scope>
     </dependency>
     <!-- Scope-conflict pair: both pull demo.ext:shared at the same depth. Because the test
-         dep is declared first, Maven keeps shared under the test parent but unions the scopes to
-         compile, so shared's effective scope is prod while its only retained parent is dev. A
-         scope-based prod/dev split would strand shared in the prod root with no parent edge (an
-         unreachable, non-direct component); the reachability split keeps it with its parent. -->
+         dep is declared first, Maven keeps shared under the test parent but selects compile, the
+         scope conflict-prod's path gives it, so shared is prod and reached through
+         conflict-prod's edge. -->
     <dependency>
       <groupId>demo.ext</groupId>
       <artifactId>conflict-test</artifactId>
@@ -44,6 +43,29 @@
     <dependency>
       <groupId>demo.ext</groupId>
       <artifactId>conflict-prod</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <!-- dup-io depends on dup-util, which Maven keeps as this direct dependency. -->
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>dup-util</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>dup-io</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <!-- container-lib (compile) depends on container-api, which Maven keeps as provided. -->
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>container-api</artifactId>
+      <version>1.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>container-lib</artifactId>
       <version>1.0</version>
     </dependency>
     <dependency>

@@ -16,3 +16,6 @@ graph-failure/target/
 descriptor-failure/records.tsv
 descriptor-failure/target/
 descriptor-failure/*/target/
+unsolvable-conflict/records.tsv
+unsolvable-conflict/target/
+unsolvable-conflict/localrepo/
