@@ -19,3 +19,6 @@ descriptor-failure/*/target/
 unsolvable-conflict/records.tsv
 unsolvable-conflict/target/
 unsolvable-conflict/localrepo/
+extension-type/localrepo/
+extension-type/records.tsv
+extension-type/target/
