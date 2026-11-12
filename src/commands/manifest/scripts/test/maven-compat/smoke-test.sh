@@ -10,8 +10,8 @@
 #  - records every resolved edge, pointing at the node Maven kept: onto a direct dependency, onto a
 #    mediated version, and from a prod node onto a provided one;
 #  - every component is reachable from a direct dependency of its own root (no orphaned components);
-#  - keeps the dependencies Maven leaves only under a sibling module's test-jar (app reaches
-#    demo.ext:libdep under lib's test-jar node, after lib's jar node through mid);
+#  - keeps a dependency only a sibling module's test-jar brings (mid excludes demo.ext:libdep from
+#    lib, and app reaches lib's jar through mid before lib's test-jar);
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).
 #

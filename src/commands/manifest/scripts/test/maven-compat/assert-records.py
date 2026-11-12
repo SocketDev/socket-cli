@@ -70,39 +70,45 @@ elif not direct.get(lib): errors.append("internal module demo:lib not marked dir
 def edge_roots(parent, child):
     return edges.get((parent, child), set())
 
+def edge_pair(parent, child):
+    """Both coordinates, or None after reporting the missing ones."""
+    found = (coord(parent), coord(child))
+    missing = [p for p, c in zip((parent, child), found) if not c]
+    if missing:
+        errors.append(f"missing {', '.join(m.rstrip(':') for m in missing)}")
+        return None
+    return found
+
 # Scope conflict: Maven keeps demo.ext:shared under the test parent but selects compile, the
 # scope conflict-prod's path gives it, so it is on the runtime classpath. Its edge from
 # conflict-prod, onto the copy Maven kept under the test parent, keeps it reachable in the prod root.
-shared = coord('demo.ext:shared:jar:')
-conflict_prod = coord('demo.ext:conflict-prod:jar:')
-if not shared: errors.append("missing scope-conflict dep demo.ext:shared")
-elif not in_prod(shared): errors.append("scope-conflict demo.ext:shared not in a prod root")
-elif not any(roots.get(rid) for rid in edge_roots(conflict_prod, shared)):
-    errors.append("edge demo.ext:conflict-prod -> demo.ext:shared missing from a prod root")
+pair = edge_pair('demo.ext:conflict-prod:jar:', 'demo.ext:shared:jar:')
+if pair:
+    if not in_prod(pair[1]): errors.append("scope-conflict demo.ext:shared not in a prod root")
+    elif not any(roots.get(rid) for rid in edge_roots(*pair)):
+        errors.append("edge demo.ext:conflict-prod -> demo.ext:shared missing from a prod root")
 
 # An edge onto a dependency Maven kept elsewhere: dup-io's dup-util is the direct one.
-dup_io, dup_util = coord('demo.ext:dup-io:jar:'), coord('demo.ext:dup-util:jar:')
-if not dup_io or not dup_util: errors.append("missing demo.ext:dup-io or demo.ext:dup-util")
-elif not edge_roots(dup_io, dup_util): errors.append("edge demo.ext:dup-io -> demo.ext:dup-util missing")
+pair = edge_pair('demo.ext:dup-io:jar:', 'demo.ext:dup-util:jar:')
+if pair and not edge_roots(*pair): errors.append("edge demo.ext:dup-io -> demo.ext:dup-util missing")
 
-# A mediated edge: med-io asks for another med-util than mid declares, and points at mid's. One
-# med-util coordinate in all, so the version med-io asked for was never emitted.
-med_io, med_util = coord('demo.ext:med-io:jar:'), coord('demo.ext:med-util:jar:')
-if not med_io or not med_util: errors.append("missing demo.ext:med-io or demo.ext:med-util")
-elif not any(root_projects.get(rid) == 'demo:mid:1.0' for rid in edge_roots(med_io, med_util)):
+# A mediated edge: med-io asks for another med-util than mid declares, and points at mid's.
+# coord() fails if the med-util version med-io asked for is also emitted.
+pair = edge_pair('demo.ext:med-io:jar:', 'demo.ext:med-util:jar:')
+if pair and not any(root_projects.get(rid) == 'demo:mid:1.0' for rid in edge_roots(*pair)):
     errors.append("edge demo.ext:med-io -> demo.ext:med-util missing from mid")
 
 # An edge across the prod/dev split: container-lib (compile) onto container-api, which app
 # declares provided. The edge is kept and container-api stays dev.
-container_lib, container_api = coord('demo.ext:container-lib:jar:'), coord('demo.ext:container-api:jar:')
-if not container_lib or not container_api: errors.append("missing demo.ext:container-lib or demo.ext:container-api")
-elif in_prod(container_api): errors.append("provided demo.ext:container-api wrongly in a prod root")
-elif not in_prod(container_lib): errors.append("demo.ext:container-lib not in a prod root")
-elif not edge_roots(container_lib, container_api):
-    errors.append("edge demo.ext:container-lib -> demo.ext:container-api missing")
+pair = edge_pair('demo.ext:container-lib:jar:', 'demo.ext:container-api:jar:')
+if pair:
+    if in_prod(pair[1]): errors.append("provided demo.ext:container-api wrongly in a prod root")
+    elif not in_prod(pair[0]): errors.append("demo.ext:container-lib not in a prod root")
+    elif not edge_roots(*pair):
+        errors.append("edge demo.ext:container-lib -> demo.ext:container-api missing")
 
 if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; internal demo:lib (bare id, direct); {shared} prod; edges onto kept dependencies")
+print(f"PASS: tool=maven; {ext} prod+jar; harness/harness-core dev; internal demo:lib (bare id, direct); demo.ext:shared prod; edges onto kept dependencies")

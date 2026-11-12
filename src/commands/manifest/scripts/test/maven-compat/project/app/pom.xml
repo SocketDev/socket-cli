@@ -9,9 +9,8 @@
   <artifactId>app</artifactId>
   <dependencies>
     <!-- internal reactor modules -> inter-module edges, bare-id components. lib's jar comes in
-         through mid, deeper than lib's test-jar further down, so Maven keeps demo.ext:libdep (with
-         its compile scope) under the test-jar node and none under the jar node, which the walk
-         reaches first. -->
+         through mid, which excludes demo.ext:libdep, so only lib's test-jar further down brings
+         libdep, and the walk reaches the jar first. -->
     <dependency>
       <groupId>demo</groupId>
       <artifactId>mid</artifactId>

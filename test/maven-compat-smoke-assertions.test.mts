@@ -82,6 +82,8 @@ const CONTAINER_API = 'demo.ext:container-api:jar:1.0'
 
 const DEV_NODES = new Set([CONFLICT_TEST, CONTAINER_API, HARNESS, HARNESS_CORE])
 
+type Edge = { child: string; module: string; parent: string }
+
 const EDGES = {
   conflictProdShared: { module: 'app', parent: CONFLICT_PROD, child: SHARED },
   conflictTestShared: { module: 'app', parent: CONFLICT_TEST, child: SHARED },
@@ -93,25 +95,31 @@ const EDGES = {
   dupIoUtil: { module: 'app', parent: DUP_IO, child: DUP_UTIL },
   harnessCore: { module: 'app', parent: HARNESS, child: HARNESS_CORE },
   medIoUtil: { module: 'mid', parent: MED_IO, child: MED_UTIL },
+} satisfies Record<string, Edge>
+
+function rootIdOf(module: string, prodRoot: boolean): string {
+  return `${module}-${prodRoot ? 'compile' : 'test'}`
 }
 
 type RecordsOptions = {
   dev?: string[]
   internalModuleCoord?: string
-  omitEdges?: Array<keyof typeof EDGES>
+  omitEdges?: Edge[]
+  omitNodes?: string[]
   prod?: string[]
 }
 
 /**
  * Records in the extension's root layout: per module, a compile root with the
  * nodes Maven kept with a prod scope and a test root with the whole
- * resolution. `dev`, `prod` and `omitEdges` alter it into outputs the
+ * resolution. `dev`, `prod`, `omitEdges` and `omitNodes` alter it into outputs the
  * assertions must reject.
  */
 function buildRecords({
   dev = [],
   internalModuleCoord = 'demo:lib:1.0',
   omitEdges = [],
+  omitNodes = [],
   prod = [],
 }: RecordsOptions = {}): string {
   // Coordinate and directness of each module's nodes.
@@ -145,18 +153,19 @@ function buildRecords({
   const rows = [['meta', 'maven'].join('\t')]
   for (const { 0: module, 1: nodes } of modules) {
     for (const prodRoot of [true, false]) {
-      const rootId = `${module}-${prodRoot ? 'compile' : 'test'}`
-      const inRoot = (coord: string) => !prodRoot || isProd(coord)
+      const rootId = rootIdOf(module, prodRoot)
+      const inRoot = (coord: string) =>
+        !omitNodes.includes(coord) && (!prodRoot || isProd(coord))
       rows.push(rootRow(rootId, `demo:${module}:1.0`, { prod: prodRoot }))
       for (const { 0: coord, 1: direct } of nodes) {
         if (inRoot(coord)) {
           rows.push(nodeRow(rootId, coord, { direct }))
         }
       }
-      for (const { 0: name, 1: edge } of Object.entries(EDGES)) {
+      for (const edge of Object.values(EDGES)) {
         if (
           edge.module === module &&
-          !omitEdges.includes(name as keyof typeof EDGES) &&
+          !omitEdges.includes(edge) &&
           inRoot(edge.parent) &&
           inRoot(edge.child)
         ) {
@@ -165,8 +174,8 @@ function buildRecords({
       }
     }
   }
-  rows.push(fileRow('app-compile', TOOL, '/repo/tool-1.0.jar'))
-  rows.push(fileRow('app-test', HARNESS, '/repo/harness-1.0.jar'))
+  rows.push(fileRow(rootIdOf('app', true), TOOL, '/repo/tool-1.0.jar'))
+  rows.push(fileRow(rootIdOf('app', false), HARNESS, '/repo/harness-1.0.jar'))
   return `${rows.join('\n')}\n`
 }
 
@@ -222,24 +231,29 @@ describe('maven-compat assert-records.py', () => {
     },
     {
       name: 'a missing edge onto a node kept under another parent',
-      options: { omitEdges: ['conflictProdShared'] },
+      options: { omitEdges: [EDGES.conflictProdShared] },
       message:
         'edge demo.ext:conflict-prod -> demo.ext:shared missing from a prod root',
     },
     {
       name: 'a missing edge onto a direct dependency',
-      options: { omitEdges: ['dupIoUtil'] },
+      options: { omitEdges: [EDGES.dupIoUtil] },
       message: 'edge demo.ext:dup-io -> demo.ext:dup-util missing',
     },
     {
       name: 'a missing mediated edge',
-      options: { omitEdges: ['medIoUtil'] },
+      options: { omitEdges: [EDGES.medIoUtil] },
       message: 'edge demo.ext:med-io -> demo.ext:med-util missing from mid',
     },
     {
       name: 'a missing edge from a prod node onto a provided one',
-      options: { omitEdges: ['containerLibApi'] },
+      options: { omitEdges: [EDGES.containerLibApi] },
       message: 'edge demo.ext:container-lib -> demo.ext:container-api missing',
+    },
+    {
+      name: 'a missing end of an edge',
+      options: { omitNodes: [CONFLICT_PROD] },
+      message: 'missing demo.ext:conflict-prod:jar',
     },
     {
       name: 'a provided dependency in a prod root',

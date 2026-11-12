@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
  * Emits each reactor module's resolved dependency graph as line-protocol records for the TS assembler
  * (same contract as the Gradle/SBT scripts; no JSON/hashing here). Per module: a test root with the
  * whole resolution and a compile root with the nodes kept with a prod scope (compile/runtime/system),
- * both with every resolved edge. A reactor module becomes a component only
+ * each with the resolved edges between its own nodes. A reactor module becomes a component only
  * where another depends on it, by its bare {@code groupId:artifactId:version} id.
  *
  * <p>Resolution goes through {@link ProjectDependenciesResolver} — the same component Maven's own
@@ -215,14 +215,16 @@ public final class SocketFactsRecordsEngine {
       thrown = e;
       result = e.getResult();
       if (result == null) {
-        unscannable.add(new Unscannable(rootMessage(e), moduleCoord));
-        log.warn("[socket-facts] could not resolve dependencies for " + moduleCoord + ": " + rootMessage(e));
+        reportUnscannable(unscannable, moduleCoord, rootMessage(e));
         return;
       }
     }
     boolean reported = false;
-    // Conflict resolution threw: the result holds only the collected candidates, not a resolved graph.
-    DependencyNode graph = recorder.resolved() ? result.getDependencyGraph() : null;
+    // Null when the transformer threw (the result then holds only the collected candidates) or the
+    // recorder never saw the graph Maven returned.
+    Map<DependencyNode, List<DependencyNode>> edges = recorder.edges();
+    DependencyNode returned = result.getDependencyGraph();
+    DependencyNode graph = edges != null && edges.containsKey(returned) ? returned : null;
     List<FailedRequest> collectionFailures = new ArrayList<>();
     for (Exception e : result.getCollectionErrors()) {
       FailedRequest failed = failedRequest(e);
@@ -258,11 +260,10 @@ public final class SocketFactsRecordsEngine {
       if (scopes != null) reported |= addFailures(failures, e.getKey(), e.getValue(), scopes, passingScopes, moduleCoord);
     }
     Set<String> placed = new HashSet<>();
-    Set<DependencyNode> onClasspath = null;
+    Set<DependencyNode> onClasspath = graph == null ? Collections.<DependencyNode>emptySet() : edges.keySet();
     for (FailedRequest failed : collectionFailures) {
       String coord = gav(failed.artifact);
       if (scopesByGav.containsKey(coord)) continue;
-      if (onClasspath == null) onClasspath = onClasspath(graph);
       String scope = absentScope(session, module, failed, onClasspath);
       placed.add(coord);
       if (scope == null) {
@@ -300,11 +301,14 @@ public final class SocketFactsRecordsEngine {
     // Fail closed: a throw whose result named nothing must still surface, or an unresolved dependency
     // would silently leave the reachability analysis blind to whatever that artifact contains.
     if (thrown != null && !reported) {
-      unscannable.add(new Unscannable(rootMessage(thrown), moduleCoord));
-      log.warn("[socket-facts] could not resolve dependencies for " + moduleCoord + ": " + rootMessage(thrown));
+      reportUnscannable(unscannable, moduleCoord, rootMessage(thrown));
+    }
+    // A transformer that threw is a collection error, reported above. Otherwise Maven's graph bypassed
+    // the recorder, and the module's whole graph would vanish unreported.
+    if (graph == null && !recorder.threw()) {
+      reportUnscannable(unscannable, moduleCoord, "dependencies resolved without the socket-facts graph transformer");
     }
     if (graph == null) return;
-    Map<DependencyNode, List<DependencyNode>> edges = recorder.resolvedEdges(graph);
     Set<String> visited = new HashSet<>();
     for (DependencyNode child : edges.get(graph)) {
       String id = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
@@ -386,6 +390,11 @@ public final class SocketFactsRecordsEngine {
     }
   }
 
+  private void reportUnscannable(Set<Unscannable> unscannable, String moduleCoord, String reason) {
+    unscannable.add(new Unscannable(reason, moduleCoord));
+    log.warn("[socket-facts] could not resolve dependencies for " + moduleCoord + ": " + reason);
+  }
+
   private void reportUnfetched(
       Dependency dep, List<Exception> errors, String moduleCoord, Set<Failure> failures, Set<String> unfetched) {
     String id = externalId(dep.getArtifact());
@@ -418,16 +427,16 @@ public final class SocketFactsRecordsEngine {
     String key = externalId(artifact);
     String id = internal ? SocketSupport.bareId(artifact.getGroupId(), artifact.getArtifactId(), version) : key;
 
+    // One walk per artifact: a shared subtree is already recorded. Keyed by coordinate, as a sibling's jar
+    // and test-jar share a node but can collect different children, e.g. when one declaration has exclusions.
+    if (!visited.add(key)) return id;
+
     Node node = internal
         ? upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(), "", "", version, gav)
         : upsert(nodes, id, artifact.getGroupId(), artifact.getArtifactId(),
             type == null ? "" : type, classifier == null ? "" : classifier, version, "");
     // A sibling's jar and test-jar share a node, each kept with its own scope.
     if (isProd(scope)) node.prod = true;
-
-    // One walk per artifact: a shared subtree is already recorded. Keyed by coordinate, as a sibling's jar
-    // and test-jar share a node but Maven can keep the sibling's dependencies under either.
-    if (!visited.add(key)) return id;
 
     // Maven wrote each accepted node's resolved file back onto the node; a reactor module reports its
     // own dirs through its `project` record instead of a `file` record.
@@ -438,8 +447,7 @@ public final class SocketFactsRecordsEngine {
 
     for (DependencyNode child : edges.get(dn)) {
       String childId = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes, visited);
-      // A cycle back onto the node's own artifact, or a sibling's jar and test-jar, which share an id.
-      if (childId != null && !childId.equals(id)) node.children.add(childId);
+      if (childId != null) node.children.add(childId);
     }
     return id;
   }
@@ -856,19 +864,43 @@ public final class SocketFactsRecordsEngine {
   // including one onto a dependency Maven kept elsewhere, possibly at another version.
   private static final class EdgeRecorder implements DependencyGraphTransformer {
     private final DependencyGraphTransformer delegate;
-    private Map<DependencyNode, List<DependencyNode>> collected;
-    private Map<?, ?> conflictIds;
-    private boolean resolved;
+    private Map<DependencyNode, List<DependencyNode>> edges;
+    private boolean threw;
 
     EdgeRecorder(DependencyGraphTransformer delegate) {
       this.delegate = delegate;
     }
 
+    /**
+     * The root and each node Maven kept, mapped to its children by every resolved edge, a child that
+     * lost its conflict replaced by the node kept for its conflict id. Null unless the last
+     * call to the transformer, recording included, completed.
+     */
+    Map<DependencyNode, List<DependencyNode>> edges() {
+      return edges;
+    }
+
+    boolean threw() {
+      return threw;
+    }
+
+    // A RepositoryException is a collection error, so a broken assumption fails this module only.
     @Override
     public DependencyNode transformGraph(DependencyNode root, DependencyGraphTransformationContext context)
         throws RepositoryException {
       // Resolver 2 may collect again when a DependencyCollectionChecker asks; the last run is the result.
-      resolved = false;
+      edges = null;
+      threw = true;
+      Map<DependencyNode, List<DependencyNode>> collected = snapshot(root);
+      DependencyNode transformed = delegate.transformGraph(root, context);
+      Map<?, ?> conflictIds = (Map<?, ?>) context.get(CONTEXT_CONFLICT_IDS);
+      if (conflictIds == null) throw new RepositoryException("Maven's graph transformer assigned no conflict ids");
+      edges = resolvedEdges(transformed, collected, conflictIds);
+      threw = false;
+      return transformed;
+    }
+
+    private static Map<DependencyNode, List<DependencyNode>> snapshot(DependencyNode root) {
       Map<DependencyNode, List<DependencyNode>> children = new IdentityHashMap<>();
       // The collector gives nodes of one artifact and context one shared child list.
       Map<List<DependencyNode>, List<DependencyNode>> copies = new IdentityHashMap<>();
@@ -885,53 +917,37 @@ public final class SocketFactsRecordsEngine {
         }
         children.put(n, copy);
       }
-      DependencyNode transformed = delegate.transformGraph(root, context);
-      collected = children;
-      conflictIds = (Map<?, ?>) context.get(CONTEXT_CONFLICT_IDS);
-      resolved = true;
-      return transformed;
+      return children;
     }
 
-    /** Whether Maven's conflict resolution completed, so the resolution result holds its graph. */
-    boolean resolved() {
-      return resolved;
-    }
-
-    /**
-     * The root and each node Maven kept, mapped to its children by every resolved edge, a child that
-     * lost its conflict replaced by the node kept for its conflict id. Releases the recorded graph.
-     */
-    Map<DependencyNode, List<DependencyNode>> resolvedEdges(DependencyNode graph) {
-      if (conflictIds == null) throw new IllegalStateException("Maven's graph transformer assigned no conflict ids");
+    private static Map<DependencyNode, List<DependencyNode>> resolvedEdges(
+        DependencyNode graph, Map<DependencyNode, List<DependencyNode>> collected, Map<?, ?> conflictIds)
+        throws RepositoryException {
       Set<DependencyNode> classpath = onClasspath(graph);
       Map<Object, DependencyNode> kept = new HashMap<>();
       for (DependencyNode n : classpath) {
         if (n == graph) continue;
-        DependencyNode other = kept.put(conflictId(n), n);
-        if (other != null) {
-          throw new IllegalStateException("Maven kept two nodes for one conflict: " + other + " and " + n);
-        }
+        DependencyNode other = kept.put(conflictId(conflictIds, n), n);
+        if (other != null) throw new RepositoryException("Maven kept two nodes for one conflict: " + other + " and " + n);
       }
       Map<DependencyNode, List<DependencyNode>> edges = new IdentityHashMap<>();
       for (DependencyNode parent : classpath) {
         List<DependencyNode> children = collected.get(parent);
-        if (children == null) throw new IllegalStateException(parent + " was kept but never collected");
+        if (children == null) throw new RepositoryException(parent + " was kept but never collected");
         List<DependencyNode> resolved = new ArrayList<>();
         for (DependencyNode child : children) {
           // None kept: the resolved graph has no such dependency, so neither has the edge.
-          DependencyNode winner = kept.get(conflictId(child));
+          DependencyNode winner = kept.get(conflictId(conflictIds, child));
           if (winner != null) resolved.add(winner);
         }
         edges.put(parent, resolved);
       }
-      collected = null;
-      conflictIds = null;
       return edges;
     }
 
-    private Object conflictId(DependencyNode n) {
+    private static Object conflictId(Map<?, ?> conflictIds, DependencyNode n) throws RepositoryException {
       Object id = conflictIds.get(n);
-      if (id == null) throw new IllegalStateException("Maven's graph transformer assigned " + n + " no conflict id");
+      if (id == null) throw new RepositoryException("Maven's graph transformer assigned " + n + " no conflict id");
       return id;
     }
   }
