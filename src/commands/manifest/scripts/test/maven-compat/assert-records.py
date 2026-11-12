@@ -23,9 +23,9 @@ for r in rows:
 
 errors = []
 
-# NOTE: the generic "every component is reachable from a direct dependency of its project" invariant
-# lives in ../assert-reachability.py, which smoke-test.sh runs alongside this file. What remains here
-# is Maven-specific: which coordinate lands in which root, and jar materialization.
+# NOTE: smoke-test.sh also assembles the records (../assemble-records.mts), which fails on an
+# orphaned component. What remains here is Maven-specific: which coordinate lands in which root,
+# and jar materialization.
 
 def coord(prefix, fields=None):
     """The one emitted coordId starting with prefix, or None. Keeps assertions version-agnostic.

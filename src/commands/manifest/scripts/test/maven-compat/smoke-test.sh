@@ -10,7 +10,7 @@
 #    sets under a test parent;
 #  - records every resolved edge, pointing at the node Maven kept: onto a direct dependency, onto a
 #    mediated version, and from a prod node onto a provided one;
-#  - every component is reachable from a direct dependency of its own project (no orphaned components);
+#  - its records assemble into facts with no orphaned components;
 #  - keeps a dependency only a sibling module's test-jar brings (mid excludes demo.ext:libdep from
 #    lib, and app reaches lib's jar through mid before lib's test-jar);
 #  - materializes resolved external jars under -Dsocket.withFiles;
@@ -75,7 +75,7 @@ if not any(r[0] == 'node' and r[1] in app and r[2].startswith('demo.ext:libdep:'
     print("FAIL: demo.ext:libdep missing from app"); sys.exit(1)
 print("PASS: demo.ext:libdep in app through lib's test-jar")
 PY
-python3 "$HERE/../assert-reachability.py" --per-project "$RECORDS"
+assemble_records "$RECORDS"
 
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
 # The GAV comes from the records the first run just emitted, so it always matches the fixture pom.
@@ -124,4 +124,4 @@ if errors:
 print("PASS (populateFilesFor scoping): demo.ext:tool materialized, demo.ext:harness skipped")
 PY
 
-python3 "$HERE/../assert-reachability.py" --per-project "$RECORDS"
+assemble_records "$RECORDS"

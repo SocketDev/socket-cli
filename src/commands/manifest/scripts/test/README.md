@@ -8,13 +8,12 @@ workspace-enumeration sibling (`socket-workspaces.init.gradle`,
 against a matrix of build-tool versions, asserting they still emit the
 expected line-protocol records.
 
-Every ecosystem's records are also checked against the shared
-`assert-reachability.py` invariant: within each resolution root, every component
-must be reachable from one of that root's direct dependencies, or the manifest
-consumer reports it as an orphaned component. Maven checks each project instead,
-its roots merged as the assembler merges them, since its compile root holds
-nodes whose parent edge only its test root can hold. It's unit-tested over
-synthetic records in `test/manifest-reachability-assertions.test.mts`.
+The main Gradle, Maven and sbt smoke tests also assemble their records with the
+facts assembler (`assemble-records.mts`). It fails on a root outside every
+project, and on a resolved dependency no direct dependency of its project
+reaches, the manifest consumer's orphaned component. This runs the assembler's
+TypeScript directly, so the suites need Node 22+ and the repo's installed
+dependencies (`pnpm install`).
 
 ## Run locally, on demand
 

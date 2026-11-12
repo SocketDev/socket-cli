@@ -8,7 +8,7 @@
 #  - foo (prod) appears in a prod root, bar (test) only in non-prod roots -> the assembler's dev flag;
 #  - every resolved dependency gets an on-disk jar `file` record under -Psocket.withFiles (incl. the
 #    production dep reached via the legacy `compile` config on old Gradle);
-#  - every component is reachable from a direct dependency of its own root (no orphaned components);
+#  - its records assemble into facts with no orphaned components;
 #  - -Psocket.populateFilesFor scopes materialization to a single GAV;
 #  - a jar that cannot be fetched is reported as a failure, and the other jars still materialize.
 #
@@ -72,7 +72,7 @@ print(f"PASS ({'scoped' if scoped else 'full'}): nodes {sorted(nodes)}; foo prod
       + ("; bar skipped" if scoped else "; bar jar"))
 PY
 
-python3 "$HERE/../assert-reachability.py" "$RECORDS"
+assemble_records "$RECORDS"
 
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
 SCOPE="$HERE/.populate-for.txt"
@@ -98,7 +98,7 @@ if errors:
 print("PASS (populateFilesFor scoping): foo materialized, bar skipped")
 PY
 
-python3 "$HERE/../assert-reachability.py" "$RECORDS"
+assemble_records "$RECORDS"
 
 # Third run: bar's jar is gone from the repository, so it must be reported rather than emitted as
 # resolved with no file.

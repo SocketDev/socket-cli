@@ -123,5 +123,5 @@ if errors:
     sys.exit(1)
 print(f"PASS (failures, withFiles={sys.argv[2]}): every failure reported, no partial or fabricated component")
 PY
-  python3 "$HERE/../assert-reachability.py" "$RECORDS"
+  assemble_records "$RECORDS"
 done

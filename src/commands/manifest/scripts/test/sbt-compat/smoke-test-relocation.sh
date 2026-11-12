@@ -76,4 +76,4 @@ if errors:
 print(f"PASS (relocation): demo.ext:moved direct in core, under core in app (overridden), never under {wrapper}")
 PY
 
-python3 "$HERE/../assert-reachability.py" "$RECORDS"
+assemble_records "$RECORDS"
