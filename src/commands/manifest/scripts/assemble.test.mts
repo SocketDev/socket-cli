@@ -441,6 +441,47 @@ describe('records → assemble → sidecar', () => {
       expect(assemble).not.toThrow()
     }
   })
+  it('keeps the nodes of a root on no classpath in the SBOM but off every classpath', () => {
+    // Maven 4: `none` is declared, and resolved with its subtree, but on no
+    // path. Its child x is also on the classpath through lib.
+    const records = [
+      'meta\tmaven\t4.0.0\t21',
+      'project\ta\tg\ta\t1\ta',
+      'root\tr1\ta\tcompile\t1',
+      'node\tr1\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr1\tg:x:jar:1\tg\tx\t1\tjar\t\t0',
+      'edge\tr1\tg:lib:jar:1\tg:x:jar:1',
+      'root\tr2\ta\tnone\t0',
+      'noClasspath\tr2',
+      'node\tr2\tg:lib:jar:1\tg\tlib\t1\tjar\t\t1',
+      'node\tr2\tg:x:jar:1\tg\tx\t1\tjar\t\t0',
+      'node\tr2\tg:none:jar:1\tg\tnone\t1\tjar\t\t1',
+      'node\tr2\tg:none-dep:jar:1\tg\tnone-dep\t1\tjar\t\t0',
+      'edge\tr2\tg:lib:jar:1\tg:x:jar:1',
+      'edge\tr2\tg:none:jar:1\tg:x:jar:1',
+      'edge\tr2\tg:none:jar:1\tg:none-dep:jar:1',
+    ].join('\n')
+
+    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
+
+    expect(trees(facts)).toEqual({
+      a: [
+        'g:lib:jar:1(g:x:jar:1)',
+        'g:none:jar:1(g:x:jar:1, g:none-dep:jar:1)',
+      ],
+    })
+    expect(facts.components.filter(c => c.dev).map(c => c.id)).toEqual([
+      'g:none-dep:jar:1',
+      'g:none:jar:1',
+    ])
+    expect(artifactPaths.classpathByProject.get('a')).toEqual([
+      'g:lib:jar:1',
+      'g:x:jar:1',
+    ])
+    expect(artifactPaths.directDependenciesByProject.get('a')).toEqual([
+      'g:lib:jar:1',
+    ])
+  })
   it("gives a dependency on a build project that project's id, and marks only it firstParty", () => {
     const records = [
       'meta\tgradle\t8.0\t17',

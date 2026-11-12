@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo</groupId>
+  <artifactId>unknown-scopes</artifactId>
+  <version>1.0</version>
+  <properties>
+    <stub.repo.url>file://${maven.multiModuleProjectDirectory}/localrepo</stub.repo.url>
+  </properties>
+  <repositories>
+    <repository>
+      <id>socket-stubs</id>
+      <url>${stub.repo.url}</url>
+      <releases>
+        <enabled>true</enabled>
+        <checksumPolicy>ignore</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  <!-- Scopes Maven 3 does not know: it warns, and puts each jar on every classpath. -->
+  <dependencies>
+    <dependency>
+      <groupId>demo.scopes</groupId>
+      <artifactId>imported</artifactId>
+      <version>1.0</version>
+      <scope>import</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.scopes</groupId>
+      <artifactId>mistyped</artifactId>
+      <version>1.0</version>
+      <scope>optional</scope>
+    </dependency>
+  </dependencies>
+</project>

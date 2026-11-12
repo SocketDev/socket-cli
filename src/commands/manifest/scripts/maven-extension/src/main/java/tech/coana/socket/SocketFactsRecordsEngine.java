@@ -76,9 +76,6 @@ public final class SocketFactsRecordsEngine {
     public String recordsFile;
   }
 
-  private static final List<String> ALL_SCOPES =
-      Arrays.asList("compile", "provided", "runtime", "system", "test");
-
   // Aether's ArtifactProperties.TYPE: Maven's `type` (jar, test-jar, ...) as opposed to the file
   // extension, carried as an artifact property once a Maven dependency becomes an Aether one.
   private static final String ARTIFACT_PROPERTY_TYPE = "type";
@@ -116,7 +113,7 @@ public final class SocketFactsRecordsEngine {
 
   public void run(MavenSession session, List<MavenProject> reactor, File rootDir, Options opts)
       throws IOException {
-    Set<String> passingScopes = computePassingScopes(opts.includeConfigs, opts.excludeConfigs);
+    Scopes scopes = new Scopes(!maven3ScopeRules, opts.includeConfigs, opts.excludeConfigs);
     // GAVs to materialize under --with-files (null = all). Scopes artifact downloads so reachability
     // doesn't fetch the whole dependency universe. Module src/tgt dirs are emitted regardless (no download).
     Set<String> populateGavs = readPopulateGavs(opts);
@@ -157,8 +154,6 @@ public final class SocketFactsRecordsEngine {
       }
     }
 
-    for (String scope : passingScopes) rec(lines, "scanned", scope);
-
     Set<Failure> failures = new LinkedHashSet<>();
     Set<Unscannable> unscannable = new LinkedHashSet<>();
     int rootIdx = 0;
@@ -171,13 +166,14 @@ public final class SocketFactsRecordsEngine {
       ClassLoader previous = Thread.currentThread().getContextClassLoader();
       if (module.getClassRealm() != null) Thread.currentThread().setContextClassLoader(module.getClassRealm());
       try {
-        collectModule(session, module, passingScopes, reactorGavs, populateGavs, opts, nodes, directIds, failures, unscannable);
+        collectModule(session, module, scopes, reactorGavs, populateGavs, opts, nodes, directIds, failures, unscannable);
       } finally {
         Thread.currentThread().setContextClassLoader(previous);
       }
       rootIdx = emitModuleRoots(lines, rootIdx, projectKey(module), nodes, directIds);
     }
 
+    for (String scope : scopes.scanned()) rec(lines, "scanned", scope);
     for (Failure f : failures) rec(lines, "failure", f.coord, f.detail, f.config, f.project);
     for (Unscannable u : unscannable) rec(lines, "unscannable", "", u.detail, u.project);
 
@@ -197,7 +193,7 @@ public final class SocketFactsRecordsEngine {
   private void collectModule(
       MavenSession session,
       MavenProject module,
-      Set<String> passingScopes,
+      Scopes scopes,
       Set<String> reactorGavs,
       Set<String> populateGavs,
       Options opts,
@@ -208,7 +204,7 @@ public final class SocketFactsRecordsEngine {
     String moduleCoord = module.getGroupId() + ":" + module.getArtifactId() + ":" + module.getVersion();
     DependencyResolutionResult result;
     DependencyResolutionException thrown = null;
-    DependencyFilter resolutionFilter = materializationFilter(opts, passingScopes, reactorGavs, populateGavs);
+    DependencyFilter resolutionFilter = materializationFilter(opts, scopes, reactorGavs, populateGavs);
     observer.reset();
     EdgeRecorder recorder = new EdgeRecorder(session.getRepositorySession().getDependencyGraphTransformer());
     DefaultRepositorySystemSession recording = new DefaultRepositorySystemSession(session.getRepositorySession());
@@ -256,16 +252,16 @@ public final class SocketFactsRecordsEngine {
             ? Collections.<String, Set<String>>emptyMap()
             : scopesByGav(graph);
     for (Map.Entry<String, FailedRequest> e : brokenDescriptors.entrySet()) {
-      Set<String> scopes = scopesByGav.get(e.getKey());
-      if (scopes == null) continue;
+      Set<String> gavScopes = scopesByGav.get(e.getKey());
+      if (gavScopes == null) continue;
       unresolved.add(e.getKey());
-      reported |= addFailures(failures, e.getKey(), e.getValue().detail, scopes, passingScopes, moduleCoord);
+      reported |= addFailures(failures, e.getKey(), e.getValue().detail, gavScopes, scopes, moduleCoord);
     }
     for (Map.Entry<String, String> e : incompleteDescriptors.entrySet()) {
       // A strict descriptor policy also throws for it: already reported above.
       if (brokenDescriptors.containsKey(e.getKey())) continue;
-      Set<String> scopes = scopesByGav.get(e.getKey());
-      if (scopes != null) reported |= addFailures(failures, e.getKey(), e.getValue(), scopes, passingScopes, moduleCoord);
+      Set<String> gavScopes = scopesByGav.get(e.getKey());
+      if (gavScopes != null) reported |= addFailures(failures, e.getKey(), e.getValue(), gavScopes, scopes, moduleCoord);
     }
     Set<String> placed = new HashSet<>();
     Set<DependencyNode> onClasspath = graph == null ? Collections.<DependencyNode>emptySet() : edges.keySet();
@@ -276,7 +272,7 @@ public final class SocketFactsRecordsEngine {
       placed.add(coord);
       if (scope == null) {
         log.debug("[socket-facts] " + coord + " failed but sits on no classpath of " + moduleCoord);
-      } else if (scope.isEmpty() || passingScopes.contains(scope)) {
+      } else if (scope.isEmpty() || scopes.passes(scope)) {
         failures.add(new Failure(coord, failed.detail, scope, moduleCoord));
       }
     }
@@ -288,7 +284,7 @@ public final class SocketFactsRecordsEngine {
         if (scopesByGav.containsKey(e.getKey()) || placed.contains(e.getKey())) continue;
         if (isDirectChild(graph, e.getValue().artifact)) continue;
         String scope = declaredScope(session, module, e.getValue().artifact);
-        if (scope != null && passingScopes.contains(scope)) {
+        if (scope != null && scopes.passes(scope)) {
           failures.add(new Failure(e.getKey(), e.getValue().detail, scope, moduleCoord));
           reported = true;
         }
@@ -318,7 +314,7 @@ public final class SocketFactsRecordsEngine {
     }
     if (graph == null) return;
     for (DependencyNode child : edges.get(graph)) {
-      String id = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes);
+      String id = visit(child, edges, scopes, reactorGavs, unresolved, opts, nodes);
       if (id != null) directIds.add(id);
     }
     for (String id : unfetched) {
@@ -339,7 +335,7 @@ public final class SocketFactsRecordsEngine {
    */
   private static DependencyFilter materializationFilter(
       final Options opts,
-      final Set<String> passingScopes,
+      final Scopes scopes,
       final Set<String> reactorGavs,
       final Set<String> populateGavs) {
     if (!opts.withFiles) {
@@ -356,7 +352,9 @@ public final class SocketFactsRecordsEngine {
         Dependency dep = node == null ? null : node.getDependency();
         Artifact artifact = dep == null ? null : dep.getArtifact();
         if (artifact == null) return false;
-        if (!passingScopes.contains(scopeOf(dep))) return false;
+        // A dependency on no path is never fetched.
+        String scope = scopeOf(dep);
+        if (!scopes.passes(scope) || !scopes.onClasspath(scope)) return false;
         String gav = gav(artifact);
         if (reactorGavs.contains(gav)) return false;
         return populateGavs == null || populateGavs.contains(gav);
@@ -413,7 +411,7 @@ public final class SocketFactsRecordsEngine {
   private String visit(
       DependencyNode dn,
       Map<DependencyNode, List<DependencyNode>> edges,
-      Set<String> passingScopes,
+      Scopes scopes,
       Set<String> reactorGavs,
       Set<String> unresolved,
       Options opts,
@@ -422,7 +420,7 @@ public final class SocketFactsRecordsEngine {
     Artifact artifact = dn.getArtifact();
     if (dep == null || artifact == null) return null;
     String scope = scopeOf(dep);
-    if (!passingScopes.contains(scope)) return null;
+    if (!scopes.passes(scope)) return null;
 
     String gav = gav(artifact);
     if (unresolved.contains(gav)) return null;
@@ -438,7 +436,9 @@ public final class SocketFactsRecordsEngine {
     // assembler merges them into its component.
     Node node = new Node(id, artifact.getGroupId(), artifact.getArtifactId(),
         type == null ? "" : type, classifier == null ? "" : classifier, artifact.getBaseVersion(), internal ? gav : "");
-    node.prod = isProd(scope);
+    node.prod = scopes.prod(scope);
+    node.onClasspath = scopes.onClasspath(scope);
+    scopes.scanned(scope);
     nodes.put(id, node);
 
     // Maven wrote each accepted node's resolved file back onto the node; a reactor module reports its
@@ -449,7 +449,7 @@ public final class SocketFactsRecordsEngine {
     }
 
     for (DependencyNode child : edges.get(dn)) {
-      String childId = visit(child, edges, passingScopes, reactorGavs, unresolved, opts, nodes);
+      String childId = visit(child, edges, scopes, reactorGavs, unresolved, opts, nodes);
       if (childId != null) node.children.add(childId);
     }
     return id;
@@ -475,31 +475,39 @@ public final class SocketFactsRecordsEngine {
     return scope == null || scope.isEmpty() ? "compile" : scope;
   }
 
-  private static boolean isProd(String scope) {
-    return scope.equals("compile") || scope.equals("runtime") || scope.equals("system");
-  }
-
   // ---- emission ----
 
   // Shaped like Gradle's runtime and test classpaths. An edge from a prod node onto a dev one, such as
-  // onto a dependency the module declares `provided`, lives in the test root only.
+  // onto a dependency the module declares `provided`, lives in the test root only. A dependency on no
+  // path lives only in a root off every classpath, which holds the whole resolution.
   private int emitModuleRoots(
       List<String> lines, int rootIdx, String projectKey, Map<String, Node> nodes, Set<String> directIds) {
     Map<String, Node> prod = new LinkedHashMap<>();
-    for (Node n : nodes.values()) if (n.prod) prod.put(n.id, n);
-    if (!prod.isEmpty()) {
-      rootIdx = emitRoot(lines, rootIdx, projectKey, "compile", true, prod, directIds);
+    Map<String, Node> classpath = new LinkedHashMap<>();
+    Map<String, Node> noPath = new LinkedHashMap<>();
+    for (Node n : nodes.values()) {
+      if (n.prod && n.onClasspath) prod.put(n.id, n);
+      if (n.onClasspath) classpath.put(n.id, n);
+      else noPath.put(n.id, n);
     }
-    if (!nodes.isEmpty()) {
-      rootIdx = emitRoot(lines, rootIdx, projectKey, "test", false, nodes, directIds);
+    if (!prod.isEmpty()) {
+      rootIdx = emitRoot(lines, rootIdx, projectKey, "compile", true, true, prod, directIds);
+    }
+    if (!classpath.isEmpty()) {
+      rootIdx = emitRoot(lines, rootIdx, projectKey, "test", false, true, classpath, directIds);
+    }
+    if (!noPath.isEmpty()) {
+      rootIdx = emitRoot(lines, rootIdx, projectKey, "none", false, false, nodes, directIds);
     }
     return rootIdx;
   }
 
   private int emitRoot(
-      List<String> lines, int rootIdx, String projectKey, String config, boolean prod, Map<String, Node> nodeMap, Set<String> directIds) {
+      List<String> lines, int rootIdx, String projectKey, String config, boolean prod, boolean onClasspath,
+      Map<String, Node> nodeMap, Set<String> directIds) {
     String rootId = Integer.toString(rootIdx);
     rec(lines, "root", rootId, projectKey, config, prod ? "1" : "0");
+    if (!onClasspath) rec(lines, "noClasspath", rootId);
     for (Node n : nodeMap.values()) {
       rec(lines, "node", rootId, n.id, n.groupId, n.artifactId, n.version, n.type, n.classifier,
           directIds.contains(n.id) ? "1" : "0", n.project);
@@ -514,16 +522,54 @@ public final class SocketFactsRecordsEngine {
 
   // ---- scopes / module files ----
 
-  private Set<String> computePassingScopes(String includeConfigs, String excludeConfigs) {
-    List<Pattern> includes = SocketSupport.parsePatterns(includeConfigs);
-    List<Pattern> excludes = SocketSupport.parsePatterns(excludeConfigs);
-    Set<String> passing = new TreeSet<>();
-    for (String scope : ALL_SCOPES) {
-      if (matchesAny(excludes, scope)) continue;
-      if (!includes.isEmpty() && !matchesAny(includes, scope)) continue;
-      passing.add(scope);
+  /**
+   * How Maven treats a dependency scope, and which scopes --include-configs/--exclude-configs pass.
+   * Maven 3 knows five scopes and lets any other through every classpath filter, so an unknown scope
+   * (`import`, or a typo, in {@code <dependencies>}) is on every classpath. Maven 4 adds four, which
+   * maven-api-core's DependencyScope and PathScope define; a scope it does not define is treated as
+   * Maven 3 treats it, as Maven 4's default plugins do.
+   */
+  private static final class Scopes {
+    private static final List<String> MAVEN3 = Arrays.asList("compile", "provided", "runtime", "system", "test");
+    private static final List<String> MAVEN4 = Arrays.asList("compile-only", "none", "test-only", "test-runtime");
+    private final boolean maven4;
+    private final List<Pattern> includes;
+    private final List<Pattern> excludes;
+    private final Map<String, Boolean> passing = new HashMap<>();
+    private final Set<String> scanned = new TreeSet<>();
+
+    Scopes(boolean maven4, String includeConfigs, String excludeConfigs) {
+      this.maven4 = maven4;
+      this.includes = SocketSupport.parsePatterns(includeConfigs);
+      this.excludes = SocketSupport.parsePatterns(excludeConfigs);
+      for (String scope : MAVEN3) scanned(scope);
+      if (maven4) for (String scope : MAVEN4) scanned(scope);
     }
-    return passing;
+
+    boolean passes(String scope) {
+      return passing.computeIfAbsent(
+          scope, s -> !matchesAny(excludes, s) && (includes.isEmpty() || matchesAny(includes, s)));
+    }
+
+    // Prod: Maven 4's main runtime path (compile, runtime), system, and any scope Maven 3 does not know.
+    boolean prod(String scope) {
+      if (scope.equals("provided") || scope.equals("test")) return false;
+      return !(maven4 && MAVEN4.contains(scope));
+    }
+
+    // Maven 4's none is in no path scope.
+    boolean onClasspath(String scope) {
+      return !(maven4 && scope.equals("none"));
+    }
+
+    /** Records a scope as scanned if it passes: one Maven defines, or one a resolved graph used. */
+    void scanned(String scope) {
+      if (passes(scope)) scanned.add(scope);
+    }
+
+    Set<String> scanned() {
+      return scanned;
+    }
   }
 
   private static boolean matchesAny(List<Pattern> patterns, String name) {
@@ -671,11 +717,11 @@ public final class SocketFactsRecordsEngine {
   }
 
   private static boolean addFailures(
-      Set<Failure> failures, String coord, String detail, Set<String> scopes, Set<String> passingScopes,
+      Set<Failure> failures, String coord, String detail, Set<String> gavScopes, Scopes scopes,
       String moduleCoord) {
     boolean added = false;
-    for (String scope : scopes) {
-      if (passingScopes.contains(scope)) added |= failures.add(new Failure(coord, detail, scope, moduleCoord));
+    for (String scope : gavScopes) {
+      if (scopes.passes(scope)) added |= failures.add(new Failure(coord, detail, scope, moduleCoord));
     }
     return added;
   }
@@ -956,6 +1002,7 @@ public final class SocketFactsRecordsEngine {
     final TreeSet<String> children = new TreeSet<>();
     final TreeSet<String> files = new TreeSet<>();
     boolean prod;
+    boolean onClasspath = true;
     boolean unfetched;
 
     Node(String id, String groupId, String artifactId, String type, String classifier, String version, String project) {

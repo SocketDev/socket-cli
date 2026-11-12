@@ -101,9 +101,11 @@ export type ComponentFramework = {
 export type ResolvedArtifactPaths = {
   pathsById: Map<string, { sources: string[]; targets?: string[] | undefined }>
   // Component ids on each project's resolved classpath (union over its
-  // configurations), keyed by project id.
+  // configurations), keyed by project id. A component on no classpath, such as
+  // a Maven 4 `none` dependency, is in the SBOM but not here.
   classpathByProject: Map<string, string[]>
-  // Component ids of each project's direct dependencies, keyed by project id.
+  // Component ids of each project's direct dependencies on its classpath, keyed
+  // by project id.
   directDependenciesByProject: Map<string, string[]>
   // dotnet only: the same per target framework.
   frameworksByProject?: Map<string, ProjectFramework[]> | undefined
