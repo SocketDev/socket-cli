@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.15.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.15.0) - 2026-11-12
 
 ### Added
 - `socket fix --package-managers` accepts `UV`, to include or leave out uv projects.
