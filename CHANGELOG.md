@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `socket fix --package-managers` accepts `UV`, to include or leave out uv projects.
 
+### Changed
+- Updated the Coana CLI to v `15.15.0`.
+
 ### Fixed
 - When `dotnet restore` fails in one .NET project, the projects it may have skipped as up to date are no longer reported as not restored.
 - Maven Socket facts now include every dependency edge Maven resolves, as Gradle and sbt facts do, so dependency chains show each path to a package. A dependency Maven puts on the runtime classpath is no longer marked as a dev dependency because Maven kept it under a test or provided dependency.
