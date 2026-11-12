@@ -55,7 +55,19 @@ advance.
 **Values to extract**:
 - `CURRENT_VERSION`: The old Coana CLI version (for PR body)
 
-### Step 3: Update CHANGELOG.md
+### Step 3: Update the native help snapshots
+
+Some native help snapshots show the pinned Coana version, and native CI fails
+until they match the pin. Move them to the new version:
+
+```bash
+node scripts/test/swap-snapshot-version.mts --dep coana --from "$CURRENT_VERSION"
+```
+
+If it reports that a snapshot doesn't show `CURRENT_VERSION` or a row has no
+room, run `pnpm snapshots:update:dep coana` instead.
+
+### Step 4: Update CHANGELOG.md
 
 Do not hand-edit the file. Run the helper, which owns the shape:
 
@@ -93,20 +105,20 @@ if it finds one; hand-editing is what puts one there.)
 - Updated the Coana CLI to v `COANA_VERSION`.
 ```
 
-### Step 4: Create Branch and Commit
+### Step 5: Create Branch and Commit
 
 ```bash
 # Create branch
 git checkout -b "coana-$COANA_VERSION"
 
 # Stage changes
-git add src/constants.mts CHANGELOG.md
+git add src/constants.mts CHANGELOG.md test/native-snapshots
 
 # Commit (skip pre-commit hooks with -n)
 git commit -n -m "upgrading coana to version $COANA_VERSION"
 ```
 
-### Step 5: Push and Create PR
+### Step 6: Push and Create PR
 
 ```bash
 # Push branch
@@ -130,7 +142,8 @@ Replace `CURRENT_VERSION` and `COANA_VERSION` with actual values.
 - Branch: `coana-<VERSION>` pushed to origin
 - PR: Created targeting `v1.x` branch
 - Files modified: `src/constants.mts` (the `COANA_CLI_VERSION` line only),
-  `CHANGELOG.md` (under `## [Unreleased]`)
+  `CHANGELOG.md` (under `## [Unreleased]`), and the Coana help snapshots in
+  `test/native-snapshots/`
 
 Report the PR URL to the user when complete.
 

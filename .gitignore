@@ -42,6 +42,7 @@
 !/scripts/test/terminal-report.mts
 !/scripts/test/snapshots.mts
 !/scripts/test/snapshot-dependencies.mts
+!/scripts/test/swap-snapshot-version.mts
 !/scripts/utils/
 !/shadow-bin/
 !/src/
@@ -253,6 +254,7 @@
 !/test/native-snapshots/**
 !/test/unit/scripts/test/snapshots.test.mts
 !/test/unit/scripts/test/snapshot-dependencies.test.mts
+!/test/unit/scripts/test/swap-snapshot-version.test.mts
 !/test/package-matrix.test.mts
 !/test/fixtures/
 !/test/fixtures/commands/
