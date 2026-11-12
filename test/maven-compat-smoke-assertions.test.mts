@@ -79,8 +79,16 @@ const MED_IO = 'demo.ext:med-io:jar:1.0'
 const MED_UTIL = 'demo.ext:med-util:jar:1.0'
 const CONTAINER_LIB = 'demo.ext:container-lib:jar:1.0'
 const CONTAINER_API = 'demo.ext:container-api:jar:1.0'
+const MGD_TEST = 'demo.ext:mgd-test:jar:1.0'
+const MANAGED = 'demo.ext:managed:jar:1.0'
 
-const DEV_NODES = new Set([CONFLICT_TEST, CONTAINER_API, HARNESS, HARNESS_CORE])
+const DEV_NODES = new Set([
+  CONFLICT_TEST,
+  CONTAINER_API,
+  HARNESS,
+  HARNESS_CORE,
+  MGD_TEST,
+])
 
 type Edge = { child: string; module: string; parent: string }
 
@@ -95,6 +103,7 @@ const EDGES = {
   dupIoUtil: { module: 'app', parent: DUP_IO, child: DUP_UTIL },
   harnessCore: { module: 'app', parent: HARNESS, child: HARNESS_CORE },
   medIoUtil: { module: 'mid', parent: MED_IO, child: MED_UTIL },
+  mgdTestManaged: { module: 'app', parent: MGD_TEST, child: MANAGED },
 } satisfies Record<string, Edge>
 
 function rootIdOf(module: string, prodRoot: boolean): string {
@@ -137,6 +146,8 @@ function buildRecords({
         [DUP_IO, true],
         [CONTAINER_API, true],
         [CONTAINER_LIB, true],
+        [MGD_TEST, true],
+        [MANAGED, false],
         [internalModuleCoord, true],
       ],
     ],
@@ -254,6 +265,21 @@ describe('maven-compat assert-records.py', () => {
       name: 'a missing end of an edge',
       options: { omitNodes: [CONFLICT_PROD] },
       message: 'missing demo.ext:conflict-prod:jar',
+    },
+    {
+      name: 'a test parent of a managed-scope node in a prod root',
+      options: { prod: [MGD_TEST] },
+      message: 'test dep demo.ext:mgd-test wrongly in a prod root',
+    },
+    {
+      name: 'a missing edge onto a managed-scope node',
+      options: { omitEdges: [EDGES.mgdTestManaged] },
+      message: 'edge demo.ext:mgd-test -> demo.ext:managed missing',
+    },
+    {
+      name: 'a managed-scope node left dev',
+      options: { dev: [MANAGED] },
+      message: 'managed-scope demo.ext:managed not in a prod root',
     },
     {
       name: 'a provided dependency in a prod root',

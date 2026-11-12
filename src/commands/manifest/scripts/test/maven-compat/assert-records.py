@@ -23,7 +23,7 @@ for r in rows:
 
 errors = []
 
-# NOTE: the generic "every component is reachable from a direct dependency of its root" invariant
+# NOTE: the generic "every component is reachable from a direct dependency of its project" invariant
 # lives in ../assert-reachability.py, which smoke-test.sh runs alongside this file. What remains here
 # is Maven-specific: which coordinate lands in which root, and jar materialization.
 
@@ -97,6 +97,14 @@ if pair and not edge_roots(*pair): errors.append("edge demo.ext:dup-io -> demo.e
 pair = edge_pair('demo.ext:med-io:jar:', 'demo.ext:med-util:jar:')
 if pair and not any(root_projects.get(rid) == 'demo:mid:1.0' for rid in edge_roots(*pair)):
     errors.append("edge demo.ext:med-io -> demo.ext:med-util missing from mid")
+
+# A managed scope applies to a transitive dependency as it is: demo.ext:managed is compile under
+# its test parent, so it is on the runtime classpath.
+pair = edge_pair('demo.ext:mgd-test:jar:', 'demo.ext:managed:jar:')
+if pair:
+    if in_prod(pair[0]): errors.append("test dep demo.ext:mgd-test wrongly in a prod root")
+    elif not in_prod(pair[1]): errors.append("managed-scope demo.ext:managed not in a prod root")
+    elif not edge_roots(*pair): errors.append("edge demo.ext:mgd-test -> demo.ext:managed missing")
 
 # An edge across the prod/dev split: container-lib (compile) onto container-api, which app
 # declares provided. The edge is kept and container-api stays dev.

@@ -7,6 +7,18 @@
     <version>1.0</version>
   </parent>
   <artifactId>app</artifactId>
+  <!-- A managed scope applies to a transitive dependency as it is, so demo.ext:managed is compile
+       under its test parent, and in the compile root without one. -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>demo.ext</groupId>
+        <artifactId>managed</artifactId>
+        <version>1.0</version>
+        <scope>compile</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <dependencies>
     <!-- internal reactor modules -> inter-module edges, bare-id components. lib's jar comes in
          through mid, which excludes demo.ext:libdep, so only lib's test-jar further down brings
@@ -72,6 +84,12 @@
       <artifactId>lib</artifactId>
       <version>1.0</version>
       <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>demo.ext</groupId>
+      <artifactId>mgd-test</artifactId>
+      <version>1.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
