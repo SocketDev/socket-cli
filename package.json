@@ -1,6 +1,9 @@
 {
   "name": "socket",
-  "version": "1.15.0",
+  "version": "2.1.0-rc.0",
+  "publishConfig": {
+    "tag": "rc-2.1.0"
+  },
   "description": "CLI for Socket.dev",
   "contentPolicy": {
     "class": "dual-use"
@@ -38,16 +41,22 @@
     "build": "pnpm build:dist",
     "build:dist": "pnpm build:dist:src && pnpm build:dist:types",
     "build:dist:src": "run-p -c clean:dist clean:external && dotenvx -q run -f .env.local -- rollup -c .config/rollup.dist.config.mjs",
-    "build:dist:types": "pnpm clean:dist:types && tsgo --project tsconfig.dts.json",
+    "build:dist:types": "pnpm clean:dist:types && tsgo --project .config/tsconfig.dts.json",
     "build:dotnet-tool": "bash src/commands/manifest/scripts/dotnet-tool/build-tool.sh",
     "build:maven-extension": "bash src/commands/manifest/scripts/maven-extension/build-jar.sh",
     "build:sea": "node src/sea/build-sea.mts",
+    "build:package-matrix": "node scripts/build-package-matrix.mts",
+    "test:native": "node scripts/test/native.mts",
+    "test:native:build": "node scripts/test/native.mts --build",
+    "snapshots": "node scripts/test/snapshots.mts",
+    "snapshots:update": "node scripts/test/snapshots.mts --update",
+    "snapshots:update:dep": "node scripts/test/snapshots.mts --update --dep",
     "build:sea:internal:bootstrap": "rollup -c .config/rollup.sea.config.mjs",
     "check": "node scripts/check.mts",
     "check:lint": "dotenvx -q run -f .env.local -- eslint --report-unused-disable-directives .",
     "check:tsc": "run-s check:tsc:*",
     "check:tsc:src": "tsgo",
-    "check:tsc:scripts": "tsgo --project tsconfig.scripts.json",
+    "check:tsc:scripts": "tsgo --project .config/tsconfig.scripts.json",
     "check-ci": "pnpm check:lint",
     "ci:setup-uv": "node scripts/ci/setup-uv.mts",
     "coverage": "run-s coverage:*",
@@ -81,24 +90,28 @@
     "prepare": "dotenvx -q run -f .env.local -- husky",
     "bs": "dotenvx -q run -f .env.local -- pnpm build:dist:src; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
-    "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
-    "test": "pnpm run check --all && run-s test:*",
+    "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.e2e.config.mts",
+    "integration-tests": "node scripts/test/integration.mts",
+    "test": "pnpm run check --all && run-s test:prepare test:unit integration-tests e2e-tests",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
-    "test:unit": "dotenvx -q run -f .env.test -- vitest run",
-    "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --update",
-    "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --coverage",
-    "test-ci": "run-s test:*",
+    "test:unit": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts",
+    "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts --update",
+    "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts --coverage",
+    "test-ci": "run-s test:prepare test:unit integration-tests",
     "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm test:unit:update --",
     "testuf": "dotenvx -q run -f .env.testu -- pnpm test:unit:update --",
     "update": "node scripts/update.mts",
     "release:preflight": "node scripts/release/preflight.mts",
+    "approve:npm": "node scripts/release/approve-npm.mts",
     "check:actions": "node scripts/ci/check-actions.mts"
   },
   "dependencies": {
     "@socketsecurity/socket-patch": "2.0.0",
+    "cross-spawn": "7.0.6",
     "form-data": "4.0.6"
   },
   "devDependencies": {
+    "@actions/cache": "6.3.0",
     "@babel/core": "7.29.6",
     "@babel/plugin-proposal-export-default-from": "7.27.1",
     "@babel/plugin-transform-export-namespace-from": "7.27.1",
@@ -134,8 +147,11 @@
     "@socketsecurity/config": "3.0.1",
     "@socketsecurity/registry": "1.1.17",
     "@socketsecurity/sdk": "4.0.3",
+    "@termless/core": "0.11.0",
+    "@termless/xtermjs": "0.11.0",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
+    "@types/cross-spawn": "6.0.6",
     "@types/js-yaml": "4.0.9",
     "@types/mdast": "4.0.4",
     "@types/micromatch": "4.0.9",
@@ -180,6 +196,7 @@
     "micromatch": "4.0.8",
     "mock-fs": "5.5.0",
     "nock": "14.0.10",
+    "node-pty": "1.2.0-beta.18",
     "npm-package-arg": "13.0.0",
     "npm-run-all2": "8.0.4",
     "open": "10.2.0",
@@ -189,6 +206,7 @@
     "postject": "1.0.0-alpha.6",
     "rollup": "4.50.1",
     "semver": "7.7.2",
+    "svgo": "4.1.0",
     "synp": "1.9.14",
     "tar": "7.5.16",
     "taze": "19.6.0",
@@ -227,6 +245,9 @@
     ]
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "node-pty"
+    ],
     "overrides": {
       "@octokit/graphql": "$@octokit/graphql",
       "@octokit/request-error": "$@octokit/request-error",
@@ -259,6 +280,7 @@
       "isarray": "npm:@socketregistry/isarray@^1.0.7",
       "lodash": "4.17.21",
       "meow": "13.2.0",
+      "minimatch@10.2.6>brace-expansion": "5.0.12",
       "npm-package-arg": "$npm-package-arg",
       "packageurl-js": "npm:@socketregistry/packageurl-js@^1.0.9",
       "path-parse": "npm:@socketregistry/path-parse@^1.0.7",
@@ -295,8 +317,8 @@
       "bresenham@0.0.3": "patches/bresenham@0.0.3.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
       "rollup@4.50.1": "patches/rollup@4.50.1.patch",
-      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch",
-      "@socketsecurity/registry@1.1.17": "patches/@socketsecurity__registry@1.1.17.patch"
+      "@socketsecurity/registry@1.1.17": "patches/@socketsecurity__registry@1.1.17.patch",
+      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch"
     }
   },
   "typeCoverage": {

@@ -1,10 +1,11 @@
 import semver from 'semver'
 
-export const RELEASE_PACKAGES = [
-  'socket',
-  '@socketsecurity/cli',
-  '@socketsecurity/cli-with-sentry',
-] as const
+import { RELEASE_PACKAGES } from './packages.mts'
+import { matchesReleasePolicy } from '../../src/sea/version.mts'
+
+import type { ReleasePolicy } from '../../src/sea/version.mts'
+
+export { RELEASE_PACKAGES }
 
 const REGISTRY_URL = 'https://registry.npmjs.org'
 
@@ -105,6 +106,26 @@ export async function readPublishedVersion(
   )
 }
 
+export async function readPublishedVersions(
+  name: string,
+  fetcher: typeof fetch = fetch,
+): Promise<string[]> {
+  const document = await readRegistryDocument(name, undefined, fetcher)
+  if (!document) {
+    return []
+  }
+  const versions = document['versions']
+  if (!versions || typeof versions !== 'object' || Array.isArray(versions)) {
+    throw new ReleaseRegistryError(
+      'REGISTRY_INVALID_RESPONSE',
+      name,
+      'a missing or invalid versions map',
+      200,
+    )
+  }
+  return Object.keys(versions)
+}
+
 export interface ReleaseRegistryPreflight {
   readonly packages: readonly string[]
   readonly version: string
@@ -113,17 +134,32 @@ export interface ReleaseRegistryPreflight {
 export async function assertReleaseVersionsAvailable(
   version: string,
   fetcher: typeof fetch = fetch,
+  policy?: ReleasePolicy,
 ): Promise<ReleaseRegistryPreflight> {
-  if (semver.valid(version) !== version || semver.prerelease(version)) {
+  const prereleasePolicy =
+    policy?.mode === 'prerelease-only' ? policy : undefined
+  const onPrereleaseMajor =
+    prereleasePolicy !== undefined &&
+    semver.parse(version)?.major ===
+      Number(prereleasePolicy.versionHint.split('.')[0])
+  const allowedVersion = prereleasePolicy
+    ? onPrereleaseMajor
+      ? matchesReleasePolicy(version, prereleasePolicy)
+      : semver.parse(version)?.major === 1 &&
+        semver.valid(version) === version &&
+        !semver.prerelease(version)
+    : semver.valid(version) === version && !semver.prerelease(version)
+  if (!allowedVersion) {
     throw new TypeError(
       '[release] invalid release version.\n' +
         '  Where: release:preflight --version.\n' +
-        '  Saw: a missing or non-release version; wanted an exact stable semver.\n' +
+        `  Saw: ${version}; wanted a version allowed by the release policy.\n` +
         '  Fix: pass --version with the bump step version.',
     )
   }
+  const packages = onPrereleaseMajor ? ['socket'] : [...RELEASE_PACKAGES]
   const results = await Promise.allSettled(
-    RELEASE_PACKAGES.map(async name => {
+    packages.map(async name => {
       const document = await readRegistryDocument(name, version, fetcher)
       if (!document) {
         return
@@ -149,5 +185,5 @@ export async function assertReleaseVersionsAvailable(
       throw result.reason
     }
   }
-  return { packages: [...RELEASE_PACKAGES], version }
+  return { packages, version }
 }

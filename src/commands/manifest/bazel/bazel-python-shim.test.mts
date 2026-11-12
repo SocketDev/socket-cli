@@ -9,10 +9,17 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { findBazelExecutable, getBazelEnvironment } from './bazel-process.mts'
+import {
+  findBazelExecutable,
+  getBazelEnvironment,
+  getBazelEnvironmentValue,
+} from './bazel-process.mts'
 import { provisionPythonShim } from './bazel-python-shim.mts'
+import { isStandaloneSea } from '../../../sea/runtime.mts'
+
+vi.mock('../../../sea/runtime.mts', () => ({ isStandaloneSea: vi.fn() }))
 
 const python = await findBazelExecutable(
   process.platform === 'win32' ? 'python' : 'python3',
@@ -25,6 +32,7 @@ describe('provisionPythonShim', () => {
   const shims: string[] = []
 
   beforeEach(() => {
+    vi.mocked(isStandaloneSea).mockReturnValue(false)
     cwd = mkdtempSync(path.join(os.tmpdir(), 'bazel python '))
   })
 
@@ -120,6 +128,25 @@ describe('provisionPythonShim', () => {
       }
       shims.push(result.shimDir)
       expect(readlinkSync(path.join(result.shimDir, 'python'))).toBe(python)
+    },
+  )
+
+  it.skipIf(!python || process.platform !== 'win32')(
+    'keeps an overridden Windows interpreter beside its runtime files',
+    async () => {
+      if (!python) {
+        throw new Error('Python fixture is unavailable')
+      }
+      vi.mocked(isStandaloneSea).mockReturnValue(true)
+      const env = getBazelEnvironment({
+        SOCKET_CLI_PYTHON_PATH: path.relative(cwd, python),
+        Path: 'existing-path',
+      })
+      const result = await provisionPythonShim(env, cwd)
+      expect(result.shimDir).toBeUndefined()
+      expect(getBazelEnvironmentValue(result.env, 'PATH')).toBe(
+        `${path.dirname(python)}${path.delimiter}existing-path`,
+      )
     },
   )
 })

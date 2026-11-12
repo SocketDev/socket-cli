@@ -6,6 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
+import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import { isStandaloneSea } from '../../sea/runtime.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 
 // Walk up from a pom path to find a `target` directory ancestor and return
@@ -39,22 +41,33 @@ export async function convertSbtToMaven({
 }) {
   // TODO: Implement json/md.
 
+  let selectedBin: string
+  try {
+    selectedBin = resolveBuildToolBin('sbt', cwd, bin, isStandaloneSea())
+  } catch (error) {
+    process.exitCode = 1
+    logger.fail(error instanceof Error ? error.message : String(error))
+    return
+  }
+
   const { spinner } = constants
 
   logger.group('sbt2maven:')
-  logger.info(`- executing: \`${bin}\``)
+  logger.info(`- executing: \`${selectedBin}\``)
   logger.info(`- src dir: \`${cwd}\``)
   logger.groupEnd()
 
   try {
-    spinner.start(`Converting sbt to maven from \`${bin}\` on \`${cwd}\`...`)
+    spinner.start(
+      `Converting sbt to maven from \`${selectedBin}\` on \`${cwd}\`...`,
+    )
 
     // Run sbt with the init script we provide which should yield zero or more
     // pom files. We have to figure out where to store those pom files such that
     // we can upload them and predict them through the GitHub API. We could do a
     // .socket folder. We could do a socket.pom.gz with all the poms, although
     // I'd prefer something plain-text if it is to be committed.
-    const output = await spawn(bin, ['makePom', ...sbtOpts], { cwd })
+    const output = await spawn(selectedBin, ['makePom', ...sbtOpts], { cwd })
 
     spinner.stop()
 

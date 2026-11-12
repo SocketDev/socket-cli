@@ -49,7 +49,7 @@ const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 
 const LAZY_ENV = () => {
   const { env } = process
-  const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
+  const { envAsBoolean, envAsString } = require('@socketsecurity/registry/lib/env')
   return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
@@ -61,6 +61,7 @@ const LAZY_ENV = () => {
     [INLINED_SOCKET_CLI_PUBLISHED_BUILD]: envAsBoolean(
       env[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
     ),
+    [INLINED_SOCKET_CLI_VERSION]: envAsString(env[INLINED_SOCKET_CLI_VERSION]),
     // Flag set to determine if this is the Sentry build.
     [INLINED_SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(
       env[INLINED_SOCKET_CLI_SENTRY_BUILD],
@@ -75,9 +76,15 @@ const lazyBlessedPath = () => path.join(constants.externalPath, 'blessed')
 
 const lazyConfigPath = () => path.join(constants.rootPath, '.config')
 
-const lazyDistPath = () => path.join(constants.rootPath, 'dist')
+const lazyDistPath = () =>
+  process.env.SOCKET_SEA_DIST_DIR
+    ? path.resolve(process.env.SOCKET_SEA_DIST_DIR)
+    : path.join(constants.rootPath, 'dist')
 
-const lazyExternalPath = () => path.join(constants.rootPath, 'external')
+const lazyExternalPath = () =>
+  process.env.SOCKET_SEA_EXTERNAL_DIR
+    ? path.resolve(process.env.SOCKET_SEA_EXTERNAL_DIR)
+    : path.join(constants.rootPath, 'external')
 
 const lazyRootPackageJsonPath = () =>
   path.join(constants.rootPath, 'package.json')

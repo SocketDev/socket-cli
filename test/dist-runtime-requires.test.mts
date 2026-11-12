@@ -18,6 +18,8 @@ const builtinNames = new Set(
     name.startsWith('node:') ? name.slice('node:'.length) : name,
   ),
 )
+// Node 27 adds the SEA-only API, which Node 22 cannot report in builtinModules.
+builtinNames.add('sea')
 
 function isAstNode(value: unknown): value is AstNode {
   return (

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationDir": "../dist/types",
+    "declarationMap": false,
+    "emitDeclarationOnly": true,
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "outDir": "../dist/types",
+    "rootDir": "../src",
+    "sourceMap": false
+  },
+  "include": ["../src/**/*.mts", "../src/**/*.json"],
+  "exclude": ["../test", "../**/*.test.mts"]
+}

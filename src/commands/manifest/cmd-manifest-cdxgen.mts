@@ -1,5 +1,10 @@
+import { existsSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
+import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -9,6 +14,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 import { runCdxgen } from './run-cdxgen.mts'
 import constants, { FLAG_HELP } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { isStandaloneSea } from '../../sea/runtime.mts'
 import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
@@ -292,6 +298,25 @@ async function run(
     return
   }
 
+  // The standalone build must not start cdxgen just to display its help:
+  // cdxgen is an optional payload and can be unavailable for this target.
+  // Keep this local help useful without resolving or installing that payload.
+  if (yargv.help && isStandaloneSea()) {
+    logger.log(`
+Usage
+  socket manifest cdxgen [options] [path]
+
+Options
+  -h, --help                  Show this help
+  -o, --output <file>         Output file (default: socket-cdx.json)
+  -t, --type <type>           npm, nodejs, javascript, js, typescript, ts, or tsx
+  --lifecycle pre-build       Read dependency metadata without running project installs
+
+Generates a CycloneDX SBOM from a root npm package-lock.json v3.
+Only one npm project is supported in this standalone build. Other cdxgen modes are unavailable.`)
+    return
+  }
+
   // Change defaults when not passing the --help flag.
   if (!yargv.help) {
     // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
@@ -315,6 +340,30 @@ async function run(
   process.exitCode = 1
 
   const { spawnPromise } = await runCdxgen(yargv)
+
+  if (isStandaloneSea()) {
+    // The embedded Worker exposes an awaited result. Avoid translating its
+    // synthetic exit event into process.exit(), which can bypass CLI error
+    // formatting and telemetry drain on rejection or cancellation.
+    const result = (await spawnPromise) as unknown as {
+      code: number | null
+      signal: NodeJS.Signals | null
+    }
+    if (result.signal) {
+      process.exitCode = 128 + (os.constants.signals[result.signal] ?? 1)
+    } else {
+      process.exitCode = typeof result.code === 'number' ? result.code : 1
+      if (
+        result.code === 0 &&
+        typeof yargv.output === 'string' &&
+        yargv.output !== '-' &&
+        existsSync(path.resolve(process.cwd(), yargv.output))
+      ) {
+        logger.log(colors.cyanBright(`${yargv.output} created!`))
+      }
+    }
+    return
+  }
 
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {

@@ -7,11 +7,21 @@ import nugetShallow from './fixtures/nuget_shallow.json'
 import pythonDupes from './fixtures/python_dupes.json'
 import pythonShallow from './fixtures/python_shallow.json'
 import rubyShallow from './fixtures/ruby_shallow.json'
-import {
-  generateMarkdownReport,
-  generateTextReport,
-  preProcess,
-} from './output-purls-shallow-score.mts'
+const previousForceColor = process.env['FORCE_COLOR']
+const previousNoColor = process.env['NO_COLOR']
+process.env['FORCE_COLOR'] = '1'
+delete process.env['NO_COLOR']
+const { generateMarkdownReport, generateTextReport, preProcess } = await import(
+  './output-purls-shallow-score.mts'
+)
+if (previousForceColor === undefined) {
+  delete process.env['FORCE_COLOR']
+} else {
+  process.env['FORCE_COLOR'] = previousForceColor
+}
+if (previousNoColor !== undefined) {
+  process.env['NO_COLOR'] = previousNoColor
+}
 
 describe('package score output', async () => {
   describe('npm', () => {

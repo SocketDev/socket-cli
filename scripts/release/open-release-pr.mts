@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * @file Commit the bump that `bump.mts` wrote into the working tree via the
- *   release App and open the release PR into the release line. The
- *   publish-npm workflow runs this in a job with no dependency install, so the
- *   App token never shares a job with third-party code.
+ * @file Commits the files from `prepare.mts` with the release App and opens the
+ *   release PR. This job installs no dependencies, so installed code never
+ *   shares a job with the App token.
  *
  *   Usage:
  *     node scripts/release/open-release-pr.mts --version 1.5.1
@@ -65,7 +64,7 @@ export function assertBumpOnly(changedFiles: readonly string[]): void {
       '[open-release-pr] the bump must change exactly CHANGELOG.md and package.json.\n' +
         "  Where: the working tree after applying the derivation job's patch.\n" +
         `  Saw: ${sorted.join(', ') || '(no changes)'}.\n` +
-        '  Fix: re-dispatch with mode release-pr. If it repeats, inspect bump.mts.',
+        '  Fix: re-dispatch with mode release-pr. If it repeats, inspect prepare.mts.',
     )
   }
 }
@@ -145,7 +144,7 @@ const SCRIPT_META: ScriptMeta = {
     'commits the bump via the release App and opens the release PR into the release line',
   help: `Usage: node scripts/release/open-release-pr.mts --version <version>
 
-  --version <version>  the version bump.mts derived and wrote into the tree
+  --version <version>  the version prepare.mts derived and wrote into the tree
 
   The publish-npm workflow runs this in its release-pr mode, after applying
   the bump to a clean checkout. It needs RELEASE_APP_TOKEN with contents:write

@@ -37,6 +37,7 @@ import {
   getDefaultProxyUrl,
   resolveDefaultApiToken,
 } from './sdk.mts'
+import { isStandaloneSea } from '../sea/runtime.mts'
 
 import type { CResult } from '../types.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
@@ -409,6 +410,30 @@ export async function spawnCoana(
     ...options,
   } as CoanaSpawnOptions
 
+  const localPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+  const standaloneSea = isStandaloneSea()
+  if (standaloneSea && !localPath) {
+    return {
+      ok: false,
+      message: 'Coana is unavailable in the standalone Socket build',
+      cause:
+        'Set SOCKET_CLI_COANA_LOCAL_PATH to a native Coana executable to run Coana from a standalone build.',
+    }
+  }
+  if (
+    standaloneSea &&
+    localPath &&
+    (localPath.endsWith('.js') || localPath.endsWith('.mjs'))
+  ) {
+    return {
+      ok: false,
+      message:
+        'Cannot launch a JavaScript Coana CLI from the standalone Socket build',
+      cause:
+        'SOCKET_CLI_COANA_LOCAL_PATH must name a native Coana executable; the standalone JavaScript Worker adapter is not configured.',
+    }
+  }
+
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
     // Forwarded to the Coana CLI so it can append our product token to its
@@ -448,7 +473,7 @@ export async function spawnCoana(
     ...spawnEnv,
   })
 
-  let scriptPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+  let scriptPath = localPath
   if (!scriptPath) {
     const coanaDirCResult = await getCoanaCliDir(
       coanaVersion || COANA_CLI_VERSION,

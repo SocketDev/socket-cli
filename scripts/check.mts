@@ -150,7 +150,10 @@ export function buildSteps(forwardedArgs: readonly string[]): CheckStep[] {
       runStep('lint', process.execPath, ['scripts/lint.mts', ...forwardedArgs]),
     () => runStep('tsc:src', 'tsgo', []),
     () =>
-      runStep('tsc:scripts', 'tsgo', ['--project', 'tsconfig.scripts.json']),
+      runStep('tsc:scripts', 'tsgo', [
+        '--project',
+        '.config/tsconfig.scripts.json',
+      ]),
   ]
 }
 

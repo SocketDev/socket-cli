@@ -1,7 +1,7 @@
 /**
  * @file Derive the next release version from the Conventional Commits landed
  *   since the last release. Everything here is PURE over its inputs — no git,
- *   no registry, no filesystem — so `bump.mts` collects the facts and this
+ *   no registry, no filesystem — so `prepare.mts` collects the facts and this
  *   module decides the number. That split is what makes the decision unit
  *   testable.
  *
@@ -20,7 +20,28 @@
 
 import semver from 'semver'
 
+import type { ReleasePolicy } from '../../src/sea/version.mts'
+
 export type BumpLevel = 'major' | 'minor' | 'patch'
+
+export function nextPrereleaseVersion(
+  policy: Extract<ReleasePolicy, { mode: 'prerelease-only' }>,
+  knownVersions: readonly string[],
+): string {
+  const prefix = `${policy.versionHint}-${policy.identifier}.`
+  let highest = -1
+  for (let i = 0; i < knownVersions.length; i += 1) {
+    const version = knownVersions[i]!
+    if (!version.startsWith(prefix)) {
+      continue
+    }
+    const sequence = version.slice(prefix.length)
+    if (/^(?:0|[1-9]\d*)$/u.test(sequence)) {
+      highest = Math.max(highest, Number(sequence))
+    }
+  }
+  return `${prefix}${highest + 1}`
+}
 
 export interface ConventionalCommit {
   readonly breaking: boolean
@@ -152,12 +173,31 @@ export function maxReleaseVersion(
   return best
 }
 
+/** Highest published version with the exact configured prerelease prefix. */
+export function maxPrereleaseVersion(
+  versions: readonly string[],
+  prefix: string,
+): string | undefined {
+  let best: string | undefined
+  for (let i = 0; i < versions.length; i += 1) {
+    const version = versions[i]!
+    if (!version.startsWith(prefix) || !semver.valid(version)) {
+      continue
+    }
+    if (!best || semver.gt(version, best)) {
+      best = version
+    }
+  }
+  return best
+}
+
 export function releaseVersionsForLine(
   versions: readonly string[],
   manifestVersion: string,
+  releaseMajor?: number,
 ): string[] {
-  const line = semver.coerce(manifestVersion)
-  if (!line) {
+  const major = releaseMajor ?? semver.coerce(manifestVersion)?.major
+  if (major === undefined) {
     throw new TypeError(
       '[version] cannot identify the release line.\n' +
         '  Where: the root package.json version.\n' +
@@ -165,14 +205,22 @@ export function releaseVersionsForLine(
         '  Fix: restore the release line version in package.json.',
     )
   }
+  if (
+    !Number.isInteger(major) ||
+    major < 0 ||
+    (releaseMajor !== undefined && major < 1)
+  ) {
+    throw new TypeError(`Invalid release major: ${String(major)}`)
+  }
   return versions.filter(version => {
     const parsed = semver.parse(version)
-    return parsed?.major === line.major && parsed.prerelease.length === 0
+    return parsed?.major === major && parsed.prerelease.length === 0
   })
 }
 
 export interface BumpBaseConfig {
   readonly manifestVersion: string
+  readonly releaseMajor?: number | undefined
   readonly publishedVersion?: string | undefined
   // Landed release tags belonging to this major line.
   readonly tagVersions?: readonly string[] | undefined
@@ -186,9 +234,8 @@ export interface BumpBaseConfig {
  * authority has anything to say.
  *
  * The registry's `latest` is a repo-wide signal, not a per-line one, so it only
- * counts when it shares a major with the manifest. That keeps a
- * maintenance branch anchored to its own line even while a newer major owns the
- * dist-tag, and still lets `latest` cover a release whose tag went missing.
+ * counts when it shares the selected release major. That keeps a maintenance
+ * branch anchored to its own line even while a newer major owns the dist-tag.
  */
 export function resolveBumpBase(config: BumpBaseConfig): string {
   const cfg = { __proto__: null, ...config } as BumpBaseConfig
@@ -200,9 +247,12 @@ export function resolveBumpBase(config: BumpBaseConfig): string {
           ...(cfg.publishedVersion ? [cfg.publishedVersion] : []),
         ],
         cfg.manifestVersion,
+        cfg.releaseMajor,
       ),
     ) ??
-    semver.valid(semver.coerce(cfg.manifestVersion) ?? '') ??
+    (cfg.releaseMajor
+      ? `${cfg.releaseMajor}.0.0`
+      : semver.valid(semver.coerce(cfg.manifestVersion) ?? '')) ??
     '0.0.0'
   )
 }
@@ -210,6 +260,7 @@ export function resolveBumpBase(config: BumpBaseConfig): string {
 export interface DeriveNextVersionConfig {
   readonly commits: readonly ConventionalCommit[]
   readonly manifestVersion: string
+  readonly releaseMajor?: number | undefined
   readonly publishedVersion?: string | undefined
   readonly releaseAs?: string | undefined
   readonly reservedVersions?: readonly string[] | undefined
@@ -242,6 +293,7 @@ export function deriveNextVersion(
   const cfg = { __proto__: null, ...config } as DeriveNextVersionConfig
   const base = resolveBumpBase({
     manifestVersion: cfg.manifestVersion,
+    releaseMajor: cfg.releaseMajor,
     publishedVersion: cfg.publishedVersion,
     tagVersions: cfg.tagVersions,
   })
@@ -265,7 +317,11 @@ export function deriveNextVersion(
       ? `derived ${derived} from ${cfg.commits.length} conventional commit(s) since ${base}`
       : `no user-visible commits since ${base} — patch by default`
   const reserved = maxReleaseVersion(
-    releaseVersionsForLine(cfg.reservedVersions ?? [], cfg.manifestVersion),
+    releaseVersionsForLine(
+      cfg.reservedVersions ?? [],
+      cfg.manifestVersion,
+      cfg.releaseMajor,
+    ),
   )
   const candidate = semver.inc(base, level)!
   const version =
