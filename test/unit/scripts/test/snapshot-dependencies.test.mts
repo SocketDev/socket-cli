@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { snapshotDependencyUpdateHint } from '../../../../scripts/test/snapshot-dependencies.mts'
+import {
+  findStaleSnapshotDependencies,
+  snapshotDependencyUpdateHint,
+} from '../../../../scripts/test/snapshot-dependencies.mts'
 
 describe('snapshot dependency hints', () => {
+  it('matches pinned Coana and socket-patch versions in their snapshots', async () => {
+    await expect(findStaleSnapshotDependencies()).resolves.toEqual([])
+  })
+
   it('lists stale files and the focused refresh command', () => {
     expect(
       snapshotDependencyUpdateHint([
