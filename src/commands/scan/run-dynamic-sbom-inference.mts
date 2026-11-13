@@ -7,29 +7,22 @@ import { isFactsOnlyTypes } from '../../utils/coana.mts'
 import { InputError } from '../../utils/errors.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
+import { DSI_SETUP_COMMAND } from '../manifest/run-manifest-facts.mts'
 import {
   PURL_TYPE_BY_TOOL,
   buildToolLabelsFor,
 } from '../manifest/scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
-import {
-  hasSidecarEntries,
-  serializeSidecar,
-} from '../manifest/scripts/sidecar.mts'
 
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { RecursiveManifestOutcome } from '../manifest/generate-recursive-manifests.mts'
-import type {
-  ResolvedPathsSidecar,
-  SidecarAccumulator,
-} from '../manifest/scripts/sidecar.mts'
+import type { SocketFactsContext } from '../manifest/run-manifest-facts.mts'
 
 const DSI_SETTINGS_DOCS_URL =
   'https://github.com/SocketDev/socket-cli/blob/v1.x/docs/dynamic-sbom-inference-settings.md'
 
-// Who consumes the facts: Coana for `fix` and `reach` (which also resolves
-// artifact paths), or only the scan upload.
+// Who consumes the facts: Coana for `fix` and `reach`, or only the scan
+// upload.
 export type FactsConsumer = 'fix' | 'reach' | 'upload'
 
 export type DynamicSbomInferenceResult = {
@@ -39,7 +32,6 @@ export type DynamicSbomInferenceResult = {
   // these types' artifacts only from facts files.
   factsOnlyTypes: FactsOnlyTypes
   factsPaths: string[]
-  resolvedPathsSidecar: ResolvedPathsSidecar | undefined
 }
 
 // Coana takes the discovered ecosystems' artifacts only from facts files, so a
@@ -74,38 +66,28 @@ function checkFactsForCoana(
 }
 
 // Recursively discovers and generates Socket facts for every independent
-// build root of the selected ecosystems under `cwd`, returning the generated
-// facts paths plus the resolved-paths sidecar that reachability forwards to
-// Coana.
+// build root of the selected ecosystems under `cwd`. For `fix` and `reach`,
+// `context.workDir` collects what the Coana run after it reads.
 export async function runDynamicSbomInference({
   consumer,
+  context,
   cwd,
   excludePaths,
   purlTypes,
-  sbtTmpDir,
 }: {
   consumer: FactsConsumer
+  context: SocketFactsContext
   cwd: string
   excludePaths: string[]
   purlTypes: readonly PURL_Type[]
-  // sbt provisions its Scala toolchain under this directory and reach's
-  // artifactPaths point into it, so it must outlive whoever consumes them.
-  // Only meaningful for `reach`.
-  sbtTmpDir: string | undefined
 }): Promise<DynamicSbomInferenceResult> {
-  const withFiles = consumer === 'reach'
   const coanaReadsFacts = consumer === 'fix' || consumer === 'reach'
-  const sidecarAcc: SidecarAccumulator | undefined = coanaReadsFacts
-    ? new Map()
-    : undefined
   const outcomes = await generateRecursiveManifests({
+    context,
     cwd,
     excludePaths,
     purlTypes,
-    sbtTmpDir: withFiles ? sbtTmpDir : undefined,
-    sidecarAcc,
     verbose: false,
-    withFiles,
   })
   const factsOnlyTypes = [
     ...new Set(outcomes.map(o => PURL_TYPE_BY_TOOL[o.ecosystem])),
@@ -147,10 +129,6 @@ export async function runDynamicSbomInference({
     ),
     factsOnlyTypes,
     factsPaths,
-    resolvedPathsSidecar:
-      sidecarAcc && hasSidecarEntries(sidecarAcc)
-        ? serializeSidecar(sidecarAcc)
-        : undefined,
   }
 }
 

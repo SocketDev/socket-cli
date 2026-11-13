@@ -1,13 +1,16 @@
 import { runManifestFacts } from './run-manifest-facts.mts'
 
-import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
-import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
-import type { SidecarAccumulator } from './scripts/sidecar.mts'
+import type {
+  BuildOptionHints,
+  RunManifestFactsOutcome,
+  SocketFactsContext,
+} from './run-manifest-facts.mts'
 
 // Generates `pom.xml.socket.facts.json` (named after the POM Maven runs on)
-// for a Maven project via the bundled extension.
+// for a Maven project with Coana.
 export async function convertMavenToFacts({
   bin,
+  context,
   cwd,
   excludeConfigs,
   excludePaths,
@@ -16,11 +19,10 @@ export async function convertMavenToFacts({
   includeConfigs,
   javaHome,
   mavenOpts,
-  sidecarAcc,
   verbose,
-  withFiles,
 }: {
   bin: string
+  context?: SocketFactsContext | undefined
   cwd: string
   excludeConfigs: string
   excludePaths?: string[] | undefined
@@ -29,13 +31,12 @@ export async function convertMavenToFacts({
   includeConfigs: string
   javaHome?: string | undefined
   mavenOpts: string[]
-  sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
-  withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome> {
   return await runManifestFacts({
     bin,
     buildOpts: mavenOpts,
+    context,
     cwd,
     ecosystem: 'maven',
     excludeConfigs,
@@ -44,8 +45,6 @@ export async function convertMavenToFacts({
     ignoreUnresolved,
     includeConfigs,
     javaHome,
-    sidecarAcc,
     verbose,
-    withFiles,
   })
 }

@@ -2,20 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { assembleFacts } from './assemble.mts'
 import { parseRecords } from './records.mts'
-import { accumulateSidecar, serializeSidecar } from './sidecar.mts'
 
 import type { SocketFactsSbom } from './facts.mts'
-import type { SidecarAccumulator } from './sidecar.mts'
-
-function sidecarEntry(
-  facts: SocketFactsSbom,
-  artifactPaths: ReturnType<typeof assembleFacts>['artifactPaths'],
-  factsFile: string,
-) {
-  const acc: SidecarAccumulator = new Map()
-  accumulateSidecar(acc, facts, artifactPaths, factsFile)
-  return serializeSidecar(acc)[factsFile]!
-}
 
 // Each project's tree, written out with component ids; a repeat on the current
 // path (a cycle) is written without its children.
@@ -78,50 +66,7 @@ function cycle(root: string, project: string, extra: boolean): string[] {
   ]
 }
 
-describe('records → assemble → sidecar', () => {
-  it('carries first-party project paths, external jars, and artifactless BOMs', () => {
-    // Inject fileExists so the synthetic absolute paths aren't filtered out.
-    const { artifactPaths, facts } = assembleFacts(parseRecords(RECORDS), {
-      fileExists: () => true,
-    })
-
-    expect(facts.metadata?.tool).toBe('gradle')
-    expect(facts.metadata?.javaVersion).toBe('17')
-    // contentHash/schemaVersion are intentionally absent from metadata.
-    expect(facts.metadata).not.toHaveProperty('contentHash')
-    expect(facts.metadata).not.toHaveProperty('schemaVersion')
-
-    const bucket = sidecarEntry(facts, artifactPaths, '/abs/.socket.facts.json')
-    const byName = new Map(bucket.components.map(r => [r.name, r]))
-
-    // First-party module: project-only (not a node), yet its source/output
-    // roots reach the sidecar, keyed by its own facts file.
-    expect(bucket.projects).toEqual([
-      {
-        id: ':app',
-        type: 'maven',
-        namespace: 'com.example',
-        name: 'app',
-        version: '1.0',
-        subprojectDir: '/abs/app',
-        dependencies: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
-        targets: ['/abs/app/build/classes'],
-        sources: ['/abs/app/src/main/java'],
-        classpath: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
-      },
-    ])
-
-    // External dependency: jar target, empty (not undefined) sources - it was
-    // resolved, it just has no first-party source roots.
-    expect(byName.get('lib')?.targets).toEqual(['/abs/lib.jar'])
-    expect(byName.get('lib')?.sources).toEqual([])
-
-    // Artifactless BOM: present with explicit empty arrays (resolved, no
-    // artifact) - [] means resolved-and-empty, not "not resolved".
-    const bom = byName.get('bom')
-    expect(bom?.targets).toEqual([])
-    expect(bom?.sources).toEqual([])
-  })
+describe('records → assemble', () => {
   it("carries an excluded module's paths into the kept project that depends on it", () => {
     const records = [
       'meta\tgradle\t8.10\t17',
@@ -144,49 +89,6 @@ describe('records → assemble → sidecar', () => {
       targets: ['/abs/lib/classes'],
     })
     expect([...artifactPaths.classpathByProject.keys()]).toEqual([':app'])
-  })
-  it('states no targets for an artifact that failed to resolve or is gone from disk', () => {
-    const records = [
-      'meta\tmaven\t3.9.6\t17',
-      'project\tg:app:1\tg\tapp\t1\t.',
-      'root\t0\tg:app:1\tcompile\t1',
-      'node\t0\tg:ok:jar:1\tg\tok\t1\tjar\t\t1',
-      'node\t0\tg:nojar:jar:1\tg\tnojar\t1\tjar\t\t1',
-      'node\t0\tg:nojar:test-jar:tests:1\tg\tnojar\t1\ttest-jar\ttests\t1',
-      'node\t0\tg:gone:jar:1\tg\tgone\t1\tjar\t\t1',
-      'node\t0\tg:bom:pom:1\tg\tbom\t1\tpom\t\t1',
-      'node\t0\tg:half:jar:1\tg\thalf\t1\tjar\t\t1',
-      'node\t0\tg:halfgone:jar:1\tg\thalfgone\t1\tjar\t\t1',
-      'file\t0\tg:ok:jar:1\t/abs/ok.jar',
-      'file\t0\tg:half:jar:1\t/abs/half-a.jar',
-      'unfetched\t0\tg:half:jar:1',
-      'file\t0\tg:halfgone:jar:1\t/abs/halfgone-a.jar',
-      'file\t0\tg:halfgone:jar:1\t/abs/gone.jar',
-      'file\t0\tg:gone:jar:1\t/abs/gone.jar',
-      'file\t0\tg:nojar:test-jar:tests:1\t/abs/nojar-tests.jar',
-      'unfetched\t0\tg:nojar:jar:1',
-    ].join('\n')
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
-      fileExists: p => p !== '/abs/gone.jar',
-    })
-    const byId = new Map(
-      sidecarEntry(
-        facts,
-        artifactPaths,
-        '/abs/pom.xml.socket.facts.json',
-      ).components.map(c => [c.id, c]),
-    )
-
-    expect(byId.get('g:ok:jar:1')?.targets).toEqual(['/abs/ok.jar'])
-    expect(byId.get('g:nojar:jar:1')).not.toHaveProperty('targets')
-    expect(byId.get('g:nojar:test-jar:tests:1')?.targets).toEqual([
-      '/abs/nojar-tests.jar',
-    ])
-    expect(byId.get('g:gone:jar:1')).not.toHaveProperty('targets')
-    expect(byId.get('g:bom:pom:1')?.targets).toEqual([])
-    // One of several files missing leaves the artifact incomplete.
-    expect(byId.get('g:half:jar:1')).not.toHaveProperty('targets')
-    expect(byId.get('g:halfgone:jar:1')).not.toHaveProperty('targets')
   })
   it('keeps the targets of an artifact that another root fetched', () => {
     const records = [
@@ -256,24 +158,20 @@ describe('records → assemble → sidecar', () => {
       ':b': ['g:junit:jar:4', 'g:lib:jar:1(g:dep:jar:2)'],
     })
 
-    const byName = new Map(
-      sidecarEntry(
-        facts,
-        artifactPaths,
-        '/abs/.socket.facts.json',
-      ).projects.map(p => [p.name, p]),
-    )
-    expect(byName.get('a')?.classpath).toEqual(['g:dep:jar:1', 'g:lib:jar:1'])
-    expect(byName.get('b')?.classpath).toEqual([
+    const { classpathByProject, directDependenciesByProject } = artifactPaths
+    expect([...classpathByProject.get(':a')!]).toEqual([
+      'g:dep:jar:1',
+      'g:lib:jar:1',
+    ])
+    expect([...classpathByProject.get(':b')!]).toEqual([
       'g:dep:jar:2',
       'g:junit:jar:4',
       'g:lib:jar:1',
     ])
-    expect(byName.get('b')?.dependencies).toEqual([
+    expect([...directDependenciesByProject.get(':b')!]).toEqual([
       'g:junit:jar:4',
       'g:lib:jar:1',
     ])
-    expect(byName.get('b')).not.toHaveProperty('children')
   })
   it('shares one dependency entry between identical subtrees across subprojects', () => {
     const records = [
@@ -496,7 +394,7 @@ describe('records → assemble → sidecar', () => {
       // Same name as a build project, but a published artifact, not the project.
       'node\tr2\tg:b:jar:0.9\tg\tb\t0.9\tjar\t\t1\t',
     ].join('\n')
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records))
+    const { facts } = assembleFacts(parseRecords(records))
 
     expect(facts.components.map(c => [c.id, c.firstParty ?? 'absent'])).toEqual(
       [
@@ -509,14 +407,7 @@ describe('records → assemble → sidecar', () => {
       ':a': ['g:ext:jar:2'],
       ':b': [':a(g:ext:jar:2)', 'g:b:jar:0.9'],
     })
-
-    const bucket = sidecarEntry(
-      facts,
-      artifactPaths,
-      '/abs/gradle.socket.facts.json',
-    )
-    expect(bucket.components.find(c => c.id === ':a')?.firstParty).toBe(true)
-    for (const project of bucket.projects) {
+    for (const project of facts.projects ?? []) {
       expect(project).not.toHaveProperty('firstParty')
     }
   })
@@ -718,133 +609,8 @@ describe('dotnet records → assemble', () => {
   })
 })
 
-describe('dotnet records → sidecar', () => {
-  it('carries assemblies, compile items and unresolved packages per nuget purl', () => {
-    const records = [
-      'meta\tdotnet\t8.0.414\t',
-      'project\tApp.csproj\t\tApp\t1.0.0\t.',
-      'projectSrc\tApp.csproj\t/abs/Program.cs',
-      'projectTgt\tApp.csproj\t/abs/bin/App.dll',
-      'root\tr\tApp.csproj\tnet8.0\t1',
-      'node\tr\tlib:1.0.0\t\tLib\t1.0.0\t\t\t1\t',
-      'file\tr\tlib:1.0.0\t/pkgs/lib/1.0.0/lib/net8.0/Lib.dll',
-      'node\tr\tanalyzer:1.0.0\t\tAnalyzer\t1.0.0\t\t\t1\t',
-      'node\tr\tgone:1.0.0\t\tGone\t1.0.0\t\t\t1\t',
-      'unfetched\tr\tgone:1.0.0',
-    ].join('\n')
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
-      fileExists: () => true,
-    })
-    const entry = sidecarEntry(
-      facts,
-      artifactPaths,
-      '/abs/App.csproj.socket.facts.json',
-    )
-    expect(entry.components.map(c => [c.type, c.name, c.targets])).toEqual([
-      ['nuget', 'Analyzer', []],
-      ['nuget', 'Gone', undefined],
-      ['nuget', 'Lib', ['/pkgs/lib/1.0.0/lib/net8.0/Lib.dll']],
-    ])
-    expect(entry.projects).toMatchObject([
-      {
-        id: 'App.csproj',
-        type: 'nuget',
-        sources: ['/abs/Program.cs'],
-        targets: ['/abs/bin/App.dll'],
-        dependencies: ['analyzer:1.0.0', 'gone:1.0.0', 'lib:1.0.0'],
-      },
-    ])
-    expect(entry.projects[0]).not.toHaveProperty('namespace')
-  })
-})
-
-describe('dotnet records → per-framework sidecar', () => {
-  const records = [
-    'meta\tdotnet\t8.0.414\t',
-    'project\tLib.csproj\t\tLib\t1.0.0\t.',
-    'projectSrc\tLib.csproj\t/abs/L.cs\tnet8.0',
-    'projectSrc\tLib.csproj\t/abs/A.cs\tnet8.0',
-    'projectSrc\tLib.csproj\t/abs/Legacy.cs\tnetstandard2.0',
-    'projectTgt\tLib.csproj\t/abs/bin/net8.0/Lib.dll\tnet8.0',
-    'projectInfo\tLib.csproj\tnet8.0\tTargetFrameworkMoniker\t.NETCoreApp,Version=v8.0',
-    'projectInfo\tLib.csproj\tnet8.0\tDefineConstant\tDEBUG',
-    'projectInfo\tLib.csproj\tnet8.0\tFrameworkReference\tMicrosoft.NETCore.App',
-    'projectInfo\tLib.csproj\tnet8.0\tNullable\tenable',
-    'projectUsing\tLib.csproj\tnet8.0\tSystem.Linq\t\t0',
-    'projectUsing\tLib.csproj\tnet8.0\tSystem.Math\t\t1',
-    'root\ta\tLib.csproj\tnet8.0\t0\tnet8.0\t\tnet8.0',
-    'node\ta\tx:1.0.0\t\tX\t1.0.0\t\t\t1\t',
-    'file\ta\tx:1.0.0\t/pkgs/x/lib/net8.0/X.dll',
-    'compileFile\ta\tx:1.0.0\t/pkgs/x/ref/net8.0/X.dll',
-    'node\ta\tgone:1.0.0\t\tGone\t1.0.0\t\t\t1\t',
-    'unfetched\ta\tgone:1.0.0',
-    'root\tp\tLib.csproj\tnet8.0\t1\tnet8.0\t\tnet8.0',
-    'node\tp\tx:1.0.0\t\tX\t1.0.0\t\t\t1\t',
-    'node\tp\tgone:1.0.0\t\tGone\t1.0.0\t\t\t1\t',
-    'root\ts\tLib.csproj\tnetstandard2.0\t0\tnetstandard2.0\t\tnetstandard2.0',
-    'node\ts\tx:1.0.0\t\tX\t1.0.0\t\t\t1\t',
-    'file\ts\tx:1.0.0\t/pkgs/x/lib/netstandard2.0/X.dll',
-  ].join('\n')
-
-  it('gives each project build its own context and each package its assemblies per framework', () => {
-    const { artifactPaths, facts } = assembleFacts(parseRecords(records), {
-      fileExists: () => true,
-    })
-    const entry = sidecarEntry(
-      facts,
-      artifactPaths,
-      '/abs/Lib.csproj.socket.facts.json',
-    )
-    expect(entry.projects[0]!.frameworks).toEqual([
-      {
-        alias: 'net8.0',
-        framework: 'net8.0',
-        targetFrameworkMoniker: '.NETCoreApp,Version=v8.0',
-        language: undefined,
-        langVersion: undefined,
-        nullable: 'enable',
-        assemblyName: undefined,
-        frameworkReferences: ['Microsoft.NETCore.App'],
-        defineConstants: ['DEBUG'],
-        usings: [
-          { namespace: 'System.Linq' },
-          { namespace: 'System.Math', static: true },
-        ],
-        // Compiler order, not sorted.
-        sources: ['/abs/L.cs', '/abs/A.cs'],
-        targets: ['/abs/bin/net8.0/Lib.dll'],
-        dependencies: ['gone:1.0.0', 'x:1.0.0'],
-        classpath: ['gone:1.0.0', 'x:1.0.0'],
-      },
-      expect.objectContaining({
-        alias: 'netstandard2.0',
-        sources: ['/abs/Legacy.cs'],
-        targets: [],
-        classpath: ['x:1.0.0'],
-      }),
-    ])
-    const byName = Object.fromEntries(
-      entry.components.map(c => [c.name, c.frameworks]),
-    )
-    expect(byName['X']).toEqual([
-      {
-        framework: 'net8.0',
-        targets: ['/pkgs/x/lib/net8.0/X.dll'],
-        compile: ['/pkgs/x/ref/net8.0/X.dll'],
-      },
-      {
-        framework: 'netstandard2.0',
-        targets: ['/pkgs/x/lib/netstandard2.0/X.dll'],
-        compile: [],
-      },
-    ])
-    // A root without files (the prod one) does not count as resolving it.
-    expect(byName['Gone']).toEqual([{ framework: 'net8.0' }])
-  })
-})
-
 describe('dotnet build without dependencies', () => {
-  it('still gets its compile context in the sidecar', () => {
+  it('still gets its compile context', () => {
     const records = [
       'meta\tdotnet\t8.0.414\t',
       'project\tLeaf.csproj\t\tLeaf\t1.0.0\t.',

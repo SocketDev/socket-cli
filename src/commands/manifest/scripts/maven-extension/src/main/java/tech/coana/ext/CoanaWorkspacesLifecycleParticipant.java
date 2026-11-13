@@ -14,8 +14,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
- * Sibling of {@link CoanaFactsLifecycleParticipant}, gated by {@code -Dcoana.task=socket-workspaces}.
- * Hooks {@code afterProjectsRead} (fires once the reactor project list is known, before any
+ * Gated by {@code -Dcoana.task=socket-workspaces}. Hooks {@code afterProjectsRead} (fires once the reactor project list is known, before any
  * lifecycle phase runs) since it only needs that list, never a dependency graph.
  */
 @Named("coana-workspaces")

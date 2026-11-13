@@ -398,11 +398,13 @@ async function coanaFixWithFacts(
       logger.info('Generating Socket facts for each build ...')
     }
     factsSlot.generated = await generateSocketFactsForFix({
+      coanaVersion,
       cwd,
       excludePaths,
       purlTypes: factsSlot.purlTypes,
       findFactsPaths: async () =>
         (await findScanFilepaths()).filter(isSocketFactsFile),
+      orgSlug,
       tmpDir: factsSlot.tmpDir,
     })
     scanFilepaths = await withoutDiscardedFacts(
@@ -416,13 +418,12 @@ async function coanaFixWithFacts(
     }
   }
   const sidecarFile = factsSlot?.generated?.sidecarFile
-  // Discovery only needs which artifacts the facts files resolve. Applying
-  // fixes reads each project's tree; a Coana predating facts trees can only
-  // tell from the sidecar's classpaths which projects resolve an artifact.
+  // Discovery only needs which artifacts the facts files resolve; applying
+  // fixes also reads what facts generation kept of each build root.
   const discoveryFlags = factsSlot?.generated?.artifactsFlags ?? []
   const factsFlags = [
     ...discoveryFlags,
-    ...(sidecarFile ? ['--compute-artifacts-sidecar', sidecarFile] : []),
+    ...(sidecarFile ? ['--socket-facts-sidecar', sidecarFile] : []),
   ]
   const uploadCResult = await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {

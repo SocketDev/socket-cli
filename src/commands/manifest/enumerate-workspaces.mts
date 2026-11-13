@@ -4,12 +4,23 @@ import {
   expandEnvVarRefs,
   formatMissingEnvVarRefs,
 } from './expand-env-var-refs.mts'
-import { tailBuildOutput } from './run-manifest-facts.mts'
 import { enumerateWorkspaces as enumerateWorkspacesScript } from './scripts/run.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
+
+const MAX_FAILURE_OUTPUT_LINES = 40
+
+// Last N non-empty lines of the captured build output, for diagnosing a crash
+// without forcing a --verbose rebuild.
+function tailBuildOutput(stdout: string, stderr: string): string {
+  const combined = [stdout, stderr]
+    .map(s => s.trimEnd())
+    .filter(Boolean)
+    .join('\n')
+  return combined.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
+}
 
 export type EnumerateWorkspacesResult = {
   buildRoot: string

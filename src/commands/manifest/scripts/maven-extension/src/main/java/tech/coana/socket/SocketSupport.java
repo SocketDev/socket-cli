@@ -8,8 +8,7 @@ import java.util.regex.Pattern;
 
 /**
  * Shared helpers kept byte-compatible with the Gradle/SBT scripts and the TS parsers: the
- * build-root-relative workspace path, the full-coordinate {@code id} key, and the config-glob
- * translation.
+ * build-root-relative workspace path, path exclusion and record-field escaping.
  */
 public final class SocketSupport {
   private SocketSupport() {}
@@ -21,58 +20,6 @@ public final class SocketSupport {
 
   public static String relativePath(Path rootDir, Path file) {
     return rootDir.relativize(file).toString().replace(File.separatorChar, '/');
-  }
-
-  /**
-   * Full Maven coordinate {@code groupId:artifactId:type:classifier:version} with empty segments
-   * dropped — the per-root node key the assembler uses. {@code type} is the Maven packaging (the
-   * Gradle/SBT {@code ext}).
-   */
-  public static String coordId(String groupId, String artifactId, String type, String classifier, String version) {
-    StringBuilder sb = new StringBuilder();
-    for (String segment : new String[] {groupId, artifactId, type, classifier, version}) {
-      if (segment == null || segment.isEmpty()) continue;
-      if (sb.length() > 0) sb.append(':');
-      sb.append(segment);
-    }
-    return sb.toString();
-  }
-
-  /**
-   * Translate a config-name glob to a case-sensitive regex. Supports {@code *}, {@code ?}, and
-   * {@code [...]} character classes: enumerations ({@code [cC]}), ranges ({@code [a-z]}), and
-   * {@code [!..]}/{@code [^..]} negation. A malformed glob falls back to a literal match, never throws.
-   */
-  public static Pattern globToRegex(String glob) {
-    StringBuilder sb = new StringBuilder();
-    int i = 0;
-    int n = glob.length();
-    while (i < n) {
-      char c = glob.charAt(i);
-      if (c == '*') { sb.append(".*"); i++; }
-      else if (c == '?') { sb.append('.'); i++; }
-      else if (c == '[') {
-        int j = glob.indexOf(']', i + 1);
-        // Treat as a class only with a non-empty body; else a literal '['.
-        if (j <= i + 1) { sb.append("\\["); i++; }
-        else {
-          String body = glob.substring(i + 1, j);
-          boolean neg = body.startsWith("!");
-          if (neg) body = body.substring(1);
-          // Only literal chars and '-' ranges are meaningful; neutralize regex-class tricks.
-          body = body.replace("\\", "\\\\").replace("[", "\\[").replace("&", "\\&");
-          sb.append('[').append(neg ? "^" : "").append(body).append(']');
-          i = j + 1;
-        }
-      } else if ("\\.^$|+(){}]".indexOf(c) >= 0) {
-        sb.append('\\').append(c); i++;
-      } else { sb.append(c); i++; }
-    }
-    try {
-      return Pattern.compile(sb.toString());
-    } catch (java.util.regex.PatternSyntaxException e) {
-      return Pattern.compile(Pattern.quote(glob));
-    }
   }
 
   /**
@@ -136,22 +83,6 @@ public final class SocketSupport {
       if (p.matcher(c).matches()) return true;
     }
     return false;
-  }
-
-  /** Parse a comma-separated list of globs into case-sensitive patterns. */
-  public static List<Pattern> parsePatterns(String csv) {
-    List<Pattern> out = new ArrayList<>();
-    if (csv == null || csv.trim().isEmpty()) return out;
-    for (String raw : csv.split(",")) {
-      String p = raw.trim();
-      if (!p.isEmpty()) out.add(globToRegex(p));
-    }
-    return out;
-  }
-
-  /** Absolute path of a file if it exists, else null. */
-  public static String existingAbsolutePath(File f) {
-    return f != null && f.exists() ? f.getAbsolutePath() : null;
   }
 
   /** Backslash-escape a record field so it can never break line/field framing (see records.ts). */

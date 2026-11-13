@@ -1,14 +1,17 @@
 import { runManifestFacts } from './run-manifest-facts.mts'
 
-import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
-import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
-import type { SidecarAccumulator } from './scripts/sidecar.mts'
+import type {
+  BuildOptionHints,
+  RunManifestFactsOutcome,
+  SocketFactsContext,
+} from './run-manifest-facts.mts'
 
-// Generates `sbt.socket.facts.json` for an sbt project via the bundled sbt plugin.
+// Generates `sbt.socket.facts.json` for an sbt project with Coana.
 // sbt 0.13/early 1.x can't run on modern JDKs — pass a compatible JDK via
 // `--sbt-opts "--java-home <path>"` or `JAVA_HOME`.
 export async function convertSbtToFacts({
   bin,
+  context,
   cwd,
   excludeConfigs,
   excludePaths,
@@ -17,12 +20,10 @@ export async function convertSbtToFacts({
   includeConfigs,
   javaHome,
   sbtOpts,
-  sidecarAcc,
-  tmpDir,
   verbose,
-  withFiles,
 }: {
   bin: string
+  context?: SocketFactsContext | undefined
   cwd: string
   excludeConfigs: string
   excludePaths?: string[] | undefined
@@ -31,15 +32,12 @@ export async function convertSbtToFacts({
   includeConfigs: string
   javaHome?: string | undefined
   sbtOpts: string[]
-  sidecarAcc?: SidecarAccumulator | undefined
-  // Caller-owned; see ManifestScriptOptions.tmpDir.
-  tmpDir: string
   verbose: boolean
-  withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome> {
   return await runManifestFacts({
     bin,
     buildOpts: sbtOpts,
+    context,
     cwd,
     ecosystem: 'sbt',
     excludeConfigs,
@@ -48,9 +46,6 @@ export async function convertSbtToFacts({
     ignoreUnresolved,
     includeConfigs,
     javaHome,
-    sidecarAcc,
-    tmpDir,
     verbose,
-    withFiles,
   })
 }

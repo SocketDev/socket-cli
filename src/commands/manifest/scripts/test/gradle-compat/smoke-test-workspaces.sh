@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Run socket-workspaces.init.gradle (the lightweight workspace-enumeration sibling of
-# socket-facts.init.gradle) against the smoke project and assert it emits exactly the expected
-# project record - no dependency resolution, no node/root/file records at all. Guards, across the
-# same Gradle compat matrix as the facts script, that the socketWorkspaces task registers and runs
-# cleanly.
+# Run socket-workspaces.init.gradle against the smoke project and assert it emits exactly the
+# expected project record - no dependency resolution, no node/root/file records at all. Guards,
+# across the Gradle compat matrix, that the socketWorkspaces task registers and runs cleanly.
 #
 # Usage: smoke-test-workspaces.sh /path/to/gradle
 set -euo pipefail

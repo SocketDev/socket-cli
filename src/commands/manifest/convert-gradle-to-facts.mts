@@ -1,13 +1,15 @@
 import { runManifestFacts } from './run-manifest-facts.mts'
 
-import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
-import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
-import type { SidecarAccumulator } from './scripts/sidecar.mts'
+import type {
+  BuildOptionHints,
+  RunManifestFactsOutcome,
+  SocketFactsContext,
+} from './run-manifest-facts.mts'
 
-// Generates `gradle.socket.facts.json` for a Gradle project via the bundled
-// init script.
+// Generates `gradle.socket.facts.json` for a Gradle project with Coana.
 export async function convertGradleToFacts({
   bin,
+  context,
   cwd,
   excludeConfigs,
   excludePaths,
@@ -16,11 +18,10 @@ export async function convertGradleToFacts({
   ignoreUnresolved,
   includeConfigs,
   javaHome,
-  sidecarAcc,
   verbose,
-  withFiles,
 }: {
   bin: string
+  context?: SocketFactsContext | undefined
   cwd: string
   excludeConfigs: string
   excludePaths?: string[] | undefined
@@ -29,13 +30,12 @@ export async function convertGradleToFacts({
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome?: string | undefined
-  sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
-  withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome> {
   return await runManifestFacts({
     bin,
     buildOpts: gradleOpts,
+    context,
     cwd,
     ecosystem: 'gradle',
     excludeConfigs,
@@ -44,8 +44,6 @@ export async function convertGradleToFacts({
     ignoreUnresolved,
     includeConfigs,
     javaHome,
-    sidecarAcc,
     verbose,
-    withFiles,
   })
 }

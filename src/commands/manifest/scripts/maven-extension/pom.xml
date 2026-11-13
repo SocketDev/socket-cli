@@ -7,12 +7,11 @@
   <version>1.0</version>
   <!-- A Maven CORE EXTENSION (not a plugin): loaded from a loose jar via
        -Dmaven.ext.class.path=<jar>, so nothing is installed in the user's local repository and
-       their pom.xml is untouched. It only GATHERS the resolved dependency graph and emits the
-       flat line-protocol records the TS assembler turns into the Socket facts SBOM —
-       no JSON / hashing here, identical contract to the Gradle init script and SBT plugin. -->
+       their pom.xml is untouched. It emits the reactor's projects as line-protocol records, the
+       same contract as the Gradle init script and sbt plugin. -->
   <packaging>jar</packaging>
   <name>Coana Maven extension</name>
-  <description>Core extension that emits Coana's dependency-graph records (socket-facts) without a local-repo install.</description>
+  <description>Core extension that emits a reactor's projects as records without a local-repo install.</description>
 
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
@@ -84,31 +83,6 @@
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
       <version>${maven.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
-      <version>${maven.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact</artifactId>
-      <version>${maven.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <!-- Aether graph/artifact types: what ProjectDependenciesResolver hands back. -->
-    <dependency>
-      <groupId>org.apache.maven.resolver</groupId>
-      <artifactId>maven-resolver-api</artifactId>
-      <version>1.9.18</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.7.36</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

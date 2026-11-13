@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Run socket-workspaces.plugin.scala (the lightweight workspace-enumeration sibling of
-# socket-facts.plugin.scala) against the smoke project on a given sbt version and assert it emits
-# exactly the expected project record - no dependency resolution at all. Guards, across the same
-# sbt/scala compat matrix as the facts plugin, that SocketWorkspacesPlugin registers and runs.
+# Run socket-workspaces.plugin.scala against the smoke project on a given sbt version and assert it
+# emits exactly the expected project record - no dependency resolution at all. Guards, across the
+# sbt/scala compat matrix, that SocketWorkspacesPlugin registers and runs.
 #
 # The plugin is activated exactly as run.ts does it: dropped into a fresh sbt global base's plugins/.
 # Usage: smoke-test-workspaces.sh <sbt-version> <scala-version>
@@ -32,8 +31,7 @@ echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION) (workspaces)"
 python3 - "$RECORDS" "$SCALA_VERSION" "$(cd "$PROJECT" && pwd -P)" <<'PY'
 import sys
 rows = [l.rstrip('\n').split('\t') for l in open(sys.argv[1]) if l.strip()]
-# CrossVersion.apply appends _<binary-version> (major.minor) to the artifact name - the same
-# identity computation socket-facts.plugin.scala's rootIdOf already does, so this isn't optional.
+# CrossVersion.apply appends _<binary-version> (major.minor) to the artifact name.
 binary_version = '.'.join(sys.argv[2].split('.')[:2])
 expected_name = f"sbt-compat-smoke_{binary_version}"
 errors = []

@@ -3,62 +3,282 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { buildRootPath } from './discover-manifest-roots.mts'
 import {
-  expandEnvVarRefs,
-  formatMissingEnvVarRefs,
-} from './expand-env-var-refs.mts'
-import { looksLikeSbtBuild } from './scripts/build-tool.mts'
-import {
-  FLAG_HINTS,
-  renderResolutionErrorReport,
-  verboseHint,
-} from './scripts/resolution-report-render.mts'
-import { runManifestScript } from './scripts/run.mts'
-import { accumulateSidecar } from './scripts/sidecar.mts'
+  looksLikeSbtBuild,
+  resolveBuildToolBin,
+} from './scripts/build-tool.mts'
 import constants from '../../constants.mts'
+import { isStandaloneSea } from '../../sea/runtime.mts'
+import { spawnCoana } from '../../utils/coana-release.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
-import { realpathOrResolved } from '../../utils/fs.mts'
+import { withTmpDir } from '../../utils/fs.mts'
+import { getOrInsert } from '../../utils/get-or-insert.mts'
+import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
-import type { SocketFactsSbomProject } from './scripts/facts.mts'
-import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
-import type { ManifestRunResult } from './scripts/run.mts'
-import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
-const MAX_FAILURE_OUTPUT_LINES = 40
+export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 
-export type RunManifestFactsResult = {
-  factsPath: string
-  projects: SocketFactsSbomProject[]
+// Where the invoking command lets the user set each build option, so a remedy
+// in Coana's failure report names something they can actually set.
+export type BuildOptionHints = {
+  // Reachability scans only: reachability cannot install a dependency that
+  // `ignoreUnresolved` lets through, so it must be told to continue too.
+  continueOnInstallErrorsFlag?: string | undefined
+  // Taken as flags; every other option is set in `socketJson`.
+  flags: ReadonlySet<BuildOption>
+  // Wizard that writes `socketJson`.
+  setupCommand: string
+  socketJson: string
 }
 
-// Last N non-empty lines of the captured build output, for diagnosing a crash
-// without forcing a --verbose rebuild.
-export function tailBuildOutput(stdout: string, stderr: string): string {
-  const combined = [stdout, stderr]
-    .map(s => s.trimEnd())
-    .filter(Boolean)
-    .join('\n')
-  return combined.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
+export const DSI_SETUP_COMMAND =
+  'socket manifest setup --dynamic-sbom-inference'
+
+export const REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG =
+  '--reach-continue-on-install-errors'
+
+// The single-build manifest commands take every option as a flag.
+export const FLAG_HINTS: BuildOptionHints = {
+  flags: new Set<BuildOption>([
+    'excludeConfigs',
+    'ignoreUnresolved',
+    'verbose',
+  ]),
+  setupCommand: 'socket manifest setup',
+  socketJson: constants.SOCKET_JSON,
+}
+
+// What a later Coana run needs of one generated build root; passed back to it
+// unread.
+export type SocketFactsSidecarEntry = {
+  factsFile: string
+  stateDir: string
+}
+
+// A directory socket-cli owns until the Coana run that reads it is done, and
+// the entries of the build roots generated into it.
+export type SocketFactsWorkDir = {
+  dir: string
+  entries: SocketFactsSidecarEntry[]
+  // Reachability only: also install the dependencies the analysis reads.
+  withFiles: boolean
+}
+
+export function sidecarEntryOf(
+  workDir: SocketFactsWorkDir,
+  factsFile: string,
+): SocketFactsSidecarEntry | undefined {
+  return workDir.entries.find(entry => entry.factsFile === factsFile)
+}
+
+// A facts file has one entry: the run that wrote it last.
+export function setSidecarEntry(
+  workDir: SocketFactsWorkDir,
+  factsFile: string,
+  entry: SocketFactsSidecarEntry | undefined,
+): void {
+  const kept = workDir.entries.filter(other => other.factsFile !== factsFile)
+  workDir.entries.splice(0, workDir.entries.length, ...kept)
+  if (entry) {
+    workDir.entries.push(entry)
+  }
+}
+
+export type SocketFactsContext = {
+  // The Coana that reads `workDir` must be the one that wrote it.
+  coanaVersion?: string | undefined
+  orgSlug?: string | undefined
+  workDir?: SocketFactsWorkDir | undefined
+}
+
+export type RunManifestFactsResult = {
+  // Realpath-resolved build files the build covers.
+  coveredBuildFiles: string[]
+  factsPath: string
 }
 
 // `null` = a real failure (crash, missing config, blocking unresolved
 // dependency); `undefined` = genuinely nothing to resolve, not a failure.
-// Distinguishing the two here means callers never have to infer it from
-// `process.exitCode`, which can already be non-zero for an unrelated reason.
 export type RunManifestFactsOutcome = RunManifestFactsResult | null | undefined
 
-// Runs the bundled build-tool resolution script for a JVM project and writes
-// its `<entry>.socket.facts.json` (see socketFactsFileName). `withFiles`
-// (reachability only) additionally folds resolved artifact paths into
-// `sidecarAcc`. A blocking resolution failure sets
-// a non-zero exit code and returns (matching the `--pom` generator) unless
-// `ignoreUnresolved`; a crashed build — a process failure, not an unresolved
-// dependency — always fails.
+// The request `coana generate-socket-facts --request` reads.
+type SocketFactsRequest = {
+  buildRoot: string
+  config: {
+    bin?: string | undefined
+    buildOpts: string[]
+    excludeConfigs?: string | undefined
+    ignoreUnresolved: boolean
+    includeConfigs?: string | undefined
+    javaHome?: string | undefined
+    verbose: boolean
+  }
+  entryFile?: string | undefined
+  excludeBase: string
+  excludePaths?: string[] | undefined
+  hints: {
+    continueOnInstallErrorsFlag?: string | undefined
+    flags: BuildOption[]
+    setupCommand: string
+    socketJson: string
+  }
+  tool: BuildTool
+}
+
+type SocketFactsResult =
+  | {
+      coveredBuildFiles: string[]
+      factsPath: string
+      sidecarEntry?: SocketFactsSidecarEntry | undefined
+      status: 'generated'
+    }
+  | { status: 'empty' }
+  | { status: 'failed' }
+
+type SolutionMembers = { members: string[] | null }
+
+let defaultOrgSlug: Promise<string | undefined> | undefined
+
+// Resolved once: each build root is its own Coana run.
+function orgSlugFor(context: SocketFactsContext): Promise<string | undefined> {
+  if (context.orgSlug) {
+    return Promise.resolve(context.orgSlug)
+  }
+  defaultOrgSlug ??= getDefaultOrgSlug(true).then(r =>
+    r.ok ? r.data : undefined,
+  )
+  return defaultOrgSlug
+}
+
+function toRequestHints(hints: BuildOptionHints): SocketFactsRequest['hints'] {
+  return {
+    ...(hints.continueOnInstallErrorsFlag
+      ? { continueOnInstallErrorsFlag: hints.continueOnInstallErrorsFlag }
+      : {}),
+    flags: [...hints.flags].sort(),
+    setupCommand: hints.setupCommand,
+    socketJson: hints.socketJson,
+  }
+}
+
+async function runGenerateSocketFacts<T>(
+  request: SocketFactsRequest,
+  flags: string[],
+  context: SocketFactsContext,
+): Promise<{ message?: string | undefined; result: T | undefined }> {
+  return await withTmpDir('socket-facts-request-', async tmpDir => {
+    const requestFile = path.join(tmpDir, 'request.json')
+    const resultFile = path.join(tmpDir, 'result.json')
+    await fs.writeFile(requestFile, JSON.stringify(request), 'utf8')
+    const spawned = await spawnCoana(
+      [
+        'generate-socket-facts',
+        '--request',
+        requestFile,
+        '--output-file',
+        resultFile,
+        ...flags,
+      ],
+      await orgSlugFor(context),
+      {
+        coanaVersion: context.coanaVersion,
+        cwd: request.buildRoot,
+        // Coana logs to stdout; keep the command's own stdout machine-readable.
+        stdio: ['inherit', 2, 'inherit'],
+      },
+    )
+    const result = existsSync(resultFile)
+      ? (JSON.parse(await fs.readFile(resultFile, 'utf8')) as T)
+      : undefined
+    return {
+      message: spawned.ok
+        ? undefined
+        : [spawned.message, spawned.cause].filter(Boolean).join(': '),
+      result,
+    }
+  })
+}
+
+// Resolves `bin` as the build tool's own runner would: the SOCKET_CLI_*_PATH
+// override first, then the given bin, the project wrapper, PATH.
+function requestBin(tool: BuildTool, dir: string, bin: string | undefined) {
+  return resolveBuildToolBin(
+    tool,
+    dir,
+    bin || undefined,
+    tool !== 'dotnet' && isStandaloneSea(),
+  )
+}
+
+const membersByRequest = new Map<string, Promise<string[] | undefined>>()
+
+// The projects a dotnet solution builds; undefined when the SDK cannot read
+// it, empty when the listing fails, which the build itself then reports.
+export function listDotnetSolutionMembers({
+  bin,
+  buildOpts,
+  context = {},
+  dir,
+  entryFile,
+  excludeBase,
+  excludePaths,
+}: {
+  bin?: string | undefined
+  buildOpts: string[]
+  context?: SocketFactsContext | undefined
+  dir: string
+  entryFile: string
+  excludeBase?: string | undefined
+  excludePaths?: string[] | undefined
+}): Promise<string[] | undefined> {
+  const key = JSON.stringify([
+    bin,
+    buildOpts,
+    dir,
+    entryFile,
+    excludeBase,
+    excludePaths,
+  ])
+  return getOrInsert(membersByRequest, key, async () => {
+    let request: SocketFactsRequest
+    try {
+      request = {
+        buildRoot: path.resolve(dir),
+        config: {
+          bin: requestBin('dotnet', dir, bin),
+          buildOpts,
+          ignoreUnresolved: false,
+          verbose: false,
+        },
+        entryFile,
+        excludeBase: path.resolve(excludeBase ?? dir),
+        ...(excludePaths?.length ? { excludePaths } : {}),
+        hints: toRequestHints(FLAG_HINTS),
+        tool: 'dotnet',
+      }
+    } catch {
+      return []
+    }
+    const { result } = await runGenerateSocketFacts<SolutionMembers>(
+      request,
+      ['--list-members'],
+      context,
+    )
+    if (!result) {
+      return []
+    }
+    return result.members ?? undefined
+  })
+}
+
+// Generates one build root's `<entry>.socket.facts.json` with Coana. With a
+// work dir in `context`, also collects what a later Coana run reads of it. A
+// failure sets a non-zero exit code; Coana reports why.
 export async function runManifestFacts({
   bin,
   buildOpts,
+  context = {},
   cwd,
   ecosystem,
   entryFile,
@@ -69,45 +289,28 @@ export async function runManifestFacts({
   ignoreUnresolved,
   includeConfigs,
   javaHome,
-  sidecarAcc,
-  tmpDir,
   verbose,
-  withFiles,
 }: {
   bin: string
   buildOpts: string[]
+  context?: SocketFactsContext | undefined
   cwd: string
   ecosystem: BuildTool
-  // See ManifestScriptOptions.entryFile.
+  // The file in `cwd` to build: Maven's POM (unset leaves Maven's default),
+  // dotnet's solution or project (required).
   entryFile?: string | undefined
-  // See ManifestScriptOptions.excludeBase.
+  // What `excludePaths` are relative to, as a build can reach modules outside
+  // its own directory; `cwd` when unset.
   excludeBase?: string | undefined
   excludeConfigs: string
   excludePaths?: string[] | undefined
-  // Where the user sets build options, for remedy hints.
   hints?: BuildOptionHints | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
+  // As written: Coana expands `$VAR` references itself.
   javaHome?: string | undefined
-  sidecarAcc?: SidecarAccumulator | undefined
-  // sbt only; see ManifestScriptOptions.tmpDir.
-  tmpDir?: string | undefined
   verbose: boolean
-  withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome> {
-  let resolvedJavaHome: string | undefined
-  if (javaHome) {
-    const expanded = expandEnvVarRefs(javaHome)
-    if (expanded.missing) {
-      process.exitCode = 1
-      logger.fail(
-        `javaHome (\`${javaHome}\`) ${formatMissingEnvVarRefs(expanded.missing)}.`,
-      )
-      return null
-    }
-    resolvedJavaHome = expanded.value
-  }
-
   if (ecosystem === 'sbt' && !looksLikeSbtBuild(cwd)) {
     process.exitCode = 1
     logger.fail(
@@ -116,193 +319,71 @@ export async function runManifestFacts({
     return null
   }
 
-  const location = buildRootPath({ dir: cwd, entryFile })
-  logger.info(
-    `Generating Socket facts for the ${ecosystem} project at \`${location}\` ...`,
-  )
-
-  const scriptOpts = {
-    bin: bin || undefined,
-    entryFile,
-    excludeBase,
-    excludeConfigs: excludeConfigs || undefined,
-    excludePaths: excludePaths?.length ? excludePaths : undefined,
-    // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
-    env: resolvedJavaHome
-      ? { ...process.env, JAVA_HOME: resolvedJavaHome }
-      : undefined,
-    includeConfigs: includeConfigs || undefined,
-    projectDir: cwd,
-    // Stream the build tool's output only when asked; otherwise capture it and
-    // show a spinner, surfacing the output only if the build crashes.
-    stdio: verbose ? ('inherit' as const) : ('pipe' as const),
-    tmpDir,
-    toolOpts: buildOpts,
-    withFiles,
-  }
-  const { spinner } = constants
-  let result: ManifestRunResult
+  let resolvedBin: string
   try {
-    if (verbose) {
-      logger.info(
-        `(Running ${ecosystem} with output streaming; this can take a while.)`,
-      )
-      result = await runManifestScript(ecosystem, scriptOpts)
-    } else {
-      logger.info(
-        `(No live output; to stream the ${ecosystem} build output, ${verboseHint(hints, ecosystem)}.)`,
-      )
-      spinner.start(`Resolving ${ecosystem} dependencies ...`)
-      result = await runManifestScript(ecosystem, scriptOpts)
-      if (result.code === 0) {
-        spinner.successAndStop(`Resolved ${ecosystem} dependencies.`)
-      } else {
-        spinner.failAndStop(
-          `${ecosystem} build exited with code ${result.code}.`,
-        )
-      }
-    }
+    resolvedBin = requestBin(ecosystem, cwd, bin)
   } catch (e) {
-    // Only a spawn-level failure (e.g. the build tool missing from PATH) reaches
-    // here; runNeverThrow returns non-zero build exits rather than throwing.
-    if (!verbose) {
-      spinner.failAndStop(`Failed to run ${ecosystem}.`)
-    }
     process.exitCode = 1
     logger.fail(
       `Could not run the ${ecosystem} build tool: ${getErrorMessageOr(e, String(e))}`,
     )
     return null
   }
-  const {
-    artifactPaths,
-    buildRoot,
-    code,
-    facts,
-    factsFileName,
-    report,
-    stderr,
-    stdout,
-  } = result
 
-  // A non-zero build exit with no usable output (no graph, no first-party
-  // modules, no failure records) means the build died before the socketFacts
-  // task emitted anything — a script/plugin compile error, OOM, or an unchecked
-  // exception in the extension. The build tool's own exit is the only signal, so
-  // fail closed rather than silently dropping the ecosystem with an empty SBOM
-  // (the empty-facts branch below would otherwise just log "nothing to upload").
-  // The dotnet tool exits non-zero only when it crashed, so whatever it
-  // recorded before is incomplete however much there is.
-  if (
-    code !== 0 &&
-    (ecosystem === 'dotnet' ||
-      (!facts.components.length &&
-        !facts.projects?.length &&
-        !report.failures.length &&
-        !report.unscannable.length))
-  ) {
-    if (!verbose) {
-      const tail = tailBuildOutput(stdout, stderr)
-      if (tail) {
-        logger.group('Build output:')
-        logger.error(tail)
-        logger.groupEnd()
-      }
-    }
-    // A crashed build is a process failure (missing JDK/build tool, unparseable
-    // project, OOM, plugin error), not an unresolved dependency, so it fails
-    // regardless of `ignoreUnresolved` — that flag only tolerates dependencies a
-    // successful run couldn't resolve.
-    process.exitCode = 1
-    logger.fail(
-      `The ${ecosystem} build at \`${location}\` failed (exit code ${code}) without completing its Socket facts.`,
-    )
-    return null
-  }
-
-  const rendered = renderResolutionErrorReport(
-    report.failures,
-    report.scannedConfigs,
-    ecosystem,
-    {
-      hints,
+  const request: SocketFactsRequest = {
+    buildRoot: path.resolve(cwd),
+    config: {
+      bin: resolvedBin,
+      buildOpts,
+      ...(excludeConfigs ? { excludeConfigs } : {}),
       ignoreUnresolved,
-      resolvedModules: report.resolvedModules,
-      unscannable: report.unscannable,
+      ...(includeConfigs ? { includeConfigs } : {}),
+      ...(javaHome ? { javaHome } : {}),
+      verbose,
     },
+    ...(entryFile ? { entryFile } : {}),
+    excludeBase: path.resolve(excludeBase ?? cwd),
+    ...(excludePaths?.length ? { excludePaths } : {}),
+    hints: toRequestHints(hints),
+    tool: ecosystem,
+  }
+  const { workDir } = context
+  const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
+    request,
+    workDir
+      ? [
+          ...(workDir.withFiles ? ['--with-files'] : []),
+          '--work-dir',
+          workDir.dir,
+        ]
+      : [],
+    context,
   )
 
-  if (rendered.hasBlockingFailures) {
-    if (ignoreUnresolved) {
-      logger.warn(rendered.summary)
-    } else {
+  if (!result || result.status === 'failed') {
+    process.exitCode = 1
+    if (!result) {
+      logger.fail(
+        `Could not generate Socket facts for the ${ecosystem} project at \`${cwd}\`${message ? `: ${message}` : '.'}`,
+      )
+    }
+    return null
+  }
+  if (result.status === 'empty') {
+    return undefined
+  }
+  if (workDir) {
+    if (!result.sidecarEntry) {
       process.exitCode = 1
-      logger.fail(rendered.summary)
-      if (verbose && rendered.details) {
-        logger.info(rendered.details)
-      }
+      logger.fail(
+        `Coana did not keep what reachability analysis needs of \`${result.factsPath}\`.`,
+      )
       return null
     }
+    setSidecarEntry(workDir, result.factsPath, result.sidecarEntry)
   }
-  if (rendered.nonBlockingNotice) {
-    logger.info(rendered.nonBlockingNotice)
+  return {
+    coveredBuildFiles: result.coveredBuildFiles,
+    factsPath: result.factsPath,
   }
-  if (verbose && rendered.details) {
-    logger.info(rendered.details)
-  }
-
-  // Nothing resolved at all — no dependencies and no first-party modules. A
-  // project with only first-party modules (empty components, non-empty projects)
-  // still has source roots reachability needs, so it must be written.
-  if (!facts.components.length && !facts.projects?.length) {
-    logger.warn(
-      `No resolvable ${ecosystem} dependencies found; nothing to upload.`,
-    )
-    return
-  }
-
-  if (!buildRoot || !factsFileName) {
-    process.exitCode = 1
-    logger.fail(
-      `The ${ecosystem} build did not report its ${buildRoot ? 'entry build file' : 'root directory'}, so its Socket facts file cannot be placed.`,
-    )
-    return null
-  }
-  // Every path in the facts is relative to the build root, which `-f`/`-p`
-  // can move away from cwd.
-  const factsPath = path.join(buildRoot, factsFileName)
-  // Not a name producers write, so a copy here is stale and would be uploaded
-  // alongside the new file.
-  const legacyFactsPath = path.join(
-    buildRoot,
-    constants.DOT_SOCKET_DOT_FACTS_JSON,
-  )
-  if (existsSync(legacyFactsPath)) {
-    logger.warn(
-      `Found \`${legacyFactsPath}\`, which is uploaded alongside \`${factsFileName}\`. Delete it if an earlier \`socket manifest\` run left it behind.`,
-    )
-  }
-
-  const socketCliVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
-  if (facts.metadata && socketCliVersion) {
-    facts.metadata.socketCliVersion = socketCliVersion
-  }
-  await fs.writeFile(factsPath, JSON.stringify(facts), 'utf8')
-
-  if (sidecarAcc) {
-    // Key by the symlink-resolved path so the sidecar's keys are comparable
-    // regardless of which caller's cwd it was joined against (the recursive
-    // discovery path already resolves symlinks before this point; the plain
-    // single-root path does not).
-    accumulateSidecar(
-      sidecarAcc,
-      facts,
-      artifactPaths,
-      await realpathOrResolved(factsPath),
-      !!withFiles,
-    )
-  }
-
-  logger.success('Generated Socket facts')
-  return { factsPath, projects: facts.projects ?? [] }
 }

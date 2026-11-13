@@ -1,9 +1,8 @@
 // Invoke via:
 //   ./gradlew --init-script socket-workspaces.init.gradle socketWorkspaces
 
-// Sibling of socket-facts.init.gradle: emits only `meta`/`buildRoot`/`project`/`projectBuild`
-// records, no dependency resolution. Kept as a separate script so it can't affect that file's
-// already-verified, wide Gradle-version compatibility (1.0+).
+// Emits only `meta`/`buildRoot`/`project`/`projectBuild` records, no dependency resolution, for
+// the setup wizard; Coana generates the facts themselves.
 
 // `Project.findProperty` only exists since Gradle 2.13; fall back to hasProperty/property for older Gradle.
 gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(name) : null }
@@ -58,8 +57,7 @@ gradle.ext.socketIsExcludedDir = { java.io.File dir ->
 gradle.ext.socketWorkspacesInfo = Collections.synchronizedList([])
 
 // Collect every non-excluded project's identity at configuration time - cheap, no dependency
-// resolution, no sourceSets/jar introspection (unlike the full facts script, which also stamps
-// sources/targets/artifact-ext for resolution-time use).
+// resolution, no sourceSets/jar introspection.
 gradle.projectsEvaluated { g ->
   def rootPath = g.rootProject.projectDir.toPath()
   def rel = { java.io.File f ->

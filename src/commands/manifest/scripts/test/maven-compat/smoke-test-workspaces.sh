@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Load the Coana Maven workspaces participant (CoanaWorkspacesLifecycleParticipant, the lightweight
-# sibling of the facts participant) on a given Maven binary and assert it emits exactly the
-# expected reactor project records - no dependency graph at all. Guards, across the same Maven
-# compat matrix as the facts extension, that the participant registers and fires correctly.
+# Load the Coana Maven workspaces participant (CoanaWorkspacesLifecycleParticipant) on a given
+# Maven binary and assert it emits exactly the expected reactor project records - no dependency
+# graph at all. Guards, across the Maven compat matrix, that the participant registers and fires
+# correctly.
 #
 # Usage: smoke-test-workspaces.sh <path-to-mvn> <path-to-extension-jar>
 set -euo pipefail

@@ -12,10 +12,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Sibling of {@link SocketFactsRecordsEngine} that emits only `meta`/`buildRoot`/`project`/
- * `projectBuild` records from the already-populated reactor list, building no dependency graph -
- * cheap workspace discovery for `socket manifest setup --dynamic-sbom-inference` without a full
- * facts-generation build.
+ * Emits only `meta`/`buildRoot`/`project`/`projectBuild` records from the already-populated reactor
+ * list, building no dependency graph - cheap workspace discovery for
+ * `socket manifest setup --dynamic-sbom-inference`.
  */
 public final class SocketWorkspacesRecordsEngine {
 

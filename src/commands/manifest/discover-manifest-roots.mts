@@ -5,6 +5,7 @@ import micromatch from 'micromatch'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { listDotnetSolutionMembers } from './run-manifest-facts.mts'
 import {
   BUILD_FILES,
   BUILD_TOOLS,
@@ -12,15 +13,14 @@ import {
   buildToolsFor,
   isDotnetSolution,
 } from './scripts/build-tool.mts'
-import { listDotnetEntryProjects } from './scripts/run.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
+import type { SocketFactsContext } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
-import type { ManifestScriptOptions } from './scripts/run.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -166,6 +166,22 @@ export async function membershipOf(
   return membership
 }
 
+// Coana reports the realpath-resolved build files a build covers.
+export async function membershipOfBuildFiles(
+  files: readonly string[],
+  scanRoot?: string | undefined,
+): Promise<Membership> {
+  const realScanRoot = scanRoot ? await realpathOrResolved(scanRoot) : undefined
+  return {
+    dirs: new Set(),
+    files: new Set(
+      realScanRoot
+        ? files.filter(file => isPathInside(realScanRoot, file))
+        : files,
+    ),
+  }
+}
+
 const rootMarkerByDir = new Map<string, boolean>()
 
 export function hasRootMarker(tool: BuildTool, root: BuildRoot): boolean {
@@ -196,17 +212,22 @@ export function isBuildRootCovered(
   )
 }
 
+export type RootBuildOptions = {
+  bin?: string | undefined
+  buildOpts: string[]
+  context?: SocketFactsContext | undefined
+  excludeBase?: string | undefined
+  excludePaths?: string[] | undefined
+}
+
 // A dotnet solution is covered once every project it builds is, or, when the
 // SDK cannot read it, by a same-named solution in the other format beside it
 // (`dotnet sln migrate` writes App.slnx next to App.sln) that it can read.
 async function isSolutionCovered(
   covered: Membership,
   root: BuildRoot,
-  opts: Pick<
-    ManifestScriptOptions,
-    'bin' | 'excludeBase' | 'excludePaths' | 'toolOpts'
-  >,
-  listMembers: typeof listDotnetEntryProjects = listDotnetEntryProjects,
+  opts: RootBuildOptions,
+  listMembers: typeof listDotnetSolutionMembers = listDotnetSolutionMembers,
 ): Promise<boolean> {
   const { entryFile } = root
   if (!entryFile || !isDotnetSolution(entryFile)) {
@@ -220,7 +241,7 @@ async function isSolutionCovered(
     return false
   }
   const list = (file: string) =>
-    listMembers({ ...opts, entryFile: file, projectDir: root.dir })
+    listMembers({ ...opts, dir: root.dir, entryFile: file })
   const listed = await list(entryFile)
   if (!listed) {
     // Unless the twin is readable, this one is built and its failure shows.
@@ -254,11 +275,8 @@ export async function isRootCovered(
   covered: Membership,
   tool: BuildTool,
   root: BuildRoot,
-  opts: Pick<
-    ManifestScriptOptions,
-    'bin' | 'excludeBase' | 'excludePaths' | 'toolOpts'
-  >,
-  listMembers: typeof listDotnetEntryProjects = listDotnetEntryProjects,
+  opts: RootBuildOptions,
+  listMembers: typeof listDotnetSolutionMembers = listDotnetSolutionMembers,
 ): Promise<boolean> {
   return (
     isBuildRootCovered(covered, tool, root) ||

@@ -29,8 +29,8 @@ import {
   resolveEcosystemConfig,
 } from './generate-recursive-manifests.mts'
 import { loadBuild, withModules } from './load-build.mts'
+import { DSI_SETUP_COMMAND } from './run-manifest-facts.mts'
 import { BUILD_FILES, ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from './scripts/resolution-report-render.mts'
 import {
   setupDotnet,
   setupGradle,

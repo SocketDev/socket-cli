@@ -12,9 +12,8 @@ import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './scripts/resolution-report-render.mts'
-import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
 import {
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
@@ -24,12 +23,11 @@ import { InputError } from '../../utils/errors.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
-import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
-import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
 import type {
-  ResolvedPathsSidecar,
-  SidecarAccumulator,
-} from './scripts/sidecar.mts'
+  BuildOptionHints,
+  RunManifestFactsOutcome,
+  SocketFactsContext,
+} from './run-manifest-facts.mts'
 import type { OutputKind } from '../../types.mts'
 
 // Auto-manifest reads every build option from the root socket.json.
@@ -41,8 +39,6 @@ const AUTO_MANIFEST_HINTS: BuildOptionHints = {
 
 export type GenerateAutoManifestResult = {
   generatedFiles: string[]
-  // Reachability path only: resolved on-disk paths from the build-tool run.
-  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
 }
 
 // A failed generator aborts --auto-manifest: a partial SBOM silently
@@ -71,40 +67,29 @@ function abortManifestRunIfFailed(
 }
 
 export async function generateAutoManifest({
-  computeArtifactsSidecar,
+  context,
   cwd,
   detected,
   excludePaths,
   outputKind,
-  tmpDir,
   verbose,
 }: {
-  // Reachability path: run build tools with files to emit the sidecar.
-  computeArtifactsSidecar?: boolean | undefined
+  context?: SocketFactsContext | undefined
   detected: GeneratableManifests
   cwd: string
-  // Scan-root-relative `--exclude-paths`: skip excluded subprojects and drop
-  // excluded source roots from the resolved-paths sidecar.
+  // Scan-root-relative `--exclude-paths`: skip excluded subprojects.
   excludePaths?: string[] | undefined
   outputKind: OutputKind
-  // Caller-owned; see ManifestScriptOptions.tmpDir. Only sbt reads it, but
-  // required here so every caller allocates one via withTmpDir uniformly.
-  tmpDir: string
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const generatedFiles: string[] = []
-  const hints: BuildOptionHints = computeArtifactsSidecar
+  const hints: BuildOptionHints = context?.workDir?.withFiles
     ? {
         ...AUTO_MANIFEST_HINTS,
         continueOnInstallErrorsFlag: REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
       }
     : AUTO_MANIFEST_HINTS
-
-  // Resolved paths across all JVM roots, serialized to one sidecar at the end.
-  const sidecarAcc: SidecarAccumulator | undefined = computeArtifactsSidecar
-    ? new Map()
-    : undefined
 
   if (verbose) {
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
@@ -136,10 +121,8 @@ export async function generateAutoManifest({
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined,
+        context,
         hints,
-        sidecarAcc,
-        tmpDir,
-        withFiles: computeArtifactsSidecar,
       })
       abortFactsRunIfFailed('sbt', outcome)
     } else {
@@ -182,9 +165,8 @@ export async function generateAutoManifest({
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined,
+        context,
         hints,
-        sidecarAcc,
-        withFiles: computeArtifactsSidecar,
       })
       abortFactsRunIfFailed('gradle', outcome)
     } else {
@@ -215,10 +197,9 @@ export async function generateAutoManifest({
       mavenOpts: parseBuildToolOpts(
         sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
       ),
+      context,
       hints,
-      sidecarAcc,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
-      withFiles: computeArtifactsSidecar,
     })
     abortFactsRunIfFailed('maven', outcome)
   }
@@ -229,11 +210,10 @@ export async function generateAutoManifest({
     )
     const outcome = await convertDotnetToFacts({
       config: resolveEcosystemConfig('dotnet', cwd, sockJson),
+      context,
       cwd,
       excludePaths,
       hints,
-      sidecarAcc,
-      withFiles: computeArtifactsSidecar,
     })
     abortFactsRunIfFailed('dotnet', outcome)
   }
@@ -309,11 +289,5 @@ export async function generateAutoManifest({
     }
   }
 
-  return {
-    generatedFiles,
-    resolvedPathsSidecar:
-      sidecarAcc && hasSidecarEntries(sidecarAcc)
-        ? serializeSidecar(sidecarAcc)
-        : undefined,
-  }
+  return { generatedFiles }
 }

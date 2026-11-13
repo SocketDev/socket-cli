@@ -356,29 +356,29 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
     rmSync(scanCwd, { force: true, recursive: true })
   })
 
-  const sidecar = {
-    '/repo/reactor/.socket.facts.json': { components: [], projects: [] },
-  }
+  const sidecar = [
+    { factsFile: '/repo/reactor/.socket.facts.json', stateDir: '/work/r' },
+  ]
 
   it.for([
     {
       name: 'names every facts-only type next to the sidecar',
       factsOnlyTypes: ['maven', 'nuget'],
-      resolvedPathsSidecar: sidecar,
+      socketFactsSidecar: sidecar,
       expected: ['--use-only-socket-facts-artifacts', 'maven,nuget'],
       expectedSidecar: sidecar,
     },
     {
       name: 'keeps the Maven-only flag older Coana releases know, with an empty sidecar',
       factsOnlyTypes: ['maven'],
-      resolvedPathsSidecar: undefined,
+      socketFactsSidecar: undefined,
       expected: ['--maven-use-only-socket-facts'],
-      expectedSidecar: {},
+      expectedSidecar: [],
     },
     {
       name: 'passes no facts-only flag without facts-only types, even with a sidecar',
       factsOnlyTypes: undefined,
-      resolvedPathsSidecar: sidecar,
+      socketFactsSidecar: sidecar,
       expected: [],
       expectedSidecar: sidecar,
     },
@@ -388,12 +388,11 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
       expected,
       expectedSidecar,
       factsOnlyTypes,
-      resolvedPathsSidecar,
+      socketFactsSidecar,
     }) => {
       let sidecarAtSpawn: unknown
       mockSpawnCoana.mockImplementationOnce(async (args: string[]) => {
-        const sidecarPath =
-          args[args.indexOf('--compute-artifacts-sidecar') + 1]!
+        const sidecarPath = args[args.indexOf('--socket-facts-sidecar') + 1]!
         sidecarAtSpawn = JSON.parse(readFileSync(sidecarPath, 'utf8'))
         return { ok: true, data: '' }
       })
@@ -401,7 +400,7 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
       const args = await coanaArgsFor(
         scanCwd,
         {},
-        { factsOnlyTypes, resolvedPathsSidecar },
+        { factsOnlyTypes, socketFactsSidecar },
       )
 
       expect(factsOnlyArgs(args)).toEqual(expected)
@@ -413,7 +412,7 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
     const args = await coanaArgsFor(scanCwd, {
       dynamicSbomInference: ['maven', 'nuget'],
     })
-    expect(args).not.toContain('--compute-artifacts-sidecar')
+    expect(args).not.toContain('--socket-facts-sidecar')
   })
 })
 

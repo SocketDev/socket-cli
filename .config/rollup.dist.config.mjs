@@ -109,8 +109,8 @@ async function copyInitGradle() {
   await fs.copyFile(filepath, destPath)
 }
 
-// Copy the build-tool resolution assets (Gradle init script, sbt plugin,
-// Maven extension jar, dotnet tool) into dist/manifest-scripts, where run.mts resolves them
+// Copy the workspace-enumeration assets (Gradle init script, sbt plugin, Maven
+// extension jar, dotnet tool) into dist/manifest-scripts, where run.mts resolves them
 // at runtime. The Maven jar is compiled by maven-extension/build-jar.sh. Local
 // dev builds may omit it; published builds fail here if it is missing.
 async function copyManifestScripts() {
@@ -118,14 +118,6 @@ async function copyManifestScripts() {
   const destDir = path.join(constants.distPath, 'manifest-scripts')
   await fs.mkdir(path.join(destDir, 'maven-extension'), { recursive: true })
   await Promise.all([
-    fs.copyFile(
-      path.join(srcDir, 'socket-facts.init.gradle'),
-      path.join(destDir, 'socket-facts.init.gradle'),
-    ),
-    fs.copyFile(
-      path.join(srcDir, 'socket-facts.plugin.scala'),
-      path.join(destDir, 'socket-facts.plugin.scala'),
-    ),
     fs.copyFile(
       path.join(srcDir, 'socket-workspaces.init.gradle'),
       path.join(destDir, 'socket-workspaces.init.gradle'),
@@ -159,13 +151,11 @@ async function copyManifestScripts() {
       jarPath,
       path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
     )
-  } else if (
-    constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
-  ) {
+  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
     // Fail closed: a published build without the jar would ship a package whose
-    // `socket manifest maven` / Maven reachability silently produces an empty
-    // SBOM. Run `pnpm run build:maven-extension` before `build:dist`. (A local
-    // dev build tolerates a missing jar; run.mts surfaces a hint at runtime.)
+    // `socket manifest setup` cannot list Maven projects. Run
+    // `pnpm run build:maven-extension` before `build:dist`. (A local dev build
+    // tolerates a missing jar; run.mts surfaces a hint at runtime.)
     throw new Error(
       'Maven manifest extension jar not found at ' +
         jarPath +

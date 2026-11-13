@@ -4,11 +4,10 @@ import sbt._
 import sbt.Keys._
 
 /**
- * Sibling of SocketFactsPlugin (socket-facts.plugin.scala): emits only `meta`/`buildRoot`/
- * `project`/`projectBuild` records, no dependency resolution. Kept as a separate plugin so it
- * can't affect that file's already-verified wide sbt-version compatibility (0.13.x+).
+ * Emits only `meta`/`buildRoot`/`project`/`projectBuild` records, no dependency resolution, for
+ * the setup wizard; Coana generates the facts themselves.
  *
- * Must compile on Scala 2.10/sbt 0.13 and Scala 2.12/sbt 1.x, same constraint as the facts plugin.
+ * Must compile on Scala 2.10/sbt 0.13 and Scala 2.12/sbt 1.x.
  */
 object SocketWorkspacesPlugin extends AutoPlugin {
   override def trigger = allRequirements
@@ -29,7 +28,7 @@ object SocketWorkspacesPlugin extends AutoPlugin {
       val allRefs = extracted.structure.allProjectRefs
 
       // `-Dsocket.excludePaths` (scan-root-relative globs): a subproject whose dir is wholly excluded
-      // emits no project record. Mirrors socket-facts.plugin.scala / the gradle / maven producers.
+      // emits no project record, as in the gradle / maven producers.
       val excludeMatchers = parseExcludeMatchers()
       val rootCanonPath = buildRoot.getCanonicalFile.toPath
       def relTo(base: java.nio.file.Path)(f: File): String = {
@@ -56,7 +55,6 @@ object SocketWorkspacesPlugin extends AutoPlugin {
         CrossVersion.apply(sv, sbv)(extracted.get(projectID.in(ref)))
       }
 
-      // Mirrors socket-facts.plugin.scala's projectBuild records.
       val buildFilesByRef: Map[ProjectRef, Seq[String]] =
         extracted.structure.settings
           .flatMap { setting =>
@@ -100,7 +98,7 @@ object SocketWorkspacesPlugin extends AutoPlugin {
     }
   )
 
-  // ---- config selection / path exclusion (mirrors socket-facts.plugin.scala) ----------------
+  // ---- path exclusion ---------------------------------------------------------------------------
 
   // `-Dsocket.excludePaths` → PRE-COMPILED, comma-joined, anchored regex pattern sources, used only
   // to skip whole excluded subprojects. The CLI compiles the user-facing globs in

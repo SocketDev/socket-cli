@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Run the manifest-script compatibility matrix LOCALLY, on demand.
+# Run the workspace-enumeration compatibility matrix LOCALLY, on demand.
 #
 # GitHub Actions can't run this: SocketDev's org action allowlist forbids
 # `actions/setup-java` and `sbt/setup-sbt`, so the build-tool matrix has no CI
-# home. Run this whenever you change the Gradle init script
-# (socket-facts.init.gradle), the sbt plugin (socket-facts.plugin.scala), or the
-# Maven extension (maven-extension/) — it exercises the same version matrix the
-# CI workflow used and asserts the scripts still emit the expected records.
+# home. Run this whenever you change socket-workspaces.init.gradle,
+# socket-workspaces.plugin.scala, the Maven extension or the dotnet tool's
+# workspaces mode.
 #
 # JDKs: the matrix needs several Java versions (a row's required major is shown
 # per run). Point JDK8 / JDK11 / JDK17 / JDK21 at JDK homes to use the right one
@@ -26,17 +25,13 @@ TOOL="${1:-all}"
 . "$HERE/compat-cache.sh"
 CACHE="$SOCKET_COMPAT_CACHE"
 
-# Same matrix as the former CI workflow. Rows: "<ver> <javaMajor> [scala]".
-# 6.2 is the oldest Gradle with dependency verification.
+# Rows: "<ver> <javaMajor> [scala]".
 GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "6.2.2 8" "8.10.2 17" "9.2.1 21")
-# The Maven rows span the range the extension claims to support (see maven-extension/pom.xml):
-# 3.2.5 is the oldest, 4.x the newest. Resolution goes through Maven's own
-# ProjectDependenciesResolver, so both ends are load-bearing, not decorative.
+# The Maven rows span the range the extension claims to support (see maven-extension/pom.xml).
 MAVEN_MATRIX=("3.2.5 8" "3.6.3 11" "3.8.8 17" "3.9.9 17" "4.0.0-rc-6 21")
-# The `ivy` row runs sbt 1.x with `useCoursier := false`, the other resolver path; failure suite only.
 # One SDK per supported major.
 DOTNET_MATRIX=("6.0.428" "7.0.410" "8.0.414" "9.0.315" "10.0.301" "11.0.100-rc.3.26522.148")
-SBT_MATRIX=("0.13.18 8 2.10.7" "1.4.9 11 2.12.20" "1.6.2 17 2.12.20" "1.9.9 17 2.12.20" "1.9.9 17 2.12.20 ivy")
+SBT_MATRIX=("0.13.18 8 2.10.7" "1.4.9 11 2.12.20" "1.6.2 17 2.12.20" "1.9.9 17 2.12.20")
 
 # Select a JDK for the given Java major: use $JDK<major> if set, else current java.
 use_jdk() {
@@ -63,7 +58,6 @@ run_dotnet() {
       echo "Fix: bash dotnet-install.sh --version $sdk --install-dir $CACHE/dotnet (https://dot.net/v1/dotnet-install.sh)" >&2
       exit 1
     fi
-    bash "$HERE/dotnet-compat/smoke-test.sh" "$dotnet" "$sdk"
     bash "$HERE/dotnet-compat/smoke-test-workspaces.sh" "$dotnet" "$sdk"
     bash "$HERE/dotnet-compat/smoke-test-exclude-base.sh" "$dotnet" "$sdk"
   done
@@ -84,10 +78,8 @@ run_gradle() {
       echo "Fix: download https://services.gradle.org/distributions/gradle-$ver-bin.zip and unzip it into $CACHE" >&2
       exit 1
     fi
-    bash "$HERE/gradle-compat/smoke-test.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-workspaces.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-exclude-base.sh" "$dir/bin/gradle"
-    bash "$HERE/gradle-compat/smoke-test-failures.sh" "$dir/bin/gradle"
   done
 }
 
@@ -110,16 +102,8 @@ run_maven() {
       echo "Fix: download https://archive.apache.org/dist/maven/$line/$ver/binaries/apache-maven-$ver-bin.zip and unzip it into $CACHE" >&2
       exit 1
     fi
-    bash "$HERE/maven-compat/smoke-test.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-workspaces.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-exclude-base.sh" "$dir/bin/mvn" "$jar"
-    bash "$HERE/maven-compat/smoke-test-repo-inheritance.sh" "$dir/bin/mvn" "$jar"
-    bash "$HERE/maven-compat/smoke-test-duplicate-failure.sh" "$dir/bin/mvn" "$jar"
-    bash "$HERE/maven-compat/smoke-test-graph-failure.sh" "$dir/bin/mvn" "$jar"
-    bash "$HERE/maven-compat/smoke-test-descriptor-failure.sh" "$dir/bin/mvn" "$jar"
-    bash "$HERE/maven-compat/smoke-test-unsolvable-conflict.sh" "$dir/bin/mvn" "$jar"
-    bash "$HERE/maven-compat/smoke-test-extension-type.sh" "$dir/bin/mvn" "$jar"
-    bash "$HERE/maven-compat/smoke-test-scopes.sh" "$dir/bin/mvn" "$jar"
   done
 }
 
@@ -131,16 +115,11 @@ run_sbt() {
   for row in "${SBT_MATRIX[@]}"; do
     # shellcheck disable=SC2086
     set -- $row
-    local ver="$1" java="$2" scala="$3" resolver="${4:-}"
-    echo "== sbt $ver / scala $scala${resolver:+ / $resolver} (wants JDK $java) =="
+    local ver="$1" java="$2" scala="$3"
+    echo "== sbt $ver / scala $scala (wants JDK $java) =="
     use_jdk "$java"
-    if [ -z "$resolver" ]; then
-      bash "$HERE/sbt-compat/smoke-test.sh" "$ver" "$scala"
-      bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
-      bash "$HERE/sbt-compat/smoke-test-exclude-base.sh" "$ver" "$scala"
-    fi
-    bash "$HERE/sbt-compat/smoke-test-failure.sh" "$ver" "$scala" ${resolver:+"$resolver"}
-    bash "$HERE/sbt-compat/smoke-test-relocation.sh" "$ver" "$scala" ${resolver:+"$resolver"}
+    bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
+    bash "$HERE/sbt-compat/smoke-test-exclude-base.sh" "$ver" "$scala"
   done
 }
 

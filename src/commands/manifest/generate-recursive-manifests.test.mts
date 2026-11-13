@@ -12,29 +12,72 @@ vi.mock('../../utils/socket-json.mts', async importOriginal => ({
   // Default: no nested socket.json anywhere in the fixture tree.
   readSocketJsonChain: vi.fn(() => []),
 }))
-vi.mock('./run-manifest-facts.mts', () => ({
+vi.mock('./run-manifest-facts.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./run-manifest-facts.mts')>()),
+  listDotnetSolutionMembers: vi.fn(async () => undefined),
   runManifestFacts: vi.fn(),
 }))
 vi.mock('./enumerate-workspaces.mts', () => ({
   enumerateWorkspaces: vi.fn(),
 }))
-vi.mock('./scripts/run.mts', async importOriginal => ({
-  ...(await importOriginal<typeof import('./scripts/run.mts')>()),
-  listDotnetEntryProjects: vi.fn(async () => undefined),
-}))
 
 import { buildRootPath } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
-import { runManifestFacts } from './run-manifest-facts.mts'
-import { listDotnetEntryProjects } from './scripts/run.mts'
+import {
+  listDotnetSolutionMembers,
+  runManifestFacts,
+  setSidecarEntry,
+} from './run-manifest-facts.mts'
 import { testPath } from '../../../test/utils.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonChain,
 } from '../../utils/socket-json.mts'
 
+import type {
+  RunManifestFactsOutcome,
+  SocketFactsWorkDir,
+} from './run-manifest-facts.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
+
+type TestProject = {
+  manifestFiles?: Array<{ file: string }> | undefined
+  subprojectDir: string
+  [field: string]: unknown
+}
+
+type TestFacts = { factsPath: string; projects: TestProject[] }
+
+// What Coana reports of a build whose tool lists `projects`, relative to the
+// facts file's directory.
+function reported({ factsPath, projects }: TestFacts) {
+  const buildRoot = path.dirname(factsPath)
+  return {
+    coveredBuildFiles: projects
+      .flatMap(project => project.manifestFiles ?? [])
+      .map(({ file }) => path.resolve(buildRoot, file))
+      .filter(file => existsSync(file)),
+    factsPath,
+  }
+}
+
+function newWorkDir(): SocketFactsWorkDir {
+  return { dir: '/work', entries: [], withFiles: true }
+}
+
+function mockFacts(
+  impl: (
+    options: Parameters<typeof runManifestFacts>[0],
+  ) => Promise<TestFacts | null | undefined>,
+): void {
+  vi.mocked(runManifestFacts).mockImplementation(
+    async (options): Promise<RunManifestFactsOutcome> => {
+      const facts = await impl(options)
+      return facts ? reported(facts) : facts
+    },
+  )
+}
 
 // The settings each build root's directory resolves to, as one socket.json at
 // the filesystem root.
@@ -88,32 +131,30 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('invokes the reactor root once and skips its declared members, but still visits an undeclared nested submodule and a differently-tooled nested project', async () => {
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, ecosystem }) => {
-        if (cwd === reactor && ecosystem === 'maven') {
-          return {
-            factsPath: path.join(cwd, '.socket.facts.json'),
-            projects: [
-              {
-                type: 'maven',
-                name: 'moduleA',
-                subprojectDir: 'moduleA',
-                manifestFiles: [{ file: 'moduleA/pom.xml' }],
-                children: [],
-              },
-              {
-                type: 'maven',
-                name: 'moduleB',
-                subprojectDir: 'moduleB',
-                manifestFiles: [{ file: 'moduleB/pom.xml' }],
-                children: [],
-              },
-            ],
-          }
+    mockFacts(async ({ cwd, ecosystem }) => {
+      if (cwd === reactor && ecosystem === 'maven') {
+        return {
+          factsPath: path.join(cwd, '.socket.facts.json'),
+          projects: [
+            {
+              type: 'maven',
+              name: 'moduleA',
+              subprojectDir: 'moduleA',
+              manifestFiles: [{ file: 'moduleA/pom.xml' }],
+              children: [],
+            },
+            {
+              type: 'maven',
+              name: 'moduleB',
+              subprojectDir: 'moduleB',
+              manifestFiles: [{ file: 'moduleB/pom.xml' }],
+              children: [],
+            },
+          ],
         }
-        return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
-      },
-    )
+      }
+      return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
+    })
 
     const outcomes = await generateRecursiveManifests({
       cwd: monorepo,
@@ -159,7 +200,7 @@ describe('generateRecursiveManifests', () => {
       const reactorA = path.join(outer, 'reactor-a')
       const sharedLib = path.join(outer, sharedLibName)
       const sharedFacts = path.join(sharedLib, 'pom.xml.socket.facts.json')
-      const sidecarAcc = new Map()
+      const workDir = newWorkDir()
       try {
         await fs.mkdir(reactorA, { recursive: true })
         await fs.mkdir(sharedLib, { recursive: true })
@@ -167,10 +208,13 @@ describe('generateRecursiveManifests', () => {
         await fs.writeFile(path.join(sharedLib, 'pom.xml'), '<project/>')
         await fs.writeFile(sharedFacts, 'committed')
 
-        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+        mockFacts(async ({ cwd }) => {
           const factsPath = path.join(cwd, 'pom.xml.socket.facts.json')
           await fs.writeFile(factsPath, 'generated')
-          sidecarAcc.set(factsPath, { components: [], projects: [] })
+          setSidecarEntry(workDir, factsPath, {
+            factsFile: factsPath,
+            stateDir: cwd,
+          })
           return {
             factsPath,
             projects:
@@ -190,8 +234,8 @@ describe('generateRecursiveManifests', () => {
         })
 
         const outcomes = await generateRecursiveManifests({
+          context: { workDir },
           cwd: outer,
-          sidecarAcc,
           verbose: false,
         })
 
@@ -204,72 +248,13 @@ describe('generateRecursiveManifests', () => {
             .mock.calls.some(([opts]) => opts.cwd === sharedLib),
         ).toBe(builtAlone)
         expect(await fs.readFile(sharedFacts, 'utf8')).toBe('committed')
-        expect([...sidecarAcc.keys()]).toEqual([
+        expect(workDir.entries.map(entry => entry.factsFile)).toEqual([
           path.join(reactorA, 'pom.xml.socket.facts.json'),
         ])
         // The restored file is not this scan's, so it is not to be collected.
         expect(
           outcomes.find(o => o.dir === sharedLib)?.discardedFactsPath,
         ).toBe(builtAlone ? sharedFacts : undefined)
-      } finally {
-        await fs.rm(outer, { recursive: true, force: true })
-      }
-    },
-  )
-
-  it.for([
-    // The build that redirects Gradle with `-p` runs second, then first.
-    ['a-main', 'z-alias'],
-    ['z-main', 'a-alias'],
-  ])(
-    'keeps the facts and sidecar entry of the kept run together when two runs write one facts file (%s, %s)',
-    async ([mainName, aliasName]) => {
-      const outer = await fs.realpath(
-        await fs.mkdtemp(path.join(tmpdir(), 'shared-facts-')),
-      )
-      const main = path.join(outer, mainName!)
-      const alias = path.join(outer, aliasName!)
-      const sidecarAcc = new Map()
-      try {
-        for (const dir of [main, alias]) {
-          for (const file of ['settings.gradle', 'build.gradle']) {
-            // eslint-disable-next-line no-await-in-loop
-            await fs.mkdir(dir, { recursive: true })
-            // eslint-disable-next-line no-await-in-loop
-            await fs.writeFile(path.join(dir, file), '')
-          }
-        }
-        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
-          const factsPath = path.join(main, 'gradle.socket.facts.json')
-          await fs.writeFile(factsPath, cwd)
-          sidecarAcc.set(factsPath, { components: [], projects: [], cwd })
-          return {
-            factsPath,
-            projects: [
-              {
-                type: 'maven' as const,
-                name: 'root',
-                id: 'root',
-                subprojectDir: '.',
-                children: [],
-              },
-            ],
-          }
-        })
-
-        const outcomes = await generateRecursiveManifests({
-          cwd: outer,
-          sidecarAcc,
-          verbose: false,
-        })
-
-        const generated = outcomes.filter(o => o.status === 'generated')
-        expect(generated).toHaveLength(1)
-        const { factsPath } = generated[0]!
-        expect(generated[0]!.discardedFactsPath).toBeUndefined()
-        // The kept build's own facts and sidecar entry, whichever ran last.
-        expect(await fs.readFile(factsPath!, 'utf8')).toBe(generated[0]!.dir)
-        expect(sidecarAcc.get(factsPath!)?.cwd).toBe(generated[0]!.dir)
       } finally {
         await fs.rm(outer, { recursive: true, force: true })
       }
@@ -289,7 +274,7 @@ describe('generateRecursiveManifests', () => {
         // eslint-disable-next-line no-await-in-loop
         await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
       }
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+      mockFacts(async ({ cwd }) => {
         const factsPath = path.join(cwd, 'pom.xml.socket.facts.json')
         await fs.writeFile(factsPath, 'generated')
         return {
@@ -338,42 +323,40 @@ describe('generateRecursiveManifests', () => {
       await fs.writeFile(path.join(gradleMember, 'build.gradle'), '')
       await fs.writeFile(path.join(gradleMember, 'pom.xml'), '<project/>')
 
-      vi.mocked(runManifestFacts).mockImplementation(
-        async ({ cwd, ecosystem }) => {
-          if (cwd === outer && ecosystem === 'maven') {
-            return {
-              factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
-              projects: [
-                {
-                  type: 'maven',
-                  name: 'shared',
-                  subprojectDir: 'shared',
-                  manifestFiles: [{ file: 'shared/alt.xml' }],
-                  children: [],
-                },
-              ],
-            }
-          }
-          if (cwd === outer && ecosystem === 'gradle') {
-            return {
-              factsPath: path.join(cwd, 'gradle.socket.facts.json'),
-              projects: [
-                {
-                  type: 'maven',
-                  name: 'gradle-member',
-                  subprojectDir: 'gradle-member',
-                  manifestFiles: [{ file: 'gradle-member/build.gradle' }],
-                  children: [],
-                },
-              ],
-            }
-          }
+      mockFacts(async ({ cwd, ecosystem }) => {
+        if (cwd === outer && ecosystem === 'maven') {
           return {
-            factsPath: path.join(cwd, `${ecosystem}.socket.facts.json`),
-            projects: [],
+            factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
+            projects: [
+              {
+                type: 'maven',
+                name: 'shared',
+                subprojectDir: 'shared',
+                manifestFiles: [{ file: 'shared/alt.xml' }],
+                children: [],
+              },
+            ],
           }
-        },
-      )
+        }
+        if (cwd === outer && ecosystem === 'gradle') {
+          return {
+            factsPath: path.join(cwd, 'gradle.socket.facts.json'),
+            projects: [
+              {
+                type: 'maven',
+                name: 'gradle-member',
+                subprojectDir: 'gradle-member',
+                manifestFiles: [{ file: 'gradle-member/build.gradle' }],
+                children: [],
+              },
+            ],
+          }
+        }
+        return {
+          factsPath: path.join(cwd, `${ecosystem}.socket.facts.json`),
+          projects: [],
+        }
+      })
 
       const outcomes = await generateRecursiveManifests({
         cwd: outer,
@@ -401,7 +384,7 @@ describe('generateRecursiveManifests', () => {
       await fs.writeFile(path.join(outer, 'build.sbt'), '')
       await fs.writeFile(path.join(member, 'build.sbt'), '')
 
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      mockFacts(async ({ cwd }) => ({
         factsPath: path.join(cwd, 'sbt.socket.facts.json'),
         projects:
           cwd === outer
@@ -443,7 +426,7 @@ describe('generateRecursiveManifests', () => {
       await fs.writeFile(path.join(outer, 'settings.gradle'), "include 'tools'")
       await fs.writeFile(path.join(tools, 'settings.gradle'), '')
 
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      mockFacts(async ({ cwd }) => ({
         factsPath: path.join(cwd, 'gradle.socket.facts.json'),
         projects:
           cwd === outer
@@ -485,7 +468,7 @@ describe('generateRecursiveManifests', () => {
         // eslint-disable-next-line no-await-in-loop
         await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
       }
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+      mockFacts(async ({ cwd }) => {
         if (cwd === outer) {
           return {
             factsPath: path.join(buildRoot, 'x.xml.socket.facts.json'),
@@ -528,7 +511,7 @@ describe('generateRecursiveManifests', () => {
   })
 
   it("runs both ecosystems unconditionally at a dual-marker directory (matches auto's existing behavior)", async () => {
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -547,15 +530,13 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('aborts only the build roots in and under a failed one, which may be its members, while siblings and other ecosystems proceed', async () => {
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, ecosystem }) => {
-        if (ecosystem === 'maven' && cwd === reactor) {
-          process.exitCode = 1
-          return null
-        }
-        return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
-      },
-    )
+    mockFacts(async ({ cwd, ecosystem }) => {
+      if (ecosystem === 'maven' && cwd === reactor) {
+        process.exitCode = 1
+        return null
+      }
+      return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
+    })
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
     try {
@@ -614,7 +595,7 @@ describe('generateRecursiveManifests', () => {
         // eslint-disable-next-line no-await-in-loop
         await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
       }
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+      mockFacts(async ({ cwd }) => {
         if (cwd === core) {
           process.exitCode = 1
           return null
@@ -650,15 +631,13 @@ describe('generateRecursiveManifests', () => {
 
   it('still classifies a failure as failed (not empty) when process.exitCode was already non-zero beforehand', async () => {
     process.exitCode = 1
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, ecosystem }) => {
-        if (ecosystem === 'maven' && cwd === dualMarkerDir) {
-          process.exitCode = 1
-          return null
-        }
-        return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
-      },
-    )
+    mockFacts(async ({ cwd, ecosystem }) => {
+      if (ecosystem === 'maven' && cwd === dualMarkerDir) {
+        process.exitCode = 1
+        return null
+      }
+      return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
+    })
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
     try {
@@ -677,15 +656,13 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('reports a non-fatal empty result distinctly from a failure', async () => {
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, ecosystem }) => {
-        if (ecosystem === 'maven' && cwd === dualMarkerDir) {
-          // No resolvable dependencies; runManifestFacts warns but does not fail.
-          return undefined
-        }
-        return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
-      },
-    )
+    mockFacts(async ({ cwd, ecosystem }) => {
+      if (ecosystem === 'maven' && cwd === dualMarkerDir) {
+        // No resolvable dependencies; runManifestFacts warns but does not fail.
+        return undefined
+      }
+      return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
+    })
 
     const outcomes = await generateRecursiveManifests({
       cwd: monorepo,
@@ -699,7 +676,7 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('passes every build root the scan-root-relative --exclude-paths and the scan root', async () => {
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -725,21 +702,19 @@ describe('generateRecursiveManifests', () => {
     try {
       await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
       await fs.writeFile(path.join(dir, 'App.sln'), '')
-      vi.mocked(listDotnetEntryProjects).mockClear()
-      vi.mocked(runManifestFacts).mockImplementation(
-        async ({ cwd, entryFile }) => ({
-          factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-          projects: [
-            {
-              type: 'maven',
-              name: 'app',
-              subprojectDir: '',
-              manifestFiles: [{ file: 'pom.xml' }],
-              children: [],
-            },
-          ],
-        }),
-      )
+      vi.mocked(listDotnetSolutionMembers).mockClear()
+      mockFacts(async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects: [
+          {
+            type: 'maven',
+            name: 'app',
+            subprojectDir: '',
+            manifestFiles: [{ file: 'pom.xml' }],
+            children: [],
+          },
+        ],
+      }))
       const outcomes = await generateRecursiveManifests({
         cwd: dir,
         verbose: false,
@@ -748,7 +723,7 @@ describe('generateRecursiveManifests', () => {
       expect(
         outcomes.map(o => `${o.ecosystem}:${o.entryFile}:${o.status}`).sort(),
       ).toEqual(['dotnet:App.sln:generated', 'maven:pom.xml:generated'])
-      expect(listDotnetEntryProjects).not.toHaveBeenCalled()
+      expect(listDotnetSolutionMembers).not.toHaveBeenCalled()
     } finally {
       await fs.rm(dir, { recursive: true, force: true })
     }
@@ -760,7 +735,7 @@ describe('generateRecursiveManifests', () => {
         ? { defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } } }
         : {},
     )
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -793,7 +768,7 @@ describe('generateRecursiveManifests', () => {
           }
         : {},
     )
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -818,7 +793,7 @@ describe('generateRecursiveManifests', () => {
         ? { defaults: { manifest: { maven: { verbose: true } } } }
         : {},
     )
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -853,7 +828,7 @@ describe('generateRecursiveManifests', () => {
             }
           : {},
       )
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      mockFacts(async ({ cwd }) => ({
         factsPath: path.join(cwd, '.socket.facts.json'),
         projects: [],
       }))
@@ -878,7 +853,7 @@ describe('generateRecursiveManifests', () => {
         ? { defaults: { manifest: { maven: { ignoreUnresolved: true } } } }
         : {},
     )
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -906,7 +881,7 @@ describe('generateRecursiveManifests', () => {
         ? { defaults: { manifest: { gradle: { facts: false } } } }
         : {},
     )
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -957,7 +932,7 @@ describe('generateRecursiveManifests', () => {
         ? { defaults: { manifest: { maven: { disabled: true } } } }
         : {},
     )
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -1014,7 +989,7 @@ describe('generateRecursiveManifests', () => {
       }
       return {}
     })
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -1045,7 +1020,7 @@ describe('generateRecursiveManifests', () => {
     mockCascade(dir => ({
       defaults: { manifest: { maven: { disabled: dir !== reactor } } },
     }))
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -1075,7 +1050,7 @@ describe('generateRecursiveManifests', () => {
         ? { defaults: { manifest: { maven: { disabled: true } } } }
         : {},
     )
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
@@ -1127,7 +1102,7 @@ describe('generateRecursiveManifests', () => {
         }),
       )
       await fs.symlink(realCwd, cwdLink)
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      mockFacts(async ({ cwd }) => ({
         factsPath: path.join(cwd, '.socket.facts.json'),
         projects: [],
       }))
@@ -1142,137 +1117,29 @@ describe('generateRecursiveManifests', () => {
     }
   })
 
-  it('shares one sbt tmpDir across every discovered sbt root, but passes tmpDir: undefined for gradle/maven', async () => {
-    const outer = await fs.mkdtemp(path.join(tmpdir(), 'sbt-shared-tmpdir-'))
-    const sbtA = path.join(outer, 'sbt-a')
-    const sbtB = path.join(outer, 'sbt-b')
-    const mavenRoot = path.join(outer, 'maven-root')
-    try {
-      await fs.mkdir(sbtA, { recursive: true })
-      await fs.mkdir(sbtB, { recursive: true })
-      await fs.mkdir(mavenRoot, { recursive: true })
-      await fs.writeFile(path.join(sbtA, 'build.sbt'), '')
-      await fs.writeFile(path.join(sbtB, 'build.sbt'), '')
-      await fs.writeFile(path.join(mavenRoot, 'pom.xml'), '<project/>')
-
-      const tmpDirsSeen: Record<string, Array<string | undefined>> = {}
-      vi.mocked(runManifestFacts).mockImplementation(
-        async ({ cwd, ecosystem, tmpDir }) => {
-          ;(tmpDirsSeen[ecosystem] ??= []).push(tmpDir)
-          return {
-            factsPath: path.join(cwd, '.socket.facts.json'),
-            projects: [],
-          }
-        },
-      )
-
-      await generateRecursiveManifests({
-        cwd: outer,
-        verbose: false,
-      })
-
-      expect(tmpDirsSeen['sbt']).toHaveLength(2)
-      expect(tmpDirsSeen['sbt']![0]).toBeDefined()
-      expect(tmpDirsSeen['sbt']![0]).toBe(tmpDirsSeen['sbt']![1])
-      expect(tmpDirsSeen['maven']).toEqual([undefined])
-    } finally {
-      await fs.rm(outer, { recursive: true, force: true })
-    }
-  })
-
-  it('does not allocate a shared tmpDir at all when no sbt root is discovered', async () => {
-    const outer = await fs.mkdtemp(path.join(tmpdir(), 'no-sbt-tmpdir-'))
-    try {
-      await fs.writeFile(path.join(outer, 'pom.xml'), '<project/>')
-
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
-        factsPath: path.join(cwd, '.socket.facts.json'),
-        projects: [],
-      }))
-
-      await generateRecursiveManifests({
-        cwd: outer,
-        verbose: false,
-      })
-
-      expect(
-        vi.mocked(runManifestFacts).mock.calls[0]?.[0].tmpDir,
-      ).toBeUndefined()
-    } finally {
-      await fs.rm(outer, { recursive: true, force: true })
-    }
-  })
-
-  it('reuses a caller-supplied sbtTmpDir as-is for every sbt root, and does not delete it', async () => {
-    const outer = await fs.mkdtemp(path.join(tmpdir(), 'sbt-caller-tmpdir-'))
-    const sbtA = path.join(outer, 'sbt-a')
-    const sbtB = path.join(outer, 'sbt-b')
-    const callerOwnedDir = await fs.mkdtemp(
-      path.join(tmpdir(), 'caller-owned-sbt-base-'),
-    )
-    try {
-      await fs.mkdir(sbtA, { recursive: true })
-      await fs.mkdir(sbtB, { recursive: true })
-      await fs.writeFile(path.join(sbtA, 'build.sbt'), '')
-      await fs.writeFile(path.join(sbtB, 'build.sbt'), '')
-
-      const tmpDirsSeen: Array<string | undefined> = []
-      vi.mocked(runManifestFacts).mockImplementation(
-        async ({ cwd, tmpDir }) => {
-          tmpDirsSeen.push(tmpDir)
-          return {
-            factsPath: path.join(cwd, '.socket.facts.json'),
-            projects: [],
-          }
-        },
-      )
-
-      await generateRecursiveManifests({
-        cwd: outer,
-        sbtTmpDir: callerOwnedDir,
-        verbose: false,
-      })
-
-      expect(tmpDirsSeen).toEqual([callerOwnedDir, callerOwnedDir])
-      // generateRecursiveManifests must not clean up a directory it didn't
-      // allocate - the caller (e.g. handleCreateNewScan keeping it alive
-      // until reachability analysis consumes the sidecar's resolved paths)
-      // owns that lifetime.
-      await expect(fs.access(callerOwnedDir)).resolves.toBeUndefined()
-    } finally {
-      await fs.rm(outer, { recursive: true, force: true })
-      await fs.rm(callerOwnedDir, { recursive: true, force: true })
-    }
-  })
-
-  it('threads sidecarAcc/withFiles through to every build root, not just the first', async () => {
-    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+  it('threads the work dir through to every build root, not just the first', async () => {
+    mockFacts(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
     }))
 
-    const sidecarAcc = new Map()
-    await generateRecursiveManifests({
-      cwd: monorepo,
-      sidecarAcc,
-      verbose: false,
-      withFiles: true,
-    })
+    const context = { workDir: newWorkDir() }
+    await generateRecursiveManifests({ context, cwd: monorepo, verbose: false })
 
     expect(vi.mocked(runManifestFacts).mock.calls.length).toBeGreaterThan(1)
     for (const [opts] of vi.mocked(runManifestFacts).mock.calls) {
-      expect(opts.sidecarAcc).toBe(sidecarAcc)
-      expect(opts.withFiles).toBe(true)
+      expect(opts.context).toBe(context)
+      expect(opts.hints?.continueOnInstallErrorsFlag).toBe(
+        '--reach-continue-on-install-errors',
+      )
     }
   })
 
   it('runs every POM in a directory as its own build', async () => {
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, entryFile }) => ({
-        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-        projects: [],
-      }),
-    )
+    mockFacts(async ({ cwd, entryFile }) => ({
+      factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+      projects: [],
+    }))
 
     const outcomes = await generateRecursiveManifests({
       cwd: pomNames,
@@ -1296,23 +1163,21 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('covers a POM by file, so a sibling POM in the same directory still runs', async () => {
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, entryFile }) => ({
-        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-        projects:
-          cwd === pomNames && entryFile === 'pom.xml'
-            ? [
-                {
-                  type: 'maven',
-                  name: 'bare',
-                  subprojectDir: 'bare',
-                  manifestFiles: [{ file: 'bare/pom' }],
-                  children: [],
-                },
-              ]
-            : [],
-      }),
-    )
+    mockFacts(async ({ cwd, entryFile }) => ({
+      factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+      projects:
+        cwd === pomNames && entryFile === 'pom.xml'
+          ? [
+              {
+                type: 'maven',
+                name: 'bare',
+                subprojectDir: 'bare',
+                manifestFiles: [{ file: 'bare/pom' }],
+                children: [],
+              },
+            ]
+          : [],
+    }))
 
     const outcomes = await generateRecursiveManifests({
       cwd: pomNames,
@@ -1338,12 +1203,10 @@ describe('generateRecursiveManifests', () => {
       },
     }))
     vi.mocked(readSocketJsonChain).mockClear()
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, entryFile }) => ({
-        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-        projects: [],
-      }),
-    )
+    mockFacts(async ({ cwd, entryFile }) => ({
+      factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+      projects: [],
+    }))
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
     try {
@@ -1406,70 +1269,6 @@ describe('generateRecursiveManifests', () => {
     })
 
     it.for([
-      // sub's own settings include `a`, which the outer build does not load.
-      [['.', 'a'], 'generated'],
-      // Everything sub loads, the outer build loads too.
-      [['.'], 'skippedCovered'],
-    ] as const)(
-      'runs the nested build and keeps it only when it loads more (%j)',
-      async ({ 0: subProjects, 1: subStatus }) => {
-        const sub = path.join(outer, 'sub')
-        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) =>
-          cwd === outer
-            ? gradleFacts(cwd, [
-                '.',
-                'sub',
-                ...(subProjects.length > 1 ? [] : ['sub/a']),
-              ])
-            : gradleFacts(cwd, [...subProjects]),
-        )
-
-        const outcomes = await generateRecursiveManifests({
-          cwd: outer,
-          purlTypes: ['maven'],
-          verbose: false,
-        })
-
-        const byDir = new Map(
-          outcomes
-            .filter(o => o.ecosystem === 'gradle')
-            .map(o => [path.relative(outer, o.dir) || '.', o.status]),
-        )
-        expect(byDir.get('.')).toBe('generated')
-        expect(byDir.get('sub')).toBe(subStatus)
-        expect(byDir.get('sub/a')).toBe('skippedCovered')
-        expect(
-          vi
-            .mocked(runManifestFacts)
-            .mock.calls.map(([o]) => path.relative(outer, o.cwd) || '.'),
-        ).toEqual(['.', 'sub'])
-      },
-    )
-
-    it('ignores the failure of a nested build of its own when the build that includes its directory succeeds', async () => {
-      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
-        if (cwd === path.join(outer, 'sub')) {
-          process.exitCode = 1
-          return null
-        }
-        return gradleFacts(cwd, ['.', 'sub', 'sub/a'])
-      })
-      vi.spyOn(logger, 'info').mockImplementation(() => logger)
-
-      const outcomes = await generateRecursiveManifests({
-        cwd: outer,
-        purlTypes: ['maven'],
-        verbose: false,
-      })
-
-      expect(
-        outcomes.find(o => o.dir === path.join(outer, 'sub'))?.status,
-      ).toBe('skippedCovered')
-      expect(outcomes.some(o => o.status === 'failed')).toBe(false)
-      expect(process.exitCode).toBeUndefined()
-    })
-
-    it.for([
       // `a` is a project of sub: skipped with what sub loads.
       [['.', 'a'], 'and its 1 module'],
       // `a` isn't: Gradle can only run it through sub, which is skipped.
@@ -1489,9 +1288,7 @@ describe('generateRecursiveManifests', () => {
           buildRoot: sub,
           projects: gradleFacts(sub, [...subProjects]).projects,
         })
-        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) =>
-          gradleFacts(cwd, ['.']),
-        )
+        mockFacts(async ({ cwd }) => gradleFacts(cwd, ['.']))
         const warnSpy = vi
           .spyOn(logger, 'warn')
           .mockImplementation(() => logger)
@@ -1538,12 +1335,10 @@ describe('generateRecursiveManifests', () => {
         },
       },
     })
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, entryFile }) => ({
-        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-        projects: [],
-      }),
-    )
+    mockFacts(async ({ cwd, entryFile }) => ({
+      factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+      projects: [],
+    }))
 
     await generateRecursiveManifests({ cwd: pomNames, verbose: false })
 
@@ -1567,24 +1362,22 @@ describe('generateRecursiveManifests', () => {
         },
       },
     })
-    vi.mocked(runManifestFacts).mockImplementation(
-      async ({ cwd, ecosystem }) => ({
-        factsPath: path.join(cwd, '.socket.facts.json'),
-        projects:
-          cwd === reactor && ecosystem === 'maven'
-            ? [
-                {
-                  type: 'maven',
-                  name: 'moduleA',
-                  id: 'moduleA',
-                  subprojectDir: 'moduleA',
-                  manifestFiles: [{ file: 'moduleA/pom.xml' }],
-                  children: [],
-                },
-              ]
-            : [],
-      }),
-    )
+    mockFacts(async ({ cwd, ecosystem }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects:
+        cwd === reactor && ecosystem === 'maven'
+          ? [
+              {
+                type: 'maven',
+                name: 'moduleA',
+                id: 'moduleA',
+                subprojectDir: 'moduleA',
+                manifestFiles: [{ file: 'moduleA/pom.xml' }],
+                children: [],
+              },
+            ]
+          : [],
+    }))
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
     try {
@@ -1636,21 +1429,19 @@ describe('generateRecursiveManifests', () => {
           },
         },
       })
-      vi.mocked(runManifestFacts).mockImplementation(
-        async ({ cwd, entryFile }) => {
-          const factsPath = path.join(cwd, `${entryFile}.socket.facts.json`)
-          await fs.writeFile(factsPath, 'generated')
-          return {
-            factsPath,
-            projects: [
-              {
-                ...mavenProject('.'),
-                manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
-              },
-            ],
-          }
-        },
-      )
+      mockFacts(async ({ cwd, entryFile }) => {
+        const factsPath = path.join(cwd, `${entryFile}.socket.facts.json`)
+        await fs.writeFile(factsPath, 'generated')
+        return {
+          factsPath,
+          projects: [
+            {
+              ...mavenProject('.'),
+              manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
+            },
+          ],
+        }
+      })
     })
     afterEach(async () => {
       await fs.rm(outer, { recursive: true, force: true })
@@ -1710,20 +1501,18 @@ describe('generateRecursiveManifests', () => {
         buildRoot: path.join(outer, 'legacy'),
         projects: [mavenProject('.')],
       })
-      vi.mocked(runManifestFacts).mockImplementation(
-        async ({ cwd, entryFile }) => ({
-          factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-          projects:
-            cwd === path.join(outer, 'zzz-reactor')
-              ? [mavenProject('.'), mavenProject('../legacy')]
-              : [
-                  {
-                    ...mavenProject('.'),
-                    manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
-                  },
-                ],
-        }),
-      )
+      mockFacts(async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects:
+          cwd === path.join(outer, 'zzz-reactor')
+            ? [mavenProject('.'), mavenProject('../legacy')]
+            : [
+                {
+                  ...mavenProject('.'),
+                  manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
+                },
+              ],
+      }))
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
       try {
@@ -1824,25 +1613,23 @@ describe('generateRecursiveManifests', () => {
           defaults: { manifest: { builds: { 'Y.sln': { disabled: true } } } },
         },
       })
-      vi.mocked(listDotnetEntryProjects).mockImplementation(
+      vi.mocked(listDotnetSolutionMembers).mockImplementation(
         async ({ entryFile }) => members[entryFile ?? ''],
       )
       vi.mocked(enumerateWorkspaces).mockResolvedValue({
         buildRoot: at('skip'),
         projects: [projectRecord('../p/a/A.csproj')],
       })
-      vi.mocked(runManifestFacts).mockImplementation(
-        async ({ cwd, entryFile }) => ({
-          factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-          projects:
-            entryFile === 'R.sln'
-              ? [
-                  projectRecord('../p/a/A.csproj'),
-                  projectRecord('../p/c/C.csproj'),
-                ]
-              : [projectRecord(entryFile ?? '')],
-        }),
-      )
+      mockFacts(async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects:
+          entryFile === 'R.sln'
+            ? [
+                projectRecord('../p/a/A.csproj'),
+                projectRecord('../p/c/C.csproj'),
+              ]
+            : [projectRecord(entryFile ?? '')],
+      }))
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
       const outcomes = await generateRecursiveManifests({
@@ -1869,7 +1656,7 @@ describe('generateRecursiveManifests', () => {
         ),
       )
     } finally {
-      vi.mocked(listDotnetEntryProjects).mockImplementation(
+      vi.mocked(listDotnetSolutionMembers).mockImplementation(
         async () => undefined,
       )
       await fs.rm(outer, { recursive: true, force: true })

@@ -32,16 +32,21 @@ const generated = {
   status: 'generated',
 }
 
+const context = {
+  coanaVersion: '1.2.3',
+  workDir: { dir: '/work', entries: [], withFiles: true },
+}
+
 function run(
   consumer: FactsConsumer,
   purlTypes: readonly PURL_Type[] = ['maven', 'nuget'],
 ) {
   return runDynamicSbomInference({
     consumer,
+    context,
     cwd: '/repo',
     excludePaths: ['vendor/**'],
     purlTypes,
-    sbtTmpDir: '/tmp/sbt',
   })
 }
 
@@ -50,45 +55,19 @@ describe('runDynamicSbomInference', () => {
     vi.clearAllMocks()
   })
 
-  it.for([
-    // sbtTmpDir only matters for reach; withheld otherwise so the callee
-    // allocates and cleans up its own ephemeral base.
-    {
-      consumer: 'upload',
-      sbtTmpDir: undefined,
-      sidecar: false,
-      withFiles: false,
-    },
-    {
-      consumer: 'fix',
-      sbtTmpDir: undefined,
-      sidecar: true,
-      withFiles: false,
-    },
-    {
-      consumer: 'reach',
-      sbtTmpDir: '/tmp/sbt',
-      sidecar: true,
-      withFiles: true,
-    },
-  ] as const)(
-    'generates for $consumer',
-    async ({ consumer, sbtTmpDir, sidecar, withFiles }) => {
-      mockGenerateRecursiveManifests.mockResolvedValueOnce([generated])
+  it('generates every build root with the given context', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([generated])
 
-      await run(consumer)
+    await run('reach')
 
-      expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
-        cwd: '/repo',
-        excludePaths: ['vendor/**'],
-        purlTypes: ['maven', 'nuget'],
-        sbtTmpDir,
-        sidecarAcc: sidecar ? expect.any(Map) : undefined,
-        verbose: false,
-        withFiles,
-      })
-    },
-  )
+    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
+      context,
+      cwd: '/repo',
+      excludePaths: ['vendor/**'],
+      purlTypes: ['maven', 'nuget'],
+      verbose: false,
+    })
+  })
 
   it('returns only the generated facts paths, ignoring empty and skipped roots', async () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([
@@ -102,26 +81,6 @@ describe('runDynamicSbomInference', () => {
       discardedFactsPaths: [],
       factsOnlyTypes: ['maven'],
       factsPaths: ['/repo/a/.socket.facts.json'],
-      resolvedPathsSidecar: undefined,
-    })
-  })
-
-  it('serializes the accumulated sidecar', async () => {
-    mockGenerateRecursiveManifests.mockImplementationOnce(
-      async ({ sidecarAcc }) => {
-        sidecarAcc.set('/repo/a/.socket.facts.json', {
-          projects: [{ name: 'app' }],
-          components: [],
-        })
-        return [generated]
-      },
-    )
-
-    expect((await run('reach')).resolvedPathsSidecar).toEqual({
-      '/repo/a/.socket.facts.json': {
-        projects: [{ name: 'app' }],
-        components: [],
-      },
     })
   })
 

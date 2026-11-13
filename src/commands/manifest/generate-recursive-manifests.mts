@@ -21,41 +21,45 @@ import {
   isBuildRootCovered,
   isPathInside,
   isRootCovered,
-  membershipOf,
+  membershipOfBuildFiles,
   realpathOrResolved,
   unionMemberships,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import { loadBuild, withModules } from './load-build.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
-import { runManifestFacts } from './run-manifest-facts.mts'
+import {
+  DSI_SETUP_COMMAND,
+  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+  runManifestFacts,
+  setSidecarEntry,
+  sidecarEntryOf,
+} from './run-manifest-facts.mts'
 import {
   BUILD_FILES,
   resolveBuildToolBin,
   socketFactsFileName,
 } from './scripts/build-tool.mts'
-import {
-  DSI_SETUP_COMMAND,
-  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
-} from './scripts/resolution-report-render.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
-import { withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { ResolvedBuildRootSettings } from './build-root-config.mts'
-import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
-import type { LoadedBuild } from './load-build.mts'
 import type {
-  RunManifestFactsOutcome,
-  RunManifestFactsResult,
-} from './run-manifest-facts.mts'
-import type { BuildTool } from './scripts/build-tool.mts'
+  BuildRoot,
+  Membership,
+  RootBuildOptions,
+} from './discover-manifest-roots.mts'
+import type { LoadedBuild } from './load-build.mts'
 import type {
   BuildOption,
   BuildOptionHints,
-} from './scripts/resolution-report-render.mts'
-import type { SidecarAccumulator } from './scripts/sidecar.mts'
+  RunManifestFactsOutcome,
+  RunManifestFactsResult,
+  SocketFactsContext,
+  SocketFactsSidecarEntry,
+} from './run-manifest-facts.mts'
+import type { BuildTool } from './scripts/build-tool.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
@@ -151,12 +155,10 @@ type Candidate = {
   root: BuildRoot
 }
 
-type SidecarEntry = NonNullable<ReturnType<SidecarAccumulator['get']>>
-
 // A copy of a facts file, if there was one, and its sidecar entry.
 type FactsState = {
   facts: string | undefined
-  sidecar: SidecarEntry | undefined
+  sidecar: SocketFactsSidecarEntry | undefined
 }
 
 type Run = Candidate & {
@@ -174,6 +176,7 @@ type Load = Candidate & LoadedBuild
 
 type WalkContext = {
   backupDir: () => Promise<string>
+  context: SocketFactsContext
   excludePaths: string[] | undefined
   // What each facts file held before the walk, by real path; undefined when a
   // run wrote it away from its own directory (Gradle's `-p`) before it was
@@ -186,10 +189,7 @@ type WalkContext = {
     tool: BuildTool,
     root: BuildRoot,
   ) => ResolvedBuildRootSettings
-  sbtTmpDir: string | undefined
-  sidecarAcc: SidecarAccumulator | undefined
   verbose: boolean
-  withFiles: boolean | undefined
 }
 
 type Loader = { path: string; skipped: boolean }
@@ -205,17 +205,19 @@ function statusOf(loader: Loader | undefined): RecursiveManifestOutcomeStatus {
   return loader?.skipped ? 'skippedDisabled' : 'skippedCovered'
 }
 
-// The options the build-tool scripts take besides the build itself.
+// The options a build's listings take besides the build itself.
 export function buildToolScriptOptions(
   config: Pick<EcosystemBuildConfig, 'bin' | 'buildOpts'>,
   excludeBase: string | undefined,
   excludePaths: string[] | undefined,
-) {
+  context?: SocketFactsContext | undefined,
+): RootBuildOptions {
   return {
     bin: config.bin,
+    buildOpts: config.buildOpts,
+    context,
     excludeBase,
     excludePaths,
-    toolOpts: config.buildOpts,
   }
 }
 
@@ -314,7 +316,12 @@ async function walkTool(
     })
 
   const scriptOpts = (candidate: Candidate) =>
-    buildToolScriptOptions(configFor(candidate), ctx.realCwd, ctx.excludePaths)
+    buildToolScriptOptions(
+      configFor(candidate),
+      ctx.realCwd,
+      ctx.excludePaths,
+      ctx.context,
+    )
 
   // A solution the SDK cannot read, built through its twin instead.
   const superseded = new Map<number, Promise<boolean>>()
@@ -677,6 +684,7 @@ async function runCandidate(
   const result = await runManifestFacts({
     bin: dirConfig.bin,
     buildOpts: dirConfig.buildOpts,
+    context: ctx.context,
     cwd: root.dir,
     ecosystem,
     entryFile: root.entryFile,
@@ -686,7 +694,7 @@ async function runCandidate(
     excludeConfigs: dirConfig.excludeConfigs,
     excludePaths: ctx.excludePaths,
     hints: {
-      continueOnInstallErrorsFlag: ctx.withFiles
+      continueOnInstallErrorsFlag: ctx.context.workDir?.withFiles
         ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
         : undefined,
       flags: ctx.optionFlags,
@@ -696,10 +704,7 @@ async function runCandidate(
     ignoreUnresolved: ctx.ignoreUnresolved ?? dirConfig.ignoreUnresolved,
     includeConfigs: dirConfig.includeConfigs,
     javaHome: dirConfig.javaHome,
-    sidecarAcc: ctx.sidecarAcc,
-    tmpDir: ecosystem === 'sbt' ? ctx.sbtTmpDir : undefined,
     verbose: ctx.verbose || dirConfig.verbose,
-    withFiles: ctx.withFiles,
   })
   if (result === null) {
     return undefined
@@ -722,13 +727,8 @@ async function runCandidate(
   return {
     ...candidate,
     factsKey,
-    // Gradle's `-p` can root the build away from `root.dir`.
     membership: result
-      ? await membershipOf(
-          path.dirname(result.factsPath),
-          result.projects,
-          ctx.realCwd,
-        )
+      ? await membershipOfBuildFiles(result.coveredBuildFiles, ctx.realCwd)
       : emptyMembership(),
     output,
     result: result ?? undefined,
@@ -743,10 +743,9 @@ async function putFacts(
   key: string,
   state: FactsState | undefined,
 ): Promise<void> {
-  if (state?.sidecar) {
-    ctx.sidecarAcc?.set(key, state.sidecar)
-  } else {
-    ctx.sidecarAcc?.delete(key)
+  const { workDir } = ctx.context
+  if (workDir) {
+    setSidecarEntry(workDir, key, state?.sidecar)
   }
   if (!state) {
     return
@@ -769,13 +768,15 @@ async function saveFacts(
     facts = path.join(await ctx.backupDir(), name)
     await fs.copyFile(file, facts)
   }
-  return { facts, sidecar: ctx.sidecarAcc?.get(key) }
+  const { workDir } = ctx.context
+  return { facts, sidecar: workDir && sidecarEntryOf(workDir, key) }
 }
 
 // Builds `root` unless earlier builds cover it, then adds what it loaded to
 // `covered`.
 export async function buildUncoveredRoot({
   config,
+  context,
   covered,
   cwd,
   ecosystem,
@@ -783,11 +784,9 @@ export async function buildUncoveredRoot({
   excludePaths,
   hints,
   root,
-  sidecarAcc,
-  tmpDir,
-  withFiles,
 }: {
   config: EcosystemBuildConfig
+  context?: SocketFactsContext | undefined
   covered: Membership
   // Where the build runs, as the user named it; `root.dir` by default.
   cwd?: string | undefined
@@ -796,9 +795,6 @@ export async function buildUncoveredRoot({
   excludePaths?: string[] | undefined
   hints?: BuildOptionHints | undefined
   root: BuildRoot
-  sidecarAcc?: SidecarAccumulator | undefined
-  tmpDir?: string | undefined
-  withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome | 'covered'> {
   const { bin, buildOpts } = config
   if (
@@ -806,7 +802,7 @@ export async function buildUncoveredRoot({
       covered,
       ecosystem,
       root,
-      buildToolScriptOptions(config, excludeBase, excludePaths),
+      buildToolScriptOptions(config, excludeBase, excludePaths, context),
     )
   ) {
     return 'covered'
@@ -814,6 +810,7 @@ export async function buildUncoveredRoot({
   const result = await runManifestFacts({
     bin,
     buildOpts,
+    context,
     cwd: cwd ?? root.dir,
     ecosystem,
     entryFile: root.entryFile,
@@ -824,15 +821,12 @@ export async function buildUncoveredRoot({
     ignoreUnresolved: config.ignoreUnresolved,
     includeConfigs: config.includeConfigs,
     javaHome: config.javaHome,
-    sidecarAcc,
-    tmpDir,
     verbose: config.verbose,
-    withFiles,
   })
   if (result) {
     addMembership(
       covered,
-      await membershipOf(path.dirname(result.factsPath), result.projects),
+      await membershipOfBuildFiles(result.coveredBuildFiles),
     )
   }
   return result
@@ -840,16 +834,15 @@ export async function buildUncoveredRoot({
 
 // A failure fails the walk only when no kept or skipped build loads it.
 export async function generateRecursiveManifests({
+  context = {},
   cwd,
   excludePaths,
   ignoreUnresolved,
   optionFlags = new Set(),
   purlTypes,
-  sbtTmpDir,
-  sidecarAcc,
   verbose,
-  withFiles,
 }: {
+  context?: SocketFactsContext | undefined
   cwd: string
   excludePaths?: string[] | undefined
   // When set, overrides every build root's own socket.json setting.
@@ -858,21 +851,7 @@ export async function generateRecursiveManifests({
   // build root's socket.json.
   optionFlags?: ReadonlySet<BuildOption> | undefined
   purlTypes?: readonly PURL_Type[] | undefined
-  // Reachability path only: caller-supplied directory to use as sbt's shared
-  // global base across every sbt root in this run. sbt provisions the Scala
-  // toolchain under `<base>/boot`, which withFiles' artifactPaths point into,
-  // so when the caller intends to consume those paths after this call
-  // returns (e.g. reachability analysis), it must supply a directory that
-  // outlives this call and delete it once it's done - mirrors
-  // ManifestScriptOptions.tmpDir one level up. Unset ⇒ an ephemeral shared
-  // dir is allocated and cleaned up before this call returns, matching
-  // runManifestFacts' own withFiles-less default.
-  sbtTmpDir?: string | undefined
-  // Reachability path only: run build tools with files and fold resolved
-  // artifact paths into sidecarAcc, keyed by each root's own factsPath.
-  sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
-  withFiles?: boolean | undefined
 }): Promise<RecursiveManifestOutcome[]> {
   const rootSockJson = readOrDefaultSocketJson(cwd)
   // Candidate dirs come back realpath-resolved (findBuildToolCandidates); cwd
@@ -899,47 +878,28 @@ export async function generateRecursiveManifests({
   const exitCodeBefore = process.exitCode
 
   let backupDir: string | undefined
-  const runAll = async (resolvedSbtTmpDir: string | undefined) => {
-    const ctx: WalkContext = {
-      backupDir: async () => {
-        backupDir ??= await fs.mkdtemp(
-          path.join(tmpdir(), 'socket-facts-backup-'),
-        )
-        return backupDir
-      },
-      excludePaths,
-      ignoreUnresolved,
-      optionFlags,
-      originals: new Map(),
-      realCwd,
-      resolveSettings,
-      sbtTmpDir: resolvedSbtTmpDir,
-      sidecarAcc,
-      verbose,
-      withFiles,
-    }
-    const outcomes: RecursiveManifestOutcome[] = []
+  const ctx: WalkContext = {
+    backupDir: async () => {
+      backupDir ??= await fs.mkdtemp(
+        path.join(tmpdir(), 'socket-facts-backup-'),
+      )
+      return backupDir
+    },
+    context,
+    excludePaths,
+    ignoreUnresolved,
+    optionFlags,
+    originals: new Map(),
+    realCwd,
+    resolveSettings,
+    verbose,
+  }
+  const outcomes: RecursiveManifestOutcome[] = []
+  try {
     for (const { 0: ecosystem, 1: roots } of candidatesByTool) {
       // eslint-disable-next-line no-await-in-loop
       outcomes.push(...(await walkTool(ctx, ecosystem, roots)))
     }
-    return outcomes
-  }
-
-  // A shared global base across every sbt root in this run lets sbt's own
-  // Scala-toolchain cache under <base>/boot survive between invocations
-  // instead of being reprovisioned per root (the plugin file is rewritten and
-  // records.tsv is removed before every invocation, so reuse is safe). A
-  // caller-supplied sbtTmpDir is reused as-is (the caller owns its lifetime);
-  // otherwise one is allocated and cleaned up here, but only when there's an
-  // sbt root to benefit from sharing it at all.
-  let outcomes: RecursiveManifestOutcome[]
-  try {
-    outcomes = sbtTmpDir
-      ? await runAll(sbtTmpDir)
-      : candidatesByTool.get('sbt')?.length
-        ? await withTmpDir('socket-sbt-facts-shared-', runAll)
-        : await runAll(undefined)
   } finally {
     if (backupDir) {
       await fs.rm(backupDir, { recursive: true, force: true })
