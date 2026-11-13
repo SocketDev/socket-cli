@@ -12,6 +12,7 @@ vi.mock('../ci/fetch-default-org-slug.mts', () => ({
 }))
 
 import {
+  listBuildProjects,
   listDotnetSolutionMembers,
   runManifestFacts,
 } from './run-manifest-facts.mts'
@@ -234,5 +235,55 @@ describe('listDotnetSolutionMembers', () => {
         entryFile: 'Broken.sln',
       }),
     ).toEqual([])
+  })
+})
+
+describe('listBuildProjects', () => {
+  const listArgs = {
+    bin: 'mvn',
+    buildOpts: ['-Pci'],
+    ecosystem: 'maven' as const,
+    verbose: false,
+  }
+
+  it('asks Coana to list the build root, unresolved, with its options as written', async () => {
+    const projects = [{ buildFiles: [path.join(cwd, 'pom.xml')], dir: cwd }]
+    coanaAnswers({ buildRoot: cwd, projects, status: 'listed' })
+    expect(
+      await listBuildProjects({
+        ...listArgs,
+        cwd: path.join(cwd, 'reactor'),
+        entryFile: 'pom.xml',
+        excludeBase: cwd,
+        excludePaths: ['reactor/moduleB'],
+        javaHome: '$JAVA11_HOME',
+      }),
+    ).toEqual(projects)
+    expect(calls[0]!.args).toContain('--list-projects')
+    expect(calls[0]!.args).not.toContain('--work-dir')
+    expect(calls[0]!.request).toMatchObject({
+      buildRoot: path.join(cwd, 'reactor'),
+      config: {
+        bin: 'mvn',
+        buildOpts: ['-Pci'],
+        ignoreUnresolved: false,
+        javaHome: '$JAVA11_HOME',
+        verbose: false,
+      },
+      entryFile: 'pom.xml',
+      excludeBase: cwd,
+      excludePaths: ['reactor/moduleB'],
+      tool: 'maven',
+    })
+  })
+
+  it('lists nothing when the build cannot list its projects', async () => {
+    coanaAnswers({ status: 'failed' }, false)
+    expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()
+  })
+
+  it('lists nothing when Coana writes no result', async () => {
+    coanaAnswers(undefined, false)
+    expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()
   })
 })

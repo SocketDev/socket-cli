@@ -45,9 +45,6 @@ export function buildToolLabelsFor(purlTypes: readonly PURL_Type[]): string[] {
   return buildToolsFor(purlTypes).map(tool => ECOSYSTEM_LABELS[tool])
 }
 
-// Purl types whose packages have no namespace (NuGet ids are flat).
-export const NAMESPACELESS_PURL_TYPES: ReadonlySet<string> = new Set(['nuget'])
-
 const BUILD_TOOL_PATH_ENV: Record<BuildTool, string> = {
   __proto__: null,
   gradle: 'SOCKET_CLI_GRADLE_PATH',

@@ -42,8 +42,6 @@
     "build:dist": "pnpm build:dist:src && pnpm build:dist:types",
     "build:dist:src": "run-p -c clean:dist clean:external && dotenvx -q run -f .env.local -- rollup -c .config/rollup.dist.config.mjs",
     "build:dist:types": "pnpm clean:dist:types && tsgo --project .config/tsconfig.dts.json",
-    "build:dotnet-tool": "bash src/commands/manifest/scripts/dotnet-tool/build-tool.sh",
-    "build:maven-extension": "bash src/commands/manifest/scripts/maven-extension/build-jar.sh",
     "build:sea": "node src/sea/build-sea.mts",
     "build:package-matrix": "node scripts/build-package-matrix.mts",
     "test:native": "node scripts/test/native.mts",

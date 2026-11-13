@@ -141,6 +141,10 @@ type SocketFactsResult =
 
 type SolutionMembers = { members: string[] | null }
 
+type ProjectList =
+  | { projects: SocketFactsProject[]; status: 'listed' }
+  | { status: 'failed' }
+
 let defaultOrgSlug: Promise<string | undefined> | undefined
 
 // Resolved once: each build root is its own Coana run.
@@ -273,6 +277,68 @@ export function listDotnetSolutionMembers({
     }
     return result.members ?? undefined
   })
+}
+
+// The projects a build loads, as the build reports them, without resolving its
+// dependencies; undefined when the build cannot list them, which Coana
+// reports.
+export async function listBuildProjects({
+  bin,
+  buildOpts,
+  cwd,
+  ecosystem,
+  entryFile,
+  excludeBase,
+  excludePaths,
+  javaHome,
+  verbose,
+}: {
+  bin: string
+  buildOpts: string[]
+  cwd: string
+  ecosystem: BuildTool
+  entryFile?: string | undefined
+  excludeBase?: string | undefined
+  excludePaths?: string[] | undefined
+  javaHome?: string | undefined
+  verbose: boolean
+}): Promise<SocketFactsProject[] | undefined> {
+  let resolvedBin: string
+  try {
+    resolvedBin = requestBin(ecosystem, cwd, bin)
+  } catch (e) {
+    logger.fail(
+      `Could not run the ${ecosystem} build tool: ${getErrorMessageOr(e, String(e))}`,
+    )
+    return undefined
+  }
+  const request: SocketFactsRequest = {
+    buildRoot: path.resolve(cwd),
+    config: {
+      bin: resolvedBin,
+      buildOpts,
+      ignoreUnresolved: false,
+      ...(javaHome ? { javaHome } : {}),
+      verbose,
+    },
+    ...(entryFile ? { entryFile } : {}),
+    excludeBase: path.resolve(excludeBase ?? cwd),
+    ...(excludePaths?.length ? { excludePaths } : {}),
+    hints: toRequestHints(FLAG_HINTS),
+    tool: ecosystem,
+  }
+  const { message, result } = await runGenerateSocketFacts<ProjectList>(
+    request,
+    ['--list-projects'],
+    {},
+  )
+  if (!result) {
+    logger.fail(
+      `Could not list the projects of the ${ecosystem} build at \`${cwd}\`${message ? `: ${message}` : '.'}`,
+    )
+    return undefined
+  }
+  return result.status === 'listed' ? result.projects : undefined
 }
 
 // Generates one build root's `<entry>.socket.facts.json` with Coana. With a

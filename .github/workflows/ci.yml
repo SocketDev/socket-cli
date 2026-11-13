@@ -757,10 +757,6 @@ jobs:
           pnpm exec vitest run --config .config/vitest.config.mts test/unit/scripts/test/apple-signing.test.mts
           pnpm exec vitest run --config .config/vitest.terminal.config.mts
 
-      - name: Verify .NET SDK
-        shell: bash
-        run: dotnet --list-sdks | awk -F. '$1 >= 8 { found=1 } END { exit !found }'
-
       - name: Build prototype native executable
         env:
           NODE_OPTIONS: ${{ matrix.target == 'darwin-arm64' && '--max-old-space-size=4096' || '' }}

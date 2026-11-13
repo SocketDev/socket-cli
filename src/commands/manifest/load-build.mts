@@ -1,9 +1,7 @@
-import path from 'node:path'
-
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { membershipOf } from './discover-manifest-roots.mts'
-import { enumerateWorkspaces } from './enumerate-workspaces.mts'
+import { listBuildProjects } from './run-manifest-facts.mts'
 
 import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
@@ -31,7 +29,7 @@ export async function loadBuild({
   scanRoot: string
   verbose: boolean
 }): Promise<LoadedBuild | undefined> {
-  const result = await enumerateWorkspaces({
+  const projects = await listBuildProjects({
     bin: config.bin,
     buildOpts: config.buildOpts,
     cwd: root.dir,
@@ -42,20 +40,11 @@ export async function loadBuild({
     javaHome: config.javaHome,
     verbose: verbose || config.verbose,
   })
-  if (!result) {
+  if (!projects) {
     return undefined
   }
-  const { buildRoot, projects } = result
   return {
-    membership: await membershipOf(
-      projects.map(({ manifestFiles, subprojectDir }) => ({
-        buildFiles: (manifestFiles ?? []).map(({ file }) =>
-          path.resolve(buildRoot, file),
-        ),
-        dir: path.resolve(buildRoot, subprojectDir),
-      })),
-      scanRoot,
-    ),
+    membership: await membershipOf(projects, scanRoot),
     modules: Math.max(0, projects.length - 1),
   }
 }

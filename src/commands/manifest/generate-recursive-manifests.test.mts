@@ -14,17 +14,15 @@ vi.mock('../../utils/socket-json.mts', async importOriginal => ({
 }))
 vi.mock('./run-manifest-facts.mts', async importOriginal => ({
   ...(await importOriginal<typeof import('./run-manifest-facts.mts')>()),
+  listBuildProjects: vi.fn(),
   listDotnetSolutionMembers: vi.fn(async () => undefined),
   runManifestFacts: vi.fn(),
 }))
-vi.mock('./enumerate-workspaces.mts', () => ({
-  enumerateWorkspaces: vi.fn(),
-}))
 
 import { buildRootPath } from './discover-manifest-roots.mts'
-import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import {
+  listBuildProjects,
   listDotnetSolutionMembers,
   runManifestFacts,
   setSidecarEntry,
@@ -49,19 +47,19 @@ type TestProject = {
 
 type TestFacts = { factsPath: string; projects: TestProject[] }
 
-// What Coana reports of a build whose tool lists `projects`, relative to the
-// facts file's directory.
+// What Coana reports of `projects`, as the build tool at `buildRoot` lists
+// them.
+function listed(buildRoot: string, projects: readonly TestProject[]) {
+  return projects.map(project => ({
+    buildFiles: (project.manifestFiles ?? []).map(({ file }) =>
+      path.resolve(buildRoot, file),
+    ),
+    dir: path.resolve(buildRoot, project.subprojectDir),
+  }))
+}
+
 function reported({ factsPath, projects }: TestFacts) {
-  const buildRoot = path.dirname(factsPath)
-  return {
-    factsPath,
-    projects: projects.map(project => ({
-      buildFiles: (project.manifestFiles ?? []).map(({ file }) =>
-        path.resolve(buildRoot, file),
-      ),
-      dir: path.resolve(buildRoot, project.subprojectDir),
-    })),
-  }
+  return { factsPath, projects: listed(path.dirname(factsPath), projects) }
 }
 
 function newWorkDir(): SocketFactsWorkDir {
@@ -1414,10 +1412,9 @@ describe('generateRecursiveManifests', () => {
             },
           },
         })
-        vi.mocked(enumerateWorkspaces).mockResolvedValue({
-          buildRoot: sub,
-          projects: gradleFacts(sub, [...subProjects]).projects,
-        })
+        vi.mocked(listBuildProjects).mockResolvedValue(
+          listed(sub, gradleFacts(sub, [...subProjects]).projects),
+        )
         mockFacts(async ({ cwd }) => gradleFacts(cwd, ['.']))
         const warnSpy = vi
           .spyOn(logger, 'warn')
@@ -1578,14 +1575,13 @@ describe('generateRecursiveManifests', () => {
     })
 
     it('loads it without resolving, and skips what it loads with it, wherever that is', async () => {
-      vi.mocked(enumerateWorkspaces).mockResolvedValue({
-        buildRoot: path.join(outer, 'legacy'),
-        projects: [
+      vi.mocked(listBuildProjects).mockResolvedValue(
+        listed(path.join(outer, 'legacy'), [
           mavenProject('.'),
           mavenProject('old'),
           mavenProject('../aaa-module'),
-        ],
-      })
+        ]),
+      )
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
       try {
@@ -1608,7 +1604,7 @@ describe('generateRecursiveManifests', () => {
         expect(
           existsSync(path.join(outer, 'aaa-module/pom.xml.socket.facts.json')),
         ).toBe(false)
-        expect(enumerateWorkspaces).toHaveBeenCalledWith(
+        expect(listBuildProjects).toHaveBeenCalledWith(
           expect.objectContaining({
             cwd: path.join(outer, 'legacy'),
             entryFile: 'pom.xml',
@@ -1627,10 +1623,9 @@ describe('generateRecursiveManifests', () => {
     it('reports a skipped build that another build includes as part of that build, warning that the skip does not apply', async () => {
       await fs.mkdir(path.join(outer, 'zzz-reactor'), { recursive: true })
       await fs.writeFile(pom('zzz-reactor'), '<project/>')
-      vi.mocked(enumerateWorkspaces).mockResolvedValue({
-        buildRoot: path.join(outer, 'legacy'),
-        projects: [mavenProject('.')],
-      })
+      vi.mocked(listBuildProjects).mockResolvedValue(
+        listed(path.join(outer, 'legacy'), [mavenProject('.')]),
+      )
       mockFacts(async ({ cwd, entryFile }) => ({
         factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
         projects:
@@ -1670,7 +1665,7 @@ describe('generateRecursiveManifests', () => {
     })
 
     it('fails, without building what lies beneath it, when it cannot be loaded', async () => {
-      vi.mocked(enumerateWorkspaces).mockImplementation(async () => {
+      vi.mocked(listBuildProjects).mockImplementation(async () => {
         process.exitCode = 1
         return undefined
       })
@@ -1746,10 +1741,9 @@ describe('generateRecursiveManifests', () => {
       vi.mocked(listDotnetSolutionMembers).mockImplementation(
         async ({ entryFile }) => members[entryFile ?? ''],
       )
-      vi.mocked(enumerateWorkspaces).mockResolvedValue({
-        buildRoot: at('skip'),
-        projects: [projectRecord('../p/a/A.csproj')],
-      })
+      vi.mocked(listBuildProjects).mockResolvedValue(
+        listed(at('skip'), [projectRecord('../p/a/A.csproj')]),
+      )
       mockFacts(async ({ cwd, entryFile }) => ({
         factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
         projects:

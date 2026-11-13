@@ -1,4 +1,0 @@
-// Smoke project for ../../socket-workspaces.init.gradle.
-apply plugin: 'java'
-group = 'demo'
-version = '1.0.0'
