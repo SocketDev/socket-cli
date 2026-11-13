@@ -207,7 +207,7 @@ function statusOf(loader: Loader | undefined): RecursiveManifestOutcomeStatus {
 
 // The options a build's listings take besides the build itself.
 export function buildToolScriptOptions(
-  config: Pick<EcosystemBuildConfig, 'bin' | 'buildOpts'>,
+  config: Pick<EcosystemBuildConfig, 'bin' | 'buildOpts' | 'javaHome'>,
   excludeBase: string | undefined,
   excludePaths: string[] | undefined,
   context?: SocketFactsContext | undefined,
@@ -218,6 +218,7 @@ export function buildToolScriptOptions(
     context,
     excludeBase,
     excludePaths,
+    javaHome: config.javaHome,
   }
 }
 

@@ -3,12 +3,13 @@
  *
  * Test Coverage:
  * - spawnCoana: runs cli-wrapper.mjs from the cache with the caller's args,
- *   cwd and environment, and surfaces a failing run's output.
+ *   cwd and environment, surfaces a failing run's output, and looks the
+ *   default org up once.
  *
  * Testing Approach:
  * A fake cli-wrapper.mjs is installed into a temporary cache with the real
- * coana-cache.mjs, so nothing is mocked. This needs dist/coana-cache.mjs, which
- * the build copies there.
+ * coana-cache.mjs, so only the default-org lookup is mocked. This needs
+ * dist/coana-cache.mjs, which the build copies there.
  *
  * Related Files:
  * - utils/coana-release.mts (implementation)
@@ -19,10 +20,15 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+vi.mock('../commands/ci/fetch-default-org-slug.mts', () => ({
+  getDefaultOrgSlug: vi.fn(async () => ({ ok: true, data: 'default-org' })),
+}))
+
+import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants from '../constants.mts'
 import { spawnCoana } from './coana-release.mts'
 import { getCliUserAgent } from './sdk.mts'
@@ -47,8 +53,9 @@ type FakeRun = {
 
 async function runFake(
   options?: Parameters<typeof spawnCoana>[2],
+  { orgSlug }: { orgSlug?: string | undefined } = { orgSlug: 'acme' },
 ): Promise<FakeRun> {
-  const result = await spawnCoana(['run', '.'], 'acme', {
+  const result = await spawnCoana(['run', '.'], orgSlug, {
     coanaVersion: VERSION,
     stdio: 'pipe',
     ...options,
@@ -132,6 +139,14 @@ describe('spawnCoana', () => {
     expect(overridden.env['SOCKET_CALLER_USER_AGENT']).toBe(
       'custom-caller-agent/1.0.0',
     )
+  })
+
+  it('looks the default org up once for every run given no org', async () => {
+    const first = await runFake(undefined, {})
+    const second = await runFake(undefined, {})
+    expect(first.env['SOCKET_ORG_SLUG']).toBe('default-org')
+    expect(second.env['SOCKET_ORG_SLUG']).toBe('default-org')
+    expect(getDefaultOrgSlug).toHaveBeenCalledOnce()
   })
 
   it('surfaces captured stdout when stderr is empty (Coana logs some failures to stdout)', async () => {

@@ -4,11 +4,10 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 vi.mock('../../utils/coana-release.mts', () => ({
   spawnCoana: vi.fn(),
-}))
-vi.mock('../ci/fetch-default-org-slug.mts', () => ({
-  getDefaultOrgSlug: vi.fn(async () => ({ ok: true, data: 'default-org' })),
 }))
 
 import {
@@ -16,6 +15,7 @@ import {
   listDotnetSolutionMembers,
   runManifestFacts,
 } from './run-manifest-facts.mts'
+import { COANA_CLI_VERSION } from '../../constants.mts'
 import { spawnCoana } from '../../utils/coana-release.mts'
 
 import type { SocketFactsWorkDir } from './run-manifest-facts.mts'
@@ -35,25 +35,28 @@ const baseArgs = {
 let cwd = ''
 let calls: Call[] = []
 
-// Answers each Coana run with `result`, as `coana generate-socket-facts` writes
-// it, or writes nothing when `result` is undefined.
-function coanaAnswers(result: unknown, ok = true): void {
+// Answers each Coana run by writing `text` as its result file, or nothing when
+// `text` is undefined.
+function coanaWrites(text: string | undefined, ok = true): void {
   vi.mocked(spawnCoana).mockImplementation(async args => {
     const list = [...args]
     const request = JSON.parse(
       await fs.readFile(list[list.indexOf('--request') + 1]!, 'utf8'),
     )
     calls.push({ args: list, request })
-    if (result !== undefined) {
-      await fs.writeFile(
-        list[list.indexOf('--output-file') + 1]!,
-        JSON.stringify(result),
-      )
+    if (text !== undefined) {
+      await fs.writeFile(list[list.indexOf('--output-file') + 1]!, text)
     }
     return ok
       ? { ok: true, data: '' }
       : { ok: false, message: 'Coana command failed', cause: 'exit code 3' }
   })
+}
+
+// Answers each Coana run with `result`, as `coana generate-socket-facts` writes
+// it, or writes nothing when `result` is undefined.
+function coanaAnswers(result: unknown, ok = true): void {
+  coanaWrites(result === undefined ? undefined : JSON.stringify(result), ok)
 }
 
 beforeEach(async () => {
@@ -65,6 +68,7 @@ beforeEach(async () => {
   process.exitCode = undefined
 })
 afterEach(async () => {
+  vi.restoreAllMocks()
   await fs.rm(cwd, { recursive: true, force: true })
   delete process.env['SOCKET_CLI_MAVEN_PATH']
   process.exitCode = undefined
@@ -116,8 +120,13 @@ describe('runManifestFacts', () => {
     expect(vi.mocked(spawnCoana).mock.calls[0]![1]).toBe('acme')
     expect(vi.mocked(spawnCoana).mock.calls[0]![2]).toMatchObject({
       coanaVersion: '1.2.3',
-      cwd,
     })
+  })
+
+  it("runs Coana in socket-cli's own cwd, so its logs show paths from there", async () => {
+    coanaAnswers({ status: 'empty' })
+    await runManifestFacts({ ...baseArgs, cwd })
+    expect(vi.mocked(spawnCoana).mock.calls[0]![2]?.cwd).toBeUndefined()
   })
 
   it('sends the SOCKET_CLI_*_PATH override as the bin', async () => {
@@ -127,6 +136,17 @@ describe('runManifestFacts', () => {
     coanaAnswers({ status: 'empty' })
     await runManifestFacts({ ...baseArgs, cwd })
     expect(calls[0]!.request.config.bin).toBe(mvn)
+  })
+
+  it('fails the root without running Coana when the bin cannot be resolved', async () => {
+    const fail = vi.spyOn(logger, 'fail')
+    process.env['SOCKET_CLI_MAVEN_PATH'] = path.join(cwd, 'missing-mvn')
+    expect(await runManifestFacts({ ...baseArgs, cwd })).toBeNull()
+    expect(process.exitCode).toBe(1)
+    expect(spawnCoana).not.toHaveBeenCalled()
+    expect(fail).toHaveBeenCalledWith(
+      expect.stringContaining('Could not run the maven build tool: '),
+    )
   })
 
   it('installs files into the work dir and collects the root for reachability', async () => {
@@ -185,6 +205,40 @@ describe('runManifestFacts', () => {
     expect(process.exitCode).toBe(1)
   })
 
+  it('fails the root when Coana writes an unreadable result', async () => {
+    const fail = vi.spyOn(logger, 'fail')
+    coanaWrites('{"status":"gener')
+    expect(await runManifestFacts({ ...baseArgs, cwd })).toBeNull()
+    expect(process.exitCode).toBe(1)
+    expect(fail).toHaveBeenCalledWith(
+      expect.stringContaining("Coana's result is unreadable"),
+    )
+  })
+
+  it('names the bundled Coana when a pinned one writes no result', async () => {
+    const info = vi.spyOn(logger, 'info')
+    coanaAnswers(undefined, false)
+    await runManifestFacts({
+      ...baseArgs,
+      context: { coanaVersion: '1.0.0', orgSlug: 'acme' },
+      cwd,
+    })
+    expect(info).toHaveBeenCalledWith(
+      `The pinned Coana 1.0.0 may predate Socket facts generation; pin ${COANA_CLI_VERSION}, the version this Socket CLI bundles, or newer.`,
+    )
+  })
+
+  it('does not blame the pinned Coana for a build it reports as failed', async () => {
+    const info = vi.spyOn(logger, 'info')
+    coanaAnswers({ status: 'failed' }, false)
+    await runManifestFacts({
+      ...baseArgs,
+      context: { coanaVersion: '1.0.0', orgSlug: 'acme' },
+      cwd,
+    })
+    expect(info).not.toHaveBeenCalled()
+  })
+
   it('does not run Coana outside an sbt build', async () => {
     coanaAnswers({ status: 'empty' })
     expect(
@@ -202,15 +256,32 @@ describe('runManifestFacts', () => {
 describe('listDotnetSolutionMembers', () => {
   it('lists the members once for the same request', async () => {
     coanaAnswers({ members: ['/r/A/A.csproj'] })
-    const request = { buildOpts: [], dir: cwd, entryFile: 'All.sln' }
+    const request = {
+      buildOpts: [],
+      cwd,
+      entryFile: 'All.sln',
+      javaHome: '$JAVA11_HOME',
+    }
     expect(await listDotnetSolutionMembers(request)).toEqual(['/r/A/A.csproj'])
     expect(await listDotnetSolutionMembers(request)).toEqual(['/r/A/A.csproj'])
     expect(spawnCoana).toHaveBeenCalledOnce()
     expect(calls[0]!.args).toContain('--list-members')
-    expect(calls[0]!.request).toMatchObject({
+    expect(calls[0]!.request).toEqual({
       buildRoot: cwd,
+      config: {
+        bin: 'dotnet',
+        buildOpts: [],
+        ignoreUnresolved: false,
+        javaHome: '$JAVA11_HOME',
+        verbose: false,
+      },
       entryFile: 'All.sln',
       excludeBase: cwd,
+      hints: {
+        flags: ['excludeConfigs', 'ignoreUnresolved', 'verbose'],
+        setupCommand: 'socket manifest setup',
+        socketJson: 'socket.json',
+      },
       tool: 'dotnet',
     })
   })
@@ -220,7 +291,7 @@ describe('listDotnetSolutionMembers', () => {
     expect(
       await listDotnetSolutionMembers({
         buildOpts: [],
-        dir: cwd,
+        cwd,
         entryFile: 'All.slnx',
       }),
     ).toBeUndefined()
@@ -231,7 +302,7 @@ describe('listDotnetSolutionMembers', () => {
     expect(
       await listDotnetSolutionMembers({
         buildOpts: [],
-        dir: cwd,
+        cwd,
         entryFile: 'Broken.sln',
       }),
     ).toEqual([])
@@ -277,6 +348,12 @@ describe('listBuildProjects', () => {
     })
   })
 
+  it('lists nothing without running Coana when the bin cannot be resolved', async () => {
+    process.env['SOCKET_CLI_MAVEN_PATH'] = path.join(cwd, 'missing-mvn')
+    expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()
+    expect(spawnCoana).not.toHaveBeenCalled()
+  })
+
   it('lists nothing when the build cannot list its projects', async () => {
     coanaAnswers({ status: 'failed' }, false)
     expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()
@@ -284,6 +361,11 @@ describe('listBuildProjects', () => {
 
   it('lists nothing when Coana writes no result', async () => {
     coanaAnswers(undefined, false)
+    expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()
+  })
+
+  it('lists nothing when Coana writes an unreadable result', async () => {
+    coanaWrites('')
     expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()
   })
 })

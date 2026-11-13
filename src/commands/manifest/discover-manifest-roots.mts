@@ -21,6 +21,7 @@ import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import type {
   SocketFactsContext,
   SocketFactsProject,
+  SocketFactsRequestOptions,
 } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -191,13 +192,10 @@ export function isBuildRootCovered(
   )
 }
 
-export type RootBuildOptions = {
-  bin?: string | undefined
-  buildOpts: string[]
-  context?: SocketFactsContext | undefined
-  excludeBase?: string | undefined
-  excludePaths?: string[] | undefined
-}
+export type RootBuildOptions = Pick<
+  SocketFactsRequestOptions,
+  'bin' | 'buildOpts' | 'excludeBase' | 'excludePaths' | 'javaHome'
+> & { context?: SocketFactsContext | undefined }
 
 // A dotnet solution is covered once every project it builds is, or, when the
 // SDK cannot read it, by a same-named solution in the other format beside it
@@ -220,7 +218,7 @@ async function isSolutionCovered(
     return false
   }
   const list = (file: string) =>
-    listMembers({ ...opts, dir: root.dir, entryFile: file })
+    listMembers({ ...opts, cwd: root.dir, entryFile: file })
   const listed = await list(entryFile)
   if (!listed) {
     // Unless the twin is readable, this one is built and its failure shows.

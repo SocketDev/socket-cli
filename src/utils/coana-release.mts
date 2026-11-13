@@ -386,6 +386,10 @@ function withoutNpmPackageEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return out
 }
 
+// Kept for the process, failure included, as a scan runs Coana once per build
+// root. Silent: the download reports a failed lookup when it needs the org.
+let defaultOrg: Promise<CResult<string>> | undefined
+
 /**
  * Run the Coana CLI, downloading it into the cache that Coana and the Socket
  * CLIs share when the cache lacks the version. Returns a CResult with Coana's
@@ -456,7 +460,7 @@ export async function spawnCoana(
 
   const org: CResult<string> = orgSlug
     ? { ok: true, data: orgSlug }
-    : await getDefaultOrgSlug()
+    : await (defaultOrg ??= getDefaultOrgSlug(true))
   if (org.ok) {
     mixinsEnv['SOCKET_ORG_SLUG'] = org.data
   }

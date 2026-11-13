@@ -7,15 +7,15 @@ import {
   looksLikeSbtBuild,
   resolveBuildToolBin,
 } from './scripts/build-tool.mts'
-import constants from '../../constants.mts'
+import { COANA_CLI_VERSION, SOCKET_JSON } from '../../constants.mts'
 import { isStandaloneSea } from '../../sea/runtime.mts'
 import { spawnCoana } from '../../utils/coana-release.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
-import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { CResult } from '../../types.mts'
 
 export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 
@@ -46,7 +46,7 @@ export const FLAG_HINTS: BuildOptionHints = {
     'verbose',
   ]),
   setupCommand: 'socket manifest setup',
-  socketJson: constants.SOCKET_JSON,
+  socketJson: SOCKET_JSON,
 }
 
 // What a later Coana run needs of one generated build root; passed back to it
@@ -145,17 +145,30 @@ type ProjectList =
   | { projects: SocketFactsProject[]; status: 'listed' }
   | { status: 'failed' }
 
-let defaultOrgSlug: Promise<string | undefined> | undefined
-
-// Resolved once: each build root is its own Coana run.
-function orgSlugFor(context: SocketFactsContext): Promise<string | undefined> {
-  if (context.orgSlug) {
-    return Promise.resolve(context.orgSlug)
+// Coana rejects a command or flag it predates, so it writes no result.
+function warnIfPinnedCoanaPredatesFacts(context: SocketFactsContext): void {
+  const pinned = context.coanaVersion
+  if (pinned && pinned !== COANA_CLI_VERSION) {
+    logger.info(
+      `The pinned Coana ${pinned} may predate Socket facts generation; pin ${COANA_CLI_VERSION}, the version this Socket CLI bundles, or newer.`,
+    )
   }
-  defaultOrgSlug ??= getDefaultOrgSlug(true).then(r =>
-    r.ok ? r.data : undefined,
-  )
-  return defaultOrgSlug
+}
+
+async function readResult<T>(
+  resultFile: string,
+): Promise<{ error?: string | undefined; result: T | undefined }> {
+  if (!existsSync(resultFile)) {
+    return { result: undefined }
+  }
+  try {
+    return { result: JSON.parse(await fs.readFile(resultFile, 'utf8')) as T }
+  } catch (e) {
+    return {
+      error: `Coana's result is unreadable (${getErrorMessageOr(e, String(e))})`,
+      result: undefined,
+    }
+  }
 }
 
 function toRequestHints(hints: BuildOptionHints): SocketFactsRequest['hints'] {
@@ -187,148 +200,146 @@ async function runGenerateSocketFacts<T>(
         resultFile,
         ...flags,
       ],
-      await orgSlugFor(context),
+      context.orgSlug,
       {
         coanaVersion: context.coanaVersion,
-        cwd: request.buildRoot,
         // Coana logs to stdout; keep the command's own stdout machine-readable.
         stdio: ['inherit', 2, 'inherit'],
       },
     )
-    const result = existsSync(resultFile)
-      ? (JSON.parse(await fs.readFile(resultFile, 'utf8')) as T)
-      : undefined
+    const { error, result } = await readResult<T>(resultFile)
+    const failure = spawned.ok
+      ? undefined
+      : [spawned.message, spawned.cause].filter(Boolean).join(': ')
     return {
-      message: spawned.ok
-        ? undefined
-        : [spawned.message, spawned.cause].filter(Boolean).join(': '),
+      message: [failure, error].filter(Boolean).join('; ') || undefined,
       result,
     }
   })
 }
 
-// Resolves `bin` as the build tool's own runner would: the SOCKET_CLI_*_PATH
-// override first, then the given bin, the project wrapper, PATH.
-function requestBin(tool: BuildTool, dir: string, bin: string | undefined) {
-  return resolveBuildToolBin(
-    tool,
-    dir,
-    bin || undefined,
-    tool !== 'dotnet' && isStandaloneSea(),
-  )
-}
-
-const membersByRequest = new Map<string, Promise<string[] | undefined>>()
-
-// The projects a dotnet solution builds; undefined when the SDK cannot read
-// it, empty when the listing fails, which the build itself then reports.
-export function listDotnetSolutionMembers({
-  bin,
-  buildOpts,
-  context = {},
-  dir,
-  entryFile,
-  excludeBase,
-  excludePaths,
-}: {
+export type SocketFactsRequestOptions = {
   bin?: string | undefined
   buildOpts: string[]
-  context?: SocketFactsContext | undefined
-  dir: string
-  entryFile: string
+  cwd: string
+  ecosystem: BuildTool
+  // The file in `cwd` to build: Maven's POM (unset leaves Maven's default),
+  // dotnet's solution or project (required).
+  entryFile?: string | undefined
+  // What `excludePaths` are relative to, as a build can reach modules outside
+  // its own directory; `cwd` when unset.
   excludeBase?: string | undefined
+  excludeConfigs?: string | undefined
   excludePaths?: string[] | undefined
-}): Promise<string[] | undefined> {
-  const key = JSON.stringify([
-    bin,
-    buildOpts,
-    dir,
-    entryFile,
-    excludeBase,
-    excludePaths,
-  ])
-  return getOrInsert(membersByRequest, key, async () => {
-    let request: SocketFactsRequest
-    try {
-      request = {
-        buildRoot: path.resolve(dir),
-        config: {
-          bin: requestBin('dotnet', dir, bin),
-          buildOpts,
-          ignoreUnresolved: false,
-          verbose: false,
-        },
-        entryFile,
-        excludeBase: path.resolve(excludeBase ?? dir),
-        ...(excludePaths?.length ? { excludePaths } : {}),
-        hints: toRequestHints(FLAG_HINTS),
-        tool: 'dotnet',
-      }
-    } catch {
-      return []
-    }
-    const { result } = await runGenerateSocketFacts<SolutionMembers>(
-      request,
-      ['--list-members'],
-      context,
-    )
-    if (!result) {
-      return []
-    }
-    return result.members ?? undefined
-  })
+  hints?: BuildOptionHints | undefined
+  ignoreUnresolved?: boolean | undefined
+  includeConfigs?: string | undefined
+  // As written: Coana expands `$VAR` references itself.
+  javaHome?: string | undefined
+  verbose?: boolean | undefined
 }
 
-// The projects a build loads, as the build reports them, without resolving its
-// dependencies; undefined when the build cannot list them, which Coana
-// reports.
-export async function listBuildProjects({
+// `bin` is resolved as the build tool's own runner would: the
+// SOCKET_CLI_*_PATH override first, then the given bin, the project wrapper,
+// PATH.
+function toSocketFactsRequest({
   bin,
   buildOpts,
   cwd,
   ecosystem,
   entryFile,
   excludeBase,
+  excludeConfigs,
   excludePaths,
+  hints = FLAG_HINTS,
+  ignoreUnresolved = false,
+  includeConfigs,
   javaHome,
-  verbose,
-}: {
-  bin: string
-  buildOpts: string[]
-  cwd: string
-  ecosystem: BuildTool
-  entryFile?: string | undefined
-  excludeBase?: string | undefined
-  excludePaths?: string[] | undefined
-  javaHome?: string | undefined
-  verbose: boolean
-}): Promise<SocketFactsProject[] | undefined> {
+  verbose = false,
+}: SocketFactsRequestOptions): CResult<SocketFactsRequest> {
   let resolvedBin: string
   try {
-    resolvedBin = requestBin(ecosystem, cwd, bin)
-  } catch (e) {
-    logger.fail(
-      `Could not run the ${ecosystem} build tool: ${getErrorMessageOr(e, String(e))}`,
+    resolvedBin = resolveBuildToolBin(
+      ecosystem,
+      cwd,
+      bin || undefined,
+      ecosystem !== 'dotnet' && isStandaloneSea(),
     )
+  } catch (e) {
+    return {
+      ok: false,
+      message: `Could not run the ${ecosystem} build tool`,
+      cause: getErrorMessageOr(e, String(e)),
+    }
+  }
+  return {
+    ok: true,
+    data: {
+      buildRoot: path.resolve(cwd),
+      config: {
+        bin: resolvedBin,
+        buildOpts,
+        ...(excludeConfigs ? { excludeConfigs } : {}),
+        ignoreUnresolved,
+        ...(includeConfigs ? { includeConfigs } : {}),
+        ...(javaHome ? { javaHome } : {}),
+        verbose,
+      },
+      ...(entryFile ? { entryFile } : {}),
+      excludeBase: path.resolve(excludeBase ?? cwd),
+      ...(excludePaths?.length ? { excludePaths } : {}),
+      hints: toRequestHints(hints),
+      tool: ecosystem,
+    },
+  }
+}
+
+const membersByRequest = new Map<string, Promise<string[] | undefined>>()
+
+// The projects a dotnet solution builds; undefined when the SDK cannot read
+// it, empty when the listing fails, which the build itself then reports.
+export async function listDotnetSolutionMembers({
+  context = {},
+  ...options
+}: Omit<SocketFactsRequestOptions, 'ecosystem'> & {
+  context?: SocketFactsContext | undefined
+}): Promise<string[] | undefined> {
+  const request = toSocketFactsRequest({ ...options, ecosystem: 'dotnet' })
+  if (!request.ok) {
+    // Left for the build itself to report.
+    return []
+  }
+  return await getOrInsert(
+    membersByRequest,
+    JSON.stringify(request.data),
+    async () => {
+      const { result } = await runGenerateSocketFacts<SolutionMembers>(
+        request.data,
+        ['--list-members'],
+        context,
+      )
+      if (!result) {
+        return []
+      }
+      return result.members ?? undefined
+    },
+  )
+}
+
+// The projects a build loads, as the build reports them, without resolving its
+// dependencies; undefined when the build cannot list them, after reporting
+// why.
+export async function listBuildProjects(
+  options: SocketFactsRequestOptions,
+): Promise<SocketFactsProject[] | undefined> {
+  const { cwd, ecosystem } = options
+  const request = toSocketFactsRequest(options)
+  if (!request.ok) {
+    logger.fail(`${request.message}: ${request.cause}`)
     return undefined
   }
-  const request: SocketFactsRequest = {
-    buildRoot: path.resolve(cwd),
-    config: {
-      bin: resolvedBin,
-      buildOpts,
-      ignoreUnresolved: false,
-      ...(javaHome ? { javaHome } : {}),
-      verbose,
-    },
-    ...(entryFile ? { entryFile } : {}),
-    excludeBase: path.resolve(excludeBase ?? cwd),
-    ...(excludePaths?.length ? { excludePaths } : {}),
-    hints: toRequestHints(FLAG_HINTS),
-    tool: ecosystem,
-  }
   const { message, result } = await runGenerateSocketFacts<ProjectList>(
-    request,
+    request.data,
     ['--list-projects'],
     {},
   )
@@ -343,43 +354,14 @@ export async function listBuildProjects({
 
 // Generates one build root's `<entry>.socket.facts.json` with Coana. With a
 // work dir in `context`, also collects what a later Coana run reads of it. A
-// failure sets a non-zero exit code; Coana reports why.
+// failure sets a non-zero exit code; only a failed build is Coana's to report.
 export async function runManifestFacts({
-  bin,
-  buildOpts,
   context = {},
-  cwd,
-  ecosystem,
-  entryFile,
-  excludeBase,
-  excludeConfigs,
-  excludePaths,
-  hints = FLAG_HINTS,
-  ignoreUnresolved,
-  includeConfigs,
-  javaHome,
-  verbose,
-}: {
-  bin: string
-  buildOpts: string[]
+  ...options
+}: SocketFactsRequestOptions & {
   context?: SocketFactsContext | undefined
-  cwd: string
-  ecosystem: BuildTool
-  // The file in `cwd` to build: Maven's POM (unset leaves Maven's default),
-  // dotnet's solution or project (required).
-  entryFile?: string | undefined
-  // What `excludePaths` are relative to, as a build can reach modules outside
-  // its own directory; `cwd` when unset.
-  excludeBase?: string | undefined
-  excludeConfigs: string
-  excludePaths?: string[] | undefined
-  hints?: BuildOptionHints | undefined
-  ignoreUnresolved: boolean
-  includeConfigs: string
-  // As written: Coana expands `$VAR` references itself.
-  javaHome?: string | undefined
-  verbose: boolean
 }): Promise<RunManifestFactsOutcome> {
+  const { cwd, ecosystem } = options
   if (ecosystem === 'sbt' && !looksLikeSbtBuild(cwd)) {
     process.exitCode = 1
     logger.fail(
@@ -388,37 +370,16 @@ export async function runManifestFacts({
     return null
   }
 
-  let resolvedBin: string
-  try {
-    resolvedBin = requestBin(ecosystem, cwd, bin)
-  } catch (e) {
+  const request = toSocketFactsRequest(options)
+  if (!request.ok) {
     process.exitCode = 1
-    logger.fail(
-      `Could not run the ${ecosystem} build tool: ${getErrorMessageOr(e, String(e))}`,
-    )
+    logger.fail(`${request.message}: ${request.cause}`)
     return null
   }
 
-  const request: SocketFactsRequest = {
-    buildRoot: path.resolve(cwd),
-    config: {
-      bin: resolvedBin,
-      buildOpts,
-      ...(excludeConfigs ? { excludeConfigs } : {}),
-      ignoreUnresolved,
-      ...(includeConfigs ? { includeConfigs } : {}),
-      ...(javaHome ? { javaHome } : {}),
-      verbose,
-    },
-    ...(entryFile ? { entryFile } : {}),
-    excludeBase: path.resolve(excludeBase ?? cwd),
-    ...(excludePaths?.length ? { excludePaths } : {}),
-    hints: toRequestHints(hints),
-    tool: ecosystem,
-  }
   const { workDir } = context
   const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
-    request,
+    request.data,
     workDir
       ? [
           ...(workDir.withFiles ? ['--with-files'] : []),
@@ -435,6 +396,7 @@ export async function runManifestFacts({
       logger.fail(
         `Could not generate Socket facts for the ${ecosystem} project at \`${cwd}\`${message ? `: ${message}` : '.'}`,
       )
+      warnIfPinnedCoanaPredatesFacts(context)
     }
     return null
   }
