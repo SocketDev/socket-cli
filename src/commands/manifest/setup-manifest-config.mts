@@ -13,7 +13,10 @@ import {
 } from '../../utils/socket-json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { ManifestDefaults } from '../../utils/socket-json.mts'
+import type {
+  ManifestDefaults,
+  ReachabilityDefaults,
+} from '../../utils/socket-json.mts'
 
 // Whether the prompt was canceled. A blank answer clears a value set before
 // with null rather than deleting the key, so it doesn't silently start
@@ -385,10 +388,11 @@ export async function setupGradle(
       return canceledByUser()
     }
   }
+  const generatesFacts = factsOnly || config.facts !== false
 
   // The config filters and --ignore-unresolved only apply to facts generation
   // (the default); skip them when pom generation (--pom) is selected.
-  if (factsOnly || config.facts !== false) {
+  if (generatesFacts) {
     const factsOptions = await setupFactsOptions(config)
     if (!factsOptions.ok || factsOptions.data.canceled) {
       return factsOptions
@@ -397,6 +401,10 @@ export async function setupGradle(
 
   if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
+  }
+
+  if (generatesFacts) {
+    return await setupReachability(config)
   }
 
   return notCanceled()
@@ -440,7 +448,7 @@ export async function setupMaven(
     return canceledByUser()
   }
 
-  return notCanceled()
+  return await setupReachability(config)
 }
 
 export async function setupSbt(
@@ -478,11 +486,12 @@ export async function setupSbt(
       return canceledByUser()
     }
   }
+  const generatesFacts = factsOnly || config.facts !== false
 
   // Socket facts is the default. The pom output questions (stdout/outfile)
   // only apply when pom generation (--pom) is explicitly selected; otherwise
   // ask the facts-only options.
-  if (!factsOnly && config.facts === false) {
+  if (!generatesFacts) {
     const stdout = await askForStdout(config.stdout)
     if (stdout === undefined) {
       return canceledByUser()
@@ -518,6 +527,10 @@ export async function setupSbt(
 
   if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
+  }
+
+  if (generatesFacts) {
+    return await setupReachability(config)
   }
 
   return notCanceled()
@@ -625,10 +638,13 @@ async function askForBin(
   })
 }
 
-async function askForJavaHome(defaultName = ''): Promise<string | undefined> {
+async function askForJavaHome(
+  defaultName = '',
+  question = 'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME.',
+): Promise<string | undefined> {
   return await input({
     message:
-      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME. Supports $VAR/${VAR}.' +
+      `${question} Supports $VAR/\${VAR}.` +
       (defaultName ? ' (Backspace to leave default)' : ''),
     default: defaultName,
     required: false,
@@ -714,6 +730,54 @@ async function askForIgnoreUnresolvedFlag(
     ],
     default: current === true ? 'yes' : current === false ? 'no' : '',
   })
+}
+
+// Settings only the reachability run reads. A "no" leaves a setting as it is,
+// so an inherited value is neither pinned nor cleared.
+async function setupReachability(config: {
+  reachability?: ReachabilityDefaults | undefined
+}): Promise<CResult<{ canceled: boolean }>> {
+  const reachability = { ...config.reachability }
+
+  const wantsJavaHome = await select({
+    message: 'Use a different Java for reachability analysis?',
+    choices: [
+      {
+        name: 'no',
+        value: false,
+        description: 'Leave the JDK for reachability analysis unset',
+      },
+      {
+        name: 'yes',
+        value: true,
+        description: 'Set the JDK reachability analysis uses',
+      },
+    ],
+    default: !!reachability.javaHome,
+  })
+  if (wantsJavaHome === undefined || wantsJavaHome === null) {
+    return canceledByUser()
+  }
+  if (
+    wantsJavaHome &&
+    applyAnswer(
+      reachability,
+      'javaHome',
+      await askForJavaHome(
+        reachability.javaHome || '',
+        'What JDK should reachability analysis use?',
+      ),
+    )
+  ) {
+    return canceledByUser()
+  }
+
+  if (Object.keys(reachability).length) {
+    config.reachability = reachability
+  } else {
+    delete config.reachability
+  }
+  return notCanceled()
 }
 
 // Prompts for the facts-only options every facts generator shares: the config
