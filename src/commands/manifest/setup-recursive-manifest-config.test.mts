@@ -538,6 +538,39 @@ describe('setupRecursiveManifestConfig', () => {
     expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({})
   })
 
+  it('writes an inherited reachability setting only where it differs, field by field', async () => {
+    await writeSettings('.', {
+      maven: { reachability: { javaHome: '/opt/jdk-17' } },
+    })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    vi.mocked(setupMaven).mockResolvedValue({
+      ok: true,
+      data: { canceled: false },
+    })
+    const answers: Answers = [
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ]
+    answer(answers)
+
+    await setupRecursiveManifestConfig(repo, false)
+    expect(existsSync(file('legacy/socket.json'))).toBe(false)
+
+    vi.mocked(setupMaven).mockImplementation(async config => {
+      config.reachability = { javaHome: null }
+      return { ok: true, data: { canceled: false } }
+    })
+    answer(answers)
+
+    await setupRecursiveManifestConfig(repo, false)
+    expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+      reachability: { javaHome: null },
+    })
+  })
+
   it('loads a build left skipped under its own name, so its modules are not asked about', async () => {
     await writeSettings('legacy', {
       builds: { 'pom.xml': { disabled: true } },

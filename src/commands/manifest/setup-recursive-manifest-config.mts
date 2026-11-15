@@ -5,6 +5,7 @@ import micromatch from 'micromatch'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { select } from '@socketsecurity/registry/lib/prompts'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -81,6 +82,28 @@ function canceledByUser(): CResult<{ canceled: boolean }> {
 
 function notCanceled(): CResult<{ canceled: boolean }> {
   return { ok: true, data: { canceled: false } }
+}
+
+// A nested section (`reachability`) compares field by field, as the cascade
+// merges it.
+function changedFields(
+  seed: Record<string, unknown>,
+  inherited: Record<string, unknown>,
+): Record<string, unknown> {
+  const changed: Record<string, unknown> = {}
+  for (const key of Object.keys(seed)) {
+    const value = seed[key]
+    const base = inherited[key]
+    if (isObjectObject(value) && isObjectObject(base)) {
+      const nested = changedFields(value, base)
+      if (Object.keys(nested).length) {
+        changed[key] = nested
+      }
+    } else if (value !== base) {
+      changed[key] = value
+    }
+  }
+  return changed
 }
 
 function getEcosystemSection(
@@ -457,12 +480,13 @@ async function configureBuild(
   }
 
   const before = JSON.stringify(target)
+  const changed = changedFields(seed, inherited)
   // An answer the wizard removed leaves the field to inheritance.
   for (const field of new Set([...seeded, ...Object.keys(seed)])) {
-    if (!Object.hasOwn(seed, field) || seed[field] === inherited[field]) {
-      delete target[field]
+    if (Object.hasOwn(changed, field)) {
+      target[field] = changed[field]
     } else {
-      target[field] = seed[field]
+      delete target[field]
     }
   }
   const label = buildLabel(cwd, build)

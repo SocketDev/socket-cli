@@ -115,6 +115,7 @@ type SocketFactsRequest = {
     ignoreUnresolved: boolean
     includeConfigs?: string | undefined
     javaHome?: string | undefined
+    reachability?: { javaHome: string } | undefined
     verbose: boolean
   }
   entryFile?: string | undefined
@@ -236,6 +237,8 @@ export type SocketFactsRequestOptions = {
   includeConfigs?: string | undefined
   // As written: Coana expands `$VAR` references itself.
   javaHome?: string | undefined
+  // Unused by facts generation: Coana keeps it for the reachability run.
+  reachability?: { javaHome?: string | undefined } | undefined
   verbose?: boolean | undefined
 }
 
@@ -255,6 +258,7 @@ function toSocketFactsRequest({
   ignoreUnresolved = false,
   includeConfigs,
   javaHome,
+  reachability,
   verbose = false,
 }: SocketFactsRequestOptions): CResult<SocketFactsRequest> {
   let resolvedBin: string
@@ -283,6 +287,9 @@ function toSocketFactsRequest({
         ignoreUnresolved,
         ...(includeConfigs ? { includeConfigs } : {}),
         ...(javaHome ? { javaHome } : {}),
+        ...(reachability?.javaHome
+          ? { reachability: { javaHome: reachability.javaHome } }
+          : {}),
         verbose,
       },
       ...(entryFile ? { entryFile } : {}),

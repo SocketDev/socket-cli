@@ -179,7 +179,18 @@ export function createBuildRootSettingsResolver(
     let entryDisabledBy: DisabledBy | undefined
     if (entryKey) {
       const entry = builds![entryKey] as SocketJsonBuildEntry
+      const sectionReachability = section['reachability']
       Object.assign(section, entry)
+      // Merged field by field, as the cascade merges it.
+      if (
+        isObjectObject(sectionReachability) &&
+        isObjectObject(entry['reachability'])
+      ) {
+        section['reachability'] = {
+          ...sectionReachability,
+          ...entry['reachability'],
+        }
+      }
       if (entry.disabled !== undefined) {
         entryDisabledBy = { dir: root.dir, key: entryKey }
       }

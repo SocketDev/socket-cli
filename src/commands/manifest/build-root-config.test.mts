@@ -82,6 +82,20 @@ describe('createBuildRootSettingsResolver', () => {
     })
   })
 
+  it("merges an entry's reachability into the section's field by field", async () => {
+    await write('.', { maven: { reachability: { javaHome: '/jdk-17' } } })
+    await write(
+      'svc',
+      { builds: { 'pom.xml': { reachability: { other: 'x' } } } },
+      ['pom.xml'],
+    )
+
+    expect(
+      createBuildRootSettingsResolver()('maven', maven('svc')).sockJson.defaults
+        ?.manifest?.maven,
+    ).toEqual({ reachability: { javaHome: '/jdk-17', other: 'x' } })
+  })
+
   it('names a Gradle or sbt build by any build file of its directory', async () => {
     await write(
       'lib',

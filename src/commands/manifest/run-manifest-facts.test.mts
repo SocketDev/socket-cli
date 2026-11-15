@@ -123,6 +123,30 @@ describe('runManifestFacts', () => {
     })
   })
 
+  it("sends the reachability run's javaHome as written, next to the build's", async () => {
+    coanaAnswers({ status: 'empty' })
+    await runManifestFacts({
+      ...baseArgs,
+      cwd,
+      javaHome: '$JAVA11_HOME',
+      reachability: { javaHome: '${JAVA17_HOME}' },
+    })
+    expect(calls[0]!.request.config).toMatchObject({
+      javaHome: '$JAVA11_HOME',
+      reachability: { javaHome: '${JAVA17_HOME}' },
+    })
+  })
+
+  it('sends no reachability settings when none are set', async () => {
+    coanaAnswers({ status: 'empty' })
+    await runManifestFacts({
+      ...baseArgs,
+      cwd,
+      reachability: { javaHome: undefined },
+    })
+    expect(calls[0]!.request.config).not.toHaveProperty('reachability')
+  })
+
   it("runs Coana in socket-cli's own cwd, so its logs show paths from there", async () => {
     coanaAnswers({ status: 'empty' })
     await runManifestFacts({ ...baseArgs, cwd })

@@ -30,6 +30,13 @@ import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 
+// Settings only the reachability run reads; they cascade field by field like
+// the rest of an ecosystem's section.
+export type ReachabilityDefaults = {
+  // JDK for reachability analysis; passed to Coana as written.
+  javaHome?: string | undefined | null
+}
+
 export interface SocketJson {
   ' _____         _       _     ': string
   '|   __|___ ___| |_ ___| |_   ': string
@@ -94,6 +101,7 @@ export interface SocketJson {
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
+        reachability?: ReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       maven?: {
@@ -109,6 +117,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         mavenOpts?: string | undefined | null
+        reachability?: ReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       sbt?: {
@@ -127,6 +136,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         outfile?: string | undefined | null
+        reachability?: ReachabilityDefaults | undefined
         sbtOpts?: string | undefined | null
         stdout?: boolean | undefined
         verbose?: boolean | undefined
@@ -187,9 +197,20 @@ export async function readOrDefaultSocketJsonUp(
   return getDefaultSocketJson()
 }
 
-// Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields set in
-// `override` win, others fall through to `base`. Only this section cascades;
-// everything else in `defaults` comes from `base` only.
+function mergeJvmDefaults<
+  T extends { reachability?: ReachabilityDefaults | undefined },
+>(base: T | undefined, override: T): T {
+  const merged = { ...base, ...override }
+  if (base?.reachability && override.reachability) {
+    merged.reachability = { ...base.reachability, ...override.reachability }
+  }
+  return merged
+}
+
+// Merges `defaults.manifest.<ecosystem>` per ecosystem, and a JVM section's
+// `reachability` within it: fields set in `override` win, others fall through
+// to `base`. Only this section cascades; everything else in `defaults` comes
+// from `base` only.
 function mergeManifestDefaults(
   base: SocketJson,
   override: SocketJson,
@@ -215,16 +236,22 @@ function mergeManifestDefaults(
     }
   }
   if (overrideManifest.gradle) {
-    mergedManifest.gradle = {
-      ...baseManifest?.gradle,
-      ...overrideManifest.gradle,
-    }
+    mergedManifest.gradle = mergeJvmDefaults(
+      baseManifest?.gradle,
+      overrideManifest.gradle,
+    )
   }
   if (overrideManifest.maven) {
-    mergedManifest.maven = { ...baseManifest?.maven, ...overrideManifest.maven }
+    mergedManifest.maven = mergeJvmDefaults(
+      baseManifest?.maven,
+      overrideManifest.maven,
+    )
   }
   if (overrideManifest.sbt) {
-    mergedManifest.sbt = { ...baseManifest?.sbt, ...overrideManifest.sbt }
+    mergedManifest.sbt = mergeJvmDefaults(
+      baseManifest?.sbt,
+      overrideManifest.sbt,
+    )
   }
   return {
     ...base,

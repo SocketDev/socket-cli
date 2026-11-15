@@ -822,12 +822,65 @@ describe('generateRecursiveManifests', () => {
     expect(javaHomeByCall.get('maven:reactor')).toBeUndefined()
   })
 
+  it("passes each gradle, maven and sbt root's reachability javaHome on its request", async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'dsi-reachability-')),
+    )
+    try {
+      for (const file of [
+        'gradle/build.gradle',
+        'maven/pom.xml',
+        'sbt/build.sbt',
+      ]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(path.join(outer, path.dirname(file)))
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(path.join(outer, file), '')
+      }
+      mockCascade(() => ({
+        defaults: {
+          manifest: {
+            gradle: { reachability: { javaHome: '$GRADLE_JDK' } },
+            maven: { reachability: { javaHome: '$MAVEN_JDK' } },
+            sbt: { reachability: { javaHome: '$SBT_JDK' } },
+          },
+        },
+      }))
+      mockFacts(async ({ cwd }) => ({
+        factsPath: path.join(cwd, '.socket.facts.json'),
+        projects: [],
+      }))
+
+      await generateRecursiveManifests({ cwd: outer, verbose: false })
+
+      expect(
+        Object.fromEntries(
+          vi
+            .mocked(runManifestFacts)
+            .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
+        ),
+      ).toEqual({
+        gradle: { javaHome: '$GRADLE_JDK' },
+        maven: { javaHome: '$MAVEN_JDK' },
+        sbt: { javaHome: '$SBT_JDK' },
+      })
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
   it('resolves an explicit null override back to the no-restriction default, not a literal null', async () => {
     mockCascade(dir =>
       dir === dualMarkerDir
         ? {
             defaults: {
-              manifest: { maven: { excludeConfigs: null, javaHome: null } },
+              manifest: {
+                maven: {
+                  excludeConfigs: null,
+                  javaHome: null,
+                  reachability: { javaHome: null },
+                },
+              },
             },
           }
         : {},
@@ -849,6 +902,7 @@ describe('generateRecursiveManifests', () => {
       )
     expect(call?.[0].excludeConfigs).toBe('')
     expect(call?.[0].javaHome).toBeUndefined()
+    expect(call?.[0].reachability?.javaHome).toBeUndefined()
   })
 
   it("honors a build root's own socket.json verbose and points hints at it", async () => {

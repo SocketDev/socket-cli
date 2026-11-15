@@ -134,4 +134,100 @@ describe('readSocketJsonChain and mergeSocketJsonChain', () => {
       excludeConfigs: null,
     })
   })
+
+  describe('reachability', () => {
+    let buildRoot = ''
+
+    beforeEach(async () => {
+      await writeSocketJson(root, {
+        version: 1,
+        defaults: {
+          manifest: {
+            maven: { reachability: { javaHome: '$JAVA17_HOME' } },
+          },
+        },
+      })
+      buildRoot = path.join(root, 'project')
+      await fs.mkdir(buildRoot, { recursive: true })
+    })
+
+    it('inherits the reachability javaHome when the override only sets other fields', async () => {
+      await writeSocketJson(buildRoot, {
+        version: 1,
+        defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } },
+      })
+
+      const result = readSocketJsonCascade(buildRoot)
+      expect(mavenConfig(result)).toEqual({
+        javaHome: '/opt/jdk-11',
+        reachability: { javaHome: '$JAVA17_HOME' },
+      })
+    })
+
+    it('lets the nearest socket.json override the reachability javaHome', async () => {
+      await writeSocketJson(buildRoot, {
+        version: 1,
+        defaults: {
+          manifest: { maven: { reachability: { javaHome: '/opt/jdk-21' } } },
+        },
+      })
+
+      const result = readSocketJsonCascade(buildRoot)
+      expect(mavenConfig(result)?.reachability).toEqual({
+        javaHome: '/opt/jdk-21',
+      })
+    })
+
+    it('treats an explicit null reachability javaHome as clearing the inherited one', async () => {
+      await writeSocketJson(buildRoot, {
+        version: 1,
+        defaults: { manifest: { maven: { reachability: { javaHome: null } } } },
+      })
+
+      const result = readSocketJsonCascade(buildRoot)
+      expect(mavenConfig(result)?.reachability).toEqual({ javaHome: null })
+    })
+
+    it('merges reachability field by field rather than replacing it whole', async () => {
+      await writeSocketJson(buildRoot, {
+        version: 1,
+        defaults: { manifest: { maven: { reachability: { other: 'x' } } } },
+      })
+
+      const result = readSocketJsonCascade(buildRoot)
+      expect(mavenConfig(result)?.reachability).toEqual({
+        javaHome: '$JAVA17_HOME',
+        other: 'x',
+      })
+    })
+
+    it('cascades gradle and sbt reachability the same way', async () => {
+      await writeSocketJson(root, {
+        version: 1,
+        defaults: {
+          manifest: {
+            gradle: { reachability: { javaHome: '/opt/gradle-jdk' } },
+            sbt: { reachability: { javaHome: '/opt/sbt-jdk' } },
+          },
+        },
+      })
+      await writeSocketJson(buildRoot, {
+        version: 1,
+        defaults: {
+          manifest: {
+            gradle: { reachability: { javaHome: null } },
+            sbt: { bin: 'sbt' },
+          },
+        },
+      })
+
+      const result = readSocketJsonCascade(buildRoot)
+      expect(result.defaults?.manifest?.gradle?.reachability).toEqual({
+        javaHome: null,
+      })
+      expect(result.defaults?.manifest?.sbt?.reachability).toEqual({
+        javaHome: '/opt/sbt-jdk',
+      })
+    })
+  })
 })

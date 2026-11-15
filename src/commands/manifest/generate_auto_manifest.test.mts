@@ -274,6 +274,35 @@ describe('generateAutoManifest — bazel branch', () => {
     expect(convertGradleToMaven).not.toHaveBeenCalled()
   })
 
+  it('passes each JVM build tool its socket.json reachability javaHome', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          gradle: { reachability: { javaHome: '$GRADLE_JDK' } },
+          maven: { bin: 'mvn', reachability: { javaHome: '$MAVEN_JDK' } },
+          sbt: { reachability: { javaHome: '$SBT_JDK' } },
+        },
+      },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, gradle: true, maven: true, sbt: true },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(
+      Object.fromEntries(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
+      ),
+    ).toEqual({
+      gradle: { javaHome: '$GRADLE_JDK' },
+      maven: { javaHome: '$MAVEN_JDK' },
+      sbt: { javaHome: '$SBT_JDK' },
+    })
+  })
+
   it('uses the gradle pom generator when defaults.manifest.gradle.facts is false', async () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({
       defaults: { manifest: { gradle: { facts: false } } },

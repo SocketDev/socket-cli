@@ -124,6 +124,11 @@ export async function generateAutoManifest({
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined,
+        reachability: {
+          javaHome:
+            sockJson.defaults?.manifest?.sbt?.reachability?.javaHome ??
+            undefined,
+        },
         context,
         hints,
       })
@@ -171,6 +176,11 @@ export async function generateAutoManifest({
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
         javaHome: sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined,
+        reachability: {
+          javaHome:
+            sockJson.defaults?.manifest?.gradle?.reachability?.javaHome ??
+            undefined,
+        },
         context,
         hints,
       })
@@ -204,6 +214,11 @@ export async function generateAutoManifest({
       ),
       includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
       javaHome: sockJson.defaults?.manifest?.maven?.javaHome ?? undefined,
+      reachability: {
+        javaHome:
+          sockJson.defaults?.manifest?.maven?.reachability?.javaHome ??
+          undefined,
+      },
       context,
       hints,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),

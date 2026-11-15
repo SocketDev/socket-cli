@@ -87,6 +87,7 @@ export type EcosystemBuildConfig = {
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome: string | undefined
+  reachability: { javaHome: string | undefined }
   // Set when this build root should be skipped entirely (never invoked).
   skipReason: string | undefined
   verbose: boolean
@@ -705,6 +706,7 @@ async function runCandidate(
     ignoreUnresolved: ctx.ignoreUnresolved ?? dirConfig.ignoreUnresolved,
     includeConfigs: dirConfig.includeConfigs,
     javaHome: dirConfig.javaHome,
+    reachability: dirConfig.reachability,
     verbose: ctx.verbose || dirConfig.verbose,
   })
   if (result === null) {
@@ -822,6 +824,7 @@ export async function buildUncoveredRoot({
     ignoreUnresolved: config.ignoreUnresolved,
     includeConfigs: config.includeConfigs,
     javaHome: config.javaHome,
+    reachability: config.reachability,
     verbose: config.verbose,
   })
   if (result) {
@@ -932,6 +935,7 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: undefined,
+      reachability: { javaHome: undefined },
       skipReason: getSkipReason(ecosystem, config?.disabled),
       verbose: Boolean(config?.verbose),
     }
@@ -946,6 +950,7 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
+      reachability: { javaHome: config?.reachability?.javaHome ?? undefined },
       skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
       verbose: Boolean(config?.verbose),
     }
@@ -960,6 +965,7 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
+      reachability: { javaHome: config?.reachability?.javaHome ?? undefined },
       skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
       verbose: Boolean(config?.verbose),
     }
@@ -976,6 +982,7 @@ export function resolveEcosystemConfig(
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome ?? undefined,
+    reachability: { javaHome: config?.reachability?.javaHome ?? undefined },
     skipReason: getSkipReason(ecosystem, config?.disabled),
     verbose: Boolean(config?.verbose),
   }
