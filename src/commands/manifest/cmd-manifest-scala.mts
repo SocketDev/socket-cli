@@ -3,10 +3,10 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
@@ -351,15 +351,16 @@ async function run(
   assertValidExcludePaths(excludePaths)
 
   if (facts) {
-    await convertSbtToFacts({
+    await runManifestFacts({
       bin: String(bin),
+      buildOpts: parsedSbtOpts,
       cwd,
+      ecosystem: 'sbt',
       excludeConfigs: String(excludeConfigs || ''),
       excludePaths,
       ignoreUnresolved: Boolean(ignoreUnresolved),
       includeConfigs: String(includeConfigs || ''),
       javaHome,
-      sbtOpts: parsedSbtOpts,
       verbose: Boolean(verbose),
     })
     return

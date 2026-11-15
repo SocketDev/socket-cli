@@ -19,11 +19,9 @@ vi.mock('./convert_sbt_to_maven.mts', () => ({
 vi.mock('./convert-dotnet-to-facts.mts', () => ({
   convertDotnetToFacts: vi.fn(async () => undefined),
 }))
-vi.mock('./convert-gradle-to-facts.mts', () => ({
-  convertGradleToFacts: vi.fn(async () => undefined),
-}))
-vi.mock('./convert-sbt-to-facts.mts', () => ({
-  convertSbtToFacts: vi.fn(async () => undefined),
+vi.mock('./run-manifest-facts.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./run-manifest-facts.mts')>()),
+  runManifestFacts: vi.fn(async () => undefined),
 }))
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
@@ -36,10 +34,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
-import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -59,7 +57,7 @@ const baseDetected = {
 describe('generateAutoManifest — bazel branch', () => {
   beforeEach(() => {
     vi.mocked(extractBazelToMaven).mockClear()
-    vi.mocked(convertGradleToFacts).mockClear()
+    vi.mocked(runManifestFacts).mockClear()
     vi.mocked(convertGradleToMaven).mockClear()
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
     vi.mocked(extractBazelToMaven).mockResolvedValue({
@@ -272,7 +270,7 @@ describe('generateAutoManifest — bazel branch', () => {
     })
     expect(extractBazelToMaven).toHaveBeenCalledTimes(1)
     // Socket facts is the default for the gradle branch.
-    expect(convertGradleToFacts).toHaveBeenCalledTimes(1)
+    expect(runManifestFacts).toHaveBeenCalledTimes(1)
     expect(convertGradleToMaven).not.toHaveBeenCalled()
   })
 
@@ -287,7 +285,7 @@ describe('generateAutoManifest — bazel branch', () => {
       verbose: false,
     })
     expect(convertGradleToMaven).toHaveBeenCalledTimes(1)
-    expect(convertGradleToFacts).not.toHaveBeenCalled()
+    expect(runManifestFacts).not.toHaveBeenCalled()
   })
 
   it('honors socket.json out override (user-supplied .socket-auto-manifest dir)', async () => {
@@ -394,7 +392,7 @@ describe('generateAutoManifest — conda branch', () => {
 
   it('aborts on a failed facts generator even when the exit code was already set', async () => {
     process.exitCode = 1
-    vi.mocked(convertGradleToFacts).mockResolvedValueOnce(null)
+    vi.mocked(runManifestFacts).mockResolvedValueOnce(null)
     await expect(
       generateAutoManifest({
         cwd: '/tmp/repo',

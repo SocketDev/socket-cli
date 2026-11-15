@@ -4,15 +4,15 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
-import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
-import { convertMavenToFacts } from './convert-maven-to-facts.mts'
-import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
-import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './run-manifest-facts.mts'
+import {
+  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+  runManifestFacts,
+} from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import {
   ENVIRONMENT_YML,
@@ -112,8 +112,11 @@ export async function generateAutoManifest({
     // `defaults.manifest.sbt.facts: false` in socket.json.
     if (sockJson.defaults?.manifest?.sbt?.facts !== false) {
       logger.log('Detected a Scala sbt build, generating Socket facts...')
-      const outcome = await convertSbtToFacts({
-        ...sbtArgs,
+      const { sbtOpts, ...sbtCommon } = sbtArgs
+      const outcome = await runManifestFacts({
+        ...sbtCommon,
+        buildOpts: sbtOpts,
+        ecosystem: 'sbt',
         excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
         excludePaths,
         ignoreUnresolved: Boolean(
@@ -154,8 +157,11 @@ export async function generateAutoManifest({
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
       )
-      const outcome = await convertGradleToFacts({
-        ...gradleArgs,
+      const { gradleOpts, ...gradleCommon } = gradleArgs
+      const outcome = await runManifestFacts({
+        ...gradleCommon,
+        buildOpts: gradleOpts,
+        ecosystem: 'gradle',
         excludeConfigs:
           sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
         excludePaths,
@@ -181,12 +187,16 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
     logger.log('Detected a Maven pom.xml build, generating Socket facts...')
-    const outcome = await convertMavenToFacts({
+    const outcome = await runManifestFacts({
       // Configured bin wins; else prefer ./mvnw, else mvn on PATH.
       bin:
         sockJson.defaults?.manifest?.maven?.bin ??
         resolveBuildToolBin('maven', cwd),
+      buildOpts: parseBuildToolOpts(
+        sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
+      ),
       cwd,
+      ecosystem: 'maven',
       excludeConfigs: sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
       excludePaths,
       ignoreUnresolved: Boolean(
@@ -194,9 +204,6 @@ export async function generateAutoManifest({
       ),
       includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
       javaHome: sockJson.defaults?.manifest?.maven?.javaHome ?? undefined,
-      mavenOpts: parseBuildToolOpts(
-        sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
-      ),
       context,
       hints,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
