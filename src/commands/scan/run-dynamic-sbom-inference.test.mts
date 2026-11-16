@@ -1,6 +1,13 @@
+import { promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
+import {
+  runDynamicSbomInference,
+  withoutDiscardedFacts,
+} from './run-dynamic-sbom-inference.mts'
 
 import type { FactsConsumer } from './run-dynamic-sbom-inference.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -92,6 +99,7 @@ describe('runDynamicSbomInference', () => {
     ])
 
     expect(await run('upload')).toEqual({
+      discardedFactsPaths: [],
       factsOnlyTypes: ['maven'],
       factsPaths: ['/repo/a/.socket.facts.json'],
       resolvedPathsSidecar: undefined,
@@ -208,5 +216,35 @@ describe('runDynamicSbomInference', () => {
     expect(mockWarn).toHaveBeenCalledWith(
       expect.stringMatching(/leaves out the build roots socket.json skips/),
     )
+  })
+})
+
+describe('withoutDiscardedFacts', () => {
+  it('leaves out a discarded facts file, also through a symlinked path', async () => {
+    const real = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'discarded-facts-')),
+    )
+    const link = `${real}-link`
+    try {
+      await fs.symlink(real, link)
+      const discarded = path.join(real, 'pom.xml.socket.facts.json')
+      const kept = path.join(real, 'app-cli.pom.xml.socket.facts.json')
+      await fs.writeFile(discarded, '{}')
+      await fs.writeFile(kept, '{}')
+
+      expect(
+        await withoutDiscardedFacts(
+          [
+            path.join(link, 'pom.xml.socket.facts.json'),
+            kept,
+            path.join(real, 'pom.xml'),
+          ],
+          [discarded],
+        ),
+      ).toEqual([kept, path.join(real, 'pom.xml')])
+    } finally {
+      await fs.rm(link, { force: true })
+      await fs.rm(real, { recursive: true, force: true })
+    }
   })
 })

@@ -4,6 +4,7 @@ import {
   expandEnvVarRefs,
   formatMissingEnvVarRefs,
 } from './expand-env-var-refs.mts'
+import { tailBuildOutput } from './run-manifest-facts.mts'
 import { enumerateWorkspaces as enumerateWorkspacesScript } from './scripts/run.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
 
@@ -15,10 +16,9 @@ export type EnumerateWorkspacesResult = {
   projects: SocketFactsSbomProject[]
 }
 
-// Cheap subproject discovery (no dependency resolution) for
-// `socket manifest setup --dynamic-sbom-inference`; dynamic-sbom-inference
-// itself instead gets this list for free as a side effect of its own full
-// facts run.
+// Cheap subproject discovery (no dependency resolution), for builds that are
+// not resolved: the setup wizard's, and skipped ones. Callers decide whether
+// a failure fails the command.
 export async function enumerateWorkspaces({
   bin,
   buildOpts,
@@ -46,7 +46,6 @@ export async function enumerateWorkspaces({
   if (javaHome) {
     const expanded = expandEnvVarRefs(javaHome)
     if (expanded.missing) {
-      process.exitCode = 1
       logger.fail(
         `javaHome (\`${javaHome}\`) ${formatMissingEnvVarRefs(expanded.missing)}.`,
       )
@@ -73,7 +72,6 @@ export async function enumerateWorkspaces({
   try {
     result = await enumerateWorkspacesScript(ecosystem, scriptOpts)
   } catch (e) {
-    process.exitCode = 1
     logger.fail(
       `Could not run the ${ecosystem} build tool: ${getErrorMessageOr(e, String(e))}`,
     )
@@ -81,15 +79,19 @@ export async function enumerateWorkspaces({
   }
 
   if (!result.projects.length) {
-    process.exitCode = 1
     logger.fail(
       `The ${ecosystem} build produced no workspace records (exit code ${result.code}); every build reports at least its own root project, so the enumeration task did not run.`,
     )
+    const tail = verbose ? '' : tailBuildOutput(result.stdout, result.stderr)
+    if (tail) {
+      logger.group('Build output:')
+      logger.error(tail)
+      logger.groupEnd()
+    }
     return
   }
 
   if (!result.buildRoot) {
-    process.exitCode = 1
     logger.fail(
       `The ${ecosystem} build did not report its build root, so its projects' paths cannot be located.`,
     )

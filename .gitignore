@@ -30,6 +30,7 @@
 !/assets/fleet/
 !/bin/
 !/docs/
+!/docs/dynamic-sbom-inference-settings.md
 !/patches/
 !/scripts/
 !/scripts/build-package-matrix.mts
@@ -556,6 +557,8 @@
 !/src/commands/manifest/bazel/extract_bazel_to_pypi.constructed.test.mts
 !/src/commands/manifest/bazel/extract_bazel_to_pypi.mts
 !/src/commands/manifest/bazel/extract_bazel_to_pypi.test.mts
+!/src/commands/manifest/build-root-config.mts
+!/src/commands/manifest/build-root-config.test.mts
 !/src/commands/manifest/cmd-manifest-auto.mts
 !/src/commands/manifest/cmd-manifest-auto.test.mts
 !/src/commands/manifest/cmd-manifest-cdxgen.mts
@@ -603,6 +606,7 @@
 !/src/commands/manifest/handle-manifest-dynamic-sbom-inference.test.mts
 !/src/commands/manifest/handle-manifest-setup.mts
 !/src/commands/manifest/init.gradle
+!/src/commands/manifest/load-build.mts
 !/src/commands/manifest/manifest-flags.mts
 !/src/commands/manifest/output-manifest-dynamic-sbom-inference.mts
 !/src/commands/manifest/output-manifest-setup.mts

@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -6,14 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-vi.mock('../../utils/socket-json.mts', () => ({
+vi.mock('../../utils/socket-json.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../utils/socket-json.mts')>()),
   readOrDefaultSocketJson: vi.fn(() => ({})),
-  // Default: no per-root override found, fall back to the root config - matches
-  // there being no nested socket.json anywhere in the fixture tree.
-  readSocketJsonCascade: vi.fn((_dir, _boundaryDir, fallback) => fallback),
+  // Default: no nested socket.json anywhere in the fixture tree.
+  readSocketJsonChain: vi.fn(() => []),
 }))
 vi.mock('./run-manifest-facts.mts', () => ({
   runManifestFacts: vi.fn(),
+}))
+vi.mock('./enumerate-workspaces.mts', () => ({
+  enumerateWorkspaces: vi.fn(),
 }))
 vi.mock('./scripts/run.mts', async importOriginal => ({
   ...(await importOriginal<typeof import('./scripts/run.mts')>()),
@@ -21,16 +24,32 @@ vi.mock('./scripts/run.mts', async importOriginal => ({
 }))
 
 import { buildRootPath } from './discover-manifest-roots.mts'
+import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { listDotnetEntryProjects } from './scripts/run.mts'
 import { testPath } from '../../../test/utils.mts'
 import {
   readOrDefaultSocketJson,
-  readSocketJsonCascade,
+  readSocketJsonChain,
 } from '../../utils/socket-json.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
+
+// The settings each build root's directory resolves to, as one socket.json at
+// the filesystem root.
+function mockCascade(cascade: (dir: string) => unknown): void {
+  vi.mocked(readSocketJsonChain).mockImplementation(dir => [
+    { dir: path.parse(dir).root, sockJson: cascade(dir) as SocketJson },
+  ])
+}
+
+// `dir`'s own socket.json, with `builds` entries for the builds there.
+function mockOwnSettings(own: Record<string, unknown>): void {
+  vi.mocked(readSocketJsonChain).mockImplementation(dir =>
+    own[dir] ? [{ dir, sockJson: own[dir] as SocketJson }] : [],
+  )
+}
 
 const monorepo = path.join(
   testPath,
@@ -47,13 +66,22 @@ function relOf(dir: string): string {
   return path.relative(monorepo, dir).replaceAll('\\', '/')
 }
 
+function mavenProject(subprojectDir: string) {
+  return {
+    type: 'maven' as const,
+    name: subprojectDir,
+    id: subprojectDir,
+    subprojectDir,
+    manifestFiles: [{ file: `${subprojectDir}/pom.xml` }],
+    children: [],
+  }
+}
+
 describe('generateRecursiveManifests', () => {
   beforeEach(() => {
     vi.mocked(runManifestFacts).mockReset()
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (_dir, _boundaryDir, fallback) => fallback,
-    )
+    mockCascade(() => ({}))
   })
   afterEach(() => {
     process.exitCode = undefined
@@ -117,65 +145,181 @@ describe('generateRecursiveManifests', () => {
   })
 
   it.each([
-    // Escaping references must get their own independent invocation
-    // regardless of where they happen to sort alphabetically relative to the
-    // reactor that declares them - before ('aaa-shared-lib') and after
-    // ('zzz-shared-lib') both have to behave identically.
-    ['aaa-shared-lib'],
-    ['zzz-shared-lib'],
+    // Sorting before the reactor ('aaa-shared-lib'), the member is built on
+    // its own first and dropped once the reactor turns out to load it; after
+    // it ('zzz-shared-lib'), it is never built on its own.
+    ['aaa-shared-lib', true],
+    ['zzz-shared-lib', false],
   ])(
-    'never suppresses a sibling subprojectDir that escapes its declaring reactor (name: %s)',
-    async sharedLibName => {
+    'builds a member outside its reactor directory only inside the reactor (name: %s)',
+    async (sharedLibName, builtAlone) => {
       const outer = await fs.realpath(
         await fs.mkdtemp(path.join(tmpdir(), 'escaping-subproject-')),
       )
       const reactorA = path.join(outer, 'reactor-a')
       const sharedLib = path.join(outer, sharedLibName)
+      const sharedFacts = path.join(sharedLib, 'pom.xml.socket.facts.json')
+      const sidecarAcc = new Map()
       try {
         await fs.mkdir(reactorA, { recursive: true })
         await fs.mkdir(sharedLib, { recursive: true })
         await fs.writeFile(path.join(reactorA, 'pom.xml'), '<project/>')
         await fs.writeFile(path.join(sharedLib, 'pom.xml'), '<project/>')
+        await fs.writeFile(sharedFacts, 'committed')
 
         vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
-          if (cwd === reactorA) {
-            return {
-              factsPath: path.join(cwd, '.socket.facts.json'),
-              projects: [
-                {
-                  type: 'maven',
-                  name: 'shared-lib',
-                  subprojectDir: `../${sharedLibName}`,
-                  manifestFiles: [{ file: `../${sharedLibName}/pom.xml` }],
-                  children: [],
-                },
-              ],
-            }
-          }
+          const factsPath = path.join(cwd, 'pom.xml.socket.facts.json')
+          await fs.writeFile(factsPath, 'generated')
+          sidecarAcc.set(factsPath, { components: [], projects: [] })
           return {
-            factsPath: path.join(cwd, '.socket.facts.json'),
-            projects: [],
+            factsPath,
+            projects:
+              cwd === reactorA
+                ? [
+                    {
+                      type: 'maven',
+                      name: 'shared-lib',
+                      id: 'shared-lib',
+                      subprojectDir: `../${sharedLibName}`,
+                      manifestFiles: [{ file: `../${sharedLibName}/pom.xml` }],
+                      children: [],
+                    },
+                  ]
+                : [],
           }
         })
 
         const outcomes = await generateRecursiveManifests({
           cwd: outer,
+          sidecarAcc,
           verbose: false,
         })
 
         const byDir = new Map(outcomes.map(o => [o.dir, o.status]))
         expect(byDir.get(reactorA)).toBe('generated')
-        expect(byDir.get(sharedLib)).toBe('generated')
+        expect(byDir.get(sharedLib)).toBe('skippedCovered')
         expect(
           vi
             .mocked(runManifestFacts)
             .mock.calls.some(([opts]) => opts.cwd === sharedLib),
-        ).toBe(true)
+        ).toBe(builtAlone)
+        expect(await fs.readFile(sharedFacts, 'utf8')).toBe('committed')
+        expect([...sidecarAcc.keys()]).toEqual([
+          path.join(reactorA, 'pom.xml.socket.facts.json'),
+        ])
+        // The restored file is not this scan's, so it is not to be collected.
+        expect(
+          outcomes.find(o => o.dir === sharedLib)?.discardedFactsPath,
+        ).toBe(builtAlone ? sharedFacts : undefined)
       } finally {
         await fs.rm(outer, { recursive: true, force: true })
       }
     },
   )
+
+  it.for([
+    // The build that redirects Gradle with `-p` runs second, then first.
+    ['a-main', 'z-alias'],
+    ['z-main', 'a-alias'],
+  ])(
+    'keeps the facts and sidecar entry of the kept run together when two runs write one facts file (%s, %s)',
+    async ([mainName, aliasName]) => {
+      const outer = await fs.realpath(
+        await fs.mkdtemp(path.join(tmpdir(), 'shared-facts-')),
+      )
+      const main = path.join(outer, mainName!)
+      const alias = path.join(outer, aliasName!)
+      const sidecarAcc = new Map()
+      try {
+        for (const dir of [main, alias]) {
+          for (const file of ['settings.gradle', 'build.gradle']) {
+            // eslint-disable-next-line no-await-in-loop
+            await fs.mkdir(dir, { recursive: true })
+            // eslint-disable-next-line no-await-in-loop
+            await fs.writeFile(path.join(dir, file), '')
+          }
+        }
+        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+          const factsPath = path.join(main, 'gradle.socket.facts.json')
+          await fs.writeFile(factsPath, cwd)
+          sidecarAcc.set(factsPath, { components: [], projects: [], cwd })
+          return {
+            factsPath,
+            projects: [
+              {
+                type: 'maven' as const,
+                name: 'root',
+                id: 'root',
+                subprojectDir: '.',
+                children: [],
+              },
+            ],
+          }
+        })
+
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          sidecarAcc,
+          verbose: false,
+        })
+
+        const generated = outcomes.filter(o => o.status === 'generated')
+        expect(generated).toHaveLength(1)
+        const { factsPath } = generated[0]!
+        expect(generated[0]!.discardedFactsPath).toBeUndefined()
+        // The kept build's own facts and sidecar entry, whichever ran last.
+        expect(await fs.readFile(factsPath!, 'utf8')).toBe(generated[0]!.dir)
+        expect(sidecarAcc.get(factsPath!)?.cwd).toBe(generated[0]!.dir)
+      } finally {
+        await fs.rm(outer, { recursive: true, force: true })
+      }
+    },
+  )
+
+  it('removes the facts file of a dropped run when none existed before it', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'dropped-run-')),
+    )
+    const lib = path.join(outer, 'aaa-lib')
+    const app = path.join(outer, 'app')
+    try {
+      for (const dir of [lib, app]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(dir, { recursive: true })
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
+      }
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+        const factsPath = path.join(cwd, 'pom.xml.socket.facts.json')
+        await fs.writeFile(factsPath, 'generated')
+        return {
+          factsPath,
+          projects:
+            cwd === app
+              ? [
+                  {
+                    type: 'maven',
+                    name: 'lib',
+                    id: 'lib',
+                    subprojectDir: '../aaa-lib',
+                    manifestFiles: [{ file: '../aaa-lib/pom.xml' }],
+                    children: [],
+                  },
+                ]
+              : [],
+        }
+      })
+
+      await generateRecursiveManifests({ cwd: outer, verbose: false })
+
+      expect(existsSync(path.join(lib, 'pom.xml.socket.facts.json'))).toBe(
+        false,
+      )
+      expect(existsSync(path.join(app, 'pom.xml.socket.facts.json'))).toBe(true)
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
 
   it('covers only the build files a build reports, so an independent build sharing a member directory still runs', async () => {
     const outer = await fs.realpath(
@@ -327,7 +471,7 @@ describe('generateRecursiveManifests', () => {
     }
   })
 
-  it('judges coverage against the reported build root, not the discovery directory', async () => {
+  it('judges coverage against the reported build root, not the discovery directory, anywhere in the scan root', async () => {
     const outer = await fs.realpath(
       await fs.mkdtemp(path.join(tmpdir(), 'relocated-build-root-')),
     )
@@ -376,7 +520,8 @@ describe('generateRecursiveManifests', () => {
 
       const byDir = new Map(outcomes.map(o => [o.dir, o.status]))
       expect(byDir.get(member)).toBe('skippedCovered')
-      expect(byDir.get(escaped)).toBe('generated')
+      // Inside the scan root, though outside its build root.
+      expect(byDir.get(escaped)).toBe('skippedCovered')
     } finally {
       await fs.rm(outer, { recursive: true, force: true })
     }
@@ -401,10 +546,10 @@ describe('generateRecursiveManifests', () => {
     expect(atDualMarkerDir.every(o => o.status === 'generated')).toBe(true)
   })
 
-  it('aborts only the failing ecosystem (fail-closed), marking its remaining candidates aborted, while an unrelated ecosystem proceeds normally', async () => {
+  it('aborts only the build roots in and under a failed one, which may be its members, while siblings and other ecosystems proceed', async () => {
     vi.mocked(runManifestFacts).mockImplementation(
       async ({ cwd, ecosystem }) => {
-        if (ecosystem === 'maven' && cwd === dualMarkerDir) {
+        if (ecosystem === 'maven' && cwd === reactor) {
           process.exitCode = 1
           return null
         }
@@ -422,32 +567,84 @@ describe('generateRecursiveManifests', () => {
       const byKey = new Map(
         outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
       )
-      expect(byKey.get('maven:dual-marker-dir')).toBe('failed')
-      // Without dual-marker-dir's own projects[], reactor's still-undiscovered
-      // members can't be safely told apart from independent projects - so
-      // nothing else in the maven ecosystem gets attempted, but that's now
-      // reported explicitly rather than silently omitted.
-      expect(byKey.get('maven:reactor')).toBe('aborted')
-      expect(byKey.get('maven:reactor/moduleB/independent-submodule')).toBe(
-        'aborted',
-      )
+      expect(byKey.get('maven:reactor')).toBe('failed')
+      // Without reactor's projects[], its members can't be told apart from
+      // independent projects beneath it.
+      for (const member of [
+        'maven:reactor/moduleA',
+        'maven:reactor/moduleB',
+        'maven:reactor/moduleB/independent-submodule',
+      ]) {
+        expect(byKey.get(member)).toBe('aborted')
+      }
       expect(
         vi
           .mocked(runManifestFacts)
-          .mock.calls.some(
-            ([opts]) => opts.ecosystem === 'maven' && opts.cwd === reactor,
-          ),
-      ).toBe(false)
-      // Coverage is tracked per ecosystem, so maven's failure has nothing to
-      // do with gradle's - it still runs to completion at the same directory.
-      expect(byKey.get('gradle:dual-marker-dir')).toBe('generated')
+          .mock.calls.filter(([opts]) => opts.ecosystem === 'maven')
+          .map(([opts]) => relOf(opts.cwd))
+          .sort(),
+      ).toEqual(['dual-marker-dir', 'reactor'])
+      expect(byKey.get('maven:dual-marker-dir')).toBe('generated')
+      expect(byKey.get('gradle:reactor/moduleA/nested-gradle')).toBe(
+        'generated',
+      )
       expect(
         warnSpy.mock.calls.some(c =>
-          /Aborting maven discovery/.test(String(c[0])),
+          /Not building 3 maven build root\(s\) in or under \S*reactor:/.test(
+            String(c[0]),
+          ),
         ),
       ).toBe(true)
+      expect(process.exitCode).toBe(1)
     } finally {
       warnSpy.mockRestore()
+    }
+  })
+
+  it('excuses the failure of a member built on its own before the build that loads it', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'misordered-member-')),
+    )
+    const core = path.join(outer, 'core')
+    const parent = path.join(outer, 'parent')
+    try {
+      for (const dir of [core, parent]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(dir, { recursive: true })
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(path.join(dir, 'pom.xml'), '<project/>')
+      }
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+        if (cwd === core) {
+          process.exitCode = 1
+          return null
+        }
+        return {
+          factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
+          projects: [
+            {
+              type: 'maven',
+              name: 'core',
+              id: 'core',
+              subprojectDir: '../core',
+              manifestFiles: [{ file: '../core/pom.xml' }],
+              children: [],
+            },
+          ],
+        }
+      })
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
+
+      const byDir = new Map(outcomes.map(o => [o.dir, o.status]))
+      expect(byDir.get(core)).toBe('skippedCovered')
+      expect(byDir.get(parent)).toBe('generated')
+      expect(process.exitCode).toBeUndefined()
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
     }
   })
 
@@ -558,11 +755,10 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('resolves each build root its own nearest socket.json instead of only the root config', async () => {
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) =>
-        dir === dualMarkerDir
-          ? { defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } } }
-          : fallback,
+    mockCascade(dir =>
+      dir === dualMarkerDir
+        ? { defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } } }
+        : {},
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
@@ -588,15 +784,14 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('resolves an explicit null override back to the no-restriction default, not a literal null', async () => {
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) =>
-        dir === dualMarkerDir
-          ? {
-              defaults: {
-                manifest: { maven: { excludeConfigs: null, javaHome: null } },
-              },
-            }
-          : fallback,
+    mockCascade(dir =>
+      dir === dualMarkerDir
+        ? {
+            defaults: {
+              manifest: { maven: { excludeConfigs: null, javaHome: null } },
+            },
+          }
+        : {},
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
@@ -618,11 +813,10 @@ describe('generateRecursiveManifests', () => {
   })
 
   it("honors a build root's own socket.json verbose and points hints at it", async () => {
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) =>
-        dir === dualMarkerDir
-          ? { defaults: { manifest: { maven: { verbose: true } } } }
-          : fallback,
+    mockCascade(dir =>
+      dir === dualMarkerDir
+        ? { defaults: { manifest: { maven: { verbose: true } } } }
+        : {},
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
@@ -650,15 +844,14 @@ describe('generateRecursiveManifests', () => {
   it.each([true, false])(
     'lets an explicit ignoreUnresolved (%s) override every build root socket.json',
     async ignoreUnresolved => {
-      vi.mocked(readSocketJsonCascade).mockImplementation(
-        (dir, _boundaryDir, fallback) =>
-          dir === dualMarkerDir
-            ? {
-                defaults: {
-                  manifest: { maven: { ignoreUnresolved: !ignoreUnresolved } },
-                },
-              }
-            : fallback,
+      mockCascade(dir =>
+        dir === dualMarkerDir
+          ? {
+              defaults: {
+                manifest: { maven: { ignoreUnresolved: !ignoreUnresolved } },
+              },
+            }
+          : {},
       )
       vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
         factsPath: path.join(cwd, '.socket.facts.json'),
@@ -680,11 +873,10 @@ describe('generateRecursiveManifests', () => {
   )
 
   it("falls back to each build root's socket.json ignoreUnresolved when not overridden", async () => {
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) =>
-        dir === dualMarkerDir
-          ? { defaults: { manifest: { maven: { ignoreUnresolved: true } } } }
-          : fallback,
+    mockCascade(dir =>
+      dir === dualMarkerDir
+        ? { defaults: { manifest: { maven: { ignoreUnresolved: true } } } }
+        : {},
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
@@ -709,11 +901,10 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('skips (with a warning) a resolved config that sets facts: false, never invoking the build tool', async () => {
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) =>
-        dir === dualMarkerDir
-          ? { defaults: { manifest: { gradle: { facts: false } } } }
-          : fallback,
+    mockCascade(dir =>
+      dir === dualMarkerDir
+        ? { defaults: { manifest: { gradle: { facts: false } } } }
+        : {},
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
@@ -747,7 +938,7 @@ describe('generateRecursiveManifests', () => {
     }
   })
 
-  it('shortens the cascade walk for a nested candidate under an already-disabled root, instead of re-walking from cwd', async () => {
+  it('warns once per setting that disables build roots, not once per build root it skips', async () => {
     const independentSubmodule = path.join(
       reactor,
       'moduleB',
@@ -761,21 +952,10 @@ describe('generateRecursiveManifests', () => {
       path.join(reactor, 'moduleB'),
       independentSubmodule,
     ])
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, boundaryDir, fallback) => {
-        if (dir === reactor && boundaryDir === monorepo) {
-          // The one full walk: reactor's own socket.json disables maven.
-          return { defaults: { manifest: { maven: { disabled: true } } } }
-        }
-        // Every other maven candidate nested under reactor must use a
-        // boundary nearer than the overall recursion root - never re-walk
-        // all the way back to monorepo/rootSockJson once an ancestor is
-        // already confirmed disabled.
-        if (nestedMavenDirs.has(dir)) {
-          expect(boundaryDir).not.toBe(monorepo)
-        }
-        return fallback
-      },
+    mockCascade(dir =>
+      dir === reactor || nestedMavenDirs.has(dir)
+        ? { defaults: { manifest: { maven: { disabled: true } } } }
+        : {},
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
@@ -810,7 +990,9 @@ describe('generateRecursiveManifests', () => {
       // moduleB + independent-submodule), but only the root cause should
       // warn - otherwise a big disabled reactor spams one line per pom.
       expect(warnSpy).toHaveBeenCalledTimes(1)
-      expect(String(warnSpy.mock.calls[0]?.[0])).toMatch(/disabled is true/)
+      expect(String(warnSpy.mock.calls[0]?.[0])).toMatch(
+        /sets defaults\.manifest\.maven\.disabled/,
+      )
     } finally {
       warnSpy.mockRestore()
     }
@@ -822,18 +1004,16 @@ describe('generateRecursiveManifests', () => {
       'moduleB',
       'independent-submodule',
     )
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) => {
-        if (dir === reactor) {
-          return { defaults: { manifest: { maven: { disabled: true } } } }
-        }
-        if (dir === independentSubmodule) {
-          // Its own socket.json explicitly clears the inherited disable.
-          return { defaults: { manifest: { maven: { disabled: false } } } }
-        }
-        return fallback
-      },
-    )
+    mockCascade(dir => {
+      if (dir === reactor) {
+        return { defaults: { manifest: { maven: { disabled: true } } } }
+      }
+      if (dir === independentSubmodule) {
+        // Its own socket.json explicitly clears the inherited disable.
+        return { defaults: { manifest: { maven: { disabled: false } } } }
+      }
+      return {}
+    })
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
@@ -862,12 +1042,9 @@ describe('generateRecursiveManifests', () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({
       defaults: { manifest: { maven: { disabled: true } } },
     } as SocketJson)
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) =>
-        dir === reactor
-          ? { defaults: { manifest: { maven: { disabled: false } } } }
-          : fallback,
-    )
+    mockCascade(dir => ({
+      defaults: { manifest: { maven: { disabled: dir !== reactor } } },
+    }))
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects: [],
@@ -893,11 +1070,10 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('skips (with a warning) a resolved config that sets a cascaded disabled: true', async () => {
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      (dir, _boundaryDir, fallback) =>
-        dir === reactor
-          ? { defaults: { manifest: { maven: { disabled: true } } } }
-          : fallback,
+    mockCascade(dir =>
+      dir === reactor
+        ? { defaults: { manifest: { maven: { disabled: true } } } }
+        : {},
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
@@ -912,7 +1088,7 @@ describe('generateRecursiveManifests', () => {
       })
 
       const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
-      expect(warned).toMatch(/disabled is true/)
+      expect(warned).toMatch(/sets defaults\.manifest\.maven\.disabled/)
 
       const byKey = new Map(
         outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
@@ -923,49 +1099,44 @@ describe('generateRecursiveManifests', () => {
     }
   })
 
-  it('bounds the socket.json cascade at a symlinked cwd instead of walking past it to the real filesystem root', async () => {
+  it('reads the socket.json files above a symlinked scan directory, through its real path', async () => {
     const actual = await vi.importActual<
       typeof import('../../utils/socket-json.mts')
     >('../../utils/socket-json.mts')
     vi.mocked(readOrDefaultSocketJson).mockImplementation(
       actual.readOrDefaultSocketJson,
     )
-    vi.mocked(readSocketJsonCascade).mockImplementation(
-      actual.readSocketJsonCascade,
+    vi.mocked(readSocketJsonChain).mockImplementation(
+      actual.readSocketJsonChain,
     )
 
-    const outer = await fs.mkdtemp(path.join(tmpdir(), 'symlink-cascade-'))
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'symlink-cascade-')),
+    )
     const realCwd = path.join(outer, 'real-cwd')
     const cwdLink = path.join(outer, 'cwd-link')
     const project = path.join(realCwd, 'project')
     try {
       await fs.mkdir(project, { recursive: true })
       await fs.writeFile(path.join(project, 'pom.xml'), '<project/>')
-      // Sits strictly above the intended recursion root - must never be read.
       await fs.writeFile(
         path.join(outer, 'socket.json'),
         JSON.stringify({
           version: 1,
-          defaults: { manifest: { maven: { bin: 'LEAKED-BIN' } } },
+          defaults: { manifest: { maven: { bin: 'ABOVE-BIN' } } },
         }),
       )
       await fs.symlink(realCwd, cwdLink)
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+        factsPath: path.join(cwd, '.socket.facts.json'),
+        projects: [],
+      }))
 
-      vi.mocked(runManifestFacts).mockImplementation(async ({ bin, cwd }) => {
-        expect(bin).not.toBe('LEAKED-BIN')
-        return {
-          factsPath: path.join(cwd, '.socket.facts.json'),
-          projects: [],
-        }
-      })
+      await generateRecursiveManifests({ cwd: cwdLink, verbose: false })
 
-      const outcomes = await generateRecursiveManifests({
-        cwd: cwdLink,
-        verbose: false,
-      })
-
-      expect(outcomes.some(o => o.status === 'generated')).toBe(true)
-      expect(runManifestFacts).toHaveBeenCalled()
+      expect(
+        vi.mocked(runManifestFacts).mock.calls.map(([opts]) => opts.bin),
+      ).toEqual(['ABOVE-BIN'])
     } finally {
       await fs.rm(outer, { recursive: true, force: true })
     }
@@ -1156,8 +1327,7 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('resolves settings once per directory and drops a --file in mavenOpts with a warning', async () => {
-    vi.mocked(readSocketJsonCascade).mockClear()
-    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+    mockCascade(() => ({
       defaults: {
         manifest: {
           maven: {
@@ -1166,7 +1336,8 @@ describe('generateRecursiveManifests', () => {
           },
         },
       },
-    } as SocketJson)
+    }))
+    vi.mocked(readSocketJsonChain).mockClear()
     vi.mocked(runManifestFacts).mockImplementation(
       async ({ cwd, entryFile }) => ({
         factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
@@ -1179,7 +1350,7 @@ describe('generateRecursiveManifests', () => {
       await generateRecursiveManifests({ cwd: pomNames, verbose: false })
 
       const cascadeDirs = vi
-        .mocked(readSocketJsonCascade)
+        .mocked(readSocketJsonChain)
         .mock.calls.map(([dir]) => dir)
       expect(cascadeDirs.length).toBeGreaterThan(0)
       expect(cascadeDirs).toEqual([...new Set(cascadeDirs)])
@@ -1195,6 +1366,513 @@ describe('generateRecursiveManifests', () => {
       )
     } finally {
       warnSpy.mockRestore()
+    }
+  })
+
+  describe('with a Gradle build nested in another that includes its directory', () => {
+    let outer = ''
+    const gradleFacts = (cwd: string, dirs: string[]) => ({
+      factsPath: path.join(cwd, 'gradle.socket.facts.json'),
+      projects: dirs.map(subprojectDir => ({
+        type: 'maven' as const,
+        name: subprojectDir,
+        id: subprojectDir,
+        subprojectDir,
+        children: [],
+      })),
+    })
+
+    beforeEach(async () => {
+      outer = await fs.realpath(
+        await fs.mkdtemp(path.join(tmpdir(), 'nested-gradle-build-')),
+      )
+      for (const file of [
+        'settings.gradle',
+        'build.gradle',
+        'sub/settings.gradle',
+        'sub/build.gradle',
+        'sub/a/build.gradle',
+      ]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(path.dirname(path.join(outer, file)), {
+          recursive: true,
+        })
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(path.join(outer, file), '')
+      }
+    })
+    afterEach(async () => {
+      await fs.rm(outer, { recursive: true, force: true })
+    })
+
+    it.for([
+      // sub's own settings include `a`, which the outer build does not load.
+      [['.', 'a'], 'generated'],
+      // Everything sub loads, the outer build loads too.
+      [['.'], 'skippedCovered'],
+    ] as const)(
+      'runs the nested build and keeps it only when it loads more (%j)',
+      async ({ 0: subProjects, 1: subStatus }) => {
+        const sub = path.join(outer, 'sub')
+        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) =>
+          cwd === outer
+            ? gradleFacts(cwd, [
+                '.',
+                'sub',
+                ...(subProjects.length > 1 ? [] : ['sub/a']),
+              ])
+            : gradleFacts(cwd, [...subProjects]),
+        )
+
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          purlTypes: ['maven'],
+          verbose: false,
+        })
+
+        const byDir = new Map(
+          outcomes
+            .filter(o => o.ecosystem === 'gradle')
+            .map(o => [path.relative(outer, o.dir) || '.', o.status]),
+        )
+        expect(byDir.get('.')).toBe('generated')
+        expect(byDir.get('sub')).toBe(subStatus)
+        expect(byDir.get('sub/a')).toBe('skippedCovered')
+        expect(
+          vi
+            .mocked(runManifestFacts)
+            .mock.calls.map(([o]) => path.relative(outer, o.cwd) || '.'),
+        ).toEqual(['.', 'sub'])
+      },
+    )
+
+    it('ignores the failure of a nested build of its own when the build that includes its directory succeeds', async () => {
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+        if (cwd === path.join(outer, 'sub')) {
+          process.exitCode = 1
+          return null
+        }
+        return gradleFacts(cwd, ['.', 'sub', 'sub/a'])
+      })
+      vi.spyOn(logger, 'info').mockImplementation(() => logger)
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        purlTypes: ['maven'],
+        verbose: false,
+      })
+
+      expect(
+        outcomes.find(o => o.dir === path.join(outer, 'sub'))?.status,
+      ).toBe('skippedCovered')
+      expect(outcomes.some(o => o.status === 'failed')).toBe(false)
+      expect(process.exitCode).toBeUndefined()
+    })
+
+    it.for([
+      // `a` is a project of sub: skipped with what sub loads.
+      [['.', 'a'], 'and its 1 module'],
+      // `a` isn't: Gradle can only run it through sub, which is skipped.
+      [['.'], ''],
+    ] as const)(
+      'skips a skipped settings build and the Gradle directories beneath it that belong to it (%j)',
+      async ({ 0: subProjects, 1: modules }) => {
+        const sub = path.join(outer, 'sub')
+        mockOwnSettings({
+          [sub]: {
+            defaults: {
+              manifest: { builds: { 'settings.gradle': { disabled: true } } },
+            },
+          },
+        })
+        vi.mocked(enumerateWorkspaces).mockResolvedValue({
+          buildRoot: sub,
+          projects: gradleFacts(sub, [...subProjects]).projects,
+        })
+        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) =>
+          gradleFacts(cwd, ['.']),
+        )
+        const warnSpy = vi
+          .spyOn(logger, 'warn')
+          .mockImplementation(() => logger)
+
+        try {
+          const outcomes = await generateRecursiveManifests({
+            cwd: outer,
+            purlTypes: ['maven'],
+            verbose: false,
+          })
+
+          const byDir = new Map(
+            outcomes.map(o => [path.relative(outer, o.dir) || '.', o.status]),
+          )
+          expect(byDir.get('sub')).toBe('skippedDisabled')
+          expect(byDir.get('sub/a')).toBe('skippedDisabled')
+          expect(
+            vi
+              .mocked(runManifestFacts)
+              .mock.calls.map(([o]) => path.relative(outer, o.cwd) || '.'),
+          ).toEqual(['.'])
+          expect(warnSpy.mock.calls.map(c => String(c[0]))).toEqual([
+            expect.stringMatching(
+              new RegExp(
+                `^Skipping \\S*sub${modules ? ` ${modules}` : ''}: \\S*sub/socket\\.json sets defaults\\.manifest\\.builds\\["settings\\.gradle"\\]\\.disabled\\.$`,
+              ),
+            ),
+          ])
+        } finally {
+          warnSpy.mockRestore()
+        }
+      },
+    )
+  })
+
+  it('configures each POM of a directory through its own builds entry', async () => {
+    mockOwnSettings({
+      [pomNames]: {
+        defaults: {
+          manifest: {
+            maven: { mavenOpts: '-B' },
+            builds: { 'app-dev.pom.xml': { mavenOpts: '-Pdev' } },
+          },
+        },
+      },
+    })
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ cwd, entryFile }) => ({
+        factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+        projects: [],
+      }),
+    )
+
+    await generateRecursiveManifests({ cwd: pomNames, verbose: false })
+
+    const optsByRoot = new Map(
+      vi
+        .mocked(runManifestFacts)
+        .mock.calls.map(([o]) => [
+          path.relative(pomNames, path.join(o.cwd, o.entryFile ?? '')),
+          o.buildOpts,
+        ]),
+    )
+    expect(optsByRoot.get('app-dev.pom.xml')).toEqual(['-Pdev'])
+    expect(optsByRoot.get('pom.xml')).toEqual(['-B'])
+  })
+
+  it('warns that a builds entry naming a member of another build does not apply', async () => {
+    mockOwnSettings({
+      [path.join(reactor, 'moduleA')]: {
+        defaults: {
+          manifest: { builds: { 'pom.xml': { mavenOpts: '-Pa' } } },
+        },
+      },
+    })
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ cwd, ecosystem }) => ({
+        factsPath: path.join(cwd, '.socket.facts.json'),
+        projects:
+          cwd === reactor && ecosystem === 'maven'
+            ? [
+                {
+                  type: 'maven',
+                  name: 'moduleA',
+                  id: 'moduleA',
+                  subprojectDir: 'moduleA',
+                  manifestFiles: [{ file: 'moduleA/pom.xml' }],
+                  children: [],
+                },
+              ]
+            : [],
+      }),
+    )
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
+
+      expect(
+        outcomes.find(
+          o => o.ecosystem === 'maven' && relOf(o.dir) === 'reactor/moduleA',
+        )?.status,
+      ).toBe('skippedCovered')
+      const warned = warnSpy.mock.calls.map(c => String(c[0]))
+      expect(
+        warned.filter(w => w.includes('defaults.manifest.builds["pom.xml"]')),
+      ).toEqual([
+        expect.stringMatching(
+          /in \S*reactor\/moduleA\/socket\.json does not apply: \S*reactor\/pom\.xml builds \S*reactor\/moduleA\/pom\.xml with its own settings\.$/,
+        ),
+      ])
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  describe('with a Maven build skipped by its own entry', () => {
+    let outer = ''
+    const pom = (rel: string) => path.join(outer, rel, 'pom.xml')
+
+    beforeEach(async () => {
+      outer = await fs.realpath(
+        await fs.mkdtemp(path.join(tmpdir(), 'skipped-reactor-')),
+      )
+      for (const rel of ['aaa-module', 'legacy', 'legacy/old', 'legacy/tool']) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(path.join(outer, rel), { recursive: true })
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(pom(rel), '<project/>')
+      }
+      await fs.writeFile(
+        path.join(outer, 'legacy/legacy-keep.pom.xml'),
+        '<project/>',
+      )
+      mockOwnSettings({
+        [path.join(outer, 'legacy')]: {
+          defaults: {
+            manifest: { builds: { 'pom.xml': { disabled: true } } },
+          },
+        },
+      })
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, entryFile }) => {
+          const factsPath = path.join(cwd, `${entryFile}.socket.facts.json`)
+          await fs.writeFile(factsPath, 'generated')
+          return {
+            factsPath,
+            projects: [
+              {
+                ...mavenProject('.'),
+                manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
+              },
+            ],
+          }
+        },
+      )
+    })
+    afterEach(async () => {
+      await fs.rm(outer, { recursive: true, force: true })
+    })
+
+    it('loads it without resolving, and skips what it loads with it, wherever that is', async () => {
+      vi.mocked(enumerateWorkspaces).mockResolvedValue({
+        buildRoot: path.join(outer, 'legacy'),
+        projects: [
+          mavenProject('.'),
+          mavenProject('old'),
+          mavenProject('../aaa-module'),
+        ],
+      })
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+      try {
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          verbose: false,
+        })
+
+        const byRoot = new Map(
+          outcomes.map(o => [path.relative(outer, buildRootPath(o)), o.status]),
+        )
+        expect(Object.fromEntries(byRoot)).toEqual({
+          'aaa-module/pom.xml': 'skippedDisabled',
+          'legacy/legacy-keep.pom.xml': 'generated',
+          'legacy/pom.xml': 'skippedDisabled',
+          'legacy/old/pom.xml': 'skippedDisabled',
+          'legacy/tool/pom.xml': 'generated',
+        })
+        // aaa-module sorts first, so it ran before legacy was loaded.
+        expect(
+          existsSync(path.join(outer, 'aaa-module/pom.xml.socket.facts.json')),
+        ).toBe(false)
+        expect(enumerateWorkspaces).toHaveBeenCalledWith(
+          expect.objectContaining({
+            cwd: path.join(outer, 'legacy'),
+            entryFile: 'pom.xml',
+          }),
+        )
+        expect(warnSpy.mock.calls.map(c => String(c[0]))).toEqual([
+          expect.stringMatching(
+            /^Skipping \S*legacy\/pom\.xml and its 2 modules: \S*legacy\/socket\.json sets defaults\.manifest\.builds\["pom\.xml"\]\.disabled\.$/,
+          ),
+        ])
+      } finally {
+        warnSpy.mockRestore()
+      }
+    })
+
+    it('reports a skipped build that another build includes as part of that build, warning that the skip does not apply', async () => {
+      await fs.mkdir(path.join(outer, 'zzz-reactor'), { recursive: true })
+      await fs.writeFile(pom('zzz-reactor'), '<project/>')
+      vi.mocked(enumerateWorkspaces).mockResolvedValue({
+        buildRoot: path.join(outer, 'legacy'),
+        projects: [mavenProject('.')],
+      })
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, entryFile }) => ({
+          factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+          projects:
+            cwd === path.join(outer, 'zzz-reactor')
+              ? [mavenProject('.'), mavenProject('../legacy')]
+              : [
+                  {
+                    ...mavenProject('.'),
+                    manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
+                  },
+                ],
+        }),
+      )
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+      try {
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          verbose: false,
+        })
+
+        expect(
+          outcomes.find(
+            o =>
+              o.dir === path.join(outer, 'legacy') && o.entryFile === 'pom.xml',
+          )?.status,
+        ).toBe('skippedCovered')
+        const warned = warnSpy.mock.calls.map(c => String(c[0]))
+        expect(warned.some(w => w.startsWith('Skipping'))).toBe(false)
+        expect(warned).toContainEqual(
+          expect.stringMatching(
+            /does not apply: \S*zzz-reactor\/pom\.xml builds \S*legacy\/pom\.xml/,
+          ),
+        )
+      } finally {
+        warnSpy.mockRestore()
+      }
+    })
+
+    it('fails, without building what lies beneath it, when it cannot be loaded', async () => {
+      vi.mocked(enumerateWorkspaces).mockImplementation(async () => {
+        process.exitCode = 1
+        return undefined
+      })
+      const failSpy = vi.spyOn(logger, 'fail').mockImplementation(() => logger)
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+      try {
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          verbose: false,
+        })
+
+        const byRoot = new Map(
+          outcomes.map(o => [path.relative(outer, buildRootPath(o)), o.status]),
+        )
+        expect(byRoot.get('legacy/pom.xml')).toBe('failed')
+        expect(byRoot.get('legacy/old/pom.xml')).toBe('aborted')
+        expect(byRoot.get('aaa-module/pom.xml')).toBe('generated')
+        expect(String(failSpy.mock.calls.at(-1)?.[0])).toMatch(
+          /^Could not load \S*legacy\/pom\.xml .* with `socket manifest setup --dynamic-sbom-inference`\.$/,
+        )
+        expect(process.exitCode).toBe(1)
+      } finally {
+        failSpy.mockRestore()
+        warnSpy.mockRestore()
+      }
+    })
+  })
+
+  it('reports a build a kept build covers as part of it, even when a skipped build loads it too or its own entry skips it', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'covered-solution-')),
+    )
+    const at = (rel: string) => path.join(outer, rel)
+    const projectRecord = (file: string) => ({
+      type: 'nuget' as const,
+      name: file,
+      id: file,
+      subprojectDir: path.dirname(file),
+      manifestFiles: [{ file }],
+      children: [],
+    })
+    const members: Record<string, string[]> = {
+      'App.sln': [at('p/a/A.csproj')],
+      'R.sln': [at('p/a/A.csproj'), at('p/c/C.csproj')],
+      'Skip.sln': [at('p/a/A.csproj'), at('gone/Gone.csproj')],
+      'Y.sln': [at('p/a/A.csproj')],
+    }
+    try {
+      for (const rel of [
+        'p/a/A.csproj',
+        'p/c/C.csproj',
+        'r/R.sln',
+        'skip/Skip.sln',
+        'y/Y.sln',
+        'z/App.sln',
+      ]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(path.dirname(at(rel)), { recursive: true })
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(at(rel), '')
+      }
+      mockOwnSettings({
+        [at('skip')]: {
+          defaults: {
+            manifest: { builds: { 'Skip.sln': { disabled: true } } },
+          },
+        },
+        [at('y')]: {
+          defaults: { manifest: { builds: { 'Y.sln': { disabled: true } } } },
+        },
+      })
+      vi.mocked(listDotnetEntryProjects).mockImplementation(
+        async ({ entryFile }) => members[entryFile ?? ''],
+      )
+      vi.mocked(enumerateWorkspaces).mockResolvedValue({
+        buildRoot: at('skip'),
+        projects: [projectRecord('../p/a/A.csproj')],
+      })
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, entryFile }) => ({
+          factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+          projects:
+            entryFile === 'R.sln'
+              ? [
+                  projectRecord('../p/a/A.csproj'),
+                  projectRecord('../p/c/C.csproj'),
+                ]
+              : [projectRecord(entryFile ?? '')],
+        }),
+      )
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        purlTypes: ['nuget'],
+        verbose: false,
+      })
+
+      expect(
+        Object.fromEntries(
+          outcomes.map(o => [path.relative(outer, buildRootPath(o)), o.status]),
+        ),
+      ).toEqual({
+        'p/a/A.csproj': 'skippedCovered',
+        'p/c/C.csproj': 'skippedCovered',
+        'r/R.sln': 'generated',
+        'skip/Skip.sln': 'skippedDisabled',
+        'y/Y.sln': 'skippedCovered',
+        'z/App.sln': 'skippedCovered',
+      })
+      expect(warnSpy.mock.calls.map(c => String(c[0]))).toContainEqual(
+        expect.stringMatching(
+          /^defaults\.manifest\.builds\["Y\.sln"\] in \S*y\/socket\.json does not apply: \S*r\/R\.sln builds \S*y\/Y\.sln with its own settings\.$/,
+        ),
+      )
+    } finally {
+      vi.mocked(listDotnetEntryProjects).mockImplementation(
+        async () => undefined,
+      )
+      await fs.rm(outer, { recursive: true, force: true })
     }
   })
 })

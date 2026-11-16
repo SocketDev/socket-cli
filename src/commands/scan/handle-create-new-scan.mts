@@ -14,7 +14,10 @@ import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
-import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
+import {
+  runDynamicSbomInference,
+  withoutDiscardedFacts,
+} from './run-dynamic-sbom-inference.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import {
@@ -161,6 +164,7 @@ async function createNewScan(
   // Sidecar forwarded to reachability; populated only when reach runs.
   let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
   let factsOnlyTypes: FactsOnlyTypes | undefined
+  let discardedFactsPaths: string[] | undefined
 
   // sbt provisions its Scala toolchain under the directory passed as its
   // isolated global base; reach's artifactPaths point into it, so it must
@@ -194,6 +198,7 @@ async function createNewScan(
         )
         resolvedPathsSidecar = dynamicResult.resolvedPathsSidecar
         factsOnlyTypes = dynamicResult.factsOnlyTypes
+        discardedFactsPaths = dynamicResult.discardedFactsPaths
       }
 
       if (autoManifest) {
@@ -274,11 +279,14 @@ async function createNewScan(
 
     const packagePaths =
       scanFiles ??
-      (await getPackageFilesForScan(scanTargets, supportedFiles, {
-        additionalIgnores: additionalScaIgnores,
-        config: socketConfig,
-        cwd,
-      }))
+      (await withoutDiscardedFacts(
+        await getPackageFilesForScan(scanTargets, supportedFiles, {
+          additionalIgnores: additionalScaIgnores,
+          config: socketConfig,
+          cwd,
+        }),
+        discardedFactsPaths,
+      ))
 
     spinner.successAndStop(
       `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,

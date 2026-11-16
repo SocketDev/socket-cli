@@ -89,8 +89,7 @@ function sortByPurl<T extends AnyPURL>(entries: T[]): T[] {
 // Emit an entry for every SBOM component AND every first-party project: a
 // top-level module is a project, not a dependency component, yet its source
 // roots are where reachability starts, so the sidecar must carry them.
-// Every build writes its own facts file, so a key is accumulated once; a
-// repeated call for the same factsFile (the same build run again) overwrites.
+// A run writing a facts file another run wrote replaces its entry.
 export function accumulateSidecar(
   acc: SidecarAccumulator,
   facts: SocketFactsSbom,

@@ -49,6 +49,8 @@ vi.mock('./perform-reachability-analysis.mts', () => ({
 
 vi.mock('./run-dynamic-sbom-inference.mts', () => ({
   runDynamicSbomInference: mockRunDynamicSbomInference,
+  withoutDiscardedFacts: async (paths: string[], discarded?: string[]) =>
+    paths.filter(p => !discarded?.includes(p)),
 }))
 
 vi.mock('../../constants.mts', () => ({
@@ -404,6 +406,35 @@ describe('handleScanReach', () => {
           },
           // The reachability target stays the user's own, never a facts file.
           target: '/repo',
+        }),
+      )
+    })
+
+    it('leaves the facts files of dropped runs out of the analysis', async () => {
+      mockRunDynamicSbomInference.mockResolvedValueOnce({
+        discardedFactsPaths: ['/repo/lib/pom.xml.socket.facts.json'],
+        factsOnlyTypes: ['maven'],
+        factsPaths: ['/repo/pom.xml.socket.facts.json'],
+        resolvedPathsSidecar: undefined,
+      })
+      mockGetPackageFilesForScan.mockResolvedValueOnce([
+        '/repo/lib/pom.xml.socket.facts.json',
+        '/repo/pom.xml.socket.facts.json',
+      ])
+
+      await handleScanReach({
+        cwd: '/repo',
+        interactive: false,
+        orgSlug: 'fakeOrg',
+        outputKind: 'text',
+        outputPath: '',
+        reachabilityOptions: baseReachabilityOptions,
+        targets: ['/repo'],
+      })
+
+      expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+        expect.objectContaining({
+          packagePaths: ['/repo/pom.xml.socket.facts.json'],
         }),
       )
     })

@@ -46,7 +46,11 @@ describe('generateSocketFactsForFix', () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(existing, 'regenerated')
       await fs.writeFile(fresh, 'generated')
-      return { factsOnlyTypes: ['maven'], factsPaths: [existing, fresh] }
+      return {
+        discardedFactsPaths: [],
+        factsOnlyTypes: ['maven'],
+        factsPaths: [existing, fresh],
+      }
     })
 
     const generated = await generate()
@@ -63,10 +67,29 @@ describe('generateSocketFactsForFix', () => {
     expect(existsSync(fresh)).toBe(false)
   })
 
+  it('removes a discarded facts file a dropped run left behind', async () => {
+    const discarded = path.join(cwd, 'sub', 'pom.xml.socket.facts.json')
+    mockRunDynamicSbomInference.mockImplementation(async () => {
+      await fs.writeFile(discarded, 'dropped')
+      return {
+        discardedFactsPaths: [discarded, existing],
+        factsOnlyTypes: ['maven'],
+        factsPaths: [],
+      }
+    })
+
+    const generated = await generate()
+    await generated.remove()
+
+    expect(existsSync(discarded)).toBe(false)
+    expect(await fs.readFile(existing, 'utf8')).toBe('original')
+  })
+
   it('writes the sidecar outside the repository', async () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(fresh, 'generated')
       return {
+        discardedFactsPaths: [],
         factsOnlyTypes: ['maven', 'nuget'],
         factsPaths: [fresh],
         resolvedPathsSidecar: { [fresh]: { components: [], projects: [] } },
@@ -90,6 +113,7 @@ describe('generateSocketFactsForFix', () => {
 
   it('writes an empty sidecar when no build root resolved any paths', async () => {
     mockRunDynamicSbomInference.mockResolvedValue({
+      discardedFactsPaths: [],
       factsOnlyTypes: ['maven'],
       factsPaths: [],
     })
@@ -103,7 +127,11 @@ describe('generateSocketFactsForFix', () => {
   it('restores an existing facts file that generation does not rewrite', async () => {
     mockRunDynamicSbomInference.mockImplementation(async () => {
       await fs.writeFile(fresh, 'generated')
-      return { factsOnlyTypes: ['maven'], factsPaths: [fresh] }
+      return {
+        discardedFactsPaths: [],
+        factsOnlyTypes: ['maven'],
+        factsPaths: [fresh],
+      }
     })
 
     const generated = await generate()

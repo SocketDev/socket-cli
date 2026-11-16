@@ -56,6 +56,7 @@ import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
+import { withoutDiscardedFacts } from '../scan/run-dynamic-sbom-inference.mts'
 
 import type { GeneratedSocketFacts } from './generated-socket-facts.mts'
 import type { FixConfig } from './types.mts'
@@ -390,7 +391,7 @@ async function coanaFixWithFacts(
           outputPath: DOT_SOCKET_DOT_FACTS_JSON,
         }),
     )
-  const scanFilepaths = await findScanFilepaths()
+  let scanFilepaths = await findScanFilepaths()
   if (factsSlot) {
     if (!silence) {
       spinner?.stop()
@@ -404,6 +405,10 @@ async function coanaFixWithFacts(
         (await findScanFilepaths()).filter(isSocketFactsFile),
       tmpDir: factsSlot.tmpDir,
     })
+    scanFilepaths = await withoutDiscardedFacts(
+      scanFilepaths,
+      factsSlot.generated.discardedPaths,
+    )
     const known = new Set(scanFilepaths)
     scanFilepaths.push(...factsSlot.generated.paths.filter(p => !known.has(p)))
     if (!silence) {

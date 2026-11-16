@@ -50,6 +50,9 @@ export interface SocketJson {
         perRepoTimeout?: number | undefined
         verbose?: boolean | undefined
       }
+      // Keyed by the name of a build file in this file's directory: settings
+      // of that build tool's section for that build alone.
+      builds?: Record<string, SocketJsonBuildEntry> | undefined
       conda?: {
         disabled?: boolean | undefined
         infile?: string | undefined
@@ -151,6 +154,13 @@ export type ManifestDefaults<
   K extends keyof NonNullable<NonNullable<SocketJson['defaults']>['manifest']>,
 > = NonNullable<NonNullable<NonNullable<SocketJson['defaults']>['manifest']>[K]>
 
+export type SocketJsonBuildEntry = {
+  disabled?: boolean | undefined
+  [field: string]: unknown
+}
+
+export type SocketJsonInDir = { dir: string; sockJson: SocketJson }
+
 export function readOrDefaultSocketJson(cwd: string): SocketJson {
   const jsonCResult = readSocketJsonSync(cwd, true)
   return jsonCResult.ok
@@ -222,33 +232,33 @@ function mergeManifestDefaults(
   }
 }
 
-// Cascades `defaults.manifest.*` from `rootSockJson` down to `dir`: each
-// ancestor's own socket.json, between `dir` and `boundaryDir` (exclusive),
-// merges in, nearest-to-`dir` winning field by field.
-export function readSocketJsonCascade(
-  dir: string,
-  boundaryDir: string,
-  rootSockJson: SocketJson,
+// Merges `defaults.manifest.*` of `chain`, the nearest winning field by field.
+export function mergeSocketJsonChain(
+  chain: readonly SocketJsonInDir[],
 ): SocketJson {
-  const boundary = path.resolve(boundaryDir)
+  return chain.reduce(
+    (merged, { sockJson }) => mergeManifestDefaults(merged, sockJson),
+    getDefaultSocketJson(),
+  )
+}
+
+// Every socket.json from the filesystem root down to `dir`, farthest first.
+export function readSocketJsonChain(dir: string): SocketJsonInDir[] {
+  const chain: SocketJsonInDir[] = []
   let current = path.resolve(dir)
-  // Farthest-from-dir first, so the merge loop below applies overrides in
-  // increasing precedence and the nearest-to-dir file wins last.
-  const ancestorsFarToNear: SocketJson[] = []
-  while (current !== boundary) {
+  for (;;) {
     if (existsSync(path.join(current, SOCKET_JSON))) {
       const jsonCResult = readSocketJsonSync(current, true)
       if (jsonCResult.ok) {
-        ancestorsFarToNear.unshift(jsonCResult.data)
+        chain.unshift({ dir: current, sockJson: jsonCResult.data })
       }
     }
     const parent = path.dirname(current)
     if (parent === current) {
-      break
+      return chain
     }
     current = parent
   }
-  return ancestorsFarToNear.reduce(mergeManifestDefaults, rootSockJson)
 }
 
 export function getDefaultSocketJson(): SocketJson {

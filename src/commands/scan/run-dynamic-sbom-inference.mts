@@ -1,8 +1,11 @@
+import path from 'node:path'
+
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { isFactsOnlyTypes } from '../../utils/coana.mts'
 import { InputError } from '../../utils/errors.mts'
+import { realpathOrResolved } from '../../utils/fs.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import {
   PURL_TYPE_BY_TOOL,
@@ -22,11 +25,16 @@ import type {
   SidecarAccumulator,
 } from '../manifest/scripts/sidecar.mts'
 
+const DSI_SETTINGS_DOCS_URL =
+  'https://github.com/SocketDev/socket-cli/blob/v1.x/docs/dynamic-sbom-inference-settings.md'
+
 // Who consumes the facts: Coana for `fix` and `reach` (which also resolves
 // artifact paths), or only the scan upload.
 export type FactsConsumer = 'fix' | 'reach' | 'upload'
 
 export type DynamicSbomInferenceResult = {
+  // Facts files of dropped runs, which the scan must not collect.
+  discardedFactsPaths: string[]
   // Each discovered build root's purl type, generated or not: Coana takes
   // these types' artifacts only from facts files.
   factsOnlyTypes: FactsOnlyTypes
@@ -119,7 +127,12 @@ export async function runDynamicSbomInference({
   // matches handleManifestDynamicSbomInference's own check.
   if (outcomes.some(o => o.status === 'failed')) {
     throw new InputError(
-      'One or more independent build roots failed to generate Socket facts; aborting (see the errors above).',
+      [
+        'One or more independent build roots failed to generate Socket facts; aborting (see the errors above).',
+        '',
+        `- To fix a build's settings or skip it, run \`${DSI_SETUP_COMMAND}\`.`,
+        `- The settings are documented at ${DSI_SETTINGS_DOCS_URL}.`,
+      ].join('\n'),
     )
   }
   const factsPaths = outcomes
@@ -129,6 +142,9 @@ export async function runDynamicSbomInference({
     checkFactsForCoana(outcomes, consumer, !!factsPaths.length)
   }
   return {
+    discardedFactsPaths: outcomes.flatMap(o =>
+      o.discardedFactsPath ? [o.discardedFactsPath] : [],
+    ),
     factsOnlyTypes,
     factsPaths,
     resolvedPathsSidecar:
@@ -136,4 +152,24 @@ export async function runDynamicSbomInference({
         ? serializeSidecar(sidecarAcc)
         : undefined,
   }
+}
+
+// `paths` without the facts files discovery discarded: each holds what was
+// there before the scan, or a dropped run's facts, not a kept build's.
+export async function withoutDiscardedFacts(
+  paths: string[],
+  discarded: readonly string[] | undefined,
+): Promise<string[]> {
+  if (!discarded?.length) {
+    return paths
+  }
+  const names = new Set(discarded.map(p => path.basename(p)))
+  const keys = new Set(discarded)
+  const isDiscarded = await Promise.all(
+    paths.map(
+      async p =>
+        names.has(path.basename(p)) && keys.has(await realpathOrResolved(p)),
+    ),
+  )
+  return paths.filter((_, index) => !isDiscarded[index])
 }

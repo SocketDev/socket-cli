@@ -7,14 +7,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   buildRootPath,
   findBuildToolCandidates,
+  hasRootMarker,
   isBuildRootCovered,
   isRootCovered,
+  membershipOf,
   sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
 import { testPath } from '../../../test/utils.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 
-import type { BuildRoot } from './discover-manifest-roots.mts'
+import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -249,6 +251,10 @@ describe('findBuildToolCandidates', () => {
   })
 })
 
+function filesCovered(files: string[]): Membership {
+  return { dirs: new Set(), files: new Set(files) }
+}
+
 describe('isBuildRootCovered', () => {
   it.for([
     [
@@ -280,9 +286,113 @@ describe('isBuildRootCovered', () => {
   ] as const)(
     '%s: %s covers %o: %s',
     ({ 0: tool, 1: file, 2: root, 3: expected }) => {
-      expect(isBuildRootCovered(new Set([file]), tool, root)).toBe(expected)
+      expect(isBuildRootCovered(filesCovered([file]), tool, root)).toBe(
+        expected,
+      )
     },
   )
+
+  it.for([
+    ['gradle', '/repo/lib', true],
+    ['sbt', '/repo/lib', true],
+    ['gradle', '/repo/lib/sub', false],
+    // A Maven build is addressed by its file.
+    ['maven', '/repo/lib', false],
+  ] as const)(
+    '%s: a project in %s covers /repo/lib: %s',
+    ({ 0: tool, 1: dir, 2: expected }) => {
+      const covered = { dirs: new Set([dir]), files: new Set<string>() }
+      const root =
+        tool === 'maven'
+          ? { dir: '/repo/lib', entryFile: 'pom.xml' }
+          : { dir: '/repo/lib' }
+      expect(isBuildRootCovered(covered, tool, root)).toBe(expected)
+    },
+  )
+})
+
+function mavenProject(subprojectDir: string, file: string) {
+  return {
+    type: 'maven' as const,
+    name: subprojectDir,
+    id: subprojectDir,
+    subprojectDir,
+    manifestFiles: [{ file }],
+    children: [],
+  }
+}
+
+describe('membershipOf', () => {
+  let scanRoot = ''
+
+  beforeAll(async () => {
+    scanRoot = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'membership-')),
+    )
+    for (const dir of ['build/member', 'sibling']) {
+      // eslint-disable-next-line no-await-in-loop
+      await fs.mkdir(path.join(scanRoot, dir), { recursive: true })
+      // eslint-disable-next-line no-await-in-loop
+      await fs.writeFile(path.join(scanRoot, dir, 'pom.xml'), '<project/>')
+    }
+  })
+
+  afterAll(async () => {
+    await fs.rm(scanRoot, { recursive: true, force: true })
+  })
+
+  it('takes project dirs and existing build files anywhere in the scan root, relative to the build root', async () => {
+    const membership = await membershipOf(
+      path.join(scanRoot, 'build'),
+      [
+        mavenProject('member', 'member/pom.xml'),
+        mavenProject('../sibling', '../sibling/pom.xml'),
+        mavenProject('absent', 'absent/build.gradle'),
+        mavenProject('../../outside', '../../outside/pom.xml'),
+      ],
+      scanRoot,
+    )
+    expect([...membership.files].sort()).toEqual([
+      path.join(scanRoot, 'build/member/pom.xml'),
+      path.join(scanRoot, 'sibling/pom.xml'),
+    ])
+    expect([...membership.dirs].sort()).toEqual([
+      path.join(scanRoot, 'build/absent'),
+      path.join(scanRoot, 'build/member'),
+      path.join(scanRoot, 'sibling'),
+    ])
+  })
+})
+
+describe('hasRootMarker', () => {
+  let dir = ''
+
+  beforeAll(async () => {
+    dir = await fs.mkdtemp(path.join(tmpdir(), 'root-marker-'))
+    await fs.mkdir(path.join(dir, 'gradle-build'))
+    await fs.writeFile(
+      path.join(dir, 'gradle-build', 'settings.gradle.kts'),
+      '',
+    )
+    await fs.mkdir(path.join(dir, 'gradle-project'))
+    await fs.writeFile(path.join(dir, 'gradle-project', 'build.gradle'), '')
+    await fs.mkdir(path.join(dir, 'sbt-build', 'project'), { recursive: true })
+    await fs.mkdir(path.join(dir, 'sbt-project'))
+  })
+
+  afterAll(async () => {
+    await fs.rm(dir, { recursive: true, force: true })
+  })
+
+  it.for([
+    ['gradle', 'gradle-build', true],
+    ['gradle', 'gradle-project', false],
+    ['sbt', 'sbt-build', true],
+    ['sbt', 'sbt-project', false],
+    ['maven', 'gradle-build', false],
+  ] as const)('%s at %s: %s', ({ 0: tool, 1: sub, 2: expected }) => {
+    expect(hasRootMarker(tool, { dir: path.join(dir, sub) })).toBe(expected)
+  })
 })
 
 describe('sortByDepthThenPath', () => {
@@ -352,7 +462,7 @@ describe('isRootCovered', () => {
     covered: string[],
     list: Parameters<typeof isRootCovered>[4],
     r: BuildRoot = root,
-  ) => isRootCovered(new Set(covered), 'dotnet', r, {}, list)
+  ) => isRootCovered(filesCovered(covered), 'dotnet', r, {}, list)
 
   it('covers a solution once every project it builds is covered', async () => {
     const covered = ['/repo/src/A/A.csproj', '/repo/src/B/B.csproj']
@@ -372,7 +482,7 @@ describe('isRootCovered', () => {
     ).toBe(false)
     expect(
       await isRootCovered(
-        new Set(['/x']),
+        filesCovered(['/x']),
         'maven',
         { dir: '/repo', entryFile: 'pom.xml' },
         {},
