@@ -160,12 +160,11 @@ type FactsState = {
 }
 
 type Run = Candidate & {
-  // What the facts file held before this run. Unknown only when the run wrote
-  // away from its own directory (Gradle's `-p`) to a file no run wrote before.
-  before: FactsState | undefined
   // The facts file's real path.
   factsKey: string | undefined
   membership: Membership
+  // What the run wrote, written back once the walk keeps it.
+  output: FactsState | undefined
   // Undefined when the build had nothing to resolve.
   result: RunManifestFactsResult | undefined
 }
@@ -176,8 +175,10 @@ type Load = Candidate & LoadedBuild
 type WalkContext = {
   backupDir: () => Promise<string>
   excludePaths: string[] | undefined
-  // What the last run to write each facts file wrote, by real path.
-  outputs: Map<string, FactsState>
+  // What each facts file held before the walk, by real path; undefined when a
+  // run wrote it away from its own directory (Gradle's `-p`) before it was
+  // saved.
+  originals: Map<string, FactsState | undefined>
   ignoreUnresolved: boolean | undefined
   optionFlags: ReadonlySet<BuildOption>
   realCwd: string
@@ -270,9 +271,8 @@ async function walkTool(
     return nearest
   })
 
-  const resolved = new Map<number, ResolvedBuildRootSettings>()
-  const resolvedFor = ({ index, root }: Candidate) =>
-    getOrInsert(resolved, index, () => ctx.resolveSettings(ecosystem, root))
+  const resolvedFor = ({ root }: Candidate) =>
+    ctx.resolveSettings(ecosystem, root)
   const configs = new Map<string, EcosystemBuildConfig>()
   const configFor = (candidate: Candidate): EcosystemBuildConfig => {
     const { entryKey, sockJson } = resolvedFor(candidate)
@@ -537,18 +537,15 @@ async function walkTool(
 
   const keptSet = new Set(kept)
   const keptKeys = new Set(kept.map(run => run.factsKey))
-  const droppedRuns = new Set<Run>()
-  const runOrder = [...runs.values()]
-  // The run that next wrote the same facts file and is not dropped.
-  const nextWriter = (run: Run): Run | undefined =>
-    runOrder
-      .slice(runOrder.indexOf(run) + 1)
-      .find(other => !droppedRuns.has(other) && other.factsKey === run.factsKey)
   const outcomes: RecursiveManifestOutcome[] = []
   for (const candidate of candidates) {
     const { index, root } = candidate
     const run = runs.get(index)
     if (run && keptSet.has(run)) {
+      if (run.result) {
+        // eslint-disable-next-line no-await-in-loop
+        await putFacts(ctx, run.result.factsPath, run.factsKey!, run.output)
+      }
       outcomes.push({
         ...root,
         ecosystem,
@@ -562,12 +559,13 @@ async function walkTool(
     if (run) {
       // eslint-disable-next-line no-await-in-loop
       const loader = await loaderOf(candidate)
-      const owned = keptKeys.has(run.factsKey)
-      // eslint-disable-next-line no-await-in-loop
-      await dropRun(ctx, run, nextWriter(run), owned, loader)
-      droppedRuns.add(run)
-      if (run.factsKey && !owned) {
-        discardedFactsPath = run.factsKey
+      if (run.result) {
+        logger.info(
+          `Dropping the Socket facts of ${buildRootPath(root)}: ${describeLoader(loader)}.`,
+        )
+        if (!keptKeys.has(run.factsKey)) {
+          discardedFactsPath = run.factsKey
+        }
       }
       status = statusOf(loader)
     } else if (loads.has(index)) {
@@ -665,12 +663,17 @@ async function runCandidate(
     socketFactsFileName(ecosystem, root.entryFile) ?? '',
   )
   const expectedKey = await realpathOrResolved(expectedFactsPath)
-  let backup: string | undefined
-  if (!ctx.outputs.has(expectedKey) && existsSync(expectedFactsPath)) {
-    backup = path.join(await ctx.backupDir(), `${ecosystem}-${candidate.index}`)
-    await fs.copyFile(expectedFactsPath, backup)
+  if (!ctx.originals.has(expectedKey)) {
+    ctx.originals.set(
+      expectedKey,
+      await saveFacts(
+        ctx,
+        expectedFactsPath,
+        expectedKey,
+        `${ecosystem}-${candidate.index}`,
+      ),
+    )
   }
-  const sidecarBefore = ctx.sidecarAcc?.get(expectedKey)
   const result = await runManifestFacts({
     bin: dirConfig.bin,
     buildOpts: dirConfig.buildOpts,
@@ -701,31 +704,23 @@ async function runCandidate(
   if (result === null) {
     return undefined
   }
-  let before: FactsState | undefined
   let factsKey: string | undefined
+  let output: FactsState | undefined
   if (result) {
     factsKey = await realpathOrResolved(result.factsPath)
-    before =
-      ctx.outputs.get(factsKey) ??
-      (factsKey === expectedKey
-        ? { facts: backup, sidecar: sidecarBefore }
-        : undefined)
-    let output: string | undefined
-    if (existsSync(result.factsPath)) {
-      output = path.join(
-        await ctx.backupDir(),
-        `${ecosystem}-${candidate.index}.out`,
-      )
-      await fs.copyFile(result.factsPath, output)
+    output = await saveFacts(
+      ctx,
+      result.factsPath,
+      factsKey,
+      `${ecosystem}-${candidate.index}.out`,
+    )
+    if (!ctx.originals.has(factsKey)) {
+      ctx.originals.set(factsKey, undefined)
     }
-    ctx.outputs.set(factsKey, {
-      facts: output,
-      sidecar: ctx.sidecarAcc?.get(factsKey),
-    })
+    await putFacts(ctx, result.factsPath, factsKey, ctx.originals.get(factsKey))
   }
   return {
     ...candidate,
-    before,
     factsKey,
     // Gradle's `-p` can root the build away from `root.dir`.
     membership: result
@@ -735,50 +730,46 @@ async function runCandidate(
           ctx.realCwd,
         )
       : emptyMembership(),
+    output,
     result: result ?? undefined,
   }
 }
 
-// The runs that wrote one facts file form a chain: each one's `before` is what
-// the previous one wrote, and the file holds what the last one wrote. Dropping
-// a run unlinks it, so a kept run's facts and sidecar entry stay together.
-async function dropRun(
+// Puts `state` in place of a facts file and its sidecar entry; an unknown state
+// leaves the file and drops the entry.
+async function putFacts(
   ctx: WalkContext,
-  run: Run,
-  next: Run | undefined,
-  owned: boolean,
-  loader: Loader | undefined,
+  file: string,
+  key: string,
+  state: FactsState | undefined,
 ): Promise<void> {
-  if (!run.result) {
-    return
-  }
-  const { factsPath } = run.result
-  logger.info(
-    `Dropping the Socket facts of ${buildRootPath(run.root)}: ${describeLoader(loader)}.`,
-  )
-  if (next) {
-    next.before = run.before
-    return
-  }
-  const key = run.factsKey!
-  if (!run.before) {
-    // Left as written, with its entry when a kept run owns the file.
-    if (!owned) {
-      ctx.sidecarAcc?.delete(key)
-    }
-    return
-  }
-  const { facts, sidecar } = run.before
-  if (sidecar) {
-    ctx.sidecarAcc?.set(key, sidecar)
+  if (state?.sidecar) {
+    ctx.sidecarAcc?.set(key, state.sidecar)
   } else {
     ctx.sidecarAcc?.delete(key)
   }
-  if (facts) {
-    await fs.copyFile(facts, factsPath)
-  } else {
-    await fs.rm(factsPath, { force: true })
+  if (!state) {
+    return
   }
+  if (state.facts) {
+    await fs.copyFile(state.facts, file)
+  } else {
+    await fs.rm(file, { force: true })
+  }
+}
+
+async function saveFacts(
+  ctx: WalkContext,
+  file: string,
+  key: string,
+  name: string,
+): Promise<FactsState> {
+  let facts: string | undefined
+  if (existsSync(file)) {
+    facts = path.join(await ctx.backupDir(), name)
+    await fs.copyFile(file, facts)
+  }
+  return { facts, sidecar: ctx.sidecarAcc?.get(key) }
 }
 
 // Builds `root` unless earlier builds cover it, then adds what it loaded to
@@ -919,7 +910,7 @@ export async function generateRecursiveManifests({
       excludePaths,
       ignoreUnresolved,
       optionFlags,
-      outputs: new Map(),
+      originals: new Map(),
       realCwd,
       resolveSettings,
       sbtTmpDir: resolvedSbtTmpDir,

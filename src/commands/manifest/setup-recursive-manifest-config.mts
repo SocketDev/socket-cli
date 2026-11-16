@@ -357,10 +357,11 @@ function buildKey({ ecosystem, root }: WalkBuild): string {
 }
 
 function buildLabel(cwd: string, { ecosystem, root, sharesDir }: WalkBuild) {
-  const where =
-    sharesDir || root.dir !== cwd
-      ? relPath(cwd, sharesDir ? buildRootPath(root) : root.dir)
-      : 'This project'
+  const where = sharesDir
+    ? relPath(cwd, buildRootPath(root))
+    : root.dir === cwd
+      ? 'This project'
+      : relPath(cwd, root.dir)
   return `${where} (${ecosystem})`
 }
 
@@ -379,6 +380,15 @@ function buildsKeyOf(draft: SettingsDraft, { ecosystem, root }: WalkBuild) {
 }
 
 type BuildsEntries = Record<string, Record<string, unknown>>
+
+// Whether a build's settings go in its own entry, rather than in its
+// directory's section, which the builds beneath inherit.
+function writesOwnEntry(draft: SettingsDraft, build: WalkBuild): boolean {
+  return (
+    build.sharesDir ||
+    !!resolveDraftSettings(draft, build.ecosystem, build.root).entryKey
+  )
+}
 
 function membershipFor(
   map: Map<BuildTool, Membership>,
@@ -420,12 +430,12 @@ async function configureBuild(
   cwd: string,
   build: WalkBuild,
 ): Promise<CResult<{ canceled: boolean }>> {
-  const { ecosystem, root, sharesDir } = build
+  const { ecosystem, root } = build
   const key = buildsKeyOf(draft, build)
   const own = draftSettings(draft, root.dir)
   const manifest = manifestOf(own)
   const builds = { ...(manifest['builds'] as BuildsEntries | undefined) }
-  const intoEntry = sharesDir || Object.hasOwn(builds, key)
+  const intoEntry = writesOwnEntry(draft, build)
   const target: Record<string, unknown> = intoEntry
     ? { ...builds[key] }
     : { ...getEcosystemSection(own, ecosystem) }
@@ -728,12 +738,19 @@ async function askBuildAction(label: string): Promise<BuildAction | null> {
   })) as BuildAction | null
 }
 
-// Without `load`, a build is only decided; loading it is left to the caller.
+type LoadDecision = { announce: boolean; into: 'covered' | 'skipped' }
+
+function decided(
+  load: LoadDecision,
+): CResult<{ canceled: boolean; load: LoadDecision }> {
+  return { ok: true, data: { canceled: false, load } }
+}
+
+// What to load `build` into, as decided; none for a build skipped unloaded.
 async function reviewBuild(
   walk: Walk,
   build: WalkBuild,
-  { load = true } = {},
-): Promise<CResult<{ canceled: boolean }>> {
+): Promise<CResult<{ canceled: boolean; load?: LoadDecision | undefined }>> {
   walk.decided.add(buildKey(build))
   const label = buildLabel(walk.cwd, build)
   const { disabledBy } = resolveDraftSettings(
@@ -753,14 +770,11 @@ async function reviewBuild(
       return canceledByUser()
     }
     if (!again) {
-      if (disabledBy.key && load) {
-        return await loadInto(walk, build, 'skipped', { announce: false })
-      }
-      if (disabledBy.key) {
+      if (!disabledBy.key) {
+        walk.counts.skipped += 1
         return notCanceled()
       }
-      walk.counts.skipped += 1
-      return notCanceled()
+      return decided({ announce: false, into: 'skipped' })
     }
     enableBuild(walk.draft, build, disabledBy)
   }
@@ -770,12 +784,7 @@ async function reviewBuild(
     return canceledByUser()
   }
   if (action === 'skip') {
-    if (load) {
-      return await loadInto(walk, build, 'skipped')
-    }
-    disableBuild(walk.draft, build)
-    logger.success(`Skipped ${label}.`)
-    return notCanceled()
+    return decided({ announce: true, into: 'skipped' })
   }
   if (action === 'configure') {
     const configured = await configureBuild(walk.draft, walk.cwd, build)
@@ -786,7 +795,7 @@ async function reviewBuild(
   } else {
     walk.counts.inherited += 1
   }
-  return load ? await loadInto(walk, build, 'covered') : notCanceled()
+  return decided({ announce: true, into: 'covered' })
 }
 
 // Dispatches to the right ecosystem-specific wizard. `factsOnly` skips the
@@ -873,7 +882,7 @@ async function setupRootDefaults(
     const atCwd = buildsAtCwd(ecosystem)
     if (
       atCwd.length === 1 &&
-      !resolveDraftSettings(draft, ecosystem, atCwd[0]!).entryKey
+      !writesOwnEntry(draft, { ecosystem, root: atCwd[0]!, sharesDir: false })
     ) {
       continue
     }
@@ -1038,7 +1047,7 @@ export async function setupRecursiveManifestConfig(
     skipped: new Map(),
   }
 
-  // The builds at cwd are decided first and loaded only for the review below:
+  // The builds at cwd are decided first, and loaded only for the review below:
   // what they include isn't asked about.
   const cwdBuilds: WalkBuild[] = ROOT_ECOSYSTEMS.flatMap(ecosystem => {
     const roots = atCwd(ecosystem)
@@ -1047,20 +1056,27 @@ export async function setupRecursiveManifestConfig(
       root,
       sharesDir: roots.length > 1,
     }))
-  })
-  for (const build of cwdBuilds) {
+  }).filter(build => {
     const { disabledBy } = resolveDraftSettings(
       draft,
       build.ecosystem,
       build.root,
     )
-    if (disabledBy && !disabledBy.key) {
-      continue
-    }
+    return !disabledBy || !!disabledBy.key
+  })
+  const cwdLoads: Array<{ build: WalkBuild; into: LoadDecision['into'] }> = []
+  for (const build of cwdBuilds) {
     // eslint-disable-next-line no-await-in-loop
-    const result = await reviewBuild(walk, build, { load: false })
+    const result = await reviewBuild(walk, build)
     if (!result.ok || result.data.canceled) {
       return result
+    }
+    const { load } = result.data
+    if (load) {
+      if (load.into === 'skipped') {
+        disableBuild(draft, build)
+      }
+      cwdLoads.push({ build, into: load.into })
     }
   }
 
@@ -1073,22 +1089,12 @@ export async function setupRecursiveManifestConfig(
       return canceledByUser()
     }
     if (review) {
-      for (const build of cwdBuilds) {
-        const { disabledBy } = resolveDraftSettings(
-          draft,
-          build.ecosystem,
-          build.root,
-        )
-        if (disabledBy && !disabledBy.key) {
-          continue
-        }
+      for (const { build, into } of cwdLoads) {
         // eslint-disable-next-line no-await-in-loop
-        const result = await loadInto(
-          walk,
-          build,
-          disabledBy ? 'skipped' : 'covered',
-          { allowDirectory: false, announce: false },
-        )
+        const result = await loadInto(walk, build, into, {
+          allowDirectory: false,
+          announce: false,
+        })
         if (!result.ok || result.data.canceled) {
           return result
         }
@@ -1120,6 +1126,16 @@ export async function setupRecursiveManifestConfig(
         const result = await reviewBuild(walk, build)
         if (!result.ok || result.data.canceled) {
           return result
+        }
+        const { load } = result.data
+        if (load) {
+          // eslint-disable-next-line no-await-in-loop
+          const loaded = await loadInto(walk, build, load.into, {
+            announce: load.announce,
+          })
+          if (!loaded.ok || loaded.data.canceled) {
+            return loaded
+          }
         }
       }
       const { configured, covered, inherited, skipped } = walk.counts

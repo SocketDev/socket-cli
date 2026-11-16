@@ -4,10 +4,11 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 
-import { isBuildFile } from './discover-manifest-roots.mts'
+import { buildRootPath, isBuildFile } from './discover-manifest-roots.mts'
 import { BUILD_FILES, BUILD_TOOLS } from './scripts/build-tool.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
+import { getOrInsert } from '../../utils/get-or-insert.mts'
 import {
   mergeSocketJsonChain,
   readSocketJsonChain,
@@ -45,6 +46,23 @@ function namesBuildFile(key: string): boolean {
   })
 }
 
+// The `builds` keys naming an existing build file of `tool`'s build in `dir`:
+// its entry file, or any of a Gradle or sbt directory's build files.
+function ownEntryKeys(
+  tool: BuildTool,
+  dir: string,
+  builds: object,
+  entryFile?: string | undefined,
+): string[] {
+  const files = BUILD_FILES[tool]
+  if (files.byFile) {
+    return entryFile && Object.hasOwn(builds, entryFile) ? [entryFile] : []
+  }
+  return files.names.filter(
+    name => Object.hasOwn(builds, name) && existsSync(path.join(dir, name)),
+  )
+}
+
 function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
   const builds: unknown = sockJson.defaults?.manifest?.builds
   if (builds === undefined) {
@@ -77,13 +95,7 @@ function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
     }
   }
   for (const tool of BUILD_TOOLS) {
-    const files = BUILD_FILES[tool]
-    const keys = files.byFile
-      ? []
-      : files.names.filter(
-          name =>
-            Object.hasOwn(builds, name) && existsSync(path.join(dir, name)),
-        )
+    const keys = ownEntryKeys(tool, dir, builds)
     if (keys.length > 1) {
       throw new InputError(
         `${keys.map(buildsSetting).join(' and ')} in ${file} configure the same ${tool} build. Keep one of them.`,
@@ -111,14 +123,15 @@ export function buildsSetting(key: string): string {
   return `defaults.manifest.builds[${JSON.stringify(key)}]`
 }
 
-// Resolves the socket.json settings of build roots, reading and validating
-// each socket.json once. `readChain` lists a directory's socket.json files,
+// Resolves the socket.json settings of build roots once, reading and
+// validating each socket.json once. `readChain` lists a directory's socket.json files,
 // farthest first; resolvers sharing `warned` warn about a file once.
 export function createBuildRootSettingsResolver(
   readChain: (dir: string) => SocketJsonInDir[] = readSocketJsonChain,
   warned: Set<string> = new Set(),
 ): (tool: BuildTool, root: BuildRoot) => ResolvedBuildRootSettings {
   const chains = new Map<string, SocketJsonInDir[]>()
+  const resolved = new Map<string, ResolvedBuildRootSettings>()
   const validated = new Set<string>()
 
   const chainFor = (dir: string): SocketJsonInDir[] => {
@@ -137,7 +150,10 @@ export function createBuildRootSettingsResolver(
     return chain
   }
 
-  return (tool, root) => {
+  const resolve = (
+    tool: BuildTool,
+    root: BuildRoot,
+  ): ResolvedBuildRootSettings => {
     const chain = chainFor(root.dir)
     const merged = mergeSocketJsonChain(chain)
     const section: Record<string, unknown> = {
@@ -156,13 +172,9 @@ export function createBuildRootSettingsResolver(
       own?.dir === root.dir
         ? own.sockJson.defaults?.manifest?.builds
         : undefined
-    const files = BUILD_FILES[tool]
-    const names = files.byFile
-      ? [root.entryFile ?? '']
-      : files.names.filter(name => existsSync(path.join(root.dir, name)))
     // Validation leaves at most one.
     const entryKey = builds
-      ? names.find(name => Object.hasOwn(builds, name))
+      ? ownEntryKeys(tool, root.dir, builds, root.entryFile)[0]
       : undefined
     let entryDisabledBy: DisabledBy | undefined
     if (entryKey) {
@@ -192,6 +204,10 @@ export function createBuildRootSettingsResolver(
       } as SocketJson,
     }
   }
+  return (tool, root) =>
+    getOrInsert(resolved, `${tool}\0${buildRootPath(root)}`, () =>
+      resolve(tool, root),
+    )
 }
 
 // The setting that skips builds, as `<socket.json> sets <setting>`.
