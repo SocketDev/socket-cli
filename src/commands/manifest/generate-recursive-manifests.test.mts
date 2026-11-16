@@ -207,6 +207,69 @@ describe('generateRecursiveManifests', () => {
         expect([...sidecarAcc.keys()]).toEqual([
           path.join(reactorA, 'pom.xml.socket.facts.json'),
         ])
+        // The restored file is not this scan's, so it is not to be collected.
+        expect(
+          outcomes.find(o => o.dir === sharedLib)?.discardedFactsPath,
+        ).toBe(builtAlone ? sharedFacts : undefined)
+      } finally {
+        await fs.rm(outer, { recursive: true, force: true })
+      }
+    },
+  )
+
+  it.for([
+    // The build that redirects Gradle with `-p` runs second, then first.
+    ['a-main', 'z-alias'],
+    ['z-main', 'a-alias'],
+  ])(
+    'keeps the facts and sidecar entry of the kept run together when two runs write one facts file (%s, %s)',
+    async ([mainName, aliasName]) => {
+      const outer = await fs.realpath(
+        await fs.mkdtemp(path.join(tmpdir(), 'shared-facts-')),
+      )
+      const main = path.join(outer, mainName!)
+      const alias = path.join(outer, aliasName!)
+      const sidecarAcc = new Map()
+      try {
+        for (const dir of [main, alias]) {
+          for (const file of ['settings.gradle', 'build.gradle']) {
+            // eslint-disable-next-line no-await-in-loop
+            await fs.mkdir(dir, { recursive: true })
+            // eslint-disable-next-line no-await-in-loop
+            await fs.writeFile(path.join(dir, file), '')
+          }
+        }
+        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+          const factsPath = path.join(main, 'gradle.socket.facts.json')
+          await fs.writeFile(factsPath, cwd)
+          sidecarAcc.set(factsPath, { components: [], projects: [], cwd })
+          return {
+            factsPath,
+            projects: [
+              {
+                type: 'maven' as const,
+                name: 'root',
+                id: 'root',
+                subprojectDir: '.',
+                children: [],
+              },
+            ],
+          }
+        })
+
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          sidecarAcc,
+          verbose: false,
+        })
+
+        const generated = outcomes.filter(o => o.status === 'generated')
+        expect(generated).toHaveLength(1)
+        const { factsPath } = generated[0]!
+        expect(generated[0]!.discardedFactsPath).toBeUndefined()
+        expect(sidecarAcc.get(factsPath!)?.cwd).toBe(
+          await fs.readFile(factsPath!, 'utf8'),
+        )
       } finally {
         await fs.rm(outer, { recursive: true, force: true })
       }

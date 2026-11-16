@@ -6,7 +6,10 @@ import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.m
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
-import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
+import {
+  runDynamicSbomInference,
+  withoutDiscardedFacts,
+} from './run-dynamic-sbom-inference.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
@@ -93,14 +96,13 @@ async function runScanReach(
       target: targets[0]!,
     })
 
-  const packagePaths = await getPackageFilesForScan(
-    scanTargets,
-    supportedFiles,
-    {
+  const packagePaths = await withoutDiscardedFacts(
+    await getPackageFilesForScan(scanTargets, supportedFiles, {
       additionalIgnores: additionalScaIgnores,
       config: socketConfig,
       cwd,
-    },
+    }),
+    dynamicResult?.discardedFactsPaths,
   )
 
   spinner.successAndStop(

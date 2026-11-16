@@ -9,6 +9,8 @@ import type { PURL_Type } from '../../utils/ecosystem.mts'
 export type GeneratedSocketFacts = {
   // Coana's flags selecting what the facts files resolve.
   artifactsFlags: string[]
+  // Facts files of dropped runs, which Coana must not read.
+  discardedPaths: string[]
   paths: string[]
   // The facts files' per-project classpaths, written outside the repository.
   sidecarFile: string
@@ -60,18 +62,24 @@ export async function generateSocketFactsForFix({
     await restoreAll(originals)
   }
   let artifactsFlags: string[]
+  let discardedPaths: string[]
   let paths: string[]
   const sidecarFile = path.join(tmpDir, 'sidecar.json')
   try {
-    const { factsOnlyTypes, factsPaths, resolvedPathsSidecar } =
-      await runDynamicSbomInference({
-        consumer: 'fix',
-        cwd,
-        excludePaths,
-        purlTypes,
-        sbtTmpDir: undefined,
-      })
+    const {
+      discardedFactsPaths,
+      factsOnlyTypes,
+      factsPaths,
+      resolvedPathsSidecar,
+    } = await runDynamicSbomInference({
+      consumer: 'fix',
+      cwd,
+      excludePaths,
+      purlTypes,
+      sbtTmpDir: undefined,
+    })
     artifactsFlags = useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
+    discardedPaths = discardedFactsPaths
     paths = factsPaths.map(p => path.resolve(cwd, p))
     // Written even when empty, as for reach; applying fixes looks each facts
     // file up in it, so an empty one is the same as none.
@@ -88,6 +96,7 @@ export async function generateSocketFactsForFix({
   ]
   return {
     artifactsFlags,
+    discardedPaths,
     paths,
     sidecarFile,
     remove: () => reset(paths),

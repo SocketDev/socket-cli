@@ -49,6 +49,7 @@ vi.mock('./perform-reachability-analysis.mts', () => ({
 
 vi.mock('./run-dynamic-sbom-inference.mts', () => ({
   runDynamicSbomInference: mockRunDynamicSbomInference,
+  withoutDiscardedFacts: async (paths: string[]) => paths,
 }))
 
 vi.mock('../../constants.mts', () => ({

@@ -58,8 +58,9 @@ reaching for a skip.
 }
 ```
 
-A Gradle or sbt build is keyed by any of its build files (`settings.gradle`,
-`build.gradle.kts`, `build.sbt`, ...).
+A Gradle or sbt build is keyed by any one of its build files that exists
+(`settings.gradle`, `build.gradle.kts`, `build.sbt`, ...); two entries for the
+same build are an error.
 
 ## Fields
 

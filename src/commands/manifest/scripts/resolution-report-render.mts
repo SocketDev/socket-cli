@@ -59,9 +59,6 @@ export type BuildOptionHints = {
 export const DSI_SETUP_COMMAND =
   'socket manifest setup --dynamic-sbom-inference'
 
-export const DSI_SETTINGS_DOCS_URL =
-  'https://github.com/SocketDev/socket-cli/blob/v1.x/docs/dynamic-sbom-inference-settings.md'
-
 export const REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG =
   '--reach-continue-on-install-errors'
 

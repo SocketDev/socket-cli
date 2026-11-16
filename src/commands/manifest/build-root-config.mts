@@ -31,8 +31,8 @@ export type DisabledBy = {
 
 export type ResolvedBuildRootSettings = {
   disabledBy: DisabledBy | undefined
-  // The keys of the build's own `defaults.manifest.builds` entries.
-  entryKeys: string[]
+  // The key of the build's own `defaults.manifest.builds` entry.
+  entryKey: string | undefined
   // The cascaded settings, the build's own entries applied last.
   sockJson: SocketJson
 }
@@ -143,16 +143,24 @@ export function createBuildRootSettingsResolver(
         ? own.sockJson.defaults?.manifest?.builds
         : undefined
     const files = BUILD_FILES[tool]
-    const names = files.byFile ? [root.entryFile ?? ''] : files.names
+    const names = files.byFile
+      ? [root.entryFile ?? '']
+      : files.names.filter(name => existsSync(path.join(root.dir, name)))
     const entryKeys = builds
       ? names.filter(name => Object.hasOwn(builds, name))
       : []
+    if (entryKeys.length > 1) {
+      throw new InputError(
+        `${entryKeys.map(buildsSetting).join(' and ')} in ${socketJsonPath(root.dir)} configure the same ${tool} build. Keep one of them.`,
+      )
+    }
+    const entryKey = entryKeys[0]
     let entryDisabledBy: DisabledBy | undefined
-    for (const key of entryKeys) {
-      const entry = builds![key] as SocketJsonBuildEntry
+    if (entryKey) {
+      const entry = builds![entryKey] as SocketJsonBuildEntry
       Object.assign(section, entry)
       if (entry.disabled !== undefined) {
-        entryDisabledBy = { dir: root.dir, key }
+        entryDisabledBy = { dir: root.dir, key: entryKey }
       }
     }
 
@@ -165,7 +173,7 @@ export function createBuildRootSettingsResolver(
 
     return {
       disabledBy,
-      entryKeys,
+      entryKey,
       sockJson: {
         ...merged,
         defaults: {

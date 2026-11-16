@@ -243,7 +243,7 @@ describe('setupRecursiveManifestConfig', () => {
   it('asks only about builds no other build includes, and writes nothing when nothing changes', async () => {
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', 'inherit'],
       ['legacy/tool (maven)', 'inherit'],
@@ -253,7 +253,7 @@ describe('setupRecursiveManifestConfig', () => {
 
     expect(result).toEqual({ ok: true, data: { canceled: false } })
     expect(asked).toEqual([
-      'Configure Maven settings for this project?',
+      'This project (maven)',
       'Review the 4 other builds found beneath this one?',
       'legacy (maven)',
       'legacy/tool (maven)',
@@ -264,7 +264,7 @@ describe('setupRecursiveManifestConfig', () => {
   it('skips a build it can load with exactly what it loads, and keeps asking about the separate builds beneath it', async () => {
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', 'skip'],
       ['legacy/tool (maven)', 'inherit'],
@@ -286,7 +286,7 @@ describe('setupRecursiveManifestConfig', () => {
   it('offers to fix a build it cannot load first, and otherwise skips its directory and everything beneath it', async () => {
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': undefined })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', 'skip'],
       ['Socket could not load legacy (maven)', 'directory'],
@@ -332,7 +332,7 @@ describe('setupRecursiveManifestConfig', () => {
       return { ok: true, data: { canceled: false } }
     })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', 'skip'],
       ['Socket could not load legacy (maven)', 'configure'],
@@ -363,7 +363,7 @@ describe('setupRecursiveManifestConfig', () => {
       return { ok: true, data: { canceled: false } }
     })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy/legacy-cli.pom.xml (maven)', 'configure'],
       ['legacy/pom.xml (maven)', 'skip'],
@@ -391,7 +391,7 @@ describe('setupRecursiveManifestConfig', () => {
     })
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven) is skipped. Build it again?', true],
       ['legacy (maven)', 'inherit'],
@@ -410,13 +410,9 @@ describe('setupRecursiveManifestConfig', () => {
     await writeSettings('legacy', { maven: { disabled: true } })
     loads({ 'legacy/tool/pom.xml': [] })
     answer([
+      ['This project (maven)', 'inherit'],
       ['', true],
-      ['Configure Maven', false],
     ])
-    vi.mocked(select).mockImplementation(async ({ message }) => {
-      asked.push(message)
-      return (message.startsWith('Configure Maven') ? false : true) as never
-    })
 
     await setupRecursiveManifestConfig(file('legacy/tool'), false)
 
@@ -425,6 +421,102 @@ describe('setupRecursiveManifestConfig', () => {
     )
     expect(await readSettings('legacy/tool')).toMatchObject({
       defaults: { manifest: { maven: { disabled: false } } },
+    })
+  })
+
+  it('asks about the build here like any other, offering its own skip back', async () => {
+    await writeSettings('.', { builds: { 'pom.xml': { disabled: true } } })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    answer([
+      ['This project (maven) is skipped. Build it again?', true],
+      ['This project (maven)', 'inherit'],
+      ['Review the', false],
+      ['Write it?', true],
+    ])
+
+    await setupRecursiveManifestConfig(repo, false)
+
+    expect(asked).toEqual([
+      'This project (maven) is skipped. Build it again?',
+      'This project (maven)',
+      'Review the 4 other builds found beneath this one?',
+      'Write it?',
+    ])
+    expect(
+      (await readSettings('.')).defaults?.manifest?.builds?.['pom.xml'],
+    ).toEqual({})
+  })
+
+  it('asks about each build file here, after the defaults they share', async () => {
+    await fs.writeFile(file('app-alt.pom.xml'), '<project/>')
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    answer([
+      ['Configure Maven defaults for the projects here and beneath?', false],
+      ['app-alt.pom.xml (maven)', 'skip'],
+      ['pom.xml (maven)', 'inherit'],
+      ['Review the', false],
+      ['Write it?', true],
+    ])
+
+    await setupRecursiveManifestConfig(repo, false)
+
+    expect(asked.slice(0, 3)).toEqual([
+      'Configure Maven defaults for the projects here and beneath?',
+      'app-alt.pom.xml (maven)',
+      'pom.xml (maven)',
+    ])
+    expect((await readSettings('.')).defaults?.manifest?.builds).toEqual({
+      'app-alt.pom.xml': { disabled: true },
+    })
+  })
+
+  it("writes a Gradle build's choice under the build file its entry already names", async () => {
+    await fs.mkdir(file('app'))
+    await fs.writeFile(file('app/build.gradle'), '')
+    await fs.writeFile(file('app/settings.gradle'), '')
+    await writeSettings('app', {
+      builds: { 'settings.gradle': { disabled: false } },
+    })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    answer([
+      ['Configure Gradle defaults', false],
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['app (gradle)', 'skip'],
+      ['legacy (maven)', 'inherit'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    await setupRecursiveManifestConfig(repo, false)
+
+    expect((await readSettings('app')).defaults?.manifest?.builds).toEqual({
+      'settings.gradle': { disabled: true },
+    })
+  })
+
+  it('drops an override for an answer the user leaves to its default', async () => {
+    await writeSettings('legacy', {
+      maven: { ignoreUnresolved: true, javaHome: '/opt/jdk-17', verbose: true },
+    })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    vi.mocked(setupMaven).mockImplementation(async config => {
+      delete config.ignoreUnresolved
+      delete config.verbose
+      return { ok: true, data: { canceled: false } }
+    })
+    answer([
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    await setupRecursiveManifestConfig(repo, false)
+
+    expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+      javaHome: '/opt/jdk-17',
     })
   })
 
@@ -437,7 +529,7 @@ describe('setupRecursiveManifestConfig', () => {
       return { ok: true, data: { canceled: false } }
     })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', 'configure'],
       ['legacy/tool (maven)', 'inherit'],
@@ -455,7 +547,7 @@ describe('setupRecursiveManifestConfig', () => {
     })
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven) is skipped. Build it again?', false],
       ['legacy/tool (maven)', 'inherit'],
@@ -469,7 +561,7 @@ describe('setupRecursiveManifestConfig', () => {
   it('writes nothing when the user declines the changes', async () => {
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', 'skip'],
       ['legacy/tool (maven)', 'inherit'],
@@ -484,7 +576,7 @@ describe('setupRecursiveManifestConfig', () => {
   it('skips what --exclude-paths excludes without asking about it', async () => {
     loads({ 'pom.xml': ['api'] })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['Write it?', true],
     ])
@@ -492,7 +584,7 @@ describe('setupRecursiveManifestConfig', () => {
     await setupRecursiveManifestConfig(repo, false, ['legacy'])
 
     expect(asked).toEqual([
-      'Configure Maven settings for this project?',
+      'This project (maven)',
       'Review the other build found beneath this one?',
       'Write it?',
     ])
@@ -504,7 +596,7 @@ describe('setupRecursiveManifestConfig', () => {
   it('stops, writing nothing, when the user cancels a prompt', async () => {
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
     answer([
-      ['Configure Maven', false],
+      ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', null],
     ])

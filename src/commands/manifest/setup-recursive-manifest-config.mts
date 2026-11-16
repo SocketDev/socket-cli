@@ -357,16 +357,22 @@ function buildKey({ ecosystem, root }: WalkBuild): string {
 }
 
 function buildLabel(cwd: string, { ecosystem, root, sharesDir }: WalkBuild) {
-  return `${relPath(cwd, sharesDir ? buildRootPath(root) : root.dir)} (${ecosystem})`
+  const where =
+    sharesDir || root.dir !== cwd
+      ? relPath(cwd, sharesDir ? buildRootPath(root) : root.dir)
+      : 'This project'
+  return `${where} (${ecosystem})`
 }
 
-// The build file a build's own `builds` entry is keyed by.
-function buildsKeyOf({ ecosystem, root }: WalkBuild): string {
+// The build file a build's own `builds` entry is keyed by: the one its entry
+// names, else the first one in its directory.
+function buildsKeyOf(draft: SettingsDraft, { ecosystem, root }: WalkBuild) {
   const files = BUILD_FILES[ecosystem]
   if (files.byFile) {
     return root.entryFile ?? ''
   }
   return (
+    resolveDraftSettings(draft, ecosystem, root).entryKey ??
     files.names.find(name => existsSync(path.join(root.dir, name))) ??
     files.names[0]!
   )
@@ -415,7 +421,7 @@ async function configureBuild(
   build: WalkBuild,
 ): Promise<CResult<{ canceled: boolean }>> {
   const { ecosystem, root, sharesDir } = build
-  const key = buildsKeyOf(build)
+  const key = buildsKeyOf(draft, build)
   const own = draftSettings(draft, root.dir)
   const manifest = manifestOf(own)
   const builds = { ...(manifest['builds'] as BuildsEntries | undefined) }
@@ -434,14 +440,16 @@ async function configureBuild(
     ),
   }
 
+  const seeded = Object.keys(seed)
   const result = await runEcosystemWizard(ecosystem, seed)
   if (!result.ok || result.data.canceled) {
     return result
   }
 
   const before = JSON.stringify(target)
-  for (const field of Object.keys(seed)) {
-    if (seed[field] === inherited[field]) {
+  // An answer the wizard removed leaves the field to inheritance.
+  for (const field of new Set([...seeded, ...Object.keys(seed)])) {
+    if (!Object.hasOwn(seed, field) || seed[field] === inherited[field]) {
       delete target[field]
     } else {
       target[field] = seed[field]
@@ -496,7 +504,7 @@ function disableDirectory(
 // Skips just this build and what it loads, under its own build file.
 function disableBuild(draft: SettingsDraft, build: WalkBuild): void {
   const { root } = build
-  const key = buildsKeyOf(build)
+  const key = buildsKeyOf(draft, build)
   const own = draftSettings(draft, root.dir)
   const manifest = manifestOf(own)
   const builds = (manifest['builds'] ?? {}) as Record<
@@ -720,9 +728,11 @@ async function askBuildAction(label: string): Promise<BuildAction | null> {
   })) as BuildAction | null
 }
 
+// Without `load`, a build is only decided; loading it is left to the caller.
 async function reviewBuild(
   walk: Walk,
   build: WalkBuild,
+  { load = true } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   walk.decided.add(buildKey(build))
   const label = buildLabel(walk.cwd, build)
@@ -743,8 +753,11 @@ async function reviewBuild(
       return canceledByUser()
     }
     if (!again) {
-      if (disabledBy.key) {
+      if (disabledBy.key && load) {
         return await loadInto(walk, build, 'skipped', { announce: false })
+      }
+      if (disabledBy.key) {
+        return notCanceled()
       }
       walk.counts.skipped += 1
       return notCanceled()
@@ -757,7 +770,12 @@ async function reviewBuild(
     return canceledByUser()
   }
   if (action === 'skip') {
-    return await loadInto(walk, build, 'skipped')
+    if (load) {
+      return await loadInto(walk, build, 'skipped')
+    }
+    disableBuild(walk.draft, build)
+    logger.success(`Skipped ${label}.`)
+    return notCanceled()
   }
   if (action === 'configure') {
     const configured = await configureBuild(walk.draft, walk.cwd, build)
@@ -768,7 +786,7 @@ async function reviewBuild(
   } else {
     walk.counts.inherited += 1
   }
-  return await loadInto(walk, build, 'covered')
+  return load ? await loadInto(walk, build, 'covered') : notCanceled()
 }
 
 // Dispatches to the right ecosystem-specific wizard. `factsOnly` skips the
@@ -818,14 +836,14 @@ async function askYesNo(message: string): Promise<boolean | null> {
   })) as boolean | null
 }
 
-// Defaults for the build at cwd and the builds beneath it. A skip that applies
-// here, from this directory's socket.json or one above it, is offered back
-// first.
+// Defaults for the builds in and beneath cwd. A skip that applies here, from
+// this directory's socket.json or one above it, is offered back first. A tool
+// with one build at cwd gets its defaults from that build's own prompt.
 async function setupRootDefaults(
   draft: SettingsDraft,
   cwd: string,
   ecosystems: readonly BuildTool[],
-  ecosystemsAtCwd: readonly BuildTool[],
+  buildsAtCwd: (ecosystem: BuildTool) => number,
 ): Promise<CResult<{ canceled: boolean }>> {
   for (const ecosystem of ecosystems) {
     const label = ECOSYSTEM_LABELS[ecosystem]
@@ -852,8 +870,12 @@ async function setupRootDefaults(
       stageSettings(draft, cwd, own, `build ${label} projects here again`)
     }
 
-    const message = ecosystemsAtCwd.includes(ecosystem)
-      ? `Configure ${label} settings for this project?`
+    const atCwd = buildsAtCwd(ecosystem)
+    if (atCwd === 1) {
+      continue
+    }
+    const message = atCwd
+      ? `Configure ${label} defaults for the projects here and beneath?`
       : `Configure ${label} defaults for any nested projects?`
     // eslint-disable-next-line no-await-in-loop
     const wants = await askYesNo(message)
@@ -972,7 +994,7 @@ export async function setupRecursiveManifestConfig(
     draft,
     realCwd,
     detectedEcosystems,
-    ROOT_ECOSYSTEMS.filter(ecosystem => atCwd(ecosystem).length),
+    ecosystem => atCwd(ecosystem).length,
   )
   if (!rootResult.ok || rootResult.data.canceled) {
     return rootResult
@@ -1013,6 +1035,32 @@ export async function setupRecursiveManifestConfig(
     skipped: new Map(),
   }
 
+  // The builds at cwd are decided first and loaded only for the review below:
+  // what they include isn't asked about.
+  const cwdBuilds: WalkBuild[] = ROOT_ECOSYSTEMS.flatMap(ecosystem => {
+    const roots = atCwd(ecosystem)
+    return roots.map(root => ({
+      ecosystem,
+      root,
+      sharesDir: roots.length > 1,
+    }))
+  })
+  for (const build of cwdBuilds) {
+    const { disabledBy } = resolveDraftSettings(
+      draft,
+      build.ecosystem,
+      build.root,
+    )
+    if (disabledBy && !disabledBy.key) {
+      continue
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const result = await reviewBuild(walk, build, { load: false })
+    if (!result.ok || result.data.canceled) {
+      return result
+    }
+  }
+
   if (builds.length) {
     logger.log('')
     const review = await askYesNo(
@@ -1022,25 +1070,24 @@ export async function setupRecursiveManifestConfig(
       return canceledByUser()
     }
     if (review) {
-      // What the builds at cwd include isn't asked about.
-      for (const ecosystem of ROOT_ECOSYSTEMS) {
-        const roots = atCwd(ecosystem)
-        for (const root of roots) {
-          const build = { ecosystem, root, sharesDir: roots.length > 1 }
-          const { disabledBy } = resolveDraftSettings(draft, ecosystem, root)
-          if (disabledBy && !disabledBy.key) {
-            continue
-          }
-          // eslint-disable-next-line no-await-in-loop
-          const result = await loadInto(
-            walk,
-            build,
-            disabledBy ? 'skipped' : 'covered',
-            { allowDirectory: false, announce: false },
-          )
-          if (!result.ok || result.data.canceled) {
-            return result
-          }
+      for (const build of cwdBuilds) {
+        const { disabledBy } = resolveDraftSettings(
+          draft,
+          build.ecosystem,
+          build.root,
+        )
+        if (disabledBy && !disabledBy.key) {
+          continue
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const result = await loadInto(
+          walk,
+          build,
+          disabledBy ? 'skipped' : 'covered',
+          { allowDirectory: false, announce: false },
+        )
+        if (!result.ok || result.data.canceled) {
+          return result
         }
       }
       for (const build of builds) {

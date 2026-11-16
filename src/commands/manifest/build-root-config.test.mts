@@ -52,7 +52,7 @@ describe('createBuildRootSettingsResolver', () => {
 
     const resolved = createBuildRootSettingsResolver()('maven', maven('svc'))
 
-    expect(resolved.entryKeys).toEqual([])
+    expect(resolved.entryKey).toBeUndefined()
     expect(resolved.sockJson.defaults?.manifest?.maven).toEqual({
       javaHome: '/jdk',
       mavenOpts: '-Psvc',
@@ -75,7 +75,7 @@ describe('createBuildRootSettingsResolver', () => {
       resolve('maven', maven('svc')).sockJson.defaults?.manifest?.maven,
     ).toEqual({ javaHome: '/jdk-17', mavenOpts: '-B' })
     const alt = resolve('maven', maven('svc', 'svc-alt.pom.xml'))
-    expect(alt.entryKeys).toEqual(['svc-alt.pom.xml'])
+    expect(alt.entryKey).toBe('svc-alt.pom.xml')
     expect(alt.sockJson.defaults?.manifest?.maven).toEqual({
       javaHome: '/jdk-17',
       mavenOpts: '-Palt',
@@ -97,6 +97,46 @@ describe('createBuildRootSettingsResolver', () => {
       dir: path.join(scanRoot, 'lib'),
       key: 'settings.gradle.kts',
     })
+  })
+
+  it('applies no entry that names a missing build file of a Gradle build', async () => {
+    await write(
+      'lib',
+      {
+        gradle: { javaHome: '/jdk-21' },
+        builds: { 'build.gradle': { disabled: true, javaHome: '/jdk-8' } },
+      },
+      ['build.gradle.kts'],
+    )
+
+    const resolved = createBuildRootSettingsResolver()('gradle', {
+      dir: path.join(scanRoot, 'lib'),
+    })
+
+    expect(resolved.disabledBy).toBeUndefined()
+    expect(resolved.entryKey).toBeUndefined()
+    expect(resolved.sockJson.defaults?.manifest?.gradle).toEqual({
+      javaHome: '/jdk-21',
+    })
+  })
+
+  it('rejects two entries that name the same Gradle build', async () => {
+    await write(
+      'lib',
+      {
+        builds: {
+          'build.gradle': { disabled: true },
+          'settings.gradle': { disabled: false },
+        },
+      },
+      ['build.gradle', 'settings.gradle'],
+    )
+
+    expect(() =>
+      createBuildRootSettingsResolver()('gradle', {
+        dir: path.join(scanRoot, 'lib'),
+      }),
+    ).toThrow(/configure the same gradle build/)
   })
 
   it('ignores the entries of other directories, above or below', async () => {
