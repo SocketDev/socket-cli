@@ -1717,4 +1717,99 @@ describe('generateRecursiveManifests', () => {
       }
     })
   })
+
+  it('reports a build a kept build covers as part of it, even when a skipped build loads it too or its own entry skips it', async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'covered-solution-')),
+    )
+    const at = (rel: string) => path.join(outer, rel)
+    const projectRecord = (file: string) => ({
+      type: 'nuget' as const,
+      name: file,
+      id: file,
+      subprojectDir: path.dirname(file),
+      manifestFiles: [{ file }],
+      children: [],
+    })
+    const members: Record<string, string[]> = {
+      'App.sln': [at('p/a/A.csproj')],
+      'R.sln': [at('p/a/A.csproj'), at('p/c/C.csproj')],
+      'Skip.sln': [at('p/a/A.csproj'), at('gone/Gone.csproj')],
+      'Y.sln': [at('p/a/A.csproj')],
+    }
+    try {
+      for (const rel of [
+        'p/a/A.csproj',
+        'p/c/C.csproj',
+        'r/R.sln',
+        'skip/Skip.sln',
+        'y/Y.sln',
+        'z/App.sln',
+      ]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(path.dirname(at(rel)), { recursive: true })
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(at(rel), '')
+      }
+      mockOwnSettings({
+        [at('skip')]: {
+          defaults: {
+            manifest: { builds: { 'Skip.sln': { disabled: true } } },
+          },
+        },
+        [at('y')]: {
+          defaults: { manifest: { builds: { 'Y.sln': { disabled: true } } } },
+        },
+      })
+      vi.mocked(listDotnetEntryProjects).mockImplementation(
+        async ({ entryFile }) => members[entryFile ?? ''],
+      )
+      vi.mocked(enumerateWorkspaces).mockResolvedValue({
+        buildRoot: at('skip'),
+        projects: [projectRecord('../p/a/A.csproj')],
+      })
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, entryFile }) => ({
+          factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
+          projects:
+            entryFile === 'R.sln'
+              ? [
+                  projectRecord('../p/a/A.csproj'),
+                  projectRecord('../p/c/C.csproj'),
+                ]
+              : [projectRecord(entryFile ?? '')],
+        }),
+      )
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        purlTypes: ['nuget'],
+        verbose: false,
+      })
+
+      expect(
+        Object.fromEntries(
+          outcomes.map(o => [path.relative(outer, buildRootPath(o)), o.status]),
+        ),
+      ).toEqual({
+        'p/a/A.csproj': 'skippedCovered',
+        'p/c/C.csproj': 'skippedCovered',
+        'r/R.sln': 'generated',
+        'skip/Skip.sln': 'skippedDisabled',
+        'y/Y.sln': 'skippedCovered',
+        'z/App.sln': 'skippedCovered',
+      })
+      expect(warnSpy.mock.calls.map(c => String(c[0]))).toContainEqual(
+        expect.stringMatching(
+          /^defaults\.manifest\.builds\["Y\.sln"\] in \S*y\/socket\.json does not apply: \S*r\/R\.sln builds \S*y\/Y\.sln with its own settings\.$/,
+        ),
+      )
+    } finally {
+      vi.mocked(listDotnetEntryProjects).mockImplementation(
+        async () => undefined,
+      )
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
 })

@@ -564,19 +564,19 @@ async function walkTool(
         }
         status = statusOf(loader)
       }
-    } else if (isCheaplyCovered(coverage, candidate)) {
+      // eslint-disable-next-line no-await-in-loop
+    } else if (await isCovered(coverage, candidate)) {
       status = 'skippedCovered'
-    } else if (isCheaplyCovered(skippedCoverage, candidate)) {
+      // eslint-disable-next-line no-await-in-loop
+    } else if (await isCovered(skippedCoverage, candidate)) {
       status = 'skippedDisabled'
     } else if (isAborted(candidate)) {
       status = 'aborted'
     } else if (skipOf(candidate)) {
       status = 'skippedDisabled'
     } else {
-      // eslint-disable-next-line no-await-in-loop
-      status = (await isCovered(skippedCoverage, candidate))
-        ? 'skippedDisabled'
-        : 'skippedCovered'
+      // A solution the SDK cannot read, built through its twin.
+      status = 'skippedCovered'
     }
     if (status === 'skippedCovered') {
       // eslint-disable-next-line no-await-in-loop
