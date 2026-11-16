@@ -24,15 +24,24 @@ import path from 'node:path'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { formatErrorWithDetail } from './errors.mts'
+import { InputError, formatErrorWithDetail } from './errors.mts'
 import { findUp } from './fs.mts'
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 
+export const REACHABILITY_BUILD_MODES = ['compile', 'none'] as const
+
+// Whether reachability analysis builds the project first; unset means none.
+export type ReachabilityBuild = (typeof REACHABILITY_BUILD_MODES)[number]
+
 // Settings only the reachability run reads; they cascade field by field like
 // the rest of an ecosystem's section.
 export type ReachabilityDefaults = {
+  build?: ReachabilityBuild | undefined
+}
+
+export type JvmReachabilityDefaults = ReachabilityDefaults & {
   // JDK for reachability analysis; passed to Coana as written.
   javaHome?: string | undefined | null
 }
@@ -83,6 +92,7 @@ export interface SocketJson {
         excludeConfigs?: string | undefined | null
         includeConfigs?: string | undefined | null
         ignoreUnresolved?: boolean | undefined
+        reachability?: ReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       gradle?: {
@@ -101,7 +111,7 @@ export interface SocketJson {
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
-        reachability?: ReachabilityDefaults | undefined
+        reachability?: JvmReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       maven?: {
@@ -117,7 +127,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         mavenOpts?: string | undefined | null
-        reachability?: ReachabilityDefaults | undefined
+        reachability?: JvmReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       sbt?: {
@@ -136,7 +146,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         outfile?: string | undefined | null
-        reachability?: ReachabilityDefaults | undefined
+        reachability?: JvmReachabilityDefaults | undefined
         sbtOpts?: string | undefined | null
         stdout?: boolean | undefined
         verbose?: boolean | undefined
@@ -171,12 +181,41 @@ export type SocketJsonBuildEntry = {
 
 export type SocketJsonInDir = { dir: string; sockJson: SocketJson }
 
+const REACHABILITY_BUILD_TOOLS = ['dotnet', 'gradle', 'maven', 'sbt'] as const
+
+// With `defaultOnError`, only an invalid value fails a read.
+function socketJsonOrThrow(jsonCResult: CResult<SocketJson>): SocketJson {
+  if (!jsonCResult.ok) {
+    throw new InputError(
+      `${jsonCResult.message}: ${jsonCResult.cause ?? 'unknown cause'}`,
+    )
+  }
+  return jsonCResult.data
+}
+
+function validateSocketJson(
+  sockJson: SocketJson,
+  sockJsonPath: string,
+): CResult<SocketJson> {
+  for (const tool of REACHABILITY_BUILD_TOOLS) {
+    const build: unknown =
+      sockJson.defaults?.manifest?.[tool]?.reachability?.build
+    if (
+      build !== undefined &&
+      !(REACHABILITY_BUILD_MODES as readonly unknown[]).includes(build)
+    ) {
+      return {
+        ok: false,
+        message: `Invalid ${SOCKET_JSON} at ${sockJsonPath}`,
+        cause: `\`defaults.manifest.${tool}.reachability.build\` is ${JSON.stringify(build)}; set it to ${REACHABILITY_BUILD_MODES.map(m => `"${m}"`).join(' or ')}, or remove it`,
+      }
+    }
+  }
+  return { ok: true, data: sockJson }
+}
+
 export function readOrDefaultSocketJson(cwd: string): SocketJson {
-  const jsonCResult = readSocketJsonSync(cwd, true)
-  return jsonCResult.ok
-    ? jsonCResult.data
-    : // This should be unreachable but it makes TS happy.
-      getDefaultSocketJson()
+  return socketJsonOrThrow(readSocketJsonSync(cwd, true))
 }
 
 export async function findSocketJsonUp(
@@ -191,13 +230,12 @@ export async function readOrDefaultSocketJsonUp(
   const socketJsonPath = await findSocketJsonUp(cwd)
   if (socketJsonPath) {
     const socketJsonDir = path.dirname(socketJsonPath)
-    const jsonCResult = readSocketJsonSync(socketJsonDir, true)
-    return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
+    return socketJsonOrThrow(readSocketJsonSync(socketJsonDir, true))
   }
   return getDefaultSocketJson()
 }
 
-function mergeJvmDefaults<
+function mergeBuildToolDefaults<
   T extends { reachability?: ReachabilityDefaults | undefined },
 >(base: T | undefined, override: T): T {
   const merged = { ...base, ...override }
@@ -207,7 +245,7 @@ function mergeJvmDefaults<
   return merged
 }
 
-// Merges `defaults.manifest.<ecosystem>` per ecosystem, and a JVM section's
+// Merges `defaults.manifest.<ecosystem>` per ecosystem, and a build tool's
 // `reachability` within it: fields set in `override` win, others fall through
 // to `base`. Only this section cascades; everything else in `defaults` comes
 // from `base` only.
@@ -230,25 +268,25 @@ function mergeManifestDefaults(
     mergedManifest.conda = { ...baseManifest?.conda, ...overrideManifest.conda }
   }
   if (overrideManifest.dotnet) {
-    mergedManifest.dotnet = {
-      ...baseManifest?.dotnet,
-      ...overrideManifest.dotnet,
-    }
+    mergedManifest.dotnet = mergeBuildToolDefaults(
+      baseManifest?.dotnet,
+      overrideManifest.dotnet,
+    )
   }
   if (overrideManifest.gradle) {
-    mergedManifest.gradle = mergeJvmDefaults(
+    mergedManifest.gradle = mergeBuildToolDefaults(
       baseManifest?.gradle,
       overrideManifest.gradle,
     )
   }
   if (overrideManifest.maven) {
-    mergedManifest.maven = mergeJvmDefaults(
+    mergedManifest.maven = mergeBuildToolDefaults(
       baseManifest?.maven,
       overrideManifest.maven,
     )
   }
   if (overrideManifest.sbt) {
-    mergedManifest.sbt = mergeJvmDefaults(
+    mergedManifest.sbt = mergeBuildToolDefaults(
       baseManifest?.sbt,
       overrideManifest.sbt,
     )
@@ -275,10 +313,10 @@ export function readSocketJsonChain(dir: string): SocketJsonInDir[] {
   let current = path.resolve(dir)
   for (;;) {
     if (existsSync(path.join(current, SOCKET_JSON))) {
-      const jsonCResult = readSocketJsonSync(current, true)
-      if (jsonCResult.ok) {
-        chain.unshift({ dir: current, sockJson: jsonCResult.data })
-      }
+      chain.unshift({
+        dir: current,
+        sockJson: socketJsonOrThrow(readSocketJsonSync(current, true)),
+      })
     }
     const parent = path.dirname(current)
     if (parent === current) {
@@ -356,9 +394,7 @@ export async function readSocketJson(
     return { ok: true, data: getDefaultSocketJson() }
   }
 
-  // Do we really care to validate? All properties are optional so code will have
-  // to check every step of the way regardless. Who cares about validation here...?
-  return { ok: true, data: obj }
+  return validateSocketJson(obj, sockJsonPath)
 }
 
 export function readSocketJsonSync(
@@ -416,9 +452,7 @@ export function readSocketJsonSync(
     return { ok: true, data: getDefaultSocketJson() }
   }
 
-  // TODO: Do we need to validate? All properties are optional so code will have
-  // to check every step of the way regardless.
-  return { ok: true, data: jsonObj }
+  return validateSocketJson(jsonObj, sockJsonPath)
 }
 
 export async function writeSocketJson(

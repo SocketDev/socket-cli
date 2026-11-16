@@ -14,8 +14,8 @@ import {
 
 import type { CResult } from '../../types.mts'
 import type {
+  JvmReachabilityDefaults,
   ManifestDefaults,
-  ReachabilityDefaults,
 } from '../../utils/socket-json.mts'
 
 // Whether the prompt was canceled. A blank answer clears a value set before
@@ -735,7 +735,7 @@ async function askForIgnoreUnresolvedFlag(
 // Settings only the reachability run reads. A "no" leaves a setting as it is,
 // so an inherited value is neither pinned nor cleared.
 async function setupReachability(config: {
-  reachability?: ReachabilityDefaults | undefined
+  reachability?: JvmReachabilityDefaults | undefined
 }): Promise<CResult<{ canceled: boolean }>> {
   const reachability = { ...config.reachability }
 

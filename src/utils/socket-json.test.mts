@@ -4,7 +4,13 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { mergeSocketJsonChain, readSocketJsonChain } from './socket-json.mts'
+import { InputError } from './errors.mts'
+import {
+  mergeSocketJsonChain,
+  readOrDefaultSocketJson,
+  readSocketJsonChain,
+  readSocketJsonSync,
+} from './socket-json.mts'
 
 import type { SocketJson } from './socket-json.mts'
 
@@ -229,5 +235,133 @@ describe('readSocketJsonChain and mergeSocketJsonChain', () => {
         javaHome: '/opt/sbt-jdk',
       })
     })
+
+    it('cascades the reachability build field by field, for dotnet too', async () => {
+      await writeSocketJson(root, {
+        version: 1,
+        defaults: {
+          manifest: {
+            dotnet: { reachability: { build: 'compile' } },
+            maven: { reachability: { javaHome: '$JAVA17_HOME' } },
+          },
+        },
+      })
+      await writeSocketJson(buildRoot, {
+        version: 1,
+        defaults: {
+          manifest: {
+            dotnet: { bin: 'dotnet' },
+            maven: { reachability: { build: 'compile' } },
+          },
+        },
+      })
+
+      const result = readSocketJsonCascade(buildRoot)
+      expect(result.defaults?.manifest?.dotnet).toEqual({
+        bin: 'dotnet',
+        reachability: { build: 'compile' },
+      })
+      expect(mavenConfig(result)?.reachability).toEqual({
+        build: 'compile',
+        javaHome: '$JAVA17_HOME',
+      })
+    })
+
+    it("lets a nested socket.json's none override an inherited compile", async () => {
+      await writeSocketJson(root, {
+        version: 1,
+        defaults: {
+          manifest: { gradle: { reachability: { build: 'compile' } } },
+        },
+      })
+      await writeSocketJson(buildRoot, {
+        version: 1,
+        defaults: { manifest: { gradle: { reachability: { build: 'none' } } } },
+      })
+
+      const result = readSocketJsonCascade(buildRoot)
+      expect(result.defaults?.manifest?.gradle?.reachability).toEqual({
+        build: 'none',
+      })
+    })
+  })
+})
+
+describe('reachability.build validation', () => {
+  let dir = ''
+
+  beforeEach(async () => {
+    dir = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'socket-json-build-')),
+    )
+  })
+  afterEach(async () => {
+    await fs.rm(dir, { recursive: true, force: true })
+  })
+
+  it.for(['compile', 'none', undefined])(
+    'accepts a build of %s',
+    async build => {
+      const sockJson = {
+        version: 1,
+        defaults: { manifest: { maven: { reachability: { build } } } },
+      }
+      await writeSocketJson(dir, sockJson)
+
+      expect(readSocketJsonSync(dir)).toEqual({
+        ok: true,
+        data: JSON.parse(JSON.stringify(sockJson)),
+      })
+    },
+  )
+
+  it.for(['dotnet', 'gradle', 'maven', 'sbt'])(
+    'rejects any other %s build, naming the key and the allowed values, even with defaultOnError',
+    async tool => {
+      await writeSocketJson(dir, {
+        version: 1,
+        defaults: {
+          manifest: { [tool]: { reachability: { build: 'package' } } },
+        },
+      })
+
+      expect(readSocketJsonSync(dir, true)).toEqual({
+        ok: false,
+        message: `Invalid socket.json at ${path.join(dir, 'socket.json')}`,
+        cause: `\`defaults.manifest.${tool}.reachability.build\` is "package"; set it to "compile" or "none", or remove it`,
+      })
+    },
+  )
+
+  it('rejects a null build, as only an absent one means none', async () => {
+    await writeSocketJson(dir, {
+      version: 1,
+      defaults: { manifest: { sbt: { reachability: { build: null } } } },
+    })
+
+    expect(readSocketJsonSync(dir).ok).toBe(false)
+  })
+
+  it('fails the command rather than falling back to the default socket.json', async () => {
+    await writeSocketJson(dir, {
+      version: 1,
+      defaults: { manifest: { gradle: { reachability: { build: true } } } },
+    })
+
+    expect(() => readOrDefaultSocketJson(dir)).toThrow(InputError)
+    expect(() => readOrDefaultSocketJson(dir)).toThrow(
+      /defaults\.manifest\.gradle\.reachability\.build` is true; set it to "compile" or "none"/,
+    )
+  })
+
+  it("fails the cascade on a nested socket.json's invalid build", async () => {
+    const buildRoot = path.join(dir, 'project')
+    await fs.mkdir(buildRoot)
+    await writeSocketJson(buildRoot, {
+      version: 1,
+      defaults: { manifest: { maven: { reachability: { build: 'Compile' } } } },
+    })
+
+    expect(() => readSocketJsonCascade(buildRoot)).toThrow(InputError)
   })
 })
