@@ -17,6 +17,7 @@ vi.mock('./run-manifest-facts.mts', async importOriginal => ({
   listBuildProjects: vi.fn(),
 }))
 vi.mock('@socketsecurity/registry/lib/prompts', () => ({
+  input: vi.fn(),
   select: vi.fn(),
 }))
 vi.mock('./setup-manifest-config.mts', () => ({
@@ -27,7 +28,7 @@ vi.mock('./setup-manifest-config.mts', () => ({
 }))
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
+import { input, select } from '@socketsecurity/registry/lib/prompts'
 
 import { findBuildToolCandidates } from './discover-manifest-roots.mts'
 import { listBuildProjects } from './run-manifest-facts.mts'
@@ -597,6 +598,67 @@ describe('setupRecursiveManifestConfig', () => {
     expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
       reachability: { other: 'x' },
     })
+  })
+
+  describe('after a no to building before reachability analysis', () => {
+    const BUILD_QUESTION =
+      'Build project before reachability analysis? Note: A failed build fails the scan.'
+
+    // Runs the real Maven wizard for legacy, answering the build question no
+    // and its other prompts with their defaults, under a parent with
+    // `parentBuild`.
+    async function configureUnder(
+      parentBuild: 'compile' | 'none' | undefined,
+    ): Promise<void> {
+      const actual = await vi.importActual<
+        typeof import('./setup-manifest-config.mts')
+      >('./setup-manifest-config.mts')
+      vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
+      vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
+      await writeSettings(
+        '.',
+        parentBuild ? { maven: { reachability: { build: parentBuild } } } : {},
+      )
+      loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+      const rules: Answers = [
+        ['This project (maven)', 'inherit'],
+        ['Review the', true],
+        ['legacy (maven)', 'configure'],
+        ['legacy/tool (maven)', 'inherit'],
+        ['Write it?', true],
+      ]
+      vi.mocked(select).mockImplementation(
+        async ({ default: def, message }) => {
+          asked.push(message)
+          if (message === BUILD_QUESTION) {
+            return false as never
+          }
+          const rule = rules.find(({ 0: start }) => message.startsWith(start))
+          return (rule ? rule[1] : (def ?? '')) as never
+        },
+      )
+
+      const result = await setupRecursiveManifestConfig(repo, false)
+      expect(result).toEqual({ ok: true, data: { canceled: false } })
+      expect(asked).toContain(BUILD_QUESTION)
+    }
+
+    it('writes none under a parent that sets compile', async () => {
+      await configureUnder('compile')
+
+      expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+        reachability: { build: 'none' },
+      })
+    })
+
+    it.for(['none', undefined] as const)(
+      'leaves the build unset under a parent whose build is %s',
+      async parentBuild => {
+        await configureUnder(parentBuild)
+
+        expect(existsSync(file('legacy/socket.json'))).toBe(false)
+      },
+    )
   })
 
   it('loads a build left skipped under its own name, so its modules are not asked about', async () => {

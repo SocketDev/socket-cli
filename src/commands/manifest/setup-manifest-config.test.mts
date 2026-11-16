@@ -195,6 +195,144 @@ describe('reachability step', () => {
   })
 })
 
+describe('reachability build step', () => {
+  const BUILD_QUESTION =
+    'Build project before reachability analysis? Note: A failed build fails the scan.'
+
+  // Answers the build question with `wantsBuild`; every other prompt keeps
+  // its default. Returns the build question's shown default per call.
+  function answerBuild(wantsBuild: boolean): unknown[] {
+    const shown: unknown[] = []
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
+      if (message === BUILD_QUESTION) {
+        shown.push(def)
+        return wantsBuild
+      }
+      return def ?? ''
+    })
+    return shown
+  }
+
+  afterEach(() => {
+    vi.mocked(select).mockReset()
+    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
+  })
+
+  it.for([
+    ['dotnet', setupDotnet],
+    ['gradle', setupGradle],
+    ['maven', setupMaven],
+    ['sbt', setupSbt],
+  ] as const)(
+    '%s writes compile to reachability.build after a yes',
+    async ({ 1: setup }) => {
+      answerBuild(true)
+      const config: Record<string, unknown> = {}
+
+      const result = await setup(config)
+
+      expect(result).toEqual({ ok: true, data: { canceled: false } })
+      expect(config).toEqual({ reachability: { build: 'compile' } })
+    },
+  )
+
+  it.for([
+    ['dotnet', setupDotnet],
+    ['gradle', setupGradle],
+    ['maven', setupMaven],
+    ['sbt', setupSbt],
+  ] as const)(
+    '%s leaves reachability.build unset after a no at the top level, never writing none',
+    async ({ 1: setup }) => {
+      answerBuild(false)
+      const config: Record<string, unknown> = {}
+
+      await setup(config)
+
+      expect(config).toEqual({})
+    },
+  )
+
+  it.for([
+    ['dotnet', setupDotnet],
+    ['gradle', setupGradle],
+    ['maven', setupMaven],
+    ['sbt', setupSbt],
+  ] as const)(
+    '%s writes none after a no when the project inherits compile',
+    async ({ 1: setup }) => {
+      const shown = answerBuild(false)
+      const config: Record<string, unknown> = {
+        reachability: { build: 'compile' },
+      }
+
+      await setup(config, { inheritedReachabilityBuild: 'compile' })
+
+      expect(shown).toEqual([true])
+      expect(config).toEqual({ reachability: { build: 'none' } })
+    },
+  )
+
+  it('leaves the build unset after a no when the project inherits none', async () => {
+    answerBuild(false)
+    const config: Record<string, unknown> = { reachability: { build: 'none' } }
+
+    await setupGradle(config, { inheritedReachabilityBuild: 'none' })
+
+    expect(config).toEqual({})
+  })
+
+  it('unsets a build it shows as the default after a no, keeping the JDK', async () => {
+    const shown = answerBuild(false)
+    const config: Record<string, unknown> = {
+      reachability: { build: 'compile', javaHome: '/opt/jdk-17' },
+    }
+
+    await setupMaven(config)
+
+    expect(shown).toEqual([true])
+    expect(config['reachability']).toEqual({ javaHome: '/opt/jdk-17' })
+  })
+
+  it('removes a written none after a no', async () => {
+    const shown = answerBuild(false)
+    const config: Record<string, unknown> = { reachability: { build: 'none' } }
+
+    await setupDotnet(config)
+
+    expect(shown).toEqual([false])
+    expect(config).toEqual({})
+  })
+
+  it('never asks dotnet for a reachability JDK', async () => {
+    const messages: string[] = []
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
+      messages.push(message)
+      return message === BUILD_QUESTION ? true : (def ?? '')
+    })
+    const config: Record<string, unknown> = {}
+
+    await setupDotnet(config)
+
+    expect(messages).toContain(BUILD_QUESTION)
+    expect(messages.some(m => m.includes('Java'))).toBe(false)
+    expect(config).toEqual({ reachability: { build: 'compile' } })
+  })
+
+  it('does not ask in pom mode, where no facts reach a reachability run', async () => {
+    const messages: string[] = []
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
+      messages.push(message)
+      return def ?? ''
+    })
+
+    await setupGradle({ facts: false })
+    await setupSbt({ facts: false })
+
+    expect(messages).not.toContain(BUILD_QUESTION)
+  })
+})
+
 describe('setupDotnet', () => {
   it('preserves explicit nulls on a blank re-prompt', async () => {
     const config: Record<string, unknown> = { bin: null, dotnetOpts: null }

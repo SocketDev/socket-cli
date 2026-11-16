@@ -57,9 +57,11 @@ import type {
 import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { LoadedBuild } from './load-build.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { ReachabilityStepOptions } from './setup-manifest-config.mts'
 import type { CResult } from '../../types.mts'
 import type {
   ManifestDefaults,
+  ReachabilityBuild,
   SocketJson,
   SocketJsonInDir,
 } from '../../utils/socket-json.mts'
@@ -104,6 +106,15 @@ function changedFields(
     }
   }
   return changed
+}
+
+function inheritedReachabilityBuildOf(
+  inherited: Record<string, unknown>,
+): ReachabilityBuild | undefined {
+  const reachability = inherited['reachability']
+  return isObjectObject(reachability)
+    ? (reachability['build'] as ReachabilityBuild | undefined)
+    : undefined
 }
 
 function getEcosystemSection(
@@ -474,7 +485,9 @@ async function configureBuild(
   }
 
   const seeded = Object.keys(seed)
-  const result = await runEcosystemWizard(ecosystem, seed)
+  const result = await runEcosystemWizard(ecosystem, seed, {
+    inheritedReachabilityBuild: inheritedReachabilityBuildOf(inherited),
+  })
   if (!result.ok || result.data.canceled) {
     return result
   }
@@ -830,19 +843,24 @@ async function reviewBuild(
 async function runEcosystemWizard(
   ecosystem: BuildTool,
   config: Record<string, unknown>,
+  options: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (ecosystem === 'dotnet') {
-    return await setupDotnet(config as ManifestDefaults<'dotnet'>)
+    return await setupDotnet(config as ManifestDefaults<'dotnet'>, options)
   }
   if (ecosystem === 'gradle') {
     return await setupGradle(config as ManifestDefaults<'gradle'>, {
+      ...options,
       factsOnly: true,
     })
   }
   if (ecosystem === 'maven') {
-    return await setupMaven(config as ManifestDefaults<'maven'>)
+    return await setupMaven(config as ManifestDefaults<'maven'>, options)
   }
-  return await setupSbt(config as ManifestDefaults<'sbt'>, { factsOnly: true })
+  return await setupSbt(config as ManifestDefaults<'sbt'>, {
+    ...options,
+    factsOnly: true,
+  })
 }
 
 // Accepting every prompt's default leaves an ecosystem's section empty (see
@@ -925,8 +943,14 @@ async function setupRootDefaults(
     const manifest = manifestOf(own)
     const section = { ...getEcosystemSection(own, ecosystem) }
     manifest[ecosystem] = section
+    const inherited = getEcosystemSection(
+      draftCascade(draft, path.dirname(cwd)),
+      ecosystem,
+    )
     // eslint-disable-next-line no-await-in-loop
-    const result = await runEcosystemWizard(ecosystem, section)
+    const result = await runEcosystemWizard(ecosystem, section, {
+      inheritedReachabilityBuild: inheritedReachabilityBuildOf(inherited),
+    })
     if (!result.ok || result.data.canceled) {
       return result
     }

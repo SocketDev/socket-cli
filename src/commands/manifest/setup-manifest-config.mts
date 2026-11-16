@@ -16,7 +16,13 @@ import type { CResult } from '../../types.mts'
 import type {
   JvmReachabilityDefaults,
   ManifestDefaults,
+  ReachabilityBuild,
 } from '../../utils/socket-json.mts'
+
+export type ReachabilityStepOptions = {
+  // What the project inherits from ancestor socket.json files.
+  inheritedReachabilityBuild?: ReachabilityBuild | undefined
+}
 
 // Whether the prompt was canceled. A blank answer clears a value set before
 // with null rather than deleting the key, so it doesn't silently start
@@ -318,6 +324,7 @@ async function setupConda(
 
 export async function setupDotnet(
   config: ManifestDefaults<'dotnet'>,
+  { inheritedReachabilityBuild }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'dotnet'))) {
     return canceledByUser()
@@ -347,14 +354,20 @@ export async function setupDotnet(
     return canceledByUser()
   }
 
-  return notCanceled()
+  return await setupReachability(config, {
+    askJavaHome: false,
+    inheritedReachabilityBuild,
+  })
 }
 
 export async function setupGradle(
   config: ManifestDefaults<'gradle'>,
   // Set by the recursive dynamic-sbom-inference wizard, which has no
   // pom-mode equivalent - skips the facts/pom question entirely.
-  { factsOnly = false }: { factsOnly?: boolean } = {},
+  {
+    factsOnly = false,
+    inheritedReachabilityBuild,
+  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (
     applyAnswer(config, 'bin', await askForBin(config.bin || '', './gradlew'))
@@ -404,7 +417,7 @@ export async function setupGradle(
   }
 
   if (generatesFacts) {
-    return await setupReachability(config)
+    return await setupReachability(config, { inheritedReachabilityBuild })
   }
 
   return notCanceled()
@@ -412,6 +425,7 @@ export async function setupGradle(
 
 export async function setupMaven(
   config: ManifestDefaults<'maven'>,
+  { inheritedReachabilityBuild }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'mvn'))) {
     return canceledByUser()
@@ -448,13 +462,16 @@ export async function setupMaven(
     return canceledByUser()
   }
 
-  return await setupReachability(config)
+  return await setupReachability(config, { inheritedReachabilityBuild })
 }
 
 export async function setupSbt(
   config: ManifestDefaults<'sbt'>,
   // See setupGradle's matching parameter for why.
-  { factsOnly = false }: { factsOnly?: boolean } = {},
+  {
+    factsOnly = false,
+    inheritedReachabilityBuild,
+  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'sbt'))) {
     return canceledByUser()
@@ -530,7 +547,7 @@ export async function setupSbt(
   }
 
   if (generatesFacts) {
-    return await setupReachability(config)
+    return await setupReachability(config, { inheritedReachabilityBuild })
   }
 
   return notCanceled()
@@ -732,13 +749,64 @@ async function askForIgnoreUnresolvedFlag(
   })
 }
 
-// Settings only the reachability run reads. A "no" leaves a setting as it is,
-// so an inherited value is neither pinned nor cleared.
-async function setupReachability(config: {
-  reachability?: JvmReachabilityDefaults | undefined
-}): Promise<CResult<{ canceled: boolean }>> {
+// Settings only the reachability run reads. A "no" to the JDK leaves it as it
+// is, so an inherited value is neither pinned nor cleared; a "no" to building
+// unsets the build, and writes "none" only to override an inherited "compile".
+async function setupReachability(
+  config: { reachability?: JvmReachabilityDefaults | undefined },
+  {
+    askJavaHome = true,
+    inheritedReachabilityBuild,
+  }: ReachabilityStepOptions & { askJavaHome?: boolean | undefined } = {},
+): Promise<CResult<{ canceled: boolean }>> {
   const reachability = { ...config.reachability }
 
+  const wantsBuild = await select({
+    message:
+      'Build project before reachability analysis? Note: A failed build fails the scan.',
+    choices: [
+      {
+        name: 'no',
+        value: false,
+        description: 'Analyze the project without building it',
+      },
+      {
+        name: 'yes',
+        value: true,
+        description: 'Compile the project before reachability analysis',
+      },
+    ],
+    default: reachability.build === 'compile',
+  })
+  if (wantsBuild === undefined || wantsBuild === null) {
+    return canceledByUser()
+  }
+  if (wantsBuild) {
+    reachability.build = 'compile'
+  } else if (inheritedReachabilityBuild === 'compile') {
+    reachability.build = 'none'
+  } else {
+    delete reachability.build
+  }
+
+  if (askJavaHome) {
+    const javaHome = await setupReachabilityJavaHome(reachability)
+    if (!javaHome.ok || javaHome.data.canceled) {
+      return javaHome
+    }
+  }
+
+  if (Object.keys(reachability).length) {
+    config.reachability = reachability
+  } else {
+    delete config.reachability
+  }
+  return notCanceled()
+}
+
+async function setupReachabilityJavaHome(
+  reachability: JvmReachabilityDefaults,
+): Promise<CResult<{ canceled: boolean }>> {
   const wantsJavaHome = await select({
     message: 'Use a different Java for reachability analysis?',
     choices: [
@@ -770,12 +838,6 @@ async function setupReachability(config: {
     )
   ) {
     return canceledByUser()
-  }
-
-  if (Object.keys(reachability).length) {
-    config.reachability = reachability
-  } else {
-    delete config.reachability
   }
   return notCanceled()
 }
