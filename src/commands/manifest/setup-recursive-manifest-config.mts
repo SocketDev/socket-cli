@@ -837,13 +837,13 @@ async function askYesNo(message: string): Promise<boolean | null> {
 }
 
 // Defaults for the builds in and beneath cwd. A skip that applies here, from
-// this directory's socket.json or one above it, is offered back first. A tool
-// with one build at cwd gets its defaults from that build's own prompt.
+// this directory's socket.json or one above it, is offered back first. A tool's
+// only build at cwd, without an entry of its own, sets them from its prompt.
 async function setupRootDefaults(
   draft: SettingsDraft,
   cwd: string,
   ecosystems: readonly BuildTool[],
-  buildsAtCwd: (ecosystem: BuildTool) => number,
+  buildsAtCwd: (ecosystem: BuildTool) => BuildRoot[],
 ): Promise<CResult<{ canceled: boolean }>> {
   for (const ecosystem of ecosystems) {
     const label = ECOSYSTEM_LABELS[ecosystem]
@@ -871,10 +871,13 @@ async function setupRootDefaults(
     }
 
     const atCwd = buildsAtCwd(ecosystem)
-    if (atCwd === 1) {
+    if (
+      atCwd.length === 1 &&
+      !resolveDraftSettings(draft, ecosystem, atCwd[0]!).entryKey
+    ) {
       continue
     }
-    const message = atCwd
+    const message = atCwd.length
       ? `Configure ${label} defaults for the projects here and beneath?`
       : `Configure ${label} defaults for any nested projects?`
     // eslint-disable-next-line no-await-in-loop
@@ -994,7 +997,7 @@ export async function setupRecursiveManifestConfig(
     draft,
     realCwd,
     detectedEcosystems,
-    ecosystem => atCwd(ecosystem).length,
+    atCwd,
   )
   if (!rootResult.ok || rootResult.data.canceled) {
     return rootResult

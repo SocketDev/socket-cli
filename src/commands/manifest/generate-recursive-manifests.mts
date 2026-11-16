@@ -153,13 +153,16 @@ type Candidate = {
 
 type SidecarEntry = NonNullable<ReturnType<SidecarAccumulator['get']>>
 
+// A copy of a facts file, if there was one, and its sidecar entry.
+type FactsState = {
+  facts: string | undefined
+  sidecar: SidecarEntry | undefined
+}
+
 type Run = Candidate & {
-  // What the facts file and its sidecar entry held before this run: a copy
-  // of the file, if there was one. Unknown when the run wrote away from its
-  // own directory (Gradle's `-p`), where no copy was taken.
-  before:
-    | { facts: string | undefined; sidecar: SidecarEntry | undefined }
-    | undefined
+  // What the facts file held before this run. Unknown only when the run wrote
+  // away from its own directory (Gradle's `-p`) to a file no run wrote before.
+  before: FactsState | undefined
   // The facts file's real path.
   factsKey: string | undefined
   membership: Membership
@@ -173,6 +176,8 @@ type Load = Candidate & LoadedBuild
 type WalkContext = {
   backupDir: () => Promise<string>
   excludePaths: string[] | undefined
+  // What the last run to write each facts file wrote, by real path.
+  outputs: Map<string, FactsState>
   ignoreUnresolved: boolean | undefined
   optionFlags: ReadonlySet<BuildOption>
   realCwd: string
@@ -533,13 +538,12 @@ async function walkTool(
   const keptSet = new Set(kept)
   const keptKeys = new Set(kept.map(run => run.factsKey))
   const droppedRuns = new Set<Run>()
+  const runOrder = [...runs.values()]
   // The run that next wrote the same facts file and is not dropped.
-  const nextWriter = (run: Run): Run | undefined => {
-    const ordered = [...runs.values()]
-    return ordered
-      .slice(ordered.indexOf(run) + 1)
+  const nextWriter = (run: Run): Run | undefined =>
+    runOrder
+      .slice(runOrder.indexOf(run) + 1)
       .find(other => !droppedRuns.has(other) && other.factsKey === run.factsKey)
-  }
   const outcomes: RecursiveManifestOutcome[] = []
   for (const candidate of candidates) {
     const { index, root } = candidate
@@ -660,12 +664,13 @@ async function runCandidate(
     root.dir,
     socketFactsFileName(ecosystem, root.entryFile) ?? '',
   )
+  const expectedKey = await realpathOrResolved(expectedFactsPath)
   let backup: string | undefined
-  if (existsSync(expectedFactsPath)) {
+  if (!ctx.outputs.has(expectedKey) && existsSync(expectedFactsPath)) {
     backup = path.join(await ctx.backupDir(), `${ecosystem}-${candidate.index}`)
     await fs.copyFile(expectedFactsPath, backup)
   }
-  const sidecarBefore = ctx.sidecarAcc && new Map(ctx.sidecarAcc)
+  const sidecarBefore = ctx.sidecarAcc?.get(expectedKey)
   const result = await runManifestFacts({
     bin: dirConfig.bin,
     buildOpts: dirConfig.buildOpts,
@@ -696,15 +701,31 @@ async function runCandidate(
   if (result === null) {
     return undefined
   }
-  const factsKey = result
-    ? await realpathOrResolved(result.factsPath)
-    : undefined
+  let before: FactsState | undefined
+  let factsKey: string | undefined
+  if (result) {
+    factsKey = await realpathOrResolved(result.factsPath)
+    before =
+      ctx.outputs.get(factsKey) ??
+      (factsKey === expectedKey
+        ? { facts: backup, sidecar: sidecarBefore }
+        : undefined)
+    let output: string | undefined
+    if (existsSync(result.factsPath)) {
+      output = path.join(
+        await ctx.backupDir(),
+        `${ecosystem}-${candidate.index}.out`,
+      )
+      await fs.copyFile(result.factsPath, output)
+    }
+    ctx.outputs.set(factsKey, {
+      facts: output,
+      sidecar: ctx.sidecarAcc?.get(factsKey),
+    })
+  }
   return {
     ...candidate,
-    before:
-      result && path.resolve(result.factsPath) === expectedFactsPath
-        ? { facts: backup, sidecar: sidecarBefore?.get(factsKey!) }
-        : undefined,
+    before,
     factsKey,
     // Gradle's `-p` can root the build away from `root.dir`.
     membership: result
@@ -877,6 +898,12 @@ export async function generateRecursiveManifests({
     sockJson: withoutDisabledFlags(rootSockJson),
   })
   const resolveSettings = createBuildRootSettingsResolver()
+  // Invalid settings fail the scan before any build runs.
+  for (const { 0: tool, 1: roots } of candidatesByTool) {
+    for (const root of roots) {
+      resolveSettings(tool, root)
+    }
+  }
   // A failure another build excuses leaves the exit code it set.
   const exitCodeBefore = process.exitCode
 
@@ -892,6 +919,7 @@ export async function generateRecursiveManifests({
       excludePaths,
       ignoreUnresolved,
       optionFlags,
+      outputs: new Map(),
       realCwd,
       resolveSettings,
       sbtTmpDir: resolvedSbtTmpDir,

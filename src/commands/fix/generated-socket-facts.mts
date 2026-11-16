@@ -99,7 +99,8 @@ export async function generateSocketFactsForFix({
     discardedPaths,
     paths,
     sidecarFile,
-    remove: () => reset(paths),
+    // A discarded file a run left as written is removed too.
+    remove: () => reset([...paths, ...discardedPaths]),
     restore: () => restoreAll(backups),
   }
 }

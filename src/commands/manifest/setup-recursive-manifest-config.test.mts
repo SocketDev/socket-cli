@@ -424,10 +424,11 @@ describe('setupRecursiveManifestConfig', () => {
     })
   })
 
-  it('asks about the build here like any other, offering its own skip back', async () => {
+  it('asks about the build here like any other, offering its own skip back after the defaults', async () => {
     await writeSettings('.', { builds: { 'pom.xml': { disabled: true } } })
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
     answer([
+      ['Configure Maven defaults', false],
       ['This project (maven) is skipped. Build it again?', true],
       ['This project (maven)', 'inherit'],
       ['Review the', false],
@@ -436,7 +437,9 @@ describe('setupRecursiveManifestConfig', () => {
 
     await setupRecursiveManifestConfig(repo, false)
 
+    // Its own entry would override defaults set through its prompt.
     expect(asked).toEqual([
+      'Configure Maven defaults for the projects here and beneath?',
       'This project (maven) is skipped. Build it again?',
       'This project (maven)',
       'Review the 4 other builds found beneath this one?',

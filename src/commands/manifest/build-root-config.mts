@@ -76,6 +76,20 @@ function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
       )
     }
   }
+  for (const tool of BUILD_TOOLS) {
+    const files = BUILD_FILES[tool]
+    const keys = files.byFile
+      ? []
+      : files.names.filter(
+          name =>
+            Object.hasOwn(builds, name) && existsSync(path.join(dir, name)),
+        )
+    if (keys.length > 1) {
+      throw new InputError(
+        `${keys.map(buildsSetting).join(' and ')} in ${file} configure the same ${tool} build. Keep one of them.`,
+      )
+    }
+  }
 }
 
 function warnMissingFiles(
@@ -146,15 +160,10 @@ export function createBuildRootSettingsResolver(
     const names = files.byFile
       ? [root.entryFile ?? '']
       : files.names.filter(name => existsSync(path.join(root.dir, name)))
-    const entryKeys = builds
-      ? names.filter(name => Object.hasOwn(builds, name))
-      : []
-    if (entryKeys.length > 1) {
-      throw new InputError(
-        `${entryKeys.map(buildsSetting).join(' and ')} in ${socketJsonPath(root.dir)} configure the same ${tool} build. Keep one of them.`,
-      )
-    }
-    const entryKey = entryKeys[0]
+    // Validation leaves at most one.
+    const entryKey = builds
+      ? names.find(name => Object.hasOwn(builds, name))
+      : undefined
     let entryDisabledBy: DisabledBy | undefined
     if (entryKey) {
       const entry = builds![entryKey] as SocketJsonBuildEntry

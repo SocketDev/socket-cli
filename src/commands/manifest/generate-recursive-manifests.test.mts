@@ -267,9 +267,9 @@ describe('generateRecursiveManifests', () => {
         expect(generated).toHaveLength(1)
         const { factsPath } = generated[0]!
         expect(generated[0]!.discardedFactsPath).toBeUndefined()
-        expect(sidecarAcc.get(factsPath!)?.cwd).toBe(
-          await fs.readFile(factsPath!, 'utf8'),
-        )
+        // The kept build's own facts and sidecar entry, whichever ran last.
+        expect(await fs.readFile(factsPath!, 'utf8')).toBe(generated[0]!.dir)
+        expect(sidecarAcc.get(factsPath!)?.cwd).toBe(generated[0]!.dir)
       } finally {
         await fs.rm(outer, { recursive: true, force: true })
       }
