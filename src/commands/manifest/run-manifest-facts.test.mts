@@ -137,12 +137,40 @@ describe('runManifestFacts', () => {
     })
   })
 
+  it.for(['compile', 'none'] as const)(
+    'sends a reachability build of %s as configured, next to javaHome',
+    async build => {
+      coanaAnswers({ status: 'empty' })
+      await runManifestFacts({
+        ...baseArgs,
+        cwd,
+        reachability: { build, javaHome: '$JAVA17_HOME' },
+      })
+      expect(calls[0]!.request.config.reachability).toEqual({
+        build,
+        javaHome: '$JAVA17_HOME',
+      })
+    },
+  )
+
+  it('sends a reachability build without a javaHome', async () => {
+    coanaAnswers({ status: 'empty' })
+    await runManifestFacts({
+      ...baseArgs,
+      cwd,
+      reachability: { build: 'compile' },
+    })
+    expect(calls[0]!.request.config.reachability).toEqual({
+      build: 'compile',
+    })
+  })
+
   it('sends no reachability settings when none are set', async () => {
     coanaAnswers({ status: 'empty' })
     await runManifestFacts({
       ...baseArgs,
       cwd,
-      reachability: { javaHome: undefined },
+      reachability: { build: undefined, javaHome: undefined },
     })
     expect(calls[0]!.request.config).not.toHaveProperty('reachability')
   })

@@ -303,6 +303,35 @@ describe('generateAutoManifest — bazel branch', () => {
     })
   })
 
+  it('passes each JVM build tool its socket.json reachability build as configured', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          gradle: { reachability: { build: 'compile' } },
+          maven: { bin: 'mvn', reachability: { build: 'none' } },
+          sbt: { reachability: { javaHome: '$SBT_JDK' } },
+        },
+      },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, gradle: true, maven: true, sbt: true },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(
+      Object.fromEntries(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
+      ),
+    ).toStrictEqual({
+      gradle: { build: 'compile', javaHome: undefined },
+      maven: { build: 'none', javaHome: undefined },
+      sbt: { build: undefined, javaHome: '$SBT_JDK' },
+    })
+  })
+
   it('uses the gradle pom generator when defaults.manifest.gradle.facts is false', async () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({
       defaults: { manifest: { gradle: { facts: false } } },
@@ -458,6 +487,7 @@ describe('generateAutoManifest — dotnet branch', () => {
             dotnetOpts: '-p:Configuration=Release',
             includeConfigs: 'net8.0',
             ignoreUnresolved: true,
+            reachability: { build: 'compile' },
           },
         },
       },
@@ -470,6 +500,7 @@ describe('generateAutoManifest — dotnet branch', () => {
           buildOpts: ['-p:Configuration=Release'],
           ignoreUnresolved: true,
           includeConfigs: 'net8.0',
+          reachability: { build: 'compile', javaHome: undefined },
         }),
         cwd: '/tmp/repo',
       }),

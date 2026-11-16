@@ -16,6 +16,7 @@ import { getOrInsert } from '../../utils/get-or-insert.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
+import type { ReachabilityBuild } from '../../utils/socket-json.mts'
 
 export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 
@@ -115,7 +116,9 @@ type SocketFactsRequest = {
     ignoreUnresolved: boolean
     includeConfigs?: string | undefined
     javaHome?: string | undefined
-    reachability?: { javaHome: string } | undefined
+    reachability?:
+      | { build?: ReachabilityBuild | undefined; javaHome?: string | undefined }
+      | undefined
     verbose: boolean
   }
   entryFile?: string | undefined
@@ -238,7 +241,9 @@ export type SocketFactsRequestOptions = {
   // As written: Coana expands `$VAR` references itself.
   javaHome?: string | undefined
   // Unused by facts generation: Coana keeps it for the reachability run.
-  reachability?: { javaHome?: string | undefined } | undefined
+  reachability?:
+    | { build?: ReachabilityBuild | undefined; javaHome?: string | undefined }
+    | undefined
   verbose?: boolean | undefined
 }
 
@@ -287,8 +292,15 @@ function toSocketFactsRequest({
         ignoreUnresolved,
         ...(includeConfigs ? { includeConfigs } : {}),
         ...(javaHome ? { javaHome } : {}),
-        ...(reachability?.javaHome
-          ? { reachability: { javaHome: reachability.javaHome } }
+        ...(reachability?.build || reachability?.javaHome
+          ? {
+              reachability: {
+                ...(reachability.build ? { build: reachability.build } : {}),
+                ...(reachability.javaHome
+                  ? { javaHome: reachability.javaHome }
+                  : {}),
+              },
+            }
           : {}),
         verbose,
       },

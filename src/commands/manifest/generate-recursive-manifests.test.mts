@@ -869,6 +869,57 @@ describe('generateRecursiveManifests', () => {
     }
   })
 
+  it("passes each root's reachability build on its request, dotnet's too", async () => {
+    const outer = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'dsi-reachability-build-')),
+    )
+    try {
+      for (const file of [
+        'dotnet/App.sln',
+        'gradle/build.gradle',
+        'maven/pom.xml',
+        'sbt/build.sbt',
+      ]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(path.join(outer, path.dirname(file)))
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(path.join(outer, file), '')
+      }
+      mockCascade(() => ({
+        defaults: {
+          manifest: {
+            dotnet: { reachability: { build: 'compile' } },
+            gradle: {
+              reachability: { build: 'compile', javaHome: '$GRADLE_JDK' },
+            },
+            maven: { reachability: { build: 'none' } },
+          },
+        },
+      }))
+      mockFacts(async ({ cwd }) => ({
+        factsPath: path.join(cwd, '.socket.facts.json'),
+        projects: [],
+      }))
+
+      await generateRecursiveManifests({ cwd: outer, verbose: false })
+
+      expect(
+        Object.fromEntries(
+          vi
+            .mocked(runManifestFacts)
+            .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
+        ),
+      ).toStrictEqual({
+        dotnet: { build: 'compile', javaHome: undefined },
+        gradle: { build: 'compile', javaHome: '$GRADLE_JDK' },
+        maven: { build: 'none', javaHome: undefined },
+        sbt: { build: undefined, javaHome: undefined },
+      })
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
   it('resolves an explicit null override back to the no-restriction default, not a literal null', async () => {
     mockCascade(dir =>
       dir === dualMarkerDir

@@ -61,7 +61,7 @@ import type {
 } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type { ReachabilityBuild, SocketJson } from '../../utils/socket-json.mts'
 
 export type RecursiveManifestOutcomeStatus =
   | 'aborted'
@@ -87,7 +87,10 @@ export type EcosystemBuildConfig = {
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome: string | undefined
-  reachability: { javaHome: string | undefined }
+  reachability: {
+    build: ReachabilityBuild | undefined
+    javaHome: string | undefined
+  }
   // Set when this build root should be skipped entirely (never invoked).
   skipReason: string | undefined
   verbose: boolean
@@ -935,7 +938,10 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: undefined,
-      reachability: { javaHome: undefined },
+      reachability: {
+        build: config?.reachability?.build,
+        javaHome: undefined,
+      },
       skipReason: getSkipReason(ecosystem, config?.disabled),
       verbose: Boolean(config?.verbose),
     }
@@ -950,7 +956,10 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      reachability: { javaHome: config?.reachability?.javaHome ?? undefined },
+      reachability: {
+        build: config?.reachability?.build,
+        javaHome: config?.reachability?.javaHome ?? undefined,
+      },
       skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
       verbose: Boolean(config?.verbose),
     }
@@ -965,7 +974,10 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      reachability: { javaHome: config?.reachability?.javaHome ?? undefined },
+      reachability: {
+        build: config?.reachability?.build,
+        javaHome: config?.reachability?.javaHome ?? undefined,
+      },
       skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
       verbose: Boolean(config?.verbose),
     }
@@ -982,7 +994,10 @@ export function resolveEcosystemConfig(
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome ?? undefined,
-    reachability: { javaHome: config?.reachability?.javaHome ?? undefined },
+    reachability: {
+      build: config?.reachability?.build,
+      javaHome: config?.reachability?.javaHome ?? undefined,
+    },
     skipReason: getSkipReason(ecosystem, config?.disabled),
     verbose: Boolean(config?.verbose),
   }
