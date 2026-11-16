@@ -150,10 +150,12 @@ describe('createBuildRootSettingsResolver', () => {
     ['..', 'must be keyed by the name of a build file'],
   ] as const)('rejects the key %j', async ({ 0: key, 1: reason }) => {
     await write('.', { builds: { [key]: { disabled: true } } })
-    const resolve = () => createBuildRootSettingsResolver()('maven', maven('.'))
+    const root = maven('.')
 
-    expect(resolve).toThrow(InputError)
-    expect(resolve).toThrow(
+    expect(() => createBuildRootSettingsResolver()('maven', root)).toThrow(
+      InputError,
+    )
+    expect(() => createBuildRootSettingsResolver()('maven', root)).toThrow(
       expect.objectContaining({ message: expect.stringContaining(reason) }),
     )
   })
