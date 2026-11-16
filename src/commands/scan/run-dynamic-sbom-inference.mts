@@ -155,7 +155,7 @@ export async function runDynamicSbomInference({
 }
 
 // `paths` without the facts files discovery discarded: each holds what was
-// there before the dropped run, not this scan's facts.
+// there before the scan, or a dropped run's facts, not a kept build's.
 export async function withoutDiscardedFacts(
   paths: string[],
   discarded: readonly string[] | undefined,

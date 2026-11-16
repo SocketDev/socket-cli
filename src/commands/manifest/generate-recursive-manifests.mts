@@ -68,8 +68,8 @@ export type RecursiveManifestOutcomeStatus =
   | 'skippedDisabled'
 
 export type RecursiveManifestOutcome = BuildRoot & {
-  // The facts file of a run that was dropped, which no kept run wrote: what
-  // it holds now is not this scan's, so it must not be collected.
+  // The facts file of a run that was dropped, which no kept run wrote: it holds
+  // no kept build's facts, so it must not be collected.
   discardedFactsPath?: string | undefined
   ecosystem: BuildTool
   factsPath?: string | undefined
