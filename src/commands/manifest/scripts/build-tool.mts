@@ -109,14 +109,20 @@ const BUILD_TOOL_WRAPPER = {
 // a directory can hold several builds, matched case-insensitively. `walkGlob`
 // is a case-sensitive superset of `nocaseGlob`, for the walk.
 export type BuildFiles =
-  | { byFile: false; names: readonly string[] }
+  | {
+      byFile: false
+      names: readonly string[]
+      // Entries that make a directory a build of its own: a build that
+      // includes the directory as a project does not load what it defines.
+      rootMarkers: readonly string[]
+      // The tool run in a directory without a root marker loads the build of
+      // the nearest ancestor that has one, except in these directories.
+      loadsAncestorBuild?: { except: readonly string[] }
+    }
   | {
       byFile: true
       nocaseGlob: string
       walkGlob: string
-      // Each project restores on its own whichever build reaches it, so a build
-      // covers its projects wherever they live; solution properties aside.
-      projectsResolveAlone?: true
       // Within one directory, lower runs first; by name otherwise.
       entryRank?: (file: string) => number
     }
@@ -132,8 +138,6 @@ export const BUILD_FILES: Record<BuildTool, BuildFiles> = {
     nocaseGlob: '*.{sln,slnx,csproj,fsproj,vbproj}',
     walkGlob:
       '*.{[sS][lL][nN],[sS][lL][nN][xX],[cCfFvV][sSbB][pP][rR][oO][jJ]}',
-    // NuGet restores each project into its own project.assets.json.
-    projectsResolveAlone: true,
     // A solution covers the projects it lists.
     entryRank: (file: string) => (isDotnetSolution(file) ? 0 : 1),
   },
@@ -145,13 +149,17 @@ export const BUILD_FILES: Record<BuildTool, BuildFiles> = {
       'settings.gradle',
       'settings.gradle.kts',
     ],
+    rootMarkers: ['settings.gradle', 'settings.gradle.kts'],
+    // Gradle builds `buildSrc` on its own.
+    loadsAncestorBuild: { except: ['buildSrc'] },
   },
   maven: {
     byFile: true,
     nocaseGlob: '{*-*.,}pom{.xml,}',
     walkGlob: '*[pP][oO][mM]*',
   },
-  sbt: { byFile: false, names: ['build.sbt'] },
+  // A subproject's own `project/` is ignored by the build that includes it.
+  sbt: { byFile: false, names: ['build.sbt'], rootMarkers: ['project'] },
 } as unknown as Record<BuildTool, BuildFiles>
 
 // sbt happily runs in any directory, synthesizing a default project from its

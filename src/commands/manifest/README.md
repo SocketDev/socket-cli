@@ -167,6 +167,11 @@ Generates a manifest file (`pom.xml`) from Scala's `build.sbt` file.
 Starts an interactive configurator that writes default flag values for
 `socket manifest` into a `socket.json` in the current directory.
 
+With `--dynamic-sbom-inference`, it walks every build beneath the current
+directory and writes the settings for each. The settings themselves are
+documented in [`docs/dynamic-sbom-inference-settings.md`](../../../docs/dynamic-sbom-inference-settings.md),
+for anyone, or any agent, writing them without the configurator.
+
 ## Dev
 
 Run it like these examples:

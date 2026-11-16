@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { readSocketJsonCascade } from './socket-json.mts'
+import { mergeSocketJsonChain, readSocketJsonChain } from './socket-json.mts'
 
 import type { SocketJson } from './socket-json.mts'
 
@@ -20,38 +20,39 @@ function mavenConfig(sockJson: SocketJson) {
   return sockJson.defaults?.manifest?.maven
 }
 
-describe('readSocketJsonCascade', () => {
+function readSocketJsonCascade(dir: string): SocketJson {
+  return mergeSocketJsonChain(readSocketJsonChain(dir))
+}
+
+describe('readSocketJsonChain and mergeSocketJsonChain', () => {
   let root = ''
-  let rootSockJson: SocketJson
 
   beforeEach(async () => {
     root = await fs.mkdtemp(path.join(tmpdir(), 'socket-json-cascade-'))
-    rootSockJson = {
+    await writeSocketJson(root, {
       version: 1,
       defaults: {
         manifest: {
           maven: { bin: 'mvn', excludeConfigs: 'root-exclude' },
         },
       },
-    } as SocketJson
+    })
   })
   afterEach(async () => {
     await fs.rm(root, { recursive: true, force: true })
   })
 
-  it('returns rootSockJson unchanged when dir is the boundary itself', () => {
-    expect(readSocketJsonCascade(root, root, rootSockJson)).toBe(rootSockJson)
-  })
-
-  it('returns rootSockJson unchanged when nothing is found between dir and the boundary', async () => {
+  it('reads the socket.json of every directory above, however far up', async () => {
     const buildRoot = path.join(root, 'workspace', 'project')
     await fs.mkdir(buildRoot, { recursive: true })
 
-    const result = readSocketJsonCascade(buildRoot, root, rootSockJson)
-    expect(result).toBe(rootSockJson)
+    expect(mavenConfig(readSocketJsonCascade(buildRoot))).toEqual({
+      bin: 'mvn',
+      excludeConfigs: 'root-exclude',
+    })
   })
 
-  it("merges the build root's own socket.json over the root config instead of replacing it", async () => {
+  it("merges the build root's own socket.json over the ones above instead of replacing them", async () => {
     const buildRoot = path.join(root, 'project')
     await fs.mkdir(buildRoot, { recursive: true })
     await writeSocketJson(buildRoot, {
@@ -59,8 +60,7 @@ describe('readSocketJsonCascade', () => {
       defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } },
     })
 
-    const result = readSocketJsonCascade(buildRoot, root, rootSockJson)
-    expect(mavenConfig(result)).toEqual({
+    expect(mavenConfig(readSocketJsonCascade(buildRoot))).toEqual({
       bin: 'mvn',
       excludeConfigs: 'root-exclude',
       javaHome: '/opt/jdk-11',
@@ -68,7 +68,7 @@ describe('readSocketJsonCascade', () => {
   })
 
   it('does not touch an ecosystem the override never mentions', async () => {
-    rootSockJson = {
+    await writeSocketJson(root, {
       version: 1,
       defaults: {
         manifest: {
@@ -76,7 +76,7 @@ describe('readSocketJsonCascade', () => {
           maven: { bin: 'mvn' },
         },
       },
-    } as SocketJson
+    })
     const buildRoot = path.join(root, 'project')
     await fs.mkdir(buildRoot, { recursive: true })
     await writeSocketJson(buildRoot, {
@@ -84,8 +84,9 @@ describe('readSocketJsonCascade', () => {
       defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } },
     })
 
-    const result = readSocketJsonCascade(buildRoot, root, rootSockJson)
-    expect(result.defaults?.manifest?.gradle).toEqual({ bin: './gradlew' })
+    expect(readSocketJsonCascade(buildRoot).defaults?.manifest?.gradle).toEqual(
+      { bin: './gradlew' },
+    )
   })
 
   it('cascades multiple levels, nearest-to-dir winning per field', async () => {
@@ -108,8 +109,7 @@ describe('readSocketJsonCascade', () => {
       defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } },
     })
 
-    const result = readSocketJsonCascade(buildRoot, root, rootSockJson)
-    expect(mavenConfig(result)).toEqual({
+    expect(mavenConfig(readSocketJsonCascade(buildRoot))).toEqual({
       // From root, untouched by either override.
       bin: 'mvn',
       // Workspace overrides root; project doesn't mention it.
@@ -129,26 +129,9 @@ describe('readSocketJsonCascade', () => {
       defaults: { manifest: { maven: { excludeConfigs: null } } },
     })
 
-    const result = readSocketJsonCascade(buildRoot, root, rootSockJson)
-    expect(mavenConfig(result)).toEqual({
+    expect(mavenConfig(readSocketJsonCascade(buildRoot))).toEqual({
       bin: 'mvn',
       excludeConfigs: null,
     })
-  })
-
-  it('does not walk past the boundary even if an ancestor above it has one', async () => {
-    await writeSocketJson(tmpdir(), {
-      version: 1,
-      defaults: { manifest: { maven: { javaHome: '/outside-scope' } } },
-    })
-    const buildRoot = path.join(root, 'project')
-    await fs.mkdir(buildRoot, { recursive: true })
-
-    try {
-      const result = readSocketJsonCascade(buildRoot, root, rootSockJson)
-      expect(result).toBe(rootSockJson)
-    } finally {
-      await fs.rm(path.join(tmpdir(), 'socket.json'), { force: true })
-    }
   })
 })

@@ -8,7 +8,10 @@ import {
   PURL_TYPE_BY_TOOL,
   buildToolLabelsFor,
 } from '../manifest/scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
+import {
+  DSI_SETTINGS_DOCS_URL,
+  DSI_SETUP_COMMAND,
+} from '../manifest/scripts/resolution-report-render.mts'
 import {
   hasSidecarEntries,
   serializeSidecar,
@@ -119,7 +122,12 @@ export async function runDynamicSbomInference({
   // matches handleManifestDynamicSbomInference's own check.
   if (outcomes.some(o => o.status === 'failed')) {
     throw new InputError(
-      'One or more independent build roots failed to generate Socket facts; aborting (see the errors above).',
+      [
+        'One or more independent build roots failed to generate Socket facts; aborting (see the errors above).',
+        '',
+        `- To fix a build's settings or skip it, run \`${DSI_SETUP_COMMAND}\`.`,
+        `- The settings are documented at ${DSI_SETTINGS_DOCS_URL}.`,
+      ].join('\n'),
     )
   }
   const factsPaths = outcomes

@@ -1,7 +1,10 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { findDotnetEntries } from './detect-manifest-actions.mts'
-import { realpathOrResolved } from './discover-manifest-roots.mts'
+import {
+  emptyMembership,
+  realpathOrResolved,
+} from './discover-manifest-roots.mts'
 import { buildUncoveredRoot } from './generate-recursive-manifests.mts'
 
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
@@ -39,7 +42,7 @@ export async function convertDotnetToFacts({
     return null
   }
   const dir = await realpathOrResolved(cwd)
-  const covered = new Set<string>()
+  const covered = emptyMembership()
   let last: RunManifestFactsOutcome
   for (const entry of entries) {
     // eslint-disable-next-line no-await-in-loop

@@ -74,7 +74,7 @@ describe('enumerateWorkspaces', () => {
     })
     expect(result).toBeUndefined()
     expect(enumerateWorkspacesScript).not.toHaveBeenCalled()
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBeUndefined()
   })
 
   it('leaves the environment untouched when javaHome is unset', async () => {
@@ -94,7 +94,7 @@ describe('enumerateWorkspaces', () => {
     })
     const result = await enumerateWorkspaces(baseArgs)
     expect(result).toBeUndefined()
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBeUndefined()
   })
 
   it('fails even on a clean exit if no workspace records were produced - every real run reports at least its own root project', async () => {
@@ -107,7 +107,7 @@ describe('enumerateWorkspaces', () => {
     })
     const result = await enumerateWorkspaces(baseArgs)
     expect(result).toBeUndefined()
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBeUndefined()
   })
 
   it('fails when the build did not report its build root', async () => {
@@ -117,6 +117,6 @@ describe('enumerateWorkspaces', () => {
     })
     const result = await enumerateWorkspaces(baseArgs)
     expect(result).toBeUndefined()
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBeUndefined()
   })
 })

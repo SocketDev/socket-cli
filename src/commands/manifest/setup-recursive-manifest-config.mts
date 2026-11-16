@@ -3,22 +3,34 @@ import path from 'node:path'
 
 import micromatch from 'micromatch'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import {
-  addCoveredBuildFiles,
+  createBuildRootSettingsResolver,
+  displayPath,
+  socketJsonPath,
+} from './build-root-config.mts'
+import {
+  addMembership,
   buildRootPath,
+  emptyMembership,
   findBuildToolCandidates,
-  isBuildRootCovered,
-  isRootCovered,
+  isBuildCovered,
+  isPathInside,
   realpathOrResolved,
   sortByDepthThenPath,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
-import { enumerateWorkspaces } from './enumerate-workspaces.mts'
-import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
-import { ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
+import {
+  buildToolScriptOptions,
+  resolveEcosystemConfig,
+} from './generate-recursive-manifests.mts'
+import { loadBuild, withModules } from './load-build.mts'
+import { BUILD_FILES, ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
+import { DSI_SETUP_COMMAND } from './scripts/resolution-report-render.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -29,20 +41,29 @@ import { SOCKET_JSON } from '../../constants.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import {
+  mergeSocketJsonChain,
   readOrDefaultSocketJson,
-  readSocketJsonCascade,
+  readSocketJsonChain,
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
-import type { BuildRoot } from './discover-manifest-roots.mts'
+import type {
+  DisabledBy,
+  ResolvedBuildRootSettings,
+} from './build-root-config.mts'
+import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
+import type { LoadedBuild } from './load-build.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
-import type { ManifestDefaults, SocketJson } from '../../utils/socket-json.mts'
+import type {
+  ManifestDefaults,
+  SocketJson,
+  SocketJsonInDir,
+} from '../../utils/socket-json.mts'
 
-// One prompt per directory, as settings are per directory; Maven may have
-// several POMs, so several roots, there.
+// The builds of one tool in one directory.
 type Candidate = { dir: string; ecosystem: BuildTool; roots: BuildRoot[] }
 
 const ROOT_ECOSYSTEMS: BuildTool[] = ['maven', 'gradle', 'sbt', 'dotnet']
@@ -94,7 +115,7 @@ function findExclusionRoot(
   return relDir
 }
 
-export type ScannedBuildRoots = {
+type ScannedBuildRoots = {
   fullByTool: Map<BuildTool, BuildRoot[]>
   includedByTool: Map<BuildTool, BuildRoot[]>
 }
@@ -119,8 +140,11 @@ export async function scanBuildRoots({
   return { fullByTool, includedByTool }
 }
 
-export type DiscoveredBuildRoots = {
+type DiscoveredBuildRoots = {
   excluded: ExclusionRoot[]
+  // Build files --exclude-paths matches in a directory whose other build files
+  // it does not match.
+  excludedBuilds: Array<{ ecosystem: BuildTool; root: BuildRoot }>
   // Every candidate --exclude-paths didn't rule out - these get the
   // interactive configure-or-inherit walk instead of a bulk write.
   included: Candidate[]
@@ -144,6 +168,7 @@ export async function discoverBuildRoots({
 }): Promise<DiscoveredBuildRoots> {
   const realCwd = await realpathOrResolved(cwd)
   const included: Candidate[] = []
+  const excludedBuilds: DiscoveredBuildRoots['excludedBuilds'] = []
   const ignorePatterns = (excludePaths ?? []).flatMap(excludePathToScanIgnores)
   const ecosystemsByRoot = new Map<string, Set<BuildTool>>()
   for (const [ecosystem, fullRoots] of fullByTool) {
@@ -175,12 +200,9 @@ export async function discoverBuildRoots({
       }
       if (includedRoots.length) {
         included.push({ dir, ecosystem, roots: includedRoots })
-        // `disabled` is per directory, so it cannot exclude one build file
-        // without its included siblings.
+        // A section's `disabled` would also skip the included siblings.
         for (const root of excludedRoots) {
-          logger.warn(
-            `Not disabling ${ecosystem} in ${relDir}: --exclude-paths matches ${buildRootPath(root)} but not the other build files there. Pass the same --exclude-paths to the scan instead.`,
-          )
+          excludedBuilds.push({ ecosystem, root })
         }
         continue
       }
@@ -197,130 +219,556 @@ export async function discoverBuildRoots({
       dir,
       ecosystems: [...ecosystems].sort(),
     })),
+    excludedBuilds,
     included,
   }
 }
 
-// Fails closed: without the members' build files, covered and independent
-// candidates can't be told apart. In order, as a root's enumeration can cover
-// the roots after it.
-export async function markWorkspaceCoverage({
-  covered,
-  cwd,
-  dir,
-  ecosystem,
-  excludePaths,
-  rootSockJson,
-  roots,
-}: {
-  covered: Set<string>
-  cwd: string
-  dir: string
-  ecosystem: BuildTool
-  excludePaths?: string[] | undefined
-  rootSockJson: SocketJson
-  roots: readonly BuildRoot[]
-}): Promise<CResult<undefined>> {
-  if (roots.every(root => isBuildRootCovered(covered, ecosystem, root))) {
-    return { ok: true, data: undefined }
-  }
-  const cascade = readSocketJsonCascade(dir, cwd, rootSockJson)
-  const { bin, buildOpts, javaHome, skipReason } = resolveEcosystemConfig(
-    ecosystem,
-    dir,
-    cascade,
-  )
-  if (skipReason) {
-    return { ok: true, data: undefined }
-  }
-
-  for (const root of roots) {
-    if (
-      // eslint-disable-next-line no-await-in-loop
-      await isRootCovered(covered, ecosystem, root, {
-        bin,
-        excludeBase: cwd,
-        excludePaths,
-        toolOpts: buildOpts,
-      })
-    ) {
-      continue
-    }
-    // eslint-disable-next-line no-await-in-loop
-    const enumResult = await enumerateWorkspaces({
-      bin,
-      buildOpts,
-      cwd: dir,
-      ecosystem,
-      entryFile: root.entryFile,
-      excludeBase: cwd,
-      excludePaths,
-      javaHome,
-      verbose: false,
-    })
-    if (!enumResult) {
-      const relRoot = path.relative(cwd, buildRootPath(root)) || '.'
-      return {
-        ok: false,
-        message: `Could not determine ${ecosystem} workspace layout for ${relRoot}; aborting rather than risk misclassifying its members.`,
-      }
-    }
-    // eslint-disable-next-line no-await-in-loop
-    await addCoveredBuildFiles(
-      covered,
-      ecosystem,
-      enumResult.buildRoot,
-      enumResult.projects,
-    )
-  }
-  return { ok: true, data: undefined }
+// Changes to socket.json files, kept until the user confirms them.
+type SettingsDraft = {
+  files: Map<string, SocketJson>
+  // What changed in each file, for the confirmation.
+  notes: Map<string, string[]>
+  // Resolves against the files as they are now; dropped on every change.
+  resolver: ResolveSettings | undefined
+  warned: Set<string>
 }
 
-// Marks one exclusion root's own socket.json `disabled: true` for whichever
-// of its ecosystems aren't already disabled via cascade (an already-disabled
-// ancestor from a prior run) - a no-op write is skipped entirely so re-running
-// the wizard doesn't keep rewriting already-disabled roots.
-export async function disableExclusionRoot({
-  cwd,
-  dir,
-  ecosystems,
-  rootSockJson,
-}: {
-  cwd: string
-  dir: string
-  ecosystems: readonly BuildTool[]
-  rootSockJson: SocketJson
-}): Promise<CResult<{ canceled: boolean }>> {
-  const relDir = path.relative(cwd, dir) || '.'
-  const cascade = readSocketJsonCascade(dir, cwd, rootSockJson)
-  const needsWrite = ecosystems.filter(
-    ecosystem => getEcosystemSection(cascade, ecosystem)['disabled'] !== true,
-  )
-  if (!needsWrite.length) {
-    return notCanceled()
-  }
+type ResolveSettings = (
+  tool: BuildTool,
+  root: BuildRoot,
+) => ResolvedBuildRootSettings
 
-  const ownSockJson = readOrDefaultSocketJson(dir)
-  if (!ownSockJson.defaults) {
-    ownSockJson.defaults = {}
+function createSettingsDraft(): SettingsDraft {
+  return {
+    files: new Map(),
+    notes: new Map(),
+    resolver: undefined,
+    warned: new Set(),
   }
-  if (!ownSockJson.defaults.manifest) {
-    ownSockJson.defaults.manifest = {}
+}
+
+function setDraftFile(
+  draft: SettingsDraft,
+  dir: string,
+  sockJson: SocketJson,
+): void {
+  draft.files.set(dir, sockJson)
+  draft.resolver = undefined
+}
+
+function cloneSocketJson(sockJson: SocketJson): SocketJson {
+  return JSON.parse(JSON.stringify(sockJson)) as SocketJson
+}
+
+// `dir`'s own socket.json as it will be written.
+function draftSettings(draft: SettingsDraft, dir: string): SocketJson {
+  return cloneSocketJson(draft.files.get(dir) ?? readOrDefaultSocketJson(dir))
+}
+
+function stageSettings(
+  draft: SettingsDraft,
+  dir: string,
+  sockJson: SocketJson,
+  note: string,
+): void {
+  setDraftFile(draft, dir, sockJson)
+  const notes = getOrInsert(draft.notes, dir, () => [])
+  if (!notes.includes(note)) {
+    notes.push(note)
   }
-  const manifest = ownSockJson.defaults.manifest as Record<string, unknown>
-  for (const ecosystem of needsWrite) {
-    manifest[ecosystem] = {
-      ...getEcosystemSection(ownSockJson, ecosystem),
-      disabled: true,
+}
+
+function manifestOf(sockJson: SocketJson): Record<string, unknown> {
+  if (!sockJson.defaults) {
+    sockJson.defaults = {}
+  }
+  if (!sockJson.defaults.manifest) {
+    sockJson.defaults.manifest = {}
+  }
+  return sockJson.defaults.manifest as Record<string, unknown>
+}
+
+// The socket.json files from the filesystem root down to `dir`, as they will
+// be written.
+function draftChain(draft: SettingsDraft, dir: string): SocketJsonInDir[] {
+  const byDir = new Map(
+    readSocketJsonChain(dir).map(file => [file.dir, file.sockJson]),
+  )
+  for (const { 0: fileDir, 1: sockJson } of draft.files) {
+    if (isPathInside(fileDir, dir)) {
+      byDir.set(fileDir, sockJson)
     }
   }
+  return [...byDir]
+    .sort((a, b) => a[0].length - b[0].length)
+    .map(({ 0: fileDir, 1: sockJson }) => ({ dir: fileDir, sockJson }))
+}
 
-  const writeResult = await writeSocketJson(dir, ownSockJson)
-  if (!writeResult.ok) {
-    return writeResult
+function draftCascade(draft: SettingsDraft, dir: string): SocketJson {
+  return mergeSocketJsonChain(draftChain(draft, dir))
+}
+
+function resolveDraftSettings(
+  draft: SettingsDraft,
+  ecosystem: BuildTool,
+  root: BuildRoot,
+): ResolvedBuildRootSettings {
+  draft.resolver ??= createBuildRootSettingsResolver(
+    dir => draftChain(draft, dir),
+    draft.warned,
+  )
+  return draft.resolver(ecosystem, root)
+}
+
+// "other build", or "3 other builds".
+function otherBuilds(count: number): string {
+  return count === 1 ? 'other build' : `${count} other builds`
+}
+
+function relPath(cwd: string, file: string): string {
+  return path.relative(cwd, file) || '.'
+}
+
+// One build of the walk; a directory holding several builds of one tool has
+// a prompt, and settings, per build file.
+type WalkBuild = { ecosystem: BuildTool; root: BuildRoot; sharesDir: boolean }
+
+type Walk = {
+  builds: WalkBuild[]
+  counts: {
+    configured: number
+    covered: number
+    inherited: number
+    skipped: number
   }
-  logger.success(`Disabled ${relDir} (${needsWrite.join(', ')})`)
+  // What the builds left in, and the skipped builds, load: neither is asked
+  // about again.
+  covered: Map<BuildTool, Membership>
+  cwd: string
+  decided: Set<string>
+  draft: SettingsDraft
+  excludePaths: string[] | undefined
+  skipped: Map<BuildTool, Membership>
+}
+
+function buildKey({ ecosystem, root }: WalkBuild): string {
+  return `${ecosystem}\0${buildRootPath(root)}`
+}
+
+function buildLabel(cwd: string, { ecosystem, root, sharesDir }: WalkBuild) {
+  return `${relPath(cwd, sharesDir ? buildRootPath(root) : root.dir)} (${ecosystem})`
+}
+
+// The build file a build's own `builds` entry is keyed by.
+function buildsKeyOf({ ecosystem, root }: WalkBuild): string {
+  const files = BUILD_FILES[ecosystem]
+  if (files.byFile) {
+    return root.entryFile ?? ''
+  }
+  return (
+    files.names.find(name => existsSync(path.join(root.dir, name))) ??
+    files.names[0]!
+  )
+}
+
+type BuildsEntries = Record<string, Record<string, unknown>>
+
+function membershipFor(
+  map: Map<BuildTool, Membership>,
+  ecosystem: BuildTool,
+): Membership {
+  return getOrInsert(map, ecosystem, emptyMembership)
+}
+
+function buildConfig(walk: Walk, { ecosystem, root }: WalkBuild) {
+  return resolveEcosystemConfig(
+    ecosystem,
+    root.dir,
+    resolveDraftSettings(walk.draft, ecosystem, root).sockJson,
+  )
+}
+
+// Whether a build `covered` stands for already loads `build`.
+async function isLoadedBy(
+  walk: Walk,
+  covered: Membership,
+  build: WalkBuild,
+): Promise<boolean> {
+  return await isBuildCovered(
+    covered,
+    build.ecosystem,
+    build.root,
+    buildToolScriptOptions(
+      buildConfig(walk, build),
+      walk.cwd,
+      walk.excludePaths,
+    ),
+  )
+}
+
+// Keeps only answers that differ from what the build would inherit; a
+// directory section also sets defaults for the builds beneath it.
+async function configureBuild(
+  draft: SettingsDraft,
+  cwd: string,
+  build: WalkBuild,
+): Promise<CResult<{ canceled: boolean }>> {
+  const { ecosystem, root, sharesDir } = build
+  const key = buildsKeyOf(build)
+  const own = draftSettings(draft, root.dir)
+  const manifest = manifestOf(own)
+  const builds = { ...(manifest['builds'] as BuildsEntries | undefined) }
+  const intoEntry = sharesDir || Object.hasOwn(builds, key)
+  const target: Record<string, unknown> = intoEntry
+    ? { ...builds[key] }
+    : { ...getEcosystemSection(own, ecosystem) }
+  const inherited = getEcosystemSection(
+    draftCascade(draft, intoEntry ? root.dir : path.dirname(root.dir)),
+    ecosystem,
+  )
+  const seed: Record<string, unknown> = {
+    ...getEcosystemSection(
+      resolveDraftSettings(draft, ecosystem, root).sockJson,
+      ecosystem,
+    ),
+  }
+
+  const result = await runEcosystemWizard(ecosystem, seed)
+  if (!result.ok || result.data.canceled) {
+    return result
+  }
+
+  const before = JSON.stringify(target)
+  for (const field of Object.keys(seed)) {
+    if (seed[field] === inherited[field]) {
+      delete target[field]
+    } else {
+      target[field] = seed[field]
+    }
+  }
+  const label = buildLabel(cwd, build)
+  if (JSON.stringify(target) === before) {
+    logger.log(`No changes for ${label}.`)
+    return notCanceled()
+  }
+  if (intoEntry) {
+    manifest['builds'] = { ...builds, [key]: target }
+    stageSettings(draft, root.dir, own, `configure ${key}`)
+  } else {
+    manifest[ecosystem] = target
+    stageSettings(draft, root.dir, own, `configure ${ecosystem} builds`)
+  }
+  logger.success(`Configured ${label}`)
   return notCanceled()
+}
+
+// Sets `disabled` for every `ecosystems` in `dir`'s section, so their builds
+// in and beneath it are skipped, unless the settings above already do.
+function disableDirectory(
+  draft: SettingsDraft,
+  dir: string,
+  ecosystems: readonly BuildTool[],
+): BuildTool[] {
+  const cascade = draftCascade(draft, dir)
+  const needed = ecosystems.filter(
+    ecosystem => getEcosystemSection(cascade, ecosystem)['disabled'] !== true,
+  )
+  if (needed.length) {
+    const own = draftSettings(draft, dir)
+    const manifest = manifestOf(own)
+    for (const ecosystem of needed) {
+      manifest[ecosystem] = {
+        ...getEcosystemSection(own, ecosystem),
+        disabled: true,
+      }
+    }
+    stageSettings(
+      draft,
+      dir,
+      own,
+      `skip ${needed.join(', ')} builds in and beneath it`,
+    )
+  }
+  return needed
+}
+
+// Skips just this build and what it loads, under its own build file.
+function disableBuild(draft: SettingsDraft, build: WalkBuild): void {
+  const { root } = build
+  const key = buildsKeyOf(build)
+  const own = draftSettings(draft, root.dir)
+  const manifest = manifestOf(own)
+  const builds = (manifest['builds'] ?? {}) as Record<
+    string,
+    Record<string, unknown>
+  >
+  if (builds[key]?.['disabled'] === true) {
+    return
+  }
+  manifest['builds'] = { ...builds, [key]: { ...builds[key], disabled: true } }
+  stageSettings(draft, root.dir, own, `skip ${key}`)
+}
+
+// Turns a skipped build back on at the setting that skipped it: dropping that
+// setting where nothing above skips the build too, else overriding it.
+function enableBuild(
+  draft: SettingsDraft,
+  build: WalkBuild,
+  disabledBy: DisabledBy,
+): void {
+  const { ecosystem, root } = build
+  const own = draftSettings(draft, disabledBy.dir)
+  const manifest = manifestOf(own)
+  const target = disabledBy.key
+    ? { ...(manifest['builds'] as BuildsEntries | undefined)?.[disabledBy.key] }
+    : getEcosystemSection(own, ecosystem)
+  delete target['disabled']
+  const place = (value: Record<string, unknown>) => {
+    if (disabledBy.key) {
+      manifest['builds'] = {
+        ...(manifest['builds'] as object),
+        [disabledBy.key]: value,
+      }
+    } else {
+      manifest[ecosystem] = value
+    }
+  }
+  place(target)
+  setDraftFile(draft, disabledBy.dir, own)
+  if (resolveDraftSettings(draft, ecosystem, root).disabledBy) {
+    place({ ...target, disabled: false })
+  }
+  stageSettings(
+    draft,
+    disabledBy.dir,
+    own,
+    disabledBy.key
+      ? `build ${disabledBy.key} again`
+      : `build ${ecosystem} builds here again`,
+  )
+}
+
+type CantLoadAction = 'configure' | 'directory' | 'stop'
+
+// The build tool could not load `build`. Fixing its settings comes first: a
+// build Socket can load is built once with its modules, and skips exactly.
+async function askCantLoad(
+  walk: Walk,
+  build: WalkBuild,
+  allowDirectory: boolean,
+): Promise<CantLoadAction | null> {
+  const label = buildLabel(walk.cwd, build)
+  const relDir = relPath(walk.cwd, build.root.dir)
+  const beneath = walk.builds.filter(
+    other =>
+      other !== build &&
+      isPathInside(build.root.dir, other.root.dir) &&
+      !walk.decided.has(buildKey(other)),
+  ).length
+  const skipNotes = [
+    ...(beneath
+      ? [
+          `Also skips the ${otherBuilds(beneath)} in and beneath ${relDir}/. To build one of them, run \`${DSI_SETUP_COMMAND}\` in its directory.`,
+        ]
+      : []),
+    `Modules of ${relPath(walk.cwd, buildRootPath(build.root))} outside ${relDir}/ can't be found without loading it, so they are asked about separately.`,
+  ]
+  return (await select({
+    message: `Socket could not load ${label} (see above). Builds Socket can load are built once with all their modules, and can be skipped without skipping the builds next to them. What should happen with it?`,
+    choices: [
+      {
+        name: 'Configure it and try again',
+        value: 'configure',
+        description: 'Set the JDK, build tool or options, then load it again',
+      },
+      allowDirectory
+        ? {
+            name: `Skip ${relDir}/ and everything beneath it, without loading it`,
+            value: 'directory',
+            description: skipNotes.join(' '),
+          }
+        : {
+            name: 'Go on without loading it',
+            value: 'directory',
+            description:
+              'The builds it would include are asked about separately',
+          },
+      { name: 'Stop', value: 'stop' },
+    ],
+    default: 'configure',
+  })) as CantLoadAction | null
+}
+
+type LoadOutcome = LoadedBuild | 'directory'
+
+// Loads `build`, and while that fails, asks how to go on.
+async function loadOrAsk(
+  walk: Walk,
+  build: WalkBuild,
+  allowDirectory = true,
+): Promise<CResult<{ canceled: boolean; loaded?: LoadOutcome | undefined }>> {
+  for (;;) {
+    // eslint-disable-next-line no-await-in-loop
+    const loaded = await loadBuild({
+      config: buildConfig(walk, build),
+      ecosystem: build.ecosystem,
+      excludePaths: walk.excludePaths,
+      root: build.root,
+      scanRoot: walk.cwd,
+      verbose: false,
+    })
+    if (loaded) {
+      return { ok: true, data: { canceled: false, loaded } }
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const action = await askCantLoad(walk, build, allowDirectory)
+    if (action === null || action === undefined) {
+      return canceledByUser()
+    }
+    if (action === 'stop') {
+      return {
+        ok: false,
+        message: `Stopped: Socket could not load ${buildLabel(walk.cwd, build)}.`,
+      }
+    }
+    if (action === 'directory') {
+      return { ok: true, data: { canceled: false, loaded: 'directory' } }
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const configured = await configureBuild(walk.draft, walk.cwd, build)
+    if (!configured.ok || configured.data.canceled) {
+      return configured
+    }
+  }
+}
+
+// Skips `build`'s directory and everything beneath it, unasked.
+function skipDirectory(walk: Walk, build: WalkBuild): void {
+  const beneath = walk.builds.filter(
+    other => other !== build && isPathInside(build.root.dir, other.root.dir),
+  )
+  disableDirectory(walk.draft, build.root.dir, [
+    ...new Set([build.ecosystem, ...beneath.map(other => other.ecosystem)]),
+  ])
+  for (const other of [build, ...beneath]) {
+    if (!walk.decided.has(buildKey(other))) {
+      walk.decided.add(buildKey(other))
+      walk.counts.skipped += 1
+    }
+  }
+  logger.success(
+    `Skipped ${relPath(walk.cwd, build.root.dir)}/ and everything beneath it.`,
+  )
+}
+
+// A scan skips the modules of a build skipped under its own name, so the
+// wizard doesn't ask about them either.
+async function loadInto(
+  walk: Walk,
+  build: WalkBuild,
+  into: 'covered' | 'skipped',
+  { allowDirectory = true, announce = true } = {},
+): Promise<CResult<{ canceled: boolean }>> {
+  const result = await loadOrAsk(walk, build, allowDirectory)
+  if (!result.ok || result.data.canceled) {
+    return result
+  }
+  const { loaded } = result.data
+  if (loaded === 'directory') {
+    if (allowDirectory) {
+      skipDirectory(walk, build)
+    }
+  } else if (loaded) {
+    addMembership(membershipFor(walk[into], build.ecosystem), loaded.membership)
+    if (into === 'skipped') {
+      disableBuild(walk.draft, build)
+      walk.counts.skipped += 1
+      if (announce) {
+        logger.success(
+          `Skipped ${withModules(relPath(walk.cwd, buildRootPath(build.root)), loaded.modules)}.`,
+        )
+      }
+    }
+  }
+  return notCanceled()
+}
+
+type BuildAction = 'configure' | 'inherit' | 'skip'
+
+async function askBuildAction(label: string): Promise<BuildAction | null> {
+  return (await select({
+    message: label,
+    choices: [
+      {
+        name: 'Leave as-is',
+        value: 'inherit',
+        description: 'Build it with its current settings',
+      },
+      {
+        name: 'Configure',
+        value: 'configure',
+        description: 'Set the JDK, build tool or options for it',
+      },
+      {
+        name: 'Skip',
+        value: 'skip',
+        description: "Don't build it or its modules",
+      },
+    ],
+    default: 'inherit',
+  })) as BuildAction | null
+}
+
+async function reviewBuild(
+  walk: Walk,
+  build: WalkBuild,
+): Promise<CResult<{ canceled: boolean }>> {
+  walk.decided.add(buildKey(build))
+  const label = buildLabel(walk.cwd, build)
+  const { disabledBy } = resolveDraftSettings(
+    walk.draft,
+    build.ecosystem,
+    build.root,
+  )
+  if (disabledBy) {
+    // A directory skip from above covers this build silently; the setting
+    // that names this build or its directory is offered back.
+    if (!disabledBy.key && disabledBy.dir !== build.root.dir) {
+      walk.counts.skipped += 1
+      return notCanceled()
+    }
+    const again = await askYesNo(`${label} is skipped. Build it again?`)
+    if (again === null || again === undefined) {
+      return canceledByUser()
+    }
+    if (!again) {
+      if (disabledBy.key) {
+        return await loadInto(walk, build, 'skipped', { announce: false })
+      }
+      walk.counts.skipped += 1
+      return notCanceled()
+    }
+    enableBuild(walk.draft, build, disabledBy)
+  }
+
+  const action = await askBuildAction(label)
+  if (action === null || action === undefined) {
+    return canceledByUser()
+  }
+  if (action === 'skip') {
+    return await loadInto(walk, build, 'skipped')
+  }
+  if (action === 'configure') {
+    const configured = await configureBuild(walk.draft, walk.cwd, build)
+    if (!configured.ok || configured.data.canceled) {
+      return configured
+    }
+    walk.counts.configured += 1
+  } else {
+    walk.counts.inherited += 1
+  }
+  return await loadInto(walk, build, 'covered')
 }
 
 // Dispatches to the right ecosystem-specific wizard. `factsOnly` skips the
@@ -346,235 +794,8 @@ async function runEcosystemWizard(
   return await setupSbt(config as ManifestDefaults<'sbt'>, { factsOnly: true })
 }
 
-// Seeds the wizard with this candidate's effective (cascaded) value for any
-// field its own file doesn't already set, so accepting every prompt
-// unchanged preserves what it currently inherits, while an actual change
-// writes an explicit override.
-export async function configureCandidate({
-  cwd,
-  dir,
-  ecosystem,
-  rootSockJson,
-}: {
-  cwd: string
-  dir: string
-  ecosystem: BuildTool
-  rootSockJson: SocketJson
-}): Promise<CResult<{ canceled: boolean }>> {
-  const relDir = path.relative(cwd, dir) || '.'
-  const ownSockJson = readOrDefaultSocketJson(dir)
-  if (!ownSockJson.defaults) {
-    ownSockJson.defaults = {}
-  }
-  if (!ownSockJson.defaults.manifest) {
-    ownSockJson.defaults.manifest = {}
-  }
-
-  // Ancestor-only baseline (excludes dir's own file, unlike the cascade below)
-  // so a field left exactly as shown can be told apart from one the user
-  // actually set - otherwise every accepted default gets written verbatim,
-  // permanently pinning it against future changes to an ancestor's value.
-  const inherited = getEcosystemSection(
-    readSocketJsonCascade(path.dirname(dir), cwd, rootSockJson),
-    ecosystem,
-  )
-  const cascade = readSocketJsonCascade(dir, cwd, rootSockJson)
-  const seed: Record<string, unknown> = {
-    ...getEcosystemSection(cascade, ecosystem),
-    ...getEcosystemSection(ownSockJson, ecosystem),
-  }
-
-  const result = await runEcosystemWizard(ecosystem, seed)
-  if (!result.ok || result.data.canceled) {
-    return result
-  }
-
-  const toWrite: Record<string, unknown> = {}
-  for (const key of Object.keys(seed)) {
-    if (seed[key] !== inherited[key]) {
-      toWrite[key] = seed[key]
-    }
-  }
-  // Every field equals what dir would already inherit - writing it would just
-  // be noise (own file unaffected, dir keeps inheriting exactly as before).
-  if (!Object.keys(toWrite).length) {
-    logger.log(`No changes for ${relDir} (${ecosystem}); nothing written.`)
-    return notCanceled()
-  }
-
-  const manifest = ownSockJson.defaults.manifest as Record<string, unknown>
-  manifest[ecosystem] = toWrite
-
-  const writeResult = await writeSocketJson(dir, ownSockJson)
-  if (!writeResult.ok) {
-    return writeResult
-  }
-  logger.success(`Configured ${relDir} (${ecosystem})`)
-  return notCanceled()
-}
-
-type CandidateAction = 'configure' | 'inherit'
-
-// No disable choice here - that's --exclude-paths' job (see
-// findExclusionRoot), so a whole subtree still collapses to one write
-// instead of one per candidate.
-async function askCandidateAction(
-  relDir: string,
-  ecosystem: BuildTool,
-): Promise<CandidateAction | null> {
-  return (await select({
-    message: `${relDir} (${ecosystem})`,
-    choices: [
-      {
-        name: 'Leave as-is',
-        value: 'inherit',
-        description:
-          "Make no change - keep this project's current effective configuration",
-      },
-      {
-        name: 'Configure',
-        value: 'configure',
-        description: 'Set bin/JDK/opts/etc. for this project specifically',
-      },
-    ],
-    default: 'inherit',
-  })) as CandidateAction | null
-}
-
-type CandidateOutcome = 'configured' | 'inherited' | 'skipped'
-
-// Asks the standard configure-or-leave-as-is question and applies the
-// answer. Shared by the normal path and the post-re-enable path below, so
-// re-enabling a candidate isn't a dead end that skips straight past its own
-// bin/JDK/opts configuration.
-async function askAndApplyAction({
-  cwd,
-  dir,
-  ecosystem,
-  relDir,
-  rootSockJson,
-}: {
-  cwd: string
-  dir: string
-  ecosystem: BuildTool
-  relDir: string
-  rootSockJson: SocketJson
-}): Promise<
-  CResult<{ canceled: boolean; outcome: 'configured' | 'inherited' }>
-> {
-  const action = await askCandidateAction(relDir, ecosystem)
-  if (action === undefined || action === null) {
-    canceledByUser()
-    return { ok: true, data: { canceled: true, outcome: 'inherited' } }
-  }
-  if (action === 'configure') {
-    const result = await configureCandidate({
-      cwd,
-      dir,
-      ecosystem,
-      rootSockJson,
-    })
-    if (!result.ok) {
-      return result
-    }
-    return { ok: true, data: { ...result.data, outcome: 'configured' } }
-  }
-  // 'inherit', or any unexpected value - the safe no-op default.
-  return { ok: true, data: { canceled: false, outcome: 'inherited' } }
-}
-
-// Prompts for configure/inherit, unless the cascade shows the candidate
-// disabled: offer to re-enable if that's its own file, then continue into
-// the normal prompt; stay silent if it's only inherited from an ancestor's
-// bulk write (that's noise for a large excluded subtree).
-export async function processCandidate({
-  cwd,
-  dir,
-  ecosystem,
-  rootSockJson,
-}: {
-  cwd: string
-  dir: string
-  ecosystem: BuildTool
-  rootSockJson: SocketJson
-}): Promise<
-  CResult<{ canceled: boolean; outcome: CandidateOutcome; reenabled: boolean }>
-> {
-  const relDir = path.relative(cwd, dir) || '.'
-  const cascade = readSocketJsonCascade(dir, cwd, rootSockJson)
-  if (getEcosystemSection(cascade, ecosystem)['disabled'] === true) {
-    const ownSockJson = readOrDefaultSocketJson(dir)
-    if (getEcosystemSection(ownSockJson, ecosystem)['disabled'] !== true) {
-      // Inherited from an ancestor, not this candidate's own file - stay silent.
-      return {
-        ok: true,
-        data: { canceled: false, outcome: 'skipped', reenabled: false },
-      }
-    }
-
-    const wantsReenable = await askYesNo(
-      `${relDir} (${ecosystem}) is disabled - re-enable it?`,
-    )
-    if (wantsReenable === undefined || wantsReenable === null) {
-      canceledByUser()
-      return {
-        ok: true,
-        data: { canceled: true, outcome: 'skipped', reenabled: false },
-      }
-    }
-    if (!wantsReenable) {
-      return {
-        ok: true,
-        data: { canceled: false, outcome: 'skipped', reenabled: false },
-      }
-    }
-    if (!ownSockJson.defaults) {
-      ownSockJson.defaults = {}
-    }
-    if (!ownSockJson.defaults.manifest) {
-      ownSockJson.defaults.manifest = {}
-    }
-    const manifest = ownSockJson.defaults.manifest as Record<string, unknown>
-    manifest[ecosystem] = {
-      ...getEcosystemSection(ownSockJson, ecosystem),
-      disabled: false,
-    }
-    const writeResult = await writeSocketJson(dir, ownSockJson)
-    if (!writeResult.ok) {
-      return writeResult
-    }
-    logger.success(`Re-enabled ${relDir} (${ecosystem})`)
-
-    const result = await askAndApplyAction({
-      cwd,
-      dir,
-      ecosystem,
-      relDir,
-      rootSockJson,
-    })
-    if (!result.ok) {
-      return result
-    }
-    return { ok: true, data: { ...result.data, reenabled: true } }
-  }
-
-  const result = await askAndApplyAction({
-    cwd,
-    dir,
-    ecosystem,
-    relDir,
-    rootSockJson,
-  })
-  if (!result.ok) {
-    return result
-  }
-  return { ok: true, data: { ...result.data, reenabled: false } }
-}
-
-// Accepting every prompt's default leaves an ecosystem's section genuinely
-// empty (see askForBin in setup-manifest-config.mts) - drop it so
-// `configuredAny` reflects what was actually configured, not just which
-// ecosystems the user said "yes" to.
+// Accepting every prompt's default leaves an ecosystem's section empty (see
+// askForBin in setup-manifest-config.mts); an empty one changes nothing.
 function dropIfEmpty(
   manifest: Record<string, unknown>,
   ecosystem: BuildTool,
@@ -597,70 +818,38 @@ async function askYesNo(message: string): Promise<boolean | null> {
   })) as boolean | null
 }
 
-// Unlike the plain single-project wizard, cwd here is often just a common
-// ancestor - so `ecosystemsAtCwd` (a subset of `ecosystems`) picks the
-// wording: cwd's own build root gets "configure this project's settings",
-// everything else gets "configure defaults for nested projects". A
-// pre-existing `disabled: true` gets a re-enable question first, otherwise
-// there'd be no way back from a prior disable. Declining everything is
-// normal, not an abort.
-async function setupRecursiveRootDefaults(
+// Defaults for the build at cwd and the builds beneath it. A skip that applies
+// here, from this directory's socket.json or one above it, is offered back
+// first.
+async function setupRootDefaults(
+  draft: SettingsDraft,
   cwd: string,
-  defaultOnReadError: boolean,
   ecosystems: readonly BuildTool[],
   ecosystemsAtCwd: readonly BuildTool[],
 ): Promise<CResult<{ canceled: boolean }>> {
-  const jsonPath = path.join(cwd, SOCKET_JSON)
-  if (existsSync(jsonPath)) {
-    logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
-  } else {
-    logger.info(`No ${SOCKET_JSON} found at ${cwd}, will generate a new one`)
-  }
-
-  logger.log('')
-  logger.log(
-    'Note: This tool will set up flag and argument defaults for certain',
-  )
-  logger.log('      CLI commands. You can still override them by explicitly')
-  logger.log('      setting the flag.')
-  logger.log('')
-  logger.log(`This command will generate a ${SOCKET_JSON} file in ${cwd}.`)
-  logger.log('socket.json properties are inherited by nested paths.')
-  logger.log('')
-
-  const sockJsonCResult = readSocketJsonSync(cwd, defaultOnReadError)
-  if (!sockJsonCResult.ok) {
-    return sockJsonCResult
-  }
-  const sockJson = sockJsonCResult.data
-  if (!sockJson.defaults) {
-    sockJson.defaults = {}
-  }
-  if (!sockJson.defaults.manifest) {
-    sockJson.defaults.manifest = {}
-  }
-  const manifest = sockJson.defaults.manifest as Record<string, unknown>
-
-  let configuredAny = false
-
   for (const ecosystem of ecosystems) {
     const label = ECOSYSTEM_LABELS[ecosystem]
-    const existingSection = manifest[ecosystem] as
-      | Record<string, unknown>
-      | undefined
-    if (existingSection?.['disabled'] === true) {
+    const { disabledBy } = resolveDraftSettings(draft, ecosystem, { dir: cwd })
+    if (disabledBy && !disabledBy.key) {
+      const where =
+        disabledBy.dir === cwd
+          ? `${label} builds here are skipped.`
+          : `${socketJsonPath(disabledBy.dir)} skips ${label} builds in and beneath ${displayPath(disabledBy.dir)}, including this directory.`
       // eslint-disable-next-line no-await-in-loop
-      const wantsReenable = await askYesNo(
-        `${label} is currently disabled here - re-enable it?`,
-      )
-      if (wantsReenable === undefined || wantsReenable === null) {
+      const again = await askYesNo(`${where} Build the ${label} projects here?`)
+      if (again === null || again === undefined) {
         return canceledByUser()
       }
-      if (!wantsReenable) {
+      if (!again) {
         continue
       }
-      existingSection['disabled'] = false
-      configuredAny = true
+      const own = draftSettings(draft, cwd)
+      const manifest = manifestOf(own)
+      manifest[ecosystem] = {
+        ...getEcosystemSection(own, ecosystem),
+        disabled: false,
+      }
+      stageSettings(draft, cwd, own, `build ${label} projects here again`)
     }
 
     const message = ecosystemsAtCwd.includes(ecosystem)
@@ -674,48 +863,59 @@ async function setupRecursiveRootDefaults(
     if (!wants) {
       continue
     }
-    if (!manifest[ecosystem]) {
-      manifest[ecosystem] = {}
-    }
+    const own = draftSettings(draft, cwd)
+    const manifest = manifestOf(own)
+    const section = { ...getEcosystemSection(own, ecosystem) }
+    manifest[ecosystem] = section
     // eslint-disable-next-line no-await-in-loop
-    const result = await runEcosystemWizard(
-      ecosystem,
-      manifest[ecosystem] as Record<string, unknown>,
-    )
+    const result = await runEcosystemWizard(ecosystem, section)
     if (!result.ok || result.data.canceled) {
       return result
     }
     if (dropIfEmpty(manifest, ecosystem)) {
-      configuredAny = true
+      stageSettings(draft, cwd, own, `configure ${label} defaults`)
     }
-  }
-
-  if (!configuredAny) {
-    logger.log('')
-    logger.log('No root-level defaults configured.')
-    return notCanceled()
-  }
-
-  logger.log('')
-  logger.log(`Writing ${SOCKET_JSON} to ${jsonPath}`)
-  logger.log('')
-
-  const writeResult = await writeSocketJson(cwd, sockJson)
-  if (!writeResult.ok) {
-    return writeResult
   }
   return notCanceled()
 }
 
-// `socket manifest setup --dynamic-sbom-inference`: the up-front scan (see
-// scanBuildRoots) only ever answers "which build tools exist", never "which
-// projects to configure". `--exclude-paths` matches are bulk-disabled
-// unconditionally, independent of the interactive walk below, so re-running
-// later with one more entry (or none) never re-answers settled decisions.
-// Everything else gets a configure-or-inherit prompt (see processCandidate),
-// except a workspace member a parent build already declares - learned via
-// markWorkspaceCoverage right after the parent's own prompt, not a separate
-// bulk pass, so a reactor member is silently skipped instead of prompted.
+async function confirmAndWrite(
+  draft: SettingsDraft,
+  cwd: string,
+): Promise<CResult<{ canceled: boolean }>> {
+  if (!draft.files.size) {
+    logger.log('Nothing to write: no settings changed.')
+    return notCanceled()
+  }
+  const dirs = [...draft.files.keys()].sort()
+  const files = dirs.map(dir => relPath(cwd, path.join(dir, SOCKET_JSON)))
+  const width = Math.max(...files.map(file => file.length))
+  logger.log(`Ready to write ${dirs.length} ${pluralize('file', dirs.length)}:`)
+  for (const { 0: index, 1: dir } of dirs.entries()) {
+    logger.log(
+      `  ${files[index]!.padEnd(width)}   ${(draft.notes.get(dir) ?? []).join('; ')}`,
+    )
+  }
+  const write = await askYesNo(dirs.length === 1 ? 'Write it?' : 'Write them?')
+  if (write === null || write === undefined) {
+    return canceledByUser()
+  }
+  if (!write) {
+    logger.log('Nothing written.')
+    return notCanceled()
+  }
+  for (const dir of dirs) {
+    // eslint-disable-next-line no-await-in-loop
+    const result = await writeSocketJson(dir, draft.files.get(dir)!)
+    if (!result.ok) {
+      return result
+    }
+  }
+  logger.success(`Wrote ${joinAnd(files)}`)
+  return notCanceled()
+}
+
+// Nothing is written until the user confirms the draft.
 export async function setupRecursiveManifestConfig(
   cwd: string,
   defaultOnReadError: boolean,
@@ -724,10 +924,11 @@ export async function setupRecursiveManifestConfig(
   logger.log('')
   logger.log(`Configuring ${cwd} ...`)
 
-  const initialSockJson = readOrDefaultSocketJson(cwd)
-  // Resolved once here for sortByDepthThenPath/disableExclusionRoot's
-  // relative-path math, consistent with discoverBuildRoots' own internal
-  // resolution (see its comment for why this matters).
+  const ownRead = readSocketJsonSync(cwd, defaultOnReadError)
+  if (!ownRead.ok) {
+    return ownRead
+  }
+  // Candidate dirs come back realpath-resolved; cwd must match.
   const realCwd = await realpathOrResolved(cwd)
 
   logger.log('')
@@ -735,11 +936,10 @@ export async function setupRecursiveManifestConfig(
   const { fullByTool, includedByTool } = await scanBuildRoots({
     cwd,
     excludePaths,
-    sockJson: withoutDisabledFlags(initialSockJson),
+    sockJson: withoutDisabledFlags(ownRead.data),
   })
-  // includedByTool (not the unfiltered fullByTool), so an ecosystem whose
-  // only candidate is about to be excluded this same run isn't offered
-  // either - there'd be nothing left for its root defaults to apply to.
+  // includedByTool, so an ecosystem whose only builds --exclude-paths
+  // excludes isn't offered.
   const detectedEcosystems = ROOT_ECOSYSTEMS.filter(
     ecosystem => (includedByTool.get(ecosystem)?.length ?? 0) > 0,
   )
@@ -751,10 +951,7 @@ export async function setupRecursiveManifestConfig(
     logger.log(
       `No Gradle, Maven, sbt or .NET build roots found beneath ${cwd}.`,
     )
-    // Distinct from "found some, but --exclude-paths excluded them all" -
-    // that's a deliberate choice and setup still proceeds normally below.
-    // Zero build roots anywhere means --dynamic-sbom-inference doesn't apply
-    // to this target at all, so fail rather than silently do nothing.
+    // Builds that --exclude-paths excludes are a choice, not an absence.
     const hasAnyBuildRoot = ROOT_ECOSYSTEMS.some(
       ecosystem => (fullByTool.get(ecosystem)?.length ?? 0) > 0,
     )
@@ -768,172 +965,126 @@ export async function setupRecursiveManifestConfig(
   }
   logger.log('')
 
-  // Which detected ecosystems cwd is itself a build root for - see
-  // setupRecursiveRootDefaults' wording split.
-  const ecosystemsAtCwd = ROOT_ECOSYSTEMS.filter(ecosystem =>
-    (fullByTool.get(ecosystem) ?? []).some(root => root.dir === realCwd),
-  )
-
-  const rootResult = await setupRecursiveRootDefaults(
-    cwd,
-    defaultOnReadError,
+  const draft = createSettingsDraft()
+  const atCwd = (ecosystem: BuildTool) =>
+    (includedByTool.get(ecosystem) ?? []).filter(root => root.dir === realCwd)
+  const rootResult = await setupRootDefaults(
+    draft,
+    realCwd,
     detectedEcosystems,
-    ecosystemsAtCwd,
+    ROOT_ECOSYSTEMS.filter(ecosystem => atCwd(ecosystem).length),
   )
-  if (!rootResult.ok) {
+  if (!rootResult.ok || rootResult.data.canceled) {
     return rootResult
   }
-  if (rootResult.data.canceled) {
-    return canceledByUser()
-  }
 
-  // Re-read: the root wizard may have just written a new socket.json.
-  const rootSockJson = readOrDefaultSocketJson(cwd)
-  const { excluded, included } = await discoverBuildRoots({
+  const { excluded, excludedBuilds, included } = await discoverBuildRoots({
     cwd,
     excludePaths,
     fullByTool,
     includedByTool,
   })
+  for (const { ecosystem, root } of excludedBuilds) {
+    disableBuild(draft, { ecosystem, root, sharesDir: true })
+  }
+  for (const { dir, ecosystems } of sortByDepthThenPath(excluded, realCwd)) {
+    disableDirectory(draft, dir, ecosystems)
+  }
+  if (excludePaths?.length && !excluded.length && !excludedBuilds.length) {
+    logger.log('None matched --exclude-paths; nothing skipped.')
+  }
 
-  // Applies regardless of the interactive walk below - see the module doc
-  // comment on why --exclude-paths is unconditional.
-  if (excludePaths?.length) {
-    if (!excluded.length) {
-      logger.log('None matched --exclude-paths; nothing disabled.')
-    } else {
-      const orderedExcluded = sortByDepthThenPath(excluded, realCwd)
-      for (const candidate of orderedExcluded) {
+  const builds: WalkBuild[] = sortByDepthThenPath(included, realCwd).flatMap(
+    ({ ecosystem, roots }) =>
+      sortByDepthThenPath(roots, realCwd, ecosystem).map(root => ({
+        ecosystem,
+        root,
+        sharesDir: roots.length > 1,
+      })),
+  )
+  const walk: Walk = {
+    builds,
+    counts: { configured: 0, covered: 0, inherited: 0, skipped: 0 },
+    covered: new Map(),
+    cwd: realCwd,
+    decided: new Set(),
+    draft,
+    excludePaths,
+    skipped: new Map(),
+  }
+
+  if (builds.length) {
+    logger.log('')
+    const review = await askYesNo(
+      `Review the ${otherBuilds(builds.length)} found beneath this one?`,
+    )
+    if (review === null || review === undefined) {
+      return canceledByUser()
+    }
+    if (review) {
+      // What the builds at cwd include isn't asked about.
+      for (const ecosystem of ROOT_ECOSYSTEMS) {
+        const roots = atCwd(ecosystem)
+        for (const root of roots) {
+          const build = { ecosystem, root, sharesDir: roots.length > 1 }
+          const { disabledBy } = resolveDraftSettings(draft, ecosystem, root)
+          if (disabledBy && !disabledBy.key) {
+            continue
+          }
+          // eslint-disable-next-line no-await-in-loop
+          const result = await loadInto(
+            walk,
+            build,
+            disabledBy ? 'skipped' : 'covered',
+            { allowDirectory: false, announce: false },
+          )
+          if (!result.ok || result.data.canceled) {
+            return result
+          }
+        }
+      }
+      for (const build of builds) {
+        if (walk.decided.has(buildKey(build))) {
+          continue
+        }
+        let loaded = false
+        for (const into of ['covered', 'skipped'] as const) {
+          if (
+            !loaded &&
+            // eslint-disable-next-line no-await-in-loop
+            (await isLoadedBy(
+              walk,
+              membershipFor(walk[into], build.ecosystem),
+              build,
+            ))
+          ) {
+            loaded = true
+            walk.decided.add(buildKey(build))
+            walk.counts[into] += 1
+          }
+        }
+        if (loaded) {
+          continue
+        }
         // eslint-disable-next-line no-await-in-loop
-        const result = await disableExclusionRoot({
-          cwd: realCwd,
-          dir: candidate.dir,
-          ecosystems: candidate.ecosystems,
-          rootSockJson,
-        })
-        if (!result.ok) {
+        const result = await reviewBuild(walk, build)
+        if (!result.ok || result.data.canceled) {
           return result
         }
       }
-    }
-  }
-
-  if (!included.length) {
-    logger.log('')
-    logger.success('Recursive setup complete.')
-    return notCanceled()
-  }
-
-  logger.log('')
-  const wantsIndividual = await askYesNo(
-    'Configure other build roots found beneath this one, individually?',
-  )
-  if (wantsIndividual === undefined || wantsIndividual === null) {
-    return canceledByUser()
-  }
-  if (!wantsIndividual) {
-    logger.log('')
-    logger.success('Recursive setup complete.')
-    return notCanceled()
-  }
-
-  logger.log('')
-  logger.log(
-    'For each one, choose to configure it or leave it as-is. To disable one,',
-  )
-  logger.log('re-run with --exclude-paths instead.')
-  logger.log('')
-
-  // Per tool: a solution counts as covered only by .NET projects.
-  const coveredByTool = new Map<BuildTool, Set<string>>()
-  const coveredFor = (ecosystem: BuildTool) =>
-    getOrInsert(coveredByTool, ecosystem, () => new Set())
-  // cwd never appears in `included`, but a reactor root often sits exactly
-  // at cwd - seed coverage from it first so its declared members still get
-  // recognized.
-  for (const ecosystem of ROOT_ECOSYSTEMS) {
-    // eslint-disable-next-line no-await-in-loop
-    const coverageResult = await markWorkspaceCoverage({
-      covered: coveredFor(ecosystem),
-      cwd: realCwd,
-      dir: realCwd,
-      ecosystem,
-      excludePaths,
-      rootSockJson,
-      roots: (includedByTool.get(ecosystem) ?? []).filter(
-        root => root.dir === realCwd,
-      ),
-    })
-    if (!coverageResult.ok) {
-      return coverageResult
-    }
-  }
-
-  const counts = {
-    configured: 0,
-    covered: 0,
-    inherited: 0,
-    reenabled: 0,
-    skipped: 0,
-  }
-  // A parent is prompted before its children, so a child's shown default
-  // reflects the parent's just-written cascade.
-  const orderedIncluded = sortByDepthThenPath(included, realCwd)
-  for (const candidate of orderedIncluded) {
-    const { ecosystem } = candidate
-    if (
-      candidate.roots.every(root =>
-        isBuildRootCovered(coveredFor(ecosystem), ecosystem, root),
+      const { configured, covered, inherited, skipped } = walk.counts
+      logger.log('')
+      logger.log(
+        `${configured} configured, ${inherited} left as-is, ${skipped} skipped, ${covered} part of another build.`,
       )
-    ) {
-      counts.covered += 1
-      continue
-    }
-
-    // eslint-disable-next-line no-await-in-loop
-    const result = await processCandidate({
-      cwd: realCwd,
-      dir: candidate.dir,
-      ecosystem,
-      rootSockJson,
-    })
-    if (!result.ok) {
-      return result
-    }
-    if (result.data.canceled) {
-      // The cancellation itself (select Esc/Ctrl+C, or a sub-wizard's own
-      // cancel) already logged "User canceled" - don't log it twice.
-      return { ok: true, data: { canceled: true } }
-    }
-    counts[result.data.outcome] += 1
-    if (result.data.reenabled) {
-      // A qualifier on the 'configured'/'inherited' bucket just incremented
-      // above, not a separate bucket - avoids double-counting the candidate.
-      counts.reenabled += 1
-    }
-
-    // Interleaved rather than a bulk pre-pass, so this (possibly slow)
-    // build-tool invocation only runs for a project already prompted about.
-    // eslint-disable-next-line no-await-in-loop
-    const coverageResult = await markWorkspaceCoverage({
-      covered: coveredFor(ecosystem),
-      cwd: realCwd,
-      dir: candidate.dir,
-      ecosystem,
-      excludePaths,
-      rootSockJson,
-      roots: candidate.roots,
-    })
-    if (!coverageResult.ok) {
-      return coverageResult
     }
   }
 
   logger.log('')
-  logger.log(
-    `${counts.configured} configured (${counts.reenabled} re-enabled), ${counts.inherited} left as-is, ${counts.skipped} left disabled, ${counts.covered} covered by a parent build.`,
-  )
-
+  const written = await confirmAndWrite(draft, realCwd)
+  if (!written.ok || written.data.canceled) {
+    return written
+  }
   logger.log('')
   logger.success('Recursive setup complete.')
   return notCanceled()

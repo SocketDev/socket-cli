@@ -14,6 +14,7 @@ import {
 } from './scripts/build-tool.mts'
 import { listDotnetEntryProjects } from './scripts/run.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
+import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
@@ -98,51 +99,108 @@ async function realFilePath(file: string): Promise<string> {
   )
 }
 
-// Gradle reports a project's build file even when absent, which covers
-// nothing. A sibling outside the build root is independently locatable,
-// unless its projects resolve alone.
-export async function addCoveredBuildFiles(
-  covered: Set<string>,
-  tool: BuildTool,
-  buildRoot: string,
-  projects: readonly SocketFactsSbomProject[],
-): Promise<void> {
-  const buildFiles = BUILD_FILES[tool]
-  const anywhere = buildFiles.byFile && !!buildFiles.projectsResolveAlone
-  const realBuildRoot = await realpathOrResolved(buildRoot)
-  const files = await Promise.all(
-    projects
-      .flatMap(project => project.manifestFiles ?? [])
-      .map(({ file }) => realFilePath(path.resolve(buildRoot, file))),
-  )
-  for (const file of files) {
-    if (
-      (anywhere || file.startsWith(`${realBuildRoot}${path.sep}`)) &&
-      existsSync(file)
-    ) {
-      covered.add(file)
-    }
+// What a build loaded: its projects' directories and build files,
+// realpath-resolved. Gradle reports a project's build file even when absent,
+// which names nothing.
+export type Membership = { dirs: Set<string>; files: Set<string> }
+
+export function emptyMembership(): Membership {
+  return { dirs: new Set(), files: new Set() }
+}
+
+export function addMembership(into: Membership, from: Membership): void {
+  for (const dir of from.dirs) {
+    into.dirs.add(dir)
+  }
+  for (const file of from.files) {
+    into.files.add(file)
   }
 }
 
-// `root.dir` must be realpath-resolved, as findBuildToolCandidates returns it.
+export function unionMemberships(
+  memberships: Iterable<Membership>,
+): Membership {
+  const union = emptyMembership()
+  for (const membership of memberships) {
+    addMembership(union, membership)
+  }
+  return union
+}
+
+export function isPathInside(dir: string, file: string): boolean {
+  return file === dir || file.startsWith(`${dir}${path.sep}`)
+}
+
+// Paths are relative to `buildRoot`. Only what lies inside `scanRoot` (when
+// given) counts, as only that can be a candidate.
+export async function membershipOf(
+  buildRoot: string,
+  projects: readonly SocketFactsSbomProject[],
+  scanRoot?: string | undefined,
+): Promise<Membership> {
+  const realScanRoot = scanRoot ? await realpathOrResolved(scanRoot) : undefined
+  const inScan = (p: string) => !realScanRoot || isPathInside(realScanRoot, p)
+  const membership = emptyMembership()
+  const [dirs, files] = await Promise.all([
+    Promise.all(
+      projects.map(({ subprojectDir }) =>
+        realpathOrResolved(path.resolve(buildRoot, subprojectDir)),
+      ),
+    ),
+    Promise.all(
+      projects
+        .flatMap(project => project.manifestFiles ?? [])
+        .map(({ file }) => realFilePath(path.resolve(buildRoot, file))),
+    ),
+  ])
+  for (const dir of dirs) {
+    if (inScan(dir)) {
+      membership.dirs.add(dir)
+    }
+  }
+  for (const file of files) {
+    if (inScan(file) && existsSync(file)) {
+      membership.files.add(file)
+    }
+  }
+  return membership
+}
+
+const rootMarkerByDir = new Map<string, boolean>()
+
+export function hasRootMarker(tool: BuildTool, root: BuildRoot): boolean {
+  const files = BUILD_FILES[tool]
+  if (files.byFile) {
+    return false
+  }
+  return getOrInsert(rootMarkerByDir, `${tool}\0${root.dir}`, () =>
+    files.rootMarkers.some(marker => existsSync(path.join(root.dir, marker))),
+  )
+}
+
+// Whether a build loaded `root`'s project; a build of its own (see
+// hasRootMarker) is more than that project. `root.dir` must be
+// realpath-resolved, as findBuildToolCandidates returns it.
 export function isBuildRootCovered(
-  covered: ReadonlySet<string>,
+  covered: Membership,
   tool: BuildTool,
   root: BuildRoot,
 ): boolean {
   const files = BUILD_FILES[tool]
   if (files.byFile) {
-    return !!root.entryFile && covered.has(buildRootPath(root))
+    return !!root.entryFile && covered.files.has(buildRootPath(root))
   }
-  return files.names.some(name => covered.has(path.join(root.dir, name)))
+  return (
+    covered.dirs.has(root.dir) ||
+    files.names.some(name => covered.files.has(path.join(root.dir, name)))
+  )
 }
 
 // A dotnet solution is covered once every project it builds is, or, when the
 // SDK cannot read it, by a same-named solution in the other format beside it
 // (`dotnet sln migrate` writes App.slnx next to App.sln) that it can read.
 async function isSolutionCovered(
-  covered: ReadonlySet<string>,
+  covered: Membership,
   root: BuildRoot,
   opts: Pick<
     ManifestScriptOptions,
@@ -158,7 +216,7 @@ async function isSolutionCovered(
     ext.toLowerCase() === '.sln' ? '.slnx' : '.sln',
   )
   const hasTwin = existsSync(path.join(root.dir, twin))
-  if (!covered.size && !hasTwin) {
+  if (!covered.files.size && !hasTwin) {
     return false
   }
   const list = (file: string) =>
@@ -174,14 +232,26 @@ async function isSolutionCovered(
     )
     return true
   }
-  const members = await Promise.all(listed.map(realFilePath))
-  return !!members.length && members.every(member => covered.has(member))
+  const members = await realMembers(listed)
+  return !!members.length && members.every(member => covered.files.has(member))
+}
+
+// The SDK's member listings are memoized, so their resolved paths are too.
+const realMembersByListing = new WeakMap<readonly string[], Promise<string[]>>()
+
+function realMembers(listed: readonly string[]): Promise<string[]> {
+  let members = realMembersByListing.get(listed)
+  if (!members) {
+    members = Promise.all(listed.map(realFilePath))
+    realMembersByListing.set(listed, members)
+  }
+  return members
 }
 
 // Whether earlier builds cover `root`: its own build files, or every project
 // a solution builds. isBuildRootCovered alone is the cheap first half.
 export async function isRootCovered(
-  covered: ReadonlySet<string>,
+  covered: Membership,
   tool: BuildTool,
   root: BuildRoot,
   opts: Pick<
@@ -195,6 +265,25 @@ export async function isRootCovered(
     (tool === 'dotnet' &&
       (await isSolutionCovered(covered, root, opts, listMembers)))
   )
+}
+
+// A build of its own (see hasRootMarker) is covered only by builds that load
+// all of `own`, what it loads itself.
+export async function isBuildCovered(
+  covered: Membership,
+  tool: BuildTool,
+  root: BuildRoot,
+  opts: Parameters<typeof isRootCovered>[3],
+  own?: Membership | undefined,
+): Promise<boolean> {
+  if (!hasRootMarker(tool, root)) {
+    return await isRootCovered(covered, tool, root, opts)
+  }
+  const pick = (membership: Membership) =>
+    BUILD_FILES[tool].byFile ? membership.files : membership.dirs
+  const members = own ? pick(own) : new Set<string>()
+  const loaded = pick(covered)
+  return !!members.size && [...members].every(member => loaded.has(member))
 }
 
 function compareStrings(a: string, b: string): number {

@@ -6,7 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `socket manifest setup --dynamic-sbom-inference` can skip any build: one Socket can load is skipped together with its modules, leaving the builds beside and beneath it alone. The setup shows the files it will write before writing them.
+- Configure or skip one build of a directory on its own, with `socket.json` settings under `defaults.manifest.builds` keyed by its build file name.
+
+### Changed
+- `socket.json` settings apply from every directory above a scan's starting point, not only from that directory down.
+- `--dynamic-sbom-inference` builds a module that lives outside its reactor's directory (such as Maven's `<module>../core</module>`) only inside that reactor, instead of also building it on its own.
+- A build that fails to generate Socket facts now stops only the builds in and beneath its directory, and its failure is ignored when another build that includes it succeeds.
+
 ### Fixed
+- `--dynamic-sbom-inference` builds a Gradle or sbt build nested in another build on its own as well, so the projects only its own settings include are no longer missed.
 - Maven Socket facts honor artifact types that build extensions define, so they no longer list dependencies Maven doesn't resolve, or fetch files under the wrong extension.
 - Maven Socket facts no longer drop dependencies whose scope Maven 3 doesn't define, such as Maven 4's `compile-only` or `none`.
 
