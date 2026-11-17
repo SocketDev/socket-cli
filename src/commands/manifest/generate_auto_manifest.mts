@@ -10,6 +10,7 @@ import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import {
+  EXCLUDE_PATHS_FLAG,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   runManifestFacts,
 } from './run-manifest-facts.mts'
@@ -32,6 +33,7 @@ import type { OutputKind } from '../../types.mts'
 
 // Auto-manifest reads every build option from the root socket.json.
 const AUTO_MANIFEST_HINTS: BuildOptionHints = {
+  excludePathsFlag: EXCLUDE_PATHS_FLAG,
   flags: new Set(),
   setupCommand: 'socket manifest setup',
   socketJson: SOCKET_JSON,

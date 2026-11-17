@@ -980,6 +980,7 @@ describe('generateRecursiveManifests', () => {
         `${opts.ecosystem}:${relOf(opts.cwd)}` === 'maven:dual-marker-dir',
     )?.hints
     expect(hints?.flags.size).toBe(0)
+    expect(hints?.excludePathsFlag).toBe('--exclude-paths')
     expect(path.resolve(hints?.socketJson ?? '')).toBe(
       path.join(dualMarkerDir, 'socket.json'),
     )

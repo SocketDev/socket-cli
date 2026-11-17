@@ -30,6 +30,7 @@ import { loadBuild, withModules } from './load-build.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import {
   DSI_SETUP_COMMAND,
+  EXCLUDE_PATHS_FLAG,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   runManifestFacts,
   setSidecarEntry,
@@ -702,6 +703,7 @@ async function runCandidate(
       continueOnInstallErrorsFlag: ctx.context.workDir?.withFiles
         ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
         : undefined,
+      excludePathsFlag: EXCLUDE_PATHS_FLAG,
       flags: ctx.optionFlags,
       setupCommand: DSI_SETUP_COMMAND,
       socketJson: socketJsonPath(root.dir),

@@ -111,6 +111,7 @@ describe('runManifestFacts', () => {
       excludeBase: cwd,
       excludePaths: ['docs/**'],
       hints: {
+        excludePathsFlag: '--exclude-paths',
         flags: ['excludeConfigs', 'ignoreUnresolved', 'verbose'],
         setupCommand: 'socket manifest setup',
         socketJson: 'socket.json',
@@ -330,6 +331,7 @@ describe('listDotnetSolutionMembers', () => {
       entryFile: 'All.sln',
       excludeBase: cwd,
       hints: {
+        excludePathsFlag: '--exclude-paths',
         flags: ['excludeConfigs', 'ignoreUnresolved', 'verbose'],
         setupCommand: 'socket manifest setup',
         socketJson: 'socket.json',

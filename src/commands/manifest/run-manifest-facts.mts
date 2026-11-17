@@ -26,6 +26,8 @@ export type BuildOptionHints = {
   // Reachability scans only: reachability cannot install a dependency that
   // `ignoreUnresolved` lets through, so it must be told to continue too.
   continueOnInstallErrorsFlag?: string | undefined
+  // The invoking command's option that leaves paths out of the scan.
+  excludePathsFlag?: string | undefined
   // Taken as flags; every other option is set in `socketJson`.
   flags: ReadonlySet<BuildOption>
   // Wizard that writes `socketJson`.
@@ -36,11 +38,14 @@ export type BuildOptionHints = {
 export const DSI_SETUP_COMMAND =
   'socket manifest setup --dynamic-sbom-inference'
 
+export const EXCLUDE_PATHS_FLAG = '--exclude-paths'
+
 export const REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG =
   '--reach-continue-on-install-errors'
 
 // The single-build manifest commands take every option as a flag.
 export const FLAG_HINTS: BuildOptionHints = {
+  excludePathsFlag: EXCLUDE_PATHS_FLAG,
   flags: new Set<BuildOption>([
     'excludeConfigs',
     'ignoreUnresolved',
@@ -126,6 +131,7 @@ type SocketFactsRequest = {
   excludePaths?: string[] | undefined
   hints: {
     continueOnInstallErrorsFlag?: string | undefined
+    excludePathsFlag?: string | undefined
     flags: BuildOption[]
     setupCommand: string
     socketJson: string
@@ -179,6 +185,9 @@ function toRequestHints(hints: BuildOptionHints): SocketFactsRequest['hints'] {
   return {
     ...(hints.continueOnInstallErrorsFlag
       ? { continueOnInstallErrorsFlag: hints.continueOnInstallErrorsFlag }
+      : {}),
+    ...(hints.excludePathsFlag
+      ? { excludePathsFlag: hints.excludePathsFlag }
       : {}),
     flags: [...hints.flags].sort(),
     setupCommand: hints.setupCommand,
