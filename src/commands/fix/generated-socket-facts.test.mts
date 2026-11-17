@@ -109,7 +109,10 @@ describe('generateSocketFactsForFix', () => {
 
     const { artifactsFlags, sidecarFile } = await generate()
 
-    expect(artifactsFlags).toEqual(['--maven-use-only-socket-facts'])
+    expect(artifactsFlags).toEqual([
+      '--use-only-socket-facts-artifacts',
+      'maven',
+    ])
     expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual([])
   })
 
