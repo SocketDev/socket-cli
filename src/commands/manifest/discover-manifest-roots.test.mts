@@ -311,17 +311,6 @@ describe('isBuildRootCovered', () => {
   )
 })
 
-function mavenProject(subprojectDir: string, file: string) {
-  return {
-    type: 'maven' as const,
-    name: subprojectDir,
-    id: subprojectDir,
-    subprojectDir,
-    manifestFiles: [{ file }],
-    children: [],
-  }
-}
-
 describe('membershipOf', () => {
   let scanRoot = ''
 
@@ -341,14 +330,17 @@ describe('membershipOf', () => {
     await fs.rm(scanRoot, { recursive: true, force: true })
   })
 
-  it('takes project dirs and existing build files anywhere in the scan root, relative to the build root', async () => {
+  it('takes project dirs and existing build files in the scan root', async () => {
+    const at = (rel: string) => path.resolve(scanRoot, rel)
     const membership = await membershipOf(
-      path.join(scanRoot, 'build'),
       [
-        mavenProject('member', 'member/pom.xml'),
-        mavenProject('../sibling', '../sibling/pom.xml'),
-        mavenProject('absent', 'absent/build.gradle'),
-        mavenProject('../../outside', '../../outside/pom.xml'),
+        { buildFiles: [at('build/member/pom.xml')], dir: at('build/member') },
+        { buildFiles: [at('sibling/pom.xml')], dir: at('sibling') },
+        {
+          buildFiles: [at('build/absent/build.gradle')],
+          dir: at('build/absent'),
+        },
+        { buildFiles: [at('../outside/pom.xml')], dir: at('../outside') },
       ],
       scanRoot,
     )

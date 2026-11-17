@@ -3,10 +3,10 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -297,12 +297,13 @@ async function run(
   assertValidExcludePaths(excludePaths)
 
   if (facts) {
-    await convertGradleToFacts({
+    await runManifestFacts({
       bin: String(bin),
+      buildOpts: parsedGradleOpts,
       cwd,
+      ecosystem: 'gradle',
       excludeConfigs: String(excludeConfigs || ''),
       excludePaths,
-      gradleOpts: parsedGradleOpts,
       ignoreUnresolved: Boolean(ignoreUnresolved),
       includeConfigs: String(includeConfigs || ''),
       javaHome,
