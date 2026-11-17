@@ -4,7 +4,11 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { mergeSocketJsonChain, readSocketJsonChain } from './socket-json.mts'
+import {
+  mergeSocketJsonChain,
+  readOrDefaultSocketJson,
+  readSocketJsonChain,
+} from './socket-json.mts'
 
 import type { SocketJson } from './socket-json.mts'
 
@@ -133,5 +137,55 @@ describe('readSocketJsonChain and mergeSocketJsonChain', () => {
       bin: 'mvn',
       excludeConfigs: null,
     })
+  })
+
+  it("cascades a build tool's reachability field by field", async () => {
+    await writeSocketJson(root, {
+      version: 1,
+      defaults: {
+        manifest: {
+          dotnet: { reachability: { build: 'compile', runtimeVersion: '8.0' } },
+          maven: { reachability: { build: 'compile', javaHome: '/jdk-17' } },
+        },
+      },
+    })
+    const buildRoot = path.join(root, 'project')
+    await fs.mkdir(buildRoot, { recursive: true })
+    await writeSocketJson(buildRoot, {
+      version: 1,
+      defaults: {
+        manifest: {
+          dotnet: { reachability: { runtimeVersion: null } },
+          maven: { reachability: { build: 'none' } },
+        },
+      },
+    })
+
+    const manifest = readSocketJsonCascade(buildRoot).defaults?.manifest
+    expect(manifest?.maven?.reachability).toEqual({
+      build: 'none',
+      javaHome: '/jdk-17',
+    })
+    expect(manifest?.dotnet?.reachability).toEqual({
+      build: 'compile',
+      runtimeVersion: null,
+    })
+  })
+
+  it('reads a socket.json whatever its reachability settings hold', async () => {
+    await writeSocketJson(root, {
+      version: 1,
+      defaults: {
+        manifest: {
+          dotnet: { reachability: { runtimeVersion: 'net8.0' } },
+          maven: { bin: 'mvn', reachability: 'compile' },
+        },
+      },
+    })
+
+    expect(mavenConfig(readOrDefaultSocketJson(root))?.bin).toBe('mvn')
+    expect(mavenConfig(readSocketJsonCascade(root))?.reachability).toBe(
+      'compile',
+    )
   })
 })

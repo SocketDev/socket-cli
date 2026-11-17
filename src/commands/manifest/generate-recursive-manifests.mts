@@ -49,6 +49,7 @@ import type { LoadedBuild } from './load-build.mts'
 import type {
   BuildOption,
   BuildOptionHints,
+  ReachabilitySettings,
   RunManifestFactsOutcome,
   RunManifestFactsResult,
   SocketFactsContext,
@@ -98,15 +99,20 @@ export type EcosystemBuildConfig = {
 // root here, on top of its existing root-only ecosystem-wide meaning for
 // auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
 // so it skips too.
-function getSkipReason(
+// Only Gradle and sbt take `facts: false`, which generates pom files instead.
+export function getSkipReason(
   ecosystem: BuildTool,
-  disabled: boolean | undefined,
-  facts?: boolean | undefined,
+  section:
+    | { disabled?: boolean | undefined; facts?: boolean | undefined }
+    | undefined,
 ): string | undefined {
-  if (disabled) {
+  if (section?.disabled) {
     return `defaults.manifest.${ecosystem}.disabled is true`
   }
-  if (facts === false) {
+  if (
+    (ecosystem === 'gradle' || ecosystem === 'sbt') &&
+    section?.facts === false
+  ) {
     return `defaults.manifest.${ecosystem}.facts is false (pom mode)`
   }
   return undefined
@@ -223,11 +229,13 @@ export function socketFactsRunOptions(
     excludeBase,
     excludePaths,
     hints,
+    reachability,
   }: {
     context?: SocketFactsContext | undefined
     excludeBase: string | undefined
     excludePaths: string[] | undefined
     hints?: BuildOptionHints | undefined
+    reachability?: ReachabilitySettings | undefined
   },
 ): SocketFactsRunOptions {
   return {
@@ -244,6 +252,7 @@ export function socketFactsRunOptions(
     ignoreUnresolved: config.ignoreUnresolved,
     includeConfigs: config.includeConfigs,
     javaHome: config.javaHome,
+    reachability,
     verbose: config.verbose,
   }
 }
@@ -720,6 +729,11 @@ async function runCandidate(
   dirConfig: EcosystemBuildConfig,
 ): Promise<Run | undefined> {
   const options = runOptions(ctx, ecosystem, candidate, dirConfig)
+  if (ctx.context.workDir.withFiles) {
+    options.reachability = ctx
+      .resolveSettings(ecosystem, candidate.root)
+      .reachability()
+  }
   const result = await runManifestFacts(options)
   if (result === null) {
     return undefined
@@ -744,6 +758,7 @@ export async function buildUncoveredRoot({
   excludeBase,
   excludePaths,
   hints,
+  reachability,
   root,
 }: {
   config: EcosystemBuildConfig
@@ -755,6 +770,7 @@ export async function buildUncoveredRoot({
   excludeBase?: string | undefined
   excludePaths?: string[] | undefined
   hints?: BuildOptionHints | undefined
+  reachability?: ReachabilitySettings | undefined
   root: BuildRoot
 }): Promise<RunManifestFactsOutcome | 'covered'> {
   if (
@@ -773,6 +789,7 @@ export async function buildUncoveredRoot({
       excludeBase,
       excludePaths,
       hints,
+      reachability,
     }),
     cwd: cwd ?? root.dir,
   })
@@ -823,7 +840,13 @@ export async function generateRecursiveManifests({
   // Invalid settings fail the scan before any build runs.
   for (const { 0: tool, 1: roots } of candidatesByTool) {
     for (const root of roots) {
-      resolveSettings(tool, root)
+      const settings = resolveSettings(tool, root)
+      if (
+        context.workDir?.withFiles &&
+        !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
+      ) {
+        settings.reachability()
+      }
     }
   }
   // A failure another build excuses leaves the exit code it set.
@@ -881,7 +904,7 @@ export function resolveEcosystemConfig(
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: undefined,
       mavenFile: undefined,
-      skipReason: getSkipReason(ecosystem, config?.disabled),
+      skipReason: getSkipReason(ecosystem, config),
       verbose: Boolean(config?.verbose),
     }
   }
@@ -896,7 +919,7 @@ export function resolveEcosystemConfig(
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
       mavenFile: undefined,
-      skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
+      skipReason: getSkipReason(ecosystem, config),
       verbose: Boolean(config?.verbose),
     }
   }
@@ -911,7 +934,7 @@ export function resolveEcosystemConfig(
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
       mavenFile: undefined,
-      skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
+      skipReason: getSkipReason(ecosystem, config),
       verbose: Boolean(config?.verbose),
     }
   }
@@ -928,7 +951,7 @@ export function resolveEcosystemConfig(
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome ?? undefined,
     mavenFile: file,
-    skipReason: getSkipReason(ecosystem, config?.disabled),
+    skipReason: getSkipReason(ecosystem, config),
     verbose: Boolean(config?.verbose),
   }
 }

@@ -30,7 +30,8 @@ vi.mock('./run-manifest-facts.mts', async importOriginal => ({
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
 }))
-vi.mock('../../utils/socket-json.mts', () => ({
+vi.mock('../../utils/socket-json.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../utils/socket-json.mts')>()),
   readOrDefaultSocketJson: vi.fn(() => ({})),
 }))
 
@@ -454,6 +455,112 @@ describe('generateAutoManifest — JVM facts', () => {
     } finally {
       await fs.rm(cwd, { recursive: true, force: true })
     }
+  })
+
+  it("sends each tool's reachability settings on a reachability scan only", async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          dotnet: { reachability: { runtimeVersion: '8.0' } },
+          gradle: { reachability: { build: 'compile' } },
+          maven: { bin: 'mvn', reachability: { javaHome: '$MAVEN_JDK' } },
+          sbt: { reachability: { build: 'none', javaHome: null } },
+        },
+      },
+    } as SocketJson)
+    const detected = {
+      ...baseDetected,
+      dotnet: true,
+      gradle: true,
+      maven: true,
+      sbt: true,
+    }
+    const workDir = { dir: '/w', entries: new Map(), withFiles: true }
+    await generateAutoManifest({
+      context: { workDir },
+      cwd: '/tmp/repo',
+      detected,
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(
+      Object.fromEntries(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
+      ),
+    ).toEqual({
+      gradle: { build: 'compile' },
+      maven: { javaHome: '$MAVEN_JDK' },
+      sbt: { build: 'none' },
+    })
+    expect(vi.mocked(convertDotnetToFacts).mock.calls[0]?.[0]).toMatchObject({
+      reachability: { runtimeVersion: '8.0' },
+    })
+
+    vi.mocked(runManifestFacts).mockClear()
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected,
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(
+      vi.mocked(runManifestFacts).mock.calls.map(([opts]) => opts.reachability),
+    ).toEqual([undefined, undefined, undefined])
+  })
+
+  it("fails a reachability scan on an invalid setting of a detected tool, before any build, not of another's", async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: { dotnet: { reachability: { javaHome: '/jdk' } } },
+      },
+    } as SocketJson)
+    const context = {
+      workDir: { dir: '/w', entries: new Map(), withFiles: true },
+    }
+    await generateAutoManifest({
+      context,
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, gradle: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
+    vi.mocked(runManifestFacts).mockClear()
+    await expect(
+      generateAutoManifest({
+        context,
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, dotnet: true, gradle: true, count: 2 },
+        outputKind: 'text',
+        verbose: false,
+      }),
+    ).rejects.toThrow(
+      /dotnet\.reachability\.javaHome` in .* is not a reachability setting of dotnet builds/,
+    )
+    expect(runManifestFacts).not.toHaveBeenCalled()
+  })
+
+  it('does not check the settings of a tool that generates pom files', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          gradle: { facts: false, reachability: { runtimeVersion: '8.0' } },
+        },
+      },
+    } as SocketJson)
+
+    await expect(
+      generateAutoManifest({
+        context: {
+          workDir: { dir: '/w', entries: new Map(), withFiles: true },
+        },
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, gradle: true, count: 1 },
+        outputKind: 'text',
+        verbose: false,
+      }),
+    ).resolves.toBeDefined()
   })
 
   it('places the facts of each build it generates, with its sidecar entry', async () => {
