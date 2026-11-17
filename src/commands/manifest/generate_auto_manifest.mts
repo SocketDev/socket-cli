@@ -1,20 +1,24 @@
 import path from 'node:path'
 
+import { isDirSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
-import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
-import { convertMavenToFacts } from './convert-maven-to-facts.mts'
-import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
-import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
+import {
+  resolveEcosystemConfig,
+  socketFactsRunOptions,
+} from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import {
+  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+  keepFacts,
+  runManifestFacts,
+} from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG } from './scripts/resolution-report-render.mts'
-import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
 import {
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
@@ -24,12 +28,14 @@ import { InputError } from '../../utils/errors.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
-import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
-import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
+import type { BuildRoot } from './discover-manifest-roots.mts'
+import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
 import type {
-  ResolvedPathsSidecar,
-  SidecarAccumulator,
-} from './scripts/sidecar.mts'
+  BuildOptionHints,
+  RunManifestFactsOutcome,
+  SocketFactsContext,
+} from './run-manifest-facts.mts'
+import type { BuildTool } from './scripts/build-tool.mts'
 import type { OutputKind } from '../../types.mts'
 
 // Auto-manifest reads every build option from the root socket.json.
@@ -41,8 +47,6 @@ const AUTO_MANIFEST_HINTS: BuildOptionHints = {
 
 export type GenerateAutoManifestResult = {
   generatedFiles: string[]
-  // Reachability path only: resolved on-disk paths from the build-tool run.
-  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
 }
 
 // A failed generator aborts --auto-manifest: a partial SBOM silently
@@ -59,6 +63,24 @@ function abortFactsRunIfFailed(
   }
 }
 
+// Maven's `-f, --file`: "Force the use of an alternate POM file (or directory
+// with pom.xml)" (`mvn --help`), relative to where Maven runs.
+function mavenRoot(cwd: string, file: string | undefined): BuildRoot {
+  if (file === undefined) {
+    return { dir: cwd, entryFile: 'pom.xml' }
+  }
+  const named = path.resolve(cwd, file)
+  return isDirSync(named)
+    ? { dir: named, entryFile: 'pom.xml' }
+    : { dir: path.dirname(named), entryFile: path.basename(named) }
+}
+
+// A command naming a path runs that file, relative to `dir`; a bare name is
+// looked up on PATH.
+function binIn(dir: string, bin: string): string {
+  return /[/\\]/.test(bin) ? path.resolve(dir, bin) : bin
+}
+
 function abortManifestRunIfFailed(
   ecosystem: string,
   beforeExitCode: string | number | undefined,
@@ -71,156 +93,124 @@ function abortManifestRunIfFailed(
 }
 
 export async function generateAutoManifest({
-  computeArtifactsSidecar,
+  context,
   cwd,
   detected,
   excludePaths,
+  excludePathsFlag,
   outputKind,
-  tmpDir,
   verbose,
 }: {
-  // Reachability path: run build tools with files to emit the sidecar.
-  computeArtifactsSidecar?: boolean | undefined
+  context?: SocketFactsContext | undefined
   detected: GeneratableManifests
   cwd: string
-  // Scan-root-relative `--exclude-paths`: skip excluded subprojects and drop
-  // excluded source roots from the resolved-paths sidecar.
+  // Scan-root-relative `--exclude-paths`: skip excluded subprojects.
   excludePaths?: string[] | undefined
+  // The invoking command's flag for `excludePaths`, when it takes one.
+  excludePathsFlag?: string | undefined
   outputKind: OutputKind
-  // Caller-owned; see ManifestScriptOptions.tmpDir. Only sbt reads it, but
-  // required here so every caller allocates one via withTmpDir uniformly.
-  tmpDir: string
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const generatedFiles: string[] = []
-  const hints: BuildOptionHints = computeArtifactsSidecar
-    ? {
-        ...AUTO_MANIFEST_HINTS,
-        continueOnInstallErrorsFlag: REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
-      }
-    : AUTO_MANIFEST_HINTS
-
-  // Resolved paths across all JVM roots, serialized to one sidecar at the end.
-  const sidecarAcc: SidecarAccumulator | undefined = computeArtifactsSidecar
-    ? new Map()
-    : undefined
+  const hints: BuildOptionHints = {
+    ...AUTO_MANIFEST_HINTS,
+    continueOnInstallErrorsFlag: context?.workDir?.withFiles
+      ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+      : undefined,
+    excludePathsFlag,
+  }
 
   if (verbose) {
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
   }
 
-  if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
-    // Args shared by both paths. The facts-only knobs (`includeConfigs`,
-    // `excludeConfigs`, `ignoreUnresolved`) and the pom-only `out` are added
-    // per branch so neither handler is spread properties it doesn't accept.
-    const sbtArgs = {
-      // Note: `sbt` is more likely to be resolved against PATH env.
-      bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
-      cwd,
-      sbtOpts: parseBuildToolOpts(
-        sockJson.defaults?.manifest?.sbt?.sbtOpts ?? undefined,
-      ),
-      verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
+  const generateFacts = async (
+    tool: BuildTool,
+    root: BuildRoot,
+    config: EcosystemBuildConfig,
+  ) => {
+    const outcome = await runManifestFacts(
+      socketFactsRunOptions(tool, root, config, {
+        context,
+        excludeBase: cwd,
+        excludePaths,
+        hints,
+      }),
+    )
+    if (outcome) {
+      await keepFacts(context?.workDir, outcome)
     }
+    abortFactsRunIfFailed(tool, outcome)
+  }
+
+  if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
     // Socket facts is the default; opt into pom generation with
     // `defaults.manifest.sbt.facts: false` in socket.json.
     if (sockJson.defaults?.manifest?.sbt?.facts !== false) {
       logger.log('Detected a Scala sbt build, generating Socket facts...')
-      const outcome = await convertSbtToFacts({
-        ...sbtArgs,
-        excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
-        excludePaths,
-        ignoreUnresolved: Boolean(
-          sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
-        ),
-        includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
-        javaHome: sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined,
-        hints,
-        sidecarAcc,
-        tmpDir,
-        withFiles: computeArtifactsSidecar,
-      })
-      abortFactsRunIfFailed('sbt', outcome)
+      await generateFacts(
+        'sbt',
+        { dir: cwd },
+        resolveEcosystemConfig('sbt', cwd, sockJson),
+      )
     } else {
       logger.log('Detected a Scala sbt build, generating pom files with sbt...')
       const beforeExitCode = process.exitCode
       await convertSbtToMaven({
-        ...sbtArgs,
+        // Note: `sbt` is more likely to be resolved against PATH env.
+        bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
+        cwd,
         out: sockJson.defaults?.manifest?.sbt?.outfile ?? './pom.xml',
+        sbtOpts: parseBuildToolOpts(
+          sockJson.defaults?.manifest?.sbt?.sbtOpts ?? undefined,
+        ),
+        verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
       })
       abortManifestRunIfFailed('sbt', beforeExitCode)
     }
   }
 
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
-    const gradleArgs = {
-      // Configured bin wins; else prefer ./gradlew, else gradle on PATH.
-      bin: sockJson.defaults?.manifest?.gradle?.bin
-        ? path.resolve(cwd, sockJson.defaults.manifest.gradle.bin)
-        : resolveBuildToolBin('gradle', cwd),
-      cwd,
-      verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
-      gradleOpts: parseBuildToolOpts(
-        sockJson.defaults?.manifest?.gradle?.gradleOpts ?? undefined,
-      ),
-    }
     // Socket facts is the default; opt into pom generation with
     // `defaults.manifest.gradle.facts: false` in socket.json.
     if (sockJson.defaults?.manifest?.gradle?.facts !== false) {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
       )
-      const outcome = await convertGradleToFacts({
-        ...gradleArgs,
-        excludeConfigs:
-          sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
-        excludePaths,
-        ignoreUnresolved: Boolean(
-          sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
-        ),
-        includeConfigs:
-          sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
-        javaHome: sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined,
-        hints,
-        sidecarAcc,
-        withFiles: computeArtifactsSidecar,
-      })
-      abortFactsRunIfFailed('gradle', outcome)
+      await generateFacts(
+        'gradle',
+        { dir: cwd },
+        resolveEcosystemConfig('gradle', cwd, sockJson),
+      )
     } else {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
       )
       const beforeExitCode = process.exitCode
-      await convertGradleToMaven(gradleArgs)
+      await convertGradleToMaven({
+        // Configured bin wins; else prefer ./gradlew, else gradle on PATH.
+        bin: sockJson.defaults?.manifest?.gradle?.bin
+          ? path.resolve(cwd, sockJson.defaults.manifest.gradle.bin)
+          : resolveBuildToolBin('gradle', cwd),
+        cwd,
+        verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
+        gradleOpts: parseBuildToolOpts(
+          sockJson.defaults?.manifest?.gradle?.gradleOpts ?? undefined,
+        ),
+      })
       abortManifestRunIfFailed('gradle', beforeExitCode)
     }
   }
 
   if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
     logger.log('Detected a Maven pom.xml build, generating Socket facts...')
-    const outcome = await convertMavenToFacts({
-      // Configured bin wins; else prefer ./mvnw, else mvn on PATH.
-      bin:
-        sockJson.defaults?.manifest?.maven?.bin ??
-        resolveBuildToolBin('maven', cwd),
-      cwd,
-      excludeConfigs: sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
-      excludePaths,
-      ignoreUnresolved: Boolean(
-        sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
-      ),
-      includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
-      javaHome: sockJson.defaults?.manifest?.maven?.javaHome ?? undefined,
-      mavenOpts: parseBuildToolOpts(
-        sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
-      ),
-      hints,
-      sidecarAcc,
-      verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
-      withFiles: computeArtifactsSidecar,
+    const config = resolveEcosystemConfig('maven', cwd, sockJson)
+    await generateFacts('maven', mavenRoot(cwd, config.mavenFile), {
+      ...config,
+      // Maven runs in the POM's directory, which `--file` can move.
+      bin: binIn(cwd, config.bin),
     })
-    abortFactsRunIfFailed('maven', outcome)
   }
 
   if (!sockJson?.defaults?.manifest?.dotnet?.disabled && detected.dotnet) {
@@ -229,11 +219,10 @@ export async function generateAutoManifest({
     )
     const outcome = await convertDotnetToFacts({
       config: resolveEcosystemConfig('dotnet', cwd, sockJson),
+      context,
       cwd,
       excludePaths,
       hints,
-      sidecarAcc,
-      withFiles: computeArtifactsSidecar,
     })
     abortFactsRunIfFailed('dotnet', outcome)
   }
@@ -309,11 +298,5 @@ export async function generateAutoManifest({
     }
   }
 
-  return {
-    generatedFiles,
-    resolvedPathsSidecar:
-      sidecarAcc && hasSidecarEntries(sidecarAcc)
-        ? serializeSidecar(sidecarAcc)
-        : undefined,
-  }
+  return { generatedFiles }
 }

@@ -5,22 +5,26 @@ import micromatch from 'micromatch'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { listDotnetSolutionMembers } from './run-manifest-facts.mts'
 import {
   BUILD_FILES,
   BUILD_TOOLS,
   FACTS_PURL_TYPES,
+  buildRootPath,
   buildToolsFor,
   isDotnetSolution,
 } from './scripts/build-tool.mts'
-import { listDotnetEntryProjects } from './scripts/run.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
+import type {
+  SocketFactsContext,
+  SocketFactsProject,
+  SocketFactsRequestOptions,
+} from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
-import type { SocketFactsSbomProject } from './scripts/facts.mts'
-import type { ManifestScriptOptions } from './scripts/run.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -40,10 +44,6 @@ const BUILD_FILE_MATCHERS = new Map(
 // `entryFile` (a basename in `dir`) is set only for a tool that addresses its
 // builds by file, where one directory can hold several builds.
 export type BuildRoot = { dir: string; entryFile?: string | undefined }
-
-export function buildRootPath(root: BuildRoot): string {
-  return path.join(root.dir, root.entryFile ?? '')
-}
 
 export function isBuildFile(tool: BuildTool, basename: string): boolean {
   return !!BUILD_FILE_MATCHERS.get(tool)?.(basename)
@@ -89,7 +89,7 @@ export function withoutDisabledFlags(sockJson: SocketJson): SocketJson {
   } as SocketJson
 }
 
-export { realpathOrResolved }
+export { buildRootPath, realpathOrResolved }
 
 // Coverage compares files by their realpath-resolved directory.
 async function realFilePath(file: string): Promise<string> {
@@ -131,26 +131,19 @@ export function isPathInside(dir: string, file: string): boolean {
   return file === dir || file.startsWith(`${dir}${path.sep}`)
 }
 
-// Paths are relative to `buildRoot`. Only what lies inside `scanRoot` (when
-// given) counts, as only that can be a candidate.
+// Only what lies inside `scanRoot` (when given) counts, as only that can be a
+// candidate.
 export async function membershipOf(
-  buildRoot: string,
-  projects: readonly SocketFactsSbomProject[],
+  projects: readonly SocketFactsProject[],
   scanRoot?: string | undefined,
 ): Promise<Membership> {
   const realScanRoot = scanRoot ? await realpathOrResolved(scanRoot) : undefined
   const inScan = (p: string) => !realScanRoot || isPathInside(realScanRoot, p)
   const membership = emptyMembership()
   const [dirs, files] = await Promise.all([
+    Promise.all(projects.map(({ dir }) => realpathOrResolved(dir))),
     Promise.all(
-      projects.map(({ subprojectDir }) =>
-        realpathOrResolved(path.resolve(buildRoot, subprojectDir)),
-      ),
-    ),
-    Promise.all(
-      projects
-        .flatMap(project => project.manifestFiles ?? [])
-        .map(({ file }) => realFilePath(path.resolve(buildRoot, file))),
+      projects.flatMap(({ buildFiles }) => buildFiles).map(realFilePath),
     ),
   ])
   for (const dir of dirs) {
@@ -196,17 +189,19 @@ export function isBuildRootCovered(
   )
 }
 
+export type RootBuildOptions = Pick<
+  SocketFactsRequestOptions,
+  'bin' | 'buildOpts' | 'excludeBase' | 'excludePaths'
+> & { context?: SocketFactsContext | undefined }
+
 // A dotnet solution is covered once every project it builds is, or, when the
 // SDK cannot read it, by a same-named solution in the other format beside it
 // (`dotnet sln migrate` writes App.slnx next to App.sln) that it can read.
 async function isSolutionCovered(
   covered: Membership,
   root: BuildRoot,
-  opts: Pick<
-    ManifestScriptOptions,
-    'bin' | 'excludeBase' | 'excludePaths' | 'toolOpts'
-  >,
-  listMembers: typeof listDotnetEntryProjects = listDotnetEntryProjects,
+  opts: RootBuildOptions,
+  listMembers: typeof listDotnetSolutionMembers = listDotnetSolutionMembers,
 ): Promise<boolean> {
   const { entryFile } = root
   if (!entryFile || !isDotnetSolution(entryFile)) {
@@ -220,7 +215,7 @@ async function isSolutionCovered(
     return false
   }
   const list = (file: string) =>
-    listMembers({ ...opts, entryFile: file, projectDir: root.dir })
+    listMembers({ ...opts, cwd: root.dir, entryFile: file })
   const listed = await list(entryFile)
   if (!listed) {
     // Unless the twin is readable, this one is built and its failure shows.
@@ -254,11 +249,8 @@ export async function isRootCovered(
   covered: Membership,
   tool: BuildTool,
   root: BuildRoot,
-  opts: Pick<
-    ManifestScriptOptions,
-    'bin' | 'excludeBase' | 'excludePaths' | 'toolOpts'
-  >,
-  listMembers: typeof listDotnetEntryProjects = listDotnetEntryProjects,
+  opts: RootBuildOptions,
+  listMembers: typeof listDotnetSolutionMembers = listDotnetSolutionMembers,
 ): Promise<boolean> {
   return (
     isBuildRootCovered(covered, tool, root) ||
@@ -273,7 +265,7 @@ export async function isBuildCovered(
   covered: Membership,
   tool: BuildTool,
   root: BuildRoot,
-  opts: Parameters<typeof isRootCovered>[3],
+  opts: RootBuildOptions,
   own?: Membership | undefined,
 ): Promise<boolean> {
   if (!hasRootMarker(tool, root)) {

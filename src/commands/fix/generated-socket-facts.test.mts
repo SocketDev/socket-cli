@@ -67,51 +67,40 @@ describe('generateSocketFactsForFix', () => {
     expect(existsSync(fresh)).toBe(false)
   })
 
-  it('removes a discarded facts file a dropped run left behind', async () => {
-    const discarded = path.join(cwd, 'sub', 'pom.xml.socket.facts.json')
-    mockRunDynamicSbomInference.mockImplementation(async () => {
-      await fs.writeFile(discarded, 'dropped')
-      return {
-        discardedFactsPaths: [discarded, existing],
-        factsOnlyTypes: ['maven'],
-        factsPaths: [],
-      }
-    })
-
-    const generated = await generate()
-    await generated.remove()
-
-    expect(existsSync(discarded)).toBe(false)
-    expect(await fs.readFile(existing, 'utf8')).toBe('original')
-  })
-
-  it('writes the sidecar outside the repository', async () => {
-    mockRunDynamicSbomInference.mockImplementation(async () => {
+  it('keeps what Coana kept of each build root outside the repository', async () => {
+    const entry = { factsFile: fresh, stateDir: path.join(tmpDir, 'work', 'x') }
+    mockRunDynamicSbomInference.mockImplementation(async ({ workDir }) => {
       await fs.writeFile(fresh, 'generated')
+      workDir.entries.set(entry.factsFile, entry)
       return {
         discardedFactsPaths: [],
         factsOnlyTypes: ['maven', 'nuget'],
         factsPaths: [fresh],
-        resolvedPathsSidecar: { [fresh]: { components: [], projects: [] } },
       }
     })
 
     const { artifactsFlags, sidecarFile } = await generate()
 
     expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
-      expect.objectContaining({ consumer: 'fix', purlTypes: ['maven'] }),
+      expect.objectContaining({
+        consumer: 'fix',
+        context: { coanaVersion: undefined, orgSlug: undefined },
+        purlTypes: ['maven'],
+        workDir: {
+          dir: path.join(tmpDir, 'work'),
+          entries: new Map([[entry.factsFile, entry]]),
+        },
+      }),
     )
     expect(artifactsFlags).toEqual([
       '--use-only-socket-facts-artifacts',
       'maven,nuget',
     ])
     expect(path.dirname(sidecarFile)).toBe(tmpDir)
-    expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual({
-      [fresh]: { components: [], projects: [] },
-    })
+    expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual([entry])
   })
 
-  it('writes an empty sidecar when no build root resolved any paths', async () => {
+  it('writes an empty sidecar when no build root generated facts', async () => {
     mockRunDynamicSbomInference.mockResolvedValue({
       discardedFactsPaths: [],
       factsOnlyTypes: ['maven'],
@@ -121,7 +110,7 @@ describe('generateSocketFactsForFix', () => {
     const { artifactsFlags, sidecarFile } = await generate()
 
     expect(artifactsFlags).toEqual(['--maven-use-only-socket-facts'])
-    expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual({})
+    expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual([])
   })
 
   it('restores an existing facts file that generation does not rewrite', async () => {

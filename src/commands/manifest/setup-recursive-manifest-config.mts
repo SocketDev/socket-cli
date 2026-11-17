@@ -26,11 +26,12 @@ import {
 } from './discover-manifest-roots.mts'
 import {
   buildToolScriptOptions,
-  resolveEcosystemConfig,
+  resolveWalkConfig,
+  socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { loadBuild, withModules } from './load-build.mts'
+import { DSI_SETUP_COMMAND, EXCLUDE_PATHS_FLAG } from './run-manifest-facts.mts'
 import { BUILD_FILES, ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from './scripts/resolution-report-render.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -398,7 +399,7 @@ function membershipFor(
 }
 
 function buildConfig(walk: Walk, { ecosystem, root }: WalkBuild) {
-  return resolveEcosystemConfig(
+  return resolveWalkConfig(
     ecosystem,
     root.dir,
     resolveDraftSettings(walk.draft, ecosystem, root).sockJson,
@@ -627,14 +628,21 @@ async function loadOrAsk(
   allowDirectory = true,
 ): Promise<CResult<{ canceled: boolean; loaded?: LoadOutcome | undefined }>> {
   for (;;) {
+    const config = buildConfig(walk, build)
     // eslint-disable-next-line no-await-in-loop
     const loaded = await loadBuild({
-      config: buildConfig(walk, build),
-      ecosystem: build.ecosystem,
-      excludePaths: walk.excludePaths,
-      root: build.root,
+      ...socketFactsRunOptions(build.ecosystem, build.root, config, {
+        excludeBase: walk.cwd,
+        excludePaths: walk.excludePaths,
+        // A failure's remedy is this wizard's answers, for the scan to read.
+        hints: {
+          excludePathsFlag: EXCLUDE_PATHS_FLAG,
+          flags: new Set(),
+          setupCommand: DSI_SETUP_COMMAND,
+          socketJson: socketJsonPath(build.root.dir),
+        },
+      }),
       scanRoot: walk.cwd,
-      verbose: false,
     })
     if (loaded) {
       return { ok: true, data: { canceled: false, loaded } }

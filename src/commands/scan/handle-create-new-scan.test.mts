@@ -390,9 +390,8 @@ describe('handleCreateNewScan excludePaths', () => {
 
     expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
       expect.objectContaining({
+        context: expect.objectContaining({ workDir: undefined }),
         cwd: '/repo',
-        sbtTmpDir: undefined,
-        withFiles: false,
       }),
     )
     expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
@@ -490,24 +489,14 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(mockGetPackageFilesForScan).toHaveBeenCalled()
   })
 
-  it('accumulates a sidecar across recursively discovered build roots and forwards it to reachability analysis', async () => {
+  it('collects what Coana kept of each build root and forwards it to reachability analysis', async () => {
+    const entry = {
+      factsFile: '/repo/service-a/.socket.facts.json',
+      stateDir: '/work/a',
+    }
     mockGenerateRecursiveManifests.mockImplementationOnce(
-      async ({ sidecarAcc }) => {
-        sidecarAcc?.set('/repo/service-a/.socket.facts.json', {
-          projects: [
-            {
-              type: 'maven',
-              namespace: 'com.example',
-              name: 'app',
-              version: '1.0',
-              subprojectDir: '.',
-              dependencies: [],
-              targets: ['/repo/service-a/build/classes'],
-              sources: ['/repo/service-a/src/main/java'],
-            },
-          ],
-          components: [],
-        })
+      async ({ context }) => {
+        context.workDir.entries.set(entry.factsFile, entry)
         return [
           {
             dir: '/repo/service-a',
@@ -527,19 +516,14 @@ describe('handleCreateNewScan excludePaths', () => {
 
     expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
       expect.objectContaining({
-        sbtTmpDir: expect.any(String),
-        withFiles: true,
+        context: expect.objectContaining({
+          orgSlug: config.orgSlug,
+          workDir: expect.objectContaining({ withFiles: true }),
+        }),
       }),
     )
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
-      expect.objectContaining({
-        resolvedPathsSidecar: {
-          '/repo/service-a/.socket.facts.json': {
-            projects: [expect.objectContaining({ name: 'app' })],
-            components: [],
-          },
-        },
-      }),
+      expect.objectContaining({ socketFactsSidecar: [entry] }),
     )
   })
 

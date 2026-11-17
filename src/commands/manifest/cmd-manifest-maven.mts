@@ -3,9 +3,9 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { convertMavenToFacts } from './convert-maven-to-facts.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -234,15 +234,16 @@ async function run(
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
   assertValidExcludePaths(excludePaths)
 
-  await convertMavenToFacts({
+  await runManifestFacts({
     bin: String(bin),
+    buildOpts: parsedMavenOpts,
     cwd,
+    ecosystem: 'maven',
     excludeConfigs: String(excludeConfigs || ''),
     excludePaths,
     ignoreUnresolved: Boolean(ignoreUnresolved),
     includeConfigs: String(includeConfigs || ''),
     javaHome,
-    mavenOpts: parsedMavenOpts,
     verbose: Boolean(verbose),
   })
 }

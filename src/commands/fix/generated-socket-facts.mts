@@ -5,6 +5,7 @@ import { useOnlySocketFactsArtifactsFlags } from '../../utils/coana.mts'
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
 import type { PURL_Type } from '../../utils/ecosystem.mts'
+import type { KeptRootsDir } from '../scan/run-dynamic-sbom-inference.mts'
 
 export type GeneratedSocketFacts = {
   // Coana's flags selecting what the facts files resolve.
@@ -12,7 +13,8 @@ export type GeneratedSocketFacts = {
   // Facts files of dropped runs, which Coana must not read.
   discardedPaths: string[]
   paths: string[]
-  // The facts files' per-project classpaths, written outside the repository.
+  // What Coana kept of each build root, for `--socket-facts-sidecar`; written
+  // outside the repository.
   sidecarFile: string
   remove: () => Promise<void>
   restore: () => Promise<void>
@@ -40,15 +42,19 @@ async function restoreAll(backups: Backup[]): Promise<void> {
 // Backed up so each fix attempt sees the pre-fix build after `git clean`, and
 // facts files already present are left as they were found.
 export async function generateSocketFactsForFix({
+  coanaVersion,
   cwd,
   excludePaths,
   findFactsPaths,
+  orgSlug,
   purlTypes,
   tmpDir,
 }: {
+  coanaVersion?: string | undefined
   cwd: string
   excludePaths: string[]
   findFactsPaths: () => Promise<string[]>
+  orgSlug?: string | undefined
   purlTypes: readonly PURL_Type[]
   tmpDir: string
 }): Promise<GeneratedSocketFacts> {
@@ -65,25 +71,26 @@ export async function generateSocketFactsForFix({
   let discardedPaths: string[]
   let paths: string[]
   const sidecarFile = path.join(tmpDir, 'sidecar.json')
+  const workDir: KeptRootsDir = {
+    dir: path.join(tmpDir, 'work'),
+    entries: new Map(),
+  }
   try {
-    const {
-      discardedFactsPaths,
-      factsOnlyTypes,
-      factsPaths,
-      resolvedPathsSidecar,
-    } = await runDynamicSbomInference({
-      consumer: 'fix',
-      cwd,
-      excludePaths,
-      purlTypes,
-      sbtTmpDir: undefined,
-    })
+    const { discardedFactsPaths, factsOnlyTypes, factsPaths } =
+      await runDynamicSbomInference({
+        consumer: 'fix',
+        context: { coanaVersion, orgSlug },
+        cwd,
+        excludePaths,
+        purlTypes,
+        workDir,
+      })
     artifactsFlags = useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
     discardedPaths = discardedFactsPaths
     paths = factsPaths.map(p => path.resolve(cwd, p))
     // Written even when empty, as for reach; applying fixes looks each facts
     // file up in it, so an empty one is the same as none.
-    await writeFile(sidecarFile, JSON.stringify(resolvedPathsSidecar ?? {}))
+    await writeFile(sidecarFile, JSON.stringify([...workDir.entries.values()]))
   } catch (e) {
     // A failed build root aborts inference after others wrote their facts.
     await reset(await findFactsPaths())
@@ -99,8 +106,7 @@ export async function generateSocketFactsForFix({
     discardedPaths,
     paths,
     sidecarFile,
-    // A discarded file a run left as written is removed too.
-    remove: () => reset([...paths, ...discardedPaths]),
+    remove: () => reset(paths),
     restore: () => restoreAll(backups),
   }
 }

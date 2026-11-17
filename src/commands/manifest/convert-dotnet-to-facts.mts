@@ -8,30 +8,30 @@ import {
 import { buildUncoveredRoot } from './generate-recursive-manifests.mts'
 
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
-import type { RunManifestFactsOutcome } from './run-manifest-facts.mts'
-import type { BuildOptionHints } from './scripts/resolution-report-render.mts'
-import type { SidecarAccumulator } from './scripts/sidecar.mts'
+import type {
+  BuildOptionHints,
+  RunManifestFactsOutcome,
+  SocketFactsContext,
+} from './run-manifest-facts.mts'
 
 // Generates `<entry>.socket.facts.json` for the given solution or project
 // file, or for every solution and project at the top of `cwd`. A project a
 // solution there already covers is not built again.
 export async function convertDotnetToFacts({
   config,
+  context,
   cwd,
   entryFile,
   excludePaths,
   hints,
-  sidecarAcc,
-  withFiles,
 }: {
   config: EcosystemBuildConfig
+  context?: SocketFactsContext | undefined
   cwd: string
   // Builds only this file (relative to cwd) when set.
   entryFile?: string | undefined
   excludePaths?: string[] | undefined
   hints?: BuildOptionHints | undefined
-  sidecarAcc?: SidecarAccumulator | undefined
-  withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome> {
   const entries = entryFile ? [entryFile] : findDotnetEntries(cwd)
   if (!entries.length) {
@@ -48,14 +48,13 @@ export async function convertDotnetToFacts({
     // eslint-disable-next-line no-await-in-loop
     const outcome = await buildUncoveredRoot({
       config,
+      context,
       covered,
       cwd,
       ecosystem: 'dotnet',
       excludePaths,
       hints,
       root: { dir, entryFile: entry },
-      sidecarAcc,
-      withFiles,
     })
     if (outcome === 'covered') {
       if (config.verbose) {
