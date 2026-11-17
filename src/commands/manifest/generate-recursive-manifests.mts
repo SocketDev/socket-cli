@@ -21,7 +21,7 @@ import {
   isBuildRootCovered,
   isPathInside,
   isRootCovered,
-  membershipOfBuildFiles,
+  membershipOf,
   realpathOrResolved,
   unionMemberships,
   withoutDisabledFlags,
@@ -728,7 +728,7 @@ async function runCandidate(
     ...candidate,
     factsKey,
     membership: result
-      ? await membershipOfBuildFiles(result.coveredBuildFiles, ctx.realCwd)
+      ? await membershipOf(result.projects, ctx.realCwd)
       : emptyMembership(),
     output,
     result: result ?? undefined,
@@ -824,10 +824,7 @@ export async function buildUncoveredRoot({
     verbose: config.verbose,
   })
   if (result) {
-    addMembership(
-      covered,
-      await membershipOfBuildFiles(result.coveredBuildFiles),
-    )
+    addMembership(covered, await membershipOf(result.projects))
   }
   return result
 }

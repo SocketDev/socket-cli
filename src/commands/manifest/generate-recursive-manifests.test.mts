@@ -54,11 +54,13 @@ type TestFacts = { factsPath: string; projects: TestProject[] }
 function reported({ factsPath, projects }: TestFacts) {
   const buildRoot = path.dirname(factsPath)
   return {
-    coveredBuildFiles: projects
-      .flatMap(project => project.manifestFiles ?? [])
-      .map(({ file }) => path.resolve(buildRoot, file))
-      .filter(file => existsSync(file)),
     factsPath,
+    projects: projects.map(project => ({
+      buildFiles: (project.manifestFiles ?? []).map(({ file }) =>
+        path.resolve(buildRoot, file),
+      ),
+      dir: path.resolve(buildRoot, project.subprojectDir),
+    })),
   }
 }
 
@@ -255,6 +257,70 @@ describe('generateRecursiveManifests', () => {
         expect(
           outcomes.find(o => o.dir === sharedLib)?.discardedFactsPath,
         ).toBe(builtAlone ? sharedFacts : undefined)
+      } finally {
+        await fs.rm(outer, { recursive: true, force: true })
+      }
+    },
+  )
+
+  it.for([
+    // The build that redirects Gradle with `-p` runs second, then first.
+    ['a-main', 'z-alias'],
+    ['z-main', 'a-alias'],
+  ])(
+    'keeps the facts and sidecar entry of the kept run together when two runs write one facts file (%s, %s)',
+    async ([mainName, aliasName]) => {
+      const outer = await fs.realpath(
+        await fs.mkdtemp(path.join(tmpdir(), 'shared-facts-')),
+      )
+      const main = path.join(outer, mainName!)
+      const alias = path.join(outer, aliasName!)
+      const workDir = newWorkDir()
+      try {
+        for (const dir of [main, alias]) {
+          for (const file of ['settings.gradle', 'build.gradle']) {
+            // eslint-disable-next-line no-await-in-loop
+            await fs.mkdir(dir, { recursive: true })
+            // eslint-disable-next-line no-await-in-loop
+            await fs.writeFile(path.join(dir, file), '')
+          }
+        }
+        mockFacts(async ({ cwd }) => {
+          const factsPath = path.join(main, 'gradle.socket.facts.json')
+          await fs.writeFile(factsPath, cwd)
+          setSidecarEntry(workDir, factsPath, {
+            factsFile: factsPath,
+            stateDir: cwd,
+          })
+          return {
+            factsPath,
+            projects: [
+              {
+                type: 'maven' as const,
+                name: 'root',
+                id: 'root',
+                subprojectDir: '.',
+                children: [],
+              },
+            ],
+          }
+        })
+
+        const outcomes = await generateRecursiveManifests({
+          context: { workDir },
+          cwd: outer,
+          verbose: false,
+        })
+
+        const generated = outcomes.filter(o => o.status === 'generated')
+        expect(generated).toHaveLength(1)
+        const { factsPath } = generated[0]!
+        expect(generated[0]!.discardedFactsPath).toBeUndefined()
+        // The kept build's own facts and sidecar entry, whichever ran last.
+        expect(await fs.readFile(factsPath!, 'utf8')).toBe(generated[0]!.dir)
+        expect(workDir.entries).toEqual([
+          { factsFile: factsPath, stateDir: generated[0]!.dir },
+        ])
       } finally {
         await fs.rm(outer, { recursive: true, force: true })
       }
@@ -1266,6 +1332,70 @@ describe('generateRecursiveManifests', () => {
     })
     afterEach(async () => {
       await fs.rm(outer, { recursive: true, force: true })
+    })
+
+    it.for([
+      // sub's own settings include `a`, which the outer build does not load.
+      [['.', 'a'], 'generated'],
+      // Everything sub loads, the outer build loads too.
+      [['.'], 'skippedCovered'],
+    ] as const)(
+      'runs the nested build and keeps it only when it loads more (%j)',
+      async ({ 0: subProjects, 1: subStatus }) => {
+        const sub = path.join(outer, 'sub')
+        mockFacts(async ({ cwd }) =>
+          cwd === outer
+            ? gradleFacts(cwd, [
+                '.',
+                'sub',
+                ...(subProjects.length > 1 ? [] : ['sub/a']),
+              ])
+            : gradleFacts(cwd, [...subProjects]),
+        )
+
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          purlTypes: ['maven'],
+          verbose: false,
+        })
+
+        const byDir = new Map(
+          outcomes
+            .filter(o => o.ecosystem === 'gradle')
+            .map(o => [path.relative(outer, o.dir) || '.', o.status]),
+        )
+        expect(byDir.get('.')).toBe('generated')
+        expect(byDir.get('sub')).toBe(subStatus)
+        expect(byDir.get('sub/a')).toBe('skippedCovered')
+        expect(
+          vi
+            .mocked(runManifestFacts)
+            .mock.calls.map(([o]) => path.relative(outer, o.cwd) || '.'),
+        ).toEqual(['.', 'sub'])
+      },
+    )
+
+    it('ignores the failure of a nested build of its own when the build that includes its directory succeeds', async () => {
+      mockFacts(async ({ cwd }) => {
+        if (cwd === path.join(outer, 'sub')) {
+          process.exitCode = 1
+          return null
+        }
+        return gradleFacts(cwd, ['.', 'sub', 'sub/a'])
+      })
+      vi.spyOn(logger, 'info').mockImplementation(() => logger)
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        purlTypes: ['maven'],
+        verbose: false,
+      })
+
+      expect(
+        outcomes.find(o => o.dir === path.join(outer, 'sub'))?.status,
+      ).toBe('skippedCovered')
+      expect(outcomes.some(o => o.status === 'failed')).toBe(false)
+      expect(process.exitCode).toBeUndefined()
     })
 
     it.for([

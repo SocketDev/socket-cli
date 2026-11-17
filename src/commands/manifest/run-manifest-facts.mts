@@ -92,10 +92,13 @@ export type SocketFactsContext = {
   workDir?: SocketFactsWorkDir | undefined
 }
 
+// A project the build loaded, with absolute paths. Gradle reports a project's
+// build file even when absent.
+export type SocketFactsProject = { buildFiles: string[]; dir: string }
+
 export type RunManifestFactsResult = {
-  // Realpath-resolved build files the build covers.
-  coveredBuildFiles: string[]
   factsPath: string
+  projects: SocketFactsProject[]
 }
 
 // `null` = a real failure (crash, missing config, blocking unresolved
@@ -128,8 +131,8 @@ type SocketFactsRequest = {
 
 type SocketFactsResult =
   | {
-      coveredBuildFiles: string[]
       factsPath: string
+      projects: SocketFactsProject[]
       sidecarEntry?: SocketFactsSidecarEntry | undefined
       status: 'generated'
     }
@@ -383,7 +386,7 @@ export async function runManifestFacts({
     setSidecarEntry(workDir, result.factsPath, result.sidecarEntry)
   }
   return {
-    coveredBuildFiles: result.coveredBuildFiles,
     factsPath: result.factsPath,
+    projects: result.projects,
   }
 }

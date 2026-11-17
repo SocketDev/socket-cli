@@ -71,9 +71,10 @@ afterEach(async () => {
 
 describe('runManifestFacts', () => {
   it('asks Coana for one build root with its options as written', async () => {
+    const projects = [{ buildFiles: [path.join(cwd, 'pom.xml')], dir: cwd }]
     coanaAnswers({
-      coveredBuildFiles: [path.join(cwd, 'pom.xml')],
       factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
+      projects,
       status: 'generated',
     })
     const result = await runManifestFacts({
@@ -86,8 +87,8 @@ describe('runManifestFacts', () => {
       javaHome: '$JAVA11_HOME',
     })
     expect(result).toEqual({
-      coveredBuildFiles: [path.join(cwd, 'pom.xml')],
       factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
+      projects,
     })
     expect(calls[0]!.args.slice(0, 1)).toEqual(['generate-socket-facts'])
     expect(calls[0]!.args).not.toContain('--work-dir')
@@ -133,8 +134,8 @@ describe('runManifestFacts', () => {
       stateDir: '/w/x',
     }
     coanaAnswers({
-      coveredBuildFiles: [],
       factsPath: entry.factsFile,
+      projects: [],
       sidecarEntry: entry,
       status: 'generated',
     })
@@ -154,8 +155,8 @@ describe('runManifestFacts', () => {
 
   it('keeps state without installing files for socket fix', async () => {
     coanaAnswers({
-      coveredBuildFiles: [],
       factsPath: '/r/f',
+      projects: [],
       sidecarEntry: { factsFile: '/r/f', stateDir: '/w/y' },
       status: 'generated',
     })

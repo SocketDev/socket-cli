@@ -18,9 +18,11 @@ import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
-import type { SocketFactsContext } from './run-manifest-facts.mts'
+import type {
+  SocketFactsContext,
+  SocketFactsProject,
+} from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
-import type { SocketFactsSbomProject } from './scripts/facts.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -131,26 +133,19 @@ export function isPathInside(dir: string, file: string): boolean {
   return file === dir || file.startsWith(`${dir}${path.sep}`)
 }
 
-// Paths are relative to `buildRoot`. Only what lies inside `scanRoot` (when
-// given) counts, as only that can be a candidate.
+// Only what lies inside `scanRoot` (when given) counts, as only that can be a
+// candidate.
 export async function membershipOf(
-  buildRoot: string,
-  projects: readonly SocketFactsSbomProject[],
+  projects: readonly SocketFactsProject[],
   scanRoot?: string | undefined,
 ): Promise<Membership> {
   const realScanRoot = scanRoot ? await realpathOrResolved(scanRoot) : undefined
   const inScan = (p: string) => !realScanRoot || isPathInside(realScanRoot, p)
   const membership = emptyMembership()
   const [dirs, files] = await Promise.all([
+    Promise.all(projects.map(({ dir }) => realpathOrResolved(dir))),
     Promise.all(
-      projects.map(({ subprojectDir }) =>
-        realpathOrResolved(path.resolve(buildRoot, subprojectDir)),
-      ),
-    ),
-    Promise.all(
-      projects
-        .flatMap(project => project.manifestFiles ?? [])
-        .map(({ file }) => realFilePath(path.resolve(buildRoot, file))),
+      projects.flatMap(({ buildFiles }) => buildFiles).map(realFilePath),
     ),
   ])
   for (const dir of dirs) {
@@ -164,22 +159,6 @@ export async function membershipOf(
     }
   }
   return membership
-}
-
-// Coana reports the realpath-resolved build files a build covers.
-export async function membershipOfBuildFiles(
-  files: readonly string[],
-  scanRoot?: string | undefined,
-): Promise<Membership> {
-  const realScanRoot = scanRoot ? await realpathOrResolved(scanRoot) : undefined
-  return {
-    dirs: new Set(),
-    files: new Set(
-      realScanRoot
-        ? files.filter(file => isPathInside(realScanRoot, file))
-        : files,
-    ),
-  }
 }
 
 const rootMarkerByDir = new Map<string, boolean>()

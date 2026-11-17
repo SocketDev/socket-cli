@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { membershipOf } from './discover-manifest-roots.mts'
@@ -43,9 +45,18 @@ export async function loadBuild({
   if (!result) {
     return undefined
   }
+  const { buildRoot, projects } = result
   return {
-    membership: await membershipOf(result.buildRoot, result.projects, scanRoot),
-    modules: Math.max(0, result.projects.length - 1),
+    membership: await membershipOf(
+      projects.map(({ manifestFiles, subprojectDir }) => ({
+        buildFiles: (manifestFiles ?? []).map(({ file }) =>
+          path.resolve(buildRoot, file),
+        ),
+        dir: path.resolve(buildRoot, subprojectDir),
+      })),
+      scanRoot,
+    ),
+    modules: Math.max(0, projects.length - 1),
   }
 }
 
