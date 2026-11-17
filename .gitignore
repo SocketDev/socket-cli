@@ -30,6 +30,8 @@
 !/assets/fleet/
 !/bin/
 !/docs/
+!/docs/commands/
+!/docs/commands/**
 !/docs/dynamic-sbom-inference-settings.md
 !/patches/
 !/scripts/

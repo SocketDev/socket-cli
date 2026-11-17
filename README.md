@@ -17,15 +17,19 @@ socket --help
 
 ### Commands
 
+See the [Command reference](docs/commands/README.md) for usage guides.
+
 - `socket npm [args...]` and `socket npx [args...]` - Wraps npm/npx with Socket security scanning
 
 - `socket fix` - Fix CVEs in dependencies
 
-- `socket optimize` - Optimize dependencies with [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
+- `socket organization dependencies` (alias: `socket org deps`) - List dependencies recorded for your organization
 
 - `socket cdxgen [command]` - Run [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started) for SBOM generation
 
-- `socket patch <command>` - Apply, manage, and rollback Socket security patches for vulnerable dependencies
+- `socket patch` - Scan for, apply, and manage Socket security patches for vulnerable dependencies
+
+- `socket optimize` - Optimize dependencies with [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
 
 #### Patch subcommands
 
