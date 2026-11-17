@@ -4,9 +4,7 @@ import {
   constants as fsConstants,
   statSync,
 } from 'node:fs'
-import { basename, join, resolve } from 'node:path'
-
-import constants from '../../../constants.mts'
+import { join, resolve } from 'node:path'
 
 import type { FactsOnlyTypes } from '../../../utils/coana.mts'
 import type { PURL_Type } from '../../../utils/ecosystem.mts'
@@ -49,9 +47,6 @@ export function buildToolsFor(purlTypes: readonly PURL_Type[]): BuildTool[] {
 export function buildToolLabelsFor(purlTypes: readonly PURL_Type[]): string[] {
   return buildToolsFor(purlTypes).map(tool => ECOSYSTEM_LABELS[tool])
 }
-
-// Purl types whose packages have no namespace (NuGet ids are flat).
-export const NAMESPACELESS_PURL_TYPES: ReadonlySet<string> = new Set(['nuget'])
 
 const BUILD_TOOL_PATH_ENV: Record<BuildTool, string> = {
   __proto__: null,
@@ -206,17 +201,4 @@ export function resolveBuildToolBin(
 
 export function isDotnetSolution(file: string): boolean {
   return /\.slnx?$/i.test(file)
-}
-
-// Distinct for every build sharing a directory.
-export function socketFactsFileName(
-  tool: BuildTool,
-  entryFile: string | undefined,
-): string | undefined {
-  if (!BUILD_FILES[tool].byFile) {
-    return `${tool}${constants.DOT_SOCKET_DOT_FACTS_JSON}`
-  }
-  return entryFile
-    ? `${basename(entryFile)}${constants.DOT_SOCKET_DOT_FACTS_JSON}`
-    : undefined
 }

@@ -35,19 +35,19 @@ Build on the target OS and architecture. The builder supports `darwin`, `linux`,
 
 The builder creates a private temporary copy of the distribution. It does not replace the checkout's `dist` or `external` directories. It writes the executable and manifest to `build/sea`. Use `--output-dir` or `SOCKET_CLI_SEA_OUTPUT_DIR` to select another directory; the command-line option takes precedence.
 
-The builder stages independent payloads in parallel. It waits for all staging jobs before cleanup. It builds the .NET facts helper before Rollup copies the distribution.
+The builder stages independent payloads in parallel. It waits for all staging jobs before cleanup.
 
 The builder caches downloads in `~/.cache/socket-sea/downloads` and checks each cache hit against its pinned digest. It fetches Node's `SHASUMS256.txt` on every build.
 
 ## Embedded tools
 
-The build embeds the .NET facts helper, `socket-patch`, and `uv` when a verified payload exists for the target. The .NET helper still needs a compatible .NET SDK from the project or `PATH`. The scan command uses `SOCKET_CLI_UV_PATH` when set. Otherwise, it extracts embedded `uv` to a temporary directory when needed.
+The build embeds `socket-patch` and `uv` when a verified payload exists for the target. The scan command uses `SOCKET_CLI_UV_PATH` when set. Otherwise, it extracts embedded `uv` to a temporary directory when needed.
 
 The bundled `cdxgen` generates SBOMs from npm lockfile v3 and Yarn Classic projects. Yarn Classic needs an existing `node_modules` directory for Synp. The manifest records source verification and third-party notices.
 
 Rollup creates a notice inventory from each bundled dependency graph. Some pinned packages omit their license text from npm; exact package-version entries in `.config/rollup.cdxgen-sea.config.mjs` and `src/sea/rollup-provenance.mjs` supply the missing text. A dependency bump cannot reuse a mismatched entry, so the inventory records a missing-text obligation. README files are not used as license text or shipped as notice documents.
 
-The Node CLI and SEA download Coana from the Socket API on a cache miss. The SEA bundles Node to run Coana. SEA builds need no Coana credentials. Python and JVM runtimes remain external.
+The Node CLI and SEA download Coana from the Socket API on a cache miss. The SEA bundles Node to run Coana. SEA builds need no Coana credentials. Python, JVM and .NET runtimes remain external.
 
 ## Manifest
 

@@ -227,10 +227,6 @@ jobs:
           VERSION: ${{ steps.release-meta.outputs.version }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
         run: |
-          # Run tool builds directly so the firewall only wraps package-manager traffic.
-          if [[ -n "${JAVA_HOME_17_X64:-}" ]]; then export JAVA_HOME="$JAVA_HOME_17_X64"; fi
-          bash src/commands/manifest/scripts/maven-extension/build-jar.sh
-          bash src/commands/manifest/scripts/dotnet-tool/build-tool.sh
           node .github/scripts/pin-readme-assets.mjs
 
           mkdir -p "$RUNNER_TEMP/dist"

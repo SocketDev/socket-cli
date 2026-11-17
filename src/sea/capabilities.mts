@@ -23,7 +23,6 @@ export function createSeaCapabilities({
   return {
     available: [
       'socket-core',
-      'manifest-dotnet-facts',
       ...(hasSocketPatch ? ['socket-patch'] : []),
       'coana',
       ...(hasCdxgen ? ['manifest-cdxgen-npm-lock-v3'] : []),
