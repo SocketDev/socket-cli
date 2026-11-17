@@ -311,12 +311,8 @@ export function isFactsOnlyTypes(
   return !!types.length
 }
 
-// Maven alone keeps the older flag, which Coana releases before 15.14.1 also
-// know.
 export function useOnlySocketFactsArtifactsFlags(
   types: FactsOnlyTypes,
 ): string[] {
-  return types.length === 1 && types[0] === 'maven'
-    ? ['--maven-use-only-socket-facts']
-    : ['--use-only-socket-facts-artifacts', [...types].sort().join(',')]
+  return ['--use-only-socket-facts-artifacts', [...types].sort().join(',')]
 }
