@@ -287,7 +287,7 @@ describe('readSocketJsonChain and mergeSocketJsonChain', () => {
   })
 })
 
-describe('reachability.build validation', () => {
+describe('reachability validation', () => {
   let dir = ''
 
   beforeEach(async () => {
@@ -340,6 +340,40 @@ describe('reachability.build validation', () => {
     })
 
     expect(readSocketJsonSync(dir).ok).toBe(false)
+  })
+
+  it.for([
+    [
+      'compile',
+      '`defaults.manifest.maven.reachability` is "compile"; set it to an object, or remove it',
+    ],
+    [
+      { javaHome: 17 },
+      '`defaults.manifest.maven.reachability.javaHome` is 17; set it to a JDK path, or to null to clear an inherited one, or remove it',
+    ],
+  ] as const)(
+    'rejects the reachability %j, naming the key',
+    async ({ 0: reachability, 1: cause }) => {
+      await writeSocketJson(dir, {
+        version: 1,
+        defaults: { manifest: { maven: { reachability } } },
+      } as never)
+
+      expect(readSocketJsonSync(dir)).toEqual({
+        ok: false,
+        message: `Invalid socket.json at ${path.join(dir, 'socket.json')}`,
+        cause,
+      })
+    },
+  )
+
+  it('accepts a null reachability javaHome, which clears an inherited one', async () => {
+    await writeSocketJson(dir, {
+      version: 1,
+      defaults: { manifest: { gradle: { reachability: { javaHome: null } } } },
+    })
+
+    expect(readSocketJsonSync(dir).ok).toBe(true)
   })
 
   it('fails the command rather than falling back to the default socket.json', async () => {

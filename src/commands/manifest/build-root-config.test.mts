@@ -217,6 +217,18 @@ describe('createBuildRootSettingsResolver', () => {
   it.for([
     [{ 'pom.xml': true }, 'must be an object'],
     [{ 'pom.xml': { disabled: 'yes' } }, 'must be true or false'],
+    [
+      { 'pom.xml': { reachability: 'compile' } },
+      '`defaults.manifest.builds["pom.xml"].reachability` is "compile"; set it to an object',
+    ],
+    [
+      { 'pom.xml': { reachability: { build: 'package' } } },
+      '`defaults.manifest.builds["pom.xml"].reachability.build` is "package"; set it to "compile" or "none"',
+    ],
+    [
+      { 'pom.xml': { reachability: { javaHome: false } } },
+      '`defaults.manifest.builds["pom.xml"].reachability.javaHome` is false; set it to a JDK path',
+    ],
   ] as const)('rejects the entries %j', async ({ 0: builds, 1: reason }) => {
     await write('.', { builds }, ['pom.xml'])
 

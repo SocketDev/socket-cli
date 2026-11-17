@@ -23,6 +23,7 @@ import path from 'node:path'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 
 import { InputError, formatErrorWithDetail } from './errors.mts'
 import { findUp } from './fs.mts'
@@ -198,20 +199,47 @@ function validateSocketJson(
   sockJsonPath: string,
 ): CResult<SocketJson> {
   for (const tool of REACHABILITY_BUILD_TOOLS) {
-    const build: unknown =
-      sockJson.defaults?.manifest?.[tool]?.reachability?.build
-    if (
-      build !== undefined &&
-      !(REACHABILITY_BUILD_MODES as readonly unknown[]).includes(build)
-    ) {
+    const problem = reachabilityProblem(
+      sockJson.defaults?.manifest?.[tool]?.reachability,
+      `defaults.manifest.${tool}.reachability`,
+    )
+    if (problem) {
       return {
         ok: false,
         message: `Invalid ${SOCKET_JSON} at ${sockJsonPath}`,
-        cause: `\`defaults.manifest.${tool}.reachability.build\` is ${JSON.stringify(build)}; set it to ${REACHABILITY_BUILD_MODES.map(m => `"${m}"`).join(' or ')}, or remove it`,
+        cause: problem,
       }
     }
   }
   return { ok: true, data: sockJson }
+}
+
+// What is wrong with a `reachability` setting at `key`, if anything.
+export function reachabilityProblem(
+  reachability: unknown,
+  key: string,
+): string | undefined {
+  if (reachability === undefined) {
+    return undefined
+  }
+  if (!isObjectObject(reachability)) {
+    return `\`${key}\` is ${JSON.stringify(reachability)}; set it to an object, or remove it`
+  }
+  const { build, javaHome } = reachability as Record<string, unknown>
+  if (
+    build !== undefined &&
+    !(REACHABILITY_BUILD_MODES as readonly unknown[]).includes(build)
+  ) {
+    return `\`${key}.build\` is ${JSON.stringify(build)}; set it to ${REACHABILITY_BUILD_MODES.map(m => `"${m}"`).join(' or ')}, or remove it`
+  }
+  if (
+    javaHome !== undefined &&
+    javaHome !== null &&
+    typeof javaHome !== 'string'
+  ) {
+    return `\`${key}.javaHome\` is ${JSON.stringify(javaHome)}; set it to a JDK path, or to null to clear an inherited one, or remove it`
+  }
+  return undefined
 }
 
 export function readOrDefaultSocketJson(cwd: string): SocketJson {

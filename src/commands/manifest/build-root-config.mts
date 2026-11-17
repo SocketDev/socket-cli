@@ -11,6 +11,7 @@ import { InputError } from '../../utils/errors.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import {
   mergeSocketJsonChain,
+  reachabilityProblem,
   readSocketJsonChain,
 } from '../../utils/socket-json.mts'
 
@@ -92,6 +93,13 @@ function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
       throw new InputError(
         `${buildsSetting(key)}.disabled in ${file} must be true or false.`,
       )
+    }
+    const problem = reachabilityProblem(
+      entry['reachability'],
+      `${buildsSetting(key)}.reachability`,
+    )
+    if (problem) {
+      throw new InputError(`Invalid ${file}: ${problem}.`)
     }
   }
   for (const tool of BUILD_TOOLS) {
