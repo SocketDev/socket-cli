@@ -402,6 +402,20 @@ describe('listBuildProjects', () => {
     })
   })
 
+  it('lists with the Coana version and org of its context', async () => {
+    coanaAnswers({ projects: [], status: 'listed' })
+    await listBuildProjects({
+      ...listArgs,
+      context: { coanaVersion: '1.2.3', orgSlug: 'acme' },
+      cwd,
+    })
+    expect(spawnCoana).toHaveBeenCalledWith(
+      expect.arrayContaining(['--list-projects']),
+      'acme',
+      expect.objectContaining({ coanaVersion: '1.2.3' }),
+    )
+  })
+
   it('lists nothing without running Coana when the bin cannot be resolved', async () => {
     process.env['SOCKET_CLI_MAVEN_PATH'] = path.join(cwd, 'missing-mvn')
     expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()

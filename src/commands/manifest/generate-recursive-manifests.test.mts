@@ -1726,6 +1726,36 @@ describe('generateRecursiveManifests', () => {
       }
     })
 
+    it('loads it with the Coana, org and hints its build would run with', async () => {
+      vi.mocked(listBuildProjects).mockResolvedValue(
+        listed(path.join(outer, 'legacy'), [mavenProject('.')]),
+      )
+      const context = { coanaVersion: '1.2.3', orgSlug: 'acme' }
+      vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+      await generateRecursiveManifests({
+        context,
+        cwd: outer,
+        optionFlags: new Set(['verbose']),
+        verbose: false,
+      })
+
+      expect(listBuildProjects).toHaveBeenCalledWith(
+        expect.objectContaining({
+          context,
+          cwd: path.join(outer, 'legacy'),
+          entryFile: 'pom.xml',
+          hints: {
+            continueOnInstallErrorsFlag: undefined,
+            excludePathsFlag: '--exclude-paths',
+            flags: new Set(['verbose']),
+            setupCommand: 'socket manifest setup --dynamic-sbom-inference',
+            socketJson: expect.stringMatching(/legacy\/socket\.json$/),
+          },
+        }),
+      )
+    })
+
     it('reports a skipped build that another build includes as part of that build, warning that the skip does not apply', async () => {
       await fs.mkdir(path.join(outer, 'zzz-reactor'), { recursive: true })
       await fs.writeFile(pom('zzz-reactor'), '<project/>')

@@ -58,6 +58,7 @@ import type {
   RunManifestFactsOutcome,
   RunManifestFactsResult,
   SocketFactsContext,
+  SocketFactsRunOptions,
   SocketFactsSidecarEntry,
 } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
@@ -491,12 +492,8 @@ async function walkTool(
     if (skipOf(next) === 'load') {
       // eslint-disable-next-line no-await-in-loop
       const loaded = await loadBuild({
-        config: configFor(next),
-        ecosystem,
-        excludePaths: ctx.excludePaths,
-        root: next.root,
+        ...runOptions(ctx, ecosystem, next, configFor(next)),
         scanRoot: ctx.realCwd,
-        verbose: ctx.verbose,
       })
       const why = describeDisabledBy(ecosystem, resolvedFor(next).disabledBy!)
       if (loaded) {
@@ -664,30 +661,15 @@ async function warnUnappliedEntry(
   )
 }
 
-async function runCandidate(
+// How the walk runs Coana on a build root, whether to generate its facts or
+// only to list what it loads.
+function runOptions(
   ctx: WalkContext,
   ecosystem: BuildTool,
-  candidate: Candidate,
+  { root }: Candidate,
   dirConfig: EcosystemBuildConfig,
-): Promise<Run | undefined> {
-  const { root } = candidate
-  const expectedFactsPath = path.join(
-    root.dir,
-    socketFactsFileName(ecosystem, root.entryFile) ?? '',
-  )
-  const expectedKey = await realpathOrResolved(expectedFactsPath)
-  if (!ctx.originals.has(expectedKey)) {
-    ctx.originals.set(
-      expectedKey,
-      await saveFacts(
-        ctx,
-        expectedFactsPath,
-        expectedKey,
-        `${ecosystem}-${candidate.index}`,
-      ),
-    )
-  }
-  const result = await runManifestFacts({
+): SocketFactsRunOptions {
+  return {
     bin: dirConfig.bin,
     buildOpts: dirConfig.buildOpts,
     context: ctx.context,
@@ -713,7 +695,35 @@ async function runCandidate(
     javaHome: dirConfig.javaHome,
     reachability: dirConfig.reachability,
     verbose: ctx.verbose || dirConfig.verbose,
-  })
+  }
+}
+
+async function runCandidate(
+  ctx: WalkContext,
+  ecosystem: BuildTool,
+  candidate: Candidate,
+  dirConfig: EcosystemBuildConfig,
+): Promise<Run | undefined> {
+  const { root } = candidate
+  const expectedFactsPath = path.join(
+    root.dir,
+    socketFactsFileName(ecosystem, root.entryFile) ?? '',
+  )
+  const expectedKey = await realpathOrResolved(expectedFactsPath)
+  if (!ctx.originals.has(expectedKey)) {
+    ctx.originals.set(
+      expectedKey,
+      await saveFacts(
+        ctx,
+        expectedFactsPath,
+        expectedKey,
+        `${ecosystem}-${candidate.index}`,
+      ),
+    )
+  }
+  const result = await runManifestFacts(
+    runOptions(ctx, ecosystem, candidate, dirConfig),
+  )
   if (result === null) {
     return undefined
   }

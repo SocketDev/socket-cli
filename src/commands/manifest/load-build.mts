@@ -3,9 +3,8 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 import { membershipOf } from './discover-manifest-roots.mts'
 import { listBuildProjects } from './run-manifest-facts.mts'
 
-import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
-import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
-import type { BuildTool } from './scripts/build-tool.mts'
+import type { Membership } from './discover-manifest-roots.mts'
+import type { SocketFactsRunOptions } from './run-manifest-facts.mts'
 
 export type LoadedBuild = {
   membership: Membership
@@ -15,31 +14,12 @@ export type LoadedBuild = {
 
 // Lets the build tool load a build, resolving nothing, for what it includes.
 export async function loadBuild({
-  config,
-  ecosystem,
-  excludePaths,
-  root,
   scanRoot,
-  verbose,
-}: {
-  config: EcosystemBuildConfig
-  ecosystem: BuildTool
-  excludePaths: string[] | undefined
-  root: BuildRoot
-  scanRoot: string
-  verbose: boolean
-}): Promise<LoadedBuild | undefined> {
-  const projects = await listBuildProjects({
-    bin: config.bin,
-    buildOpts: config.buildOpts,
-    cwd: root.dir,
-    ecosystem,
-    entryFile: root.entryFile,
-    excludeBase: scanRoot,
-    excludePaths,
-    javaHome: config.javaHome,
-    verbose: verbose || config.verbose,
-  })
+  ...options
+}: SocketFactsRunOptions & { scanRoot: string }): Promise<
+  LoadedBuild | undefined
+> {
+  const projects = await listBuildProjects(options)
   if (!projects) {
     return undefined
   }

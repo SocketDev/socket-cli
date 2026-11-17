@@ -256,6 +256,10 @@ export type SocketFactsRequestOptions = {
   verbose?: boolean | undefined
 }
 
+export type SocketFactsRunOptions = SocketFactsRequestOptions & {
+  context?: SocketFactsContext | undefined
+}
+
 // `bin` is resolved as the build tool's own runner would: the
 // SOCKET_CLI_*_PATH override first, then the given bin, the project wrapper,
 // PATH.
@@ -357,9 +361,10 @@ export async function listDotnetSolutionMembers({
 // The projects a build loads, as the build reports them, without resolving its
 // dependencies; undefined when the build cannot list them, after reporting
 // why.
-export async function listBuildProjects(
-  options: SocketFactsRequestOptions,
-): Promise<SocketFactsProject[] | undefined> {
+export async function listBuildProjects({
+  context = {},
+  ...options
+}: SocketFactsRunOptions): Promise<SocketFactsProject[] | undefined> {
   const { cwd, ecosystem } = options
   const request = toSocketFactsRequest(options)
   if (!request.ok) {
@@ -369,7 +374,7 @@ export async function listBuildProjects(
   const { message, result } = await runGenerateSocketFacts<ProjectList>(
     request.data,
     ['--list-projects'],
-    {},
+    context,
   )
   if (!result) {
     logger.fail(
@@ -386,9 +391,7 @@ export async function listBuildProjects(
 export async function runManifestFacts({
   context = {},
   ...options
-}: SocketFactsRequestOptions & {
-  context?: SocketFactsContext | undefined
-}): Promise<RunManifestFactsOutcome> {
+}: SocketFactsRunOptions): Promise<RunManifestFactsOutcome> {
   const { cwd, ecosystem } = options
   if (ecosystem === 'sbt' && !looksLikeSbtBuild(cwd)) {
     process.exitCode = 1

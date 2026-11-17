@@ -664,14 +664,19 @@ async function loadOrAsk(
   allowDirectory = true,
 ): Promise<CResult<{ canceled: boolean; loaded?: LoadOutcome | undefined }>> {
   for (;;) {
+    const config = buildConfig(walk, build)
     // eslint-disable-next-line no-await-in-loop
     const loaded = await loadBuild({
-      config: buildConfig(walk, build),
+      bin: config.bin,
+      buildOpts: config.buildOpts,
+      cwd: build.root.dir,
       ecosystem: build.ecosystem,
+      entryFile: build.root.entryFile,
+      excludeBase: walk.cwd,
       excludePaths: walk.excludePaths,
-      root: build.root,
+      javaHome: config.javaHome,
       scanRoot: walk.cwd,
-      verbose: false,
+      verbose: config.verbose,
     })
     if (loaded) {
       return { ok: true, data: { canceled: false, loaded } }
