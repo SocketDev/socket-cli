@@ -273,10 +273,8 @@ function mergeBuildToolDefaults<
   return merged
 }
 
-// Merges `defaults.manifest.<ecosystem>` per ecosystem, and a build tool's
-// `reachability` within it: fields set in `override` win, others fall through
-// to `base`. Only this section cascades; everything else in `defaults` comes
-// from `base` only.
+// Only the tool sections of `defaults.manifest` cascade, field by field, and a
+// build tool's `reachability` within one; everything else is `base`'s.
 function mergeManifestDefaults(
   base: SocketJson,
   override: SocketJson,

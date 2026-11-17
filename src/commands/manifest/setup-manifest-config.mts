@@ -775,9 +775,8 @@ async function askForIgnoreUnresolvedFlag(
   })
 }
 
-// Settings only the reachability run reads. A "no" to the JDK leaves it as it
-// is, so an inherited value is neither pinned nor cleared; a "no" to building
-// unsets the build, and writes "none" only to override an inherited "compile".
+// A "no" keeps the JDK as is, neither pinning nor clearing an inherited one;
+// "none" is written only to override an inherited "compile".
 async function setupReachability(
   config: { reachability?: JvmReachabilityDefaults | undefined },
   {

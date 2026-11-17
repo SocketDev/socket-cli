@@ -262,9 +262,8 @@ export type SocketFactsRunOptions = SocketFactsRequestOptions & {
   context?: SocketFactsContext | undefined
 }
 
-// `bin` is resolved as the build tool's own runner would: the
-// SOCKET_CLI_*_PATH override first, then the given bin, the project wrapper,
-// PATH.
+// SOCKET_CLI_*_PATH, else `bin`, the project wrapper, then PATH; standalone,
+// JVM tools take only SOCKET_CLI_*_PATH, as no JVM tooling is bundled.
 function toSocketFactsRequest({
   bin,
   buildOpts,
@@ -360,9 +359,8 @@ export async function listDotnetSolutionMembers({
   )
 }
 
-// The projects a build loads, as the build reports them, without resolving its
-// dependencies; undefined when the build cannot list them, after reporting
-// why.
+// Resolves nothing; undefined, after reporting why, when the build cannot list
+// its projects.
 export async function listBuildProjects({
   context = {},
   ...options
@@ -387,9 +385,8 @@ export async function listBuildProjects({
   return result.status === 'listed' ? result.projects : undefined
 }
 
-// Generates one build root's `<entry>.socket.facts.json` with Coana. With a
-// work dir in `context`, also collects what a later Coana run reads of it. A
-// failure sets a non-zero exit code; only a failed build is Coana's to report.
+// A failure sets a non-zero exit code; only a failed build is Coana's to
+// report.
 export async function runManifestFacts({
   context = {},
   ...options
