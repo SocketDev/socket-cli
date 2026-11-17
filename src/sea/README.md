@@ -27,7 +27,7 @@ The CLI already runs on Node. SEA keeps that runtime and uses Node's VFS to embe
 pnpm build:sea -- --prototype
 ```
 
-The builder uses Node `v27.0.0-alpha.0.0.0`. It verifies the Node archive against the release `SHASUMS256.txt`. Node 27 is a prerelease, so these builds are experimental.
+The builder uses Node <!-- socket-sea-node-version:start -->`v27.0.0-alpha.0.1.1`<!-- socket-sea-node-version:end -->. It verifies the Node archive against the release `SHASUMS256.txt`. Node 27 is a prerelease, so these builds are experimental.
 
 Build on the target OS and architecture. The builder supports `darwin`, `linux`, and `win32`, with `x64` and `arm64` archives where Node publishes them. Cross-target builds fail.
 

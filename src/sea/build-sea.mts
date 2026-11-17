@@ -16,19 +16,22 @@ import { publishArtifactPair } from './build/publish.mts'
 import { createSeaCapabilities } from './capabilities.mts'
 import { downloadBytes } from './download-bytes.mts'
 import { cachedDownload } from './download-cache.mts'
+import { NODE_VERSION } from './node-version.mts'
+import { updateSeaReadmeVersion } from './readme-version.mts'
 import { stageSynp } from './stage-synp.mts'
 import { stageUv } from './stage-uv.mts'
 import { SEA_VERSION } from './version.mts'
+import { quotePowerShell } from '../utils/quote-powershell.mts'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '../..')
-const NODE_VERSION = '27.0.0-alpha.0.0.0'
 const MAX_PINNED_ARCHIVE_BYTES = 512 * 1024 * 1024
 const MAX_NODE_SUMS_BYTES = 1024 * 1024
 // `pnpm build:dist:src` starts by deleting `dist/`. Keep SEA artifacts outside
 // that managed distribution tree so an ordinary package build cannot erase
 // the output of a preceding SEA build.
 const DEFAULT_OUT = path.join(ROOT, 'build/sea')
+
 const TARGETS = [
   ['darwin', 'arm64', 'darwin-arm64'],
   ['darwin', 'x64', 'darwin-x64'],
@@ -638,7 +641,7 @@ async function pinnedNode(target: string): Promise<{
     const extracted = path.join(owned, 'unpacked')
     await fs.mkdir(extracted)
     if (platform === 'win') {
-      const ps = `Expand-Archive -LiteralPath '${archivePath.replaceAll("'", "''")}' -DestinationPath '${extracted.replaceAll("'", "''")}' -Force`
+      const ps = `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory(${quotePowerShell(archivePath)}, ${quotePowerShell(extracted)})`
       await run('powershell', ['-NoProfile', '-Command', ps])
       const extractedRoot = path.join(
         extracted,
@@ -833,6 +836,7 @@ async function main(): Promise<void> {
       'No matching supported target; pass --platform and --arch explicitly for cross builds',
     )
   }
+  await updateSeaReadmeVersion(path.join(HERE, 'README.md'), NODE_VERSION)
   const [, , triple] = target
   if (target[0] !== process.platform || target[1] !== process.arch) {
     throw new Error(
@@ -1127,8 +1131,6 @@ async function main(): Promise<void> {
       rootFiles,
     })
     if (process.platform === 'win32') {
-      const quotePowerShell = (value: string) =>
-        `'${value.replaceAll("'", "''")}'`
       const sourceList = archivePaths
         .map(filename => quotePowerShell(path.join(stage, filename)))
         .join(', ')

@@ -244,6 +244,7 @@ module.exports = [
             // Allow loose one-off scripts.
             'scripts/*.mts',
             'scripts/test/*.mts',
+            'test/utils/*.mts',
           ],
           defaultProject: 'tsconfig.json',
           tsconfigRootDir: rootPath,

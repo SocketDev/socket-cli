@@ -4,7 +4,8 @@
     "src/**/*.mts",
     "scripts/ci/**/*.mts",
     "scripts/lib/**/*.mts",
-    "scripts/release/**/*.mts"
+    "scripts/release/**/*.mts",
+    "scripts/utils/**/*.mts"
   ],
   "exclude": [
     "src/**/*.test.mts",
