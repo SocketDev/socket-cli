@@ -201,7 +201,7 @@ function statusOf(loader: Loader | undefined): RecursiveManifestOutcomeStatus {
 }
 
 // The options a build's listings take besides the build itself.
-export function buildToolScriptOptions(
+export function buildListingOptions(
   config: Pick<EcosystemBuildConfig, 'bin' | 'buildOpts'>,
   excludeBase: string | undefined,
   excludePaths: string[] | undefined,
@@ -348,7 +348,7 @@ async function walkTool(
     })
 
   const scriptOpts = (candidate: Candidate) =>
-    buildToolScriptOptions(
+    buildListingOptions(
       configFor(candidate),
       ctx.realCwd,
       ctx.excludePaths,
@@ -771,7 +771,7 @@ export async function buildUncoveredRoot({
       covered,
       ecosystem,
       root,
-      buildToolScriptOptions(config, excludeBase, excludePaths, context),
+      buildListingOptions(config, excludeBase, excludePaths, context),
     )
   ) {
     return 'covered'
