@@ -1,19 +1,41 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 
 import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
+import { reachabilityProblem } from './build-root-config.mts'
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import {
+  mergeSocketJsonChain,
+  readSocketJsonChain,
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 
+import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
 import type { ManifestDefaults } from '../../utils/socket-json.mts'
+
+export type ReachabilityStepOptions = {
+  // What the project inherits from ancestor socket.json files, as written.
+  inheritedReachability?: unknown
+}
+
+// As written, so that the wizard can replace an invalid value.
+function inheritedReachabilityOf(cwd: string, tool: BuildTool): unknown {
+  const dir = path.resolve(cwd)
+  const parent = path.dirname(dir)
+  return parent === dir
+    ? undefined
+    : mergeSocketJsonChain(readSocketJsonChain(parent)).defaults?.manifest?.[
+        tool
+      ]?.reachability
+}
 
 // Whether the prompt was canceled. A blank answer clears a value set before
 // with null rather than deleting the key, so it doesn't silently start
@@ -193,28 +215,36 @@ export async function setupManifestConfig(
       if (!sockJson.defaults.manifest.dotnet) {
         sockJson.defaults.manifest.dotnet = {}
       }
-      result = await setupDotnet(sockJson.defaults.manifest.dotnet)
+      result = await setupDotnet(sockJson.defaults.manifest.dotnet, {
+        inheritedReachability: inheritedReachabilityOf(cwd, 'dotnet'),
+      })
       break
     }
     case 'gradle': {
       if (!sockJson.defaults.manifest.gradle) {
         sockJson.defaults.manifest.gradle = {}
       }
-      result = await setupGradle(sockJson.defaults.manifest.gradle)
+      result = await setupGradle(sockJson.defaults.manifest.gradle, {
+        inheritedReachability: inheritedReachabilityOf(cwd, 'gradle'),
+      })
       break
     }
     case 'maven': {
       if (!sockJson.defaults.manifest.maven) {
         sockJson.defaults.manifest.maven = {}
       }
-      result = await setupMaven(sockJson.defaults.manifest.maven)
+      result = await setupMaven(sockJson.defaults.manifest.maven, {
+        inheritedReachability: inheritedReachabilityOf(cwd, 'maven'),
+      })
       break
     }
     case 'sbt': {
       if (!sockJson.defaults.manifest.sbt) {
         sockJson.defaults.manifest.sbt = {}
       }
-      result = await setupSbt(sockJson.defaults.manifest.sbt)
+      result = await setupSbt(sockJson.defaults.manifest.sbt, {
+        inheritedReachability: inheritedReachabilityOf(cwd, 'sbt'),
+      })
       break
     }
     default: {
@@ -315,6 +345,7 @@ async function setupConda(
 
 export async function setupDotnet(
   config: ManifestDefaults<'dotnet'>,
+  options: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'dotnet'))) {
     return canceledByUser()
@@ -344,14 +375,17 @@ export async function setupDotnet(
     return canceledByUser()
   }
 
-  return notCanceled()
+  return await setupReachability('dotnet', config, options)
 }
 
 export async function setupGradle(
   config: ManifestDefaults<'gradle'>,
   // Set by the recursive dynamic-sbom-inference wizard, which has no
   // pom-mode equivalent - skips the facts/pom question entirely.
-  { factsOnly = false }: { factsOnly?: boolean } = {},
+  {
+    factsOnly = false,
+    ...options
+  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (
     applyAnswer(config, 'bin', await askForBin(config.bin || '', './gradlew'))
@@ -385,10 +419,11 @@ export async function setupGradle(
       return canceledByUser()
     }
   }
+  const generatesFacts = factsOnly || config.facts !== false
 
   // The config filters and --ignore-unresolved only apply to facts generation
   // (the default); skip them when pom generation (--pom) is selected.
-  if (factsOnly || config.facts !== false) {
+  if (generatesFacts) {
     const factsOptions = await setupFactsOptions(config)
     if (!factsOptions.ok || factsOptions.data.canceled) {
       return factsOptions
@@ -399,11 +434,16 @@ export async function setupGradle(
     return canceledByUser()
   }
 
+  if (generatesFacts) {
+    return await setupReachability('gradle', config, options)
+  }
+
   return notCanceled()
 }
 
 export async function setupMaven(
   config: ManifestDefaults<'maven'>,
+  options: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'mvn'))) {
     return canceledByUser()
@@ -440,13 +480,16 @@ export async function setupMaven(
     return canceledByUser()
   }
 
-  return notCanceled()
+  return await setupReachability('maven', config, options)
 }
 
 export async function setupSbt(
   config: ManifestDefaults<'sbt'>,
   // See setupGradle's matching parameter for why.
-  { factsOnly = false }: { factsOnly?: boolean } = {},
+  {
+    factsOnly = false,
+    ...options
+  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'sbt'))) {
     return canceledByUser()
@@ -478,11 +521,12 @@ export async function setupSbt(
       return canceledByUser()
     }
   }
+  const generatesFacts = factsOnly || config.facts !== false
 
   // Socket facts is the default. The pom output questions (stdout/outfile)
   // only apply when pom generation (--pom) is explicitly selected; otherwise
   // ask the facts-only options.
-  if (!factsOnly && config.facts === false) {
+  if (!generatesFacts) {
     const stdout = await askForStdout(config.stdout)
     if (stdout === undefined) {
       return canceledByUser()
@@ -518,6 +562,10 @@ export async function setupSbt(
 
   if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
+  }
+
+  if (generatesFacts) {
+    return await setupReachability('sbt', config, options)
   }
 
   return notCanceled()
@@ -625,13 +673,32 @@ async function askForBin(
   })
 }
 
-async function askForJavaHome(defaultName = ''): Promise<string | undefined> {
+async function askForJavaHome(
+  defaultName = '',
+  question = 'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME.',
+): Promise<string | undefined> {
   return await input({
     message:
-      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME. Supports $VAR/${VAR}.' +
+      `${question} Supports $VAR/\${VAR}.` +
       (defaultName ? ' (Backspace to leave default)' : ''),
     default: defaultName,
     required: false,
+  })
+}
+
+async function askForRuntimeVersion(
+  current: string,
+): Promise<string | undefined> {
+  return await input({
+    message:
+      'Which .NET runtime? major.minor, such as 8.0, starts on its latest installed patch; major.minor.patch[-prerelease], such as 8.0.11, on exactly that one.' +
+      (current ? ' (Backspace to leave default)' : ''),
+    default: current,
+    required: false,
+    validate: (value: string) =>
+      !value ||
+      !reachabilityProblem('dotnet', 'runtimeVersion', value) ||
+      'Enter major.minor, such as 8.0, or major.minor.patch[-prerelease], such as 8.0.11.',
   })
 }
 
@@ -714,6 +781,192 @@ async function askForIgnoreUnresolvedFlag(
     ],
     default: current === true ? 'yes' : current === false ? 'no' : '',
   })
+}
+
+// The fields of `value` that `tool`'s builds take, warning about the rest the
+// answers replace; an inherited invalid value is its own socket.json's to fix.
+function validReachability(
+  tool: BuildTool,
+  value: unknown,
+  inherited: unknown,
+): Record<string, unknown> {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectObject(value)) {
+    if (!isDeepStrictEqual(value, inherited)) {
+      logger.warn(
+        `Replacing \`reachability\` (${JSON.stringify(value)}), which is not an object.`,
+      )
+    }
+    return {}
+  }
+  const inheritedFields = isObjectObject(inherited) ? inherited : {}
+  const valid: Record<string, unknown> = {}
+  for (const { 0: field, 1: setting } of Object.entries(value)) {
+    if (reachabilityProblem(tool, field, setting)) {
+      if (
+        !Object.hasOwn(inheritedFields, field) ||
+        !isDeepStrictEqual(setting, inheritedFields[field])
+      ) {
+        logger.warn(
+          `Replacing \`reachability.${field}\` (${JSON.stringify(setting)}), which ${tool} builds cannot take.`,
+        )
+      }
+    } else {
+      valid[field] = setting
+    }
+  }
+  return valid
+}
+
+// The value in effect: this socket.json's own, null included, else the
+// inherited one.
+function effectiveValue(
+  own: Record<string, unknown>,
+  inherited: Record<string, unknown>,
+  field: string,
+): unknown {
+  return Object.hasOwn(own, field) ? own[field] : inherited[field]
+}
+
+// A "no" to a value's question keeps the value in effect; "none" is written
+// only to override an inherited "compile".
+async function setupReachability(
+  tool: BuildTool,
+  config: { reachability?: unknown },
+  { inheritedReachability }: ReachabilityStepOptions = {},
+): Promise<CResult<{ canceled: boolean }>> {
+  const reachability = validReachability(
+    tool,
+    config.reachability,
+    inheritedReachability,
+  )
+  // Invalid inherited values are their own socket.json's to fix.
+  const inherited = Object.fromEntries(
+    Object.entries(
+      isObjectObject(inheritedReachability) ? inheritedReachability : {},
+    ).filter(
+      ({ 0: field, 1: value }) => !reachabilityProblem(tool, field, value),
+    ),
+  )
+
+  const wantsBuild = await select({
+    message:
+      'Build project before reachability analysis? Note: A failed build fails the scan.',
+    choices: [
+      {
+        name: 'no',
+        value: false,
+        description: 'Analyze the project without building it',
+      },
+      {
+        name: 'yes',
+        value: true,
+        description: 'Compile the project before reachability analysis',
+      },
+    ],
+    default: effectiveValue(reachability, inherited, 'build') === 'compile',
+  })
+  if (wantsBuild === undefined || wantsBuild === null) {
+    return canceledByUser()
+  }
+  if (wantsBuild) {
+    reachability['build'] = 'compile'
+  } else if (inherited['build'] === 'compile') {
+    reachability['build'] = 'none'
+  } else {
+    delete reachability['build']
+  }
+
+  const value =
+    tool === 'dotnet'
+      ? await setupReachabilityValue(
+          reachability,
+          inherited,
+          'runtimeVersion',
+          {
+            ask: askForRuntimeVersion,
+            change:
+              'Start the reachability analysis of a framework-dependent .NET build on a given runtime?',
+            keep: 'as the .NET runtime',
+            set: 'Set the runtime the analysis starts on',
+            unset:
+              "Let the analysis take the runtime the build's dotnet rolls forward to",
+          },
+        )
+      : await setupReachabilityValue(reachability, inherited, 'javaHome', {
+          ask: current =>
+            askForJavaHome(
+              current,
+              'What JDK should reachability analysis use?',
+            ),
+          change: 'Use a different Java for reachability analysis?',
+          keep: 'as the JDK for reachability analysis',
+          set: 'Set the JDK reachability analysis uses',
+          unset: 'Leave the JDK for reachability analysis unset',
+        })
+  if (!value.ok || value.data.canceled) {
+    return value
+  }
+
+  if (Object.keys(reachability).length) {
+    config.reachability = reachability
+  } else {
+    delete config.reachability
+  }
+  return notCanceled()
+}
+
+async function setupReachabilityValue(
+  reachability: Record<string, unknown>,
+  inherited: Record<string, unknown>,
+  field: 'javaHome' | 'runtimeVersion',
+  prompts: {
+    ask: (current: string) => Promise<string | undefined>
+    change: string
+    keep: string
+    set: string
+    unset: string
+  },
+): Promise<CResult<{ canceled: boolean }>> {
+  const effective = effectiveValue(reachability, inherited, field) as
+    | string
+    | null
+    | undefined
+  const wantsValue = await select({
+    message: prompts.change,
+    choices: [
+      {
+        name: 'no',
+        value: false,
+        description: effective
+          ? `Keep ${effective} ${prompts.keep}${Object.hasOwn(reachability, field) ? '' : ', as a parent socket.json sets it'}`
+          : prompts.unset,
+      },
+      {
+        name: 'yes',
+        value: true,
+        description: prompts.set,
+      },
+    ],
+    default: !!effective,
+  })
+  if (wantsValue === undefined || wantsValue === null) {
+    return canceledByUser()
+  }
+  if (!wantsValue) {
+    return notCanceled()
+  }
+  const answer = await prompts.ask(effective || '')
+  if (applyAnswer(reachability as Record<string, string>, field, answer)) {
+    return canceledByUser()
+  }
+  // A blank answer must also clear an inherited value, not fall back to it.
+  if (answer === '' && inherited[field]) {
+    reachability[field] = null
+  }
+  return notCanceled()
 }
 
 // Prompts for the facts-only options every facts generator shares: the config
