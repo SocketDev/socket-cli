@@ -33,13 +33,13 @@ Build on the target OS and architecture. The builder supports `darwin`, `linux`,
 
 The builder creates a private temporary copy of the distribution. It does not replace the checkout's `dist` or `external` directories. It writes the executable and manifest to `build/sea`. Use `--output-dir` or `SOCKET_CLI_SEA_OUTPUT_DIR` to select another directory; the command-line option takes precedence.
 
-The builder stages independent payloads in parallel. It waits for all staging jobs before cleanup. It builds the .NET facts helper before Rollup copies the distribution.
+The builder stages independent payloads in parallel. It waits for all staging jobs before cleanup.
 
 Verified source downloads are cached under `~/.cache/socket-sea/downloads`; each cache hit is checked against its pinned digest, and Node's `SHASUMS256.txt` is fetched fresh for each build. The runtime executable does not access this cache or download helper tools.
 
 ## Embedded tools
 
-The build embeds the .NET facts helper, `socket-patch`, and `uv` when a verified payload exists for the target. The .NET helper still needs a compatible .NET SDK from the project or `PATH`. The scan command uses `SOCKET_CLI_UV_PATH` when set. Otherwise, it extracts embedded `uv` to a temporary directory when needed.
+The build embeds `socket-patch` and `uv` when a verified payload exists for the target. The scan command uses `SOCKET_CLI_UV_PATH` when set. Otherwise, it extracts embedded `uv` to a temporary directory when needed.
 
 The build stages and embeds the `cdxgen` and `synp` APIs for darwin-arm64, but the manifest marks both features unavailable. Their source provenance and third-party notice obligations are not resolved, so the CLI refuses to run them. Their notice files stay with this build because the payloads are already embedded in the executable.
 

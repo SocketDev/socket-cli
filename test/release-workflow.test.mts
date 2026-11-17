@@ -234,7 +234,7 @@ describe('v1 release workflow contract', () => {
       step => step.name === 'Validate release policy and choose npm dist-tag',
     )
     const buildIndex = verifySteps.findIndex(
-      step => step.name === 'Build Maven manifest extension jar',
+      step => step.name === 'Build and pack socket',
     )
     expect(versionGuard).toBeDefined()
     expect(versionGuard?.if).toBe('${{ inputs.dry-run == false }}')
