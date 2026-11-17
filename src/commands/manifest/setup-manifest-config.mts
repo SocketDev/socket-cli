@@ -8,6 +8,8 @@ import { input, select } from '@socketsecurity/registry/lib/prompts'
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import {
+  mergeSocketJsonChain,
+  readSocketJsonChain,
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
@@ -17,11 +19,26 @@ import type {
   JvmReachabilityDefaults,
   ManifestDefaults,
   ReachabilityBuild,
+  SocketJson,
 } from '../../utils/socket-json.mts'
+
+type ManifestDefaultsSection = NonNullable<
+  NonNullable<SocketJson['defaults']>['manifest']
+>
 
 export type ReachabilityStepOptions = {
   // What the project inherits from ancestor socket.json files.
   inheritedReachabilityBuild?: ReachabilityBuild | undefined
+}
+
+function ancestorManifestDefaults(
+  cwd: string,
+): ManifestDefaultsSection | undefined {
+  const dir = path.resolve(cwd)
+  const parent = path.dirname(dir)
+  return parent === dir
+    ? undefined
+    : mergeSocketJsonChain(readSocketJsonChain(parent)).defaults?.manifest
 }
 
 // Whether the prompt was canceled. A blank answer clears a value set before
@@ -189,6 +206,7 @@ export async function setupManifestConfig(
     sockJson.defaults.manifest = {}
   }
 
+  const inherited = ancestorManifestDefaults(cwd)
   let result: CResult<{ canceled: boolean }>
   switch (targetEco) {
     case 'conda': {
@@ -202,28 +220,36 @@ export async function setupManifestConfig(
       if (!sockJson.defaults.manifest.dotnet) {
         sockJson.defaults.manifest.dotnet = {}
       }
-      result = await setupDotnet(sockJson.defaults.manifest.dotnet)
+      result = await setupDotnet(sockJson.defaults.manifest.dotnet, {
+        inheritedReachabilityBuild: inherited?.dotnet?.reachability?.build,
+      })
       break
     }
     case 'gradle': {
       if (!sockJson.defaults.manifest.gradle) {
         sockJson.defaults.manifest.gradle = {}
       }
-      result = await setupGradle(sockJson.defaults.manifest.gradle)
+      result = await setupGradle(sockJson.defaults.manifest.gradle, {
+        inheritedReachabilityBuild: inherited?.gradle?.reachability?.build,
+      })
       break
     }
     case 'maven': {
       if (!sockJson.defaults.manifest.maven) {
         sockJson.defaults.manifest.maven = {}
       }
-      result = await setupMaven(sockJson.defaults.manifest.maven)
+      result = await setupMaven(sockJson.defaults.manifest.maven, {
+        inheritedReachabilityBuild: inherited?.maven?.reachability?.build,
+      })
       break
     }
     case 'sbt': {
       if (!sockJson.defaults.manifest.sbt) {
         sockJson.defaults.manifest.sbt = {}
       }
-      result = await setupSbt(sockJson.defaults.manifest.sbt)
+      result = await setupSbt(sockJson.defaults.manifest.sbt, {
+        inheritedReachabilityBuild: inherited?.sbt?.reachability?.build,
+      })
       break
     }
     default: {
@@ -776,7 +802,7 @@ async function setupReachability(
         description: 'Compile the project before reachability analysis',
       },
     ],
-    default: reachability.build === 'compile',
+    default: (reachability.build ?? inheritedReachabilityBuild) === 'compile',
   })
   if (wantsBuild === undefined || wantsBuild === null) {
     return canceledByUser()
@@ -813,7 +839,9 @@ async function setupReachabilityJavaHome(
       {
         name: 'no',
         value: false,
-        description: 'Leave the JDK for reachability analysis unset',
+        description: reachability.javaHome
+          ? `Keep ${reachability.javaHome} as the JDK for reachability analysis`
+          : 'Leave the JDK for reachability analysis unset',
       },
       {
         name: 'yes',

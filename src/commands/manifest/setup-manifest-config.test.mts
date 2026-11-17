@@ -1,4 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Simulates a real prompt: pressing Enter with nothing typed returns
 // whatever `default` was shown - the same contract inquirer honors. This is
@@ -9,14 +13,20 @@ vi.mock('@socketsecurity/registry/lib/prompts', () => ({
   select: vi.fn(async ({ default: def }: { default?: string }) => def ?? ''),
 }))
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
 import {
   setupDotnet,
   setupGradle,
+  setupManifestConfig,
   setupMaven,
   setupSbt,
 } from './setup-manifest-config.mts'
+import {
+  getDefaultSocketJson,
+  writeSocketJson,
+} from '../../utils/socket-json.mts'
 
 describe('setup wizards', () => {
   it.for([
@@ -158,6 +168,30 @@ describe('reachability step', () => {
 
     expect(config['reachability']).toEqual({ javaHome: '/opt/jdk-17' })
   })
+
+  it.for([
+    [
+      { javaHome: '/opt/jdk-17' },
+      'Keep /opt/jdk-17 as the JDK for reachability analysis',
+    ],
+    [{}, 'Leave the JDK for reachability analysis unset'],
+  ] as const)(
+    'labels the no to the JDK %j by what it does',
+    async ({ 0: reachability, 1: label }) => {
+      answerReachability(false)
+
+      await setupMaven({ reachability: { ...reachability } })
+
+      const asked = vi
+        .mocked(select)
+        .mock.calls.find(([{ message }]) => message === REACHABILITY_QUESTION)
+      expect(
+        asked?.[0].choices.find(
+          choice => typeof choice === 'object' && choice.name === 'no',
+        ),
+      ).toMatchObject({ description: label })
+    },
+  )
 
   it('offers the shown value as the default and clears it on a blank answer', async () => {
     vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
@@ -330,6 +364,61 @@ describe('reachability build step', () => {
     await setupSbt({ facts: false })
 
     expect(messages).not.toContain(BUILD_QUESTION)
+  })
+})
+
+describe('setupManifestConfig', () => {
+  const BUILD_QUESTION =
+    'Build project before reachability analysis? Note: A failed build fails the scan.'
+  let parent = ''
+
+  beforeEach(async () => {
+    parent = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'setup-manifest-config-')),
+    )
+  })
+  afterEach(async () => {
+    vi.mocked(select).mockReset()
+    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
+    await fs.rm(parent, { recursive: true, force: true })
+  })
+
+  it('writes none after a no under an ancestor socket.json that sets compile, showing compile as the default', async () => {
+    await writeSocketJson(parent, {
+      ...getDefaultSocketJson(),
+      defaults: { manifest: { maven: { reachability: { build: 'compile' } } } },
+    })
+    const cwd = path.join(parent, 'app')
+    await fs.mkdir(cwd)
+    const shown: unknown[] = []
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
+      if (message === 'Select ecosystem manifest generator to configure') {
+        return 'maven'
+      }
+      if (message === BUILD_QUESTION) {
+        shown.push(def)
+        return false
+      }
+      if (message.startsWith('Do you want to write the new config')) {
+        return true
+      }
+      return def ?? ''
+    })
+    vi.spyOn(logger, 'log').mockImplementation(() => logger)
+    vi.spyOn(logger, 'info').mockImplementation(() => logger)
+
+    expect(await setupManifestConfig(cwd)).toEqual({
+      ok: true,
+      data: undefined,
+    })
+
+    expect(shown).toEqual([true])
+    const written = JSON.parse(
+      await fs.readFile(path.join(cwd, 'socket.json'), 'utf8'),
+    )
+    expect(written.defaults.manifest.maven).toEqual({
+      reachability: { build: 'none' },
+    })
   })
 })
 
