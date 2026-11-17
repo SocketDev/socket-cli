@@ -661,8 +661,7 @@ async function warnUnappliedEntry(
   )
 }
 
-// How the walk runs Coana on a build root, whether to generate its facts or
-// only to list what it loads.
+// Shared by listing and generation, so both run the same Coana, org and hints.
 function runOptions(
   ctx: WalkContext,
   ecosystem: BuildTool,

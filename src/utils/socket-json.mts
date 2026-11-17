@@ -214,7 +214,6 @@ function validateSocketJson(
   return { ok: true, data: sockJson }
 }
 
-// What is wrong with a `reachability` setting at `key`, if anything.
 export function reachabilityProblem(
   reachability: unknown,
   key: string,
