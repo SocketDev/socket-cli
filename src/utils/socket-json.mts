@@ -25,9 +25,29 @@ import { debugDir, debugFn } from './debug.mts'
 import { formatErrorWithDetail } from './errors.mts'
 import { findUp } from './fs.mts'
 import { logger } from './logger.mts'
+import { isRecord } from './objects.mts'
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
+
+export const REACHABILITY_BUILDS = ['compile', 'none'] as const
+
+// Whether a reachability analysis builds the project first; unset is "none".
+export type ReachabilityBuild = (typeof REACHABILITY_BUILDS)[number]
+
+// Read only by reachability scans; a null field clears an inherited value.
+export type JvmReachabilityDefaults = {
+  build?: ReachabilityBuild | undefined | null
+  // JDK the analysis takes the program to run on, as written.
+  javaHome?: string | undefined | null
+}
+
+export type DotnetReachabilityDefaults = {
+  build?: ReachabilityBuild | undefined | null
+  // The .NET runtime a framework-dependent build's analysis starts on:
+  // major.minor, or a full version as `RuntimeFrameworkVersion` takes one.
+  runtimeVersion?: string | undefined | null
+}
 
 export interface SocketJson {
   ' _____         _       _     ': string
@@ -75,6 +95,7 @@ export interface SocketJson {
         excludeConfigs?: string | undefined | null
         includeConfigs?: string | undefined | null
         ignoreUnresolved?: boolean | undefined
+        reachability?: DotnetReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       gradle?: {
@@ -93,6 +114,7 @@ export interface SocketJson {
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
+        reachability?: JvmReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       maven?: {
@@ -108,6 +130,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         mavenOpts?: string | undefined | null
+        reachability?: JvmReachabilityDefaults | undefined
         verbose?: boolean | undefined
       }
       sbt?: {
@@ -126,6 +149,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         outfile?: string | undefined | null
+        reachability?: JvmReachabilityDefaults | undefined
         sbtOpts?: string | undefined | null
         stdout?: boolean | undefined
         verbose?: boolean | undefined
@@ -186,7 +210,19 @@ export async function readOrDefaultSocketJsonUp(
   return getDefaultSocketJson()
 }
 
-// Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields set in
+// A build tool's `reachability` merges field by field, as its section does.
+export function mergeBuildToolDefaults<T extends { reachability?: unknown }>(
+  base: T | undefined,
+  override: T,
+): T {
+  const merged = { ...base, ...override }
+  if (isRecord(base?.reachability) && isRecord(override.reachability)) {
+    merged.reachability = { ...base.reachability, ...override.reachability }
+  }
+  return merged
+}
+
+// Merges `defaults.manifest.<ecosystem>` per ecosystem: fields set in
 // `override` win, others fall through to `base`. Only this section cascades;
 // everything else in `defaults` comes from `base` only.
 function mergeManifestDefaults(
@@ -208,22 +244,28 @@ function mergeManifestDefaults(
     mergedManifest.conda = { ...baseManifest?.conda, ...overrideManifest.conda }
   }
   if (overrideManifest.dotnet) {
-    mergedManifest.dotnet = {
-      ...baseManifest?.dotnet,
-      ...overrideManifest.dotnet,
-    }
+    mergedManifest.dotnet = mergeBuildToolDefaults(
+      baseManifest?.dotnet,
+      overrideManifest.dotnet,
+    )
   }
   if (overrideManifest.gradle) {
-    mergedManifest.gradle = {
-      ...baseManifest?.gradle,
-      ...overrideManifest.gradle,
-    }
+    mergedManifest.gradle = mergeBuildToolDefaults(
+      baseManifest?.gradle,
+      overrideManifest.gradle,
+    )
   }
   if (overrideManifest.maven) {
-    mergedManifest.maven = { ...baseManifest?.maven, ...overrideManifest.maven }
+    mergedManifest.maven = mergeBuildToolDefaults(
+      baseManifest?.maven,
+      overrideManifest.maven,
+    )
   }
   if (overrideManifest.sbt) {
-    mergedManifest.sbt = { ...baseManifest?.sbt, ...overrideManifest.sbt }
+    mergedManifest.sbt = mergeBuildToolDefaults(
+      baseManifest?.sbt,
+      overrideManifest.sbt,
+    )
   }
   return {
     ...base,

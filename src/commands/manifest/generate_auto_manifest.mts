@@ -1,13 +1,16 @@
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { socketJsonReachability } from './build-root-config.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import {
+  getSkipReason,
   resolveEcosystemConfig,
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
+import { BUILD_TOOLS } from './scripts/build-tool.mts'
 import {
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
@@ -93,6 +96,19 @@ export async function generateAutoManifest({
   const configOf = (tool: BuildTool) =>
     resolveEcosystemConfig(tool, cwd, sockJson)
 
+  // Read only by a reachability scan for the tools that generate facts, so
+  // checked only for those, and before any build runs.
+  const generatesFacts = (tool: BuildTool) =>
+    detected[tool] && !getSkipReason(tool, sockJson.defaults?.manifest?.[tool])
+  const reachabilityByTool = new Map(
+    context?.workDir?.withFiles
+      ? BUILD_TOOLS.filter(generatesFacts).map(tool => [
+          tool,
+          socketJsonReachability(tool, { dir: cwd, sockJson }),
+        ])
+      : [],
+  )
+
   const generateFacts = async (
     tool: BuildTool,
     config: EcosystemBuildConfig,
@@ -103,6 +119,7 @@ export async function generateAutoManifest({
         excludeBase: cwd,
         excludePaths,
         hints,
+        reachability: reachabilityByTool.get(tool),
       }),
     )
     abortFactsRunIfFailed(tool, outcome)
@@ -170,6 +187,7 @@ export async function generateAutoManifest({
       cwd,
       excludePaths,
       hints,
+      reachability: reachabilityByTool.get('dotnet'),
     })
     abortFactsRunIfFailed('dotnet', outcome)
   }

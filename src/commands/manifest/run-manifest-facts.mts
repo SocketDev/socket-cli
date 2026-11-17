@@ -17,6 +17,7 @@ import { logger } from '../../utils/logger.mts'
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
+import type { ReachabilityBuild } from '../../utils/socket-json.mts'
 
 export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 
@@ -91,6 +92,14 @@ export type SocketFactsContext = {
   workDir?: SocketFactsWorkDir | undefined
 }
 
+// What a reachability scan's analysis reads of a build's settings; only set
+// fields are sent.
+export type ReachabilitySettings = {
+  build?: ReachabilityBuild | undefined
+  javaHome?: string | undefined
+  runtimeVersion?: string | undefined
+}
+
 // A project the build loaded, with absolute paths. Gradle reports a project's
 // build file even when absent.
 export type SocketFactsProject = { buildFiles: string[]; dir: string }
@@ -118,6 +127,7 @@ type SocketFactsRequest = {
     ignoreUnresolved: boolean
     includeConfigs?: string | undefined
     javaHome?: string | undefined
+    reachability?: ReachabilitySettings | undefined
     verbose: boolean
   }
   excludeBase: string
@@ -227,6 +237,7 @@ export type SocketFactsRequestOptions = {
   includeConfigs?: string | undefined
   // As written: Coana expands `$VAR` references itself.
   javaHome?: string | undefined
+  reachability?: ReachabilitySettings | undefined
   verbose?: boolean | undefined
 }
 
@@ -251,6 +262,7 @@ function toSocketFactsRequest(
     ignoreUnresolved = false,
     includeConfigs,
     javaHome,
+    reachability,
     verbose = false,
   }: SocketFactsRequestOptions,
   context: SocketFactsContext,
@@ -281,6 +293,7 @@ function toSocketFactsRequest(
         ignoreUnresolved,
         ...(includeConfigs ? { includeConfigs } : {}),
         ...(javaHome && ecosystem !== 'dotnet' ? { javaHome } : {}),
+        ...(reachability ? { reachability } : {}),
         verbose,
       },
       excludeBase: path.resolve(excludeBase ?? cwd),
