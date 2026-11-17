@@ -34,7 +34,7 @@ const generated = {
 
 const context = {
   coanaVersion: '1.2.3',
-  workDir: { dir: '/work', entries: [], withFiles: true },
+  workDir: { dir: '/work', entries: new Map(), withFiles: true },
 }
 
 function run(

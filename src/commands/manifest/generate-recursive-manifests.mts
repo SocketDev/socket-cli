@@ -763,7 +763,7 @@ async function putFacts(
 ): Promise<void> {
   const { workDir } = ctx.context
   if (workDir) {
-    setSidecarEntry(workDir, key, state?.sidecar)
+    await setSidecarEntry(workDir, key, state?.sidecar)
   }
   if (!state) {
     return
@@ -787,7 +787,10 @@ async function saveFacts(
     await fs.copyFile(file, facts)
   }
   const { workDir } = ctx.context
-  return { facts, sidecar: workDir && sidecarEntryOf(workDir, key) }
+  return {
+    facts,
+    sidecar: workDir && (await sidecarEntryOf(workDir, key)),
+  }
 }
 
 // Builds `root` unless earlier builds cover it, then adds what it loaded to

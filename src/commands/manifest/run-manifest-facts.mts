@@ -11,7 +11,7 @@ import { COANA_CLI_VERSION, SOCKET_JSON } from '../../constants.mts'
 import { isStandaloneSea } from '../../sea/runtime.mts'
 import { spawnCoana } from '../../utils/coana-release.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
-import { withTmpDir } from '../../utils/fs.mts'
+import { realpathOrResolved, withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
@@ -66,28 +66,30 @@ export type SocketFactsSidecarEntry = {
 // the entries of the build roots generated into it.
 export type SocketFactsWorkDir = {
   dir: string
-  entries: SocketFactsSidecarEntry[]
+  // By the facts file's real path, as Coana's and the walk's paths to one
+  // file may differ in a symlinked directory.
+  entries: Map<string, SocketFactsSidecarEntry>
   // Reachability only: also install the dependencies the analysis reads.
   withFiles: boolean
 }
 
-export function sidecarEntryOf(
+export async function sidecarEntryOf(
   workDir: SocketFactsWorkDir,
   factsFile: string,
-): SocketFactsSidecarEntry | undefined {
-  return workDir.entries.find(entry => entry.factsFile === factsFile)
+): Promise<SocketFactsSidecarEntry | undefined> {
+  return workDir.entries.get(await realpathOrResolved(factsFile))
 }
 
 // A facts file has one entry: the run that wrote it last.
-export function setSidecarEntry(
+export async function setSidecarEntry(
   workDir: SocketFactsWorkDir,
   factsFile: string,
   entry: SocketFactsSidecarEntry | undefined,
-): void {
-  const kept = workDir.entries.filter(other => other.factsFile !== factsFile)
-  workDir.entries.splice(0, workDir.entries.length, ...kept)
+): Promise<void> {
+  const key = await realpathOrResolved(factsFile)
+  workDir.entries.delete(key)
   if (entry) {
-    workDir.entries.push(entry)
+    workDir.entries.set(key, entry)
   }
 }
 
@@ -442,7 +444,7 @@ export async function runManifestFacts({
       )
       return null
     }
-    setSidecarEntry(workDir, result.factsPath, result.sidecarEntry)
+    await setSidecarEntry(workDir, result.factsPath, result.sidecarEntry)
   }
   return {
     factsPath: result.factsPath,

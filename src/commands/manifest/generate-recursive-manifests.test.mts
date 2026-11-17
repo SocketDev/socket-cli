@@ -63,7 +63,7 @@ function reported({ factsPath, projects }: TestFacts) {
 }
 
 function newWorkDir(): SocketFactsWorkDir {
-  return { dir: '/work', entries: [], withFiles: true }
+  return { dir: '/work', entries: new Map(), withFiles: true }
 }
 
 function mockFacts(
@@ -211,7 +211,7 @@ describe('generateRecursiveManifests', () => {
         mockFacts(async ({ cwd }) => {
           const factsPath = path.join(cwd, 'pom.xml.socket.facts.json')
           await fs.writeFile(factsPath, 'generated')
-          setSidecarEntry(workDir, factsPath, {
+          await setSidecarEntry(workDir, factsPath, {
             factsFile: factsPath,
             stateDir: cwd,
           })
@@ -248,7 +248,7 @@ describe('generateRecursiveManifests', () => {
             .mock.calls.some(([opts]) => opts.cwd === sharedLib),
         ).toBe(builtAlone)
         expect(await fs.readFile(sharedFacts, 'utf8')).toBe('committed')
-        expect(workDir.entries.map(entry => entry.factsFile)).toEqual([
+        expect([...workDir.entries.values()].map(e => e.factsFile)).toEqual([
           path.join(reactorA, 'pom.xml.socket.facts.json'),
         ])
         // The restored file is not this scan's, so it is not to be collected.
@@ -286,7 +286,7 @@ describe('generateRecursiveManifests', () => {
         mockFacts(async ({ cwd }) => {
           const factsPath = path.join(main, 'gradle.socket.facts.json')
           await fs.writeFile(factsPath, cwd)
-          setSidecarEntry(workDir, factsPath, {
+          await setSidecarEntry(workDir, factsPath, {
             factsFile: factsPath,
             stateDir: cwd,
           })
@@ -316,7 +316,7 @@ describe('generateRecursiveManifests', () => {
         expect(generated[0]!.discardedFactsPath).toBeUndefined()
         // The kept build's own facts and sidecar entry, whichever ran last.
         expect(await fs.readFile(factsPath!, 'utf8')).toBe(generated[0]!.dir)
-        expect(workDir.entries).toEqual([
+        expect([...workDir.entries.values()]).toEqual([
           { factsFile: factsPath, stateDir: generated[0]!.dir },
         ])
       } finally {

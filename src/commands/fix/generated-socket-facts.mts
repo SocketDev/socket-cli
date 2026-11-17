@@ -73,7 +73,7 @@ export async function generateSocketFactsForFix({
   const sidecarFile = path.join(tmpDir, 'sidecar.json')
   const workDir: SocketFactsWorkDir = {
     dir: path.join(tmpDir, 'work'),
-    entries: [],
+    entries: new Map(),
     withFiles: false,
   }
   try {
@@ -90,7 +90,7 @@ export async function generateSocketFactsForFix({
     paths = factsPaths.map(p => path.resolve(cwd, p))
     // Written even when empty, as for reach; applying fixes looks each facts
     // file up in it, so an empty one is the same as none.
-    await writeFile(sidecarFile, JSON.stringify(workDir.entries))
+    await writeFile(sidecarFile, JSON.stringify([...workDir.entries.values()]))
   } catch (e) {
     // A failed build root aborts inference after others wrote their facts.
     await reset(await findFactsPaths())

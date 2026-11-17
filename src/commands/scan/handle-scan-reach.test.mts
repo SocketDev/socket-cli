@@ -357,7 +357,7 @@ describe('handleScanReach', () => {
       }
       mockRunDynamicSbomInference.mockImplementationOnce(
         async ({ context }) => {
-          context.workDir.entries.push(entry)
+          context.workDir.entries.set(entry.factsFile, entry)
           return {
             factsOnlyTypes: ['maven'],
             factsPaths: [
@@ -386,7 +386,7 @@ describe('handleScanReach', () => {
           // A caller-owned dir that outlives the analysis reading it.
           workDir: {
             dir: expect.any(String),
-            entries: [entry],
+            entries: new Map([[entry.factsFile, entry]]),
             withFiles: true,
           },
         },

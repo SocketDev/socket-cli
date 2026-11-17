@@ -89,7 +89,7 @@ describe('generateSocketFactsForFix', () => {
     const entry = { factsFile: fresh, stateDir: path.join(tmpDir, 'work', 'x') }
     mockRunDynamicSbomInference.mockImplementation(async ({ context }) => {
       await fs.writeFile(fresh, 'generated')
-      context.workDir.entries.push(entry)
+      context.workDir.entries.set(entry.factsFile, entry)
       return {
         discardedFactsPaths: [],
         factsOnlyTypes: ['maven', 'nuget'],
@@ -107,7 +107,7 @@ describe('generateSocketFactsForFix', () => {
           orgSlug: undefined,
           workDir: {
             dir: path.join(tmpDir, 'work'),
-            entries: [entry],
+            entries: new Map([[entry.factsFile, entry]]),
             withFiles: false,
           },
         },

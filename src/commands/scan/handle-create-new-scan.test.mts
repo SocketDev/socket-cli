@@ -496,7 +496,7 @@ describe('handleCreateNewScan excludePaths', () => {
     }
     mockGenerateRecursiveManifests.mockImplementationOnce(
       async ({ context }) => {
-        context.workDir.entries.push(entry)
+        context.workDir.entries.set(entry.factsFile, entry)
         return [
           {
             dir: '/repo/service-a',

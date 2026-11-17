@@ -14,6 +14,7 @@ import {
   listBuildProjects,
   listDotnetSolutionMembers,
   runManifestFacts,
+  sidecarEntryOf,
 } from './run-manifest-facts.mts'
 import { COANA_CLI_VERSION } from '../../constants.mts'
 import { spawnCoana } from '../../utils/coana-release.mts'
@@ -215,7 +216,7 @@ describe('runManifestFacts', () => {
     })
     const workDir: SocketFactsWorkDir = {
       dir: '/w',
-      entries: [],
+      entries: new Map(),
       withFiles: true,
     }
     await runManifestFacts({ ...baseArgs, context: { workDir }, cwd })
@@ -224,7 +225,37 @@ describe('runManifestFacts', () => {
       '--work-dir',
       '/w',
     ])
-    expect(workDir.entries).toEqual([entry])
+    expect([...workDir.entries.values()]).toEqual([entry])
+  })
+
+  it('finds the entry by the real path of a facts file Coana names through a symlink', async () => {
+    const real = path.join(cwd, 'real')
+    const link = path.join(cwd, 'link')
+    await fs.mkdir(real)
+    await fs.symlink(real, link)
+    await fs.writeFile(path.join(real, 'pom.xml.socket.facts.json'), '{}')
+    const entry = {
+      factsFile: path.join(link, 'pom.xml.socket.facts.json'),
+      stateDir: '/w/x',
+    }
+    coanaAnswers({
+      factsPath: entry.factsFile,
+      projects: [],
+      sidecarEntry: entry,
+      status: 'generated',
+    })
+    const workDir: SocketFactsWorkDir = {
+      dir: '/w',
+      entries: new Map(),
+      withFiles: true,
+    }
+    await runManifestFacts({ ...baseArgs, context: { workDir }, cwd: link })
+    expect(
+      await sidecarEntryOf(
+        workDir,
+        path.join(real, 'pom.xml.socket.facts.json'),
+      ),
+    ).toEqual(entry)
   })
 
   it('keeps state without installing files for socket fix', async () => {
@@ -234,7 +265,7 @@ describe('runManifestFacts', () => {
       sidecarEntry: { factsFile: '/r/f', stateDir: '/w/y' },
       status: 'generated',
     })
-    const workDir = { dir: '/w', entries: [], withFiles: false }
+    const workDir = { dir: '/w', entries: new Map(), withFiles: false }
     await runManifestFacts({ ...baseArgs, context: { workDir }, cwd })
     expect(calls[0]!.args.slice(-2)).toEqual(['--work-dir', '/w'])
     expect(calls[0]!.args).not.toContain('--with-files')

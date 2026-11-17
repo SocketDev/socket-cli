@@ -172,7 +172,7 @@ async function createNewScan(
       workDir: reach.runReachabilityAnalysis
         ? {
             dir: path.join(manifestTmpDir, 'socket-facts-work'),
-            entries: [],
+            entries: new Map(),
             withFiles: true,
           }
         : undefined,
@@ -335,7 +335,9 @@ async function createNewScan(
         packagePaths,
         reachabilityOptions: mergedReachabilityOptions,
         repoName,
-        socketFactsSidecar: factsContext.workDir?.entries,
+        socketFactsSidecar: factsContext.workDir && [
+          ...factsContext.workDir.entries.values(),
+        ],
         spinner,
         target: targets[0]!,
       })

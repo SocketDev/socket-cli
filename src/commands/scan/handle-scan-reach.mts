@@ -139,7 +139,7 @@ async function runScanReach(
     outputPath,
     packagePaths,
     reachabilityOptions: mergedReachabilityOptions,
-    socketFactsSidecar: workDir?.entries,
+    socketFactsSidecar: workDir && [...workDir.entries.values()],
     spinner,
     target: targets[0]!,
   })
@@ -171,7 +171,7 @@ export async function handleScanReach(
   // Coana's run reads what facts generation keeps in the work dir.
   return config.reachabilityOptions.dynamicSbomInference
     ? await withTmpDir('socket-dynamic-sbom-inference-', dir =>
-        runScanReach(config, { dir, entries: [], withFiles: true }),
+        runScanReach(config, { dir, entries: new Map(), withFiles: true }),
       )
     : await runScanReach(config, undefined)
 }
