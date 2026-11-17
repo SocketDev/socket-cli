@@ -172,15 +172,29 @@ describe('reachability step', () => {
   it.for([
     [
       { javaHome: '/opt/jdk-17' },
+      {},
       'Keep /opt/jdk-17 as the JDK for reachability analysis',
     ],
-    [{}, 'Leave the JDK for reachability analysis unset'],
+    [{}, {}, 'Leave the JDK for reachability analysis unset'],
+    [
+      {},
+      { javaHome: '/opt/jdk-11' },
+      'Keep /opt/jdk-11 as the JDK for reachability analysis, as a parent socket.json sets it',
+    ],
+    [
+      { javaHome: null },
+      { javaHome: '/opt/jdk-11' },
+      'Leave the JDK for reachability analysis unset',
+    ],
   ] as const)(
-    'labels the no to the JDK %j by what it does',
-    async ({ 0: reachability, 1: label }) => {
+    'labels the no to the JDK %j, inheriting %j, by what it does',
+    async ({ 0: reachability, 1: inherited, 2: label }) => {
       answerReachability(false)
 
-      await setupMaven({ reachability: { ...reachability } })
+      await setupMaven(
+        { reachability: { ...reachability } },
+        { inheritedReachability: inherited },
+      )
 
       const asked = vi
         .mocked(select)
@@ -212,6 +226,28 @@ describe('reachability step', () => {
     await setupGradle(config, { factsOnly: true })
 
     expect(shown).toEqual(['/opt/jdk-17'])
+    expect(config['reachability']).toEqual({ javaHome: null })
+  })
+
+  it('offers an inherited JDK as the default and clears it on a blank answer', async () => {
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
+      message === REACHABILITY_QUESTION ? true : (def ?? ''),
+    )
+    const shown: unknown[] = []
+    vi.mocked(input).mockImplementation(async ({ default: def, message }) => {
+      if (message.startsWith('What JDK should reachability analysis use?')) {
+        shown.push(def)
+        return ''
+      }
+      return def ?? ''
+    })
+    const config: Record<string, unknown> = {}
+
+    await setupMaven(config, {
+      inheritedReachability: { javaHome: '/opt/jdk-11' },
+    })
+
+    expect(shown).toEqual(['/opt/jdk-11'])
     expect(config['reachability']).toEqual({ javaHome: null })
   })
 
@@ -300,7 +336,7 @@ describe('reachability build step', () => {
         reachability: { build: 'compile' },
       }
 
-      await setup(config, { inheritedReachabilityBuild: 'compile' })
+      await setup(config, { inheritedReachability: { build: 'compile' } })
 
       expect(shown).toEqual([true])
       expect(config).toEqual({ reachability: { build: 'none' } })
@@ -311,7 +347,7 @@ describe('reachability build step', () => {
     answerBuild(false)
     const config: Record<string, unknown> = { reachability: { build: 'none' } }
 
-    await setupGradle(config, { inheritedReachabilityBuild: 'none' })
+    await setupGradle(config, { inheritedReachability: { build: 'none' } })
 
     expect(config).toEqual({})
   })
@@ -418,6 +454,45 @@ describe('setupManifestConfig', () => {
     )
     expect(written.defaults.manifest.maven).toEqual({
       reachability: { build: 'none' },
+    })
+  })
+})
+
+describe('setupManifestConfig with an invalid ancestor socket.json', () => {
+  let parent = ''
+
+  beforeEach(async () => {
+    parent = await fs.realpath(
+      await fs.mkdtemp(path.join(tmpdir(), 'setup-manifest-config-')),
+    )
+    await fs.writeFile(
+      path.join(parent, 'socket.json'),
+      JSON.stringify({
+        version: 1,
+        defaults: { manifest: { maven: { reachability: { javaHome: 17 } } } },
+      }),
+    )
+  })
+  afterEach(async () => {
+    vi.mocked(select).mockReset()
+    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
+    await fs.rm(parent, { recursive: true, force: true })
+  })
+
+  it('exits without reading it when no build tool is chosen', async () => {
+    const cwd = path.join(parent, 'app')
+    await fs.mkdir(cwd)
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
+      message === 'Select ecosystem manifest generator to configure'
+        ? ''
+        : (def ?? ''),
+    )
+    vi.spyOn(logger, 'log').mockImplementation(() => logger)
+    vi.spyOn(logger, 'info').mockImplementation(() => logger)
+
+    await expect(setupManifestConfig(cwd)).resolves.toMatchObject({
+      ok: true,
+      data: { canceled: true },
     })
   })
 })

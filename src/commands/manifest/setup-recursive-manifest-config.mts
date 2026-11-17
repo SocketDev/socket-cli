@@ -60,8 +60,8 @@ import type { BuildTool } from './scripts/build-tool.mts'
 import type { ReachabilityStepOptions } from './setup-manifest-config.mts'
 import type { CResult } from '../../types.mts'
 import type {
+  JvmReachabilityDefaults,
   ManifestDefaults,
-  ReachabilityBuild,
   SocketJson,
   SocketJsonInDir,
 } from '../../utils/socket-json.mts'
@@ -108,12 +108,12 @@ function changedFields(
   return changed
 }
 
-function inheritedReachabilityBuildOf(
+function inheritedReachabilityOf(
   inherited: Record<string, unknown>,
-): ReachabilityBuild | undefined {
+): JvmReachabilityDefaults | undefined {
   const reachability = inherited['reachability']
   return isObjectObject(reachability)
-    ? (reachability['build'] as ReachabilityBuild | undefined)
+    ? (reachability as JvmReachabilityDefaults)
     : undefined
 }
 
@@ -486,7 +486,7 @@ async function configureBuild(
 
   const seeded = Object.keys(seed)
   const result = await runEcosystemWizard(ecosystem, seed, {
-    inheritedReachabilityBuild: inheritedReachabilityBuildOf(inherited),
+    inheritedReachability: inheritedReachabilityOf(inherited),
   })
   if (!result.ok || result.data.canceled) {
     return result
@@ -954,7 +954,7 @@ async function setupRootDefaults(
     )
     // eslint-disable-next-line no-await-in-loop
     const result = await runEcosystemWizard(ecosystem, section, {
-      inheritedReachabilityBuild: inheritedReachabilityBuildOf(inherited),
+      inheritedReachability: inheritedReachabilityOf(inherited),
     })
     if (!result.ok || result.data.canceled) {
       return result

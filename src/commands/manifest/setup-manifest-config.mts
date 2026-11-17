@@ -18,27 +18,24 @@ import type { CResult } from '../../types.mts'
 import type {
   JvmReachabilityDefaults,
   ManifestDefaults,
-  ReachabilityBuild,
-  SocketJson,
 } from '../../utils/socket-json.mts'
-
-type ManifestDefaultsSection = NonNullable<
-  NonNullable<SocketJson['defaults']>['manifest']
->
 
 export type ReachabilityStepOptions = {
   // What the project inherits from ancestor socket.json files.
-  inheritedReachabilityBuild?: ReachabilityBuild | undefined
+  inheritedReachability?: JvmReachabilityDefaults | undefined
 }
 
-function ancestorManifestDefaults(
+function inheritedReachabilityOf(
   cwd: string,
-): ManifestDefaultsSection | undefined {
+  tool: 'dotnet' | 'gradle' | 'maven' | 'sbt',
+): JvmReachabilityDefaults | undefined {
   const dir = path.resolve(cwd)
   const parent = path.dirname(dir)
   return parent === dir
     ? undefined
-    : mergeSocketJsonChain(readSocketJsonChain(parent)).defaults?.manifest
+    : mergeSocketJsonChain(readSocketJsonChain(parent)).defaults?.manifest?.[
+        tool
+      ]?.reachability
 }
 
 // Whether the prompt was canceled. A blank answer clears a value set before
@@ -206,7 +203,6 @@ export async function setupManifestConfig(
     sockJson.defaults.manifest = {}
   }
 
-  const inherited = ancestorManifestDefaults(cwd)
   let result: CResult<{ canceled: boolean }>
   switch (targetEco) {
     case 'conda': {
@@ -221,7 +217,7 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.dotnet = {}
       }
       result = await setupDotnet(sockJson.defaults.manifest.dotnet, {
-        inheritedReachabilityBuild: inherited?.dotnet?.reachability?.build,
+        inheritedReachability: inheritedReachabilityOf(cwd, 'dotnet'),
       })
       break
     }
@@ -230,7 +226,7 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.gradle = {}
       }
       result = await setupGradle(sockJson.defaults.manifest.gradle, {
-        inheritedReachabilityBuild: inherited?.gradle?.reachability?.build,
+        inheritedReachability: inheritedReachabilityOf(cwd, 'gradle'),
       })
       break
     }
@@ -239,7 +235,7 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.maven = {}
       }
       result = await setupMaven(sockJson.defaults.manifest.maven, {
-        inheritedReachabilityBuild: inherited?.maven?.reachability?.build,
+        inheritedReachability: inheritedReachabilityOf(cwd, 'maven'),
       })
       break
     }
@@ -248,7 +244,7 @@ export async function setupManifestConfig(
         sockJson.defaults.manifest.sbt = {}
       }
       result = await setupSbt(sockJson.defaults.manifest.sbt, {
-        inheritedReachabilityBuild: inherited?.sbt?.reachability?.build,
+        inheritedReachability: inheritedReachabilityOf(cwd, 'sbt'),
       })
       break
     }
@@ -350,7 +346,7 @@ async function setupConda(
 
 export async function setupDotnet(
   config: ManifestDefaults<'dotnet'>,
-  { inheritedReachabilityBuild }: ReachabilityStepOptions = {},
+  { inheritedReachability }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'dotnet'))) {
     return canceledByUser()
@@ -382,7 +378,7 @@ export async function setupDotnet(
 
   return await setupReachability(config, {
     askJavaHome: false,
-    inheritedReachabilityBuild,
+    inheritedReachability,
   })
 }
 
@@ -392,7 +388,7 @@ export async function setupGradle(
   // pom-mode equivalent - skips the facts/pom question entirely.
   {
     factsOnly = false,
-    inheritedReachabilityBuild,
+    inheritedReachability,
   }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (
@@ -443,7 +439,7 @@ export async function setupGradle(
   }
 
   if (generatesFacts) {
-    return await setupReachability(config, { inheritedReachabilityBuild })
+    return await setupReachability(config, { inheritedReachability })
   }
 
   return notCanceled()
@@ -451,7 +447,7 @@ export async function setupGradle(
 
 export async function setupMaven(
   config: ManifestDefaults<'maven'>,
-  { inheritedReachabilityBuild }: ReachabilityStepOptions = {},
+  { inheritedReachability }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'mvn'))) {
     return canceledByUser()
@@ -488,7 +484,7 @@ export async function setupMaven(
     return canceledByUser()
   }
 
-  return await setupReachability(config, { inheritedReachabilityBuild })
+  return await setupReachability(config, { inheritedReachability })
 }
 
 export async function setupSbt(
@@ -496,7 +492,7 @@ export async function setupSbt(
   // See setupGradle's matching parameter for why.
   {
     factsOnly = false,
-    inheritedReachabilityBuild,
+    inheritedReachability,
   }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'sbt'))) {
@@ -573,7 +569,7 @@ export async function setupSbt(
   }
 
   if (generatesFacts) {
-    return await setupReachability(config, { inheritedReachabilityBuild })
+    return await setupReachability(config, { inheritedReachability })
   }
 
   return notCanceled()
@@ -781,7 +777,7 @@ async function setupReachability(
   config: { reachability?: JvmReachabilityDefaults | undefined },
   {
     askJavaHome = true,
-    inheritedReachabilityBuild,
+    inheritedReachability,
   }: ReachabilityStepOptions & { askJavaHome?: boolean | undefined } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   const reachability = { ...config.reachability }
@@ -801,21 +797,24 @@ async function setupReachability(
         description: 'Compile the project before reachability analysis',
       },
     ],
-    default: (reachability.build ?? inheritedReachabilityBuild) === 'compile',
+    default: (reachability.build ?? inheritedReachability?.build) === 'compile',
   })
   if (wantsBuild === undefined || wantsBuild === null) {
     return canceledByUser()
   }
   if (wantsBuild) {
     reachability.build = 'compile'
-  } else if (inheritedReachabilityBuild === 'compile') {
+  } else if (inheritedReachability?.build === 'compile') {
     reachability.build = 'none'
   } else {
     delete reachability.build
   }
 
   if (askJavaHome) {
-    const javaHome = await setupReachabilityJavaHome(reachability)
+    const javaHome = await setupReachabilityJavaHome(
+      reachability,
+      inheritedReachability?.javaHome,
+    )
     if (!javaHome.ok || javaHome.data.canceled) {
       return javaHome
     }
@@ -831,15 +830,20 @@ async function setupReachability(
 
 async function setupReachabilityJavaHome(
   reachability: JvmReachabilityDefaults,
+  inheritedJavaHome: string | null | undefined,
 ): Promise<CResult<{ canceled: boolean }>> {
+  const effective =
+    reachability.javaHome === undefined
+      ? inheritedJavaHome
+      : reachability.javaHome
   const wantsJavaHome = await select({
     message: 'Use a different Java for reachability analysis?',
     choices: [
       {
         name: 'no',
         value: false,
-        description: reachability.javaHome
-          ? `Keep ${reachability.javaHome} as the JDK for reachability analysis`
+        description: effective
+          ? `Keep ${effective} as the JDK for reachability analysis${reachability.javaHome ? '' : ', as a parent socket.json sets it'}`
           : 'Leave the JDK for reachability analysis unset',
       },
       {
@@ -848,23 +852,24 @@ async function setupReachabilityJavaHome(
         description: 'Set the JDK reachability analysis uses',
       },
     ],
-    default: !!reachability.javaHome,
+    default: !!effective,
   })
   if (wantsJavaHome === undefined || wantsJavaHome === null) {
     return canceledByUser()
   }
-  if (
-    wantsJavaHome &&
-    applyAnswer(
-      reachability,
-      'javaHome',
-      await askForJavaHome(
-        reachability.javaHome || '',
-        'What JDK should reachability analysis use?',
-      ),
-    )
-  ) {
+  if (!wantsJavaHome) {
+    return notCanceled()
+  }
+  const answer = await askForJavaHome(
+    effective || '',
+    'What JDK should reachability analysis use?',
+  )
+  if (applyAnswer(reachability, 'javaHome', answer)) {
     return canceledByUser()
+  }
+  // A blank answer must also clear an inherited JDK, not fall back to it.
+  if (answer === '' && inheritedJavaHome) {
+    reachability.javaHome = null
   }
   return notCanceled()
 }
