@@ -154,6 +154,14 @@ function mavenProject(subprojectDir: string) {
   }
 }
 
+function sentReachability() {
+  return Object.fromEntries(
+    vi
+      .mocked(runManifestFacts)
+      .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
+  )
+}
+
 describe('generateRecursiveManifests', () => {
   beforeEach(() => {
     vi.mocked(runManifestFacts).mockReset()
@@ -871,6 +879,149 @@ describe('generateRecursiveManifests', () => {
     expect(javaHomeByCall.get('maven:dual-marker-dir')).toBe('/opt/jdk-11')
     expect(javaHomeByCall.get('gradle:dual-marker-dir')).toBeUndefined()
     expect(javaHomeByCall.get('maven:reactor')).toBeUndefined()
+  })
+
+  describe('reachability settings', () => {
+    let outer = ''
+    beforeEach(async () => {
+      outer = await fs.realpath(
+        await fs.mkdtemp(path.join(tmpdir(), 'dsi-reachability-')),
+      )
+      for (const file of [
+        'dotnet/App.sln',
+        'gradle/build.gradle',
+        'maven/pom.xml',
+        'sbt/build.sbt',
+      ]) {
+        // eslint-disable-next-line no-await-in-loop
+        await fs.mkdir(path.join(outer, path.dirname(file)))
+        // eslint-disable-next-line no-await-in-loop
+        await fs.writeFile(path.join(outer, file), '')
+      }
+      mockFacts(async ({ cwd }) => ({
+        factsPath: path.join(cwd, '.socket.facts.json'),
+        projects: [],
+      }))
+    })
+    afterEach(async () => {
+      await fs.rm(outer, { recursive: true, force: true })
+    })
+
+    it("sends each root's cascaded settings on a reachability scan", async () => {
+      mockCascade(() => ({
+        defaults: {
+          manifest: {
+            dotnet: {
+              reachability: { build: 'compile', runtimeVersion: '8.0' },
+            },
+            gradle: {
+              reachability: { build: 'compile', javaHome: '$GRADLE_JDK' },
+            },
+            maven: { reachability: { build: 'none' } },
+          },
+        },
+      }))
+
+      await generateRecursiveManifests({
+        context: { workDir: newWorkDir() },
+        cwd: outer,
+        verbose: false,
+      })
+
+      expect(sentReachability()).toStrictEqual({
+        dotnet: { build: 'compile', runtimeVersion: '8.0' },
+        gradle: { build: 'compile', javaHome: '$GRADLE_JDK' },
+        maven: { build: 'none' },
+        sbt: undefined,
+      })
+    })
+
+    it('neither sends nor checks them without a reachability scan', async () => {
+      mockCascade(() => ({
+        defaults: {
+          manifest: { maven: { reachability: { build: 'always' } } },
+        },
+      }))
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: outer,
+        verbose: false,
+      })
+
+      expect(outcomes.every(o => o.status === 'generated')).toBe(true)
+      expect(Object.values(sentReachability())).toEqual([
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ])
+    })
+
+    it('fails a reachability scan on an invalid setting of a tool it runs, before any build, not of one it does not', async () => {
+      mockCascade(() => ({
+        defaults: {
+          manifest: { dotnet: { reachability: { runtimeVersion: 'net8.0' } } },
+        },
+      }))
+      await expect(
+        generateRecursiveManifests({
+          context: { workDir: newWorkDir() },
+          cwd: outer,
+          purlTypes: ['maven'],
+          verbose: false,
+        }),
+      ).resolves.toBeDefined()
+
+      await expect(
+        generateRecursiveManifests({
+          context: { workDir: newWorkDir() },
+          cwd: outer,
+          purlTypes: ['nuget'],
+          verbose: false,
+        }),
+      ).rejects.toThrow(/reachability\.runtimeVersion` in .* is "net8\.0"/)
+
+      // sbt builds after Gradle and Maven.
+      mockCascade(() => ({
+        defaults: { manifest: { sbt: { reachability: { build: 'always' } } } },
+      }))
+      vi.mocked(runManifestFacts).mockClear()
+      await expect(
+        generateRecursiveManifests({
+          context: { workDir: newWorkDir() },
+          cwd: outer,
+          purlTypes: ['maven'],
+          verbose: false,
+        }),
+      ).rejects.toThrow(/sbt\.reachability\.build` in .* is "always"/)
+      expect(runManifestFacts).not.toHaveBeenCalled()
+    })
+
+    it.for([
+      {
+        name: 'socket.json disables',
+        manifest: {
+          sbt: { disabled: true, reachability: { build: 'always' } },
+        },
+      },
+      {
+        name: 'generates pom files',
+        manifest: {
+          gradle: { facts: false, reachability: { build: 'always' } },
+        },
+      },
+    ])('does not check the settings of a build $name', async ({ manifest }) => {
+      mockCascade(() => ({ defaults: { manifest } }) as SocketJson)
+
+      await expect(
+        generateRecursiveManifests({
+          context: { workDir: newWorkDir() },
+          cwd: outer,
+          purlTypes: ['maven'],
+          verbose: false,
+        }),
+      ).resolves.toBeDefined()
+    })
   })
 
   it('resolves an explicit null override back to the no-restriction default, not a literal null', async () => {
