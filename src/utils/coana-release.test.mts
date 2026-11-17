@@ -3,7 +3,8 @@
  *
  * Test Coverage:
  * - spawnCoana: runs cli-wrapper.mjs from the cache with the caller's args,
- *   cwd and environment, and surfaces a failing run's output.
+ *   cwd and environment, sets the variables Coana reads, leaves the user's
+ *   API token variables out, and surfaces a failing run's output.
  *
  * Testing Approach:
  * A fake cli-wrapper.mjs is installed into a temporary cache with the real
@@ -19,13 +20,26 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../constants.mts'
+import constants, { SOCKET_CLI_API_TOKEN_VARIABLES } from '../constants.mts'
 import { spawnCoana } from './coana-release.mts'
-import { getCliUserAgent } from './sdk.mts'
+import { overrideCachedConfig, resetConfigForTesting } from './config.mts'
+import {
+  getCliUserAgent,
+  getDefaultApiBaseUrl,
+  resolveDefaultApiToken,
+} from './sdk.mts'
 
 const VERSION = '1.2.3'
 
@@ -88,6 +102,10 @@ describe('spawnCoana', () => {
     )
   })
 
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   afterAll(async () => {
     if (savedXdgCacheHome === undefined) {
       delete process.env['XDG_CACHE_HOME']
@@ -121,18 +139,69 @@ describe('spawnCoana', () => {
     }
   })
 
-  it('sets SOCKET_ORG_SLUG and SOCKET_CALLER_USER_AGENT, which options.env overrides', async () => {
-    const { env } = await runFake()
-    expect(env['SOCKET_ORG_SLUG']).toBe('acme')
-    expect(env['SOCKET_CALLER_USER_AGENT']).toBe(getCliUserAgent())
+  it('sets the variables Coana reads', async () => {
+    overrideCachedConfig(JSON.stringify({ apiToken: 'socket-cli-token' }))
+    try {
+      const apiToken = await resolveDefaultApiToken()
+      expect(apiToken).toBeTruthy()
 
-    const overridden = await runFake({
-      env: { SOCKET_CALLER_USER_AGENT: 'custom-caller-agent/1.0.0' },
-    })
-    expect(overridden.env['SOCKET_CALLER_USER_AGENT']).toBe(
-      'custom-caller-agent/1.0.0',
-    )
+      const { env } = await runFake({ repoName: 'repo' })
+
+      expect(env).toMatchObject({
+        SOCKET_CALLER_USER_AGENT: getCliUserAgent(),
+        SOCKET_CLI_API_BASE_URL: getDefaultApiBaseUrl(),
+        SOCKET_CLI_API_TOKEN: apiToken,
+        SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+        SOCKET_ORG_SLUG: 'acme',
+        SOCKET_REPO_NAME: 'repo',
+      })
+    } finally {
+      resetConfigForTesting()
+    }
   })
+
+  it.for([
+    { name: 'names no repository', repoName: undefined },
+    {
+      name: 'names the default repository',
+      repoName: 'socket-default-repository',
+    },
+  ])(
+    "leaves the user's SOCKET_REPO_NAME when socket-cli $name",
+    async ({ repoName }) => {
+      vi.stubEnv('SOCKET_REPO_NAME', 'users-repo')
+
+      const { env } = await runFake({ repoName })
+
+      expect(env['SOCKET_REPO_NAME']).toBe('users-repo')
+    },
+  )
+
+  it("doesn't add constants.processEnv to Coana's environment", async () => {
+    // Set for every socket-cli process.
+    expect(constants.processEnv['SOCKET_CLI_GIT_USER_NAME']).toBeTruthy()
+
+    const { env } = await runFake()
+
+    expect(env['SOCKET_CLI_GIT_USER_NAME']).toBeUndefined()
+  })
+
+  // Coana gets the token as SOCKET_CLI_API_TOKEN.
+  it.for([
+    ...SOCKET_CLI_API_TOKEN_VARIABLES.filter(
+      name => name !== 'SOCKET_CLI_API_TOKEN',
+    ).map(name => ({ name, value: 'users-token' })),
+    { name: 'SOCKET_CLI_CONFIG', value: '{"apiToken":"users-token"}' },
+  ])(
+    "leaves the user's $name out of Coana's environment",
+    async ({ name, value }) => {
+      vi.stubEnv(name, value)
+
+      const { env } = await runFake()
+
+      expect(env[name]).toBeUndefined()
+    },
+  )
 
   it('surfaces captured stdout when stderr is empty (Coana logs some failures to stdout)', async () => {
     const result = await spawnCoana(['fail'], 'acme', {

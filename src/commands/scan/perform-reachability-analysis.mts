@@ -55,7 +55,6 @@ export type ReachabilityOptions = {
 }
 
 export type ReachabilityAnalysisOptions = {
-  branchName?: string | undefined
   cwd?: string | undefined
   // Purl types whose artifacts Coana takes only from facts files.
   factsOnlyTypes?: FactsOnlyTypes | undefined
@@ -83,7 +82,6 @@ export async function performReachabilityAnalysis(
   options: ReachabilityAnalysisOptions,
 ): Promise<CResult<ReachabilityAnalysisResult>> {
   const {
-    branchName,
     cwd = process.cwd(),
     factsOnlyTypes,
     orgSlug,
@@ -276,17 +274,6 @@ export async function performReachabilityAnalysis(
     ...(sidecarPath ? ['--compute-artifacts-sidecar', sidecarPath] : []),
   ]
 
-  // Build environment variables.
-  const coanaEnv: Record<string, string> = {}
-  // do not pass default repo and branch name to coana to avoid mixing
-  // buckets (cached configuration) from projects that are likely very different.
-  if (repoName && repoName !== constants.SOCKET_DEFAULT_REPOSITORY) {
-    coanaEnv['SOCKET_REPO_NAME'] = repoName
-  }
-  if (branchName && branchName !== constants.SOCKET_DEFAULT_BRANCH) {
-    coanaEnv['SOCKET_BRANCH_NAME'] = branchName
-  }
-
   // In machine-readable modes (--json/--markdown) the final payload is written
   // to stdout by the output layer. Coana streams progress/logs over stdout
   // under `inherit`, which would corrupt that payload, so redirect the child's
@@ -300,7 +287,7 @@ export async function performReachabilityAnalysis(
     const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
       coanaVersion: reachabilityOptions.reachVersion,
       cwd,
-      env: coanaEnv,
+      repoName,
       spinner,
       stdio: coanaStdio,
     })

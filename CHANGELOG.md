@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `--dynamic-sbom-inference` builds a Gradle or sbt build nested in another build on its own as well, so the projects only its own settings include are no longer missed.
 - Maven Socket facts honor artifact types that build extensions define, so they no longer list dependencies Maven doesn't resolve, or fetch files under the wrong extension.
 - Maven Socket facts no longer drop dependencies whose scope Maven 3 doesn't define, such as Maven 4's `compile-only` or `none`.
+- Your Socket API token, whether from `socket login` or the environment, and the other settings socket-cli passes to Coana no longer reach the build tools and package managers Coana runs.
 
 ## [1.15.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.15.0) - 2026-11-12
 

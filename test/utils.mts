@@ -11,6 +11,7 @@ import constants, {
   COANA_CLI_VERSION,
   FLAG_HELP,
   FLAG_VERSION,
+  SOCKET_CLI_API_TOKEN_VARIABLES,
 } from '../src/constants.mts'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -25,6 +26,12 @@ const __dirname = path.dirname(__filename)
 //     - \u0080 to \uFFFF (extended Unicode)
 // eslint-disable-next-line no-control-regex
 const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
+
+const SOCKET_AUTH_VARIABLES: ReadonlySet<string> = new Set([
+  ...SOCKET_CLI_API_TOKEN_VARIABLES,
+  'SOCKET_CLI_API_BASE_URL',
+  'SOCKET_CLI_ORG_SLUG',
+])
 
 // Note: The fixture directory is in the same directory as this utils file.
 export const testPath = __dirname
@@ -104,6 +111,14 @@ function normalizeEnvironmentPaths(str: string): string {
       '<redacted>',
     )
   }, str)
+}
+
+function withoutSocketAuthEnv(
+  env: NodeJS.ProcessEnv,
+): Record<string, string | undefined> {
+  return Object.fromEntries(
+    Object.entries(env).filter(entry => !SOCKET_AUTH_VARIABLES.has(entry[0])),
+  )
 }
 
 function toAsciiSafeString(str: string): string {
@@ -208,24 +223,8 @@ export async function spawnSocketCli(
   } as SpawnOptions
   try {
     // Exclude Socket auth credentials to ensure tests run unauthenticated.
-    const {
-      SOCKET_CLI_API_BASE_URL: unusedApiBaseUrl,
-      SOCKET_CLI_API_KEY: unusedCliApiKey,
-      SOCKET_CLI_API_TOKEN: unusedCliApiToken,
-      SOCKET_CLI_ORG_SLUG: unusedOrgSlug,
-      SOCKET_SECURITY_API_KEY: unusedApiKey,
-      SOCKET_SECURITY_API_TOKEN: unusedSecurityApiToken,
-      ...cleanEnv
-    } = process.env
-    const {
-      SOCKET_CLI_API_BASE_URL: unusedProcessApiBaseUrl,
-      SOCKET_CLI_API_KEY: unusedProcessCliApiKey,
-      SOCKET_CLI_API_TOKEN: unusedProcessCliApiToken,
-      SOCKET_CLI_ORG_SLUG: unusedProcessOrgSlug,
-      SOCKET_SECURITY_API_KEY: unusedProcessApiKey,
-      SOCKET_SECURITY_API_TOKEN: unusedProcessSecurityApiToken,
-      ...cleanProcessEnv
-    } = constants.processEnv
+    const cleanEnv = withoutSocketAuthEnv(process.env)
+    const cleanProcessEnv = withoutSocketAuthEnv(constants.processEnv)
     const nativeBinary = process.env['SOCKET_CLI_NATIVE_TEST_BINARY']
     const nativeStage = process.env['SOCKET_CLI_NATIVE_TEST_STAGE']
     const executionEnv = {
