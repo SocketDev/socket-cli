@@ -6,6 +6,7 @@ import {
   whichBinSync,
 } from '@socketsecurity/registry/lib/bin'
 import { isDirSync } from '@socketsecurity/registry/lib/fs'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import {
@@ -118,7 +119,7 @@ export type PackageFilesForScanOptions = {
  */
 function normalizeScanInputPath(pathToNormalize: string, cwd: string): string {
   if (!path.isAbsolute(pathToNormalize)) {
-    return pathToNormalize
+    return stripTrailingSlash(normalizePath(pathToNormalize))
   }
   const relativePath = path.relative(cwd, pathToNormalize)
   const isInsideCwd =
