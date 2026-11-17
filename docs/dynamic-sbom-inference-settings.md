@@ -77,6 +77,11 @@ Under `defaults.manifest.maven`, `.gradle`, `.sbt` or `.dotnet`, or inside a
 | `disabled` | `true` skips builds; see below. |
 | `facts` | Gradle and sbt: `false` skips the build. |
 | `verbose` | `true` streams the build tool's output. |
+| `reachability.build` | Reachability scans only. `"compile"` builds the project before the analysis; a failed build fails the scan. `"none"` or unset analyses it unbuilt. |
+| `reachability.javaHome` | Reachability scans only; Maven, Gradle and sbt. JDK for the analysis, passed to Coana as written. |
+
+The fields under `reachability` cascade one by one: a nearer `socket.json` or
+a `builds` entry that sets only `build` keeps an inherited `javaHome`.
 
 ## Skipping builds
 
