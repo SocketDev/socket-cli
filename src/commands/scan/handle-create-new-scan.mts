@@ -91,6 +91,8 @@ export type HandleCreateNewScanConfig = {
   committers: string
   cwd: string
   defaultBranch: boolean
+  // The invoking command's flag for `reach.excludePaths`, when it takes one.
+  excludePathsFlag?: string | undefined
   // Supplies the complete scan input and replaces manifest discovery.
   generateScanFiles?: (() => Promise<GeneratedScanFiles>) | undefined
   interactive: boolean
@@ -122,6 +124,7 @@ async function createNewScan(
     committers,
     cwd,
     defaultBranch,
+    excludePathsFlag,
     interactive,
     orgSlug,
     outputKind,
@@ -218,6 +221,7 @@ async function createNewScan(
           cwd,
           detected,
           excludePaths: reach.excludePaths,
+          excludePathsFlag,
           outputKind,
           verbose: false,
         })

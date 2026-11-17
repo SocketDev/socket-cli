@@ -274,6 +274,22 @@ describe('generateAutoManifest — bazel branch', () => {
     expect(convertGradleToMaven).not.toHaveBeenCalled()
   })
 
+  it.for([['--exclude-paths'], [undefined]] as const)(
+    'names the exclude-paths flag %s in remedies only when the command takes one',
+    async ({ 0: excludePathsFlag }) => {
+      await generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, maven: true, count: 1 },
+        excludePathsFlag,
+        outputKind: 'text',
+        verbose: false,
+      })
+      expect(vi.mocked(runManifestFacts).mock.calls[0]?.[0].hints).toEqual(
+        expect.objectContaining({ excludePathsFlag }),
+      )
+    },
+  )
+
   it('passes each JVM build tool its socket.json reachability javaHome', async () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({
       defaults: {

@@ -10,7 +10,6 @@ import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import {
-  EXCLUDE_PATHS_FLAG,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   runManifestFacts,
 } from './run-manifest-facts.mts'
@@ -33,7 +32,6 @@ import type { OutputKind } from '../../types.mts'
 
 // Auto-manifest reads every build option from the root socket.json.
 const AUTO_MANIFEST_HINTS: BuildOptionHints = {
-  excludePathsFlag: EXCLUDE_PATHS_FLAG,
   flags: new Set(),
   setupCommand: 'socket manifest setup',
   socketJson: SOCKET_JSON,
@@ -73,6 +71,7 @@ export async function generateAutoManifest({
   cwd,
   detected,
   excludePaths,
+  excludePathsFlag,
   outputKind,
   verbose,
 }: {
@@ -81,17 +80,20 @@ export async function generateAutoManifest({
   cwd: string
   // Scan-root-relative `--exclude-paths`: skip excluded subprojects.
   excludePaths?: string[] | undefined
+  // The invoking command's flag for `excludePaths`, when it takes one.
+  excludePathsFlag?: string | undefined
   outputKind: OutputKind
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const generatedFiles: string[] = []
-  const hints: BuildOptionHints = context?.workDir?.withFiles
-    ? {
-        ...AUTO_MANIFEST_HINTS,
-        continueOnInstallErrorsFlag: REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
-      }
-    : AUTO_MANIFEST_HINTS
+  const hints: BuildOptionHints = {
+    ...AUTO_MANIFEST_HINTS,
+    continueOnInstallErrorsFlag: context?.workDir?.withFiles
+      ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+      : undefined,
+    excludePathsFlag,
+  }
 
   if (verbose) {
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
