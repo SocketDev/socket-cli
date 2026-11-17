@@ -509,6 +509,7 @@
 !/src/commands/manifest/run-manifest-facts.mts
 !/src/commands/manifest/run-manifest-facts.test.mts
 !/src/commands/manifest/scripts/build-tool.mts
+!/src/commands/manifest/scripts/build-tool.test.mts
 !/src/commands/manifest/setup-manifest-config.mts
 !/src/commands/manifest/setup-manifest-config.test.mts
 !/src/commands/manifest/setup-recursive-manifest-config.mts
