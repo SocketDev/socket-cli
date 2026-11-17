@@ -76,6 +76,9 @@ type CoanaSpawnOptions = {
   coanaVersion?: string | undefined
   cwd?: string | URL | undefined
   env?: Record<string, string | undefined> | undefined
+  // The oldest Coana the command exists in; checked against the version a
+  // pinned spec resolves to.
+  minimumVersion?: string | undefined
   repoName?: string | undefined
   spinner?: Spinner | undefined
   stdio?: SpawnOptions['stdio'] | undefined
@@ -215,17 +218,20 @@ async function downloadComponent(
   return { ok: true }
 }
 
+type CoanaCliDir = { dir: string; version: string }
+
 /**
  * The directory of the Coana CLI's `cli` component for `versionSpec`, an exact
- * version or a range, downloading it into the cache when the cache lacks it.
- * `env` reaches the cache script, which reads `XDG_CACHE_HOME` from it.
+ * version or a range, and the version it holds, downloading it into the cache
+ * when the cache lacks it. `env` reaches the cache script, which reads
+ * `XDG_CACHE_HOME` from it.
  */
 async function getCoanaCliDir(
   versionSpec: string,
   org: CResult<string>,
   env: NodeJS.ProcessEnv,
   spinner: Spinner | undefined,
-): Promise<CResult<string>> {
+): Promise<CResult<CoanaCliDir>> {
   try {
     const exactVersion = semver.valid(versionSpec)
     if (exactVersion) {
@@ -267,7 +273,10 @@ async function getCoanaCliDir(
       logger.info(downloading)
     }
     try {
-      return await installComponent(artifacts.data, orgSlug, env)
+      return withVersion(
+        await installComponent(artifacts.data, orgSlug, env),
+        artifacts.data.version,
+      )
     } finally {
       spinning?.setText(previousText)
     }
@@ -280,11 +289,13 @@ async function getCoanaCliDir(
   }
 
   /** The cached directory or a failure; `undefined` when the cache lacks it. */
-  async function lookup(version: string): Promise<CResult<string> | undefined> {
+  async function lookup(
+    version: string,
+  ): Promise<CResult<CoanaCliDir> | undefined> {
     const result = await runCoanaCache(['lookup', version, COMPONENT], env)
     return result.exitCode === NOT_CACHED_EXIT_CODE
       ? undefined
-      : cacheResultToCResult(result)
+      : withVersion(cacheResultToCResult(result), version)
   }
 }
 
@@ -419,6 +430,13 @@ async function runCoanaCache(
   }
 }
 
+function withVersion(
+  dir: CResult<string>,
+  version: string,
+): CResult<CoanaCliDir> {
+  return dir.ok ? { ok: true, data: { dir: dir.data, version } } : dir
+}
+
 /**
  * Run the Coana CLI, downloading it into the cache that Coana and the Socket
  * CLIs share when the cache lacks the version. Returns a CResult with Coana's
@@ -440,6 +458,7 @@ export async function spawnCoana(
     coanaVersion,
     cwd,
     env: spawnEnv,
+    minimumVersion,
     repoName,
     spinner,
     stdio = 'inherit',
@@ -505,7 +524,15 @@ export async function spawnCoana(
     if (!coanaDir.ok) {
       return coanaDir
     }
-    scriptPath = coanaCliWrapperPath(coanaDir.data)
+    const { dir, version } = coanaDir.data
+    if (minimumVersion && semver.lt(version, minimumVersion)) {
+      return {
+        ok: false,
+        message: `Coana ${version} is too old for this command`,
+        cause: `It needs Coana ${minimumVersion} or newer. Pin that or a newer version with --reach-version or --fix-version, or leave the version unpinned.`,
+      }
+    }
+    scriptPath = coanaCliWrapperPath(dir)
   }
 
   // A local path may name a native binary.

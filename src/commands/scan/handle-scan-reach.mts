@@ -16,8 +16,12 @@ import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { pluralize } from '../../utils/words.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
-import type { DynamicSbomInferenceResult } from './run-dynamic-sbom-inference.mts'
+import type {
+  DynamicSbomInferenceResult,
+  KeptRootsDir,
+} from './run-dynamic-sbom-inference.mts'
 import type { OutputKind } from '../../types.mts'
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 
 export type HandleScanReachConfig = {
   cwd: string
@@ -39,7 +43,9 @@ async function runScanReach(
     reachabilityOptions,
     targets,
   }: HandleScanReachConfig,
-  sbtTmpDir: string | undefined,
+  // The ecosystems --dynamic-sbom-inference generates facts for, with the
+  // work dir Coana's run reads.
+  dsi: { purlTypes: FactsOnlyTypes; workDir: KeptRootsDir } | undefined,
 ) {
   const { spinner } = constants
 
@@ -48,14 +54,15 @@ async function runScanReach(
   let scanTargets = targets
   let dynamicResult: DynamicSbomInferenceResult | undefined
 
-  if (reachabilityOptions.dynamicSbomInference) {
+  if (dsi) {
     logger.info('Generating Socket facts for each build root ...')
     dynamicResult = await runDynamicSbomInference({
       consumer: 'reach',
+      context: { coanaVersion: reachabilityOptions.reachVersion, orgSlug },
       cwd,
       excludePaths: reachabilityOptions.excludePaths,
-      purlTypes: reachabilityOptions.dynamicSbomInference,
-      sbtTmpDir,
+      purlTypes: dsi.purlTypes,
+      workDir: dsi.workDir,
     })
     scanTargets = Array.from(
       new Set([...scanTargets, ...dynamicResult.factsPaths]),
@@ -133,7 +140,7 @@ async function runScanReach(
     outputPath,
     packagePaths,
     reachabilityOptions: mergedReachabilityOptions,
-    resolvedPathsSidecar: dynamicResult?.resolvedPathsSidecar,
+    socketFactsSidecar: dsi && [...dsi.workDir.entries.values()],
     spinner,
     target: targets[0]!,
   })
@@ -162,12 +169,14 @@ async function runScanReach(
 export async function handleScanReach(
   config: HandleScanReachConfig,
 ): Promise<void> {
-  // sbt provisions its Scala toolchain under the directory passed as its
-  // isolated global base; the sidecar's artifactPaths point into it, so it
-  // must stay on disk until the reachability analysis has consumed them.
-  return config.reachabilityOptions.dynamicSbomInference
-    ? await withTmpDir('socket-dynamic-sbom-inference-', tmpDir =>
-        runScanReach(config, tmpDir),
+  const purlTypes = config.reachabilityOptions.dynamicSbomInference
+  // Coana's run reads what facts generation keeps in the work dir.
+  return purlTypes
+    ? await withTmpDir('socket-dynamic-sbom-inference-', dir =>
+        runScanReach(config, {
+          purlTypes,
+          workDir: { dir, entries: new Map() },
+        }),
       )
     : await runScanReach(config, undefined)
 }
