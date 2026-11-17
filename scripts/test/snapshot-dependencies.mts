@@ -39,7 +39,9 @@ export const SNAPSHOT_DEPENDENCIES = {
       'test/native-snapshots/socket-patch-repair-help.help.svg',
       'test/native-snapshots/socket-patch-version.version.svg',
     ],
-    versionSnapshots: ['test/native-snapshots/socket-patch-version.version.svg'],
+    versionSnapshots: [
+      'test/native-snapshots/socket-patch-version.version.svg',
+    ],
     testNamePattern:
       'captures bundled patch help for (apply|rollback|get|scan|list|remove|setup|repair)|captures bundled socket-patch version',
   },
@@ -48,6 +50,41 @@ export const SNAPSHOT_DEPENDENCIES = {
 export type SnapshotDependencyName = 'coana' | 'patch' | 'socket-patch'
 type SnapshotDependencyMapName = keyof typeof SNAPSHOT_DEPENDENCIES
 
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Replace a pinned version in a terminal SVG snapshot without changing the
+ * rendered row width. The row's trailing spaces absorb the length difference.
+ */
+export function swapVersionInSnapshot(
+  contents: string,
+  from: string,
+  to: string,
+): string {
+  const pattern = new RegExp(
+    `(?<![\\w.])${escapeRegExp(from)}(?!\\w|\\.\\d)(\\S*)( *)`,
+    'g',
+  )
+  let found = false
+  const swapped = contents.replace(
+    pattern,
+    (_match, tail: string, padding: string) => {
+      found = true
+      const width = from.length + padding.length
+      if (to.length > width) {
+        throw new Error(`No room in the row to replace ${from} with ${to}`)
+      }
+      return `${to}${tail}${' '.repeat(width - to.length)}`
+    },
+  )
+  if (!found) {
+    throw new Error(`The snapshot does not mention ${from}`)
+  }
+  return swapped
+}
+
 export interface StaleSnapshotDependency {
   readonly dependencyName: SnapshotDependencyName
   readonly packageName: string
@@ -55,25 +92,31 @@ export interface StaleSnapshotDependency {
   readonly snapshots: readonly string[]
 }
 
+export async function readPinnedVersion(
+  dependency: SnapshotDependency,
+): Promise<string> {
+  const source = await fs.readFile(path.join(ROOT, dependency.source), 'utf8')
+  const version = dependency.versionPattern.exec(source)?.[1]
+  if (!version) {
+    throw new Error(
+      `Could not read ${dependency.packageName} version from ${dependency.source}`,
+    )
+  }
+  return version
+}
+
 export async function findStaleSnapshotDependencies(): Promise<
   StaleSnapshotDependency[]
 > {
   const findings = await Promise.all(
-    (Object.entries(SNAPSHOT_DEPENDENCIES) as Array<[
-      string,
-      SnapshotDependency,
-    ]>).map(async ([name, dependency]) => {
-      const source = await fs.readFile(
-        path.join(ROOT, dependency.source),
-        'utf8',
-      )
-      const version = dependency.versionPattern.exec(source)?.[1]
-      if (!version) {
-        throw new Error(
-          `Could not read ${dependency.packageName} version from ${dependency.source}`,
-        )
-      }
-      const versionSnapshots = dependency.versionSnapshots ?? dependency.snapshots
+    (
+      Object.entries(SNAPSHOT_DEPENDENCIES) as Array<
+        [string, SnapshotDependency]
+      >
+    ).map(async ([name, dependency]) => {
+      const version = await readPinnedVersion(dependency)
+      const versionSnapshots =
+        dependency.versionSnapshots ?? dependency.snapshots
       const snapshots = await Promise.all(
         versionSnapshots.map(async snapshot => ({
           path: snapshot,
@@ -86,7 +129,9 @@ export async function findStaleSnapshotDependencies(): Promise<
       if (staleSnapshots.length) {
         return {
           dependencyName:
-            name === 'patch' ? 'socket-patch' : (name as SnapshotDependencyName),
+            name === 'patch'
+              ? 'socket-patch'
+              : (name as SnapshotDependencyName),
           packageName: dependency.packageName,
           version,
           snapshots: dependency.versionSnapshots
@@ -109,8 +154,12 @@ export async function findStaleSnapshotDependencies(): Promise<
 export function normalizeSnapshotDependencyName(
   name: string,
 ): SnapshotDependencyMapName | undefined {
-  if (name === 'socket-patch') {return 'patch'}
-  if (name === 'coana' || name === 'patch') {return name}
+  if (name === 'socket-patch') {
+    return 'patch'
+  }
+  if (name === 'coana' || name === 'patch') {
+    return name
+  }
   return undefined
 }
 

@@ -879,7 +879,7 @@ jobs:
         with:
           mode: restore
           path: ~/.cache/socket-sea/downloads/v1/blobs
-          key: sea-downloads-v1-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml', 'src/sea/uv-pins.json', 'src/sea/build-sea.mts') }}${{ inputs.refresh-native-cache && format('-refresh-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+          key: sea-downloads-v1-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml', 'src/sea/stage/uv-pins.json', 'src/sea/build-sea.mts') }}${{ inputs.refresh-native-cache && format('-refresh-{0}-{1}', github.run_id, github.run_attempt) || '' }}
           restore-keys: |
             sea-downloads-v1-${{ matrix.target }}-
 
@@ -904,7 +904,7 @@ jobs:
         with:
           mode: save
           path: ~/.cache/socket-sea/downloads/v1/blobs
-          key: sea-downloads-v1-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml', 'src/sea/uv-pins.json', 'src/sea/build-sea.mts') }}${{ inputs.refresh-native-cache && format('-refresh-{0}-{1}', github.run_id, github.run_attempt) || '' }}
+          key: sea-downloads-v1-${{ matrix.target }}-${{ hashFiles('pnpm-lock.yaml', 'src/sea/stage/uv-pins.json', 'src/sea/build-sea.mts') }}${{ inputs.refresh-native-cache && format('-refresh-{0}-{1}', github.run_id, github.run_attempt) || '' }}
 
       - name: Run native screenshot tests
         shell: bash

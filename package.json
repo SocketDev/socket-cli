@@ -96,6 +96,7 @@
     "test": "pnpm run check --all && run-s test:prepare test:unit integration-tests e2e-tests",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
     "test:unit": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts",
+    "test:unit:snapshot-dependencies": "pnpm run test:unit test/unit/scripts/test/snapshot-dependencies.test.mts",
     "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts --update",
     "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts --coverage",
     "test-ci": "run-s test:prepare test:unit integration-tests",
