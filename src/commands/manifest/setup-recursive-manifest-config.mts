@@ -28,6 +28,7 @@ import {
 import {
   buildToolScriptOptions,
   resolveEcosystemConfig,
+  socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { loadBuild, withModules } from './load-build.mts'
 import { DSI_SETUP_COMMAND } from './run-manifest-facts.mts'
@@ -667,16 +668,11 @@ async function loadOrAsk(
     const config = buildConfig(walk, build)
     // eslint-disable-next-line no-await-in-loop
     const loaded = await loadBuild({
-      bin: config.bin,
-      buildOpts: config.buildOpts,
-      cwd: build.root.dir,
-      ecosystem: build.ecosystem,
-      entryFile: build.root.entryFile,
-      excludeBase: walk.cwd,
-      excludePaths: walk.excludePaths,
-      javaHome: config.javaHome,
+      ...socketFactsRunOptions(build.ecosystem, build.root, config, {
+        excludeBase: walk.cwd,
+        excludePaths: walk.excludePaths,
+      }),
       scanRoot: walk.cwd,
-      verbose: config.verbose,
     })
     if (loaded) {
       return { ok: true, data: { canceled: false, loaded } }

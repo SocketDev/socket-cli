@@ -228,6 +228,41 @@ export function buildToolScriptOptions(
   }
 }
 
+export function socketFactsRunOptions(
+  ecosystem: BuildTool,
+  root: BuildRoot,
+  config: EcosystemBuildConfig,
+  {
+    context,
+    excludeBase,
+    excludePaths,
+    hints,
+  }: {
+    context?: SocketFactsContext | undefined
+    excludeBase: string | undefined
+    excludePaths: string[] | undefined
+    hints?: BuildOptionHints | undefined
+  },
+): SocketFactsRunOptions {
+  return {
+    bin: config.bin,
+    buildOpts: config.buildOpts,
+    context,
+    cwd: root.dir,
+    ecosystem,
+    entryFile: root.entryFile,
+    excludeBase,
+    excludeConfigs: config.excludeConfigs,
+    excludePaths,
+    hints,
+    ignoreUnresolved: config.ignoreUnresolved,
+    includeConfigs: config.includeConfigs,
+    javaHome: config.javaHome,
+    reachability: config.reachability,
+    verbose: config.verbose,
+  }
+}
+
 async function everyAsync<T>(
   items: readonly T[],
   test: (item: T) => Promise<boolean>,
@@ -669,30 +704,23 @@ function runOptions(
   dirConfig: EcosystemBuildConfig,
 ): SocketFactsRunOptions {
   return {
-    bin: dirConfig.bin,
-    buildOpts: dirConfig.buildOpts,
-    context: ctx.context,
-    cwd: root.dir,
-    ecosystem,
-    entryFile: root.entryFile,
-    // Relative to the scan root: a build can reach modules outside its own
-    // directory (Maven `../x` modules, relocated Gradle projects).
-    excludeBase: ctx.realCwd,
-    excludeConfigs: dirConfig.excludeConfigs,
-    excludePaths: ctx.excludePaths,
-    hints: {
-      continueOnInstallErrorsFlag: ctx.context.workDir?.withFiles
-        ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
-        : undefined,
-      excludePathsFlag: EXCLUDE_PATHS_FLAG,
-      flags: ctx.optionFlags,
-      setupCommand: DSI_SETUP_COMMAND,
-      socketJson: socketJsonPath(root.dir),
-    },
+    ...socketFactsRunOptions(ecosystem, root, dirConfig, {
+      context: ctx.context,
+      // Relative to the scan root: a build can reach modules outside its own
+      // directory (Maven `../x` modules, relocated Gradle projects).
+      excludeBase: ctx.realCwd,
+      excludePaths: ctx.excludePaths,
+      hints: {
+        continueOnInstallErrorsFlag: ctx.context.workDir?.withFiles
+          ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+          : undefined,
+        excludePathsFlag: EXCLUDE_PATHS_FLAG,
+        flags: ctx.optionFlags,
+        setupCommand: DSI_SETUP_COMMAND,
+        socketJson: socketJsonPath(root.dir),
+      },
+    }),
     ignoreUnresolved: ctx.ignoreUnresolved ?? dirConfig.ignoreUnresolved,
-    includeConfigs: dirConfig.includeConfigs,
-    javaHome: dirConfig.javaHome,
-    reachability: dirConfig.reachability,
     verbose: ctx.verbose || dirConfig.verbose,
   }
 }
@@ -816,7 +844,6 @@ export async function buildUncoveredRoot({
   hints?: BuildOptionHints | undefined
   root: BuildRoot
 }): Promise<RunManifestFactsOutcome | 'covered'> {
-  const { bin, buildOpts } = config
   if (
     await isRootCovered(
       covered,
@@ -828,21 +855,13 @@ export async function buildUncoveredRoot({
     return 'covered'
   }
   const result = await runManifestFacts({
-    bin,
-    buildOpts,
-    context,
+    ...socketFactsRunOptions(ecosystem, root, config, {
+      context,
+      excludeBase,
+      excludePaths,
+      hints,
+    }),
     cwd: cwd ?? root.dir,
-    ecosystem,
-    entryFile: root.entryFile,
-    excludeBase,
-    excludeConfigs: config.excludeConfigs,
-    excludePaths,
-    hints,
-    ignoreUnresolved: config.ignoreUnresolved,
-    includeConfigs: config.includeConfigs,
-    javaHome: config.javaHome,
-    reachability: config.reachability,
-    verbose: config.verbose,
   })
   if (result) {
     addMembership(covered, await membershipOf(result.projects))
