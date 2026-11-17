@@ -928,10 +928,6 @@ async function main(): Promise<void> {
     }
     const synpVersion = packageJson.devDependencies?.['synp']
     const prepTasks = [
-      // The 1.14.x distribution includes this first-party helper. Build it
-      // before Rollup copies manifest-scripts into the private distribution.
-      // Its runtime still uses the user's .NET SDK; NuGet is build-time only.
-      run('pnpm', ['run', 'build:dotnet-tool']),
       stageSocketPatch(target, stage, socketPatchVersion, socketPatchLicense),
       (async () => {
         const cdxgenApi = await stageCdxgenApi(target, stage, cdxgenVersion)
@@ -950,15 +946,11 @@ async function main(): Promise<void> {
         return { cdxgenApi, synpPayload }
       })(),
       stageUv(stage, target[0], target[1]),
-      // Rollup copies this helper into manifest-scripts for standalone builds.
-      run('pnpm', ['run', 'build:maven-extension']),
     ] as const
     const prepLabels = [
-      '.NET facts helper',
       'socket-patch payload',
       'cdxgen and synp payloads',
       'uv payload',
-      'Maven manifest extension',
     ] as const
     const prepResults = await Promise.allSettled(prepTasks)
     const prepErrors = prepResults.flatMap((result, index) =>
@@ -977,18 +969,18 @@ async function main(): Promise<void> {
       )
     }
     const socketPatch = (
-      prepResults[1] as PromiseFulfilledResult<
+      prepResults[0] as PromiseFulfilledResult<
         Awaited<ReturnType<typeof stageSocketPatch>>
       >
     ).value
     const { cdxgenApi, synpPayload } = (
-      prepResults[2] as PromiseFulfilledResult<{
+      prepResults[1] as PromiseFulfilledResult<{
         cdxgenApi: Awaited<ReturnType<typeof stageCdxgenApi>>
         synpPayload: Awaited<ReturnType<typeof stageSynp>> | undefined
       }>
     ).value
     const uvPayload = (
-      prepResults[3] as PromiseFulfilledResult<
+      prepResults[2] as PromiseFulfilledResult<
         Awaited<ReturnType<typeof stageUv>>
       >
     ).value
@@ -999,9 +991,6 @@ async function main(): Promise<void> {
       await fs.writeFile(socketPatchHashFile, `${socketPatch.digest}\n`)
     }
 
-    // Rollup depends on the completed helper and copies it into stageDist.
-    // Keep it ordered after preparation, while the independent downloads and
-    // helper build above are allowed to overlap.
     await run(
       'pnpm',
       [
@@ -1094,20 +1083,6 @@ async function main(): Promise<void> {
           `Required SEA payload is missing or malformed: ${filename}`,
         )
       }
-    }
-    const dotnetToolDirectory = path.join(
-      stageDist,
-      'manifest-scripts/dotnet-tool',
-    )
-    const dotnetToolEntry = path.join(
-      dotnetToolDirectory,
-      'socket-facts-dotnet.dll',
-    )
-    const dotnetToolStat = await fs.stat(dotnetToolEntry).catch(() => undefined)
-    if (!dotnetToolStat?.isFile() || dotnetToolStat.size === 0) {
-      throw new Error(
-        'The .NET facts helper was not copied into the SEA distribution',
-      )
     }
     const capabilities = createSeaCapabilities({
       triple,
@@ -1216,14 +1191,6 @@ async function main(): Promise<void> {
         version: appVersion,
         file: 'dist/',
         sha256: await digestTree(path.join(stage, 'dist')),
-      },
-      {
-        id: 'socket-dotnet-facts-helper',
-        version: appVersion,
-        file: 'dist/manifest-scripts/dotnet-tool/',
-        sha256: await digestTree(
-          path.join(stage, 'dist/manifest-scripts/dotnet-tool'),
-        ),
       },
       {
         id: 'external-dependencies',
@@ -1367,15 +1334,7 @@ async function main(): Promise<void> {
           'external',
         ),
       },
-      runtimeRequirements: [
-        {
-          capability: 'manifest-dotnet-facts',
-          executable: 'dotnet',
-          resolution: 'socket manifest dotnet --bin or PATH',
-          requirement:
-            'A .NET SDK compatible with the selected project; the Socket facts helper DLL is embedded, but the SDK/runtime is user-provided.',
-        },
-      ],
+      runtimeRequirements: [],
       capabilities,
     }
     const manifestStage = path.join(stage, 'artifact.manifest.json')

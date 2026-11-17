@@ -320,10 +320,6 @@ async function main(): Promise<void> {
       privateEnv,
     )
     await verifyPrivateVirtualStore(workspace)
-    run(workspace, 'pnpm', ['run', 'build:dotnet-tool'], privateEnv)
-    await verifyPrivateVirtualStore(workspace)
-    run(workspace, 'pnpm', ['run', 'build:maven-extension'], privateEnv)
-    await verifyPrivateVirtualStore(workspace)
     for (const variant of variants) {
       await fs.writeFile(
         packagePath,
