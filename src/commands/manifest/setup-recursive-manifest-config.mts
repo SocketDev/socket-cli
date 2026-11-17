@@ -5,6 +5,7 @@ import micromatch from 'micromatch'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { select } from '@socketsecurity/registry/lib/prompts'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -57,6 +58,7 @@ import type {
 import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { LoadedBuild } from './load-build.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { ReachabilityStepOptions } from './setup-manifest-config.mts'
 import type { CResult } from '../../types.mts'
 import type {
   ManifestDefaults,
@@ -82,6 +84,28 @@ function canceledByUser(): CResult<{ canceled: boolean }> {
 
 function notCanceled(): CResult<{ canceled: boolean }> {
   return { ok: true, data: { canceled: false } }
+}
+
+// A nested section (`reachability`) compares field by field, as the cascade
+// merges it.
+function changedFields(
+  seed: Record<string, unknown>,
+  inherited: Record<string, unknown>,
+): Record<string, unknown> {
+  const changed: Record<string, unknown> = {}
+  for (const key of Object.keys(seed)) {
+    const value = seed[key]
+    const base = inherited[key]
+    if (isObjectObject(value) && isObjectObject(base)) {
+      const nested = changedFields(value, base)
+      if (Object.keys(nested).length) {
+        changed[key] = nested
+      }
+    } else if (value !== base) {
+      changed[key] = value
+    }
+  }
+  return changed
 }
 
 function getEcosystemSection(
@@ -452,18 +476,21 @@ async function configureBuild(
   }
 
   const seeded = Object.keys(seed)
-  const result = await runEcosystemWizard(ecosystem, seed)
+  const result = await runEcosystemWizard(ecosystem, seed, {
+    inheritedReachability: inherited['reachability'],
+  })
   if (!result.ok || result.data.canceled) {
     return result
   }
 
   const before = JSON.stringify(target)
+  const changed = changedFields(seed, inherited)
   // An answer the wizard removed leaves the field to inheritance.
   for (const field of new Set([...seeded, ...Object.keys(seed)])) {
-    if (!Object.hasOwn(seed, field) || seed[field] === inherited[field]) {
-      delete target[field]
+    if (Object.hasOwn(changed, field)) {
+      target[field] = changed[field]
     } else {
-      target[field] = seed[field]
+      delete target[field]
     }
   }
   const label = buildLabel(cwd, build)
@@ -814,19 +841,24 @@ async function reviewBuild(
 async function runEcosystemWizard(
   ecosystem: BuildTool,
   config: Record<string, unknown>,
+  options: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (ecosystem === 'dotnet') {
-    return await setupDotnet(config as ManifestDefaults<'dotnet'>)
+    return await setupDotnet(config as ManifestDefaults<'dotnet'>, options)
   }
   if (ecosystem === 'gradle') {
     return await setupGradle(config as ManifestDefaults<'gradle'>, {
+      ...options,
       factsOnly: true,
     })
   }
   if (ecosystem === 'maven') {
-    return await setupMaven(config as ManifestDefaults<'maven'>)
+    return await setupMaven(config as ManifestDefaults<'maven'>, options)
   }
-  return await setupSbt(config as ManifestDefaults<'sbt'>, { factsOnly: true })
+  return await setupSbt(config as ManifestDefaults<'sbt'>, {
+    ...options,
+    factsOnly: true,
+  })
 }
 
 // Accepting every prompt's default leaves an ecosystem's section empty (see
@@ -909,8 +941,14 @@ async function setupRootDefaults(
     const manifest = manifestOf(own)
     const section = { ...getEcosystemSection(own, ecosystem) }
     manifest[ecosystem] = section
+    const inherited = getEcosystemSection(
+      draftCascade(draft, path.dirname(cwd)),
+      ecosystem,
+    )
     // eslint-disable-next-line no-await-in-loop
-    const result = await runEcosystemWizard(ecosystem, section)
+    const result = await runEcosystemWizard(ecosystem, section, {
+      inheritedReachability: inherited['reachability'],
+    })
     if (!result.ok || result.data.canceled) {
       return result
     }
