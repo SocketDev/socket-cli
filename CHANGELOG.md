@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Socket facts for a self-contained .NET build include its runtime packs.
 - Tune reachability per build tool in `socket.json` for `--dynamic-sbom-inference` scans: `reachability.build` compiles the project before the analysis, `reachability.javaHome` (Maven, Gradle, sbt) sets the JDK the analysis assumes, and `reachability.runtimeVersion` (.NET) sets the runtime it starts on.
+- `socket manifest setup --dynamic-sbom-inference` asks for the reachability settings, so there is no need to edit `socket.json` by hand.
 
 ### Changed
 - Updated the Coana CLI to v `15.15.5`.
