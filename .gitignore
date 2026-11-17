@@ -232,12 +232,15 @@
 !/test/unit/sea/build/lock.test.mts
 !/test/unit/sea/build/publish.test.mts
 !/test/unit/sea/build-sea.test.mts
+!/test/utils/
+!/test/utils/sea.mts
 !/test/unit/sea/download-bytes.test.mts
 !/test/unit/sea/download-cache.test.mts
 !/test/unit/sea/runtime.test.mts
 !/test/unit/sea/version.test.mts
 !/test/unit/utils/
 !/test/unit/utils/agent.test.mts
+!/test/unit/utils/quote-powershell.test.mts
 !/test/unit/lib/
 !/test/unit/lib/native/
 !/test/unit/lib/native/cli-harness.test.mts
@@ -1054,6 +1057,9 @@
 !/src/sea/adapters/synp.mts
 !/src/sea/bootstrap.mts
 !/src/sea/build-sea.mts
+!/src/sea/readme-version.mts
+!/src/sea/.node-version
+!/src/sea/node-version.mts
 !/src/sea/licenses/cdxgen-third-party/boolbase-1.0.0-ISC.txt
 !/src/sea/licenses/cdxgen-third-party/err-code-2.0.3-MIT.txt
 !/src/sea/licenses/cdxgen-third-party/imurmurhash-0.1.4-MIT.txt
@@ -1179,6 +1185,7 @@
 !/src/utils/purl-legacy-npm-names.json
 !/src/utils/purl-to-ghsa.mts
 !/src/utils/purl.mts
+!/src/utils/quote-powershell.mts
 !/src/utils/registry-manifest.json
 !/src/utils/requirements.mts
 !/src/utils/sdk.mts

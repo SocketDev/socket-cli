@@ -4,6 +4,7 @@ import {
   normalizeBackendOutput,
   normalizeBackendPaths,
 } from '../../../lib/terminal/output.mts'
+import { readSeaNodeVersion } from '../../../utils/sea.mts'
 
 import type { TerminalBackend } from '@termless/core'
 
@@ -30,23 +31,25 @@ describe('terminal output normalization', () => {
     )
   })
 
-  it('normalizes only the manifest Node version across split chunks', () => {
+  it('normalizes only the manifest Node version across split chunks', async () => {
     const received: Buffer[] = []
     const backend = {
       feed(data: Uint8Array) {
         received.push(Buffer.from(data))
       },
     } as unknown as TerminalBackend
+    const nodeVersion = await readSeaNodeVersion()
     const normalizer = normalizeBackendOutput(backend, [
-      { search: 'v27.0.0-alpha.0.0.0', replacement: 'v<NODE_VERSION>' },
+      { search: `v${nodeVersion}`, replacement: 'v<NODE_VERSION>' },
     ])
-    backend.feed(Buffer.from('Node.js v27.0.0-alpha.'))
-    backend.feed(Buffer.from('0.0.0; package 1.2.3'))
+    const splitAt = Math.floor(nodeVersion.length / 2)
+    backend.feed(Buffer.from(`Node.js v${nodeVersion.slice(0, splitAt)}`))
+    backend.feed(Buffer.from(`${nodeVersion.slice(splitAt)}; package 1.2.3`))
     normalizer.flush()
     expect(Buffer.concat(received).toString()).toBe(
       'Node.js v<NODE_VERSION>; package 1.2.3',
     )
-    expect(normalizer.matched('v27.0.0-alpha.0.0.0')).toBe(true)
+    expect(normalizer.matched(`v${nodeVersion}`)).toBe(true)
   })
 
   it('normalizes the socket-patch executable display token across split chunks', () => {

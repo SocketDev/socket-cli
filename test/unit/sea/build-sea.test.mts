@@ -15,8 +15,17 @@ import {
   sha512IntegrityHex,
 } from '../../../src/sea/build-sea.mts'
 import { createSeaCapabilities } from '../../../src/sea/capabilities.mts'
+import {
+  NODE_VERSION_END,
+  NODE_VERSION_START,
+  renderSeaReadme,
+  updateSeaReadmeVersion,
+} from '../../../src/sea/readme-version.mts'
+import { readSeaNodeVersion } from '../../utils/sea.mts'
 
 const execFileAsync = promisify(execFile)
+// PowerShell's archive cmdlets can be slow on shared Windows CI runners.
+const WINDOWS_ARCHIVE_TEST_TIMEOUT_MS = 90_000
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../..',
@@ -40,8 +49,8 @@ describe('SEA build arguments', () => {
 })
 
 describe('SEA lockfile metadata', () => {
-  it('parses a unique exact Node archive checksum entry', () => {
-    const archive = 'node-v27.0.0-alpha.0.0.0-linux-x64.tar.gz'
+  it('parses a unique exact Node archive checksum entry', async () => {
+    const archive = `node-v${await readSeaNodeVersion()}-linux-x64.tar.gz`
     const digest = 'a'.repeat(64)
     expect(findNodeArchiveSha256(`${digest}  ${archive}\n`, archive)).toBe(
       digest,
@@ -86,6 +95,45 @@ describe('SEA lockfile metadata', () => {
   })
 })
 
+describe('SEA README Node version', () => {
+  it('renders the pinned version between its hidden markers', async () => {
+    const nodeVersion = await readSeaNodeVersion()
+    const source = `The builder uses ${NODE_VERSION_START}old${NODE_VERSION_END}.`
+
+    expect(renderSeaReadme(source, nodeVersion)).toBe(
+      `The builder uses ${NODE_VERSION_START}\`v${nodeVersion}\`${NODE_VERSION_END}.`,
+    )
+  })
+
+  it('keeps the checked-in README version in sync with the pin', async () => {
+    const readme = await readFile(path.join(root, 'src/sea/README.md'), 'utf8')
+
+    expect(renderSeaReadme(readme, await readSeaNodeVersion())).toBe(readme)
+  })
+
+  it('updates only the marked version and is idempotent', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'sea-readme-test-'))
+    const readmePath = path.join(directory, 'README.md')
+    const source = `Keep this. ${NODE_VERSION_START}old${NODE_VERSION_END} Keep this too.`
+
+    try {
+      await writeFile(readmePath, source)
+
+      expect(
+        await updateSeaReadmeVersion(readmePath, await readSeaNodeVersion()),
+      ).toBe(true)
+      expect(await readFile(readmePath, 'utf8')).toBe(
+        renderSeaReadme(source, await readSeaNodeVersion()),
+      )
+      expect(
+        await updateSeaReadmeVersion(readmePath, await readSeaNodeVersion()),
+      ).toBe(false)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+})
+
 describe('SEA capability policy', () => {
   it('keeps optional tools unavailable unless their payloads are present', () => {
     expect(
@@ -115,7 +163,7 @@ describe('SEA archive paths', () => {
   })
 
   it.skipIf(process.platform !== 'win32')(
-    'keeps nested tools paths in a real Compress-Archive round trip',
+    'keeps nested tools paths in a real Windows ZIP round trip',
     async () => {
       const directory = await mkdtemp(path.join(os.tmpdir(), 'sea-zip-test-'))
       const stage = path.join(directory, 'stage')
@@ -130,7 +178,8 @@ describe('SEA archive paths', () => {
           'param([string]$Stage, [string]$Archive, [string]$Expanded)',
           "$ErrorActionPreference = 'Stop'",
           "Compress-Archive -LiteralPath (Join-Path $Stage 'tools') -DestinationPath $Archive -Force",
-          'Expand-Archive -LiteralPath $Archive -DestinationPath $Expanded -Force',
+          'Add-Type -AssemblyName System.IO.Compression.FileSystem',
+          '[System.IO.Compression.ZipFile]::ExtractToDirectory($Archive, $Expanded)',
           "if (-not (Test-Path (Join-Path $Expanded 'tools/uv/uv.exe'))) { throw 'Nested uv executable was flattened' }",
         ].join('\n'),
       )
@@ -148,7 +197,7 @@ describe('SEA archive paths', () => {
             archive,
             expanded,
           ],
-          { timeout: 30_000 },
+          { timeout: WINDOWS_ARCHIVE_TEST_TIMEOUT_MS },
         )
         expect(
           (await stat(path.join(expanded, 'tools/uv/uv.exe'))).isFile(),
@@ -157,7 +206,7 @@ describe('SEA archive paths', () => {
         await rm(directory, { recursive: true, force: true })
       }
     },
-    30_000,
+    WINDOWS_ARCHIVE_TEST_TIMEOUT_MS,
   )
 })
 
