@@ -367,6 +367,23 @@ describe('reachability validation', () => {
     },
   )
 
+  it.for(['/opt/jdk-17', null])(
+    'rejects the .NET reachability javaHome %j, which .NET does not use',
+    async javaHome => {
+      await writeSocketJson(dir, {
+        version: 1,
+        defaults: { manifest: { dotnet: { reachability: { javaHome } } } },
+      } as never)
+
+      expect(readSocketJsonSync(dir)).toEqual({
+        ok: false,
+        message: `Invalid socket.json at ${path.join(dir, 'socket.json')}`,
+        cause:
+          '`defaults.manifest.dotnet.reachability.javaHome` does not apply to .NET; remove it',
+      })
+    },
+  )
+
   it('accepts a null reachability javaHome, which clears an inherited one', async () => {
     await writeSocketJson(dir, {
       version: 1,

@@ -202,6 +202,7 @@ function validateSocketJson(
     const problem = reachabilityProblem(
       sockJson.defaults?.manifest?.[tool]?.reachability,
       `defaults.manifest.${tool}.reachability`,
+      tool,
     )
     if (problem) {
       return {
@@ -217,6 +218,7 @@ function validateSocketJson(
 export function reachabilityProblem(
   reachability: unknown,
   key: string,
+  tool: (typeof REACHABILITY_BUILD_TOOLS)[number],
 ): string | undefined {
   if (reachability === undefined) {
     return undefined
@@ -230,6 +232,9 @@ export function reachabilityProblem(
     !(REACHABILITY_BUILD_MODES as readonly unknown[]).includes(build)
   ) {
     return `\`${key}.build\` is ${JSON.stringify(build)}; set it to ${REACHABILITY_BUILD_MODES.map(m => `"${m}"`).join(' or ')}, or remove it`
+  }
+  if (tool === 'dotnet' && javaHome !== undefined) {
+    return `\`${key}.javaHome\` does not apply to .NET; remove it`
   }
   if (
     javaHome !== undefined &&

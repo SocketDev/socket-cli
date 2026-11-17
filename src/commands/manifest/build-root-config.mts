@@ -40,8 +40,8 @@ export type ResolvedBuildRootSettings = {
 }
 
 // Gradle and sbt name a build by any build file of its directory.
-function namesBuildFile(key: string): boolean {
-  return BUILD_TOOLS.some(tool => {
+function toolOfBuildFile(key: string): BuildTool | undefined {
+  return BUILD_TOOLS.find(tool => {
     const files = BUILD_FILES[tool]
     return files.byFile ? isBuildFile(tool, key) : files.names.includes(key)
   })
@@ -76,7 +76,8 @@ function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
     )
   }
   for (const { 0: key, 1: entry } of Object.entries(builds)) {
-    if (key.includes('/') || key.includes('\\') || !namesBuildFile(key)) {
+    const tool = toolOfBuildFile(key)
+    if (key.includes('/') || key.includes('\\') || !tool) {
       throw new InputError(
         `${buildsSetting(key)} in ${file} must be keyed by the name of a build file in that directory, such as pom.xml or build.gradle.`,
       )
@@ -97,6 +98,7 @@ function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
     const problem = reachabilityProblem(
       entry['reachability'],
       `${buildsSetting(key)}.reachability`,
+      tool,
     )
     if (problem) {
       throw new InputError(`Invalid ${file}: ${problem}.`)

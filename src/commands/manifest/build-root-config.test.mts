@@ -229,6 +229,10 @@ describe('createBuildRootSettingsResolver', () => {
       { 'pom.xml': { reachability: { javaHome: false } } },
       '`defaults.manifest.builds["pom.xml"].reachability.javaHome` is false; set it to a JDK path',
     ],
+    [
+      { 'App.csproj': { reachability: { javaHome: '/opt/jdk-17' } } },
+      '`defaults.manifest.builds["App.csproj"].reachability.javaHome` does not apply to .NET',
+    ],
   ] as const)('rejects the entries %j', async ({ 0: builds, 1: reason }) => {
     await write('.', { builds }, ['pom.xml'])
 
