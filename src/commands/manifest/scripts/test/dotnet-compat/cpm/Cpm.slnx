@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="src/Api/Api.csproj" />
-  <Project Path="src/Core/Core.csproj" />
-</Solution>
