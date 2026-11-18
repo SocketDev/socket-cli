@@ -16,6 +16,7 @@ import {
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import {
+  AUTO_MANIFEST_HINTS,
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   keepFacts,
   runManifestFacts,
@@ -39,13 +40,6 @@ import type {
 } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { OutputKind } from '../../types.mts'
-
-// Auto-manifest reads every build option from the root socket.json.
-const AUTO_MANIFEST_HINTS: BuildOptionHints = {
-  flags: new Set(),
-  setupCommand: 'socket manifest setup',
-  socketJson: SOCKET_JSON,
-}
 
 export type GenerateAutoManifestResult = {
   generatedFiles: string[]
