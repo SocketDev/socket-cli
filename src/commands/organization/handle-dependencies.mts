@@ -9,18 +9,20 @@ export async function handleDependencies({
   limit,
   offset,
   outputKind,
+  purls,
 }: {
   limit: number
   offset: number
   outputKind: OutputKind
+  purls: string[] | undefined
 }): Promise<void> {
   debugFn(
     'notice',
     `Fetching dependencies with limit=${limit}, offset=${offset}`,
   )
-  debugDir('inspect', { limit, offset, outputKind })
+  debugDir('inspect', { limit, offset, outputKind, purls })
 
-  const result = await fetchDependencies({ limit, offset })
+  const result = await fetchDependencies({ limit, offset, purls })
 
   debugFn(
     'notice',
