@@ -29,15 +29,17 @@ Take the exact released version as `$ARGUMENTS`. Ask for it if missing. Read
    ```
 
    Never write a release heading or change the top-level CLI version.
-5. Run the snapshot dependency unit test and build a prototype:
+5. Run the snapshot checks and refresh the native snapshots:
 
    ```sh
    pnpm run test:unit:snapshot-dependencies
-   pnpm build:sea -- --prototype
+   pnpm run test:unit test/unit/sea/build-sea.test.mts
+   pnpm snapshots:update:dep socket-patch
    ```
 
-   Inspect the generated `build/sea/*.manifest.json` to confirm the target
-   records the new patch version and its executable/license payloads.
+   Review any changed help snapshots. Inspect the generated
+   `build/sea/*.manifest.json` to confirm the target records the new patch
+   version and its executable/license payloads.
 6. Create one signed conventional commit and a PR against `v1.x` titled
    `build(deps): update Socket Patch to v<version>`.
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   findStaleSnapshotDependencies,
+  snapshotContainsVersion,
   snapshotDependencyUpdateHint,
   swapVersionInSnapshot,
 } from '../../../../scripts/test/snapshot-dependencies.mts'
@@ -18,10 +19,26 @@ describe('swapVersionInSnapshot', () => {
     )
   })
 
-  it('does not replace a version prefix', () => {
+  it('matches complete versions and rejects suffixes', () => {
+    expect(snapshotContainsVersion('Default: 15.15.0. ', '15.15.0')).toBe(true)
+    expect(snapshotContainsVersion('Default: 15.15.0-rc.1 ', '15.15.0')).toBe(
+      false,
+    )
+    expect(
+      snapshotContainsVersion('Default: 15.15.0+build.1 ', '15.15.0'),
+    ).toBe(false)
+    expect(snapshotContainsVersion('Default: 15.15.0.1 ', '15.15.0')).toBe(
+      false,
+    )
     expect(() =>
-      swapVersionInSnapshot('Default: 15.15.0.1 ', '15.15.0', '15.16.0'),
+      swapVersionInSnapshot('Default: 15.15.0-rc.1 ', '15.15.0', '15.16.0'),
     ).toThrow('does not mention 15.15.0')
+  })
+
+  it('accepts files already updated by an earlier partial write', () => {
+    const row = 'Default: 15.15.10.       '
+
+    expect(swapVersionInSnapshot(row, '15.15.0', '15.15.10')).toBe(row)
   })
 
   it('fails when the new version does not fit or the old version is absent', () => {

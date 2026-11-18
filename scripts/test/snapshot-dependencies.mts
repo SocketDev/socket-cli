@@ -54,6 +54,17 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+function snapshotVersionPattern(version: string): string {
+  return `(?<![\\w.+-])${escapeRegExp(version)}(?=$|[\\s<,;:)\\]]|\\.(?=$|\\s|<))`
+}
+
+export function snapshotContainsVersion(
+  contents: string,
+  version: string,
+): boolean {
+  return new RegExp(snapshotVersionPattern(version)).test(contents)
+}
+
 /**
  * Replace a pinned version in a terminal SVG snapshot without changing the
  * rendered row width. The row's trailing spaces absorb the length difference.
@@ -63,10 +74,7 @@ export function swapVersionInSnapshot(
   from: string,
   to: string,
 ): string {
-  const pattern = new RegExp(
-    `(?<![\\w.])${escapeRegExp(from)}(?!\\w|\\.\\d)(\\S*)( *)`,
-    'g',
-  )
+  const pattern = new RegExp(`${snapshotVersionPattern(from)}(\\S*)( *)`, 'g')
   let found = false
   const swapped = contents.replace(
     pattern,
@@ -80,6 +88,9 @@ export function swapVersionInSnapshot(
     },
   )
   if (!found) {
+    if (snapshotContainsVersion(contents, to)) {
+      return contents
+    }
     throw new Error(`The snapshot does not mention ${from}`)
   }
   return swapped
@@ -124,7 +135,9 @@ export async function findStaleSnapshotDependencies(): Promise<
         })),
       )
       const staleSnapshots = snapshots
-        .filter(snapshot => !snapshot.contents.includes(version))
+        .filter(
+          snapshot => !snapshotContainsVersion(snapshot.contents, version),
+        )
         .map(snapshot => snapshot.path)
       if (staleSnapshots.length) {
         return {

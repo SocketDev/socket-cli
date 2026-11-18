@@ -60,15 +60,22 @@ export async function main(): Promise<void> {
     snapshots.map(async snapshot => {
       const file = path.join(ROOT, snapshot)
       try {
-        const contents = await fs.readFile(file, 'utf8')
-        return { file, contents: swapVersionInSnapshot(contents, from, to) }
+        const original = await fs.readFile(file, 'utf8')
+        return {
+          file,
+          original,
+          contents: swapVersionInSnapshot(original, from, to),
+        }
       } catch (e) {
         throw new Error(`${snapshot}: ${(e as Error).message}`)
       }
     }),
   )
+  const pendingWrites = swapped.filter(
+    ({ contents, original }) => contents !== original,
+  )
   await Promise.all(
-    swapped.map(({ contents, file }) => fs.writeFile(file, contents)),
+    pendingWrites.map(({ contents, file }) => fs.writeFile(file, contents)),
   )
   const stale = (await findStaleSnapshotDependencies()).filter(
     finding => normalizeSnapshotDependencyName(finding.dependencyName) === name,
@@ -77,7 +84,7 @@ export async function main(): Promise<void> {
     throw new Error(snapshotDependencyUpdateHint(stale))
   }
   process.stdout.write(
-    `Moved ${snapshots.length} ${dependency.packageName} snapshots from ${from} to ${to}\n`,
+    `Updated ${pendingWrites.length} ${dependency.packageName} snapshots from ${from} to ${to}\n`,
   )
 }
 

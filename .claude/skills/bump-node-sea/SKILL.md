@@ -11,13 +11,18 @@ Read [the Node pin reference](references/pin-and-qualification.md), then update
 `src/sea/.node-version`.
 
 Confirm the official Node release publishes the required archive for each
-supported SEA target and exposes the SEA/VFS APIs the builder uses. Run the
-Node pin and SEA builder tests, then build a native prototype:
+supported SEA target and exposes the SEA/VFS APIs the builder uses. Build the
+native prototype first. It updates the README marker from the new pin:
+
+```sh
+pnpm build:sea -- --prototype
+```
+
+Then run the Node pin and SEA builder tests:
 
 ```sh
 pnpm run test:unit \
   test/unit/sea/version.test.mts test/unit/sea/build-sea.test.mts
-pnpm build:sea -- --prototype
 ```
 
 Check that `src/sea/README.md`'s marked version follows the pin. Do not claim
