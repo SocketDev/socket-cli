@@ -3,11 +3,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import {
   buildBazelStartupFlags as buildStartupFlags,
   spawnBazel,
-} from './bazel-process.mts'
+} from './process.mts'
 import constants from '../../../constants.mts'
 import { InputError } from '../../../utils/errors.mts'
 
-import type { RepoProbe } from './bazel-repo-discovery.mts'
+import type { RepoProbe } from './repo-discovery.mts'
 
 export type BazelQueryOptions = {
   bin: string
@@ -163,7 +163,7 @@ function buildBazelArgv(
 // `--keep_going --output=label` keeps it fast even on partial-analysis
 // repos and avoids paying for `--output=jsonproto` plus
 // `--proto:output_rule_attrs` (which the heavier metadata extraction in
-// `bazel-cquery.mts` needs but the probe does not).
+// `cquery.mts` needs but the probe does not).
 function buildBazelProbeCqueryArgv(
   repoName: string,
   opts: BazelQueryOptions,
@@ -356,7 +356,7 @@ export async function runBazelModShowVisibleRepos(
 /**
  * Bzlmod-native Maven hub enumeration via the rules_jvm_external maven
  * extension. The text-format report lists every repo the extension
- * generated; `parseShowExtensionOutput` (bazel-repo-discovery.mts)
+ * generated; `parseShowExtensionOutput` (repo-discovery.mts)
  * extracts the hubs from the `Fetched repositories:` section.
  */
 export async function runBazelModShowMavenExtension(
@@ -385,7 +385,7 @@ export async function runBazelModShowPipExtension(
 }
 
 /**
- * Build a `RepoProbe` (compatible with bazel-repo-discovery's tri-state
+ * Build a `RepoProbe` (compatible with repo-discovery's tri-state
  * classifier) bound to opts. Runs the lightweight presence-check cquery
  * `@<name>//... --output=label --keep_going` — cheap enough to attempt
  * every conventional Maven hub name without triggering `repository_rule`

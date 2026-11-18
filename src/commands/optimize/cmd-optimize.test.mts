@@ -488,7 +488,7 @@ describe('socket optimize', async () => {
           await trash(tempDir)
         }
       },
-      { timeout: 120_000 },
+      { timeout: process.platform === 'win32' ? 300_000 : 120_000 },
     )
 
     cmdit(
@@ -522,7 +522,7 @@ describe('socket optimize', async () => {
         const output = stdout + stderr
         expect(output).toMatch(/Optimizing|Adding overrides/i)
       },
-      { timeout: 120_000 },
+      { timeout: process.platform === 'win32' ? 300_000 : 120_000 },
     )
 
     cmdit(

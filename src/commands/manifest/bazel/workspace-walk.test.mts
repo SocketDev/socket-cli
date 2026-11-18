@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
+import { findWorkspaceRoots } from './workspace-walk.mts'
 
 function touch(file: string): void {
   mkdirSync(path.dirname(file), { recursive: true })
@@ -37,7 +37,7 @@ const BAZEL_IGNORE_NAMES: ReadonlySet<string> = new Set([
 ])
 const BAZEL_IGNORE_PREFIXES: readonly string[] = ['bazel-', 'dist']
 
-describe('bazel-workspace-walk', () => {
+describe('workspace-walk', () => {
   let tmp: string
 
   beforeEach(() => {
@@ -67,7 +67,7 @@ describe('bazel-workspace-walk', () => {
       touch(path.join(tmp, 'examples', 'dagger', 'MODULE.bazel'))
       touch(path.join(tmp, 'examples', 'android', 'nested', 'WORKSPACE.bazel'))
       const found = findWorkspaceRoots({ cwd: tmp }).map(p =>
-        path.relative(tmp, p),
+        path.relative(tmp, p).split(path.sep).join('/'),
       )
       expect(found).toEqual(['', 'examples/android/nested', 'examples/dagger'])
     })

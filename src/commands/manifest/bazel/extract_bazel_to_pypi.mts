@@ -3,15 +3,16 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { resolveBazelBinary } from './bazel-bin-detect.mts'
-import { removeBazelTempdir } from './bazel-cleanup.mts'
-import { validateOutputBase } from './bazel-output-base-check.mts'
-import { getBazelEnvironment } from './bazel-process.mts'
+import { resolveBazelBinary } from './bin-detect.mts'
+import { removeBazelTempdir } from './cleanup.mts'
+import { validateOutputBase } from './output-base-check.mts'
+import { getBazelAutoManifestDirectory } from './paths/manifest.mts'
+import { getBazelEnvironment } from './process.mts'
 import {
   discoverPypiHubs,
   parseBazelModPipExtensionCandidates,
   parseVisibleRepoCandidates,
-} from './bazel-pypi-discovery.mts'
+} from './pypi-discovery.mts'
 import {
   collectPypiPackages,
   filterReachedPypiPackages,
@@ -20,26 +21,23 @@ import {
   parsePypiTagsFromBuildOutput,
   readRequirementsLockFile,
   resolveRequirementsLockPath,
-} from './bazel-pypi-parser.mts'
-import { provisionPythonShim } from './bazel-python-shim.mts'
+} from './pypi-parser.mts'
+import { provisionPythonShim } from './python-shim.mts'
 import {
   buildPypiProbeFor,
   runBazelModShowPipExtension,
   runBazelModShowVisibleRepos,
   runBazelQuery,
-} from './bazel-query-runner.mts'
+} from './query-runner.mts'
 import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
-} from './bazel-workspace-detect.mts'
+} from './workspace-detect.mts'
 import { InputError, getErrorCause } from '../../../utils/errors.mts'
 
-import type { PypiHubCandidate } from './bazel-pypi-discovery.mts'
-import type {
-  ExtractedPypiPackage,
-  ReachedPypiLabel,
-} from './bazel-pypi-parser.mts'
-import type { BazelQueryOptions } from './bazel-query-runner.mts'
+import type { PypiHubCandidate } from './pypi-discovery.mts'
+import type { ExtractedPypiPackage, ReachedPypiLabel } from './pypi-parser.mts'
+import type { BazelQueryOptions } from './query-runner.mts'
 
 export type ExtractBazelToPypiOptions = {
   bazelFlags: string | undefined
@@ -50,6 +48,7 @@ export type ExtractBazelToPypiOptions = {
   env?: NodeJS.ProcessEnv
   out: string
   outLayout?: 'flat' | 'standalone'
+  platform?: NodeJS.Platform
   verbose: boolean
   explicitEcosystem?: boolean
 }
@@ -92,7 +91,7 @@ export async function extractBazelToPypi(
 
   let pythonShimDir: string | undefined
   try {
-    if (process.platform === 'win32') {
+    if ((opts.platform ?? process.platform) === 'win32') {
       throw new InputError(
         'Bazel PyPI extraction on Windows is not supported yet. Platform-specific dependency selection still needs verification. Use --ecosystem maven for Windows SCA scans.',
       )
@@ -264,7 +263,7 @@ export async function extractBazelToPypi(
     const lines = sorted.map(p => `${p.name}==${p.version}\n`)
     const layout = opts.outLayout ?? 'standalone'
     const manifestDir =
-      layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
+      layout === 'flat' ? getBazelAutoManifestDirectory(out) : out
     mkdirSync(manifestDir, { recursive: true })
     const manifestPath = path.join(manifestDir, 'requirements.txt')
     await fs.writeFile(manifestPath, lines.join(''), 'utf8')

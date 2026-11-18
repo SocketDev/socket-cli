@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getErrorCause } from '../../../utils/errors.mts'
 
-import type { RepoProbe } from './bazel-repo-discovery.mts'
+import type { RepoProbe } from './repo-discovery.mts'
 
 // Result shape returned by `validatePypiHub`. Kept local to the PyPI module
 // since validation here is hub-alias-marker based (different from the

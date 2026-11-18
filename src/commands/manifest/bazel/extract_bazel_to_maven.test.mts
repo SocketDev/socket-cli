@@ -17,44 +17,44 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 // composes pure-function discovery + the metadata cquery + a workspace
 // walker; mocking these lets us drive end-to-end behaviour without a
 // real Bazel toolchain.
-vi.mock('./bazel-bin-detect.mts', () => ({
+vi.mock('./bin-detect.mts', () => ({
   resolveBazelBinary: vi.fn(async () => '/usr/local/bin/bazel'),
 }))
-vi.mock('./bazel-output-base-check.mts', () => ({
+vi.mock('./output-base-check.mts', () => ({
   validateOutputBase: vi.fn(),
 }))
-vi.mock('./bazel-java-shim.mts', () => ({
+vi.mock('./java-shim.mts', () => ({
   ensureJavaOnPath: vi.fn(),
 }))
-vi.mock('./bazel-python-shim.mts', () => ({
+vi.mock('./python-shim.mts', () => ({
   provisionPythonShim: vi.fn(async (env: NodeJS.ProcessEnv) => ({
     env,
     shimDir: undefined,
   })),
 }))
-vi.mock('./bazel-workspace-detect.mts', () => ({
+vi.mock('./workspace-detect.mts', () => ({
   detectWorkspaceMode: vi.fn(),
   getBazelInvocationFlags: vi.fn(() => []),
 }))
-vi.mock('./bazel-workspace-walk.mts', () => ({
+vi.mock('./workspace-walk.mts', () => ({
   findWorkspaceRoots: vi.fn(),
 }))
-vi.mock('./bazel-query-runner.mts', () => ({
+vi.mock('./query-runner.mts', () => ({
   buildMavenProbeFor: vi.fn(() => defaultMavenProbe),
   runBazelModShowMavenExtension: vi.fn(),
 }))
-vi.mock('./bazel-repo-discovery.mts', async () => {
+vi.mock('./repo-discovery.mts', async () => {
   // Preserve `CONVENTIONAL_MAVEN_REPO_NAMES` + `probeCandidate` while
   // overriding `parseShowExtensionOutput` with a spy.
-  const actual = await vi.importActual<
-    typeof import('./bazel-repo-discovery.mts')
-  >('./bazel-repo-discovery.mts')
+  const actual = await vi.importActual<typeof import('./repo-discovery.mts')>(
+    './repo-discovery.mts',
+  )
   return {
     ...actual,
     parseShowExtensionOutput: vi.fn(actual.parseShowExtensionOutput),
   }
 })
-vi.mock('./bazel-cquery.mts', () => ({
+vi.mock('./cquery.mts', () => ({
   runMetadataCqueryForRepo: vi.fn(),
 }))
 // Quiet the spawn calls reapBazelServer makes during cleanup.
@@ -62,21 +62,21 @@ vi.mock('@socketsecurity/registry/lib/spawn', () => ({
   spawn: vi.fn(async () => ({ code: 0, stdout: '', stderr: '' })),
 }))
 
-import { runMetadataCqueryForRepo } from './bazel-cquery.mts'
+import { runMetadataCqueryForRepo } from './cquery.mts'
 import {
   buildMavenProbeFor,
   runBazelModShowMavenExtension,
-} from './bazel-query-runner.mts'
-import { parseShowExtensionOutput } from './bazel-repo-discovery.mts'
-import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
-import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
+} from './query-runner.mts'
+import { parseShowExtensionOutput } from './repo-discovery.mts'
+import { detectWorkspaceMode } from './workspace-detect.mts'
+import { findWorkspaceRoots } from './workspace-walk.mts'
 import {
   dedupArtifactsByCoord,
   extractBazelToMaven,
   normalizeToMavenInstallJson,
 } from './extract_bazel_to_maven.mts'
 
-import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
+import type { CqueryRepoResult, ExtractedArtifact } from './cquery.mts'
 
 async function defaultMavenProbe(_: string): Promise<{
   code: number

@@ -52,7 +52,16 @@ function downloadFixture(names = filenames) {
     writeFileSync(path.join(source, name), 'verified package bytes')
   }
   const archive = path.join(root, 'fixture.zip')
-  execFileSync('zip', ['-q', '-0', archive, ...names], { cwd: source })
+  if (process.platform === 'win32') {
+    execFileSync('powershell.exe', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      `Compress-Archive -Path '${path.join(source, '*')}' -DestinationPath '${archive}' -Force`,
+    ])
+  } else {
+    execFileSync('zip', ['-q', '-0', archive, ...names], { cwd: source })
+  }
   const metadata = path.join(root, 'fixture.json')
   writeFileSync(
     metadata,

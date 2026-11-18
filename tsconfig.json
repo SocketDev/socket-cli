@@ -5,6 +5,7 @@
     "scripts/ci/**/*.mts",
     "scripts/lib/**/*.mts",
     "scripts/release/**/*.mts",
+    "scripts/setup/**/*.mts",
     "scripts/utils/**/*.mts"
   ],
   "exclude": [

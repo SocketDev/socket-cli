@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildMetadataCqueryArgv } from './bazel-cquery.mts'
+import { buildMetadataCqueryArgv } from './cquery.mts'
 import {
   _internalArgvBuilders,
   buildMavenProbeFor,
@@ -13,9 +13,9 @@ import {
   runBazelModShowPipExtension,
   runBazelModShowVisibleRepos,
   runBazelQuery,
-} from './bazel-query-runner.mts'
+} from './query-runner.mts'
 
-import type { BazelQueryOptions } from './bazel-query-runner.mts'
+import type { BazelQueryOptions } from './query-runner.mts'
 
 describe('Bazel query arguments', () => {
   const opts: BazelQueryOptions = {

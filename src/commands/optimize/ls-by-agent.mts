@@ -103,7 +103,7 @@ export async function lsPnpm(
     __proto__: null,
     ...options,
   } as AgentListDepsOptions
-  if (npmExecPath && npmExecPath !== NPM) {
+  if (!constants.WIN32 && npmExecPath && npmExecPath !== NPM) {
     const result = await npmQuery(npmExecPath, cwd)
     if (result) {
       return result

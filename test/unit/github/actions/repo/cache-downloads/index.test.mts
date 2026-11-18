@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import path from 'node:path'
 
 vi.mock('@actions/cache', () => ({
   restoreCache: vi.fn(),
@@ -22,12 +23,19 @@ afterEach(() => {
 
 describe('SEA download cache action', () => {
   it('limits the cache path to content-addressed blobs', () => {
-    expect(seaDownloadBlobPath('/home/runner')).toBe(
-      '/home/runner/.cache/socket-sea/downloads/v1/blobs',
+    const home = path.join(path.parse(process.cwd()).root, 'home', 'runner')
+    const blobs = path.join(
+      home,
+      '.cache',
+      'socket-sea',
+      'downloads',
+      'v1',
+      'blobs',
     )
+    expect(seaDownloadBlobPath(home)).toBe(blobs)
     expect(
-      resolveBlobPath('~/.cache/socket-sea/downloads/v1/blobs', '/home/runner'),
-    ).toBe('/home/runner/.cache/socket-sea/downloads/v1/blobs')
+      resolveBlobPath('~/.cache/socket-sea/downloads/v1/blobs', home),
+    ).toBe(blobs)
     expect(() =>
       resolveBlobPath('~/.cache/socket-sea/downloads', '/home/runner'),
     ).toThrow('must target only the blob directory')

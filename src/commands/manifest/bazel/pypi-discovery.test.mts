@@ -12,9 +12,9 @@ import {
   parseBazelModPipExtensionCandidates,
   parsePypiHubCandidates,
   validatePypiHub,
-} from './bazel-pypi-discovery.mts'
+} from './pypi-discovery.mts'
 
-import type { RepoProbe } from './bazel-repo-discovery.mts'
+import type { RepoProbe } from './repo-discovery.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -59,7 +59,7 @@ const noPypiNameProbe: RepoProbe = async () => ({
   code: 0,
 })
 
-describe('bazel-pypi-discovery', () => {
+describe('pypi-discovery', () => {
   describe('parsePypiHubCandidates', () => {
     it('parses pip metadata from bazel mod show_extension output', () => {
       const result = parseBazelModPipExtensionCandidates(

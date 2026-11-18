@@ -3,40 +3,45 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { resolveBazelBinary } from './bazel-bin-detect.mts'
+import { resolveBazelBinary } from './bin-detect.mts'
 import {
   BAZEL_OUTPUT_ROOT_PREFIX,
   cleanUpBazelOutputRoot,
   makeBazelOutputUserRoot,
   removeBazelTempdir,
-} from './bazel-cleanup.mts'
-import { runMetadataCqueryForRepo } from './bazel-cquery.mts'
-import { ensureJavaOnPath } from './bazel-java-shim.mts'
-import { validateOutputBase } from './bazel-output-base-check.mts'
-import { getBazelEnvironment } from './bazel-process.mts'
-import { provisionPythonShim } from './bazel-python-shim.mts'
+} from './cleanup.mts'
+import { runMetadataCqueryForRepo } from './cquery.mts'
+import { ensureJavaOnPath } from './java-shim.mts'
+import { validateOutputBase } from './output-base-check.mts'
+import {
+  BAZEL_AUTO_MANIFEST_DIR_NAME,
+  BAZEL_SYNTHETIC_OUTPUT_DIR_NAMES,
+  getBazelAutoManifestDirectory,
+} from './paths/manifest.mts'
+import { getBazelEnvironment } from './process.mts'
+import { provisionPythonShim } from './python-shim.mts'
 import {
   buildMavenProbeFor,
   runBazelModShowMavenExtension,
-} from './bazel-query-runner.mts'
+} from './query-runner.mts'
 import {
   CONVENTIONAL_MAVEN_REPO_NAMES,
   ROOT_MODULE_IMPORTER,
   classifyShowExtensionResult,
   parseShowExtensionOutput,
   probeCandidate,
-} from './bazel-repo-discovery.mts'
+} from './repo-discovery.mts'
 import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
-} from './bazel-workspace-detect.mts'
-import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
+} from './workspace-detect.mts'
+import { findWorkspaceRoots } from './workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
 import { IGNORED_DIRS } from '../../../utils/glob.mts'
 
-import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
-import type { BazelQueryOptions } from './bazel-query-runner.mts'
-import type { WorkspaceMode } from './bazel-workspace-detect.mts'
+import type { CqueryRepoResult, ExtractedArtifact } from './cquery.mts'
+import type { BazelQueryOptions } from './query-runner.mts'
+import type { WorkspaceMode } from './workspace-detect.mts'
 import type { Dirent } from 'node:fs'
 
 export type ExtractBazelOptions = {
@@ -160,7 +165,7 @@ export const DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES: ReadonlySet<string> =
     '.hg',
     '.idea',
     '.pnpm-store',
-    '.socket-auto-manifest',
+    BAZEL_AUTO_MANIFEST_DIR_NAME,
     '.svn',
     '.vscode',
   ])
@@ -339,11 +344,6 @@ function hubManifestFileName(repoName: string): string {
 // the explicit-command default output dir. The gate must never read a file in
 // one of these as evidence of committed coverage, or a stale prior-run
 // synthetic file would let a later run wrongly skip a hub.
-const CLI_SYNTHETIC_OUTPUT_DIR_NAMES: ReadonlySet<string> = new Set([
-  '.socket-auto-manifest',
-  'bazel-manifests',
-])
-
 // Does a committed lockfile already cover THIS hub at THIS hub's own workspace
 // root? Each workspace is processed independently by the caller, and a
 // committed lockfile covers the workspace it lives IN — a nested workspace's
@@ -370,7 +370,7 @@ function committedLockfileCovers(args: {
   // root — not in a nested workspace and not in the CLI's output dir.
   if (
     workspaceRootResolved === manifestDirResolved ||
-    CLI_SYNTHETIC_OUTPUT_DIR_NAMES.has(path.basename(workspaceRootResolved))
+    BAZEL_SYNTHETIC_OUTPUT_DIR_NAMES.has(path.basename(workspaceRootResolved))
   ) {
     // The workspace root IS an output location; nothing here is committed.
     return undefined
@@ -706,7 +706,7 @@ export async function extractBazelToMaven(
 
   const layout = opts.outLayout ?? 'standalone'
   const manifestDir =
-    layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
+    layout === 'flat' ? getBazelAutoManifestDirectory(out) : out
   // One manifest per (workspace, hub), written best-effort: a single wedged
   // hub must not discard the manifests every other hub produced.
   const manifestPaths: string[] = []

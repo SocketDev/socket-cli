@@ -17,10 +17,10 @@ import {
   buildBazelStartupFlags,
   getBazelEnvironmentValue,
   spawnBazel,
-} from './bazel-process.mts'
+} from './process.mts'
 import { getErrorCause, isErrnoException } from '../../../utils/errors.mts'
 
-import type { BazelQueryOptions } from './bazel-query-runner.mts'
+import type { BazelQueryOptions } from './query-runner.mts'
 
 export const BAZEL_OUTPUT_ROOT_PREFIX = 'socket-bazel-'
 

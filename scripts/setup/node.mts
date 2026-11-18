@@ -13,8 +13,36 @@ const EXACT_VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/
 const DESCRIPTION =
   'installs verified Node.js for Linux CI and adds its bin directory to GITHUB_PATH'
 
+export type NodeSetupVersion =
+  | { kind: 'exact'; version: string }
+  | { kind: 'major'; major: number }
+
+export type NodeSetupOptions = {
+  arch?: string
+  githubPath: string | undefined
+  platform?: string
+  runnerTemp: string | undefined
+  version: string
+}
+
+export type NodeSetupInstallResult = { bin: string; version: string }
+
+export type NodeSetupDependencies = {
+  extract?: (archive: string, destination: string) => Promise<void>
+  fetcher?: typeof fetch
+}
+
+export type NodeSetupRunDependencies = {
+  env?: NodeJS.ProcessEnv
+  install?: (options: NodeSetupOptions) => Promise<NodeSetupInstallResult>
+  stderr?: (text: string) => void
+  stdout?: (text: string) => void
+}
+
 export class NodeSetupError extends Error {
-  constructor(code, location, observed) {
+  readonly code: string
+
+  constructor(code: string, location: string, observed: string) {
     super(
       '[setup-node] could not install Node.js.\n' +
         `  Where: ${location}.\n` +
@@ -25,7 +53,7 @@ export class NodeSetupError extends Error {
   }
 }
 
-export function parseNodeSetupVersion(wanted) {
+export function parseNodeSetupVersion(wanted: string): NodeSetupVersion {
   const version = wanted.trim().replace(/^v/, '')
   if (EXACT_VERSION.test(version)) {
     return { kind: 'exact', version }
@@ -40,13 +68,16 @@ export function parseNodeSetupVersion(wanted) {
   )
 }
 
-export function resolveNodeSetupVersion(wanted, indexVersions) {
+export function resolveNodeSetupVersion(
+  wanted: string,
+  indexVersions: readonly unknown[],
+): string {
   const spec = parseNodeSetupVersion(wanted)
   if (spec.kind === 'exact') {
     return spec.version
   }
   let newest
-  let newestParts
+  let newestParts: [number, number, number] | undefined
   for (const entry of indexVersions) {
     if (typeof entry !== 'string') {
       continue
@@ -55,7 +86,7 @@ export function resolveNodeSetupVersion(wanted, indexVersions) {
     if (!EXACT_VERSION.test(version)) {
       continue
     }
-    const parts = version.split('.').map(Number)
+    const parts = version.split('.').map(Number) as [number, number, number]
     if (parts[0] !== spec.major) {
       continue
     }
@@ -78,7 +109,11 @@ export function resolveNodeSetupVersion(wanted, indexVersions) {
   return newest
 }
 
-export function nodeSetupAsset(version, platform, arch) {
+export function nodeSetupAsset(
+  version: string,
+  platform: string,
+  arch: string,
+): { archiveRoot: string; asset: string } {
   if (!EXACT_VERSION.test(version)) {
     throw new NodeSetupError(
       'INVALID_VERSION',
@@ -97,10 +132,13 @@ export function nodeSetupAsset(version, platform, arch) {
   return { archiveRoot, asset: `${archiveRoot}.tar.gz` }
 }
 
-export function nodeSetupDigest(shasums, asset) {
+export function nodeSetupDigest(shasums: string, asset: string): string {
   const matches = shasums.split(/\r?\n/).flatMap(line => {
     const match = /^([a-f\d]{64})\s+\*?(\S+)\s*$/i.exec(line)
-    return match?.[2] === asset ? [match[1].toLowerCase()] : []
+    if (!match || match[2] !== asset) {
+      return []
+    }
+    return [match[1]!.toLowerCase()]
   })
   if (matches.length !== 1) {
     throw new NodeSetupError(
@@ -109,10 +147,28 @@ export function nodeSetupDigest(shasums, asset) {
       'a missing or duplicate asset checksum',
     )
   }
-  return matches[0]
+  return matches[0]!
 }
 
-async function fetchNodeResource(url, fetcher) {
+function validateRunnerPath(name: string, value: string | undefined): string {
+  if (
+    typeof value !== 'string' ||
+    !path.isAbsolute(value) ||
+    /[\r\n]/.test(value)
+  ) {
+    throw new NodeSetupError(
+      'INVALID_RUNNER_PATH',
+      name,
+      'a missing or invalid absolute path',
+    )
+  }
+  return value
+}
+
+async function fetchNodeResource(
+  url: string,
+  fetcher: typeof fetch,
+): Promise<Buffer> {
   let response
   try {
     response = await fetcher(url, {
@@ -135,7 +191,10 @@ async function fetchNodeResource(url, fetcher) {
   }
 }
 
-async function extractNodeArchive(archive, destination) {
+async function extractNodeArchive(
+  archive: string,
+  destination: string,
+): Promise<void> {
   await execFile(
     'tar',
     [
@@ -150,7 +209,10 @@ async function extractNodeArchive(archive, destination) {
   )
 }
 
-export async function installNodeForCi(options, dependencies = {}) {
+export async function installNodeForCi(
+  options: NodeSetupOptions,
+  dependencies: NodeSetupDependencies = {},
+): Promise<NodeSetupInstallResult> {
   const {
     arch = process.arch,
     githubPath,
@@ -158,22 +220,8 @@ export async function installNodeForCi(options, dependencies = {}) {
     runnerTemp,
     version: wanted,
   } = options
-  for (const [name, value] of [
-    ['RUNNER_TEMP', runnerTemp],
-    ['GITHUB_PATH', githubPath],
-  ]) {
-    if (
-      typeof value !== 'string' ||
-      !path.isAbsolute(value) ||
-      /[\r\n]/.test(value)
-    ) {
-      throw new NodeSetupError(
-        'INVALID_RUNNER_PATH',
-        name,
-        'a missing or invalid absolute path',
-      )
-    }
-  }
+  const runnerTempPath = validateRunnerPath('RUNNER_TEMP', runnerTemp)
+  const githubPathFile = validateRunnerPath('GITHUB_PATH', githubPath)
   const fetcher = dependencies.fetcher ?? fetch
   const extract = dependencies.extract ?? extractNodeArchive
   const spec = parseNodeSetupVersion(wanted)
@@ -220,7 +268,7 @@ export async function installNodeForCi(options, dependencies = {}) {
       'a SHA-256 digest mismatch',
     )
   }
-  const directory = await mkdtemp(path.join(runnerTemp, 'socket-node-'))
+  const directory = await mkdtemp(path.join(runnerTempPath, 'socket-node-'))
   try {
     const archive = path.join(directory, asset)
     const bin = path.join(directory, archiveRoot, 'bin')
@@ -228,7 +276,7 @@ export async function installNodeForCi(options, dependencies = {}) {
     await extract(archive, directory)
     await access(path.join(bin, 'node'), constants.X_OK)
     await rm(archive)
-    await appendFile(githubPath, `${bin}\n`)
+    await appendFile(githubPathFile, `${bin}\n`)
     return { bin, version }
   } catch {
     await rm(directory, { force: true, recursive: true })
@@ -240,7 +288,10 @@ export async function installNodeForCi(options, dependencies = {}) {
   }
 }
 
-export async function runNodeSetup(argv, dependencies = {}) {
+export async function runNodeSetup(
+  argv: string[],
+  dependencies: NodeSetupRunDependencies = {},
+): Promise<number> {
   const stdout = dependencies.stdout ?? (text => process.stdout.write(text))
   const stderr = dependencies.stderr ?? (text => process.stderr.write(text))
   const env = dependencies.env ?? process.env
@@ -256,7 +307,7 @@ export async function runNodeSetup(argv, dependencies = {}) {
     }
     if (argv.includes('--help') || argv.includes('-h')) {
       stdout(
-        'Usage: node scripts/ci/setup-node.mjs --version <X.Y.Z|X|X.x> [--json]\n',
+        'Usage: node scripts/setup/node.mts --version <X.Y.Z|X|X.x> [--json]\n',
       )
       return 0
     }

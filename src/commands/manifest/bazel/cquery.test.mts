@@ -11,7 +11,7 @@ import {
   parseCqueryJsonproto,
   runMetadataCqueryForRepo,
   versionlessCoordinate,
-} from './bazel-cquery.mts'
+} from './cquery.mts'
 
 // Sample envelope shape Bazel 5+ emits: `{ "results": [ { "target": {...} } ] }`.
 // Two rules: one with `tags`/`maven_coordinates` (rules_jvm_external shape)

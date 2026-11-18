@@ -7,6 +7,7 @@ import {
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 
 import { describe, expect } from 'vitest'
 
@@ -142,16 +143,15 @@ describe('socket config get', async () => {
     ['config', 'set', 'defaultOrg', 'my-test-org'],
     'should persist a non-token key when only the API token is overridden via env',
     async cmd => {
-      // Isolate the config file via XDG_DATA_HOME so the test never writes to
-      // the real user config. NOTE: socketAppDataPath only honors XDG_DATA_HOME
-      // on macOS/Linux; on Windows it uses LOCALAPPDATA, so this isolation (and
-      // thus the test) assumes a POSIX runner. CI is Linux-only today.
+      // Isolate the config file so the test never writes to the real user config.
       const dataHome = mkdtempSync(path.join(os.tmpdir(), 'socket-cfg-'))
       try {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
           env: {
             SOCKET_SECURITY_API_TOKEN: 'sktsec_faketoken',
-            XDG_DATA_HOME: dataHome,
+            ...(process.platform === 'win32'
+              ? { LOCALAPPDATA: dataHome }
+              : { XDG_DATA_HOME: dataHome }),
           },
         })
         expect(code, 'a persistable set should exit 0').toBe(0)
@@ -190,7 +190,10 @@ describe('socket config get', async () => {
 
       try {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          env: { XDG_DATA_HOME: dataHome },
+          env:
+            process.platform === 'win32'
+              ? { LOCALAPPDATA: dataHome }
+              : { XDG_DATA_HOME: dataHome },
         })
         expect(code, 'a persistable set should exit 0').toBe(0)
         expect(stdout).toContain('OK')

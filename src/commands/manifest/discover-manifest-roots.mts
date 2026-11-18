@@ -37,6 +37,20 @@ const BUILD_FILE_MATCHERS = new Map(
   }),
 )
 
+function pathKey(value: string): string {
+  return value.replaceAll('\\', '/')
+}
+
+function containsPath(paths: ReadonlySet<string>, value: string): boolean {
+  const key = pathKey(value)
+  for (const candidate of paths) {
+    if (pathKey(candidate) === key) {
+      return true
+    }
+  }
+  return false
+}
+
 // `entryFile` (a basename in `dir`) is set only for a tool that addresses its
 // builds by file, where one directory can hold several builds.
 export type BuildRoot = { dir: string; entryFile?: string | undefined }
@@ -188,11 +202,13 @@ export function isBuildRootCovered(
 ): boolean {
   const files = BUILD_FILES[tool]
   if (files.byFile) {
-    return !!root.entryFile && covered.files.has(buildRootPath(root))
+    return !!root.entryFile && containsPath(covered.files, buildRootPath(root))
   }
   return (
-    covered.dirs.has(root.dir) ||
-    files.names.some(name => covered.files.has(path.join(root.dir, name)))
+    containsPath(covered.dirs, root.dir) ||
+    files.names.some(name =>
+      containsPath(covered.files, path.join(root.dir, name)),
+    )
   )
 }
 
@@ -233,7 +249,10 @@ async function isSolutionCovered(
     return true
   }
   const members = await realMembers(listed)
-  return !!members.length && members.every(member => covered.files.has(member))
+  return (
+    !!members.length &&
+    members.every(member => containsPath(covered.files, member))
+  )
 }
 
 // The SDK's member listings are memoized, so their resolved paths are too.

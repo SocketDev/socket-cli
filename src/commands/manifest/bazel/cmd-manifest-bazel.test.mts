@@ -244,9 +244,7 @@ describe('evaluateEcosystemOutcomes (explicit mode)', () => {
 })
 
 describe('perRepoTimeout flag wiring', () => {
-  const importMeta = {
-    url: 'file:///cmd-manifest-bazel.test.mts',
-  } as ImportMeta
+  const importMeta = import.meta
 
   beforeEach(() => {
     vi.mocked(extractBazelToMaven).mockClear()

@@ -1,6 +1,7 @@
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 
+import { getDefaultBazelManifestDirectory } from './paths/manifest.mts'
 import { SOCKET_JSON } from '../../../constants.mts'
 
 import type { SocketJson } from '../../../utils/socket-json.mts'
@@ -132,7 +133,7 @@ export function resolveBazelManifestSettings({
   const outValue = cliOut ?? socketJsonOut
   const resolvedOut = outValue
     ? path.resolve(cwd, outValue)
-    : path.join(cwd, '.socket', 'bazel-manifests')
+    : getDefaultBazelManifestDirectory(cwd)
   const canonicalCwd = canonicalizeForContainment(cwd)
   const canonicalOut = canonicalizeForContainment(resolvedOut)
   const relativeOut = path.relative(canonicalCwd, canonicalOut)

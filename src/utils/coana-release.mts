@@ -67,6 +67,7 @@ type CoanaDownload = { ok: true } | { ok: false; status: number }
 type CoanaSpawnOptions = {
   coanaVersion?: string | undefined
   cwd?: string | URL | undefined
+  env?: Record<string, string | undefined> | undefined
   repoName?: string | undefined
   spinner?: Spinner | undefined
   stdio?: SpawnOptions['stdio'] | undefined
@@ -114,7 +115,8 @@ function coanaUserEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const out: NodeJS.ProcessEnv = {}
   for (const key of Object.keys(env)) {
     out[key] =
-      key.startsWith('npm_package_') || TOKEN_VARIABLES.has(key)
+      key.toLowerCase().startsWith('npm_package_') ||
+      TOKEN_VARIABLES.has(key.toUpperCase())
         ? undefined
         : env[key]
   }
@@ -419,6 +421,7 @@ export async function spawnCoana(
   const {
     coanaVersion,
     cwd,
+    env: spawnEnv,
     repoName,
     spinner,
     stdio = 'inherit',
@@ -484,6 +487,13 @@ export async function spawnCoana(
     // Unset ones leave the user's own, except SOCKET_CLI_API_TOKEN, which
     // coanaUserEnv removed: with no token from socket-cli, Coana gets none.
     if (value !== undefined) {
+      env[name] = value
+    }
+  }
+  for (const { 0: name, 1: value } of Object.entries(
+    coanaUserEnv(spawnEnv ?? {}),
+  )) {
+    if (!TOKEN_VARIABLES.has(name.toUpperCase())) {
       env[name] = value
     }
   }

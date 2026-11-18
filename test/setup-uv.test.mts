@@ -14,7 +14,7 @@ import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parse } from 'yaml'
 
-import { installUvForCi, uvSetupRelease } from '../scripts/ci/setup-uv.mts'
+import { installUvForCi, uvSetupRelease } from '../scripts/setup/uv.mts'
 
 const directories: string[] = []
 
@@ -162,7 +162,11 @@ describe('verified uv installation', () => {
     },
   )
 
-  it.each(['failure', 'missing', 'nonexecutable'])(
+  it.each([
+    'failure',
+    'missing',
+    ...(process.platform === 'win32' ? [] : ['nonexecutable']),
+  ])(
     'cleans an extraction with %s uv without exporting PATH',
     async condition => {
       const fixture = await uvFixture()
@@ -205,17 +209,20 @@ describe('verified uv installation', () => {
     },
   )
 
-  it('runs the installed executable to confirm its version', async () => {
-    const fixture = await uvFixture()
-    const result = await installUvForCi(fixture.options, {
-      extract: fixture.dependencies.extract,
-      fetcher: fixture.dependencies.fetcher,
-      release: fixture.release,
-    })
-    expect(await readFile(fixture.options.githubPath, 'utf8')).toBe(
-      'existing-bin\n' + result.bin + '\n',
-    )
-  })
+  it.skipIf(process.platform === 'win32')(
+    'runs the installed executable to confirm its version',
+    async () => {
+      const fixture = await uvFixture()
+      const result = await installUvForCi(fixture.options, {
+        extract: fixture.dependencies.extract,
+        fetcher: fixture.dependencies.fetcher,
+        release: fixture.release,
+      })
+      expect(await readFile(fixture.options.githubPath, 'utf8')).toBe(
+        'existing-bin\n' + result.bin + '\n',
+      )
+    },
+  )
 
   it('downloads again when an installation already exists', async () => {
     const fixture = await uvFixture()
@@ -259,5 +266,5 @@ it('installs uv after Node and before SFW shims through its registered script', 
   const manifest = JSON.parse(
     await readFile(new URL('../package.json', import.meta.url), 'utf8'),
   ) as { scripts: Record<string, string> }
-  expect(manifest.scripts['ci:setup-uv']).toBe('node scripts/ci/setup-uv.mts')
+  expect(manifest.scripts['ci:setup-uv']).toBe('node scripts/setup/uv.mts')
 })

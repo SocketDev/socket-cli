@@ -28,10 +28,10 @@ import {
   BazelTimeoutError,
   buildBazelStartupFlags,
   spawnBazel,
-} from './bazel-process.mts'
-import { splitBazelFlags } from './bazel-query-runner.mts'
+} from './process.mts'
+import { splitBazelFlags } from './query-runner.mts'
 
-import type { BazelQueryOptions } from './bazel-query-runner.mts'
+import type { BazelQueryOptions } from './query-runner.mts'
 
 // One Maven artifact recovered from the cquery stream. `ruleKind` is whatever
 // `ruleClass` jsonproto reports (`jvm_import`, `aar_import`, `java_library`,

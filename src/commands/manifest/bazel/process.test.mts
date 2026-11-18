@@ -18,19 +18,19 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import cmdShim from 'cmd-shim'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { resolveBazelBinary } from './bazel-bin-detect.mts'
+import { resolveBazelBinary } from './bin-detect.mts'
 import {
   cleanUpBazelOutputRoot,
   makeBazelOutputUserRoot,
   removeBazelTempdir,
   shutDownBazelServer,
-} from './bazel-cleanup.mts'
+} from './cleanup.mts'
 import {
   BazelTimeoutError,
   getBazelEnvironment,
   spawnBazel,
-} from './bazel-process.mts'
-import { splitBazelFlags } from './bazel-query-runner.mts'
+} from './process.mts'
+import { splitBazelFlags } from './query-runner.mts'
 
 const ARGUMENTS = [
   '',

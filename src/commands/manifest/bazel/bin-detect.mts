@@ -10,7 +10,7 @@ import {
   findBazelExecutable,
   isNodeScript,
   resolveBazelExecutable,
-} from './bazel-process.mts'
+} from './process.mts'
 import { isStandaloneSea } from '../../../sea/runtime.mts'
 import { InputError } from '../../../utils/errors.mts'
 

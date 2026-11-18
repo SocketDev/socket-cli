@@ -59,6 +59,10 @@ import type { SidecarAccumulator } from './scripts/sidecar.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
+function normalizePathKey(value: string): string {
+  return value.replaceAll('\\', '/')
+}
+
 export type RecursiveManifestOutcomeStatus =
   | 'aborted'
   | 'empty'
@@ -363,12 +367,15 @@ async function walkTool(
     const loaders = new Map<string, number>()
     const count = (membership: Membership, by: 1 | -1) => {
       for (const key of [...membership.dirs, ...membership.files]) {
-        loaders.set(key, (loaders.get(key) ?? 0) + by)
+        const normalized = normalizePathKey(key)
+        loaders.set(normalized, (loaders.get(normalized) ?? 0) + by)
       }
     }
     const loadedByOthers = (run: Run, key: string) =>
-      (loaders.get(key) ?? 0) -
-        (run.membership.dirs.has(key) || run.membership.files.has(key)
+      (loaders.get(normalizePathKey(key)) ?? 0) -
+        ([...run.membership.dirs, ...run.membership.files].some(
+          candidate => normalizePathKey(candidate) === normalizePathKey(key),
+        )
           ? 1
           : 0) >
       0

@@ -327,7 +327,7 @@ function otherBuilds(count: number): string {
 }
 
 function relPath(cwd: string, file: string): string {
-  return path.relative(cwd, file) || '.'
+  return (path.relative(cwd, file) || '.').split(path.sep).join('/')
 }
 
 // One build of the walk; a directory holding several builds of one tool has

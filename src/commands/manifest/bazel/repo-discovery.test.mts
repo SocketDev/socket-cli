@@ -8,14 +8,14 @@ import {
   classifyShowExtensionResult,
   parseShowExtensionOutput,
   probeCandidate,
-} from './bazel-repo-discovery.mts'
+} from './repo-discovery.mts'
 
 import type {
   ProbeResult,
   ProbeStatus,
   RepoProbe,
   ShowExtensionStatus,
-} from './bazel-repo-discovery.mts'
+} from './repo-discovery.mts'
 
 // Truncated text-format report Bazel 8.4.2 emits on tink-java for
 // `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`.
@@ -62,7 +62,7 @@ const probeThrows: RepoProbe = async () => {
   throw new Error('bazel exploded')
 }
 
-describe('bazel-repo-discovery', () => {
+describe('repo-discovery', () => {
   describe('parseShowExtensionOutput', () => {
     it('extracts hub repos with (imported by ...) annotations and their importers', () => {
       // The 6 hub repos in the fixture are the ones with annotations;
