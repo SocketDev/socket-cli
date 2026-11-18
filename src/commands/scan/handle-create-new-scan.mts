@@ -32,6 +32,7 @@ import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
+import { keepFacts, runBazelFacts } from '../manifest/run-manifest-facts.mts'
 import { buildToolsFor } from '../manifest/scripts/build-tool.mts'
 
 import type { ReachabilityFallback } from './output-create-new-scan.mts'
@@ -83,8 +84,15 @@ export type GeneratedScanFiles = {
   files: string[]
 }
 
+// A scan of these Bazel targets only, in the workspace at `root`.
+export type BazelScan = {
+  root: string
+  targets: string[]
+}
+
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
+  bazel?: BazelScan | undefined
   branchName: string
   commitHash: string
   commitMessage: string
@@ -118,6 +126,7 @@ export type HandleCreateNewScanConfig = {
 async function createNewScan(
   {
     autoManifest,
+    bazel,
     branchName,
     commitHash,
     commitMessage,
@@ -180,7 +189,23 @@ async function createNewScan(
           }
         : undefined,
     }
-    if (autoManifest || reach.dynamicSbomInference) {
+    let bazelFacts: string[] | undefined
+    if (bazel) {
+      logger.info('Generating Socket facts for the Bazel targets ...')
+      const result = await runBazelFacts({
+        context: factsContext,
+        root: bazel.root,
+        targets: bazel.targets,
+      })
+      if (!result) {
+        return
+      }
+      await keepFacts(factsContext.workDir, result)
+      // The scan is of the targets alone, and their JVM artifacts are only
+      // those the facts attribute.
+      bazelFacts = [result.targetPath]
+      factsOnlyTypes = ['maven']
+    } else if (autoManifest || reach.dynamicSbomInference) {
       logger.info('Auto-generating manifest files ...')
       debugFn('notice', 'Manifest auto-generation enabled')
 
@@ -275,6 +300,7 @@ async function createNewScan(
 
     const packagePaths =
       scanFiles ??
+      bazelFacts ??
       (await withoutDiscardedFacts(
         await getPackageFilesForScan(scanTargets, supportedFiles, {
           additionalIgnores: additionalScaIgnores,

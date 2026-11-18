@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "defaults": {
+    "scan": {
+      "create": {
+        "autoManifest": true
+      }
+    }
+  }
+}

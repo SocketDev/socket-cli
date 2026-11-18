@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { resolveBazelBinary } from './bazel/bazel-bin-detect.mts'
 import {
   buildRootPath,
   looksLikeSbtBuild,
@@ -116,13 +117,15 @@ type SocketFactsRequest = {
     includeConfigs?: string | undefined
     javaHome?: string | undefined
     reachability?: ReachabilitySettings | undefined
+    // Bazel only: the target patterns to resolve.
+    targets?: string[] | undefined
     verbose: boolean
   }
   entryFile?: string | undefined
   excludeBase: string
   excludePaths?: string[] | undefined
   hints: Omit<BuildOptionHints, 'flags'> & { flags: BuildOption[] }
-  tool: BuildTool
+  tool: BuildTool | 'bazel'
 }
 
 type SocketFactsResult =
@@ -350,29 +353,14 @@ export async function listBuildProjects({
 
 // A failure sets a non-zero exit code; only a failed build is Coana's to
 // report. With a work dir, the facts stay there until keepFacts places them.
-export async function runManifestFacts({
-  context = {},
-  ...options
-}: SocketFactsRunOptions): Promise<RunManifestFactsOutcome> {
-  const { cwd, ecosystem, entryFile } = options
-  if (ecosystem === 'sbt' && !looksLikeSbtBuild(cwd)) {
-    process.exitCode = 1
-    logger.fail(
-      `No sbt build found at \`${cwd}\` (expected a build.sbt file or a project directory).`,
-    )
-    return null
-  }
-
-  const request = toSocketFactsRequest(options)
-  if (!request.ok) {
-    process.exitCode = 1
-    logger.fail(`${request.message}: ${request.cause}`)
-    return null
-  }
-
+async function runSocketFactsRequest(
+  request: SocketFactsRequest,
+  context: SocketFactsContext,
+): Promise<RunManifestFactsOutcome> {
+  const { buildRoot, entryFile, tool } = request
   const { workDir } = context
   const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
-    request.data,
+    request,
     workDir
       ? [
           ...(workDir.withFiles ? ['--with-files'] : []),
@@ -387,7 +375,7 @@ export async function runManifestFacts({
     process.exitCode = 1
     if (!result) {
       logger.fail(
-        `Could not generate Socket facts for the ${ecosystem} project at \`${buildRootPath({ dir: cwd, entryFile })}\`${message ? `: ${message}` : '.'}`,
+        `Could not generate Socket facts for the ${tool} project at \`${buildRootPath({ dir: buildRoot, entryFile })}\`${message ? `: ${message}` : '.'}`,
       )
     }
     return null
@@ -408,4 +396,73 @@ export async function runManifestFacts({
     sidecarEntry: result.sidecarEntry,
     targetPath: result.targetPath,
   }
+}
+
+// The targets of the Bazel workspace at `root`, which Bazel runs in and the
+// facts belong to. For reachability, built: Bazel's jars exist only so.
+export async function runBazelFacts({
+  context = {},
+  root,
+  targets,
+}: {
+  context?: SocketFactsContext | undefined
+  root: string
+  targets: string[]
+}): Promise<RunManifestFactsOutcome> {
+  let bin: string
+  try {
+    bin = await resolveBazelBinary(undefined, process.env, root)
+  } catch (e) {
+    process.exitCode = 1
+    logger.fail(getErrorMessageOr(e, 'Could not find Bazel'))
+    return null
+  }
+  const result = await runSocketFactsRequest(
+    {
+      buildRoot: root,
+      config: {
+        bin,
+        buildOpts: [],
+        ignoreUnresolved: false,
+        ...(context.workDir?.withFiles
+          ? { reachability: { build: 'compile' } }
+          : {}),
+        targets,
+        verbose: false,
+      },
+      excludeBase: root,
+      hints: toRequestHints(FLAG_HINTS),
+      tool: 'bazel',
+    },
+    context,
+  )
+  if (result === undefined) {
+    process.exitCode = 1
+    logger.fail(
+      `Coana found no projects or dependencies in the Bazel targets ${targets.join(' ')}.`,
+    )
+    return null
+  }
+  return result
+}
+
+export async function runManifestFacts({
+  context = {},
+  ...options
+}: SocketFactsRunOptions): Promise<RunManifestFactsOutcome> {
+  const { cwd, ecosystem } = options
+  if (ecosystem === 'sbt' && !looksLikeSbtBuild(cwd)) {
+    process.exitCode = 1
+    logger.fail(
+      `No sbt build found at \`${cwd}\` (expected a build.sbt file or a project directory).`,
+    )
+    return null
+  }
+  const request = toSocketFactsRequest(options)
+  if (!request.ok) {
+    process.exitCode = 1
+    logger.fail(`${request.message}: ${request.cause}`)
+    return null
+  }
+  return await runSocketFactsRequest(request.data, context)
 }
