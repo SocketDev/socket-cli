@@ -1,4 +1,4 @@
-import { mkdir, unlink } from 'node:fs/promises'
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import micromatch from 'micromatch'
@@ -123,6 +123,21 @@ export type HandleCreateNewScanConfig = {
   workspace?: string | undefined
 }
 
+// Reachability analyses Bazel's JVM targets only; the facts' other targets
+// are scanned for their dependencies alone. False when no JVM target is left.
+async function bazelReachability(factsPath: string): Promise<boolean> {
+  const facts = JSON.parse(await fs.readFile(factsPath, 'utf8')) as {
+    projects?: Array<{ id: string; type: string }>
+  }
+  const others = (facts.projects ?? []).filter(p => p.type !== 'maven')
+  if (others.length) {
+    logger.warn(
+      `Reachability analysis does not support these Bazel targets yet, so the scan holds their dependencies without it: ${others.map(p => p.id).join(', ')}`,
+    )
+  }
+  return others.length < (facts.projects ?? []).length
+}
+
 async function createNewScan(
   {
     autoManifest,
@@ -174,6 +189,7 @@ async function createNewScan(
 
   let factsOnlyTypes: FactsOnlyTypes | undefined
   let discardedFactsPaths: string[] | undefined
+  let runReachability = reach.runReachabilityAnalysis
 
   // Coana's reachability run reads what facts generation keeps in the work
   // dir, so it lives until the analysis below is done.
@@ -190,7 +206,7 @@ async function createNewScan(
         : undefined,
     }
     if (factsContext.workDir) {
-      await mkdir(factsContext.workDir.dir)
+      await fs.mkdir(factsContext.workDir.dir)
     }
     let bazelFacts: string[] | undefined
     if (bazel) {
@@ -211,6 +227,9 @@ async function createNewScan(
       // those the facts attribute.
       bazelFacts = [result.targetPath]
       factsOnlyTypes = ['maven']
+      if (runReachability) {
+        runReachability = await bazelReachability(result.targetPath)
+      }
     } else if (autoManifest || reach.dynamicSbomInference) {
       logger.info('Auto-generating manifest files ...')
       debugFn('notice', 'Manifest auto-generation enabled')
@@ -350,7 +369,7 @@ async function createNewScan(
     let reachabilityFallback: ReachabilityFallback | undefined
 
     // If reachability is enabled, perform reachability analysis.
-    if (reach.runReachabilityAnalysis) {
+    if (runReachability) {
       logger.error('')
       logger.info('Starting reachability analysis...')
       debugFn('notice', 'Reachability analysis enabled')
@@ -445,7 +464,7 @@ async function createNewScan(
           repoName,
           branchName,
           scanType:
-            reach.runReachabilityAnalysis && !reachabilityFallback
+            runReachability && !reachabilityFallback
               ? constants.SCAN_TYPE_SOCKET_TIER1
               : constants.SCAN_TYPE_SOCKET,
           workspace,
@@ -466,7 +485,7 @@ async function createNewScan(
     if (reach && scanId && tier1ReachabilityScanId) {
       await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
     } else if (
-      reach.runReachabilityAnalysis &&
+      runReachability &&
       scanId &&
       !tier1ReachabilityScanId &&
       !reachabilityFallback
@@ -490,7 +509,7 @@ async function createNewScan(
       !reach.reachRetainFactsFile
     ) {
       try {
-        await unlink(path.resolve(cwd, reachabilityReport))
+        await fs.unlink(path.resolve(cwd, reachabilityReport))
         debugFn(
           'notice',
           `[socket-facts] removed coana output after successful scan: ${reachabilityReport}`,
