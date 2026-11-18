@@ -260,6 +260,14 @@ const REPORT_LEVEL_MONITOR = 'monitor'
 const REPORT_LEVEL_WARN = 'warn'
 const REQUIREMENTS_TXT = 'requirements.txt'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
+// The variables socket-cli reads the Socket API token from, first one first.
+const SOCKET_CLI_API_TOKEN_VARIABLES = [
+  'SOCKET_CLI_API_TOKEN',
+  // TODO: Remove legacy environment variable names.
+  'SOCKET_CLI_API_KEY',
+  'SOCKET_SECURITY_API_TOKEN',
+  'SOCKET_SECURITY_API_KEY',
+] as const
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_SHADOW_ACCEPT_RISKS = 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
@@ -632,11 +640,9 @@ const LAZY_ENV = () => {
     // Set the Socket API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:
-      envAsString(env['SOCKET_CLI_API_TOKEN']) ||
-      // TODO: Remove legacy environment variable names.
-      envAsString(env['SOCKET_CLI_API_KEY']) ||
-      envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
-      envAsString(env['SOCKET_SECURITY_API_KEY']),
+      SOCKET_CLI_API_TOKEN_VARIABLES.map(name => envAsString(env[name])).find(
+        Boolean,
+      ) ?? '',
     // A JSON stringified Socket configuration object.
     SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
     // The git config user.email used by Socket CLI.
@@ -1251,6 +1257,7 @@ export {
   SCAN_TYPE_SOCKET,
   SCAN_TYPE_SOCKET_TIER1,
   SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_API_TOKEN_VARIABLES,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_ISSUES_URL,
   SOCKET_CLI_SHADOW_ACCEPT_RISKS,

@@ -417,7 +417,7 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
   })
 })
 
-describe('performReachabilityAnalysis stdio routing by output kind', () => {
+describe('performReachabilityAnalysis spawn options', () => {
   let scanCwd: string
 
   beforeEach(() => {
@@ -428,7 +428,7 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
     })
     mockHasEnterpriseOrgPlan.mockReturnValue(true)
     mockSpawnCoana.mockResolvedValue({ ok: true, data: '' })
-    scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-rea-stdio-'))
+    scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-rea-spawn-'))
     writeFileSync(
       path.join(scanCwd, '.socket.facts.json'),
       JSON.stringify({ components: [] }),
@@ -437,6 +437,19 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
 
   afterEach(() => {
     rmSync(scanCwd, { force: true, recursive: true })
+  })
+
+  it('passes the repository name', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
+      reachabilityOptions: makeReachabilityOptions(),
+      repoName: 'repo',
+      target: scanCwd,
+    })
+
+    expect(mockSpawnCoana.mock.calls[0]![2].repoName).toBe('repo')
   })
 
   it('inherits stdio in text output mode', async () => {

@@ -28,12 +28,14 @@ import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants, {
   COANA_CLI_VERSION,
   ERROR_UNABLE_RESOLVE_ORG,
+  SOCKET_CLI_API_TOKEN_VARIABLES,
 } from '../constants.mts'
 import { apiFetch, sendApiRequest } from './api.mts'
 import { getErrorCause } from './errors.mts'
 import { withTmpDir } from './fs.mts'
 import {
   getCliUserAgent,
+  getDefaultApiBaseUrl,
   getDefaultProxyUrl,
   resolveDefaultApiToken,
 } from './sdk.mts'
@@ -65,7 +67,7 @@ type CoanaDownload = { ok: true } | { ok: false; status: number }
 type CoanaSpawnOptions = {
   coanaVersion?: string | undefined
   cwd?: string | URL | undefined
-  env?: Record<string, string | undefined> | undefined
+  repoName?: string | undefined
   spinner?: Spinner | undefined
   stdio?: SpawnOptions['stdio'] | undefined
 }
@@ -75,6 +77,10 @@ const COANA_CACHE_SCRIPT = 'coana-cache.mjs'
 const COMPONENT = 'cli'
 const NOT_CACHED_EXIT_CODE = 4
 const SHA256_REGEXP = /^[0-9a-f]{64}$/
+const TOKEN_VARIABLES: ReadonlySet<string> = new Set([
+  ...SOCKET_CLI_API_TOKEN_VARIABLES,
+  'SOCKET_CLI_CONFIG',
+])
 
 function cacheResultToCResult(result: CoanaCacheResult): CResult<string> {
   if (result.exitCode === 0) {
@@ -89,6 +95,30 @@ function cacheResultToCResult(result: CoanaCacheResult): CResult<string> {
     cause:
       result.stderr || `${COANA_CACHE_SCRIPT} exited with ${result.exitCode}`,
   }
+}
+
+/**
+ * The user's `env` for Coana, without:
+ * - the `npm_package_*` variables that npm, pnpm and yarn classic set for each
+ *   leaf of the cwd's package.json. Coana doesn't read them, and in a large
+ *   monorepo they can push argv and env past ARG_MAX, so that the spawn fails
+ *   with E2BIG.
+ * - the variables socket-cli reads the API token from, and SOCKET_CLI_CONFIG,
+ *   which can carry one. Coana gets the token from socket-cli, and would pass
+ *   them on to the tools it runs.
+ *
+ * The registry's `spawn` spreads `process.env` under the env it is given, so
+ * they are set to `undefined`, which Node drops.
+ */
+function coanaUserEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const out: NodeJS.ProcessEnv = {}
+  for (const key of Object.keys(env)) {
+    out[key] =
+      key.startsWith('npm_package_') || TOKEN_VARIABLES.has(key)
+        ? undefined
+        : env[key]
+  }
+  return out
 }
 
 /**
@@ -370,26 +400,13 @@ async function runCoanaCache(
 }
 
 /**
- * `env` without the `npm_package_*` variables that npm, pnpm and yarn classic
- * set for each leaf of the cwd's package.json. Coana doesn't read them, and in
- * a large monorepo they can push argv and env past ARG_MAX, so that the spawn
- * fails with E2BIG.
- *
- * The registry's `spawn` spreads `process.env` under the env it is given, so
- * they are set to `undefined`, which Node drops.
- */
-function withoutNpmPackageEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const out: NodeJS.ProcessEnv = {}
-  for (const key of Object.keys(env)) {
-    out[key] = key.startsWith('npm_package_') ? undefined : env[key]
-  }
-  return out
-}
-
-/**
  * Run the Coana CLI, downloading it into the cache that Coana and the Socket
  * CLIs share when the cache lacks the version. Returns a CResult with Coana's
  * stdout.
+ *
+ * Coana runs in the user's environment, less what coanaUserEnv leaves out, plus
+ * the variables socket-cli sets for it. Coana passes its environment on to the
+ * build tools it runs, after removing the variables it reads.
  *
  * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
  * Coana CLI at that path instead.
@@ -402,7 +419,7 @@ export async function spawnCoana(
   const {
     coanaVersion,
     cwd,
-    env: spawnEnv,
+    repoName,
     spinner,
     stdio = 'inherit',
   } = {
@@ -434,15 +451,9 @@ export async function spawnCoana(
     }
   }
 
-  const mixinsEnv: Record<string, string> = {
-    SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-    // Forwarded to the Coana CLI so it can append our product token to its
-    // outbound axios User-Agent header.
-    SOCKET_CALLER_USER_AGENT: getCliUserAgent(),
-  }
-  let defaultApiToken: string | undefined
+  let apiToken: string | undefined
   try {
-    defaultApiToken = await resolveDefaultApiToken()
+    apiToken = await resolveDefaultApiToken()
   } catch (error) {
     return {
       ok: false,
@@ -450,35 +461,39 @@ export async function spawnCoana(
       cause: error instanceof Error ? error.message : String(error),
     }
   }
-  if (defaultApiToken) {
-    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
-  }
-
   const org: CResult<string> = orgSlug
     ? { ok: true, data: orgSlug }
     : await getDefaultOrgSlug()
-  if (org.ok) {
-    mixinsEnv['SOCKET_ORG_SLUG'] = org.data
+  const socketCliVariables: Record<string, string | undefined> = {
+    SOCKET_CALLER_USER_AGENT: getCliUserAgent(),
+    SOCKET_CLI_API_BASE_URL: getDefaultApiBaseUrl(),
+    SOCKET_CLI_API_PROXY: getDefaultProxyUrl(),
+    SOCKET_CLI_API_TOKEN: apiToken,
+    SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+    SOCKET_ORG_SLUG: org.ok ? org.data : undefined,
+    // The default name would mix the cached configuration of unrelated
+    // projects.
+    SOCKET_REPO_NAME:
+      repoName && repoName !== constants.SOCKET_DEFAULT_REPOSITORY
+        ? repoName
+        : undefined,
   }
-
-  const proxyUrl = getDefaultProxyUrl()
-  if (proxyUrl) {
-    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
+  const userEnv = coanaUserEnv(process.env)
+  const env = { ...userEnv }
+  for (const { 0: name, 1: value } of Object.entries(socketCliVariables)) {
+    // Unset ones leave the user's own, except SOCKET_CLI_API_TOKEN, which
+    // coanaUserEnv removed: with no token from socket-cli, Coana gets none.
+    if (value !== undefined) {
+      env[name] = value
+    }
   }
-
-  const finalEnv = withoutNpmPackageEnv({
-    ...process.env,
-    ...constants.processEnv,
-    ...mixinsEnv,
-    ...spawnEnv,
-  })
 
   let scriptPath = localPath
   if (!scriptPath) {
     const coanaDirCResult = await getCoanaCliDir(
       coanaVersion || COANA_CLI_VERSION,
       org,
-      finalEnv,
+      userEnv,
       spinner,
     )
     if (!coanaDirCResult.ok) {
@@ -493,7 +508,7 @@ export async function spawnCoana(
     const spawnResult = await spawn(
       isBinary ? scriptPath : constants.execPath,
       isBinary ? args : [scriptPath, ...args],
-      { cwd, env: finalEnv, spinner, stdio },
+      { cwd, env, spinner, stdio },
     )
     return { ok: true, data: String(spawnResult.stdout) }
   } catch (e) {

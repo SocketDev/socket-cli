@@ -337,7 +337,6 @@ async function createNewScan(
       spinner.start()
 
       const reachResult = await performReachabilityAnalysis({
-        branchName,
         cwd,
         factsOnlyTypes,
         orgSlug,
