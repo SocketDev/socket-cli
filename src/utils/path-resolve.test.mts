@@ -138,6 +138,25 @@ describe('Path Resolve', () => {
       ])
     })
 
+    it('should normalize Windows-style relative directory paths', async () => {
+      const kernelDirPath = normalizePath(path.join(mockFixturePath, 'Kernel'))
+      mockTestFs({
+        [`${kernelDirPath}/package.json`]: '{}',
+        [`${kernelDirPath}/nested/package.json`]: '{}',
+      })
+
+      const actual = await sortedGetPackageFilesFullScans(
+        ['.\\Kernel\\'],
+        globPatterns,
+        { cwd: mockFixturePath },
+      )
+
+      expect(actual.map(normalizePath)).toEqual([
+        `${kernelDirPath}/nested/package.json`,
+        `${kernelDirPath}/package.json`,
+      ])
+    })
+
     it('should keep scan-root ignores effective when the input path is absolute', async () => {
       const appDirPath = normalizePath(path.join(mockFixturePath, 'apps/api'))
       mockTestFs({
