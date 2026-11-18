@@ -135,7 +135,7 @@ jobs:
         shell: bash
         env:
           NODE_VERSION: 26.13.0
-        run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
+        run: pnpm run ci:setup-node
 
       - name: Download sfw
         shell: bash
@@ -147,8 +147,8 @@ jobs:
           # requires updating the matching version AND every platform's
           # SHA256 in the same commit, otherwise the download / verify
           # steps will diverge.
-          SFW_FREE_VERSION="1.15.0"
-          SFW_ENTERPRISE_VERSION="1.15.0"
+          SFW_FREE_VERSION="1.16.0"
+          SFW_ENTERPRISE_VERSION="1.16.0"
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
@@ -158,22 +158,22 @@ jobs:
             REPO="SocketDev/firewall-release"
             SFW_VERSION="$SFW_ENTERPRISE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="5d33de4859e5138633592fb49a62fb9ac520a6a16211100d21bcb871a9b2d77f" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4cc5c51eb224cfa1c9819c218cc39753bce5273e89a50dfd226d8d71449bfd95" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fc39d500171dfa53eba26e4f59dfd187f3ae47094b8d3a54b7ac53df1c770245" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="98c87f9316a3caf67f33bb065f6b08123ae90325164535cf5b692cb1024cb64e" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="7869366709d7ca25c096ec0bcd98f5b69d9f2f13c4c0964dd5b8f656d0fb4359" ;;
+              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9c5e77a2c08683c3cca7c5fba9d380c7acca7ed6ea71c0d3919b2a723bea34b3" ;;
+              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="945708d9907f4702d91d341647576aae667ad0c411cd9c02a4f56b130512695c" ;;
+              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9b6faa3c4cb5d2cbbea7bad5c7a47a4a9f179a8a75f1ce2993ac0c50e5e040cf" ;;
+              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="16fbe362a24af30b75938667e7bff00ed79df24e17a8e2d0abf3ae53d5739e92" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e8ecd768aebabc365d91306e0b5ef8b66c16b4816496934ff4998cda60590e3c" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           else
             REPO="SocketDev/sfw-free"
             SFW_VERSION="$SFW_FREE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c80371910a808ea5c68916c48e5451716a91ca411cf5e422fdbd8119729b742c" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="55671fa409ef3d40fcee66acbba4d7acfff8a5332d349ad47cca809ebf473cd0" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="07cfcc9805812130ebca07f73c51c2cd9c0181b394f25be4c969c0d31c9dc26f" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fa473291b8b76220f4b636cf655e8a4dc03332145bdea3acfd9bc96887b2da20" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="029882f10e1020c96353b184ec0dba7da853e0f6d35131ca930515a7e61e89e6" ;;
+              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="1f24d2628aeb3995f1f2651509e37641c7c41d07749ac68594ecb5bb2dd44d8a" ;;
+              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="474cdb684e42d33d4b697dedd7d90c159d71380be0e53c496f0e7097c3617a6c" ;;
+              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b574931bc2b3c36a9bf07ac07b9c07894f8cd314efc91bc5e4fe1c371b56adca" ;;
+              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="29df049df2ef705a8ce726c6c41fe73a6034f6b1cd0d87f3f15a780d074b6d83" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="fafcb65a0349ff21af4feeda170f669053efa68acb55e1b935f7ed1b2ac93ca7" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           fi
@@ -242,6 +242,7 @@ jobs:
           for CMD in $SHIM_CMDS; do
             REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
             [ -z "$REAL" ] && continue
+            if $IS_WINDOWS && [ -f "${REAL}.exe" ]; then REAL="${REAL}.exe"; fi
             REAL="$(msys_to_win_path "$REAL")"
             SHIM_LINES=('#!/bin/bash' "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"")
             [ -n "$SSL_WORKAROUND" ] && SHIM_LINES+=("$SSL_WORKAROUND")
@@ -329,7 +330,7 @@ jobs:
         shell: bash
         env:
           NODE_VERSION: 26.13.0
-        run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
+        run: pnpm run ci:setup-node
 
       - name: Download sfw
         shell: bash
@@ -341,8 +342,8 @@ jobs:
           # requires updating the matching version AND every platform's
           # SHA256 in the same commit, otherwise the download / verify
           # steps will diverge.
-          SFW_FREE_VERSION="1.15.0"
-          SFW_ENTERPRISE_VERSION="1.15.0"
+          SFW_FREE_VERSION="1.16.0"
+          SFW_ENTERPRISE_VERSION="1.16.0"
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
@@ -352,22 +353,22 @@ jobs:
             REPO="SocketDev/firewall-release"
             SFW_VERSION="$SFW_ENTERPRISE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="5d33de4859e5138633592fb49a62fb9ac520a6a16211100d21bcb871a9b2d77f" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4cc5c51eb224cfa1c9819c218cc39753bce5273e89a50dfd226d8d71449bfd95" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fc39d500171dfa53eba26e4f59dfd187f3ae47094b8d3a54b7ac53df1c770245" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="98c87f9316a3caf67f33bb065f6b08123ae90325164535cf5b692cb1024cb64e" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="7869366709d7ca25c096ec0bcd98f5b69d9f2f13c4c0964dd5b8f656d0fb4359" ;;
+              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9c5e77a2c08683c3cca7c5fba9d380c7acca7ed6ea71c0d3919b2a723bea34b3" ;;
+              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="945708d9907f4702d91d341647576aae667ad0c411cd9c02a4f56b130512695c" ;;
+              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9b6faa3c4cb5d2cbbea7bad5c7a47a4a9f179a8a75f1ce2993ac0c50e5e040cf" ;;
+              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="16fbe362a24af30b75938667e7bff00ed79df24e17a8e2d0abf3ae53d5739e92" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e8ecd768aebabc365d91306e0b5ef8b66c16b4816496934ff4998cda60590e3c" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           else
             REPO="SocketDev/sfw-free"
             SFW_VERSION="$SFW_FREE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c80371910a808ea5c68916c48e5451716a91ca411cf5e422fdbd8119729b742c" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="55671fa409ef3d40fcee66acbba4d7acfff8a5332d349ad47cca809ebf473cd0" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="07cfcc9805812130ebca07f73c51c2cd9c0181b394f25be4c969c0d31c9dc26f" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fa473291b8b76220f4b636cf655e8a4dc03332145bdea3acfd9bc96887b2da20" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="029882f10e1020c96353b184ec0dba7da853e0f6d35131ca930515a7e61e89e6" ;;
+              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="1f24d2628aeb3995f1f2651509e37641c7c41d07749ac68594ecb5bb2dd44d8a" ;;
+              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="474cdb684e42d33d4b697dedd7d90c159d71380be0e53c496f0e7097c3617a6c" ;;
+              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b574931bc2b3c36a9bf07ac07b9c07894f8cd314efc91bc5e4fe1c371b56adca" ;;
+              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="29df049df2ef705a8ce726c6c41fe73a6034f6b1cd0d87f3f15a780d074b6d83" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="fafcb65a0349ff21af4feeda170f669053efa68acb55e1b935f7ed1b2ac93ca7" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           fi
@@ -436,6 +437,7 @@ jobs:
           for CMD in $SHIM_CMDS; do
             REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
             [ -z "$REAL" ] && continue
+            if $IS_WINDOWS && [ -f "${REAL}.exe" ]; then REAL="${REAL}.exe"; fi
             REAL="$(msys_to_win_path "$REAL")"
             SHIM_LINES=('#!/bin/bash' "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"")
             [ -n "$SSL_WORKAROUND" ] && SHIM_LINES+=("$SSL_WORKAROUND")
@@ -457,15 +459,33 @@ jobs:
         run: pnpm check:tsc
 
   test:
-    name: 🧪 Test Matrix
+    name: 🧪 Tests • ${{ matrix.os }} • Node ${{ matrix.node-version }} • ${{ matrix.shell }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: true
       matrix:
-        # Node 20 reached end-of-life 2026-03-24; test supported majors only.
-        node-version: [22, 24, 26.13.0]
-        os: [ubuntu-latest]
+        include:
+          - os: ubuntu-latest
+            node-version: 22
+            shell: bash
+            timeout: 15
+          - os: ubuntu-latest
+            node-version: 24
+            shell: bash
+            timeout: 15
+          - os: ubuntu-latest
+            node-version: 26
+            shell: bash
+            timeout: 15
+          - os: windows-2022
+            node-version: 24
+            shell: bash
+            timeout: 90
+          - os: windows-2022
+            node-version: 24
+            shell: pwsh
+            timeout: 90
     steps:
       - name: Checkout source
         shell: bash
@@ -523,11 +543,48 @@ jobs:
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
-      - name: Install Node.js
+      - name: Install Node.js • Linux
+        if: runner.os == 'Linux'
         shell: bash
         env:
           NODE_VERSION: ${{ matrix.node-version }}
-        run: node scripts/ci/setup-node.mjs --version "$NODE_VERSION"
+        run: pnpm run ci:setup-node
+
+      - name: Install Node.js • Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $nodeMajor = '${{ matrix.node-version }}'
+          $release = Invoke-RestMethod -Uri 'https://nodejs.org/dist/index.json' -ErrorAction Stop
+          $release = $release |
+            Where-Object {
+              $_.version -match '^v?(\d+)\.(\d+)\.(\d+)$' -and
+              [int]$Matches[1] -eq [int]$nodeMajor
+            } |
+            Sort-Object { [version]$_.version.TrimStart('v') } -Descending |
+            Select-Object -First 1
+          if (-not $release) {
+            throw "No stable Node.js release found for major $nodeMajor"
+          }
+          $nodeVersion = $release.version.TrimStart('v')
+          $tools = Join-Path $env:RUNNER_TEMP 'windows-node'
+          New-Item -ItemType Directory -Force $tools | Out-Null
+          $archive = "node-v$nodeVersion-win-x64.zip"
+          $releaseUrl = "https://nodejs.org/dist/v$nodeVersion"
+          $archivePath = Join-Path $tools $archive
+          $checksums = Invoke-WebRequest -Uri "$releaseUrl/SHASUMS256.txt" -ErrorAction Stop
+          $assetPattern = "(?m)^([a-fA-F0-9]{64})\s+\*?$([Regex]::Escape($archive))\s*$"
+          $checksumMatches = [Regex]::Matches($checksums.Content, $assetPattern)
+          if ($checksumMatches.Count -ne 1) {
+            throw "Expected one SHA-256 checksum for $archive"
+          }
+          Invoke-WebRequest -Uri "$releaseUrl/$archive" -OutFile $archivePath -ErrorAction Stop
+          $expectedHash = $checksumMatches[0].Groups[1].Value.ToLowerInvariant()
+          if ((Get-FileHash $archivePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedHash) {
+            throw "Checksum mismatch for $archive"
+          }
+          Expand-Archive $archivePath $tools
+          (Join-Path $tools "node-v$nodeVersion-win-x64") | Add-Content $env:GITHUB_PATH
 
       - name: Download sfw
         shell: bash
@@ -539,8 +596,8 @@ jobs:
           # requires updating the matching version AND every platform's
           # SHA256 in the same commit, otherwise the download / verify
           # steps will diverge.
-          SFW_FREE_VERSION="1.15.0"
-          SFW_ENTERPRISE_VERSION="1.15.0"
+          SFW_FREE_VERSION="1.16.0"
+          SFW_ENTERPRISE_VERSION="1.16.0"
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
@@ -550,22 +607,22 @@ jobs:
             REPO="SocketDev/firewall-release"
             SFW_VERSION="$SFW_ENTERPRISE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="5d33de4859e5138633592fb49a62fb9ac520a6a16211100d21bcb871a9b2d77f" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4cc5c51eb224cfa1c9819c218cc39753bce5273e89a50dfd226d8d71449bfd95" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fc39d500171dfa53eba26e4f59dfd187f3ae47094b8d3a54b7ac53df1c770245" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="98c87f9316a3caf67f33bb065f6b08123ae90325164535cf5b692cb1024cb64e" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="7869366709d7ca25c096ec0bcd98f5b69d9f2f13c4c0964dd5b8f656d0fb4359" ;;
+              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9c5e77a2c08683c3cca7c5fba9d380c7acca7ed6ea71c0d3919b2a723bea34b3" ;;
+              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="945708d9907f4702d91d341647576aae667ad0c411cd9c02a4f56b130512695c" ;;
+              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9b6faa3c4cb5d2cbbea7bad5c7a47a4a9f179a8a75f1ce2993ac0c50e5e040cf" ;;
+              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="16fbe362a24af30b75938667e7bff00ed79df24e17a8e2d0abf3ae53d5739e92" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e8ecd768aebabc365d91306e0b5ef8b66c16b4816496934ff4998cda60590e3c" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           else
             REPO="SocketDev/sfw-free"
             SFW_VERSION="$SFW_FREE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c80371910a808ea5c68916c48e5451716a91ca411cf5e422fdbd8119729b742c" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="55671fa409ef3d40fcee66acbba4d7acfff8a5332d349ad47cca809ebf473cd0" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="07cfcc9805812130ebca07f73c51c2cd9c0181b394f25be4c969c0d31c9dc26f" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fa473291b8b76220f4b636cf655e8a4dc03332145bdea3acfd9bc96887b2da20" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="029882f10e1020c96353b184ec0dba7da853e0f6d35131ca930515a7e61e89e6" ;;
+              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="1f24d2628aeb3995f1f2651509e37641c7c41d07749ac68594ecb5bb2dd44d8a" ;;
+              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="474cdb684e42d33d4b697dedd7d90c159d71380be0e53c496f0e7097c3617a6c" ;;
+              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b574931bc2b3c36a9bf07ac07b9c07894f8cd314efc91bc5e4fe1c371b56adca" ;;
+              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="29df049df2ef705a8ce726c6c41fe73a6034f6b1cd0d87f3f15a780d074b6d83" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="fafcb65a0349ff21af4feeda170f669053efa68acb55e1b935f7ed1b2ac93ca7" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           fi
@@ -634,6 +691,7 @@ jobs:
           for CMD in $SHIM_CMDS; do
             REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
             [ -z "$REAL" ] && continue
+            if $IS_WINDOWS && [ -f "${REAL}.exe" ]; then REAL="${REAL}.exe"; fi
             REAL="$(msys_to_win_path "$REAL")"
             SHIM_LINES=('#!/bin/bash' "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"")
             [ -n "$SSL_WORKAROUND" ] && SHIM_LINES+=("$SSL_WORKAROUND")
@@ -648,11 +706,85 @@ jobs:
           echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
           echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
 
-      - name: Install dependencies
+      - name: Install dependencies • Bash
+        if: matrix.shell == 'bash'
+        shell: bash
         run: pnpm install --loglevel error
 
-      - name: Build and run unit tests
+      - name: Install dependencies • PowerShell
+        if: matrix.shell == 'pwsh'
+        shell: pwsh
+        run: pnpm install --loglevel error
+
+      - name: Install Bazel test tools
+        if: matrix.os == 'windows-2022' && matrix.shell == 'pwsh'
+        shell: pwsh
+        run: |
+          $tools = Join-Path $env:RUNNER_TEMP 'bazel-tools'
+          New-Item -ItemType Directory -Force "$tools/bin" | Out-Null
+          function Get-VerifiedTool($url, $file, $sha256) {
+            Invoke-WebRequest -Uri $url -OutFile $file
+            if ((Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sha256) {
+              throw "Checksum mismatch for $file"
+            }
+          }
+          Get-VerifiedTool 'https://api.nuget.org/v3-flatcontainer/python/3.12.10/python.3.12.10.nupkg' "$tools/python.zip" '0eb85c2dfccccf1b17352de4c397f69194035b7d37149eacc16f1147d93de3b8'
+          Get-VerifiedTool 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jdk_x64_windows_hotspot_21.0.6_7.zip' "$tools/java.zip" '897c8eebb0f85a99ccecbd482ebae9a45d88c19d6077054f6529ebab49b6d259'
+          Get-VerifiedTool 'https://github.com/bazelbuild/bazelisk/releases/download/v1.26.0/bazelisk-windows-amd64.exe' "$tools/bin/bazelisk.exe" '023734f33ed6b9c6d65468fe20bb2c5fb32473ccb8aca2fc5bf1521e61ce1622'
+          Expand-Archive "$tools/python.zip" "$tools/python"
+          Expand-Archive "$tools/java.zip" "$tools/java"
+          "$tools/python/tools" | Add-Content $env:GITHUB_PATH
+          "$tools/java/jdk-21.0.6+7/bin" | Add-Content $env:GITHUB_PATH
+          "$tools/bin" | Add-Content $env:GITHUB_PATH
+          "JAVA_HOME=$tools/java/jdk-21.0.6+7" | Add-Content $env:GITHUB_ENV
+          'USE_BAZEL_VERSION=7.4.1' | Add-Content $env:GITHUB_ENV
+          'SOCKET_BAZEL_OUTPUT_ROOT=C:/sb' | Add-Content $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force 'C:/sb' | Out-Null
+
+      - name: Record Bazel test tool versions
+        if: matrix.os == 'windows-2022' && matrix.shell == 'pwsh'
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          node --version
+          pnpm --version
+          bazelisk --version
+          python --version
+          java -version
+          Write-Output "PowerShell $($PSVersionTable.PSVersion)"
+
+      - name: Run full unit and integration suite • Bash
+        if: matrix.shell == 'bash'
+        shell: bash
         run: pnpm test-ci
+
+      - name: Run full unit and integration suite • PowerShell
+        if: matrix.shell == 'pwsh'
+        shell: pwsh
+        run: pnpm test-ci
+
+      - name: Install the packaged CLI
+        if: matrix.os == 'windows-2022' && matrix.shell == 'pwsh'
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $packages = Join-Path $env:RUNNER_TEMP 'bazel-packages'
+          $installation = Join-Path $env:RUNNER_TEMP 'bazel-installation'
+          New-Item -ItemType Directory -Force $packages, $installation | Out-Null
+          pnpm pack --pack-destination $packages
+          $tarball = Get-ChildItem "$packages/*.tgz" | Select-Object -First 1
+          npm install --ignore-scripts --no-audit --no-fund --prefix $installation $tarball.FullName
+          "SOCKET_BAZEL_TEST_CLI=$installation/node_modules/socket/bin/cli.js" | Add-Content $env:GITHUB_ENV
+
+      - name: Verify Bazel Maven manifests
+        if: matrix.os == 'windows-2022' && matrix.shell == 'pwsh'
+        shell: pwsh
+        env:
+          SOCKET_BAZEL_E2E: '1'
+          SFW_CUSTOM_REGISTRIES: 'bypass:bcr.bazel.build,bypass:release-assets.githubusercontent.com,bypass:repo.maven.apache.org'
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          pnpm exec vitest run --config .config/vitest.e2e.config.mts src/commands/manifest/bazel/bazel-native.e2e.test.mts
 
   native-cli-pr:
     name: Native CLI tests • Cache read-only • No Apple signing

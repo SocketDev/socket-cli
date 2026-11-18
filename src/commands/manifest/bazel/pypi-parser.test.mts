@@ -1,3 +1,6 @@
+import path from 'node:path'
+import process from 'node:process'
+
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -9,7 +12,7 @@ import {
   parsePypiTagsFromBuildOutput,
   parseRequirementsLock,
   resolveRequirementsLockPath,
-} from './bazel-pypi-parser.mts'
+} from './pypi-parser.mts'
 
 describe('parseRequirementsLock', () => {
   it('parses canonical name==version lines', () => {
@@ -232,29 +235,29 @@ describe('normalizePypiName', () => {
 })
 
 describe('resolveRequirementsLockPath', () => {
-  const cwd = '/workspace'
+  const cwd = path.join(path.parse(process.cwd()).root, 'workspace')
 
   it('resolves //:requirements_lock.txt to cwd/requirements_lock.txt', () => {
     expect(resolveRequirementsLockPath('//:requirements_lock.txt', cwd)).toBe(
-      '/workspace/requirements_lock.txt',
+      path.join(cwd, 'requirements_lock.txt'),
     )
   })
 
   it('resolves :requirements_lock.txt to cwd/requirements_lock.txt', () => {
     expect(resolveRequirementsLockPath(':requirements_lock.txt', cwd)).toBe(
-      '/workspace/requirements_lock.txt',
+      path.join(cwd, 'requirements_lock.txt'),
     )
   })
 
   it('resolves //subdir:requirements_lock.txt to cwd/subdir/requirements_lock.txt', () => {
     expect(
       resolveRequirementsLockPath('//subdir:requirements_lock.txt', cwd),
-    ).toBe('/workspace/subdir/requirements_lock.txt')
+    ).toBe(path.join(cwd, 'subdir', 'requirements_lock.txt'))
   })
 
   it('resolves workspace-relative paths', () => {
     expect(resolveRequirementsLockPath('reqs.txt', cwd)).toBe(
-      '/workspace/reqs.txt',
+      path.join(cwd, 'reqs.txt'),
     )
   })
 

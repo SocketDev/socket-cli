@@ -11,14 +11,14 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the helpers BEFORE importing the orchestrator.
-vi.mock('./bazel-workspace-detect.mts', () => ({
+vi.mock('./workspace-detect.mts', () => ({
   detectWorkspaceMode: vi.fn(),
   getBazelInvocationFlags: vi.fn(() => []),
 }))
-vi.mock('./bazel-bin-detect.mts', () => ({
+vi.mock('./bin-detect.mts', () => ({
   resolveBazelBinary: vi.fn(async () => '/usr/local/bin/bazel'),
 }))
-vi.mock('./bazel-pypi-discovery.mts', () => ({
+vi.mock('./pypi-discovery.mts', () => ({
   discoverPypiHubs: vi.fn(),
   parseBazelModPipExtensionCandidates: vi.fn(() => [
     {
@@ -34,7 +34,7 @@ vi.mock('./bazel-pypi-discovery.mts', () => ({
 const { probe } = vi.hoisted(() => ({
   probe: async () => ({ code: 0, stdout: '@pypi//requests:pkg\n', stderr: '' }),
 }))
-vi.mock('./bazel-query-runner.mts', () => ({
+vi.mock('./query-runner.mts', () => ({
   buildPypiProbeFor: vi.fn(() => probe),
   runBazelModShowVisibleRepos: vi.fn(async () => ({
     code: 0,
@@ -49,29 +49,31 @@ vi.mock('./bazel-query-runner.mts', () => ({
   })),
   runBazelQuery: vi.fn(),
 }))
-vi.mock('./bazel-output-base-check.mts', () => ({
+vi.mock('./output-base-check.mts', () => ({
   validateOutputBase: vi.fn(),
 }))
-vi.mock('./bazel-python-shim.mts', () => ({
+vi.mock('./python-shim.mts', () => ({
   provisionPythonShim: vi.fn(async (env: NodeJS.ProcessEnv) => ({
     env,
     shimDir: undefined,
   })),
 }))
 
-import { validateOutputBase } from './bazel-output-base-check.mts'
+import { validateOutputBase } from './output-base-check.mts'
 import {
   discoverPypiHubs,
   parseBazelModPipExtensionCandidates,
-} from './bazel-pypi-discovery.mts'
-import {
-  runBazelModShowPipExtension,
-  runBazelQuery,
-} from './bazel-query-runner.mts'
-import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
-import { extractBazelToPypi } from './extract_bazel_to_pypi.mts'
+} from './pypi-discovery.mts'
+import { runBazelModShowPipExtension, runBazelQuery } from './query-runner.mts'
+import { provisionPythonShim } from './python-shim.mts'
+import { detectWorkspaceMode } from './workspace-detect.mts'
+import { extractBazelToPypi as extractBazelToPypiImpl } from './extract_bazel_to_pypi.mts'
 
 import type { ExtractBazelToPypiResult } from './extract_bazel_to_pypi.mts'
+
+const extractBazelToPypi = (
+  options: Parameters<typeof extractBazelToPypiImpl>[0],
+) => extractBazelToPypiImpl({ ...options, platform: 'linux' })
 
 describe('extractBazelToPypi', () => {
   let tmp: string
@@ -92,6 +94,21 @@ describe('extractBazelToPypi', () => {
       },
     ])
     process.exitCode = 0
+  })
+
+  it('rejects Windows explicitly because PyPI extraction is unsupported there', async () => {
+    const result = await extractBazelToPypiImpl({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      platform: 'win32',
+      verbose: false,
+    })
+    expect(result).toEqual({ artifactCount: 0, ok: false })
+    expect(provisionPythonShim).not.toHaveBeenCalled()
   })
 
   afterEach(() => {

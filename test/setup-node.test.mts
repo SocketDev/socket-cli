@@ -20,7 +20,7 @@ import {
   parseNodeSetupVersion,
   resolveNodeSetupVersion,
   runNodeSetup,
-} from '../scripts/ci/setup-node.mjs'
+} from '../scripts/setup/node.mts'
 
 const directories: string[] = []
 

@@ -36,6 +36,14 @@ import {
 
 import type { SocketJson } from '../../utils/socket-json.mts'
 
+function relativePosixPath(from: string, to: string): string {
+  return (path.relative(from, to) || '.').replaceAll('\\', '/')
+}
+
+function messageText(value: unknown): string {
+  return String(value).replaceAll('\\', '/')
+}
+
 // The settings each build root's directory resolves to, as one socket.json at
 // the filesystem root.
 function mockCascade(cascade: (dir: string) => unknown): void {
@@ -591,7 +599,7 @@ describe('generateRecursiveManifests', () => {
       expect(
         warnSpy.mock.calls.some(c =>
           /Not building 3 maven build root\(s\) in or under \S*reactor:/.test(
-            String(c[0]),
+            messageText(c[0]),
           ),
         ),
       ).toBe(true)
@@ -918,7 +926,7 @@ describe('generateRecursiveManifests', () => {
         verbose: false,
       })
 
-      const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
+      const warned = warnSpy.mock.calls.map(c => messageText(c[0])).join('\n')
       expect(warned).toMatch(/facts is false/)
 
       const byKey = new Map(
@@ -990,7 +998,7 @@ describe('generateRecursiveManifests', () => {
       // moduleB + independent-submodule), but only the root cause should
       // warn - otherwise a big disabled reactor spams one line per pom.
       expect(warnSpy).toHaveBeenCalledTimes(1)
-      expect(String(warnSpy.mock.calls[0]?.[0])).toMatch(
+      expect(messageText(warnSpy.mock.calls[0]?.[0])).toMatch(
         /sets defaults\.manifest\.maven\.disabled/,
       )
     } finally {
@@ -1087,7 +1095,7 @@ describe('generateRecursiveManifests', () => {
         verbose: false,
       })
 
-      const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
+      const warned = warnSpy.mock.calls.map(c => messageText(c[0])).join('\n')
       expect(warned).toMatch(/sets defaults\.manifest\.maven\.disabled/)
 
       const byKey = new Map(
@@ -1355,7 +1363,7 @@ describe('generateRecursiveManifests', () => {
       expect(cascadeDirs.length).toBeGreaterThan(0)
       expect(cascadeDirs).toEqual([...new Set(cascadeDirs)])
       expect(
-        warnSpy.mock.calls.filter(c => String(c[0]).includes('--file')),
+        warnSpy.mock.calls.filter(c => messageText(c[0]).includes('--file')),
       ).toHaveLength(cascadeDirs.length)
       expect(
         vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.buildOpts),
@@ -1433,7 +1441,7 @@ describe('generateRecursiveManifests', () => {
         const byDir = new Map(
           outcomes
             .filter(o => o.ecosystem === 'gradle')
-            .map(o => [path.relative(outer, o.dir) || '.', o.status]),
+            .map(o => [relativePosixPath(outer, o.dir), o.status]),
         )
         expect(byDir.get('.')).toBe('generated')
         expect(byDir.get('sub')).toBe(subStatus)
@@ -1441,7 +1449,7 @@ describe('generateRecursiveManifests', () => {
         expect(
           vi
             .mocked(runManifestFacts)
-            .mock.calls.map(([o]) => path.relative(outer, o.cwd) || '.'),
+            .mock.calls.map(([o]) => relativePosixPath(outer, o.cwd)),
         ).toEqual(['.', 'sub'])
       },
     )
@@ -1504,16 +1512,16 @@ describe('generateRecursiveManifests', () => {
           })
 
           const byDir = new Map(
-            outcomes.map(o => [path.relative(outer, o.dir) || '.', o.status]),
+            outcomes.map(o => [relativePosixPath(outer, o.dir), o.status]),
           )
           expect(byDir.get('sub')).toBe('skippedDisabled')
           expect(byDir.get('sub/a')).toBe('skippedDisabled')
           expect(
             vi
               .mocked(runManifestFacts)
-              .mock.calls.map(([o]) => path.relative(outer, o.cwd) || '.'),
+              .mock.calls.map(([o]) => relativePosixPath(outer, o.cwd)),
           ).toEqual(['.'])
-          expect(warnSpy.mock.calls.map(c => String(c[0]))).toEqual([
+          expect(warnSpy.mock.calls.map(c => messageText(c[0]))).toEqual([
             expect.stringMatching(
               new RegExp(
                 `^Skipping \\S*sub${modules ? ` ${modules}` : ''}: \\S*sub/socket\\.json sets defaults\\.manifest\\.builds\\["settings\\.gradle"\\]\\.disabled\\.$`,
@@ -1598,7 +1606,7 @@ describe('generateRecursiveManifests', () => {
           o => o.ecosystem === 'maven' && relOf(o.dir) === 'reactor/moduleA',
         )?.status,
       ).toBe('skippedCovered')
-      const warned = warnSpy.mock.calls.map(c => String(c[0]))
+      const warned = warnSpy.mock.calls.map(c => messageText(c[0]))
       expect(
         warned.filter(w => w.includes('defaults.manifest.builds["pom.xml"]')),
       ).toEqual([
@@ -1674,7 +1682,10 @@ describe('generateRecursiveManifests', () => {
         })
 
         const byRoot = new Map(
-          outcomes.map(o => [path.relative(outer, buildRootPath(o)), o.status]),
+          outcomes.map(o => [
+            relativePosixPath(outer, buildRootPath(o)),
+            o.status,
+          ]),
         )
         expect(Object.fromEntries(byRoot)).toEqual({
           'aaa-module/pom.xml': 'skippedDisabled',
@@ -1693,7 +1704,7 @@ describe('generateRecursiveManifests', () => {
             entryFile: 'pom.xml',
           }),
         )
-        expect(warnSpy.mock.calls.map(c => String(c[0]))).toEqual([
+        expect(warnSpy.mock.calls.map(c => messageText(c[0]))).toEqual([
           expect.stringMatching(
             /^Skipping \S*legacy\/pom\.xml and its 2 modules: \S*legacy\/socket\.json sets defaults\.manifest\.builds\["pom\.xml"\]\.disabled\.$/,
           ),
@@ -1738,7 +1749,7 @@ describe('generateRecursiveManifests', () => {
               o.dir === path.join(outer, 'legacy') && o.entryFile === 'pom.xml',
           )?.status,
         ).toBe('skippedCovered')
-        const warned = warnSpy.mock.calls.map(c => String(c[0]))
+        const warned = warnSpy.mock.calls.map(c => messageText(c[0]))
         expect(warned.some(w => w.startsWith('Skipping'))).toBe(false)
         expect(warned).toContainEqual(
           expect.stringMatching(
@@ -1765,12 +1776,15 @@ describe('generateRecursiveManifests', () => {
         })
 
         const byRoot = new Map(
-          outcomes.map(o => [path.relative(outer, buildRootPath(o)), o.status]),
+          outcomes.map(o => [
+            relativePosixPath(outer, buildRootPath(o)),
+            o.status,
+          ]),
         )
         expect(byRoot.get('legacy/pom.xml')).toBe('failed')
         expect(byRoot.get('legacy/old/pom.xml')).toBe('aborted')
         expect(byRoot.get('aaa-module/pom.xml')).toBe('generated')
-        expect(String(failSpy.mock.calls.at(-1)?.[0])).toMatch(
+        expect(messageText(failSpy.mock.calls.at(-1)?.[0])).toMatch(
           /^Could not load \S*legacy\/pom\.xml .* with `socket manifest setup --dynamic-sbom-inference`\.$/,
         )
         expect(process.exitCode).toBe(1)
@@ -1853,7 +1867,10 @@ describe('generateRecursiveManifests', () => {
 
       expect(
         Object.fromEntries(
-          outcomes.map(o => [path.relative(outer, buildRootPath(o)), o.status]),
+          outcomes.map(o => [
+            relativePosixPath(outer, buildRootPath(o)),
+            o.status,
+          ]),
         ),
       ).toEqual({
         'p/a/A.csproj': 'skippedCovered',
@@ -1863,7 +1880,7 @@ describe('generateRecursiveManifests', () => {
         'y/Y.sln': 'skippedCovered',
         'z/App.sln': 'skippedCovered',
       })
-      expect(warnSpy.mock.calls.map(c => String(c[0]))).toContainEqual(
+      expect(warnSpy.mock.calls.map(c => messageText(c[0]))).toContainEqual(
         expect.stringMatching(
           /^defaults\.manifest\.builds\["Y\.sln"\] in \S*y\/socket\.json does not apply: \S*r\/R\.sln builds \S*y\/Y\.sln with its own settings\.$/,
         ),

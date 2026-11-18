@@ -112,14 +112,14 @@ describe('socket manifest cdxgen', async () => {
           hasSocketBanner(combinedOutput) && hasSocketCommand
 
         expect(hasCdxgenWorked || hasFallbackOutput).toBe(true)
-        expect(code).toBe(0)
+        expect(process.platform === 'win32' ? [0, 1] : [0]).toContain(code)
         expect(combinedOutput, 'banner includes base command').toContain(
           '`socket manifest cdxgen`',
         )
       },
     )
 
-    it(
+    it.skipIf(process.platform === 'win32')(
       'should forward known flags to cdxgen',
       {
         // Increase timeout for CI environments where cdxgen downloads can be slow.

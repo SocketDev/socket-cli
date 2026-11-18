@@ -62,10 +62,11 @@ function project(subprojectDir: string): SocketFactsSbomProject {
 
 describe('scanBuildRoots', () => {
   it('runs the unfiltered and excludePaths-filtered walks once each and returns both', async () => {
+    const cwd = path.resolve('/repo')
     const unfiltered = new Map([
-      ['gradle', dirRoots('/repo/a', '/repo/legacy')],
+      ['gradle', dirRoots(path.join(cwd, 'a'), path.join(cwd, 'legacy'))],
     ])
-    const filtered = new Map([['gradle', dirRoots('/repo/a')]])
+    const filtered = new Map([['gradle', dirRoots(path.join(cwd, 'a'))]])
     const walk = async ({
       excludePaths,
     }: {
@@ -76,7 +77,7 @@ describe('scanBuildRoots', () => {
       .mockImplementationOnce(walk)
 
     const result = await scanBuildRoots({
-      cwd: '/repo',
+      cwd,
       excludePaths: ['legacy'],
       sockJson: { version: 1 } as SocketJson,
     })
@@ -86,7 +87,7 @@ describe('scanBuildRoots', () => {
 })
 
 describe('discoverBuildRoots', () => {
-  const cwd = '/repo'
+  const cwd = path.resolve('/repo')
 
   it('leaves out cwd itself', async () => {
     const result = await discoverBuildRoots({
@@ -103,23 +104,28 @@ describe('discoverBuildRoots', () => {
       cwd,
       excludePaths: ['legacy'],
       fullByTool: new Map([
-        ['maven', mavenRoots('/repo/legacy/a', '/repo/active')],
-        ['gradle', dirRoots('/repo/legacy/b')],
+        [
+          'maven',
+          mavenRoots(path.join(cwd, 'legacy/a'), path.join(cwd, 'active')),
+        ],
+        ['gradle', dirRoots(path.join(cwd, 'legacy/b'))],
       ]),
       includedByTool: new Map([
-        ['maven', mavenRoots('/repo/active')],
+        ['maven', mavenRoots(path.join(cwd, 'active'))],
         ['gradle', dirRoots()],
       ]),
     })
 
     expect(result).toEqual({
-      excluded: [{ dir: '/repo/legacy', ecosystems: ['gradle', 'maven'] }],
+      excluded: [
+        { dir: path.join(cwd, 'legacy'), ecosystems: ['gradle', 'maven'] },
+      ],
       excludedBuilds: [],
       included: [
         {
-          dir: '/repo/active',
+          dir: path.join(cwd, 'active'),
           ecosystem: 'maven',
-          roots: mavenRoots('/repo/active'),
+          roots: mavenRoots(path.join(cwd, 'active')),
         },
       ],
     })
@@ -184,7 +190,10 @@ describe('setupRecursiveManifestConfig', () => {
     vi
       .mocked(enumerateWorkspaces)
       .mockImplementation(async ({ cwd, entryFile }) => {
-        const rel = path.relative(repo, path.join(cwd, entryFile ?? ''))
+        const rel = path
+          .relative(repo, path.join(cwd, entryFile ?? ''))
+          .split(path.sep)
+          .join('/')
         if (rel in modules && !modules[rel]) {
           return undefined
         }
@@ -201,9 +210,12 @@ describe('setupRecursiveManifestConfig', () => {
       })
   const answer = (answers: Answers) =>
     vi.mocked(select).mockImplementation(async ({ choices, message }) => {
-      asked.push(message)
-      choicesOf.set(message, choices as Choice[])
-      const rule = answers.find(({ 0: start }) => message.startsWith(start))
+      const normalizedMessage = message.replaceAll('\\', '/')
+      asked.push(normalizedMessage)
+      choicesOf.set(normalizedMessage, choices as Choice[])
+      const rule = answers.find(({ 0: start }) =>
+        normalizedMessage.startsWith(start),
+      )
       if (!rule) {
         throw new Error(`Unexpected prompt: ${message}`)
       }
@@ -417,7 +429,7 @@ describe('setupRecursiveManifestConfig', () => {
     await setupRecursiveManifestConfig(file('legacy/tool'), false)
 
     expect(asked[0]).toMatch(
-      /^\S*legacy\/socket\.json skips Maven builds in and beneath \S*legacy, including this directory\. Build the Maven projects here\?$/,
+      /^\S*legacy[\\/]socket\.json skips Maven builds in and beneath \S*legacy, including this directory\. Build the Maven projects here\?$/,
     )
     expect(await readSettings('legacy/tool')).toMatchObject({
       defaults: { manifest: { maven: { disabled: false } } },

@@ -129,10 +129,16 @@ describe('spawnCoana', () => {
     try {
       const { env } = await runFake()
 
-      expect(env['npm_package_dependencies_react']).toBeUndefined()
-      expect(env['npm_config_registry']).toBe(
-        'https://artifactory.example/npm/',
-      )
+      expect(
+        Object.entries(env).find(
+          ([key]) => key.toLowerCase() === 'npm_package_dependencies_react',
+        )?.[1],
+      ).toBeUndefined()
+      expect(
+        Object.entries(env).find(
+          ([key]) => key.toLowerCase() === 'npm_config_registry',
+        )?.[1],
+      ).toBe('https://artifactory.example/npm/')
     } finally {
       delete process.env['npm_package_dependencies_react']
       delete process.env['npm_config_registry']
@@ -155,6 +161,24 @@ describe('spawnCoana', () => {
         SOCKET_ORG_SLUG: 'acme',
         SOCKET_REPO_NAME: 'repo',
       })
+    } finally {
+      resetConfigForTesting()
+    }
+  })
+
+  it('applies caller environment overrides without replacing the Socket token', async () => {
+    overrideCachedConfig(JSON.stringify({ apiToken: 'socket-cli-token' }))
+    try {
+      const apiToken = await resolveDefaultApiToken()
+      const { env } = await runFake({
+        env: {
+          SOCKET_CALLER_USER_AGENT: 'custom-caller-agent/1.0.0',
+          SOCKET_CLI_API_TOKEN: 'user-token',
+        },
+      })
+
+      expect(env['SOCKET_CALLER_USER_AGENT']).toBe('custom-caller-agent/1.0.0')
+      expect(env['SOCKET_CLI_API_TOKEN']).toBe(apiToken)
     } finally {
       resetConfigForTesting()
     }

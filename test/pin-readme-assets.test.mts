@@ -42,6 +42,10 @@ function readmeIn(dir: string): string {
   return readFileSync(path.join(dir, 'README.md'), 'utf8')
 }
 
+function testPinReadmeAssets(name: string, run: () => void): void {
+  it(name, { timeout: process.platform === 'win32' ? 30_000 : 5_000 }, run)
+}
+
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { force: true, recursive: true })
@@ -55,18 +59,21 @@ afterEach(() => {
 describe('pin-readme-assets', () => {
   const base = 'https://raw.githubusercontent.com/SocketDev/socket-cli/v1.2.3/'
 
-  it('pins a relative img src to the release tag raw URL', () => {
-    const dir = stageWorkspace({
-      readme: '<img src="assets/logo.png" alt="logo">\n',
-    })
-    const { status } = runPin(dir)
-    expect(status).toBe(0)
-    expect(readmeIn(dir)).toBe(
-      `<img src="${base}assets/logo.png" alt="logo">\n`,
-    )
-  })
+  testPinReadmeAssets(
+    'pins a relative img src to the release tag raw URL',
+    () => {
+      const dir = stageWorkspace({
+        readme: '<img src="assets/logo.png" alt="logo">\n',
+      })
+      const { status } = runPin(dir)
+      expect(status).toBe(0)
+      expect(readmeIn(dir)).toBe(
+        `<img src="${base}assets/logo.png" alt="logo">\n`,
+      )
+    },
+  )
 
-  it('pins a relative srcset ref', () => {
+  testPinReadmeAssets('pins a relative srcset ref', () => {
     const dir = stageWorkspace({
       readme:
         '<source srcset="assets/dark.png" media="(prefers-color-scheme: dark)">\n',
@@ -77,7 +84,7 @@ describe('pin-readme-assets', () => {
     )
   })
 
-  it('pins a markdown image ref', () => {
+  testPinReadmeAssets('pins a markdown image ref', () => {
     const dir = stageWorkspace({
       readme: '![banner](assets/banner.png)\n',
     })
@@ -85,7 +92,7 @@ describe('pin-readme-assets', () => {
     expect(readmeIn(dir)).toBe(`![banner](${base}assets/banner.png)\n`)
   })
 
-  it('reads the tag from package.json version', () => {
+  testPinReadmeAssets('reads the tag from package.json version', () => {
     const dir = stageWorkspace({
       readme: '![banner](assets/banner.png)\n',
       version: '9.9.9',
@@ -96,7 +103,7 @@ describe('pin-readme-assets', () => {
     )
   })
 
-  it('leaves absolute refs untouched', () => {
+  testPinReadmeAssets('leaves absolute refs untouched', () => {
     const readme =
       '<img src="https://example.com/assets/logo.png">\n' +
       '![ext](https://example.com/assets/banner.png)\n'
@@ -107,7 +114,7 @@ describe('pin-readme-assets', () => {
     expect(stdout).toContain('no relative assets/ refs to pin')
   })
 
-  it('is idempotent — a second run changes nothing', () => {
+  testPinReadmeAssets('is idempotent — a second run changes nothing', () => {
     const dir = stageWorkspace({
       readme:
         '<img src="assets/logo.png">\n' +
@@ -122,7 +129,7 @@ describe('pin-readme-assets', () => {
     expect(stdout).toContain('no relative assets/ refs to pin')
   })
 
-  it('pins a reference-style definition', () => {
+  testPinReadmeAssets('pins a reference-style definition', () => {
     const dir = stageWorkspace({
       readme: '![banner][banner-ref]\n\n[banner-ref]: assets/banner.png\n',
     })
@@ -133,7 +140,7 @@ describe('pin-readme-assets', () => {
     )
   })
 
-  it('pins refs inside blockquotes and list items', () => {
+  testPinReadmeAssets('pins refs inside blockquotes and list items', () => {
     const dir = stageWorkspace({
       readme:
         '> ![quoted](assets/quoted.png)\n' +
@@ -148,49 +155,58 @@ describe('pin-readme-assets', () => {
     )
   })
 
-  it('leaves assets/ refs inside fenced code blocks alone', () => {
-    const readme =
-      '```md\n' +
-      '![example](assets/example.png)\n' +
-      '<img src="assets/example.png">\n' +
-      '```\n'
-    const dir = stageWorkspace({ readme })
-    const { status, stdout } = runPin(dir)
-    expect(status).toBe(0)
-    expect(readmeIn(dir)).toBe(readme)
-    expect(stdout).toContain('no relative assets/ refs to pin')
-  })
+  testPinReadmeAssets(
+    'leaves assets/ refs inside fenced code blocks alone',
+    () => {
+      const readme =
+        '```md\n' +
+        '![example](assets/example.png)\n' +
+        '<img src="assets/example.png">\n' +
+        '```\n'
+      const dir = stageWorkspace({ readme })
+      const { status, stdout } = runPin(dir)
+      expect(status).toBe(0)
+      expect(readmeIn(dir)).toBe(readme)
+      expect(stdout).toContain('no relative assets/ refs to pin')
+    },
+  )
 
-  it('leaves assets/ refs inside inline code spans alone', () => {
-    const readme = 'Point refs like `](assets/x.png)` at the release tag.\n'
-    const dir = stageWorkspace({ readme })
-    const { status, stdout } = runPin(dir)
-    expect(status).toBe(0)
-    expect(readmeIn(dir)).toBe(readme)
-    expect(stdout).toContain('no relative assets/ refs to pin')
-  })
+  testPinReadmeAssets(
+    'leaves assets/ refs inside inline code spans alone',
+    () => {
+      const readme = 'Point refs like `](assets/x.png)` at the release tag.\n'
+      const dir = stageWorkspace({ readme })
+      const { status, stdout } = runPin(dir)
+      expect(status).toBe(0)
+      expect(readmeIn(dir)).toBe(readme)
+      expect(stdout).toContain('no relative assets/ refs to pin')
+    },
+  )
 
-  it('pins real refs while leaving code-block lookalikes alone', () => {
-    const dir = stageWorkspace({
-      readme:
-        '![banner](assets/banner.png)\n' +
-        '\n' +
-        '```html\n' +
-        '<img src="assets/banner.png">\n' +
-        '```\n',
-    })
-    const { status } = runPin(dir)
-    expect(status).toBe(0)
-    expect(readmeIn(dir)).toBe(
-      `![banner](${base}assets/banner.png)\n` +
-        '\n' +
-        '```html\n' +
-        '<img src="assets/banner.png">\n' +
-        '```\n',
-    )
-  })
+  testPinReadmeAssets(
+    'pins real refs while leaving code-block lookalikes alone',
+    () => {
+      const dir = stageWorkspace({
+        readme:
+          '![banner](assets/banner.png)\n' +
+          '\n' +
+          '```html\n' +
+          '<img src="assets/banner.png">\n' +
+          '```\n',
+      })
+      const { status } = runPin(dir)
+      expect(status).toBe(0)
+      expect(readmeIn(dir)).toBe(
+        `![banner](${base}assets/banner.png)\n` +
+          '\n' +
+          '```html\n' +
+          '<img src="assets/banner.png">\n' +
+          '```\n',
+      )
+    },
+  )
 
-  it('pins refs inside GFM tables and footnotes', () => {
+  testPinReadmeAssets('pins refs inside GFM tables and footnotes', () => {
     const dir = stageWorkspace({
       readme:
         '| Logo | Name |\n' +
@@ -208,24 +224,27 @@ describe('pin-readme-assets', () => {
     expect(pinned).toContain(`[^shot]: ![shot](${base}assets/shot.png)`)
   })
 
-  it('pins every ref form in one pass and reports the base', () => {
-    const dir = stageWorkspace({
-      readme:
-        '<picture>\n' +
-        '  <source srcset="assets/dark.png" media="(prefers-color-scheme: dark)">\n' +
-        '  <img src="assets/light.png" alt="Socket CLI">\n' +
-        '</picture>\n' +
-        '\n' +
-        'See ![the flow](assets/flow.png) for details.\n',
-    })
-    const { status, stdout } = runPin(dir)
-    expect(status).toBe(0)
-    expect(stdout).toContain(`pinned relative assets/ refs to ${base}`)
-    const pinned = readmeIn(dir)
-    expect(pinned).not.toContain('"assets/')
-    expect(pinned).not.toContain('](assets/')
-    expect(pinned).toContain(`src="${base}assets/light.png"`)
-    expect(pinned).toContain(`srcset="${base}assets/dark.png"`)
-    expect(pinned).toContain(`](${base}assets/flow.png)`)
-  })
+  testPinReadmeAssets(
+    'pins every ref form in one pass and reports the base',
+    () => {
+      const dir = stageWorkspace({
+        readme:
+          '<picture>\n' +
+          '  <source srcset="assets/dark.png" media="(prefers-color-scheme: dark)">\n' +
+          '  <img src="assets/light.png" alt="Socket CLI">\n' +
+          '</picture>\n' +
+          '\n' +
+          'See ![the flow](assets/flow.png) for details.\n',
+      })
+      const { status, stdout } = runPin(dir)
+      expect(status).toBe(0)
+      expect(stdout).toContain(`pinned relative assets/ refs to ${base}`)
+      const pinned = readmeIn(dir)
+      expect(pinned).not.toContain('"assets/')
+      expect(pinned).not.toContain('](assets/')
+      expect(pinned).toContain(`src="${base}assets/light.png"`)
+      expect(pinned).toContain(`srcset="${base}assets/dark.png"`)
+      expect(pinned).toContain(`](${base}assets/flow.png)`)
+    },
+  )
 })

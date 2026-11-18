@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest'
 import { resolveBazelManifestSettings } from './bazel-socket-json-trust.mts'
 import { getDefaultSocketJson } from '../../../utils/socket-json.mts'
 
+const repo = path.join(path.parse(process.cwd()).root, 'repo')
+
 function resolve(
   config: Record<string, string> = {},
   cli: Record<string, string> = {},
@@ -22,7 +24,7 @@ function resolve(
       bazelRc: cli.bazelRc,
       out: cli.out,
     },
-    cwd: '/repo',
+    cwd: repo,
     socketJson,
     trustSocketJson,
   })
@@ -35,7 +37,7 @@ describe('resolveBazelManifestSettings', () => {
       data: {
         bazel: undefined,
         bazelFlags: '',
-        out: '/repo/.socket/bazel-manifests',
+        out: path.join(repo, '.socket', 'bazel-manifests'),
         socketJsonDefaults: [],
       },
     })
@@ -95,18 +97,18 @@ describe('resolveBazelManifestSettings', () => {
     })
     expect(resolve({ out: '../outside' }, { out: 'inside' })).toMatchObject({
       ok: true,
-      data: { out: '/repo/inside' },
+      data: { out: path.join(repo, 'inside') },
     })
     expect(resolve({ out: '../outside' }, {}, true)).toMatchObject({
       ok: true,
-      data: { out: '/outside' },
+      data: { out: path.join(path.dirname(repo), 'outside') },
     })
   })
 
   it('allows an in-project socket.json output path without trust', () => {
     expect(resolve({ out: '.cache/manifests' })).toMatchObject({
       ok: true,
-      data: { out: '/repo/.cache/manifests' },
+      data: { out: path.join(repo, '.cache', 'manifests') },
     })
   })
 

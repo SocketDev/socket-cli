@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
-} from './bazel-workspace-detect.mts'
+} from './workspace-detect.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -24,7 +24,7 @@ const FIXTURES = path.join(
   'manifest-bazel',
 )
 
-describe('bazel-workspace-detect', () => {
+describe('workspace-detect', () => {
   describe('detectWorkspaceMode', () => {
     it('detects bzlmod-only repo', () => {
       const mode = detectWorkspaceMode(path.join(FIXTURES, 'bzlmod-only'))

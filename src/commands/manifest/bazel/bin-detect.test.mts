@@ -10,8 +10,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { resolveBazelBinary } from './bazel-bin-detect.mts'
-import { getBazelEnvironment } from './bazel-process.mts'
+import { resolveBazelBinary } from './bin-detect.mts'
+import { getBazelEnvironment } from './process.mts'
 
 describe('resolveBazelBinary', () => {
   let cwd: string

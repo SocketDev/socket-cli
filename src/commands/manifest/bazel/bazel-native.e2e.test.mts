@@ -16,18 +16,15 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { resolveBazelBinary } from './bazel-bin-detect.mts'
-import {
-  cleanUpBazelOutputRoot,
-  makeBazelOutputUserRoot,
-} from './bazel-cleanup.mts'
-import { ensureJavaOnPath } from './bazel-java-shim.mts'
+import { resolveBazelBinary } from './bin-detect.mts'
+import { cleanUpBazelOutputRoot, makeBazelOutputUserRoot } from './cleanup.mts'
+import { ensureJavaOnPath } from './java-shim.mts'
 import {
   BazelTimeoutError,
   getBazelEnvironment,
   spawnBazel,
-} from './bazel-process.mts'
-import { provisionPythonShim } from './bazel-python-shim.mts'
+} from './process.mts'
+import { provisionPythonShim } from './python-shim.mts'
 import { extractBazelToMaven } from './extract_bazel_to_maven.mts'
 
 const FIXTURES = path.resolve(
@@ -41,7 +38,7 @@ const CLI =
   process.env['SOCKET_BAZEL_TEST_CLI'] ??
   path.resolve(import.meta.dirname, '../../../../bin/cli.js')
 
-describe.skipIf(process.env['SOCKET_BAZEL_INTEGRATION'] !== '1')(
+describe.skipIf(process.env['SOCKET_BAZEL_E2E'] !== '1')(
   'native Bazel Maven extraction',
   () => {
     let scratch: string
@@ -201,7 +198,7 @@ const SLOW_REPOSITORY_RULE = `def _slow_repo_impl(ctx):
 slow_repo = repository_rule(implementation = _slow_repo_impl)
 `
 
-describe.skipIf(process.env['SOCKET_BAZEL_INTEGRATION'] !== '1')(
+describe.skipIf(process.env['SOCKET_BAZEL_E2E'] !== '1')(
   'native Bazel process supervision',
   () => {
     let bin: string

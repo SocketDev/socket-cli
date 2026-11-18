@@ -146,7 +146,7 @@ describe('--exclude-paths anchoring', () => {
 let dotnetCase = 0
 function dotnetDir(): string {
   dotnetCase += 1
-  return path.join(path.sep, 'repo', `dotnet-${dotnetCase}`)
+  return path.resolve(path.sep, 'repo', `dotnet-${dotnetCase}`)
 }
 
 // Answers `dotnet --version` with `sdk`, then runs the tool, which writes

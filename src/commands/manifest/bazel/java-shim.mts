@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 
-import { getBazelEnvironmentValue } from './bazel-process.mts'
+import { getBazelEnvironmentValue } from './process.mts'
 import { InputError } from '../../../utils/errors.mts'
 
 export function ensureJavaOnPath(env: NodeJS.ProcessEnv, cwd: string): void {

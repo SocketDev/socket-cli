@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { validateOutputBase } from './bazel-output-base-check.mts'
+import { validateOutputBase } from './output-base-check.mts'
 
 describe('validateOutputBase', () => {
   let tmp: string
@@ -36,20 +36,21 @@ describe('validateOutputBase', () => {
     expect(() => validateOutputBase('../../etc', tmp)).toThrow(/'\.\.'/)
   })
 
-  it('throws InputError when existing path is not writable', () => {
-    // Run only as non-root where chmod actually restricts access.
-    if (process.getuid?.() === 0) {
-      return
-    }
-    const ro = path.join(tmp, 'readonly')
-    mkdirSync(ro)
-    chmodSync(ro, 0o555)
-    try {
-      expect(() => validateOutputBase(ro, '/anywhere')).toThrow(/not writable/)
-    } finally {
-      chmodSync(ro, 0o755)
-    }
-  })
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'throws InputError when existing path is not writable',
+    () => {
+      const ro = path.join(tmp, 'readonly')
+      mkdirSync(ro)
+      chmodSync(ro, 0o555)
+      try {
+        expect(() => validateOutputBase(ro, '/anywhere')).toThrow(
+          /not writable/,
+        )
+      } finally {
+        chmodSync(ro, 0o755)
+      }
+    },
+  )
 
   it('accepts an absolute path inside /tmp when it contains no `..` segments', () => {
     // The tmp dir itself is a writable absolute path with no `..`.

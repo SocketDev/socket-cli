@@ -4,8 +4,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { ensureJavaOnPath } from './bazel-java-shim.mts'
-import { findBazelExecutable, getBazelEnvironment } from './bazel-process.mts'
+import { ensureJavaOnPath } from './java-shim.mts'
+import { findBazelExecutable, getBazelEnvironment } from './process.mts'
 
 const java = await findBazelExecutable(
   'java',

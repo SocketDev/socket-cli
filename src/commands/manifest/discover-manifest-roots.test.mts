@@ -457,7 +457,7 @@ async function unreadable(): Promise<undefined> {
 }
 
 describe('isRootCovered', () => {
-  const root = { dir: '/repo', entryFile: 'App.slnx' }
+  const root = { dir: path.resolve('/repo'), entryFile: 'App.slnx' }
   const covers = (
     covered: string[],
     list: Parameters<typeof isRootCovered>[4],
@@ -465,12 +465,18 @@ describe('isRootCovered', () => {
   ) => isRootCovered(filesCovered(covered), 'dotnet', r, {}, list)
 
   it('covers a solution once every project it builds is covered', async () => {
-    const covered = ['/repo/src/A/A.csproj', '/repo/src/B/B.csproj']
+    const covered = [
+      path.join(root.dir, 'src/A/A.csproj'),
+      path.join(root.dir, 'src/B/B.csproj'),
+    ]
     expect(await covers(covered, listing(covered))).toBe(true)
     expect(
       await covers(
         covered,
-        listing(['/repo/src/A/A.csproj', '/repo/src/C/C.csproj']),
+        listing([
+          path.join(root.dir, 'src/A/A.csproj'),
+          path.join(root.dir, 'src/C/C.csproj'),
+        ]),
       ),
     ).toBe(false)
   })

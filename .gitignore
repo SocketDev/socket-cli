@@ -21,7 +21,6 @@
 !/.github/actions/repo/cache-downloads/index.mts
 !/.github/scripts/pin-readme-assets.mjs
 !/.github/scripts/smoke-test-tarball.sh
-!/.github/workflows/bazel-windows.yml
 !/.github/workflows/ci.yml
 !/.github/workflows/e2e-tests.yml
 !/.github/workflows/publish-npm.yml
@@ -41,6 +40,7 @@
 !/scripts/lib/
 !/scripts/release/
 !/scripts/rollup/
+!/scripts/setup/
 !/scripts/test/
 !/scripts/test/terminal-report.mts
 !/scripts/test/snapshots.mts
@@ -402,8 +402,8 @@
 !/scripts/check-commit-pii.js
 !/scripts/check.mts
 !/scripts/ci/check-actions.mts
-!/scripts/ci/setup-node.mjs
-!/scripts/ci/setup-uv.mts
+!/scripts/setup/node.mts
+!/scripts/setup/uv.mts
 !/scripts/ci/upload-artifact.mjs
 !/scripts/constants.js
 !/scripts/lib/is-main-module.mts

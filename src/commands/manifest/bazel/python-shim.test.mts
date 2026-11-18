@@ -15,8 +15,8 @@ import {
   findBazelExecutable,
   getBazelEnvironment,
   getBazelEnvironmentValue,
-} from './bazel-process.mts'
-import { provisionPythonShim } from './bazel-python-shim.mts'
+} from './process.mts'
+import { provisionPythonShim } from './python-shim.mts'
 import { isStandaloneSea } from '../../../sea/runtime.mts'
 
 vi.mock('../../../sea/runtime.mts', () => ({ isStandaloneSea: vi.fn() }))
