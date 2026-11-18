@@ -8,9 +8,9 @@ import {
   parseSnapshotArgs,
   runSnapshotWorkflow,
   terminalSnapshotArgs,
-} from '../../../../scripts/test/snapshots.mts'
+} from '../../../../scripts/refresh/snapshots.mts'
 
-import type { SnapshotWorkflowDependencies } from '../../../../scripts/test/snapshots.mts'
+import type { SnapshotWorkflowDependencies } from '../../../../scripts/refresh/snapshots.mts'
 
 describe('native snapshot runner', () => {
   it('parses check and update invocations', () => {
@@ -37,7 +37,7 @@ describe('native snapshot runner', () => {
       'Unknown snapshot dependency',
     )
     expect(() => parseSnapshotArgs(['--update', '--dep'])).toThrow(
-      'pnpm snapshots:update:dep socket-patch',
+      'pnpm snapshots:refresh:dep socket-patch',
     )
     expect(() => parseSnapshotArgs(['--update', '--dep='])).toThrow(
       'Provide a dependency name',
@@ -95,7 +95,8 @@ describe('native snapshot runner', () => {
       'run',
       '--config',
       '.config/vitest.terminal.config.mts',
-      'test/unit/utils/self-update.terminal.test.mts',
+      'test/e2e/termless.test.mts',
+      'test/termless/utils/self-update.test.mts',
     ])
     expect(terminalSnapshotArgs(true)).toEqual([
       ...terminalSnapshotArgs(false),

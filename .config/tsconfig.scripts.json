@@ -16,6 +16,7 @@
     "../scripts/*.mts",
     "../scripts/lib/**/*.mts",
     "../scripts/setup/**/*.mts",
+    "../scripts/refresh/**/*.mts",
     "../scripts/test/**/*.mts",
     "../src/sea/version.mts"
   ],

@@ -8,14 +8,14 @@ import {
   captureCheckpoint,
   createRecording,
   expectTerminalAnimation,
-} from '../../lib/terminal/animation.mts'
+} from '../../lib/termless/animation.mts'
 
 const binary = process.env['SOCKET_CLI_NATIVE_TEST_BINARY']
 if (!binary) {
   throw new Error('Use pnpm test:native to run native CLI tests')
 }
 
-const snapshotDir = path.join(process.cwd(), 'test/native-snapshots')
+const snapshotDir = path.join(process.cwd(), 'test/snapshots/termless')
 const artifactDir =
   process.env['SOCKET_CLI_NATIVE_TEST_ARTIFACTS'] ??
   path.join(process.cwd(), 'build/native-test-artifacts')
@@ -57,7 +57,7 @@ describe('native blessed terminal interfaces', () => {
       .toBe('exit=0')
     normalizer.flush()
     await expectTerminalAnimation(createRecording([checkpoint]), {
-      flow: 'native-analytics-tui',
+      flow: 'analytics',
       snapshotsDir: snapshotDir,
       artifactsDir: artifactDir,
       expectedSequence: ['charts'],
@@ -81,7 +81,7 @@ describe('native blessed terminal interfaces', () => {
       .toBe('exit=0')
     normalizer.flush()
     await expectTerminalAnimation(createRecording([checkpoint]), {
-      flow: 'native-audit-log-tui',
+      flow: 'audit-log',
       snapshotsDir: snapshotDir,
       artifactsDir: artifactDir,
       expectedSequence: ['table'],
@@ -105,7 +105,7 @@ describe('native blessed terminal interfaces', () => {
       .toBe('exit=0')
     normalizer.flush()
     await expectTerminalAnimation(createRecording([checkpoint]), {
-      flow: 'native-threat-feed-tui',
+      flow: 'threat-feed',
       snapshotsDir: snapshotDir,
       artifactsDir: artifactDir,
       expectedSequence: ['table'],

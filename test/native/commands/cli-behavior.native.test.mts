@@ -11,14 +11,14 @@ import {
   captureCheckpoint,
   createRecording,
   expectTerminalAnimation,
-} from '../../lib/terminal/animation.mts'
+} from '../../lib/termless/animation.mts'
 
 const binary = process.env['SOCKET_CLI_NATIVE_TEST_BINARY']
 
 describe('native CLI behavior', () => {
   it('reads an explicit config value', async () => {
     await captureFlow({
-      flow: 'behavior-config-get',
+      flow: 'config-get',
       checkpointName: 'output',
       args: ['config', 'get', 'defaultOrg'],
       expectedText: 'native-fixture',
@@ -29,7 +29,7 @@ describe('native CLI behavior', () => {
 
   it('lists an explicit config without persisting it', async () => {
     await captureFlow({
-      flow: 'behavior-config-list',
+      flow: 'config-list',
       checkpointName: 'output',
       args: ['config', 'list'],
       expectedText: 'native-fixture',
@@ -41,7 +41,7 @@ describe('native CLI behavior', () => {
 
   it('rejects an unknown config key', async () => {
     await captureFlow({
-      flow: 'behavior-config-invalid-key',
+      flow: 'config-invalid-key',
       checkpointName: 'output',
       args: ['config', 'get', 'invalid-native-key'],
       expectedText: 'invalid config key',
@@ -51,7 +51,7 @@ describe('native CLI behavior', () => {
 
   it('shows a missing socket.json error in an isolated directory', async () => {
     await captureFlow({
-      flow: 'behavior-json-missing',
+      flow: 'json-missing',
       checkpointName: 'output',
       args: ['json'],
       expectedText: 'Not found:',
@@ -61,7 +61,7 @@ describe('native CLI behavior', () => {
 
   it('prints a seeded socket.json fixture', async () => {
     await captureFlow({
-      flow: 'behavior-json-seeded',
+      flow: 'json-seeded',
       checkpointName: 'output',
       args: ['json'],
       expectedText: '"projectIgnorePaths"',
@@ -77,7 +77,7 @@ describe('native CLI behavior', () => {
 
   it('validates wrapper mode before applying the dry-run guard', async () => {
     await captureFlow({
-      flow: 'behavior-wrapper-on-dry-run',
+      flow: 'wrapper-on-dry-run',
       checkpointName: 'output',
       args: ['wrapper', 'on', '--dry-run'],
       expectedText: '[DryRun]',
@@ -108,8 +108,8 @@ describe('native CLI behavior', () => {
     fixture.normalizer.flush()
     const canceled = await captureCheckpoint(fixture.terminal, 'canceled')
     await expectTerminalAnimation(createRecording([menu, selected, canceled]), {
-      flow: 'behavior-manifest-setup',
-      snapshotsDir: path.join(process.cwd(), 'test/native-snapshots'),
+      flow: 'manifest-setup',
+      snapshotsDir: path.join(process.cwd(), 'test/snapshots/termless'),
       artifactsDir:
         process.env['SOCKET_CLI_NATIVE_TEST_ARTIFACTS'] ??
         path.join(process.cwd(), 'build/native-test-artifacts'),

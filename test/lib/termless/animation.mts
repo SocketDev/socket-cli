@@ -9,7 +9,7 @@ import {
 } from '@termless/core'
 import { expect } from 'vitest'
 
-import { optimizeSvg } from '../optimize-svg.mts'
+import { optimizeSvg } from './svgo.mts'
 
 import type {
   AnimationFrame,
@@ -189,7 +189,7 @@ export function renderCaptured(
 
 // Pinned Termless 0.11.0 separates keyframe blocks with invalid semicolons,
 // which browsers use to discard later frames; repair only that generated CSS.
-export function createTerminalAnimationSvg(
+export function createTermlessAnimationSvg(
   frames: AnimationFrame[],
   options?: AnimationOptions,
 ): string {
@@ -331,7 +331,7 @@ export async function expectTerminalAnimation(
     if (animationFrames.length > 1) {
       await writeFile(
         path.join(flowDir, 'animation.svg'),
-        createTerminalAnimationSvg(animationFrames),
+        createTermlessAnimationSvg(animationFrames),
       )
     }
     await writeFile(
@@ -351,6 +351,11 @@ export async function expectTerminalAnimation(
   }
   const isSnapshotUpdate =
     process.env['SOCKET_CLI_NATIVE_TEST_UPDATE_SNAPSHOTS'] === 'true'
+  const testPath = expect.getState().testPath
+  if (!testPath) {
+    throw new Error('Terminal snapshots require an active Vitest test file')
+  }
+  const owner = path.basename(testPath, '.test.mts')
   const baselineRasterizer = !isSnapshotUpdate
     ? await selectRasterizer('resvg')
     : undefined
@@ -359,7 +364,7 @@ export async function expectTerminalAnimation(
       checkpoints.map(async checkpoint => {
         const svgPath = path.join(
           options.snapshotsDir,
-          `${options.flow}.${checkpoint.name}.svg`,
+          `${owner}.${options.flow}${checkpoints.length > 1 ? `.${checkpoint.name}` : ''}.svg`,
         )
         if (baselineRasterizer) {
           const expectedSvg = await readFile(svgPath, 'utf8')

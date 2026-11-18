@@ -9,7 +9,7 @@ import {
   persistNativeSigningReceipt,
   prepareNativeTestBinary,
 } from './apple-signing.mts'
-import { assertSnapshotDependenciesCurrent } from './snapshot-dependencies.mts'
+import { assertSnapshotDependenciesCurrent } from '../refresh/snapshots/dependencies.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 

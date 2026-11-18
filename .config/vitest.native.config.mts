@@ -2,12 +2,15 @@ import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'vitest/config'
 
+import { resolveSnapshotPath } from './snapshot-path.mts'
+
 export default defineConfig({
   root: fileURLToPath(new URL('../', import.meta.url)),
   resolve: {
     preserveSymlinks: false,
   },
   test: {
+    resolveSnapshotPath,
     // These tests run a native executable and may invoke npm exec/npx or pnpm
     // dlx. Serialize files to protect both package managers' shared caches.
     fileParallelism: false,

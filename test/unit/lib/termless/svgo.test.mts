@@ -1,7 +1,7 @@
 import { selectRasterizer } from '@termless/core'
 import { describe, expect, it } from 'vitest'
 
-import { optimizeSvg } from '../../lib/optimize-svg.mts'
+import { optimizeSvg } from '../../../lib/termless/svgo.mts'
 
 const extractStyle = (svg: string) =>
   svg.match(/<style>([\s\S]*?)<\/style>/)?.[1]

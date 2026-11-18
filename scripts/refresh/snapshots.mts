@@ -7,11 +7,11 @@ import {
   SNAPSHOT_DEPENDENCIES,
   assertSnapshotDependenciesCurrent,
   normalizeSnapshotDependencyName,
-} from './snapshot-dependencies.mts'
+} from './snapshots/dependencies.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 
-import type { SnapshotDependencyName } from './snapshot-dependencies.mts'
+import type { SnapshotDependencyName } from './snapshots/dependencies.mts'
 import type { ScriptMeta } from '../lib/run-main.mts'
 import type { SpawnSyncOptions } from 'node:child_process'
 
@@ -31,8 +31,8 @@ export interface SnapshotOptions {
 
 function missingSnapshotDependencyError(): Error {
   return new Error(
-    'Provide a dependency name. Usage: pnpm snapshots:update:dep <name>. ' +
-      'Examples: pnpm snapshots:update:dep coana, pnpm snapshots:update:dep socket-patch, or pnpm snapshots:update:dep patch. ' +
+    'Provide a dependency name. Usage: pnpm snapshots:refresh:dep <name>. ' +
+      'Examples: pnpm snapshots:refresh:dep coana, pnpm snapshots:refresh:dep socket-patch, or pnpm snapshots:refresh:dep patch. ' +
       'Socket Python CLI still needs a snapshot mapping. ' +
       `Currently mapped: ${Object.keys(SNAPSHOT_DEPENDENCIES).join(', ')}, socket-patch.`,
   )
@@ -94,7 +94,8 @@ export function terminalSnapshotArgs(update: boolean): string[] {
     'run',
     '--config',
     '.config/vitest.terminal.config.mts',
-    'test/unit/utils/self-update.terminal.test.mts',
+    'test/e2e/termless.test.mts',
+    'test/termless/utils/self-update.test.mts',
     ...(update ? ['--update'] : []),
   ]
 }
@@ -273,14 +274,14 @@ export async function main(): Promise<number> {
 const SCRIPT_META: ScriptMeta = {
   describe: 'builds, runs, and reports native terminal snapshot tests',
   help: `Usage: pnpm snapshots [--update|-u]
-       pnpm snapshots:update
-       pnpm snapshots:update:dep <name>  (coana, socket-patch, patch)
+       pnpm snapshots:termless:refresh
+       pnpm snapshots:refresh:dep <name>  (coana, socket-patch, patch)
 
   Builds the native CLI, runs the focused terminal screenshot tests, and writes
   a self-contained HTML report into a fresh build/native-test-artifacts folder.
   Pass --update or -u to update the native screenshot baselines. Use the dep
   command to rebuild and update only snapshots affected by a pinned tool, for
-  example: pnpm snapshots:update:dep socket-patch.`,
+  example: pnpm snapshots:refresh:dep socket-patch.`,
 }
 
 if (isMainModule(import.meta.url)) {

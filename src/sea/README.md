@@ -59,7 +59,7 @@ Use the executable's `--version` output and the adjacent manifest's recorded Soc
 
 Use Node 26.13.0 and build the prototype on the host OS before running its native tests:
 
-For the screenshot baseline workflow, run `pnpm snapshots` to rebuild and verify the focused screenshot suites, or `pnpm snapshots:update` (equivalent to `pnpm snapshots -u`) to update baselines. Both commands print the self-contained report path.
+Run `pnpm snapshots` to verify the terminal screenshots and print the HTML report path. Use `pnpm snapshots:termless:refresh` to refresh the images, `pnpm snapshots:vite:refresh` for Vitest unit snapshots, or `pnpm snapshots:refresh` for both.
 
 ```sh
 pnpm build:sea -- --prototype
