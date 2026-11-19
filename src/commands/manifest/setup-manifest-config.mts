@@ -1,12 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { debugDir } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { input, select } from '@socketsecurity/registry/lib/prompts'
-
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
+import { debugDir } from '../../utils/debug.mts'
+import { logger } from '../../utils/logger.mts'
+import { input, select } from '../../utils/prompts.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,

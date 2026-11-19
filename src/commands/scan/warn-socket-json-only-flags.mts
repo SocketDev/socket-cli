@@ -1,5 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { logger } from '../../utils/logger.mts'
 import { camelToKebab } from '../../utils/strings.mts'
 import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
 

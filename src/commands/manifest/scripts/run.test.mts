@@ -4,15 +4,14 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import {
   enumerateWorkspaces,
   listDotnetEntryProjects,
   runManifestScript,
 } from './run.mts'
+import { spawn } from '../../../utils/spawn.mts'
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../../../utils/spawn.mts', () => ({
   spawn: vi.fn(async () => ({ code: 0, stderr: '', stdout: '' })),
 }))
 // The Maven extension jar and the dotnet tool exist only in a built checkout.

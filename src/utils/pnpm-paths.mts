@@ -15,8 +15,7 @@
  * - Prevents repeated PATH searches
  */
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { logger } from './logger.mts'
 import { findBinPathDetailsSync } from './path-resolve.mts'
 
 function exitWithBinPathError(binName: string): never {

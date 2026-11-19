@@ -5,13 +5,9 @@ const Module = require('node:module')
 const path = require('node:path')
 const vm = require('node:vm')
 
-const { isValidPackageName } = require('@socketsecurity/registry/lib/packages')
-const {
-  isRelative,
-  normalizePath,
-} = require('@socketsecurity/registry/lib/path')
-
 const { findUpSync } = require('./fs')
+const { isValidPackageName } = require('../lib/packages.js')
+const { isRelative, normalizePath } = require('../lib/path.js')
 
 const { createRequire, isBuiltin } = Module
 

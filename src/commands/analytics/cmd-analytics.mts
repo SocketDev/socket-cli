@@ -1,5 +1,3 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleAnalytics } from './handle-analytics.mts'
 import constants, {
   FLAG_JSON,
@@ -9,6 +7,7 @@ import constants, {
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,

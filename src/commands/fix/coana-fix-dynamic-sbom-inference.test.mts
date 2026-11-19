@@ -2,9 +2,8 @@ import { promises as fs } from 'node:fs'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { coanaFix } from './coana-fix.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { FixConfig } from './types.mts'
 

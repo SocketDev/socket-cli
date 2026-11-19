@@ -1,14 +1,13 @@
 import { createRequire } from 'node:module'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants, {
   FLAG_JSON,
   OUTPUT_JSON,
   OUTPUT_MARKDOWN,
 } from '../../constants.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { msAtHome } from '../../utils/ms-at-home.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
@@ -244,6 +243,7 @@ async function outputWithBlessed(
   })
 
   const table: any = new TableWidget({
+    screen,
     keys: 'true',
     fg: 'white',
     selectedFg: 'white',
@@ -265,6 +265,7 @@ async function outputWithBlessed(
 
   const BoxWidget = /*@__PURE__*/ require('blessed/lib/widgets/box.js')
   const tipsBox: Widgets.BoxElement = new BoxWidget({
+    screen,
     bottom: detailsBoxHeight, // sits just above the details box
     height: tipsBoxHeight,
     width: '100%',
@@ -276,6 +277,7 @@ async function outputWithBlessed(
     content: `↑/↓: Move    Enter: Select    q/ESC: Quit`,
   })
   const detailsBox: Widgets.BoxElement = new BoxWidget({
+    screen,
     bottom: 0,
     height: detailsBoxHeight,
     width: '100%',

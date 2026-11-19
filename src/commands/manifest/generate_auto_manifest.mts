@@ -1,7 +1,5 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
@@ -21,6 +19,7 @@ import {
   SOCKET_JSON,
 } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
+import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'

@@ -1,94 +1,76 @@
 import { existsSync } from 'node:fs'
+import { copyFile, mkdtemp, rm } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 
-import trash from 'trash'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import { JsonContent } from '@socketsecurity/registry/lib/fs'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { beforeEach, describe, expect, it, onTestFinished } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
-  FLAG_SILENT,
+  PACKAGE_JSON,
   PNPM,
   PNPM_LOCK_YAML,
+  PNPM_WORKSPACE_YAML,
 } from '../../../src/constants.mts'
 import { spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { JsonContent } from '../../utils/fs.mts'
+import { readPackageJson } from '../../utils/packages.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
-const pnpm8FixtureDir = path.join(fixtureBaseDir, 'pnpm8')
-const pnpm9FixtureDir = path.join(fixtureBaseDir, 'pnpm9')
+async function prepareFixture(version: 'pnpm8' | 'pnpm9') {
+  const source = path.join(fixtureBaseDir, version)
+  const cwd = await mkdtemp(
+    path.join(os.tmpdir(), `socket-optimize-${version}-`),
+  )
+  onTestFinished(() => rm(cwd, { force: true, recursive: true }))
 
-async function cleanupFixtureInstallArtifacts(
-  fixtureDir: string,
-): Promise<void> {
-  const staleDirs = [
-    path.join(fixtureDir, '.cache'),
-    path.join(fixtureDir, 'node_modules'),
-  ]
+  await Promise.all(
+    [PACKAGE_JSON, PNPM_LOCK_YAML, PNPM_WORKSPACE_YAML].map(filename =>
+      copyFile(path.join(source, filename), path.join(cwd, filename)),
+    ),
+  )
 
-  try {
-    await Promise.all(
-      staleDirs.filter(dir => existsSync(dir)).map(dir => trash(dir)),
-    )
-  } catch {
-    // Ignore cleanup errors.
+  // Keep the pnpm executable outside the tree its install command rewrites.
+  const fixture = await readPackageJson(path.join(cwd, PACKAGE_JSON))
+  const pnpmVersion = fixture.dependencies!.pnpm
+  const binPath = path.resolve(
+    testPath,
+    '../scripts/test/tools',
+    version,
+    'node_modules/.bin',
+  )
+  const env = {
+    ...process.env,
+    CI: '1',
+    PATH: [binPath, process.env.PATH].join(path.delimiter),
   }
+  const pnpm = path.join(
+    binPath,
+    process.platform === 'win32' ? 'pnpm.cmd' : PNPM,
+  )
+  const { stdout } = await spawn(pnpm, ['--version'], { cwd, env })
+  expect(stdout.trim()).toBe(pnpmVersion)
+  await spawn(pnpm, ['install', '--no-frozen-lockfile'], { cwd, env })
+  return { cwd, env }
 }
 
 describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
   const { binCliPath } = constants
 
   describe('pnpm v8', () => {
-    const pnpm8BinPath = path.join(pnpm8FixtureDir, 'node_modules', '.bin')
-
+    let fixture: Awaited<ReturnType<typeof prepareFixture>>
     beforeEach(async () => {
-      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml)
-      // and remove untracked install artifacts left by prior runs.
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm8FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-      await cleanupFixtureInstallArtifacts(pnpm8FixtureDir)
-      // Ensure pnpm v8 is installed in the fixture.
-      // Skip if pnpm is not available globally (e.g., Windows CI).
-      try {
-        await spawn(
-          PNPM,
-          [
-            'install',
-            FLAG_SILENT,
-            '--config.confirmModulesPurge=false',
-            '--no-frozen-lockfile',
-          ],
-          {
-            cwd: pnpm8FixtureDir,
-            stdio: 'ignore',
-          },
-        )
-      } catch {}
-    })
-
-    afterEach(async () => {
-      // Reset tracked fixture files and remove install artifacts.
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm8FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-      await cleanupFixtureInstallArtifacts(pnpm8FixtureDir)
-    })
+      fixture = await prepareFixture('pnpm8')
+    }, 120_000)
 
     it(
       'should optimize packages with pnpm v8',
       { timeout: 30_000 },
       async () => {
-        const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
+        const { cwd, env } = fixture
+        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
         const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
         // Check abab is the expected version..
@@ -96,14 +78,10 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
         const { code, stderr, stdout } = await spawnSocketCli(
           binCliPath,
-          ['optimize', pnpm8FixtureDir, FLAG_CONFIG, '{}'],
+          ['optimize', cwd, FLAG_CONFIG, '{}'],
           {
-            cwd: pnpm8FixtureDir,
-            env: {
-              ...process.env,
-              CI: '1',
-              PATH: `${pnpm8BinPath}:${constants.ENV.PATH || process.env.PATH}`,
-            },
+            cwd,
+            env,
           },
         )
 
@@ -133,16 +111,17 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
             ababOverride === '@socketregistry/abab@^1.0.8',
         ).toBe(true)
         // Check that pnpm-lock.yaml exists and was modified.
-        const lockPath = path.join(pnpm8FixtureDir, PNPM_LOCK_YAML)
+        const lockPath = path.join(cwd, PNPM_LOCK_YAML)
         expect(existsSync(lockPath)).toBe(true)
       },
     )
 
     it(
       'should handle --prod flag with pnpm v8',
-      { timeout: 10_000 },
+      { timeout: 60_000 },
       async () => {
-        const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
+        const { cwd, env } = fixture
+        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
         const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
         // Check abab is in dependencies (production), axios in devDependencies.
@@ -150,82 +129,42 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
         expect(pkgJsonBefore.devDependencies?.axios).toBe('1.3.2')
 
         // Use dry-run to avoid hanging issues with npm ls.
-        const { code, stdout } = await spawnSocketCli(
+        const { code, stderr, stdout } = await spawnSocketCli(
           binCliPath,
           [
             'optimize',
-            pnpm8FixtureDir,
+            cwd,
             '--prod',
             FLAG_DRY_RUN,
             FLAG_CONFIG,
             '{"apiToken":"fake-token"}',
           ],
           {
-            cwd: pnpm8FixtureDir,
-            env: {
-              ...process.env,
-              CI: '1',
-              PATH: `${pnpm8BinPath}:${constants.ENV.PATH || process.env.PATH}`,
-            },
+            cwd,
+            env,
             timeout: 10_000,
           },
         )
 
         // With dry-run, should exit early.
         expect(stdout).toContain('[DryRun]: Bailing now')
-        expect(code, 'exit code should be 0').toBe(0)
+        expect(code, stderr).toBe(0)
       },
     )
   })
 
   describe('pnpm v9', () => {
-    const pnpm9BinPath = path.join(pnpm9FixtureDir, 'node_modules', '.bin')
-
+    let fixture: Awaited<ReturnType<typeof prepareFixture>>
     beforeEach(async () => {
-      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml)
-      // and remove untracked install artifacts left by prior runs.
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm9FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-      await cleanupFixtureInstallArtifacts(pnpm9FixtureDir)
-      // Ensure pnpm v9 is installed in the fixture.
-      // Skip if pnpm is not available globally (e.g., Windows CI).
-      try {
-        await spawn(
-          PNPM,
-          [
-            'install',
-            FLAG_SILENT,
-            '--config.confirmModulesPurge=false',
-            '--no-frozen-lockfile',
-          ],
-          {
-            cwd: pnpm9FixtureDir,
-            stdio: 'ignore',
-          },
-        )
-      } catch {}
-    })
-
-    afterEach(async () => {
-      // Reset tracked fixture files and remove install artifacts.
-      try {
-        await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-          cwd: pnpm9FixtureDir,
-          stdio: 'ignore',
-        })
-      } catch {}
-      await cleanupFixtureInstallArtifacts(pnpm9FixtureDir)
-    })
+      fixture = await prepareFixture('pnpm9')
+    }, 120_000)
 
     it(
       'should optimize packages with pnpm v9',
       { timeout: 30_000 },
       async () => {
-        const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
+        const { cwd, env } = fixture
+        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
         const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
         // Check abab is the expected version.
@@ -233,14 +172,10 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
         const { code, stderr, stdout } = await spawnSocketCli(
           binCliPath,
-          ['optimize', pnpm9FixtureDir, FLAG_CONFIG, '{}'],
+          ['optimize', cwd, FLAG_CONFIG, '{}'],
           {
-            cwd: pnpm9FixtureDir,
-            env: {
-              ...process.env,
-              CI: '1',
-              PATH: `${pnpm9BinPath}:${constants.ENV.PATH || process.env.PATH}`,
-            },
+            cwd,
+            env,
           },
         )
 
@@ -253,7 +188,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
         expect(stdout, 'should show overrides applied').toContain(
           'Socket.dev optimized overrides',
         )
-        expect(code, 'exit code should be 0').toBe(0)
+        expect(code, stderr).toBe(0)
 
         const pkgJsonAfter = await readPackageJson(packageJsonPath)
         // Overrides should be added since abab is in Socket registry.
@@ -266,7 +201,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
             ababOverride === '@socketregistry/abab@^1.0.8',
         ).toBe(true)
         // Check that pnpm-lock.yaml exists and was modified.
-        const lockPath = path.join(pnpm9FixtureDir, PNPM_LOCK_YAML)
+        const lockPath = path.join(cwd, PNPM_LOCK_YAML)
         expect(existsSync(lockPath)).toBe(true)
       },
     )
@@ -275,18 +210,15 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       'should handle --pin flag with pnpm v9',
       { timeout: 30_000 },
       async () => {
-        const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
+        const { cwd, env } = fixture
+        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
 
         const { code, stderr } = await spawnSocketCli(
           binCliPath,
-          ['optimize', pnpm9FixtureDir, '--pin', FLAG_CONFIG, '{}'],
+          ['optimize', cwd, '--pin', FLAG_CONFIG, '{}'],
           {
-            cwd: pnpm9FixtureDir,
-            env: {
-              ...process.env,
-              CI: '1',
-              PATH: `${pnpm9BinPath}:${constants.ENV.PATH || process.env.PATH}`,
-            },
+            cwd,
+            env,
           },
         )
 
@@ -294,7 +226,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
         expect(stderr, 'should show optimization message').toContain(
           'Optimizing packages for pnpm',
         )
-        expect(code, 'exit code should be 0').toBe(0)
+        expect(code, stderr).toBe(0)
 
         const pkgJsonAfter = await readPackageJson(packageJsonPath)
         // Overrides should be added since abab is in Socket registry.

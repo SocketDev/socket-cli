@@ -1,9 +1,8 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { applyLogout } from './apply-logout.mts'
 import constants from '../../constants.mts'
 import { isConfigFromFlag } from '../../utils/config.mts'
 import { getErrorCause } from '../../utils/errors.mts'
+import { logger } from '../../utils/logger.mts'
 import { logoutOAuth } from '../../utils/oauth.mts'
 import { getDefaultProxyUrl } from '../../utils/sdk.mts'
 

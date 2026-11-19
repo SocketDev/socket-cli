@@ -19,14 +19,12 @@
 import process from 'node:process'
 import { setTimeout as sleep } from 'node:timers/promises'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { envAsNumber } from '@socketsecurity/registry/lib/env'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pRetry } from '@socketsecurity/registry/lib/promises'
-
 import { apiFetch } from './api.mts'
-import { debugApiRequest, debugApiResponse } from './debug.mts'
+import { debugApiRequest, debugApiResponse, debugFn } from './debug.mts'
+import { envAsNumber } from './env.mts'
 import { formatErrorWithDetail } from './errors.mts'
+import { logger } from './logger.mts'
+import { pRetry } from './promises.mts'
 import {
   HTTP_STATUS_FORBIDDEN,
   HTTP_STATUS_INTERNAL_SERVER_ERROR,

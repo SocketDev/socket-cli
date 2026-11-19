@@ -3,6 +3,7 @@
  * Provides test doubles for authentication-related functionality.
  */
 
+import type { Mock } from 'vitest'
 import { expect, vi } from 'vitest'
 
 export const MOCK_API_TOKEN = 'mock_socket_api_token_1234567890'
@@ -22,11 +23,35 @@ export interface MockAuthResponse {
   }
 }
 
+type MockFunction<Args extends unknown[], Result> = Mock<
+  (...args: Args) => Result
+>
+
+interface MockConfigStorage {
+  get: Mock<(key: string) => unknown>
+  set: Mock<(key: string, value: unknown) => boolean>
+  unset: Mock<(key: string) => boolean>
+  has: Mock<(key: string) => boolean>
+  clear: Mock<() => void>
+  storage: Map<string, unknown>
+}
+
+interface MockAuthenticatedApiClient {
+  isAuthenticated: Mock<() => boolean>
+  getToken: Mock<() => string | null>
+  setToken: Mock<(...args: unknown[]) => unknown>
+  clearToken: Mock<(...args: unknown[]) => unknown>
+  validateToken: Mock<() => Promise<boolean>>
+  getOrganizations: Mock<() => Promise<Array<{ id: string; name: string }>>>
+}
+
 /**
  * Mock the interactive login flow.
  * Simulates opening browser, polling for auth completion.
  */
-export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
+export function mockInteractiveLogin(options?: {
+  shouldSucceed?: boolean
+}): MockFunction<[], Promise<MockAuthResponse>> {
   const { shouldSucceed = true } = options || {}
 
   return vi.fn().mockImplementation(async () => {
@@ -39,21 +64,20 @@ export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
           name: MOCK_ORG_NAME,
         },
       }
-    } else {
-      throw new Error('Authentication failed')
     }
+    throw new Error('Authentication failed')
   })
 }
 
 /**
  * Mock configuration storage for auth tokens.
  */
-export function mockConfigStorage() {
-  const storage = new Map<string, any>()
+export function mockConfigStorage(): MockConfigStorage {
+  const storage = new Map<string, unknown>()
 
   return {
     get: vi.fn((key: string) => storage.get(key)),
-    set: vi.fn((key: string, value: any) => {
+    set: vi.fn((key: string, value: unknown) => {
       storage.set(key, value)
       return true
     }),
@@ -72,7 +96,7 @@ export function mockConfigStorage() {
  */
 export function mockAuthenticatedApiClient(options?: {
   isAuthenticated?: boolean
-}) {
+}): MockAuthenticatedApiClient {
   const { isAuthenticated = true } = options || {}
 
   return {
@@ -92,7 +116,10 @@ export function mockAuthenticatedApiClient(options?: {
 /**
  * Mock browser opener for OAuth flow.
  */
-export function mockBrowserOpener() {
+export function mockBrowserOpener(): MockFunction<
+  [...args: unknown[]],
+  Promise<void>
+> {
   return vi.fn().mockResolvedValue(undefined)
 }
 
@@ -102,7 +129,7 @@ export function mockBrowserOpener() {
 export function mockOAuthPoller(options?: {
   shouldSucceed?: boolean
   pollCount?: number
-}) {
+}): MockFunction<[], Promise<{ pending: boolean; token?: string }>> {
   const { pollCount = 3, shouldSucceed = true } = options || {}
   let currentPoll = 0
 
@@ -118,9 +145,8 @@ export function mockOAuthPoller(options?: {
         pending: false,
         token: MOCK_API_TOKEN,
       }
-    } else {
-      throw new Error('OAuth timeout')
     }
+    throw new Error('OAuth timeout')
   })
 }
 
@@ -130,7 +156,14 @@ export function mockOAuthPoller(options?: {
 export function setupLoginMocks(options?: {
   authenticated?: boolean
   loginShouldSucceed?: boolean
-}) {
+}): {
+  config: MockConfigStorage
+  apiClient: MockAuthenticatedApiClient
+  browserOpener: ReturnType<typeof mockBrowserOpener>
+  authFlow: ReturnType<typeof mockInteractiveLogin>
+  expectLoginSuccess: () => void
+  expectLogoutSuccess: () => void
+} {
   const { authenticated = false, loginShouldSucceed = true } = options || {}
 
   const configMock = mockConfigStorage()

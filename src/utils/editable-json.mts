@@ -1,7 +1,6 @@
 /**
  * @fileoverview EditableJson utility for non-destructive JSON file manipulation.
  * Preserves formatting (indentation and line endings) when updating JSON files.
- * This is a standalone implementation copied from @socketsecurity/lib/json/edit.
  */
 
 import { promises as fs } from 'node:fs'

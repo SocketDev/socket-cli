@@ -1,20 +1,16 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import {
-  resolveBinPathSync,
-  whichBinSync,
-} from '@socketsecurity/registry/lib/bin'
-import { isDirSync } from '@socketsecurity/registry/lib/fs'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-
-import constants, { NODE_MODULES, NPM } from '../constants.mts'
+import { resolveBinPathSync, whichBinSync } from './bin.mts'
+import { isDirSync } from './fs.mts'
 import {
   createSupportedFilesFilter,
   globWithGitIgnore,
   pathsToGlobPatterns,
   stripTrailingSlash,
 } from './glob.mts'
+import { normalizePath } from './path.mts'
+import constants, { NODE_MODULES, NPM } from '../constants.mts'
 
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'

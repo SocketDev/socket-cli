@@ -24,9 +24,8 @@
  * - utils/sdk.mts (getExtraCaCerts, getDefaultProxyUrl)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type { EventEmitter } from 'node:events'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock getExtraCaCerts from sdk.mts.
 const mockGetExtraCaCerts = vi.hoisted(() => vi.fn(() => undefined))
@@ -65,7 +64,9 @@ type RequestCallback = (
 ) => void
 const mockHttpsRequest = vi.hoisted(() => vi.fn())
 const MockHttpsAgent = vi.hoisted(() =>
-  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsAgent: true })),
+  vi.fn(function (opts) {
+    return { ...opts, _isHttpsAgent: true }
+  }),
 )
 vi.mock('node:https', () => ({
   Agent: MockHttpsAgent,
@@ -74,7 +75,9 @@ vi.mock('node:https', () => ({
 
 // Mock hpagent proxy agent.
 const MockHttpsProxyAgent = vi.hoisted(() =>
-  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsProxyAgent: true })),
+  vi.fn(function (opts) {
+    return { ...opts, _isHttpsProxyAgent: true }
+  }),
 )
 vi.mock('hpagent', () => ({
   HttpsProxyAgent: MockHttpsProxyAgent,
@@ -122,6 +125,8 @@ vi.mock('./errors.mts', () => ({
 vi.mock('./debug.mts', () => ({
   debugApiRequest: vi.fn(),
   debugApiResponse: vi.fn(),
+  debugDir: vi.fn(),
+  debugFn: vi.fn(),
 }))
 
 // Mock requirements.

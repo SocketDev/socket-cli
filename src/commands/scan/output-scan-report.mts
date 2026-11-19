@@ -1,9 +1,5 @@
 import fs from 'node:fs/promises'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import { generateReport } from './generate-report.mts'
 import constants, {
   EXT_JSON,
@@ -12,11 +8,14 @@ import constants, {
   OUTPUT_TEXT,
   REPORT_LEVEL_DEFER,
 } from '../../constants.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { mapToObject } from '../../utils/map-to-object.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { walkNestedMap } from '../../utils/walk-nested-map.mts'
+import { pluralize } from '../../utils/words.mts'
 
 import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
@@ -133,17 +132,14 @@ export async function outputScanReport(
     return
   }
 
-  const scanReport = generateReport(
-    result.data.scan,
-    {
-      orgSlug,
-      scanId,
-      fold,
-      reportLevel,
-      short,
-      spinner: constants.spinner,
-    },
-  )
+  const scanReport = generateReport(result.data.scan, {
+    orgSlug,
+    scanId,
+    fold,
+    reportLevel,
+    short,
+    spinner: constants.spinner,
+  })
 
   if (!scanReport.ok) {
     // Note: This means generation failed, it does not reflect the healthy state.

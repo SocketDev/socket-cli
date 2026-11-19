@@ -1,11 +1,10 @@
 import path from 'node:path'
 
-import { joinOr } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { joinOr } from '../../utils/arrays.mts'
 import { isFactsOnlyTypes } from '../../utils/coana.mts'
 import { InputError } from '../../utils/errors.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import {
   PURL_TYPE_BY_TOOL,

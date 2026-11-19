@@ -18,8 +18,10 @@ const unicornPlugin = require('eslint-plugin-unicorn')
 const globals = require('globals')
 const tsEslint = require('typescript-eslint')
 
-const constants = require('@socketsecurity/registry/lib/constants')
-const { BIOME_JSON, GITIGNORE, LATEST, TSCONFIG_JSON } = constants
+const BIOME_JSON = 'biome.json'
+const GITIGNORE = '.gitignore'
+const LATEST = 'latest'
+const TSCONFIG_JSON = 'tsconfig.json'
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 

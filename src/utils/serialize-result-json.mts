@@ -1,6 +1,6 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isObject } from '@socketsecurity/registry/lib/objects'
+import { debugDir, debugFn } from './debug.mts'
+import { logger } from './logger.mts'
+import { isObject } from './objects.mts'
 
 import type { CResult } from '../types.mts'
 

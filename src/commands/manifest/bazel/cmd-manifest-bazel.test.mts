@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 // Mock the extractor so the `run` wiring test can assert which timeout reaches
 // it without a real Bazel toolchain. The `cmdit`/spawnSocketCli tests below
 // run in a child process and are unaffected by these in-process mocks.
@@ -31,6 +29,7 @@ import constants, {
   FLAG_DRY_RUN,
 } from '../../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../../test/utils.mts'
+import { logger } from '../../../utils/logger.mts'
 import * as socketJsonUtils from '../../../utils/socket-json.mts'
 
 import type { EcosystemOutcome } from './cmd-manifest-bazel.mts'

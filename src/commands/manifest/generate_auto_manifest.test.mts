@@ -32,14 +32,13 @@ vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
 }))
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'

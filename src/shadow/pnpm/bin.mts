@@ -2,10 +2,6 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants, {
   FLAG_DRY_RUN,
   PNPM,
@@ -18,20 +14,23 @@ import {
   isAddCommand,
   isPnpmLockfileScanCommand,
 } from '../../utils/cmd.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
+import { logger } from '../../utils/logger.mts'
 import { parsePnpmLockfile, readPnpmLockfile } from '../../utils/pnpm.mts'
 import { resolvePublicApiToken } from '../../utils/sdk.mts'
 import { installPnpmLinks } from '../../utils/shadow-links.mts'
 import { logAlertsMap } from '../../utils/socket-package-alert.mts'
+import { spawn } from '../../utils/spawn.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
 import type { IpcObject } from '../../constants.mts'
-import type { DlxFlags } from '../common.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '../../utils/spawn.mts'
+import type { DlxFlags } from '../common.mts'
 
 export type ShadowPnpmOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
@@ -237,7 +236,7 @@ export default async function shadowPnpmBin(
       },
       stdio,
       // On Windows, pnpm is often a .cmd file that requires shell execution.
-      // The spawn function from @socketsecurity/registry will handle this properly
+      // The local spawn helper handles this properly
       // when shell is true.
       shell: constants.WIN32,
     },

@@ -1,6 +1,5 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleApiCall } from '../../utils/api.mts'
+import { logger } from '../../utils/logger.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'

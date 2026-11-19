@@ -4,8 +4,6 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants, { FLAG_HELP, NPM, PNPM, YARN } from '../../constants.mts'
 import { runCdxgen as runEmbeddedCdxgen } from '../../sea/adapters/cdxgen.mts'
 import {
@@ -18,6 +16,7 @@ import {
 } from '../../sea/runtime.mts'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx.mts'
 import { findUp } from '../../utils/fs.mts'
+import { logger } from '../../utils/logger.mts'
 import { isYarnBerry } from '../../utils/yarn-version.mts'
 
 import type { ShadowBinResult } from '../../shadow/npm/bin.mts'

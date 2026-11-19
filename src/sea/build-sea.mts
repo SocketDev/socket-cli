@@ -8,9 +8,8 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 
-import { parse as parseYaml } from 'yaml'
-
 import { seaArchivePaths } from './archive-paths.mts'
+import { findLockedPackageIntegrity, parsePnpmLock } from './pnpm-lock.mts'
 import { acquireBuildLock } from './build/lock.mts'
 import { publishArtifactPair } from './build/publish.mts'
 import { createSeaCapabilities } from './capabilities.mts'
@@ -40,6 +39,28 @@ const TARGETS = [
   ['win32', 'arm64', 'win-arm64'],
   ['win32', 'x64', 'win-x64'],
 ] as const
+
+export function getSocketPatchPackageName(
+  platform: string,
+  arch: string,
+  libc?: 'gnu' | 'musl',
+): string {
+  if (platform === 'linux') {
+    if (!libc) {
+      throw new Error('Linux socket-patch package selection requires libc')
+    }
+    return `@socketsecurity/socket-patch-linux-${arch}-${libc}`
+  }
+  const packagePlatform = platform === 'win32' ? 'win32' : platform
+  return `@socketsecurity/socket-patch-${packagePlatform}-${arch}`
+}
+
+function detectLinuxLibc(): 'gnu' | 'musl' {
+  const { header } = process.report.getReport() as {
+    header?: { glibcVersionRuntime?: string }
+  }
+  return header?.glibcVersionRuntime ? 'gnu' : 'musl'
+}
 
 function sha256(data: Buffer): string {
   return createHash('sha256').update(data).digest('hex')
@@ -182,22 +203,6 @@ export function findNodeArchiveSha256(
   return matches.length === 1 ? matches[0] : undefined
 }
 
-export function findLockedPackageIntegrity(
-  lock: string,
-  packageName: string,
-  version: string,
-): string | undefined {
-  const escapedName = packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const match = lock.match(
-    new RegExp(
-      `^  '${escapedName}@${escapedVersion}':\\r?\\n    resolution: \\{integrity: (sha512-[^}]+)\\}`,
-      'm',
-    ),
-  )
-  return match?.[1]
-}
-
 function readTarEntries(
   archive: Buffer,
   binaryEntry: string,
@@ -314,8 +319,11 @@ async function stageSocketPatch(
   | undefined
 > {
   const [platform, arch] = target
-  const packagePlatform = platform === 'win32' ? 'win32' : platform
-  const packageName = `@socketsecurity/socket-patch-${packagePlatform}-${arch}`
+  const packageName = getSocketPatchPackageName(
+    platform,
+    arch,
+    platform === 'linux' ? detectLinuxLibc() : undefined,
+  )
   const lock = await fs.readFile(
     path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
     'utf8',
@@ -550,8 +558,8 @@ async function stageCdxgenApi(
   const workerUtils = path.join(payloadRoot, 'utils')
   await fs.mkdir(workerUtils, { recursive: true })
   await fs.copyFile(
-    path.join(REPOSITORY_ROOT, 'src/utils/is-object-object.mjs'),
-    path.join(workerUtils, 'is-object-object.mjs'),
+    path.join(REPOSITORY_ROOT, 'src/utils/is-record.mjs'),
+    path.join(workerUtils, 'is-record.mjs'),
   )
   // Keep a concrete VFS path for cdxgen's plugin-directory override. The
   // marker does not install or expose any plugin executable.
@@ -1042,17 +1050,12 @@ async function main(): Promise<void> {
       },
     )
     const synpLock = synpPayload
-      ? (parseYaml(
+      ? parsePnpmLock(
           await fs.readFile(
             path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
             'utf8',
           ),
-        ) as {
-          packages?: Record<
-            string,
-            { resolution?: { integrity?: unknown } } | undefined
-          >
-        })
+        )
       : undefined
     const synpLocator = synpPayload ? `synp@${synpPayload.version}` : undefined
     const synpLockIntegrity = synpLocator

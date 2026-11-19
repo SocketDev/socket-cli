@@ -2,8 +2,6 @@ import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   buildsSetting,
   createBuildRootSettingsResolver,
@@ -41,6 +39,7 @@ import {
 import { loadSocketConfig } from '../../utils/config.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
+import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { ResolvedBuildRootSettings } from './build-root-config.mts'

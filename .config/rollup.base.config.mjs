@@ -9,12 +9,11 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-import { spawnSync } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
-
 import constants from '../scripts/constants.js'
+import { readPackageJsonSync } from '../scripts/lib/packages.js'
+import { escapeRegExp } from '../scripts/lib/regexps.js'
+import { spawnSync } from '../scripts/lib/spawn.js'
+import { stripAnsi } from '../scripts/lib/strings.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
@@ -39,11 +38,7 @@ const {
   VITEST,
 } = constants
 
-export const EXTERNAL_PACKAGES = [
-  '@socketsecurity/registry',
-  'blessed',
-  'blessed-contrib',
-]
+export const EXTERNAL_PACKAGES = ['blessed', 'blessed-contrib']
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   if (!n.startsWith('node:')) {

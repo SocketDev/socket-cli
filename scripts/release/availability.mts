@@ -10,10 +10,7 @@ export interface AvailabilityOptions {
   readonly fetcher?: typeof fetch
   readonly now?: () => number
   readonly signal?: AbortSignal
-  readonly wait?: (
-    milliseconds: number,
-    signal?: AbortSignal,
-  ) => Promise<void>
+  readonly wait?: (milliseconds: number, signal?: AbortSignal) => Promise<void>
   readonly timeoutMs?: number
 }
 
@@ -33,13 +30,17 @@ function waitForDelay(
     }
     const timer = setTimeout(finish, milliseconds)
     signal?.addEventListener('abort', abort, { once: true })
-    if (signal?.aborted) {abort()}
+    if (signal?.aborted) {
+      abort()
+    }
   })
 }
 
 function retryDelay(response: Response, fallback: number, now: number): number {
   const value = response.headers.get('retry-after')
-  if (!value) {return fallback}
+  if (!value) {
+    return fallback
+  }
   const seconds = Number(value)
   if (Number.isFinite(seconds)) {
     return seconds > 0 ? seconds * 1000 : fallback
@@ -99,7 +100,9 @@ export async function waitForNpmVersion(
       response.status !== 429 &&
       (response.status < 500 || response.status > 599)
     ) {
-      throw new Error(`npm availability check returned HTTP ${response.status}.`)
+      throw new Error(
+        `npm availability check returned HTTP ${response.status}.`,
+      )
     }
     const waitMs = retryDelay(response, delay, now())
     // eslint-disable-next-line no-await-in-loop -- Respect retry-after and back off for pending npm versions.

@@ -4,14 +4,13 @@
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
-
 import { compareEntryFiles, isBuildFile } from './discover-manifest-roots.mts'
 import {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
   SOCKET_JSON,
 } from '../../constants.mts'
+import { debugLog } from '../../utils/debug.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
 

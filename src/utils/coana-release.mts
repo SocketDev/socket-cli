@@ -20,10 +20,9 @@ import { pipeline } from 'node:stream/promises'
 import semver from 'semver'
 import { x as extractTar } from 'tar'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
+import { debugDir, debugFn } from './debug.mts'
+import { logger } from './logger.mts'
+import { spawn } from './spawn.mts'
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants, {
   COANA_CLI_VERSION,
@@ -42,8 +41,8 @@ import {
 import { isStandaloneSea } from '../sea/runtime.mts'
 
 import type { CResult } from '../types.mts'
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { SpawnOptions } from './spawn.mts'
+import type { Spinner } from './spinner.mts'
 
 type CoanaArtifacts = {
   cli: CoanaComponent

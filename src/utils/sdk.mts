@@ -29,16 +29,15 @@ import { Agent as HttpsAgent } from 'node:https'
 
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import { getExtraCaCerts } from './api-transport.mts'
 import { getConfigValueOrUndef, isConfigFromFlag } from './config.mts'
 import { debugApiRequest, debugApiResponse } from './debug.mts'
 import { getErrorCause } from './errors.mts'
+import { logger } from './logger.mts'
 import { readOAuthCredentials, resolveOAuthAccessToken } from './oauth.mts'
+import { isNonEmptyString } from './strings.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -46,6 +45,7 @@ import constants, {
   CONFIG_KEY_AUTH_TYPE,
 } from '../constants.mts'
 import { trackCliEvent } from './telemetry/integration.mts'
+import { isUrl } from './url.mts'
 
 import type { CResult } from '../types.mts'
 import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'

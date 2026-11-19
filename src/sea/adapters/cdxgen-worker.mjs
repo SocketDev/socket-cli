@@ -13,7 +13,7 @@ import util from 'node:util'
 import { workerData } from 'node:worker_threads'
 
 // eslint-disable-next-line import-x/no-unresolved, n/no-missing-import -- The worker path resolves in its staged SEA VFS payload.
-import { isObjectObject } from './utils/is-object-object.mjs'
+import { isRecord } from './utils/is-record.mjs'
 
 const ipc = workerData?.socketIpc
 if (
@@ -72,10 +72,10 @@ const packageJson = JSON.parse(
 const packageLock = JSON.parse(
   await readFile(path.join(isolatedRoot, 'package-lock.json'), 'utf8'),
 )
-if (!isObjectObject(packageJson)) {
+if (!isRecord(packageJson)) {
   throw new Error('Invalid package.json in cdxgen project')
 }
-if (!isObjectObject(packageLock)) {
+if (!isRecord(packageLock)) {
   throw new Error('Malformed npm package-lock.json')
 }
 if (![1, 3].includes(packageLock.lockfileVersion)) {
@@ -106,7 +106,7 @@ for (const group of [
   'optionalDependencies',
   'peerDependencies',
 ]) {
-  if (packageJson[group] !== undefined && !isObjectObject(packageJson[group])) {
+  if (packageJson[group] !== undefined && !isRecord(packageJson[group])) {
     throw new Error(`Invalid ${group} in package.json`)
   }
   if (
@@ -127,14 +127,14 @@ const inspectV1Dependencies = (
   if (dependencies === undefined) {
     return
   }
-  if (!isObjectObject(dependencies)) {
+  if (!isRecord(dependencies)) {
     throw new Error(`Malformed package-lock v1 ${dependencyPath}`)
   }
   for (const [name, dependency] of Object.entries(dependencies)) {
     if (!validPackageName(name)) {
       throw new Error(`Invalid package-lock v1 dependency name '${name}'`)
     }
-    if (!isObjectObject(dependency)) {
+    if (!isRecord(dependency)) {
       throw new Error(`Malformed package-lock v1 dependency '${name}'`)
     }
     if (typeof dependency.version !== 'string' || !dependency.version) {
@@ -177,15 +177,12 @@ const checkRootDependencyGroup = (
   if (group === undefined) {
     return
   }
-  if (!isObjectObject(group)) {
+  if (!isRecord(group)) {
     throw new Error(`Malformed package.json ${groupName}`)
   }
   for (const name of Object.keys(group)) {
     if (
-      !(
-        isObjectObject(lockDependencies) &&
-        Object.hasOwn(lockDependencies, name)
-      ) &&
+      !(isRecord(lockDependencies) && Object.hasOwn(lockDependencies, name)) &&
       !optional &&
       !optionalNames.has(name)
     ) {
@@ -198,7 +195,7 @@ const checkRootDependencyGroup = (
 
 if (packageLock.lockfileVersion === 1) {
   const rootDependencies = packageLock.dependencies ?? {}
-  if (!isObjectObject(rootDependencies)) {
+  if (!isRecord(rootDependencies)) {
     throw new Error('Malformed package-lock v1 dependencies map')
   }
   inspectV1Dependencies(rootDependencies)
@@ -230,18 +227,15 @@ if (packageLock.lockfileVersion === 1) {
 
   const resolveV1Dependency = (name, ownDependencies, ancestorMaps) =>
     Boolean(
-      (isObjectObject(ownDependencies) &&
-        Object.hasOwn(ownDependencies, name)) ||
-        ancestorMaps.some(
-          map => isObjectObject(map) && Object.hasOwn(map, name),
-        ),
+      (isRecord(ownDependencies) && Object.hasOwn(ownDependencies, name)) ||
+        ancestorMaps.some(map => isRecord(map) && Object.hasOwn(map, name)),
     )
   const validateV1Graph = (dependencies, ancestorMaps = []) => {
     for (const [packageName, dependency] of Object.entries(
       dependencies || {},
     )) {
       const requires = dependency.requires
-      if (requires !== undefined && !isObjectObject(requires)) {
+      if (requires !== undefined && !isRecord(requires)) {
         throw new Error(
           `Malformed package-lock v1 requires map for '${packageName}'`,
         )
@@ -284,16 +278,16 @@ if (packageLock.lockfileVersion === 1) {
 } else {
   const packages = packageLock.packages
   if (
-    !isObjectObject(packages) ||
+    !isRecord(packages) ||
     !Object.hasOwn(packages, '') ||
-    !isObjectObject(packages[''])
+    !isRecord(packages[''])
   ) {
     throw new Error(
       'Malformed package-lock v3 packages map or root package record',
     )
   }
   for (const [packagePath, dependency] of Object.entries(packages)) {
-    if (!isObjectObject(dependency)) {
+    if (!isRecord(dependency)) {
       throw new Error(`Malformed package-lock v3 record '${packagePath}'`)
     }
     if (packagePath) {
@@ -343,7 +337,7 @@ if (packageLock.lockfileVersion === 1) {
     if (group === undefined) {
       return
     }
-    if (!isObjectObject(group)) {
+    if (!isRecord(group)) {
       throw new Error(
         `Malformed package-lock v3 ${groupName} map at '${packagePath || '<root>'}'`,
       )
@@ -367,7 +361,7 @@ if (packageLock.lockfileVersion === 1) {
     if (group === undefined) {
       return
     }
-    if (!isObjectObject(group)) {
+    if (!isRecord(group)) {
       throw new Error(`Malformed package.json ${groupName}`)
     }
     for (const name of Object.keys(group)) {

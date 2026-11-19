@@ -2,34 +2,37 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { getManifestData } from '@socketsecurity/registry'
-import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
-import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
-import { pEach } from '@socketsecurity/registry/lib/promises'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
 import { getDependencyEntries } from './get-dependency-entries.mts'
 import {
   getOverridesData,
   getOverridesDataNpm,
   getOverridesDataYarnClassic,
+  readPnpmWorkspaceOverrides,
 } from './get-overrides-by-agent.mts'
 import { lockSrcIncludes } from './lockfile-includes-by-agent.mts'
 import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
-import { updateManifest } from './update-manifest-by-agent.mts'
+import {
+  updateManifest,
+  updatePnpmWorkspaceOverrides,
+} from './update-manifest-by-agent.mts'
 import { NPM, PNPM } from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { safeNpa } from '../../utils/npm-package-arg.mts'
+import { hasOwn, toSortedObject } from '../../utils/objects.mts'
+import { getManifestData } from '../../utils/packages.mts'
+import { pEach } from '../../utils/promises.mts'
 import { getMajor } from '../../utils/semver.mts'
+import { spawn } from '../../utils/spawn.mts'
+import { Spinner } from '../../utils/spinner.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
+import type { Logger } from '../../utils/logger.mts'
 import type { AliasResult } from '../../utils/npm-package-arg.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
-import type { Logger } from '@socketsecurity/registry/lib/logger'
-import type { PackageJson } from '@socketsecurity/registry/lib/packages'
+import type { PackageJson } from '../../utils/packages.mts'
 
 type AddOverridesOptions = {
   logger?: Logger | undefined
@@ -48,6 +51,51 @@ type AddOverridesState = {
 
 const manifestNpmOverrides = getManifestData(NPM)
 
+/**
+ * Resolve a Socket override's selected manifest version through npm itself.
+ * This preserves the project's npm registry, auth, and cache configuration
+ * without importing the registry package's Pacote-backed helper.
+ */
+async function fetchPackageVersion(
+  spec: string,
+  npmExecPath: string,
+  cwd: string,
+): Promise<string | undefined> {
+  const parsed = safeNpa(spec)
+  if (!parsed) {
+    return undefined
+  }
+  const npmSpec = parsed as AliasResult
+  const packageName =
+    npmSpec.type === 'alias' ? npmSpec.subSpec.name : npmSpec.name
+  const packageSpec =
+    npmSpec.type === 'alias' ? npmSpec.subSpec.rawSpec : npmSpec.rawSpec
+  if (!packageName || !packageSpec) {
+    return undefined
+  }
+
+  try {
+    const { stdout } = await spawn(
+      npmExecPath,
+      ['view', `${packageName}@${packageSpec}`, 'version', '--json'],
+      { cwd, stdio: 'pipe' },
+    )
+    const parsedOutput: unknown = JSON.parse(stdout)
+    if (typeof parsedOutput === 'string') {
+      return parsedOutput
+    }
+    if (Array.isArray(parsedOutput)) {
+      const versions = parsedOutput.filter(
+        (version): version is string => typeof version === 'string',
+      )
+      return semver.maxSatisfying(versions, packageSpec) ?? undefined
+    }
+  } catch {
+    // Pacote-backed registry.fetchPackageManifest also returns null on failure.
+  }
+  return undefined
+}
+
 export async function addOverrides(
   pkgEnvDetails: EnvDetails,
   pkgPath: string,
@@ -55,6 +103,7 @@ export async function addOverrides(
 ): Promise<AddOverridesState> {
   const {
     agent,
+    agentVersion,
     lockName,
     lockSrc,
     npmExecPath,
@@ -98,13 +147,24 @@ export async function addOverrides(
   }
 
   const overridesDataObjects = [] as GetOverridesResult[]
-  if (isWorkspace || pkgEnvDetails.editablePkgJson.content['private']) {
-    overridesDataObjects.push(getOverridesData(pkgEnvDetails))
-  } else {
+  // pnpm 11 moved its settings out of the package.json pnpm field.
+  const pnpmWorkspaceOverrides =
+    isWorkspaceRoot && isPnpm && agentVersion.major >= 11
+      ? await readPnpmWorkspaceOverrides(rootPath)
+      : undefined
+  if (!isWorkspace && !pkgEnvDetails.editablePkgJson.content['private']) {
     overridesDataObjects.push(
       getOverridesDataNpm(pkgEnvDetails),
       getOverridesDataYarnClassic(pkgEnvDetails),
     )
+  } else if (!pnpmWorkspaceOverrides) {
+    overridesDataObjects.push(getOverridesData(pkgEnvDetails))
+  }
+  if (pnpmWorkspaceOverrides) {
+    overridesDataObjects.push({
+      type: PNPM,
+      overrides: pnpmWorkspaceOverrides.overrides,
+    })
   }
 
   const depAliasMap = new Map<string, string>()
@@ -115,7 +175,7 @@ export async function addOverrides(
 
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(
-    manifestNpmOverrides,
+    manifestNpmOverrides ?? [],
     async ({ 1: data }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
       const major = getMajor(version)!
@@ -214,8 +274,11 @@ export async function addOverrides(
                       )?.version ?? version,
                     ) !== major
                   ) {
-                    const otherVersion = (await fetchPackageManifest(thisSpec))
-                      ?.version
+                    const otherVersion = await fetchPackageVersion(
+                      thisSpec,
+                      npmExecPath,
+                      pkgPath,
+                    )
                     if (otherVersion && otherVersion !== version) {
                       newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
                     }
@@ -286,10 +349,18 @@ export async function addOverrides(
     )
     if (isWorkspaceRoot) {
       for (const { overrides, type } of overridesDataObjects) {
-        updateManifest(
-          type,
-          pkgEnvDetails.editablePkgJson,
-          toSortedObject(overrides),
+        if (type !== PNPM || !pnpmWorkspaceOverrides) {
+          updateManifest(
+            type,
+            pkgEnvDetails.editablePkgJson,
+            toSortedObject(overrides),
+          )
+        }
+      }
+      if (pnpmWorkspaceOverrides) {
+        await updatePnpmWorkspaceOverrides(
+          pnpmWorkspaceOverrides,
+          toSortedObject(pnpmWorkspaceOverrides.overrides),
         )
       }
     }

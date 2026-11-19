@@ -1,6 +1,5 @@
-import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-
 import { resolveAdvisoryIds } from '../../utils/advisory-ids.mts'
+import { arrayUnique } from '../../utils/arrays.mts'
 import {
   CVE_FORMAT_REGEXP,
   GHSA_FORMAT_REGEXP,

@@ -1,13 +1,9 @@
 import { execFileSync } from 'node:child_process'
-import {
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import semver from 'semver'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
@@ -153,9 +149,7 @@ describe('v1 release workflow contract', () => {
     const stage = workflow.jobs.publish.steps.find(
       step => step.name === 'Stage release packages',
     )
-    const parser = stage?.run
-      ?.split("<<'NODE'\n")[1]
-      ?.split('\nNODE')[0]
+    const parser = stage?.run?.split("<<'NODE'\n")[1]?.split('\nNODE')[0]
     expect(parser).toBeDefined()
 
     const directory = mkdtempSync(path.join(tmpdir(), 'npm-stage-output-'))
@@ -221,7 +215,9 @@ describe('v1 release workflow contract', () => {
     expect(checkIndex).toBeGreaterThanOrEqual(0)
     expect(finalizeIndex).toBeGreaterThan(checkIndex)
     expect(finalize?.run).toContain('make_latest=false')
-    expect(finalize?.run).toContain('gh release view "${TAG}" --json databaseId')
+    expect(finalize?.run).toContain(
+      'gh release view "${TAG}" --json databaseId',
+    )
     expect(finalize?.run).not.toContain('releases/tags/${TAG}')
   })
 
@@ -262,8 +258,27 @@ describe('v1 release workflow contract', () => {
     const manifest = JSON.parse(
       readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
     ) as { publishConfig?: { tag?: string }; version?: string }
-    expect(manifest.version).toMatch(/^2\.1\.0-rc\.\d+$/u)
-    expect(manifest.publishConfig?.tag).toBe('rc-2.1.0')
+    const releasePolicy = JSON.parse(
+      readFileSync(new URL('../.config/release.json', import.meta.url), 'utf8'),
+    ) as { distTag: string; identifier: string; versionHint: string }
+    const manifestVersion = semver.parse(manifest.version ?? '')
+    const releaseHint = semver.parse(releasePolicy.versionHint)
+    expect(manifestVersion).not.toBeNull()
+    expect(releaseHint).not.toBeNull()
+    const isStableV1 =
+      manifestVersion?.major === 1 &&
+      manifestVersion.prerelease.length === 0 &&
+      manifestVersion.build.length === 0
+    const isConfiguredPrerelease =
+      manifestVersion?.major === releaseHint?.major &&
+      manifestVersion.minor === releaseHint?.minor &&
+      manifestVersion.patch === releaseHint?.patch &&
+      manifestVersion.prerelease[0] === releasePolicy.identifier &&
+      manifestVersion.prerelease.length === 2 &&
+      typeof manifestVersion.prerelease[1] === 'number' &&
+      manifestVersion.build.length === 0
+    expect(isStableV1 || isConfiguredPrerelease).toBe(true)
+    expect(manifest.publishConfig?.tag).toBe(releasePolicy.distTag)
     expect(workflow.on.workflow_dispatch.inputs['release-major']?.default).toBe(
       '1',
     )

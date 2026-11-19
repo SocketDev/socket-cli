@@ -3,11 +3,8 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import trash from 'trash'
-import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
-
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { afterEach, describe, expect } from 'vitest'
+import { parseAllDocuments } from 'yaml'
 
 import constants, {
   FLAG_CONFIG,
@@ -23,49 +20,22 @@ import constants, {
   PACKAGE_LOCK_JSON,
   PNPM,
   PNPM_LOCK_YAML,
+  PNPM_WORKSPACE_YAML,
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+import { logger } from '../../utils/logger.mts'
+import { readPackageJson } from '../../utils/packages.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 const npmFixtureDir = path.join(fixtureBaseDir, NPM)
 const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
-
-async function revertFixtureChanges() {
-  // Reset only the package.json and pnpm-lock.yaml files that tests modify.
-  const cwd = process.cwd()
-  // Git needs the paths relative to the repository root.
-  const relativePackageJson = path.relative(
-    cwd,
-    path.join(pnpmFixtureDir, PACKAGE_JSON),
-  )
-  const relativePnpmLock = path.relative(
-    cwd,
-    path.join(pnpmFixtureDir, PNPM_LOCK_YAML),
-  )
-  // Silently ignore errors. Files may not be tracked by git, may already be
-  // reverted, or may not have been modified yet. This is expected behavior
-  // in CI environments and during initial test runs.
-  try {
-    await spawn(
-      'git',
-      ['checkout', 'HEAD', '--', relativePackageJson, relativePnpmLock],
-      {
-        cwd,
-        stdio: 'ignore',
-      },
-    )
-  } catch {}
-}
+const tempFixtures: string[] = []
 
 async function createTempFixture(sourceDir: string): Promise<string> {
-  // Create a temporary directory with a unique name.
-  const tempDir = path.join(
-    tmpdir(),
-    `socket-optimize-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  const tempDir = await promises.mkdtemp(
+    path.join(tmpdir(), 'socket-optimize-test-'),
   )
-
-  // Copy the fixture files to the temp directory.
-  await promises.mkdir(tempDir, { recursive: true })
+  tempFixtures.push(tempDir)
 
   // Copy package.json.
   const sourcePackageJson = path.join(sourceDir, PACKAGE_JSON)
@@ -92,19 +62,14 @@ async function createTempFixture(sourceDir: string): Promise<string> {
 describe('socket optimize', async () => {
   const { binCliPath } = constants
 
-  beforeAll(async () => {
-    // Ensure fixtures are in clean state before tests.
-    await revertFixtureChanges()
-  })
-
   afterEach(async () => {
-    // Revert all changes after each test using git.
-    await revertFixtureChanges()
-  })
-
-  afterAll(async () => {
-    // Clean up once after all tests.
-    await revertFixtureChanges()
+    await Promise.all(
+      tempFixtures
+        .splice(0)
+        .map(directory =>
+          promises.rm(directory, { force: true, recursive: true }),
+        ),
+    )
   })
 
   cmdit(
@@ -409,9 +374,17 @@ describe('socket optimize', async () => {
           const packageJson = await readPackageJson(packageJsonPath)
           expect(packageJson.overrides).toBeDefined()
 
-          // Check that pnpm-lock.yaml exists (was modified/created).
+          // Check that pnpm applied the override when it regenerated the lockfile.
           const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
-          expect(existsSync(packageLockPath)).toBe(true)
+          expect(existsSync(path.join(tempDir, PNPM_WORKSPACE_YAML))).toBe(true)
+          const lockfile = parseAllDocuments(
+            await promises.readFile(packageLockPath, 'utf8'),
+          )
+            .at(-1)
+            ?.toJS()
+          expect(lockfile).toMatchObject({
+            overrides: { gopd: 'npm:@socketregistry/gopd@^1' },
+          })
 
           // Should have optimization output.
           const output = stdout + stderr
@@ -502,20 +475,21 @@ describe('socket optimize', async () => {
       ],
       'should handle optimize with both --pin and --prod flags',
       async cmd => {
+        const tempDir = await createTempFixture(pnpmFixtureDir)
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
+          cwd: tempDir,
         })
 
         expect(code).toBe(0)
 
         // Check that command completed successfully (may or may not add overrides depending on available optimizations).
-        const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
+        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
         const packageJson = await readPackageJson(packageJsonPath)
         // Note: overrides may be undefined if no production dependencies have available optimizations..
         expect(packageJson).toBeDefined()
 
         // Verify pnpm-lock.yaml exists (since we're using pnpm, not npm).
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
+        const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
         expect(existsSync(packageLockPath)).toBe(true)
 
         // Should have optimization output.
@@ -529,19 +503,20 @@ describe('socket optimize', async () => {
       ['optimize', '.', FLAG_JSON, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
       'should handle optimize with --json output format',
       async cmd => {
+        const tempDir = await createTempFixture(pnpmFixtureDir)
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
+          cwd: tempDir,
         })
 
         expect(code).toBe(0)
 
         // Verify package.json has overrides.
-        const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
+        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
         const packageJson = await readPackageJson(packageJsonPath)
         expect(packageJson.overrides).toBeDefined()
 
         // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
+        const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
         expect(existsSync(packageLockPath)).toBe(true)
       },
     )
@@ -556,19 +531,20 @@ describe('socket optimize', async () => {
       ],
       'should handle optimize with --markdown output format',
       async cmd => {
+        const tempDir = await createTempFixture(pnpmFixtureDir)
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
+          cwd: tempDir,
         })
 
         expect(code).toBe(0)
 
         // Verify package.json has overrides.
-        const packageJsonPath = path.join(pnpmFixtureDir, PACKAGE_JSON)
+        const packageJsonPath = path.join(tempDir, PACKAGE_JSON)
         const packageJson = await readPackageJson(packageJsonPath)
         expect(packageJson.overrides).toBeDefined()
 
         // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
+        const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
         expect(existsSync(packageLockPath)).toBe(true)
 
         // Should have regular output (markdown flag doesn't change console output).
@@ -712,8 +688,9 @@ describe('socket optimize', async () => {
       ['optimize', '.', FLAG_CONFIG, '{"apiToken":"invalid-token-format"}'],
       'should handle invalid API token gracefully',
       async cmd => {
+        const tempDir = await createTempFixture(pnpmFixtureDir)
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
+          cwd: tempDir,
         })
         expect(code).toBe(0)
         const output = stdout + stderr

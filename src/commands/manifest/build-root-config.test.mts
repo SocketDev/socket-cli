@@ -4,14 +4,13 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   createBuildRootSettingsResolver,
   describeDisabledBy,
   displayPath,
 } from './build-root-config.mts'
 import { InputError } from '../../utils/errors.mts'
+import { logger } from '../../utils/logger.mts'
 
 describe('createBuildRootSettingsResolver', () => {
   let scanRoot = ''

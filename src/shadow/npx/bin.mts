@@ -1,8 +1,8 @@
 import { NPX } from '../../constants.mts'
 import shadowNpmBase from '../npm-base.mts'
 
+import type { SpawnExtra } from '../../utils/spawn.mts'
 import type { ShadowBinOptions, ShadowBinResult } from '../npm-base.mts'
-import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 export type { ShadowBinOptions, ShadowBinResult }
 

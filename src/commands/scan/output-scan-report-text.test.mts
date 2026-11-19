@@ -314,8 +314,9 @@ describe('toPlainTextReport', () => {
       '<unknown>',
     )
     expect(toPlainTextReport(packageFoldReport)).toContain('<unknown>')
-    expect(flattenReportAlerts(twoVersionReport).map(row => row.packageVersion))
-      .toEqual(['2.3.4', '2.3.5'])
+    expect(
+      flattenReportAlerts(twoVersionReport).map(row => row.packageVersion),
+    ).toEqual(['2.3.4', '2.3.5'])
     const reports = [
       defaultFoldReport,
       versionFoldReport,

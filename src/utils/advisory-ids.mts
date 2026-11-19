@@ -1,11 +1,10 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { joinAnd } from './arrays.mts'
 import {
   CVE_FORMAT_REGEXP,
   GHSA_FORMAT_REGEXP,
   convertCveToGhsa,
 } from './cve-to-ghsa.mts'
+import { logger } from './logger.mts'
 import { convertPurlToGhsas } from './purl-to-ghsa.mts'
 
 type ResolveAdvisoryIdsOptions = {
