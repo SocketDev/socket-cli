@@ -79,14 +79,20 @@ describe('SEA lockfile metadata', () => {
       await readFile(path.join(root, 'pnpm-lock.yaml'), 'utf8')
     ).replace(/\r\n/g, '\n')
     const packageName = '@socketsecurity/socket-patch-win32-x64'
-    const integrity = findLockedPackageIntegrity(lock, packageName, '2.0.0')
+    const packageJson = JSON.parse(
+      await readFile(path.join(root, 'package.json'), 'utf8'),
+    ) as {
+      dependencies: { '@socketsecurity/socket-patch': string }
+    }
+    const version = packageJson.dependencies['@socketsecurity/socket-patch']
+    const integrity = findLockedPackageIntegrity(lock, packageName, version)
 
     expect(integrity).toMatch(/^sha512-/)
     expect(
       findLockedPackageIntegrity(
         lock.replace(/\r?\n/g, '\r\n'),
         packageName,
-        '2.0.0',
+        version,
       ),
     ).toBe(integrity)
     expect(findLockedPackageIntegrity(lock, packageName, '99.99.99')).toBe(

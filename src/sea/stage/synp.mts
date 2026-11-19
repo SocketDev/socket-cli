@@ -5,9 +5,9 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const HERE = path.dirname(fileURLToPath(import.meta.url))
-const ROOT = path.resolve(HERE, '../..')
-const CONFIG = path.join(ROOT, '.config/rollup.synp-sea.config.mjs')
+const STAGE_DIRECTORY = path.dirname(fileURLToPath(import.meta.url))
+const REPOSITORY_ROOT = path.resolve(STAGE_DIRECTORY, '../../..')
+const CONFIG = path.join(REPOSITORY_ROOT, '.config/rollup.synp-sea.config.mjs')
 const EXPECTED_PACKAGE = 'synp'
 
 function sha256(bytes: Uint8Array): string {
@@ -57,7 +57,7 @@ export async function stageSynp(
   noticeInventorySha256: string
   noticeDocuments: Array<{ path: string; sha256: string }>
 }> {
-  const packageRoot = path.join(ROOT, 'node_modules/synp')
+  const packageRoot = path.join(REPOSITORY_ROOT, 'node_modules/synp')
   const metadata = JSON.parse(
     await fs.readFile(path.join(packageRoot, 'package.json'), 'utf8'),
   ) as { name?: string; version?: string; license?: string }
@@ -75,12 +75,19 @@ export async function stageSynp(
   await fs.mkdir(outputRoot, { recursive: true })
   execFileSync(
     process.execPath,
-    [path.join(ROOT, 'node_modules/rollup/dist/bin/rollup'), '-c', CONFIG],
+    [
+      path.join(REPOSITORY_ROOT, 'node_modules/rollup/dist/bin/rollup'),
+      '-c',
+      CONFIG,
+    ],
     {
-      cwd: ROOT,
+      cwd: REPOSITORY_ROOT,
       env: {
         ...process.env,
-        SEA_SYNP_INPUT: path.join(HERE, 'adapters/synp-worker.mjs'),
+        SEA_SYNP_INPUT: path.join(
+          STAGE_DIRECTORY,
+          '../adapters/synp-worker.mjs',
+        ),
         SEA_SYNP_OUTPUT: outputRoot,
       },
       stdio: 'inherit',

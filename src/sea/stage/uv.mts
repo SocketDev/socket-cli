@@ -5,8 +5,8 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { gunzipSync, inflateRawSync } from 'node:zlib'
 
-import { downloadBytes } from './download-bytes.mts'
-import { cachedDownload } from './download-cache.mts'
+import { downloadBytes } from '../download-bytes.mts'
+import { cachedDownload } from '../download-cache.mts'
 import pins from './uv-pins.json' with { type: 'json' }
 
 const UV_VERSION = pins.version

@@ -3,7 +3,7 @@
 !.gitignore
 !/.claude/
 !/.claude/skills/
-!/.claude/skills/bump-coana/
+!/.claude/skills/**
 !/.config/
 !/.config/**
 !/.husky/
@@ -45,6 +45,7 @@
 !/scripts/test/terminal-report.mts
 !/scripts/test/snapshots.mts
 !/scripts/test/snapshot-dependencies.mts
+!/scripts/test/swap-snapshot-version.mts
 !/scripts/utils/
 !/shadow-bin/
 !/src/
@@ -193,6 +194,8 @@
 !/src/sea/archive-paths.mts
 !/src/sea/adapters/
 !/src/sea/build/
+!/src/sea/stage/
+!/src/sea/stage/**
 !/src/sea/download-cache.mts
 !/src/sea/capabilities.mts
 !/src/sea/licenses/
@@ -259,6 +262,7 @@
 !/test/native-snapshots/**
 !/test/unit/scripts/test/snapshots.test.mts
 !/test/unit/scripts/test/snapshot-dependencies.test.mts
+!/test/unit/scripts/test/swap-snapshot-version.test.mts
 !/test/package-matrix.test.mts
 !/test/fixtures/
 !/test/fixtures/commands/
@@ -348,7 +352,6 @@
 !/test/fixtures/manifest-bazel/native/bzlmod/
 !/test/fixtures/manifest-bazel/native/workspace/
 !/test/fixtures/manifest-bazel/python-pypi/
-!/.claude/skills/bump-coana/SKILL.md
 !/.editorconfig
 !/.env.dist
 !/.env.external
@@ -1079,10 +1082,7 @@
 !/src/sea/rollup-provenance.mjs
 !/src/sea/runtime.mts
 !/src/sea/download-bytes.mts
-!/src/sea/stage-synp.mts
-!/src/sea/stage-uv.mts
 !/src/sea/version.mts
-!/src/sea/uv-pins.json
 !/src/shadow/common.mts
 !/src/shadow/npm-base.mts
 !/src/shadow/npm-base.test.mts
