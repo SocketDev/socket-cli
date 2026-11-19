@@ -92,7 +92,7 @@ const generalFlags: MeowFlags = {
     type: 'boolean',
     hidden: true,
     description:
-      'Scan only the Bazel targets the patterns after `--` name, as `bazel build` takes them, from the workspace root TARGET, for example `socket scan create . --bazel -- //app/... -//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles, Python and JavaScript targets, with reachability for JVM and Python targets: the scan fails if the patterns match any other target, such as a `java_import`.',
+      'Scan only the Bazel targets the patterns after `--` name, as `bazel build` takes them, from the workspace root TARGET, for example `socket scan create . --bazel -- //app/... -//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles, Python, JavaScript, Rust and Go targets, with reachability for JVM and Python targets: the scan fails if the patterns match any other target, such as a `java_import`.',
   },
   branch: {
     type: 'string',
