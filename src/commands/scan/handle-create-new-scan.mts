@@ -123,19 +123,27 @@ export type HandleCreateNewScanConfig = {
   workspace?: string | undefined
 }
 
-// Reachability analyses Bazel's JVM targets only; the facts' other targets
-// are scanned for their dependencies alone. False when no JVM target is left.
-async function bazelReachability(factsPath: string): Promise<boolean> {
+// The ecosystems of Bazel targets Coana analyses for reachability.
+const BAZEL_REACHABLE_TYPES = new Set(['maven', 'pypi'])
+
+// The ecosystems among the facts' targets that reachability analyses; the
+// others' targets are scanned for their dependencies alone.
+async function bazelReachableTypes(factsPath: string): Promise<string[]> {
   const facts = JSON.parse(await readFile(factsPath, 'utf8')) as {
     projects?: Array<{ id: string; type: string }>
   }
-  const others = (facts.projects ?? []).filter(p => p.type !== 'maven')
+  const projects = facts.projects ?? []
+  const others = projects.filter(p => !BAZEL_REACHABLE_TYPES.has(p.type))
   if (others.length) {
     logger.warn(
       `Reachability analysis does not support these Bazel targets yet, so the scan holds their dependencies without it: ${others.map(p => p.id).join(', ')}`,
     )
   }
-  return others.length < (facts.projects ?? []).length
+  return [
+    ...new Set(
+      projects.map(p => p.type).filter(t => BAZEL_REACHABLE_TYPES.has(t)),
+    ),
+  ].sort()
 }
 
 async function createNewScan(
@@ -220,9 +228,12 @@ async function createNewScan(
       // The scan is of the targets alone, and their JVM artifacts are only
       // those the facts attribute.
       bazelFacts = [result.targetPath]
-      factsOnlyTypes = ['maven']
-      if (runReachability) {
-        runReachability = await bazelReachability(result.targetPath)
+      const reachable = await bazelReachableTypes(result.targetPath)
+      factsOnlyTypes = reachable.length
+        ? (reachable as unknown as FactsOnlyTypes)
+        : ['maven']
+      if (runReachability && !reachable.length) {
+        runReachability = false
       }
     } else if (autoManifest || reach.dynamicSbomInference) {
       logger.info('Auto-generating manifest files ...')
