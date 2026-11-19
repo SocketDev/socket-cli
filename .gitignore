@@ -220,6 +220,8 @@
 !/test/fixtures/commands/patch/yarn/.socket/
 !/test/fixtures/commands/patch/yarn/.socket/blobs/
 !/test/fixtures/commands/scan/
+!/test/fixtures/commands/scan/bazel-workspace/
+!/test/fixtures/commands/scan/bazel-workspace/app/
 !/test/fixtures/commands/scan/npm-test-workspace-mono/
 !/test/fixtures/commands/scan/npm-test-workspace-mono/packages/
 !/test/fixtures/commands/scan/npm-test-workspace-mono/packages/package-a/
@@ -1011,6 +1013,9 @@
 !/test/fixtures/commands/patch/yarn/.socket/manifest.json
 !/test/fixtures/commands/patch/yarn/package.json
 !/test/fixtures/commands/patch/yarn/yarn.lock
+!/test/fixtures/commands/scan/bazel-workspace/MODULE.bazel
+!/test/fixtures/commands/scan/bazel-workspace/app/BUILD.bazel
+!/test/fixtures/commands/scan/bazel-workspace/socket.json
 !/test/fixtures/commands/scan/npm-test-workspace-mono/.gitignore
 !/test/fixtures/commands/scan/npm-test-workspace-mono/package-lock.json
 !/test/fixtures/commands/scan/npm-test-workspace-mono/package.json

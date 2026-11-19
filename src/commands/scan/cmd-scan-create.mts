@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -50,6 +50,7 @@ import { socketDashboardLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { EXCLUDE_PATHS_FLAG } from '../manifest/run-manifest-facts.mts'
 
+import type { BazelScan } from './handle-create-new-scan.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { MeowFlags } from '../../flags.mts'
 import type {
@@ -66,6 +67,15 @@ const DEPRECATED_NO_OP_REACH_FLAGS = new Set([
   'reachLazyMode',
 ])
 
+// A Bazel workspace's root holds one of its boundary files (Bazel's
+// "Repositories, workspaces, packages, and targets").
+const BAZEL_WORKSPACE_FILES = [
+  'MODULE.bazel',
+  'REPO.bazel',
+  'WORKSPACE',
+  'WORKSPACE.bazel',
+]
+
 const description = 'Create a new Socket scan and report'
 
 const hidden = false
@@ -77,6 +87,13 @@ const generalFlags: MeowFlags = {
     type: 'boolean',
     description:
       'Run `socket manifest auto` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See `socket manifest auto --help`. For Gradle, sbt, Maven and .NET, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.',
+  },
+  bazelTargets: {
+    type: 'string',
+    isMultiple: true,
+    hidden: true,
+    description:
+      'Scan only these Bazel targets: Bazel target patterns from the workspace root, comma-separated or repeated, for example `//app/...,-//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles: the scan fails if the patterns match any other target, such as a `java_import`.',
   },
   branch: {
     type: 'string',
@@ -197,6 +214,14 @@ function hasSocketFactsFileIn(dir: string): boolean {
   } catch {
     return false
   }
+}
+
+function isBazelWorkspace(dir: string): boolean {
+  // Bazel counts a boundary file only when it is no directory.
+  return BAZEL_WORKSPACE_FILES.some(f => {
+    const file = path.join(dir, f)
+    return existsSync(file) && !statSync(file).isDirectory()
+  })
 }
 
 export const cmdScanCreate = {
@@ -363,6 +388,7 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
   const uvMembers = !!cli.flags['uvMembers']
+  const bazelTargets = cmdFlagValueToArray(cli.flags['bazelTargets'])
 
   let {
     autoManifest,
@@ -394,7 +420,11 @@ async function run(
 
   // Note: This needs meow booleanDefault=undefined.
   if (typeof autoManifest !== 'boolean') {
-    if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
+    // A Bazel scan replaces the manifest discovery this default is about.
+    if (
+      !bazelTargets.length &&
+      sockJson.defaults?.scan?.create?.autoManifest !== undefined
+    ) {
       autoManifest = sockJson.defaults.scan.create.autoManifest
       logger.info(
         `Using default --auto-manifest from ${SOCKET_JSON}:`,
@@ -454,6 +484,15 @@ async function run(
     targets = ['.']
   }
 
+  const bazelRoot =
+    bazelTargets.length && targets.length === 1
+      ? path.resolve(cwd, targets[0]!)
+      : undefined
+  const bazel: BazelScan | undefined =
+    bazelRoot && isBazelWorkspace(bazelRoot)
+      ? { root: bazelRoot, targets: bazelTargets }
+      : undefined
+
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
@@ -502,6 +541,7 @@ async function run(
     !autoManifest &&
     !dynamicSbomInference &&
     !uvMembers &&
+    !bazelTargets.length &&
     !hasFactsFile
   ) {
     logger.info(
@@ -611,6 +651,42 @@ async function run(
     },
     {
       nook: true,
+      test:
+        !bazelTargets.length ||
+        (!autoManifest && !dynamicSbomInference && !uvMembers),
+      message:
+        '--bazel-targets scans the Bazel targets alone and cannot be combined with --auto-manifest, --dynamic-sbom-inference or --uv-members',
+      fail: 'select one source of generated SBOMs',
+    },
+    {
+      nook: true,
+      test: !bazelTargets.length || !!bazel,
+      message:
+        '--bazel-targets needs exactly one TARGET, the root of a Bazel workspace: the directory with its MODULE.bazel, REPO.bazel, WORKSPACE or WORKSPACE.bazel file',
+      fail: 'no Bazel workspace root',
+    },
+    {
+      nook: true,
+      // The parser keeps a number such as `-1` as a value.
+      test: !argv.some(
+        (a, i) =>
+          a === '--bazel-targets' &&
+          /^-[^-]/.test(argv[i + 1] ?? '') &&
+          !/^-(\d+(\.\d+)?|\.\d+)$/.test(argv[i + 1] ?? ''),
+      ),
+      message:
+        'A negative Bazel target pattern given as its own value is read as flags: write it as `--bazel-targets=-//app/legacy/...`, or in a comma list such as `--bazel-targets //app/...,-//app/legacy/...`',
+      fail: 'attach the negative pattern with `=`',
+    },
+    {
+      nook: true,
+      test: !bazelTargets.length || !excludePaths.length,
+      message:
+        '--bazel-targets selects what to scan by target pattern: leave targets out with a negative pattern such as `-//app/legacy/...` instead of --exclude-paths',
+      fail: 'drop --exclude-paths',
+    },
+    {
+      nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
@@ -682,6 +758,7 @@ async function run(
 
   await handleCreateNewScan({
     autoManifest: Boolean(autoManifest),
+    bazel,
     branchName: branchName as string,
     commitHash: (commitHash && String(commitHash)) || '',
     commitMessage: (commitMessage && String(commitMessage)) || '',

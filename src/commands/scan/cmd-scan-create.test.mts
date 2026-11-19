@@ -81,6 +81,65 @@ describe('socket scan create', async () => {
     },
   )
 
+  const bazelFixture = path.join(
+    testPath,
+    'fixtures/commands/scan/bazel-workspace',
+  )
+  const bazelBaseArgs = uvBaseArgs.map(a =>
+    a === uvFixture ? bazelFixture : a,
+  )
+
+  it(
+    'scans Bazel targets from the workspace root, whatever socket.json says of --auto-manifest',
+    { timeout: 30_000 },
+    async () => {
+      const result = await spawnSocketCli(binCliPath, [
+        ...bazelBaseArgs,
+        '--bazel-targets',
+        '//app/...',
+        '.',
+      ])
+      expect(result.code).toBe(0)
+      expect(result.stdout).toContain('[DryRun]: Bailing now')
+    },
+  )
+
+  it.each([
+    {
+      args: ['--bazel-targets', '//app/...', 'app'],
+      error: 'the root of a Bazel workspace',
+    },
+    {
+      args: ['--bazel-targets', '//app/...', '--auto-manifest', '.'],
+      error: 'cannot be combined',
+    },
+    {
+      args: ['--bazel-targets', '//app/...', '--exclude-paths', 'app', '.'],
+      error: 'instead of --exclude-paths',
+    },
+    {
+      args: [
+        '--bazel-targets',
+        '//app/...',
+        '--bazel-targets',
+        '-//app/legacy/...',
+        '.',
+      ],
+      error: 'attach the negative pattern',
+    },
+  ])(
+    'rejects invalid Bazel scan options: $args',
+    { timeout: 30_000 },
+    async ({ args, error }) => {
+      const result = await spawnSocketCli(binCliPath, [
+        ...bazelBaseArgs,
+        ...args,
+      ])
+      expect(result.code).not.toBe(0)
+      expect(result.stdout + result.stderr).toContain(error)
+    },
+  )
+
   cmdit(
     ['scan', 'create', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,

@@ -61,11 +61,14 @@ export async function resolveBazelBinary(
     }
     return bin
   }
-  if (explicit) {
-    const resolved = path.resolve(cwd, explicit)
+  // As the other build tools take theirs from SOCKET_CLI_<TOOL>_PATH.
+  const override = explicit ?? env['SOCKET_CLI_BAZEL_PATH']
+  if (override) {
+    const named = explicit ? '--bazel' : 'SOCKET_CLI_BAZEL_PATH'
+    const resolved = path.resolve(cwd, override)
     if (!existsSync(resolved)) {
       throw new InputError(
-        `--bazel path does not exist: ${resolved}. Install bazelisk or bazel, or pass an existing path via --bazel.`,
+        `${named} path does not exist: ${resolved}. Install bazelisk or bazel, or name an existing path with ${named}.`,
       )
     }
     return resolveBazelExecutable(resolved)
@@ -82,6 +85,6 @@ export async function resolveBazelBinary(
   throw new InputError(
     'Could not find bazelisk or bazel on PATH. ' +
       'Install bazelisk (recommended; https://github.com/bazelbuild/bazelisk) ' +
-      'or bazel, or pass --bazel <path>.',
+      'or bazel, or name its path with --bazel or SOCKET_CLI_BAZEL_PATH.',
   )
 }
