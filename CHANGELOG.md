@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `socket manifest setup` and `socket manifest setup --dynamic-sbom-inference` ask for the reachability settings, so there is no need to edit `socket.json` by hand.
 
 ### Changed
+- `socket manifest bazel` takes Bazel from `SOCKET_CLI_BAZEL_PATH` outside the standalone build too, as Gradle, Maven and sbt take theirs from `SOCKET_CLI_<TOOL>_PATH`.
 - `socket.json` settings apply from every directory above a scan's starting point, not only from that directory down.
 - `--dynamic-sbom-inference` builds a module that lives outside its reactor's directory (such as Maven's `<module>../core</module>`) only inside that reactor, instead of also building it on its own.
 - A build that fails to generate Socket facts now stops only the builds in and beneath its directory, and its failure is ignored when another build that includes it succeeds.
