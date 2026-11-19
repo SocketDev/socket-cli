@@ -126,7 +126,11 @@ export type HandleCreateNewScanConfig = {
 }
 
 // The ecosystems of Bazel targets Coana analyses for reachability.
-const BAZEL_REACHABLE_TYPES: ReadonlySet<string> = new Set(['maven', 'pypi'])
+const BAZEL_REACHABLE_TYPES: ReadonlySet<string> = new Set([
+  'maven',
+  'npm',
+  'pypi',
+])
 const isBazelReachable = (type: string): type is PURL_Type =>
   BAZEL_REACHABLE_TYPES.has(type)
 
