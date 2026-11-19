@@ -150,7 +150,7 @@ describe('SEA capability policy', () => {
         hasSocketPatch: false,
         hasUv: false,
       }).available,
-    ).toEqual(['socket-core', 'manifest-dotnet-facts'])
+    ).toEqual(['socket-core'])
   })
 })
 

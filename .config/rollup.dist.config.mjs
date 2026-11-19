@@ -38,7 +38,6 @@ import {
 const {
   CONSTANTS,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
-  INLINED_SOCKET_CLI_PUBLISHED_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INSTRUMENT_WITH_SENTRY,
   NODE_MODULES,
@@ -107,71 +106,6 @@ async function copyInitGradle() {
   const filepath = path.join(constants.srcPath, 'commands/manifest/init.gradle')
   const destPath = path.join(constants.distPath, 'init.gradle')
   await fs.copyFile(filepath, destPath)
-}
-
-// Copy the build-tool resolution assets (Gradle init script, sbt plugin,
-// Maven extension jar, dotnet tool) into dist/manifest-scripts, where run.mts resolves them
-// at runtime. The Maven jar is compiled by maven-extension/build-jar.sh. Local
-// dev builds may omit it; published builds fail here if it is missing.
-async function copyManifestScripts() {
-  const srcDir = path.join(constants.srcPath, 'commands/manifest/scripts')
-  const destDir = path.join(constants.distPath, 'manifest-scripts')
-  await fs.mkdir(path.join(destDir, 'maven-extension'), { recursive: true })
-  await Promise.all([
-    fs.copyFile(
-      path.join(srcDir, 'socket-facts.init.gradle'),
-      path.join(destDir, 'socket-facts.init.gradle'),
-    ),
-    fs.copyFile(
-      path.join(srcDir, 'socket-facts.plugin.scala'),
-      path.join(destDir, 'socket-facts.plugin.scala'),
-    ),
-    fs.copyFile(
-      path.join(srcDir, 'socket-workspaces.init.gradle'),
-      path.join(destDir, 'socket-workspaces.init.gradle'),
-    ),
-    fs.copyFile(
-      path.join(srcDir, 'socket-workspaces.plugin.scala'),
-      path.join(destDir, 'socket-workspaces.plugin.scala'),
-    ),
-  ])
-  // The dotnet tool's publish output (scripts/dotnet-tool/build-tool.sh),
-  // like the Maven jar absent from a fresh checkout.
-  const dotnetToolDir = path.join(srcDir, 'dotnet-tool', 'publish')
-  if (existsSync(path.join(dotnetToolDir, 'socket-facts-dotnet.dll'))) {
-    await fs.cp(dotnetToolDir, path.join(destDir, 'dotnet-tool'), {
-      recursive: true,
-    })
-  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
-    throw new Error(
-      'dotnet manifest tool not found at ' +
-        dotnetToolDir +
-        ' for a published build. Build it first: pnpm run build:dotnet-tool',
-    )
-  }
-  const jarPath = path.join(
-    srcDir,
-    'maven-extension',
-    'coana-maven-extension.jar',
-  )
-  if (existsSync(jarPath)) {
-    await fs.copyFile(
-      jarPath,
-      path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
-    )
-  } else if (
-    constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
-  ) {
-    // Fail closed: a published build without the jar would ship a package whose
-    // `socket manifest maven` / Maven reachability silently produces an empty
-    // SBOM. Run `pnpm run build:maven-extension` before `build:dist`. (A local
-    // dev build tolerates a missing jar; run.mts surfaces a hint at runtime.)
-    throw new Error(
-      'Maven manifest extension jar not found at ' +
-        jarPath +
-        ' for a published build. Build it first: pnpm run build:maven-extension',
-    )
-  }
 }
 
 async function copyBashCompletion() {
@@ -581,7 +515,6 @@ export default async () => {
             await Promise.all([
               copyCoanaCache(),
               copyInitGradle(),
-              copyManifestScripts(),
               copyBashCompletion(),
               ...(updatePackageMetadata ? [updatePackageJson()] : []),
               // Remove dist/vendor.js.map file.
