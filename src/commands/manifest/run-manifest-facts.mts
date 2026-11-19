@@ -196,6 +196,53 @@ async function runGenerateSocketFacts<T>(
   })
 }
 
+// A failure sets a non-zero exit code; only a failed build is Coana's to
+// report. With a work dir, the facts stay there until keepFacts places them.
+async function runSocketFactsRequest(
+  request: SocketFactsRequest,
+  context: SocketFactsContext,
+): Promise<RunManifestFactsOutcome> {
+  const { buildRoot, entryFile, tool } = request
+  const { workDir } = context
+  const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
+    request,
+    workDir
+      ? [
+          ...(workDir.withFiles ? ['--with-files'] : []),
+          '--work-dir',
+          workDir.dir,
+        ]
+      : [],
+    context,
+  )
+
+  if (!result || result.status === 'failed') {
+    process.exitCode = 1
+    if (!result) {
+      logger.fail(
+        `Could not generate Socket facts for the ${tool} project at \`${buildRootPath({ dir: buildRoot, entryFile })}\`${message ? `: ${message}` : '.'}`,
+      )
+    }
+    return null
+  }
+  if (result.status === 'empty') {
+    return undefined
+  }
+  if (workDir && !result.sidecarEntry) {
+    process.exitCode = 1
+    logger.fail(
+      `Coana returned no sidecar entry for \`${result.targetPath}\`, which reachability analysis and socket fix need. This is a Coana bug; please report it to Socket.`,
+    )
+    return null
+  }
+  return {
+    factsPath: result.factsPath,
+    projects: result.projects,
+    sidecarEntry: result.sidecarEntry,
+    targetPath: result.targetPath,
+  }
+}
+
 export type SocketFactsRequestOptions = {
   bin?: string | undefined
   buildOpts: string[]
@@ -278,53 +325,6 @@ function toSocketFactsRequest({
   }
 }
 
-// A failure sets a non-zero exit code; only a failed build is Coana's to
-// report. With a work dir, the facts stay there until keepFacts places them.
-async function runSocketFactsRequest(
-  request: SocketFactsRequest,
-  context: SocketFactsContext,
-): Promise<RunManifestFactsOutcome> {
-  const { buildRoot, entryFile, tool } = request
-  const { workDir } = context
-  const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
-    request,
-    workDir
-      ? [
-          ...(workDir.withFiles ? ['--with-files'] : []),
-          '--work-dir',
-          workDir.dir,
-        ]
-      : [],
-    context,
-  )
-
-  if (!result || result.status === 'failed') {
-    process.exitCode = 1
-    if (!result) {
-      logger.fail(
-        `Could not generate Socket facts for the ${tool} project at \`${buildRootPath({ dir: buildRoot, entryFile })}\`${message ? `: ${message}` : '.'}`,
-      )
-    }
-    return null
-  }
-  if (result.status === 'empty') {
-    return undefined
-  }
-  if (workDir && !result.sidecarEntry) {
-    process.exitCode = 1
-    logger.fail(
-      `Coana returned no sidecar entry for \`${result.targetPath}\`, which reachability analysis and socket fix need. This is a Coana bug; please report it to Socket.`,
-    )
-    return null
-  }
-  return {
-    factsPath: result.factsPath,
-    projects: result.projects,
-    sidecarEntry: result.sidecarEntry,
-    targetPath: result.targetPath,
-  }
-}
-
 // Puts a kept build root's facts where they belong, and keeps its sidecar
 // entry for the Coana run that reads `workDir`.
 export async function keepFacts(
@@ -399,7 +399,8 @@ export async function listBuildProjects({
 }
 
 // The targets of the Bazel workspace at `root`, which Bazel runs in and the
-// facts belong to. For reachability, built: Bazel's jars exist only so.
+// facts belong to. For reachability they are compiled, as Bazel makes their
+// jars only when it builds them.
 export async function runBazelFacts({
   context = {},
   root,
@@ -411,12 +412,7 @@ export async function runBazelFacts({
 }): Promise<RunManifestFactsOutcome> {
   let bin: string
   try {
-    bin = await resolveBazelBinary(
-      process.env['SOCKET_CLI_BAZEL_PATH'],
-      process.env,
-      root,
-      'SOCKET_CLI_BAZEL_PATH',
-    )
+    bin = await resolveBazelBinary(undefined, process.env, root)
   } catch (e) {
     process.exitCode = 1
     logger.fail(getErrorMessageOr(e, 'Could not find Bazel'))
@@ -436,8 +432,15 @@ export async function runBazelFacts({
         verbose: false,
       },
       excludeBase: root,
-      // Its targets alone select what is scanned: no path is excluded.
-      hints: toRequestHints({ ...FLAG_HINTS, excludePathsFlag: undefined }),
+      // Scan create takes none of the build options as flags, and no path is excluded.
+      hints: toRequestHints({
+        continueOnInstallErrorsFlag: context.workDir?.withFiles
+          ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+          : undefined,
+        flags: new Set(),
+        setupCommand: FLAG_HINTS.setupCommand,
+        socketJson: SOCKET_JSON,
+      }),
       tool: 'bazel',
     },
     context,

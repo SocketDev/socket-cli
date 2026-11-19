@@ -93,10 +93,11 @@ describe('resolveBazelBinary', () => {
     ).rejects.toThrow(/--bazel path does not exist/)
     await expect(
       resolveBazelBinary(
-        path.join(cwd, 'missing'),
-        getBazelEnvironment(),
+        undefined,
+        getBazelEnvironment({
+          SOCKET_CLI_BAZEL_PATH: path.join(cwd, 'missing'),
+        }),
         cwd,
-        'SOCKET_CLI_BAZEL_PATH',
       ),
     ).rejects.toThrow(/SOCKET_CLI_BAZEL_PATH path does not exist/)
   })
