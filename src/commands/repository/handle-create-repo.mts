@@ -1,7 +1,6 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { fetchCreateRepo } from './fetch-create-repo.mts'
 import { outputCreateRepo } from './output-create-repo.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 
 import type { OutputKind } from '../../types.mts'
 

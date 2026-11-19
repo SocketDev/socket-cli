@@ -9,15 +9,16 @@ import os from 'node:os'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { confirm, select } from '@socketsecurity/registry/lib/prompts'
-
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import constants from '../../constants.mts'
 import { apiFetch } from '../../utils/api.mts'
-import { debugApiRequest, debugApiResponse } from '../../utils/debug.mts'
+import {
+  debugApiRequest,
+  debugApiResponse,
+  debugDir,
+  debugFn,
+} from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
 import {
   classifyGitHubResponse,
@@ -25,6 +26,8 @@ import {
   isGitHubBlockingError,
 } from '../../utils/github-errors.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
+import { logger } from '../../utils/logger.mts'
+import { confirm, select } from '../../utils/prompts.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'

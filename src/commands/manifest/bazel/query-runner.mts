@@ -1,11 +1,10 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   buildBazelStartupFlags as buildStartupFlags,
   spawnBazel,
 } from './process.mts'
 import constants from '../../../constants.mts'
 import { InputError } from '../../../utils/errors.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type { RepoProbe } from './repo-discovery.mts'
 

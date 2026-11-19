@@ -97,37 +97,32 @@ jobs:
       - name: Install pnpm
         shell: bash
         run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="10.33.0"
+          PNPM_VERSION="12.21.0"
           PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
           case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
-            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
-            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
-            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            Linux-x86_64)                     ASSET="pnpm-linux-x64.tar.gz"    ; EXPECTED_SHA256="84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Linux-aarch64)                    ASSET="pnpm-linux-arm64.tar.gz"   ; EXPECTED_SHA256="6c5913a48c93b3a556b71c3bd9bf12c6bf9fbfbbbd2dcbd1d52a85c539751b9e" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Darwin-x86_64)                    ASSET="pnpm-darwin-x64.tar.gz"    ; EXPECTED_SHA256="415c05ae4262c89b8f24ca58c693be5d969856ae909c086aa06996951fca30ea" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Darwin-arm64)                     ASSET="pnpm-darwin-arm64.tar.gz"  ; EXPECTED_SHA256="5c4d73018e00dd602531ce714625594fb693cbe110e6719df2b043b0ae62ab1a" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win32-x64.zip"       ; EXPECTED_SHA256="4fb64bb37e46c788309e0fd4ea93beb512546fdc7348121194fb704fbb72c09c" ; PNPM_BIN="$PNPM_DIR/pnpm.exe" ;;
             *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
           esac
-          PNPM_BIN="$PNPM_DIR/$ASSET"
+          PNPM_ARCHIVE="$PNPM_DIR/$ASSET"
           if [ ! -x "$PNPM_BIN" ]; then
             mkdir -p "$PNPM_DIR"
-            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            curl -fsSL -o "$PNPM_ARCHIVE" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_ARCHIVE" 2>/dev/null || shasum -a 256 "$PNPM_ARCHIVE") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET}!" >&2
               echo "  Expected: ${EXPECTED_SHA256}" >&2
               echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$PNPM_BIN"
+              rm -f "$PNPM_ARCHIVE"
               exit 1
             fi
+            if [[ "$ASSET" == *.zip ]]; then unzip -q "$PNPM_ARCHIVE" -d "$PNPM_DIR"; else tar -xzf "$PNPM_ARCHIVE" -C "$PNPM_DIR"; fi
             chmod +x "$PNPM_BIN"
-            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
-            if [[ "$ASSET" == *.exe ]]; then
-              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
-            else
-              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
-            fi
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
@@ -136,6 +131,14 @@ jobs:
         env:
           NODE_VERSION: 26.13.0
         run: pnpm run ci:setup-node
+
+      - name: Install latest npm
+        shell: bash
+        env:
+          NPM_VERSION: 12.2.3
+        run: |
+          npm install --global "npm@$NPM_VERSION" --ignore-scripts --no-audit --no-fund
+          test "$(npm --version)" = "$NPM_VERSION"
 
       - name: Download sfw
         shell: bash
@@ -292,37 +295,32 @@ jobs:
       - name: Install pnpm
         shell: bash
         run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="10.33.0"
+          PNPM_VERSION="12.21.0"
           PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
           case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
-            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
-            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
-            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            Linux-x86_64)                     ASSET="pnpm-linux-x64.tar.gz"    ; EXPECTED_SHA256="84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Linux-aarch64)                    ASSET="pnpm-linux-arm64.tar.gz"   ; EXPECTED_SHA256="6c5913a48c93b3a556b71c3bd9bf12c6bf9fbfbbbd2dcbd1d52a85c539751b9e" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Darwin-x86_64)                    ASSET="pnpm-darwin-x64.tar.gz"    ; EXPECTED_SHA256="415c05ae4262c89b8f24ca58c693be5d969856ae909c086aa06996951fca30ea" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Darwin-arm64)                     ASSET="pnpm-darwin-arm64.tar.gz"  ; EXPECTED_SHA256="5c4d73018e00dd602531ce714625594fb693cbe110e6719df2b043b0ae62ab1a" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win32-x64.zip"       ; EXPECTED_SHA256="4fb64bb37e46c788309e0fd4ea93beb512546fdc7348121194fb704fbb72c09c" ; PNPM_BIN="$PNPM_DIR/pnpm.exe" ;;
             *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
           esac
-          PNPM_BIN="$PNPM_DIR/$ASSET"
+          PNPM_ARCHIVE="$PNPM_DIR/$ASSET"
           if [ ! -x "$PNPM_BIN" ]; then
             mkdir -p "$PNPM_DIR"
-            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            curl -fsSL -o "$PNPM_ARCHIVE" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_ARCHIVE" 2>/dev/null || shasum -a 256 "$PNPM_ARCHIVE") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET}!" >&2
               echo "  Expected: ${EXPECTED_SHA256}" >&2
               echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$PNPM_BIN"
+              rm -f "$PNPM_ARCHIVE"
               exit 1
             fi
+            if [[ "$ASSET" == *.zip ]]; then unzip -q "$PNPM_ARCHIVE" -d "$PNPM_DIR"; else tar -xzf "$PNPM_ARCHIVE" -C "$PNPM_DIR"; fi
             chmod +x "$PNPM_BIN"
-            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
-            if [[ "$ASSET" == *.exe ]]; then
-              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
-            else
-              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
-            fi
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
@@ -331,6 +329,14 @@ jobs:
         env:
           NODE_VERSION: 26.13.0
         run: pnpm run ci:setup-node
+
+      - name: Install latest npm
+        shell: bash
+        env:
+          NPM_VERSION: 12.2.3
+        run: |
+          npm install --global "npm@$NPM_VERSION" --ignore-scripts --no-audit --no-fund
+          test "$(npm --version)" = "$NPM_VERSION"
 
       - name: Download sfw
         shell: bash
@@ -509,37 +515,32 @@ jobs:
       - name: Install pnpm
         shell: bash
         run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="10.33.0"
+          PNPM_VERSION="12.21.0"
           PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
           case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
-            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
-            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
-            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            Linux-x86_64)                     ASSET="pnpm-linux-x64.tar.gz"    ; EXPECTED_SHA256="84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Linux-aarch64)                    ASSET="pnpm-linux-arm64.tar.gz"   ; EXPECTED_SHA256="6c5913a48c93b3a556b71c3bd9bf12c6bf9fbfbbbd2dcbd1d52a85c539751b9e" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Darwin-x86_64)                    ASSET="pnpm-darwin-x64.tar.gz"    ; EXPECTED_SHA256="415c05ae4262c89b8f24ca58c693be5d969856ae909c086aa06996951fca30ea" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            Darwin-arm64)                     ASSET="pnpm-darwin-arm64.tar.gz"  ; EXPECTED_SHA256="5c4d73018e00dd602531ce714625594fb693cbe110e6719df2b043b0ae62ab1a" ; PNPM_BIN="$PNPM_DIR/pnpm" ;;
+            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win32-x64.zip"       ; EXPECTED_SHA256="4fb64bb37e46c788309e0fd4ea93beb512546fdc7348121194fb704fbb72c09c" ; PNPM_BIN="$PNPM_DIR/pnpm.exe" ;;
             *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
           esac
-          PNPM_BIN="$PNPM_DIR/$ASSET"
+          PNPM_ARCHIVE="$PNPM_DIR/$ASSET"
           if [ ! -x "$PNPM_BIN" ]; then
             mkdir -p "$PNPM_DIR"
-            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            curl -fsSL -o "$PNPM_ARCHIVE" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_ARCHIVE" 2>/dev/null || shasum -a 256 "$PNPM_ARCHIVE") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET}!" >&2
               echo "  Expected: ${EXPECTED_SHA256}" >&2
               echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$PNPM_BIN"
+              rm -f "$PNPM_ARCHIVE"
               exit 1
             fi
+            if [[ "$ASSET" == *.zip ]]; then unzip -q "$PNPM_ARCHIVE" -d "$PNPM_DIR"; else tar -xzf "$PNPM_ARCHIVE" -C "$PNPM_DIR"; fi
             chmod +x "$PNPM_BIN"
-            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
-            if [[ "$ASSET" == *.exe ]]; then
-              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
-            else
-              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
-            fi
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
@@ -585,6 +586,14 @@ jobs:
           }
           Expand-Archive $archivePath $tools
           (Join-Path $tools "node-v$nodeVersion-win-x64") | Add-Content $env:GITHUB_PATH
+
+      - name: Install latest npm
+        shell: bash
+        env:
+          NPM_VERSION: 12.2.3
+        run: |
+          npm install --global "npm@$NPM_VERSION" --ignore-scripts --no-audit --no-fund
+          test "$(npm --version)" = "$NPM_VERSION"
 
       - name: Download sfw
         shell: bash
@@ -854,11 +863,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version=10.33.0
+          version=12.21.0
           case "$RUNNER_OS/$RUNNER_ARCH" in
-            Linux/X64) asset=pnpm-linux-x64; sha=8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5 ;;
-            macOS/ARM64) asset=pnpm-macos-arm64; sha=ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae ;;
-            Windows/X64) asset=pnpm-win-x64.exe; sha=afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f ;;
+            Linux/X64) asset=pnpm-linux-x64.tar.gz; sha=84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410 ;;
+            macOS/ARM64) asset=pnpm-darwin-arm64.tar.gz; sha=5c4d73018e00dd602531ce714625594fb693cbe110e6719df2b043b0ae62ab1a ;;
+            Windows/X64) asset=pnpm-win32-x64.zip; sha=4fb64bb37e46c788309e0fd4ea93beb512546fdc7348121194fb704fbb72c09c ;;
             *) echo "Unsupported runner: $RUNNER_OS/$RUNNER_ARCH" >&2; exit 1 ;;
           esac
           dir="$RUNNER_TEMP/pnpm-bin"
@@ -866,7 +875,7 @@ jobs:
           curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v${version}/${asset}" -o "$dir/$asset"
           actual=$( (sha256sum "$dir/$asset" 2>/dev/null || shasum -a 256 "$dir/$asset") | cut -d' ' -f1 | tr -d '\134')
           [[ "$actual" == "$sha" ]] || { echo "pnpm checksum mismatch" >&2; exit 1; }
-          if [[ "$asset" == *.exe ]]; then cp "$dir/$asset" "$dir/pnpm.exe"; else chmod +x "$dir/$asset"; ln -sf "$asset" "$dir/pnpm"; fi
+          if [[ "$asset" == *.zip ]]; then unzip -q "$dir/$asset" -d "$dir"; else tar -xzf "$dir/$asset" -C "$dir"; chmod +x "$dir/pnpm"; fi
           if [[ "$RUNNER_OS" == Windows ]]; then dir=$(cygpath -w "$dir"); fi
           echo "$dir" >> "$GITHUB_PATH"
 

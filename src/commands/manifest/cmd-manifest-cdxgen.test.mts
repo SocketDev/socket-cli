@@ -2,9 +2,6 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import {
   cleanOutput,
   cmdit,
@@ -18,6 +15,8 @@ import constants, {
   FLAG_VERSION,
   REDACTED,
 } from '../../constants.mts'
+import { LOG_SYMBOLS } from '../../utils/logger.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 import type { MatcherContext } from '@vitest/expect'
 
@@ -112,7 +111,10 @@ describe('socket manifest cdxgen', async () => {
           hasSocketBanner(combinedOutput) && hasSocketCommand
 
         expect(hasCdxgenWorked || hasFallbackOutput).toBe(true)
-        expect(process.platform === 'win32' ? [0, 1] : [0]).toContain(code)
+        expect(
+          process.platform === 'win32' ? [0, 1, 127] : [0],
+          'help should return normally or tolerate a missing Windows DLX command',
+        ).toContain(code)
         expect(combinedOutput, 'banner includes base command').toContain(
           '`socket manifest cdxgen`',
         )

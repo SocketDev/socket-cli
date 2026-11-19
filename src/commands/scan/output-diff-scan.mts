@@ -3,18 +3,20 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { fileLink } from '../../utils/terminal-link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkData } from '@socketsecurity/sdk'
+
+type DiffScanData = SocketSdkData<'GetOrgDiffScan'>
+type CompletedDiffScan = Extract<DiffScanData, { before: { id: string } }>
 
 export async function outputDiffScan(
-  result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
+  result: CResult<DiffScanData>,
   {
     depth,
     file,
@@ -35,6 +37,17 @@ export async function outputDiffScan(
       return
     }
     logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  if (!('before' in result.data)) {
+    if (outputKind === 'json' || file) {
+      await handleJson(result, file, '')
+    } else {
+      logger.info(
+        `Diff scan ${result.data.id} is ${result.data.status}. Run this command again when it completes.`,
+      )
+    }
     return
   }
 
@@ -75,7 +88,7 @@ export async function outputDiffScan(
 }
 
 async function handleJson(
-  data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
+  data: CResult<DiffScanData>,
   file: string,
   dashboardMessage: string,
 ) {
@@ -100,9 +113,7 @@ async function handleJson(
   }
 }
 
-async function handleMarkdown(
-  data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
-) {
+async function handleMarkdown(data: CompletedDiffScan) {
   const SOCKET_SBOM_URL_PREFIX = `${constants.SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
   logger.log('# Scan diff result')

@@ -1,7 +1,5 @@
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
 import { resolveReachAdvisories } from './reach-advisories.mts'
@@ -22,6 +20,7 @@ import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { parseReachEcosystems } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,

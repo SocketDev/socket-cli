@@ -1,11 +1,10 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   getConfigValue,
   getSupportedConfigKeys,
   isConfigFromFlag,
   isSensitiveConfigKey,
 } from '../../utils/config.mts'
+import { logger } from '../../utils/logger.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { OutputKind } from '../../types.mts'

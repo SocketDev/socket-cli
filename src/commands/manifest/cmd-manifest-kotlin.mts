@@ -1,8 +1,5 @@
 import path from 'node:path'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
@@ -12,7 +9,9 @@ import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { debugFn } from '../../utils/debug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'

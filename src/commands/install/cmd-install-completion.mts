@@ -1,8 +1,7 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleInstallCompletion } from './handle-install-completion.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 

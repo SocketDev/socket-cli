@@ -44,6 +44,9 @@
 !/scripts/rollup/
 !/scripts/setup/
 !/scripts/test/
+!/scripts/test/tools/
+!/scripts/test/tools/pnpm*/
+!/scripts/test/tools/pnpm*/package.json
 !/scripts/test/terminal-report.mts
 !/scripts/test/snapshots.mts
 !/scripts/utils/
@@ -1046,6 +1049,8 @@
 !/src/commands/yarn/cmd-yarn.mts
 !/src/commands/yarn/cmd-yarn.test.mts
 !/src/constants.mts
+!/src/constants/
+!/src/constants/**
 !/src/external/blessed-contrib/lib/layout/grid.mjs
 !/src/external/blessed-contrib/lib/widget/charts/bar.mjs
 !/src/external/blessed-contrib/lib/widget/charts/line.mjs
@@ -1055,7 +1060,6 @@
 !/src/npm-cli.mts
 !/src/npx-cli.mts
 !/src/pnpm-cli.mts
-!/src/registry-constants.mts
 !/src/sea/README.md
 !/src/sea/adapters/cdxgen-worker.mjs
 !/src/sea/adapters/cdxgen.mts

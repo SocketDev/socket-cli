@@ -1,13 +1,12 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
 import { resolveAdvisoryIds } from '../../utils/advisory-ids.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/registry/lib/objects'
+import type { Remap } from '../../utils/objects.mts'
 
 export type HandleFixConfig = Remap<
   FixConfig & {

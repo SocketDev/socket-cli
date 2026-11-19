@@ -171,17 +171,17 @@ jobs:
         name: Install pnpm
         shell: bash
         run: | # zizmor: ignore[github-env]
-          # pnpm 11 is required for `pnpm stage publish` (the staged upload
+          # pnpm 12 is required for `pnpm stage publish` (the staged upload
           # the per-package trusted-publisher grants allow) and ships tar.gz
           # release assets (a `pnpm` binary + its dist/ tree). The job only
           # runs ubuntu-latest, so only the Linux assets are pinned.
-          PNPM_VERSION="11.17.0"
+          PNPM_VERSION="12.21.0"
           PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
           case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)  ASSET="pnpm-linux-x64.tar.gz"   ; EXPECTED_SHA256="bdb1db01bf0f757495405a59a09c5c287f315889dc98d3b14bc374b9fe43a0bf" ;;
-            Linux-aarch64) ASSET="pnpm-linux-arm64.tar.gz" ; EXPECTED_SHA256="730d17de742a3efbb020ba91d7acfc0456c6ba6ad1cd8eb49f4c229fe9f504d3" ;;
+            Linux-x86_64)  ASSET="pnpm-linux-x64.tar.gz"   ; EXPECTED_SHA256="84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410" ;;
+            Linux-aarch64) ASSET="pnpm-linux-arm64.tar.gz" ; EXPECTED_SHA256="6c5913a48c93b3a556b71c3bd9bf12c6bf9fbfbbbd2dcbd1d52a85c539751b9e" ;;
             *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
           esac
           PNPM_BIN="$PNPM_DIR/pnpm"
@@ -216,8 +216,16 @@ jobs:
         name: Install Node.js
         shell: bash
         env:
-          NODE_VERSION: 25.9.0
+          NODE_VERSION: 26.13.0
         run: pnpm run ci:setup-node
+
+      - name: Install latest npm
+        shell: bash
+        env:
+          NPM_VERSION: 12.2.3
+        run: |
+          npm install --global "npm@$NPM_VERSION" --ignore-scripts --no-audit --no-fund
+          test "$(npm --version)" = "$NPM_VERSION"
 
       - &download-sfw
         name: Download sfw
@@ -562,17 +570,17 @@ jobs:
       VERSION: ${{ needs.verify.outputs.version }}
 
     steps:
-      # pnpm 11 provides `stage publish`; the pinned tar.gz assets are the
+      # pnpm 12 provides `stage publish`; the pinned tar.gz assets are the
       # same ones the verify job installs. Checksums must be bumped in
       # lock-step with the version.
       - name: Install pnpm
         shell: bash
         run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="11.17.0"
+          PNPM_VERSION="12.21.0"
           PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
           case "$(uname -m)" in
-            x86_64)  ASSET="pnpm-linux-x64.tar.gz"   ; EXPECTED_SHA256="bdb1db01bf0f757495405a59a09c5c287f315889dc98d3b14bc374b9fe43a0bf" ;;
-            aarch64) ASSET="pnpm-linux-arm64.tar.gz" ; EXPECTED_SHA256="730d17de742a3efbb020ba91d7acfc0456c6ba6ad1cd8eb49f4c229fe9f504d3" ;;
+            x86_64)  ASSET="pnpm-linux-x64.tar.gz"   ; EXPECTED_SHA256="84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410" ;;
+            aarch64) ASSET="pnpm-linux-arm64.tar.gz" ; EXPECTED_SHA256="6c5913a48c93b3a556b71c3bd9bf12c6bf9fbfbbbd2dcbd1d52a85c539751b9e" ;;
             *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
           esac
           mkdir -p "$PNPM_DIR"

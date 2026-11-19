@@ -30,8 +30,7 @@ import {
   vi,
 } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
+import { spawn } from './spawn.mts'
 import constants, { SOCKET_CLI_API_TOKEN_VARIABLES } from '../constants.mts'
 import { spawnCoana } from './coana-release.mts'
 import { overrideCachedConfig, resetConfigForTesting } from './config.mts'

@@ -15,13 +15,9 @@ const externalPath = path.join(rootPath, 'external')
 
 // Mirrors EXTERNAL_PACKAGES in .config/rollup.base.config.mjs. Scoped to what
 // the build vendors into external/, because unbundled optional peers reached by
-// bare name there (blessed's pty.js/term.js terminal widget, node-gyp under
-// @socketsecurity/registry) are a separate, longstanding question.
-const bundledNames = new Set([
-  '@socketsecurity/registry',
-  'blessed',
-  'blessed-contrib',
-])
+// bare name there (blessed's pty.js/term.js terminal widget) is a separate,
+// longstanding question.
+const bundledNames = new Set(['blessed', 'blessed-contrib'])
 
 const bareRequireRegExp =
   /require[$\w]*(?:\.resolve)?\(\s*['"]([^'"]+)['"]\s*\)/g

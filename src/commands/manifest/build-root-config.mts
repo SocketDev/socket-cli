@@ -1,14 +1,13 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { isObjectObject } from '@socketsecurity/registry/lib/objects'
-
 import { buildRootPath, isBuildFile } from './discover-manifest-roots.mts'
 import { BUILD_FILES, BUILD_TOOLS } from './scripts/build-tool.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
+import { logger } from '../../utils/logger.mts'
+import { isRecord } from '../../utils/objects.mts'
 import {
   mergeSocketJsonChain,
   readSocketJsonChain,
@@ -69,7 +68,7 @@ function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
     return
   }
   const file = socketJsonPath(dir)
-  if (!isObjectObject(builds)) {
+  if (!isRecord(builds)) {
     throw new InputError(
       `defaults.manifest.builds in ${file} must be an object keyed by build file name.`,
     )
@@ -80,7 +79,7 @@ function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
         `${buildsSetting(key)} in ${file} must be keyed by the name of a build file in that directory, such as pom.xml or build.gradle.`,
       )
     }
-    if (!isObjectObject(entry)) {
+    if (!isRecord(entry)) {
       throw new InputError(
         `${buildsSetting(key)} in ${file} must be an object.`,
       )

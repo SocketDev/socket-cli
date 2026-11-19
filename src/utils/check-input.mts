@@ -1,10 +1,9 @@
 import colors from 'yoctocolors-cjs'
 
-import { LOG_SYMBOLS, logger } from '@socketsecurity/registry/lib/logger'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
-
 import { failMsgWithBadge } from './fail-msg-with-badge.mts'
+import { LOG_SYMBOLS, logger } from './logger.mts'
 import { serializeResultJson } from './serialize-result-json.mts'
+import { stripAnsi } from './strings.mts'
 
 import type { OutputKind } from '../types.mts'
 

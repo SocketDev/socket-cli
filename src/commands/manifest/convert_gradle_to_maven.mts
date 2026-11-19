@@ -1,12 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants from '../../constants.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import { isStandaloneSea } from '../../sea/runtime.mts'
+import { logger } from '../../utils/logger.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 export async function convertGradleToMaven({
   bin,

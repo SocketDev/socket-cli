@@ -15,7 +15,7 @@ vi.mock('../../../src/sea/runtime.mts', () => ({
   isStandaloneSea: vi.fn(() => false),
 }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../../../src/utils/spawn.mts', () => ({
   spawn: vi.fn(() => 'spawn-result'),
 }))
 

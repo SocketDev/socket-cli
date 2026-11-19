@@ -1,19 +1,18 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { parseUrl } from '@socketsecurity/registry/lib/url'
-
 import constants from '../../constants.mts'
 import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
+import { debugFn } from '../../utils/debug.mts'
 import { toFilterConfig } from '../../utils/filter-config.mts'
+import { getOwn } from '../../utils/objects.mts'
 import { idToNpmPurl } from '../../utils/spec.mts'
+import { parseUrl } from '../../utils/url.mts'
 
 import type { ArboristInstance, Diff, NodeClass } from './arborist/types.mts'
 import type {
   AlertFilter,
   AlertsByPurl,
 } from '../../utils/socket-package-alert.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { Spinner } from '../../utils/spinner.mts'
 
 function getUrlOrigin(input: string): string {
   // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.

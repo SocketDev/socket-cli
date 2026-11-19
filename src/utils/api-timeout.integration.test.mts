@@ -131,18 +131,20 @@ async function generateLocalhostCertificate(
   const requestPath = join(workingDirectory, 'direct-api-timeout.csr.pem')
   const runOpenSsl = (args: string[]) =>
     new Promise<void>((resolve, reject) => {
-      const openssl = spawn(
-        'openssl',
-        args,
-        { cwd: workingDirectory, stdio: 'ignore', windowsHide: true },
-      )
+      const openssl = spawn('openssl', args, {
+        cwd: workingDirectory,
+        stdio: 'ignore',
+        windowsHide: true,
+      })
       openssl.once('error', reject)
       openssl.once('close', code => {
         if (code === 0) {
           resolve()
         } else {
           reject(
-            new Error(`OpenSSL failed to create the test certificate (${code})`),
+            new Error(
+              `OpenSSL failed to create the test certificate (${code})`,
+            ),
           )
         }
       })
@@ -201,7 +203,7 @@ function runUnsetTimeoutChild(): Promise<string> {
   const source = [
     "const { queryApiSafeTextWithStatus } = await import('./src/utils/api.mts')",
     "const result = await queryApiSafeTextWithStatus('unset-gap')",
-    'process.stdout.write(JSON.stringify({ ok: result.ok }))',
+    'process.stdout.write(JSON.stringify(result))',
   ].join('; ')
   return new Promise((resolve, reject) => {
     const child = spawn(
@@ -212,6 +214,7 @@ function runUnsetTimeoutChild(): Promise<string> {
         env: {
           PATH: process.env['PATH'] ?? '',
           HOME: isolatedHome,
+          LOCALAPPDATA: join(isolatedHome, 'AppData', 'Local'),
           XDG_CONFIG_HOME: join(isolatedHome, 'config'),
           XDG_DATA_HOME: join(isolatedHome, 'data'),
           SOCKET_CLI_CONFIG: '{}',
@@ -223,7 +226,6 @@ function runUnsetTimeoutChild(): Promise<string> {
           HTTP_PROXY: '',
           http_proxy: '',
           SSL_CERT_FILE: certificatePath,
-          NODE_EXTRA_CA_CERTS: '',
         },
       },
     )
@@ -429,7 +431,12 @@ describe('v1 direct Socket API timeout configuration', () => {
   it('keeps raw API requests without a timeout when the setting is unset', async () => {
     const observedRequest = waitForRequest('/unset-gap')
     const childResult = await runUnsetTimeoutChild()
-    expect(childResult).toBe('{"ok":true}')
+    const result = JSON.parse(childResult) as {
+      cause?: string
+      message?: string
+      ok: boolean
+    }
+    expect(result, JSON.stringify(result)).toMatchObject({ ok: true })
     const observed = await observedRequest
     await observed.closed
   })

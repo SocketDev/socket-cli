@@ -2,30 +2,22 @@ import meow from 'meow'
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import {
-  getOwn,
-  hasOwn,
-  toSortedObject,
-} from '@socketsecurity/registry/lib/objects'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { getCliSpinners } from '@socketsecurity/registry/lib/spinner'
-import {
-  indentString,
-  trimNewlines,
-} from '@socketsecurity/registry/lib/strings'
-
+import { joinAnd } from './arrays.mts'
 import {
   getConfigValueOrUndef,
   isConfigFromFlag,
   overrideCachedConfig,
   overrideConfigApiToken,
 } from './config.mts'
+import { isDebug } from './debug.mts'
+import { logger } from './logger.mts'
+import { getOwn, hasOwn, toSortedObject } from './objects.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
+import { normalizePath } from './path.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
+import { naturalCompare } from './sorts.mts'
+import { getCliSpinners } from './spinner.mts'
+import { indentString, trimNewlines } from './strings.mts'
 import { socketPackageLink } from './terminal-link.mts'
 import constants, {
   API_V0_URL,

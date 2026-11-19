@@ -1,6 +1,6 @@
 import constants from '../../constants.mts'
 
-import type { Remap } from '@socketsecurity/registry/lib/objects'
+import type { Remap } from '../objects.mts'
 import type {
   ALERT_ACTION,
   ALERT_TYPE,

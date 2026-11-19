@@ -17,11 +17,11 @@ const mockDebugFn = vi.hoisted(() => vi.fn())
 const mockGitDeleteBranch = vi.hoisted(() => vi.fn())
 const mockGitDeleteRemoteBranch = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('../../utils/logger.mts', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
+vi.mock('../../utils/debug.mts', () => ({
   debugFn: mockDebugFn,
 }))
 

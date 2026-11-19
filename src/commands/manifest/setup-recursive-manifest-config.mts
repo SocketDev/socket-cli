@@ -3,11 +3,6 @@ import path from 'node:path'
 
 import micromatch from 'micromatch'
 
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import {
   createBuildRootSettingsResolver,
   displayPath,
@@ -38,8 +33,11 @@ import {
   setupSbt,
 } from './setup-manifest-config.mts'
 import { SOCKET_JSON } from '../../constants.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
+import { logger } from '../../utils/logger.mts'
+import { select } from '../../utils/prompts.mts'
 import {
   mergeSocketJsonChain,
   readOrDefaultSocketJson,
@@ -47,6 +45,7 @@ import {
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
+import { pluralize } from '../../utils/words.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
 import type {

@@ -1,8 +1,6 @@
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import {
   generateUvMemberSboms,
@@ -39,6 +37,7 @@ import {
   getRepoName,
   gitBranch,
 } from '../../utils/git.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,

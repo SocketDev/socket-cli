@@ -1,8 +1,7 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { outputConfigSet } from './output-config-set.mts'
 import { CONFIG_KEY_API_TOKEN, CONFIG_KEY_AUTH_TYPE } from '../../constants.mts'
 import { updateConfigValue } from '../../utils/config.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'

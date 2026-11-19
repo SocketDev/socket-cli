@@ -5,9 +5,8 @@ import v8 from 'node:v8'
 
 import { describe, expect, it } from 'vitest'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-
 import { globWithGitIgnore } from './glob.mts'
+import { normalizePath } from './path.mts'
 
 function codeSpaceMb(): number {
   const spaces = v8.getHeapSpaceStatistics()

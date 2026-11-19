@@ -1,7 +1,6 @@
 import updateNotifier from 'tiny-updater'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { logger } from './logger.mts'
 import constants from '../constants.mts'
 import { isStandaloneSea } from '../sea/runtime.mts'
 

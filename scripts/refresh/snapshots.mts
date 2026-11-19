@@ -10,7 +10,7 @@ import type { SnapshotDependencyName } from './snapshots/dependencies.mts'
 import {
   assertSnapshotDependenciesCurrent,
   normalizeSnapshotDependencyName,
-  SNAPSHOT_DEPENDENCIES,
+  SNAPSHOT_DEPENDENCIES as snapshotDependencies,
 } from './snapshots/dependencies.mts'
 
 const ROOT = path.resolve(import.meta.dirname, '../..')
@@ -32,7 +32,7 @@ function missingSnapshotDependencyError(): Error {
     'Provide a dependency name. Usage: pnpm snapshots:refresh:dep <name>. ' +
       'Examples: pnpm snapshots:refresh:dep coana, pnpm snapshots:refresh:dep socket-patch, or pnpm snapshots:refresh:dep patch. ' +
       'Socket Python CLI still needs a snapshot mapping. ' +
-      `Currently mapped: ${Object.keys(SNAPSHOT_DEPENDENCIES).join(', ')}, socket-patch.`,
+      `Currently mapped: ${Object.keys(snapshotDependencies).join(', ')}, socket-patch.`,
   )
 }
 
@@ -76,7 +76,7 @@ export function dependencySnapshotArgs(
   dependencyName: SnapshotDependencyName,
 ): string[] {
   const config =
-    SNAPSHOT_DEPENDENCIES[normalizeSnapshotDependencyName(dependencyName)!]
+    snapshotDependencies[normalizeSnapshotDependencyName(dependencyName)!]
   return [
     '--build',
     'test/native/commands/cli.native.test.mts',

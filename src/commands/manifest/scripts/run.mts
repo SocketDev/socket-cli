@@ -1,8 +1,6 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import { assembleFacts } from './assemble.mts'
 import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
@@ -11,6 +9,7 @@ import constants from '../../../constants.mts'
 import { isStandaloneSea } from '../../../sea/runtime.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
 import { getOrInsert } from '../../../utils/get-or-insert.mts'
+import { spawn } from '../../../utils/spawn.mts'
 import { camelToKebab } from '../../../utils/strings.mts'
 
 import type { BuildTool } from './build-tool.mts'

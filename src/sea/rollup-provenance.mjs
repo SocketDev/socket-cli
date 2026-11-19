@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
 
-import { parse as parseYaml } from 'yaml'
+import { parsePnpmLock } from './pnpm-lock.mts'
 
 const legalFilenamePattern =
   /^(?:license|licence|copying|copyright|notice|patents?)(?:[._ -].*)?$/i
@@ -518,8 +518,9 @@ function serializeInventory(records, { bundleId, lockfilePath }) {
 }
 
 async function readLock(root, lockfilePath) {
-  const lock = parseYaml(
+  const lock = parsePnpmLock(
     await fs.readFile(path.join(root, lockfilePath), 'utf8'),
+    await fs.readFile(path.join(root, 'pnpm-workspace.yaml'), 'utf8'),
   )
   if (!lock || typeof lock.packages !== 'object' || !lock.packages) {
     throw new Error(

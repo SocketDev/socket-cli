@@ -25,9 +25,8 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createBrotliCompress } from 'node:zlib'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { readJsonSync } from '@socketsecurity/registry/lib/fs'
-
+import { debugDir, debugFn } from './debug.mts'
+import { readJsonSync } from './fs.mts'
 import constants from '../constants.mts'
 
 import type { PURL_Type } from './ecosystem.mts'

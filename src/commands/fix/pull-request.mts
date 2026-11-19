@@ -1,8 +1,5 @@
 import { RequestError } from '@octokit/request-error'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-
 import {
   getSocketFixBranchPattern,
   getSocketFixPullRequestBody,
@@ -15,6 +12,7 @@ import {
   GQL_PR_STATE_OPEN,
   UNKNOWN_VALUE,
 } from '../../constants.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { gitDeleteRemoteBranch } from '../../utils/git.mts'
 import {
@@ -25,9 +23,10 @@ import {
   getOctokitGraphql,
   writeCache,
 } from '../../utils/github.mts'
+import { isNonEmptyString } from '../../utils/strings.mts'
 
+import type { JsonContent } from '../../utils/fs.mts'
 import type { OctokitResponse } from '@octokit/types'
-import type { JsonContent } from '@socketsecurity/registry/lib/fs'
 
 export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined

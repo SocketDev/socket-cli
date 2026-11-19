@@ -96,9 +96,13 @@ export function validatePrivateVirtualStore(
   }
   const actual = path.resolve(workspace, 'node_modules', virtualStoreDir)
   const expected = path.resolve(workspace, 'node_modules/.pnpm')
-  if (actual !== expected) {
+  const matches =
+    process.platform === 'win32'
+      ? actual.toLowerCase() === expected.toLowerCase()
+      : actual === expected
+  if (!matches) {
     throw new Error(
-      `pnpm virtual store escaped the private workspace: ${actual}`,
+      `pnpm virtual store escaped the private workspace: ${actual}; expected ${expected}; configured ${virtualStoreDir}`,
     )
   }
 }
@@ -134,7 +138,19 @@ export async function verifyPrivateVirtualStore(
   const modules = parseYaml(await fs.readFile(modulesPath, 'utf8')) as {
     virtualStoreDir?: unknown
   }
-  validatePrivateVirtualStore(workspace, modules.virtualStoreDir)
+  let workspacePath = workspace
+  let virtualStoreDir = modules.virtualStoreDir
+  if (process.platform === 'win32' && typeof virtualStoreDir === 'string') {
+    workspacePath = await fs.realpath(workspace)
+    const actualPath = await fs.realpath(
+      path.resolve(workspace, 'node_modules', virtualStoreDir),
+    )
+    virtualStoreDir = path.relative(
+      path.join(workspacePath, 'node_modules'),
+      actualPath,
+    )
+  }
+  validatePrivateVirtualStore(workspacePath, virtualStoreDir)
 }
 
 export function readPackagedManifest(bytes: Buffer): Record<string, unknown> {
@@ -314,6 +330,7 @@ async function main(): Promise<void> {
         'install',
         '--frozen-lockfile',
         '--ignore-scripts',
+        '--pm-on-fail=ignore',
         '--config.enable-global-virtual-store=false',
         '--virtual-store-dir=node_modules/.pnpm',
       ],

@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '../../utils/logger.mts'
 
 export function removeSocketWrapper(filepath: string): void {
   let content: string | undefined
