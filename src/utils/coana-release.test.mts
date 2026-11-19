@@ -5,6 +5,7 @@
  * - spawnCoana: runs cli-wrapper.mjs from the cache with the caller's args,
  *   cwd and environment, sets the variables Coana reads, leaves the user's
  *   API token variables out, and surfaces a failing run's output.
+ * - spawnCoana with a minimum version: refuses an older Coana.
  *
  * Testing Approach:
  * A fake cli-wrapper.mjs is installed into a temporary cache with the real
@@ -32,7 +33,10 @@ import {
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants, { SOCKET_CLI_API_TOKEN_VARIABLES } from '../constants.mts'
+import constants, {
+  COANA_CLI_VERSION,
+  SOCKET_CLI_API_TOKEN_VARIABLES,
+} from '../constants.mts'
 import { spawnCoana } from './coana-release.mts'
 import { overrideCachedConfig, resetConfigForTesting } from './config.mts'
 import {
@@ -88,18 +92,21 @@ describe('spawnCoana', () => {
       path.join(extracted, 'cli-wrapper.mjs'),
       FAKE_CLI_WRAPPER,
     )
-    await spawn(
-      'node',
-      [
-        path.join(constants.distPath, 'coana-cache.mjs'),
-        'install',
-        VERSION,
-        'cli',
-        'a'.repeat(64),
-        extracted,
-      ],
-      { stdio: 'pipe' },
-    )
+    for (const version of [VERSION, COANA_CLI_VERSION]) {
+      // eslint-disable-next-line no-await-in-loop
+      await spawn(
+        'node',
+        [
+          path.join(constants.distPath, 'coana-cache.mjs'),
+          'install',
+          version,
+          'cli',
+          'a'.repeat(64),
+          extracted,
+        ],
+        { stdio: 'pipe' },
+      )
+    }
   })
 
   afterEach(() => {
@@ -226,6 +233,27 @@ describe('spawnCoana', () => {
       expect(env[name]).toBeUndefined()
     },
   )
+
+  it('refuses a Coana older than the minimum, naming the minimum', async () => {
+    const result = await spawnCoana(['run', '.'], 'acme', {
+      coanaVersion: VERSION,
+      minimumVersion: COANA_CLI_VERSION,
+      stdio: 'pipe',
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe(`Coana ${VERSION} is too old for this command`)
+    expect(result.cause).toContain(`Coana ${COANA_CLI_VERSION} or newer`)
+  })
+
+  it('runs a Coana at the minimum', async () => {
+    const run = await runFake({
+      coanaVersion: COANA_CLI_VERSION,
+      minimumVersion: COANA_CLI_VERSION,
+    })
+
+    expect(run.args).toEqual(['run', '.'])
+  })
 
   it('surfaces captured stdout when stderr is empty (Coana logs some failures to stdout)', async () => {
     const result = await spawnCoana(['fail'], 'acme', {

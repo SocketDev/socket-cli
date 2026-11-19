@@ -4,12 +4,13 @@ import {
   constants as fsConstants,
   statSync,
 } from 'node:fs'
-import { basename, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 
 import constants from '../../../constants.mts'
 
 import type { FactsOnlyTypes } from '../../../utils/coana.mts'
 import type { PURL_Type } from '../../../utils/ecosystem.mts'
+import type { BuildRoot } from '../discover-manifest-roots.mts'
 
 export type BuildTool = 'dotnet' | 'gradle' | 'maven' | 'sbt'
 
@@ -36,6 +37,10 @@ export const ECOSYSTEM_LABELS: Record<BuildTool, string> = {
 export const FACTS_PURL_TYPES = [
   ...new Set(Object.values(PURL_TYPE_BY_TOOL)),
 ].sort() as unknown as FactsOnlyTypes
+
+export function buildRootPath(root: BuildRoot): string {
+  return join(root.dir, root.entryFile ?? '')
+}
 
 export function buildToolsFor(purlTypes: readonly PURL_Type[]): BuildTool[] {
   return BUILD_TOOLS.filter(tool => purlTypes.includes(PURL_TYPE_BY_TOOL[tool]))

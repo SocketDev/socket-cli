@@ -32,16 +32,19 @@ const generated = {
   status: 'generated',
 }
 
+const context = { coanaVersion: '1.2.3' }
+const workDir = { dir: '/work', entries: new Map() }
+
 function run(
   consumer: FactsConsumer,
   purlTypes: readonly PURL_Type[] = ['maven', 'nuget'],
 ) {
   return runDynamicSbomInference({
-    consumer,
+    ...(consumer === 'upload' ? { consumer } : { consumer, workDir }),
+    context,
     cwd: '/repo',
     excludePaths: ['vendor/**'],
     purlTypes,
-    sbtTmpDir: '/tmp/sbt',
   })
 }
 
@@ -51,41 +54,28 @@ describe('runDynamicSbomInference', () => {
   })
 
   it.for([
-    // sbtTmpDir only matters for reach; withheld otherwise so the callee
-    // allocates and cleans up its own ephemeral base.
     {
-      consumer: 'upload',
-      sbtTmpDir: undefined,
-      sidecar: false,
-      withFiles: false,
+      consumer: 'reach',
+      expected: { ...workDir, withFiles: true },
     },
     {
       consumer: 'fix',
-      sbtTmpDir: undefined,
-      sidecar: true,
-      withFiles: false,
+      expected: { ...workDir, withFiles: false },
     },
-    {
-      consumer: 'reach',
-      sbtTmpDir: '/tmp/sbt',
-      sidecar: true,
-      withFiles: true,
-    },
+    { consumer: 'upload', expected: undefined },
   ] as const)(
-    'generates for $consumer',
-    async ({ consumer, sbtTmpDir, sidecar, withFiles }) => {
+    'generates every build root for $consumer, installing files only for reach',
+    async ({ consumer, expected }) => {
       mockGenerateRecursiveManifests.mockResolvedValueOnce([generated])
 
       await run(consumer)
 
       expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
+        context: { ...context, workDir: expected },
         cwd: '/repo',
         excludePaths: ['vendor/**'],
         purlTypes: ['maven', 'nuget'],
-        sbtTmpDir,
-        sidecarAcc: sidecar ? expect.any(Map) : undefined,
         verbose: false,
-        withFiles,
       })
     },
   )
@@ -102,26 +92,6 @@ describe('runDynamicSbomInference', () => {
       discardedFactsPaths: [],
       factsOnlyTypes: ['maven'],
       factsPaths: ['/repo/a/.socket.facts.json'],
-      resolvedPathsSidecar: undefined,
-    })
-  })
-
-  it('serializes the accumulated sidecar', async () => {
-    mockGenerateRecursiveManifests.mockImplementationOnce(
-      async ({ sidecarAcc }) => {
-        sidecarAcc.set('/repo/a/.socket.facts.json', {
-          projects: [{ name: 'app' }],
-          components: [],
-        })
-        return [generated]
-      },
-    )
-
-    expect((await run('reach')).resolvedPathsSidecar).toEqual({
-      '/repo/a/.socket.facts.json': {
-        projects: [{ name: 'app' }],
-        components: [],
-      },
     })
   })
 

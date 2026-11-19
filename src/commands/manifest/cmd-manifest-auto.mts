@@ -6,10 +6,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
+import { EXCLUDE_PATHS_FLAG } from './run-manifest-facts.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { withTmpDir } from '../../utils/fs.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -125,16 +125,14 @@ async function run(
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
   assertValidExcludePaths(excludePaths)
 
-  await withTmpDir('socket-manifest-auto-', tmpDir =>
-    generateAutoManifest({
-      detected,
-      cwd,
-      excludePaths,
-      outputKind,
-      tmpDir,
-      verbose,
-    }),
-  )
+  await generateAutoManifest({
+    detected,
+    cwd,
+    excludePaths,
+    excludePathsFlag: EXCLUDE_PATHS_FLAG,
+    outputKind,
+    verbose,
+  })
 
   logger.success(
     `Finished. Should have attempted to generate manifest files for ${detected.count} targets.`,

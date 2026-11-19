@@ -3,15 +3,14 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
-import { withTmpDir } from '../../utils/fs.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -352,20 +351,18 @@ async function run(
   assertValidExcludePaths(excludePaths)
 
   if (facts) {
-    await withTmpDir('socket-manifest-scala-', tmpDir =>
-      convertSbtToFacts({
-        bin: String(bin),
-        cwd,
-        excludeConfigs: String(excludeConfigs || ''),
-        excludePaths,
-        ignoreUnresolved: Boolean(ignoreUnresolved),
-        includeConfigs: String(includeConfigs || ''),
-        javaHome,
-        sbtOpts: parsedSbtOpts,
-        tmpDir,
-        verbose: Boolean(verbose),
-      }),
-    )
+    await runManifestFacts({
+      bin: String(bin),
+      buildOpts: parsedSbtOpts,
+      cwd,
+      ecosystem: 'sbt',
+      excludeConfigs: String(excludeConfigs || ''),
+      excludePaths,
+      ignoreUnresolved: Boolean(ignoreUnresolved),
+      includeConfigs: String(includeConfigs || ''),
+      javaHome,
+      verbose: Boolean(verbose),
+    })
     return
   }
 
