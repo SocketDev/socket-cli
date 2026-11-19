@@ -93,7 +93,7 @@ const generalFlags: MeowFlags = {
     isMultiple: true,
     hidden: true,
     description:
-      'Scan only these Bazel targets: Bazel target patterns from the workspace root, comma-separated or repeated, for example `//app/...,-//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles: the scan fails if the patterns match any other target, such as a `java_import`.',
+      'Scan only these Bazel targets: Bazel target patterns from the workspace root, comma-separated or repeated, for example `//app/...,-//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles, Python and JavaScript targets, with reachability for JVM targets: the scan fails if the patterns match any other target, such as a `java_import`.',
   },
   branch: {
     type: 'string',
