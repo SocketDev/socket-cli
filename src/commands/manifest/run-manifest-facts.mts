@@ -290,6 +290,53 @@ function toSocketFactsRequest({
   }
 }
 
+// A failure sets a non-zero exit code; only a failed build is Coana's to
+// report. With a work dir, the facts stay there until keepFacts places them.
+async function runSocketFactsRequest(
+  request: SocketFactsRequest,
+  context: SocketFactsContext,
+): Promise<RunManifestFactsOutcome> {
+  const { root, tool } = request
+  const { workDir } = context
+  const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
+    request,
+    workDir
+      ? [
+          ...(workDir.withFiles ? ['--with-files'] : []),
+          '--work-dir',
+          workDir.dir,
+        ]
+      : [],
+    context,
+  )
+
+  if (!result || result.status === 'failed') {
+    process.exitCode = 1
+    if (!result) {
+      logger.fail(
+        `Could not generate Socket facts for the ${tool} project at \`${buildRootPath(root)}\`${message ? `: ${message}` : '.'}`,
+      )
+    }
+    return null
+  }
+  if (result.status === 'empty') {
+    return undefined
+  }
+  if (workDir && !result.sidecarEntry) {
+    process.exitCode = 1
+    logger.fail(
+      `Coana returned no sidecar entry for \`${result.targetPath}\`, which reachability analysis and socket fix need. This is a Coana bug; please report it to Socket.`,
+    )
+    return null
+  }
+  return {
+    factsPath: result.factsPath,
+    projects: result.projects,
+    sidecarEntry: result.sidecarEntry,
+    targetPath: result.targetPath,
+  }
+}
+
 // Puts a kept build root's facts where they belong, and keeps its sidecar
 // entry for the Coana run that reads `workDir`.
 export async function keepFacts(
@@ -363,53 +410,6 @@ export async function listBuildProjects({
   return result.status === 'listed' ? result.projects : undefined
 }
 
-// A failure sets a non-zero exit code; only a failed build is Coana's to
-// report. With a work dir, the facts stay there until keepFacts places them.
-async function runSocketFactsRequest(
-  request: SocketFactsRequest,
-  context: SocketFactsContext,
-): Promise<RunManifestFactsOutcome> {
-  const { root, tool } = request
-  const { workDir } = context
-  const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
-    request,
-    workDir
-      ? [
-          ...(workDir.withFiles ? ['--with-files'] : []),
-          '--work-dir',
-          workDir.dir,
-        ]
-      : [],
-    context,
-  )
-
-  if (!result || result.status === 'failed') {
-    process.exitCode = 1
-    if (!result) {
-      logger.fail(
-        `Could not generate Socket facts for the ${tool} project at \`${buildRootPath(root)}\`${message ? `: ${message}` : '.'}`,
-      )
-    }
-    return null
-  }
-  if (result.status === 'empty') {
-    return undefined
-  }
-  if (workDir && !result.sidecarEntry) {
-    process.exitCode = 1
-    logger.fail(
-      `Coana returned no sidecar entry for \`${result.targetPath}\`, which reachability analysis and socket fix need. This is a Coana bug; please report it to Socket.`,
-    )
-    return null
-  }
-  return {
-    factsPath: result.factsPath,
-    projects: result.projects,
-    sidecarEntry: result.sidecarEntry,
-    targetPath: result.targetPath,
-  }
-}
-
 // The targets of the Bazel workspace at `root`, which Bazel runs in and the
 // facts belong to. For reachability, built: Bazel's jars exist only so.
 export async function runBazelFacts({
@@ -423,7 +423,12 @@ export async function runBazelFacts({
 }): Promise<RunManifestFactsOutcome> {
   let bin: string
   try {
-    bin = await resolveBazelBinary(undefined, process.env, root)
+    bin = await resolveBazelBinary(
+      process.env['SOCKET_CLI_BAZEL_PATH'],
+      process.env,
+      root,
+      'SOCKET_CLI_BAZEL_PATH',
+    )
   } catch (e) {
     process.exitCode = 1
     logger.fail(getErrorMessageOr(e, 'Could not find Bazel'))
@@ -443,7 +448,8 @@ export async function runBazelFacts({
         verbose: false,
       },
       excludeBase: root,
-      hints: toRequestHints(FLAG_HINTS),
+      // Its targets alone select what is scanned: no path is excluded.
+      hints: toRequestHints({ ...FLAG_HINTS, excludePathsFlag: undefined }),
       root: { dir: path.resolve(root) },
       tool: 'bazel',
     },

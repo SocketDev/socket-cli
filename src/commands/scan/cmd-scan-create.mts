@@ -207,16 +207,16 @@ const generalFlags: MeowFlags = {
   },
 }
 
-function isBazelWorkspace(dir: string): boolean {
-  return BAZEL_WORKSPACE_FILES.some(f => existsSync(path.join(dir, f)))
-}
-
 function hasSocketFactsFileIn(dir: string): boolean {
   try {
     return readdirSync(dir).some(isSocketFactsFile)
   } catch {
     return false
   }
+}
+
+function isBazelWorkspace(dir: string): boolean {
+  return BAZEL_WORKSPACE_FILES.some(f => existsSync(path.join(dir, f)))
 }
 
 export const cmdScanCreate = {
@@ -659,6 +659,19 @@ async function run(
       message:
         '--bazel-targets needs exactly one TARGET, the root of a Bazel workspace: the directory with its MODULE.bazel, REPO.bazel, WORKSPACE or WORKSPACE.bazel file',
       fail: 'no Bazel workspace root',
+    },
+    {
+      nook: true,
+      // No flag starts `-/`, `-@` or `-:`.
+      test: !argv.some(
+        (a, i) =>
+          /^-[/@:]/.test(a) ||
+          ((a === '--bazel-targets' || a === '--bazelTargets') &&
+            /^-[^-]/.test(argv[i + 1] ?? '')),
+      ),
+      message:
+        'A negative Bazel target pattern given as its own value is read as flags: write it as `--bazel-targets=-//app/legacy/...`, or in a comma list such as `--bazel-targets //app/...,-//app/legacy/...`',
+      fail: 'attach the negative pattern with `=`',
     },
     {
       nook: true,

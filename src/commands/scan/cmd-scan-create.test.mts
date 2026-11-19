@@ -117,6 +117,24 @@ describe('socket scan create', async () => {
       args: ['--bazel-targets', '//app/...', '--exclude-paths', 'app', '.'],
       error: 'instead of --exclude-paths',
     },
+    {
+      args: [
+        '--bazel-targets',
+        '//app/...',
+        '--bazel-targets',
+        '-//app/legacy/...',
+        '.',
+      ],
+      error: 'attach the negative pattern',
+    },
+    {
+      args: ['--bazel-targets', '//app/...', '-//app/legacy/...', '.'],
+      error: 'attach the negative pattern',
+    },
+    {
+      args: ['--bazelTargets', '-app/legacy/...', '.'],
+      error: 'attach the negative pattern',
+    },
   ])(
     'rejects invalid Bazel scan options: $args',
     { timeout: 30_000 },
