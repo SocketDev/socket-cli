@@ -18,7 +18,8 @@ import { InputError } from '../../../utils/errors.mts'
  * Resolve the bazel binary to invoke for `socket manifest bazel`.
  *
  * Resolution order:
- *   1. If `explicit` is provided, return it iff it exists on disk; else throw.
+ *   1. SOCKET_CLI_BAZEL_PATH, else `explicit`: return it iff it exists on disk;
+ *      else throw.
  *   2. Look up `bazelisk` on PATH (preferred — respects `.bazelversion`).
  *   3. Fall back to `bazel` on PATH.
  *   4. If neither is found, throw InputError with install instructions.
@@ -27,10 +28,12 @@ export async function resolveBazelBinary(
   explicit: string | undefined,
   env: NodeJS.ProcessEnv,
   cwd: string,
-  explicitName = '--bazel',
 ): Promise<string> {
+  // As the other build tools take theirs from SOCKET_CLI_<TOOL>_PATH, ahead of
+  // a named binary.
+  const fromEnv = env['SOCKET_CLI_BAZEL_PATH']
+  const override = fromEnv || explicit
   if (isStandaloneSea()) {
-    const override = explicit ?? env['SOCKET_CLI_BAZEL_PATH']
     if (!override) {
       throw new InputError(
         'Bazel is not bundled with this standalone Socket CLI. Set SOCKET_CLI_BAZEL_PATH or pass --bazel with an installed native Bazel executable.',
@@ -62,11 +65,12 @@ export async function resolveBazelBinary(
     }
     return bin
   }
-  if (explicit) {
-    const resolved = path.resolve(cwd, explicit)
+  if (override) {
+    const named = fromEnv ? 'SOCKET_CLI_BAZEL_PATH' : '--bazel'
+    const resolved = path.resolve(cwd, override)
     if (!existsSync(resolved)) {
       throw new InputError(
-        `${explicitName} path does not exist: ${resolved}. Install bazelisk or bazel, or name an existing path with ${explicitName}.`,
+        `${named} path does not exist: ${resolved}. Install bazelisk or bazel, or name an existing path with ${named}.`,
       )
     }
     return resolveBazelExecutable(resolved)
@@ -83,6 +87,6 @@ export async function resolveBazelBinary(
   throw new InputError(
     'Could not find bazelisk or bazel on PATH. ' +
       'Install bazelisk (recommended; https://github.com/bazelbuild/bazelisk) ' +
-      `or bazel, or name its path with ${explicitName}.`,
+      'or bazel, or name its path with --bazel or SOCKET_CLI_BAZEL_PATH.',
   )
 }

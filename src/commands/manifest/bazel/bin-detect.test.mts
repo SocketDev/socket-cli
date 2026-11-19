@@ -53,6 +53,16 @@ describe('resolveBazelBinary', () => {
     expect(statSync(resolved).ino).toBe(statSync(bin).ino)
   })
 
+  it('takes SOCKET_CLI_BAZEL_PATH ahead of an explicit path', async () => {
+    const fromEnv = install('from-env')
+    const resolved = await resolveBazelBinary(
+      install('selected'),
+      getBazelEnvironment({ SOCKET_CLI_BAZEL_PATH: fromEnv }),
+      cwd,
+    )
+    expect(statSync(resolved).ino).toBe(statSync(fromEnv).ino)
+  })
+
   it('prefers Bazelisk over Bazel', async () => {
     const bazelisk = install('bazelisk')
     install('bazel')
@@ -93,10 +103,11 @@ describe('resolveBazelBinary', () => {
     ).rejects.toThrow(/--bazel path does not exist/)
     await expect(
       resolveBazelBinary(
-        path.join(cwd, 'missing'),
-        getBazelEnvironment(),
+        undefined,
+        getBazelEnvironment({
+          SOCKET_CLI_BAZEL_PATH: path.join(cwd, 'missing'),
+        }),
         cwd,
-        'SOCKET_CLI_BAZEL_PATH',
       ),
     ).rejects.toThrow(/SOCKET_CLI_BAZEL_PATH path does not exist/)
   })
