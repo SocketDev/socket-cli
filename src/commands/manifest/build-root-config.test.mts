@@ -5,11 +5,13 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import {
   createBuildRootSettingsResolver,
   describeDisabledBy,
   displayPath,
+  socketJsonReachability,
 } from './build-root-config.mts'
 import { InputError } from '../../utils/errors.mts'
 
@@ -35,6 +37,10 @@ describe('createBuildRootSettingsResolver', () => {
   const maven = (dir: string, entryFile = 'pom.xml') => ({
     dir: path.join(scanRoot, dir),
     entryFile,
+  })
+  const dotnet = (dir: string) => ({
+    dir: path.join(scanRoot, dir),
+    entryFile: 'App.sln',
   })
 
   beforeEach(async () => {
@@ -240,5 +246,196 @@ describe('createBuildRootSettingsResolver', () => {
     expect(
       createBuildRootSettingsResolver()('maven', maven('legacy')).disabledBy,
     ).toEqual({ dir: path.join(scanRoot, 'legacy') })
+  })
+
+  describe('reachability', () => {
+    it('cascades each field on its own, the build entry last, and drops cleared ones', async () => {
+      await write('.', {
+        maven: { reachability: { build: 'compile', javaHome: '$JDK17' } },
+      })
+      await write(
+        'svc',
+        {
+          maven: { reachability: { javaHome: null } },
+          builds: { 'pom.xml': { reachability: { javaHome: '$JDK21' } } },
+        },
+        ['pom.xml', 'svc-alt.pom.xml'],
+      )
+      const resolve = createBuildRootSettingsResolver()
+
+      expect(resolve('maven', maven('svc')).reachability()).toEqual({
+        build: 'compile',
+        javaHome: '$JDK21',
+      })
+      expect(
+        resolve('maven', maven('svc', 'svc-alt.pom.xml')).reachability(),
+      ).toEqual({ build: 'compile' })
+    })
+
+    it.for([
+      {
+        name: 'no socket.json sets any',
+        settings: {},
+        files: undefined,
+      },
+      {
+        name: 'a socket.json clears every field with null',
+        settings: { maven: { reachability: { build: null } } },
+        files: undefined,
+      },
+      {
+        name: "the build's own entry clears what its directory sets",
+        settings: {
+          maven: { reachability: { build: 'compile' } },
+          builds: { 'pom.xml': { reachability: { build: null } } },
+        },
+        files: ['pom.xml'],
+      },
+    ])('is undefined when $name', async ({ files, settings }) => {
+      await write('.', settings, files)
+
+      expect(
+        createBuildRootSettingsResolver()('maven', maven('.')).reachability(),
+      ).toBeUndefined()
+    })
+
+    it.for([
+      { runtimeVersion: '8.0', valid: true },
+      { runtimeVersion: '10.0.1', valid: true },
+      { runtimeVersion: '9.0.0-rc.2.24473.5', valid: true },
+      { runtimeVersion: '8', valid: false },
+      { runtimeVersion: 'net8.0', valid: false },
+      { runtimeVersion: '08.0', valid: false },
+      { runtimeVersion: '8.0.1.2', valid: false },
+      { runtimeVersion: '8.0-rc.1', valid: false },
+      { runtimeVersion: '8.0.1+build', valid: false },
+    ])(
+      'takes the .NET runtime version $runtimeVersion: $valid',
+      async ({ runtimeVersion, valid }) => {
+        await write('.', { dotnet: { reachability: { runtimeVersion } } })
+        const resolved = createBuildRootSettingsResolver()(
+          'dotnet',
+          dotnet('.'),
+        )
+
+        if (valid) {
+          expect(resolved.reachability()).toEqual({ runtimeVersion })
+        } else {
+          expect(() => resolved.reachability()).toThrow(
+            /reachability\.runtimeVersion` in .*socket\.json is .*; set it to a \.NET runtime version/,
+          )
+        }
+      },
+    )
+
+    it.for([
+      {
+        name: 'a field of another tool',
+        tool: 'maven',
+        reachability: { runtimeVersion: '8.0' },
+        reason: 'is not a reachability setting of maven builds',
+      },
+      {
+        name: 'a JVM field on dotnet',
+        tool: 'dotnet',
+        reachability: { javaHome: '/jdk' },
+        reason: 'is not a reachability setting of dotnet builds',
+      },
+      {
+        name: 'a misspelt field',
+        tool: 'gradle',
+        reachability: { java_home: '/jdk' },
+        reason: 'is not a reachability setting of gradle builds',
+      },
+      {
+        name: 'an unknown build',
+        tool: 'sbt',
+        reachability: { build: 'test' },
+        reason: 'set it to "compile" or "none"',
+      },
+      {
+        name: 'a JDK that is no string',
+        tool: 'gradle',
+        reachability: { javaHome: 17 },
+        reason: 'set it to a JDK path',
+      },
+      {
+        name: 'an empty JDK',
+        tool: 'maven',
+        reachability: { javaHome: '' },
+        reason: 'set it to a JDK path',
+      },
+      {
+        name: 'a section that is no object',
+        tool: 'maven',
+        reachability: 'compile',
+        reason: 'set it to an object',
+      },
+    ] as const)(
+      'rejects $name, naming the socket.json that sets it',
+      async ({ reachability, reason, tool }) => {
+        await write('.', { [tool]: { reachability: {} } })
+        await write('nested', { [tool]: { reachability } })
+        const root = { dir: path.join(scanRoot, 'nested') }
+
+        expect(() =>
+          createBuildRootSettingsResolver()(tool, root).reachability(),
+        ).toThrow(
+          expect.objectContaining({
+            constructor: InputError,
+            message: expect.stringMatching(
+              new RegExp(
+                `^\`defaults\\.manifest\\.${tool}\\.reachability.*\\bnested.socket\\.json.*${escapeRegExp(reason)}`,
+              ),
+            ),
+          }),
+        )
+      },
+    )
+
+    it("rejects an invalid setting in a build's own entry, naming the entry", async () => {
+      await write(
+        '.',
+        { builds: { 'pom.xml': { reachability: { runtimeVersion: '8.0' } } } },
+        ['pom.xml'],
+      )
+
+      expect(() =>
+        createBuildRootSettingsResolver()('maven', maven('.')).reachability(),
+      ).toThrow(
+        /^`defaults\.manifest\.builds\["pom\.xml"\]\.reachability\.runtimeVersion` in /,
+      )
+    })
+
+    it("resolves a build's other settings whatever its reachability holds", async () => {
+      await write('.', {
+        maven: { mavenOpts: '-B', reachability: { build: 'always' } },
+      })
+
+      expect(
+        createBuildRootSettingsResolver()('maven', maven('.')).sockJson.defaults
+          ?.manifest?.maven?.mavenOpts,
+      ).toBe('-B')
+    })
+  })
+})
+
+describe('socketJsonReachability', () => {
+  it("checks one socket.json's section for the tool alone", () => {
+    const sockJson = {
+      defaults: {
+        manifest: {
+          dotnet: { reachability: { runtimeVersion: 'latest' } },
+          gradle: { reachability: { build: 'compile' } },
+        },
+      },
+    } as any
+
+    expect(socketJsonReachability('gradle', { dir: '/r', sockJson })).toEqual({
+      build: 'compile',
+    })
+    expect(() =>
+      socketJsonReachability('dotnet', { dir: '/r', sockJson }),
+    ).toThrow(InputError)
   })
 })

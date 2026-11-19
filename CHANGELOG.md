@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `socket manifest setup --dynamic-sbom-inference` can skip any build: one Socket can load is skipped together with its modules, leaving the builds beside and beneath it alone. The setup shows the files it will write before writing them.
 - Configure or skip one build of a directory on its own, with `socket.json` settings under `defaults.manifest.builds` keyed by its build file name.
 - Socket facts for a self-contained .NET build include its runtime packs.
+- Tune reachability per build tool in `socket.json`: `reachability.build` compiles the project before the analysis, `reachability.javaHome` (Maven, Gradle, sbt) sets the JDK the analysis assumes, and `reachability.runtimeVersion` (.NET) sets the runtime it starts on.
 
 ### Changed
 - `socket.json` settings apply from every directory above a scan's starting point, not only from that directory down.
