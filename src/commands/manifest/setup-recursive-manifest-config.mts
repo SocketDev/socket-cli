@@ -26,7 +26,7 @@ import {
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import {
-  buildToolScriptOptions,
+  buildListingOptions,
   resolveWalkConfig,
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
@@ -440,11 +440,7 @@ async function isLoadedBy(
     covered,
     build.ecosystem,
     build.root,
-    buildToolScriptOptions(
-      buildConfig(walk, build),
-      walk.cwd,
-      walk.excludePaths,
-    ),
+    buildListingOptions(buildConfig(walk, build), walk.cwd, walk.excludePaths),
   )
 }
 

@@ -123,7 +123,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
   }
   const uploadManifestFiles = vi.fn()
   const generated = {
-    artifactsFlags: ['--maven-use-only-socket-facts'],
+    artifactsFlags: ['--use-only-socket-facts-artifacts', 'maven'],
     paths: [FACTS],
     sidecarFile: '/tmp/socket-fix-facts/sidecar.json',
     remove: vi.fn(),
@@ -156,7 +156,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
       { pathsRelativeTo: '/test/cwd' },
     )
     const args = coanaCalls('compute-fixes-and-upgrade-purls')[0]!
-    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args).toContain('--use-only-socket-facts-artifacts')
     expect(args).toContain('--socket-facts-sidecar')
     expect(args[args.indexOf('--socket-facts-sidecar') + 1]).toBe(
       generated.sidecarFile,
@@ -178,7 +178,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
     await coanaFix({ ...baseConfig, all: true, ghsas: [] })
 
     const args = coanaCalls('find-vulnerabilities')[0]
-    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args).toContain('--use-only-socket-facts-artifacts')
     expect(args).not.toContain('--socket-facts-sidecar')
   })
 
@@ -226,7 +226,7 @@ describe('socket fix --dynamic-sbom-inference', () => {
 
     expect(mockGenerateSocketFactsForFix).not.toHaveBeenCalled()
     expect(coanaCalls('compute-fixes-and-upgrade-purls')[0]).not.toContain(
-      '--maven-use-only-socket-facts',
+      '--use-only-socket-facts-artifacts',
     )
   })
 
