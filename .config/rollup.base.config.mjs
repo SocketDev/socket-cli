@@ -35,6 +35,9 @@ const {
   INLINED_SOCKET_CLI_VERSION_HASH,
   NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
+  SOCKET_CLI_LEGACY_PACKAGE_NAME,
+  SOCKET_CLI_PACKAGE_NAME,
+  SOCKET_CLI_SENTRY_PACKAGE_NAME,
   UTF8,
   VITEST,
 } = constants
@@ -51,6 +54,17 @@ const builtinAliases = builtinModules.reduce((o, n) => {
   }
   return o
 }, {})
+
+// The previous variant can still be named in package.json while Rollup runs.
+export function getBuildPackageName() {
+  if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
+    return SOCKET_CLI_LEGACY_PACKAGE_NAME
+  }
+  if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
+    return SOCKET_CLI_SENTRY_PACKAGE_NAME
+  }
+  return SOCKET_CLI_PACKAGE_NAME
+}
 
 let _rootPkgJson
 function getRootPkgJsonSync() {
@@ -173,7 +187,8 @@ export default function baseConfig(extendConfig = {}) {
           extensions: ['.cjs', '.js'],
           ignoreDynamicRequires: true,
           ignoreGlobal: true,
-          ignoreTryCatch: true,
+          // Bundle debug's optional color detection with the rest of the CLI.
+          ignoreTryCatch: id => id !== 'supports-color',
           strictRequires: true,
         }),
       extractedPlugins['babel'] ??
@@ -210,7 +225,7 @@ export default function baseConfig(extendConfig = {}) {
           ],
           [
             INLINED_SOCKET_CLI_NAME,
-            () => JSON.stringify(getRootPkgJsonSync().name),
+            () => JSON.stringify(getBuildPackageName()),
           ],
           [
             INLINED_SOCKET_CLI_PUBLISHED_BUILD,

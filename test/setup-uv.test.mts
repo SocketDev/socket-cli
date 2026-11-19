@@ -258,7 +258,7 @@ it('installs uv after Node and before SFW shims through its registered script', 
   const steps = workflow.jobs['e2e-tests']!.steps
   const node = steps.findIndex(step => step.name === 'Install Node.js')
   const uv = steps.findIndex(step => step.name === 'Install uv')
-  const shims = steps.findIndex(step => step.name === 'Create sfw shims')
+  const shims = steps.findIndex(step => step.name === 'Set up Socket Firewall')
   expect(node).toBeGreaterThanOrEqual(0)
   expect(uv).toBeGreaterThan(node)
   expect(shims).toBeGreaterThan(uv)

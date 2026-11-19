@@ -13,16 +13,16 @@ import trash from 'trash'
 
 import { isDirEmptySync } from '@socketsecurity/registry/lib/fs'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
-import {
-  fetchPackageManifest,
-  readPackageJson,
-} from '@socketsecurity/registry/lib/packages'
+import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
+import baseConfig, {
+  EXTERNAL_PACKAGES,
+  getBuildPackageName,
+} from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
@@ -52,16 +52,13 @@ const {
   SLASH_NODE_MODULES_SLASH,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
-  SOCKET_CLI_LEGACY_PACKAGE_NAME,
   SOCKET_CLI_NPM_BIN_NAME,
   SOCKET_CLI_NPX_BIN_NAME,
-  SOCKET_CLI_PACKAGE_NAME,
   SOCKET_CLI_PNPM_BIN_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
   SOCKET_CLI_SENTRY_NPM_BIN_NAME,
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
-  SOCKET_CLI_SENTRY_PACKAGE_NAME,
   SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
   SOCKET_CLI_SENTRY_YARN_BIN_NAME,
   SOCKET_CLI_YARN_BIN_NAME,
@@ -159,9 +156,7 @@ async function copyManifestScripts() {
       jarPath,
       path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
     )
-  } else if (
-    constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
-  ) {
+  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
     // Fail closed: a published build without the jar would ship a package whose
     // `socket manifest maven` / Maven reachability silently produces an empty
     // SBOM. Run `pnpm run build:maven-extension` before `build:dist`. (A local
@@ -313,14 +308,6 @@ async function copyPackage(pkgName, options) {
   }
 }
 
-let _sentryManifest
-async function getSentryManifest() {
-  if (_sentryManifest === undefined) {
-    _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
-  }
-  return _sentryManifest
-}
-
 async function updatePackageJson() {
   const editablePkgJson = await readPackageJson(constants.rootPath, {
     editable: true,
@@ -329,22 +316,23 @@ async function updatePackageJson() {
   const bin = resetBin(editablePkgJson.content.bin)
   const dependencies = resetDependencies(editablePkgJson.content.dependencies)
   editablePkgJson.update({
-    name: SOCKET_CLI_PACKAGE_NAME,
+    name: getBuildPackageName(),
     description: SOCKET_DESCRIPTION,
     bin,
     dependencies: hasKeys(dependencies) ? dependencies : undefined,
   })
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
     editablePkgJson.update({
-      name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
       bin: {
         [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
         ...bin,
       },
     })
   } else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
+    const sentry = await readPackageJson(
+      path.join(constants.rootPath, NODE_MODULES, SENTRY_NODE),
+    )
     editablePkgJson.update({
-      name: SOCKET_CLI_SENTRY_PACKAGE_NAME,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
       bin: {
         [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
@@ -356,7 +344,7 @@ async function updatePackageJson() {
       },
       dependencies: {
         ...dependencies,
-        [SENTRY_NODE]: (await getSentryManifest()).version,
+        [SENTRY_NODE]: sentry.version,
       },
     })
   }
@@ -368,22 +356,18 @@ async function updatePackageLockFile() {
   if (!existsSync(rootPackageLockPath)) {
     return
   }
-  try {
-    await spawn(
-      'pnpm',
-      [
-        'install',
-        '--frozen-lockfile=false',
-        '--config.confirmModulesPurge=false',
-      ],
-      {
-        cwd: constants.rootPath,
-        stdio: 'inherit',
-      },
-    )
-  } catch (e) {
-    console.warn('Failed to update pnpm lockfile:', e?.message)
-  }
+  await spawn(
+    'pnpm',
+    [
+      'install',
+      '--frozen-lockfile=false',
+      '--config.confirmModulesPurge=false',
+    ],
+    {
+      cwd: constants.rootPath,
+      stdio: 'inherit',
+    },
+  )
 }
 
 async function removeEmptyDirs(thePath) {

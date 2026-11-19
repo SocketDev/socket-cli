@@ -1,6 +1,6 @@
 import semver from 'semver'
 
-import { RELEASE_PACKAGES } from './packages.mts'
+import { RELEASE_PACKAGES, releasePackagesForVersion } from './packages.mts'
 import { matchesReleasePolicy } from '../../src/sea/version.mts'
 
 import type { ReleasePolicy } from '../../src/sea/version.mts'
@@ -157,7 +157,7 @@ export async function assertReleaseVersionsAvailable(
         '  Fix: pass --version with the bump step version.',
     )
   }
-  const packages = onPrereleaseMajor ? ['socket'] : [...RELEASE_PACKAGES]
+  const packages = releasePackagesForVersion(version)
   const results = await Promise.allSettled(
     packages.map(async name => {
       const document = await readRegistryDocument(name, version, fetcher)

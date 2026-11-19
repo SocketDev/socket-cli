@@ -42,6 +42,9 @@ jobs:
           git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
           git checkout -q --detach FETCH_HEAD
 
+      - name: Check CLI executable line endings
+        run: node scripts/ci/check-bin-eol.mjs
+
       - name: Install zizmor
         shell: bash
         run: | # zizmor: ignore[github-env]
@@ -94,168 +97,16 @@ jobs:
             }
           fi
 
-      - name: Install pnpm
+      - name: Install release toolchain
         shell: bash
-        run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="10.33.0"
-          PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
-          KERNEL="$(uname -s | cut -d- -f1)"
-          ARCH="$(uname -m)"
-          case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
-            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
-            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
-            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
-            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-          esac
-          PNPM_BIN="$PNPM_DIR/$ASSET"
-          if [ ! -x "$PNPM_BIN" ]; then
-            mkdir -p "$PNPM_DIR"
-            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
-            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-              echo "Checksum mismatch for ${ASSET}!" >&2
-              echo "  Expected: ${EXPECTED_SHA256}" >&2
-              echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$PNPM_BIN"
-              exit 1
-            fi
-            chmod +x "$PNPM_BIN"
-            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
-            if [[ "$ASSET" == *.exe ]]; then
-              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
-            else
-              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
-            fi
-          fi
-          echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+        run: bash scripts/setup/release-tools.sh
 
-      - name: Install Node.js
-        shell: bash
-        env:
-          NODE_VERSION: 26.13.0
-        run: pnpm run ci:setup-node
-
-      - name: Download sfw
+      - name: Set up Socket Firewall
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }} # zizmor: ignore[secrets-outside-env]
-        run: | # zizmor: ignore[github-env]
-          # Pinned version + per-platform checksum pairs. Bumping a tool
-          # requires updating the matching version AND every platform's
-          # SHA256 in the same commit, otherwise the download / verify
-          # steps will diverge.
-          SFW_FREE_VERSION="1.16.0"
-          SFW_ENTERPRISE_VERSION="1.16.0"
-          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
-          KERNEL="$(uname -s | cut -d- -f1)"
-          ARCH="$(uname -m)"
-          USE_ENTERPRISE=false
-          [ -n "$SOCKET_API_KEY" ] && USE_ENTERPRISE=true
-          if [ "$USE_ENTERPRISE" = "true" ]; then
-            REPO="SocketDev/firewall-release"
-            SFW_VERSION="$SFW_ENTERPRISE_VERSION"
-            case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9c5e77a2c08683c3cca7c5fba9d380c7acca7ed6ea71c0d3919b2a723bea34b3" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="945708d9907f4702d91d341647576aae667ad0c411cd9c02a4f56b130512695c" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9b6faa3c4cb5d2cbbea7bad5c7a47a4a9f179a8a75f1ce2993ac0c50e5e040cf" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="16fbe362a24af30b75938667e7bff00ed79df24e17a8e2d0abf3ae53d5739e92" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e8ecd768aebabc365d91306e0b5ef8b66c16b4816496934ff4998cda60590e3c" ;;
-              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-            esac
-          else
-            REPO="SocketDev/sfw-free"
-            SFW_VERSION="$SFW_FREE_VERSION"
-            case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="1f24d2628aeb3995f1f2651509e37641c7c41d07749ac68594ecb5bb2dd44d8a" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="474cdb684e42d33d4b697dedd7d90c159d71380be0e53c496f0e7097c3617a6c" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b574931bc2b3c36a9bf07ac07b9c07894f8cd314efc91bc5e4fe1c371b56adca" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="29df049df2ef705a8ce726c6c41fe73a6034f6b1cd0d87f3f15a780d074b6d83" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="fafcb65a0349ff21af4feeda170f669053efa68acb55e1b935f7ed1b2ac93ca7" ;;
-              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-            esac
-          fi
-          if [ ! -x "$SFW_BIN" ]; then
-            mkdir -p "$SFW_DIR"
-            DOWNLOAD_URL="$(gh api "repos/${REPO}/releases/tags/v${SFW_VERSION}" \
-              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
-            if [ -z "$DOWNLOAD_URL" ]; then
-              echo "Asset ${ASSET} not found in ${REPO}@v${SFW_VERSION}" >&2
-              exit 1
-            fi
-            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
-            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
-            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-              echo "Checksum mismatch for ${ASSET} (${REPO}@v${SFW_VERSION})!" >&2
-              echo "  Expected: ${EXPECTED_SHA256}" >&2
-              echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$SFW_BIN"
-              exit 1
-            fi
-            chmod +x "$SFW_BIN"
-          fi
-          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
-          echo "SFW_IS_ENTERPRISE=$USE_ENTERPRISE" >> "${GITHUB_ENV:-/dev/null}"
-          if [ "$USE_ENTERPRISE" = "true" ]; then
-            echo "SOCKET_API_KEY=$SOCKET_API_KEY" >> "${GITHUB_ENV:-/dev/null}"
-          fi
-
-      - name: Create sfw shims
-        shell: bash
-        run: | # zizmor: ignore[github-env]
-          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
-          rm -rf "$SHIM_DIR"
-          mkdir -p "$SHIM_DIR"
-          IS_WINDOWS=false
-          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
-          msys_to_win_path() {
-            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
-              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
-            else
-              echo "$1"
-            fi
-          }
-          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
-          CLEAN_PATH="$(strip_shim_dir)"
-          # Wrapper mode ecosystems (sfw-free):
-          #   JavaScript/TypeScript: npm, yarn, pnpm
-          #   Python: pip, uv
-          #   Rust: cargo
-          # https://github.com/SocketDev/sfw-free?tab=readme-ov-file#supported-package-managers
-          #
-          # Additional wrapper mode ecosystems (sfw-enterprise):
-          #   Ruby: gem, bundler
-          #   .NET: nuget
-          #   Go: go (Linux only)
-          # https://github.com/SocketDev/firewall-release/wiki#support-matrix
-          SSL_WORKAROUND=""
-          SHIM_CMDS="npm yarn pnpm pip uv cargo"
-          if [ "$SFW_IS_ENTERPRISE" = "true" ]; then
-            SHIM_CMDS="npm yarn pnpm pip uv cargo gem bundler nuget"
-            # Go wrapper mode is only supported on Linux.
-            [[ "$OSTYPE" == linux* ]] && SHIM_CMDS="$SHIM_CMDS go"
-          else
-            SSL_WORKAROUND='export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.'
-          fi
-          for CMD in $SHIM_CMDS; do
-            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
-            [ -z "$REAL" ] && continue
-            if $IS_WINDOWS && [ -f "${REAL}.exe" ]; then REAL="${REAL}.exe"; fi
-            REAL="$(msys_to_win_path "$REAL")"
-            SHIM_LINES=('#!/bin/bash' "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"")
-            [ -n "$SSL_WORKAROUND" ] && SHIM_LINES+=("$SSL_WORKAROUND")
-            SHIM_LINES+=("exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"")
-            printf '%s\n' "${SHIM_LINES[@]}" > "$SHIM_DIR/$CMD"
-            chmod +x "$SHIM_DIR/$CMD"
-            if $IS_WINDOWS; then
-              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
-                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
-            fi
-          done
-          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
-          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+        run: bash scripts/setup/firewall.sh
 
       - name: Install dependencies
         run: pnpm install --loglevel error
@@ -289,168 +140,16 @@ jobs:
           git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
           git checkout -q --detach FETCH_HEAD
 
-      - name: Install pnpm
+      - name: Install release toolchain
         shell: bash
-        run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="10.33.0"
-          PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
-          KERNEL="$(uname -s | cut -d- -f1)"
-          ARCH="$(uname -m)"
-          case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
-            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
-            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
-            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
-            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-          esac
-          PNPM_BIN="$PNPM_DIR/$ASSET"
-          if [ ! -x "$PNPM_BIN" ]; then
-            mkdir -p "$PNPM_DIR"
-            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
-            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-              echo "Checksum mismatch for ${ASSET}!" >&2
-              echo "  Expected: ${EXPECTED_SHA256}" >&2
-              echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$PNPM_BIN"
-              exit 1
-            fi
-            chmod +x "$PNPM_BIN"
-            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
-            if [[ "$ASSET" == *.exe ]]; then
-              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
-            else
-              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
-            fi
-          fi
-          echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
+        run: bash scripts/setup/release-tools.sh
 
-      - name: Install Node.js
-        shell: bash
-        env:
-          NODE_VERSION: 26.13.0
-        run: pnpm run ci:setup-node
-
-      - name: Download sfw
+      - name: Set up Socket Firewall
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }} # zizmor: ignore[secrets-outside-env]
-        run: | # zizmor: ignore[github-env]
-          # Pinned version + per-platform checksum pairs. Bumping a tool
-          # requires updating the matching version AND every platform's
-          # SHA256 in the same commit, otherwise the download / verify
-          # steps will diverge.
-          SFW_FREE_VERSION="1.16.0"
-          SFW_ENTERPRISE_VERSION="1.16.0"
-          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
-          KERNEL="$(uname -s | cut -d- -f1)"
-          ARCH="$(uname -m)"
-          USE_ENTERPRISE=false
-          [ -n "$SOCKET_API_KEY" ] && USE_ENTERPRISE=true
-          if [ "$USE_ENTERPRISE" = "true" ]; then
-            REPO="SocketDev/firewall-release"
-            SFW_VERSION="$SFW_ENTERPRISE_VERSION"
-            case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9c5e77a2c08683c3cca7c5fba9d380c7acca7ed6ea71c0d3919b2a723bea34b3" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="945708d9907f4702d91d341647576aae667ad0c411cd9c02a4f56b130512695c" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9b6faa3c4cb5d2cbbea7bad5c7a47a4a9f179a8a75f1ce2993ac0c50e5e040cf" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="16fbe362a24af30b75938667e7bff00ed79df24e17a8e2d0abf3ae53d5739e92" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e8ecd768aebabc365d91306e0b5ef8b66c16b4816496934ff4998cda60590e3c" ;;
-              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-            esac
-          else
-            REPO="SocketDev/sfw-free"
-            SFW_VERSION="$SFW_FREE_VERSION"
-            case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="1f24d2628aeb3995f1f2651509e37641c7c41d07749ac68594ecb5bb2dd44d8a" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="474cdb684e42d33d4b697dedd7d90c159d71380be0e53c496f0e7097c3617a6c" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b574931bc2b3c36a9bf07ac07b9c07894f8cd314efc91bc5e4fe1c371b56adca" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="29df049df2ef705a8ce726c6c41fe73a6034f6b1cd0d87f3f15a780d074b6d83" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="fafcb65a0349ff21af4feeda170f669053efa68acb55e1b935f7ed1b2ac93ca7" ;;
-              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-            esac
-          fi
-          if [ ! -x "$SFW_BIN" ]; then
-            mkdir -p "$SFW_DIR"
-            DOWNLOAD_URL="$(gh api "repos/${REPO}/releases/tags/v${SFW_VERSION}" \
-              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
-            if [ -z "$DOWNLOAD_URL" ]; then
-              echo "Asset ${ASSET} not found in ${REPO}@v${SFW_VERSION}" >&2
-              exit 1
-            fi
-            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
-            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
-            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-              echo "Checksum mismatch for ${ASSET} (${REPO}@v${SFW_VERSION})!" >&2
-              echo "  Expected: ${EXPECTED_SHA256}" >&2
-              echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$SFW_BIN"
-              exit 1
-            fi
-            chmod +x "$SFW_BIN"
-          fi
-          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
-          echo "SFW_IS_ENTERPRISE=$USE_ENTERPRISE" >> "${GITHUB_ENV:-/dev/null}"
-          if [ "$USE_ENTERPRISE" = "true" ]; then
-            echo "SOCKET_API_KEY=$SOCKET_API_KEY" >> "${GITHUB_ENV:-/dev/null}"
-          fi
-
-      - name: Create sfw shims
-        shell: bash
-        run: | # zizmor: ignore[github-env]
-          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
-          rm -rf "$SHIM_DIR"
-          mkdir -p "$SHIM_DIR"
-          IS_WINDOWS=false
-          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
-          msys_to_win_path() {
-            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
-              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
-            else
-              echo "$1"
-            fi
-          }
-          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
-          CLEAN_PATH="$(strip_shim_dir)"
-          # Wrapper mode ecosystems (sfw-free):
-          #   JavaScript/TypeScript: npm, yarn, pnpm
-          #   Python: pip, uv
-          #   Rust: cargo
-          # https://github.com/SocketDev/sfw-free?tab=readme-ov-file#supported-package-managers
-          #
-          # Additional wrapper mode ecosystems (sfw-enterprise):
-          #   Ruby: gem, bundler
-          #   .NET: nuget
-          #   Go: go (Linux only)
-          # https://github.com/SocketDev/firewall-release/wiki#support-matrix
-          SSL_WORKAROUND=""
-          SHIM_CMDS="npm yarn pnpm pip uv cargo"
-          if [ "$SFW_IS_ENTERPRISE" = "true" ]; then
-            SHIM_CMDS="npm yarn pnpm pip uv cargo gem bundler nuget"
-            # Go wrapper mode is only supported on Linux.
-            [[ "$OSTYPE" == linux* ]] && SHIM_CMDS="$SHIM_CMDS go"
-          else
-            SSL_WORKAROUND='export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.'
-          fi
-          for CMD in $SHIM_CMDS; do
-            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
-            [ -z "$REAL" ] && continue
-            if $IS_WINDOWS && [ -f "${REAL}.exe" ]; then REAL="${REAL}.exe"; fi
-            REAL="$(msys_to_win_path "$REAL")"
-            SHIM_LINES=('#!/bin/bash' "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"")
-            [ -n "$SSL_WORKAROUND" ] && SHIM_LINES+=("$SSL_WORKAROUND")
-            SHIM_LINES+=("exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"")
-            printf '%s\n' "${SHIM_LINES[@]}" > "$SHIM_DIR/$CMD"
-            chmod +x "$SHIM_DIR/$CMD"
-            if $IS_WINDOWS; then
-              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
-                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
-            fi
-          done
-          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
-          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+        run: bash scripts/setup/firewall.sh
 
       - name: Install dependencies
         run: pnpm install --loglevel error
@@ -506,49 +205,12 @@ jobs:
           git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
           git checkout -q --detach FETCH_HEAD
 
-      - name: Install pnpm
-        shell: bash
-        run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="10.33.0"
-          PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
-          KERNEL="$(uname -s | cut -d- -f1)"
-          ARCH="$(uname -m)"
-          case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
-            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
-            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
-            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
-            *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-          esac
-          PNPM_BIN="$PNPM_DIR/$ASSET"
-          if [ ! -x "$PNPM_BIN" ]; then
-            mkdir -p "$PNPM_DIR"
-            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
-            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-              echo "Checksum mismatch for ${ASSET}!" >&2
-              echo "  Expected: ${EXPECTED_SHA256}" >&2
-              echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$PNPM_BIN"
-              exit 1
-            fi
-            chmod +x "$PNPM_BIN"
-            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
-            if [[ "$ASSET" == *.exe ]]; then
-              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
-            else
-              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
-            fi
-          fi
-          echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
-
       - name: Install Node.js • Linux
         if: runner.os == 'Linux'
         shell: bash
         env:
           NODE_VERSION: ${{ matrix.node-version }}
-        run: pnpm run ci:setup-node
+        run: node scripts/setup/node.mts --version "$NODE_VERSION"
 
       - name: Install Node.js • Windows
         if: runner.os == 'Windows'
@@ -586,125 +248,16 @@ jobs:
           Expand-Archive $archivePath $tools
           (Join-Path $tools "node-v$nodeVersion-win-x64") | Add-Content $env:GITHUB_PATH
 
-      - name: Download sfw
+      - name: Install pinned package managers
+        shell: bash
+        run: bash scripts/setup/release-tools.sh --keep-node
+
+      - name: Set up Socket Firewall
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }} # zizmor: ignore[secrets-outside-env]
-        run: | # zizmor: ignore[github-env]
-          # Pinned version + per-platform checksum pairs. Bumping a tool
-          # requires updating the matching version AND every platform's
-          # SHA256 in the same commit, otherwise the download / verify
-          # steps will diverge.
-          SFW_FREE_VERSION="1.16.0"
-          SFW_ENTERPRISE_VERSION="1.16.0"
-          SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
-          KERNEL="$(uname -s | cut -d- -f1)"
-          ARCH="$(uname -m)"
-          USE_ENTERPRISE=false
-          [ -n "$SOCKET_API_KEY" ] && USE_ENTERPRISE=true
-          if [ "$USE_ENTERPRISE" = "true" ]; then
-            REPO="SocketDev/firewall-release"
-            SFW_VERSION="$SFW_ENTERPRISE_VERSION"
-            case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9c5e77a2c08683c3cca7c5fba9d380c7acca7ed6ea71c0d3919b2a723bea34b3" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="945708d9907f4702d91d341647576aae667ad0c411cd9c02a4f56b130512695c" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="9b6faa3c4cb5d2cbbea7bad5c7a47a4a9f179a8a75f1ce2993ac0c50e5e040cf" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="16fbe362a24af30b75938667e7bff00ed79df24e17a8e2d0abf3ae53d5739e92" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e8ecd768aebabc365d91306e0b5ef8b66c16b4816496934ff4998cda60590e3c" ;;
-              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-            esac
-          else
-            REPO="SocketDev/sfw-free"
-            SFW_VERSION="$SFW_FREE_VERSION"
-            case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="1f24d2628aeb3995f1f2651509e37641c7c41d07749ac68594ecb5bb2dd44d8a" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="474cdb684e42d33d4b697dedd7d90c159d71380be0e53c496f0e7097c3617a6c" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b574931bc2b3c36a9bf07ac07b9c07894f8cd314efc91bc5e4fe1c371b56adca" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="29df049df2ef705a8ce726c6c41fe73a6034f6b1cd0d87f3f15a780d074b6d83" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="fafcb65a0349ff21af4feeda170f669053efa68acb55e1b935f7ed1b2ac93ca7" ;;
-              *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
-            esac
-          fi
-          if [ ! -x "$SFW_BIN" ]; then
-            mkdir -p "$SFW_DIR"
-            DOWNLOAD_URL="$(gh api "repos/${REPO}/releases/tags/v${SFW_VERSION}" \
-              --jq ".assets[] | select(.name == \"$ASSET\") | .browser_download_url")"
-            if [ -z "$DOWNLOAD_URL" ]; then
-              echo "Asset ${ASSET} not found in ${REPO}@v${SFW_VERSION}" >&2
-              exit 1
-            fi
-            curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
-            ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
-            if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-              echo "Checksum mismatch for ${ASSET} (${REPO}@v${SFW_VERSION})!" >&2
-              echo "  Expected: ${EXPECTED_SHA256}" >&2
-              echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$SFW_BIN"
-              exit 1
-            fi
-            chmod +x "$SFW_BIN"
-          fi
-          echo "SFW_BIN=$SFW_BIN" >> "${GITHUB_ENV:-/dev/null}"
-          echo "SFW_IS_ENTERPRISE=$USE_ENTERPRISE" >> "${GITHUB_ENV:-/dev/null}"
-          if [ "$USE_ENTERPRISE" = "true" ]; then
-            echo "SOCKET_API_KEY=$SOCKET_API_KEY" >> "${GITHUB_ENV:-/dev/null}"
-          fi
-
-      - name: Create sfw shims
-        shell: bash
-        run: | # zizmor: ignore[github-env]
-          SHIM_DIR="${RUNNER_TEMP:-/tmp}/sfw-shim"
-          rm -rf "$SHIM_DIR"
-          mkdir -p "$SHIM_DIR"
-          IS_WINDOWS=false
-          [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && IS_WINDOWS=true
-          msys_to_win_path() {
-            if $IS_WINDOWS && [[ "$1" =~ ^/([a-zA-Z])/(.*) ]]; then
-              echo "${BASH_REMATCH[1]^^}:\\${BASH_REMATCH[2]//\//\\}"
-            else
-              echo "$1"
-            fi
-          }
-          strip_shim_dir() { echo "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -; }
-          CLEAN_PATH="$(strip_shim_dir)"
-          # Wrapper mode ecosystems (sfw-free):
-          #   JavaScript/TypeScript: npm, yarn, pnpm
-          #   Python: pip, uv
-          #   Rust: cargo
-          # https://github.com/SocketDev/sfw-free?tab=readme-ov-file#supported-package-managers
-          #
-          # Additional wrapper mode ecosystems (sfw-enterprise):
-          #   Ruby: gem, bundler
-          #   .NET: nuget
-          #   Go: go (Linux only)
-          # https://github.com/SocketDev/firewall-release/wiki#support-matrix
-          SSL_WORKAROUND=""
-          SHIM_CMDS="npm yarn pnpm pip uv cargo"
-          if [ "$SFW_IS_ENTERPRISE" = "true" ]; then
-            SHIM_CMDS="npm yarn pnpm pip uv cargo gem bundler nuget"
-            # Go wrapper mode is only supported on Linux.
-            [[ "$OSTYPE" == linux* ]] && SHIM_CMDS="$SHIM_CMDS go"
-          else
-            SSL_WORKAROUND='export GIT_SSL_NO_VERIFY=true # Workaround: sfw-free does not yet set GIT_SSL_CAINFO.'
-          fi
-          for CMD in $SHIM_CMDS; do
-            REAL="$(PATH="$CLEAN_PATH" command -v "$CMD" 2>/dev/null || true)"
-            [ -z "$REAL" ] && continue
-            if $IS_WINDOWS && [ -f "${REAL}.exe" ]; then REAL="${REAL}.exe"; fi
-            REAL="$(msys_to_win_path "$REAL")"
-            SHIM_LINES=('#!/bin/bash' "export PATH=\"\$(echo \"\$PATH\" | tr ':' '\n' | grep -vxF '${SHIM_DIR}' | paste -sd: -)\"")
-            [ -n "$SSL_WORKAROUND" ] && SHIM_LINES+=("$SSL_WORKAROUND")
-            SHIM_LINES+=("exec \"${SFW_BIN}\" \"${REAL}\" \"\$@\"")
-            printf '%s\n' "${SHIM_LINES[@]}" > "$SHIM_DIR/$CMD"
-            chmod +x "$SHIM_DIR/$CMD"
-            if $IS_WINDOWS; then
-              printf '@echo off\r\nset "PATH=;%%PATH%%;"\r\nset "PATH=%%PATH:;%s;=;%%"\r\nset "PATH=%%PATH:~1,-1%%"\r\n"%s" "%s" %%*\r\n' \
-                "$SHIM_DIR" "$SFW_BIN" "$REAL" > "$SHIM_DIR/$CMD.cmd"
-            fi
-          done
-          echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
-          echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
+        run: bash scripts/setup/firewall.sh
 
       - name: Install dependencies • Bash
         if: matrix.shell == 'bash'
@@ -824,51 +377,9 @@ jobs:
           git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
           git checkout -q --detach FETCH_HEAD
 
-      - name: Install Node.js 26.13.0 (checksum verified)
+      - name: Install release toolchain
         shell: bash
-        run: |
-          set -euo pipefail
-          version=26.13.0
-          base="https://nodejs.org/dist/v${version}"
-          if [[ "$RUNNER_OS" == Windows ]]; then
-            archive="node-v${version}-win-x64.zip"
-            curl -fsSLO "$base/$archive"
-            curl -fsSLO "$base/SHASUMS256.txt"
-            grep "  $archive$" SHASUMS256.txt | sha256sum -c -
-            mkdir -p "$RUNNER_TEMP/node"
-            unzip -q "$archive" -d "$RUNNER_TEMP/node"
-            cygpath -w "$RUNNER_TEMP/node/node-v${version}-win-x64" >> "$GITHUB_PATH"
-          else
-            if [[ "$RUNNER_OS" == macOS ]]; then platform=darwin-arm64; else platform=linux-x64; fi
-            archive="node-v${version}-${platform}.tar.xz"
-            curl -fsSLO "$base/$archive"
-            curl -fsSLO "$base/SHASUMS256.txt"
-            grep "  $archive$" SHASUMS256.txt | shasum -a 256 -c -
-            mkdir -p "$RUNNER_TEMP/node"
-            tar -xJf "$archive" -C "$RUNNER_TEMP/node" --strip-components=1
-            echo "$RUNNER_TEMP/node/bin" >> "$GITHUB_PATH"
-          fi
-          if [[ "$RUNNER_OS" == Windows ]]; then "$RUNNER_TEMP/node/node-v${version}-win-x64/node.exe" -e 'if(process.versions.node!=="26.13.0")process.exit(1)'; else "$RUNNER_TEMP/node/bin/node" -e 'if(process.versions.node!=="26.13.0")process.exit(1)'; fi
-
-      - name: Install pinned pnpm
-        shell: bash
-        run: |
-          set -euo pipefail
-          version=10.33.0
-          case "$RUNNER_OS/$RUNNER_ARCH" in
-            Linux/X64) asset=pnpm-linux-x64; sha=8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5 ;;
-            macOS/ARM64) asset=pnpm-macos-arm64; sha=ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae ;;
-            Windows/X64) asset=pnpm-win-x64.exe; sha=afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f ;;
-            *) echo "Unsupported runner: $RUNNER_OS/$RUNNER_ARCH" >&2; exit 1 ;;
-          esac
-          dir="$RUNNER_TEMP/pnpm-bin"
-          mkdir -p "$dir"
-          curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v${version}/${asset}" -o "$dir/$asset"
-          actual=$( (sha256sum "$dir/$asset" 2>/dev/null || shasum -a 256 "$dir/$asset") | cut -d' ' -f1 | tr -d '\134')
-          [[ "$actual" == "$sha" ]] || { echo "pnpm checksum mismatch" >&2; exit 1; }
-          if [[ "$asset" == *.exe ]]; then cp "$dir/$asset" "$dir/pnpm.exe"; else chmod +x "$dir/$asset"; ln -sf "$asset" "$dir/pnpm"; fi
-          if [[ "$RUNNER_OS" == Windows ]]; then dir=$(cygpath -w "$dir"); fi
-          echo "$dir" >> "$GITHUB_PATH"
+        run: bash scripts/setup/release-tools.sh
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -893,10 +404,10 @@ jobs:
         shell: bash
         run: dotnet --list-sdks | awk -F. '$1 >= 8 { found=1 } END { exit !found }'
 
-      - name: Build prototype native executable
+      - name: Build and check the native executable
         env:
           NODE_OPTIONS: ${{ matrix.target == 'darwin-arm64' && '--max-old-space-size=4096' || '' }}
-        run: pnpm build:sea --prototype
+        run: pnpm build:sea
 
       - name: Save pinned SEA download cache
         if: success() && steps.sea-download-cache.outputs.cache-hit != 'true' && github.repository == 'SocketDev/socket-cli' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/v1.x' || github.ref == 'refs/heads/feat/v1x-node27-sea-vfs-socket' || startsWith(github.ref, 'refs/heads/test/native-terminal-validation-'))
@@ -920,7 +431,7 @@ jobs:
           export SOCKET_CLI_NATIVE_TEST_ARTIFACTS
           rm -rf "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS"
           mkdir -p "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS"
-          if pnpm test:native test/native/commands/cli.native.test.mts test/native/commands/cli-behavior.native.test.mts test/native/commands/tui.native.test.mts; then result=0; else result=$?; fi
+          if pnpm test:sea test/native/commands/cli.native.test.mts test/native/commands/cli-behavior.native.test.mts test/native/commands/tui.native.test.mts; then result=0; else result=$?; fi
           if [[ $result == 0 ]]; then status=passed; else status=failed; fi
           export TEST_STATUS="$status" TEST_EXIT_CODE="$result" TEST_PLATFORM="$RUNNER_OS/$RUNNER_ARCH"
           node -e 'const fs=require("node:fs"); let receipt={}; try { receipt=JSON.parse(fs.readFileSync(process.env.SOCKET_CLI_NATIVE_TEST_ARTIFACTS+"/signing-receipt.json","utf8")); } catch {} process.stdout.write(JSON.stringify({status:process.env.TEST_STATUS,exitCode:Number(process.env.TEST_EXIT_CODE),platform:process.env.TEST_PLATFORM,sourceCommit:process.env.GITHUB_SHA||"unknown",signingMode:receipt.mode||"unknown",sourceSha256:receipt.sourceSha256,binarySha256:receipt.stagedSha256})+"\n")' > "$SOCKET_CLI_NATIVE_TEST_ARTIFACTS/test-result.json"

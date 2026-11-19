@@ -1,18 +1,21 @@
-import type { SpawnSyncOptions } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { isMainModule } from '../lib/is-main-module.mts'
-import type { ScriptMeta } from '../lib/run-main.mts'
-import { runMain } from '../lib/run-main.mts'
-import { assertSnapshotDependenciesCurrent } from '../refresh/snapshots/dependencies.mts'
+
 import {
   persistNativeSigningReceipt,
   prepareNativeTestBinary,
-} from './apple-signing.mts'
+} from '../lib/apple-signing.mts'
+import { SEA_VERSION } from '../../src/sea/version.mts'
+import { isMainModule } from '../lib/is-main-module.mts'
+import { runMain } from '../lib/run-main.mts'
+import { assertSnapshotDependenciesCurrent } from '../refresh/snapshots/dependencies.mts'
+
+import type { ScriptMeta } from '../lib/run-main.mts'
+import type { SpawnSyncOptions } from 'node:child_process'
 
 type NativeManifest = {
   application: { name: string; version: string }
@@ -72,10 +75,10 @@ async function verifyArtifact(
   const manifest = JSON.parse(manifestText) as NativeManifest
   if (
     manifest.application?.name !== packageInfo.name ||
-    manifest.application?.version !== packageInfo.version
+    manifest.application?.version !== SEA_VERSION
   ) {
     throw new Error(
-      `Native manifest is for ${manifest.application?.name}@${manifest.application?.version}; expected ${packageInfo.name}@${packageInfo.version}`,
+      `Native manifest is for ${manifest.application?.name}@${manifest.application?.version}; expected ${packageInfo.name}@${SEA_VERSION}`,
     )
   }
   if (manifest.target?.triple !== TRIPLE) {
@@ -126,12 +129,17 @@ async function main(): Promise<number> {
   const vitestArgs = userArgs.filter(
     arg => arg !== '--build' && arg !== '--require-apple-signature',
   )
+  if (vitestArgs.length === 0) {
+    vitestArgs.push('test/native')
+  }
   const updatesSnapshots = vitestArgs.some(
     arg => arg === '-u' || arg === '--update',
   )
   if (
     !updatesSnapshots &&
-    vitestArgs.some(arg => arg.endsWith('cli.native.test.mts'))
+    vitestArgs.some(
+      arg => arg === 'test/native' || arg.endsWith('cli.native.test.mts'),
+    )
   ) {
     await assertSnapshotDependenciesCurrent()
   }
@@ -193,10 +201,7 @@ async function main(): Promise<number> {
     process.env['SOCKET_CLI_NATIVE_TEST_ARTIFACTS'] = artifactsDir
     process.env['SOCKET_CLI_NATIVE_TEST_RECEIPT_PATH'] = receiptPath
     if (build) {
-      runPnpm(
-        ['build:sea', '--', '--prototype'],
-        sanitizeNativeEnvironment(process.env),
-      )
+      runPnpm(['build:sea'], sanitizeNativeEnvironment(process.env))
     }
 
     // Snapshot the verified artifact into this run's private stage so another
@@ -229,7 +234,7 @@ async function main(): Promise<number> {
     process.env['SOCKET_CLI_NATIVE_TEST_STAGE'] = stageDir
     process.env['SOCKET_CLI_NATIVE_TEST_CAPABILITIES'] =
       manifest.capabilities.available.join(',')
-    process.env['SOCKET_CLI_NATIVE_TEST_VERSION'] = packageInfo.version
+    process.env['SOCKET_CLI_NATIVE_TEST_VERSION'] = manifest.application.version
     const nodeRuntime = manifest.payloads.find(
       payload => payload.id === 'node-runtime',
     )
@@ -292,7 +297,7 @@ async function main(): Promise<number> {
     }
     if (
       version.status !== 0 ||
-      !version.stdout.trim().startsWith(packageInfo.version)
+      !version.stdout.trim().startsWith(manifest.application.version)
     ) {
       throw new Error(
         `Native --version check failed (status ${version.status}): ${version.stdout}${version.stderr}`,
@@ -350,11 +355,11 @@ function sanitizeNativeEnvironment(
 
 const SCRIPT_META: ScriptMeta = {
   describe: 'runs integration tests against the host-native Socket SEA binary',
-  help: `Usage: pnpm run test:native [vitest options]
-       pnpm run test:native:build [vitest options]
+  help: `Usage: pnpm run test:sea [vitest options]
+       pnpm build:sea && pnpm test:sea [vitest options]
 
   The native lane requires a matching build/sea/socket-<platform>-<arch> binary
-  and manifest. The :build variant creates the prototype first. Native test
+  and manifest. Build it first with pnpm build:sea. Native test
   package-manager caches are isolated and test files run serially.
 
   Pass Vitest options after the script name to filter test files or tests.`,

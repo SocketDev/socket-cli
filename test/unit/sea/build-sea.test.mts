@@ -1,5 +1,13 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -21,6 +29,7 @@ import {
   renderSeaReadme,
   updateSeaReadmeVersion,
 } from '../../../src/sea/readme-version.mts'
+import { digestVfs } from '../../../src/sea/vfs-digest.mts'
 import { readSeaNodeVersion } from '../../utils/sea.mts'
 
 const execFileAsync = promisify(execFile)
@@ -217,12 +226,22 @@ describe('SEA archive paths', () => {
 })
 
 describe('SEA bootstrap Rollup config', () => {
-  it('compiles the TypeScript bootstrap through the real Rollup configuration', async () => {
+  it('smoke tests the packaged bootstrap and detects a changed payload', async () => {
     const directory = await mkdtemp(
       path.join(os.tmpdir(), 'sea-bootstrap-test-'),
     )
     const output = path.join(directory, 'bootstrap.cjs')
     try {
+      const resources = path.join(directory, 'resources')
+      await mkdir(resources)
+      const payload = path.join(resources, 'payload')
+      await writeFile(payload, 'build')
+      await mkdir(path.join(directory, 'dist'))
+      await copyFile(
+        path.join(root, 'src/vendor/coana-cache.mjs'),
+        path.join(directory, 'dist/coana-cache.mjs'),
+      )
+      const entries = ['resources', 'dist']
       await execFileAsync(
         process.execPath,
         [
@@ -232,9 +251,24 @@ describe('SEA bootstrap Rollup config', () => {
           '--file',
           output,
         ],
-        { timeout: 30_000 },
+        {
+          env: {
+            ...process.env,
+            SEA_SMOKE_TEST: JSON.stringify({
+              digest: digestVfs(directory, entries),
+            }),
+          },
+          timeout: 30_000,
+        },
       )
-      expect((await stat(output)).size).toBeGreaterThan(0)
+      const run = () =>
+        execFileAsync(process.execPath, [output, 'sea', 'smoke-test'])
+      expect((await run()).stdout).toContain('VFS smoke test passed')
+      await writeFile(payload, 'other')
+      await expect(run()).rejects.toMatchObject({
+        code: 1,
+        stderr: expect.stringContaining('Embedded VFS differs'),
+      })
     } finally {
       await rm(directory, { recursive: true, force: true })
     }

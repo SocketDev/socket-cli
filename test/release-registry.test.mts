@@ -32,7 +32,7 @@ describe('release registry preflight', () => {
     }
   })
 
-  it('checks only socket for the configured prerelease track', async () => {
+  it('checks native packages for the configured prerelease track', async () => {
     const fetcher = vi.fn<typeof fetch>(
       async () => new Response('', { status: 404 }),
     )
@@ -43,8 +43,18 @@ describe('release registry preflight', () => {
         identifier: 'rc',
         distTag: 'rc-2.1.0',
       }),
-    ).resolves.toEqual({ packages: ['socket'], version: '2.1.0-rc.2' })
-    expect(fetcher).toHaveBeenCalledTimes(1)
+    ).resolves.toEqual({
+      packages: [
+        'socket',
+        '@socketsecurity/socket-cli-darwin-arm64',
+        '@socketsecurity/socket-cli-linux-arm64',
+        '@socketsecurity/socket-cli-linux-x64',
+        '@socketsecurity/socket-cli-win32-arm64',
+        '@socketsecurity/socket-cli-win32-x64',
+      ],
+      version: '2.1.0-rc.2',
+    })
+    expect(fetcher).toHaveBeenCalledTimes(6)
     expect(fetcher.mock.calls[0]?.[0]).toBe(
       'https://registry.npmjs.org/socket/2.1.0-rc.2',
     )

@@ -1,13 +1,9 @@
 import { execFileSync } from 'node:child_process'
-import {
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import semver from 'semver'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
@@ -89,8 +85,10 @@ describe('v1 release workflow contract', () => {
       .map(step => step.run ?? '')
     expect(scripts.join('\n')).not.toMatch(/promote\.mts|git push/)
     expect(Object.keys(workflow.jobs).sort()).toEqual([
+      'native-packages',
       'prepare',
       'publish',
+      'rehearse',
       'release-pr',
       'verify',
     ])
@@ -135,7 +133,6 @@ describe('v1 release workflow contract', () => {
     )
     expect(stage?.run).toContain('--json')
     expect(stage?.run).toContain('stageId')
-    expect(stage?.run).toContain('output.search(/^(?:\\{|\\[)/mu)')
     expect(stage?.run).toContain('pnpm run approve:npm <stage-id>')
     const tag = workflow.jobs.publish.steps.find(
       step => step.name === 'Reserve release tag once',
@@ -153,9 +150,7 @@ describe('v1 release workflow contract', () => {
     const stage = workflow.jobs.publish.steps.find(
       step => step.name === 'Stage release packages',
     )
-    const parser = stage?.run
-      ?.split("<<'NODE'\n")[1]
-      ?.split('\nNODE')[0]
+    const parser = stage?.run?.split("<<'NODE'\n")[1]?.split('\nNODE')[0]
     expect(parser).toBeDefined()
 
     const directory = mkdtempSync(path.join(tmpdir(), 'npm-stage-output-'))
@@ -168,6 +163,7 @@ describe('v1 release workflow contract', () => {
         outputPath,
         [
           'GET https://example.invalid/idtoken 200 193ms',
+          '[WARN] Registry request was retried',
           'Staging socket@2.1.0-rc.0',
           JSON.stringify({
             socket: {
@@ -196,7 +192,7 @@ describe('v1 release workflow contract', () => {
     )
     expect(stage?.env?.VERSION).toBe('${{ needs.verify.outputs.version }}')
     expect(stage?.run).toContain(
-      'if [[ "$VERSION" == *-* ]]; then EXPECTED=1; fi',
+      'if [[ "$VERSION" == *-* ]]; then EXPECTED=6; fi',
     )
     expect(stage?.run).not.toContain('NPM_PRERELEASE_RELEASE')
   })
@@ -221,23 +217,25 @@ describe('v1 release workflow contract', () => {
     expect(checkIndex).toBeGreaterThanOrEqual(0)
     expect(finalizeIndex).toBeGreaterThan(checkIndex)
     expect(finalize?.run).toContain('make_latest=false')
-    expect(finalize?.run).toContain('gh release view "${TAG}" --json databaseId')
+    expect(finalize?.run).toContain(
+      'gh release view "${TAG}" --json databaseId',
+    )
     expect(finalize?.run).not.toContain('releases/tags/${TAG}')
   })
 
-  it('publishes only socket for the configured prerelease policy', () => {
+  it('publishes the native CLI for the configured prerelease policy', () => {
     const verifySteps = workflow.jobs.verify.steps
     const versionGuard = verifySteps.find(
-      step => step.name === 'Validate release policy and choose npm dist-tag',
+      step => step.name === 'Resolve release metadata',
     )
     const versionGuardIndex = verifySteps.findIndex(
-      step => step.name === 'Validate release policy and choose npm dist-tag',
+      step => step.name === 'Resolve release metadata',
     )
     const buildIndex = verifySteps.findIndex(
-      step => step.name === 'Build Maven manifest extension jar',
+      step => step.name === 'Pack native launcher',
     )
     expect(versionGuard).toBeDefined()
-    expect(versionGuard?.if).toBe('${{ inputs.dry-run == false }}')
+    expect(versionGuard?.if).toBeUndefined()
     expect(versionGuard?.run).toContain('validate-npm-policy.mts')
     expect(versionGuardIndex).toBeGreaterThanOrEqual(0)
     expect(versionGuardIndex).toBeLessThan(buildIndex)
@@ -248,22 +246,42 @@ describe('v1 release workflow contract', () => {
     expect(prepareStep?.env?.SOCKET_CLI_RELEASE_MAJOR).toBe(
       '${{ inputs.release-major }}',
     )
-    expect(
-      workflow.jobs.verify.steps.find(
-        step => step.name === 'Build and pack @socketsecurity/cli (legacy)',
-      )?.if,
-    ).toBe("${{ env.NPM_PRERELEASE_RELEASE != 'true' }}")
-    expect(
-      workflow.jobs.verify.steps.find(
-        step => step.name === 'Build and pack @socketsecurity/cli-with-sentry',
-      )?.if,
-    ).toBe("${{ env.NPM_PRERELEASE_RELEASE != 'true' }}")
+    const stable = verifySteps.find(
+      step => step.name === 'Build, pack, and smoke test stable packages',
+    )
+    expect(stable?.if).toBe(
+      "${{ !contains(steps.release-meta.outputs.version, '-') }}",
+    )
+    expect(stable?.run?.match(/^pack .+$/gmu)).toEqual([
+      'pack socket',
+      'pack @socketsecurity/cli INLINED_SOCKET_CLI_LEGACY_BUILD=1',
+      'pack @socketsecurity/cli-with-sentry INLINED_SOCKET_CLI_SENTRY_BUILD=1',
+    ])
 
     const manifest = JSON.parse(
       readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
     ) as { publishConfig?: { tag?: string }; version?: string }
-    expect(manifest.version).toMatch(/^2\.1\.0-rc\.\d+$/u)
-    expect(manifest.publishConfig?.tag).toBe('rc-2.1.0')
+    const releasePolicy = JSON.parse(
+      readFileSync(new URL('../.config/release.json', import.meta.url), 'utf8'),
+    ) as { distTag: string; identifier: string; versionHint: string }
+    const manifestVersion = semver.parse(manifest.version ?? '')
+    const releaseHint = semver.parse(releasePolicy.versionHint)
+    expect(manifestVersion).not.toBeNull()
+    expect(releaseHint).not.toBeNull()
+    const isStableV1 =
+      manifestVersion?.major === 1 &&
+      manifestVersion.prerelease.length === 0 &&
+      manifestVersion.build.length === 0
+    const isConfiguredPrerelease =
+      manifestVersion?.major === releaseHint?.major &&
+      manifestVersion.minor === releaseHint?.minor &&
+      manifestVersion.patch === releaseHint?.patch &&
+      manifestVersion.prerelease[0] === releasePolicy.identifier &&
+      manifestVersion.prerelease.length === 2 &&
+      typeof manifestVersion.prerelease[1] === 'number' &&
+      manifestVersion.build.length === 0
+    expect(isStableV1 || isConfiguredPrerelease).toBe(true)
+    expect(manifest.publishConfig?.tag).toBe(releasePolicy.distTag)
     expect(workflow.on.workflow_dispatch.inputs['release-major']?.default).toBe(
       '1',
     )
@@ -286,7 +304,7 @@ describe('v1 release workflow contract', () => {
     expect(workflow.jobs.verify.permissions['id-token']).toBeUndefined()
     expect(workflow.on.workflow_dispatch.inputs['dry-run']?.default).toBe(true)
     expect(workflow.jobs.publish.if).toBe(
-      "${{ inputs.mode == 'publish' && inputs.dry-run == false }}",
+      "${{ !cancelled() && needs.verify.result == 'success' && (needs.native-packages.result == 'success' || (!contains(needs.verify.outputs.version, '-') && needs.native-packages.result == 'skipped')) && inputs.mode == 'publish' && inputs.dry-run == false }}",
     )
   })
 
