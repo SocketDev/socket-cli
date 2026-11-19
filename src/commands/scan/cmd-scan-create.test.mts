@@ -165,7 +165,7 @@ describe('socket scan create', async () => {
 
           Options
             --auto-manifest     Run \`socket manifest auto\` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See \`socket manifest auto --help\`. For Gradle, sbt, Maven and .NET, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.
-            --bazel-targets     Scan only these Bazel targets: target patterns as \`bazel build\` takes them, from the workspace root, for example \`//app/...,-//app/legacy/...\`. Replaces manifest discovery. Supports JVM targets only: the scan fails if the patterns match any other target.
+            --bazel-targets     Scan only these Bazel targets: Bazel target patterns from the workspace root, comma-separated or repeated, for example \`//app/...,-//app/legacy/...\`. Replaces manifest discovery. Supports JVM targets the workspace compiles: the scan fails if the patterns match any other target, such as a \`java_import\`.
             --branch            Branch name
             --commit-hash       Commit hash
             --commit-message    Commit message

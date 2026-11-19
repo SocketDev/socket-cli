@@ -84,7 +84,7 @@ export type GeneratedScanFiles = {
   files: string[]
 }
 
-// A scan of these Bazel targets only, in the workspace at `root`.
+// In place of manifest discovery: the scan holds these targets' dependencies alone.
 export type BazelScan = {
   root: string
   targets: string[]

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -92,7 +92,7 @@ const generalFlags: MeowFlags = {
     type: 'string',
     isMultiple: true,
     description:
-      'Scan only these Bazel targets: target patterns as `bazel build` takes them, from the workspace root, for example `//app/...,-//app/legacy/...`. Replaces manifest discovery. Supports JVM targets only: the scan fails if the patterns match any other target.',
+      'Scan only these Bazel targets: Bazel target patterns from the workspace root, comma-separated or repeated, for example `//app/...,-//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles: the scan fails if the patterns match any other target, such as a `java_import`.',
   },
   branch: {
     type: 'string',
@@ -216,7 +216,11 @@ function hasSocketFactsFileIn(dir: string): boolean {
 }
 
 function isBazelWorkspace(dir: string): boolean {
-  return BAZEL_WORKSPACE_FILES.some(f => existsSync(path.join(dir, f)))
+  // Bazel counts a boundary file only when it is no directory.
+  return BAZEL_WORKSPACE_FILES.some(f => {
+    const file = path.join(dir, f)
+    return existsSync(file) && !statSync(file).isDirectory()
+  })
 }
 
 export const cmdScanCreate = {
@@ -662,12 +666,14 @@ async function run(
     },
     {
       nook: true,
-      // No flag starts `-/`, `-@` or `-:`.
+      // No flag starts `-/`, `-@` or `-:`, and the parser keeps a number such
+      // as `-1` as a value.
       test: !argv.some(
         (a, i) =>
           /^-[/@:]/.test(a) ||
           ((a === '--bazel-targets' || a === '--bazelTargets') &&
-            /^-[^-]/.test(argv[i + 1] ?? '')),
+            /^-[^-]/.test(argv[i + 1] ?? '') &&
+            !/^-(\d+(\.\d+)?|\.\d+)$/.test(argv[i + 1] ?? '')),
       ),
       message:
         'A negative Bazel target pattern given as its own value is read as flags: write it as `--bazel-targets=-//app/legacy/...`, or in a comma list such as `--bazel-targets //app/...,-//app/legacy/...`',
