@@ -27,6 +27,7 @@ export async function resolveBazelBinary(
   explicit: string | undefined,
   env: NodeJS.ProcessEnv,
   cwd: string,
+  explicitName = '--bazel',
 ): Promise<string> {
   if (isStandaloneSea()) {
     const override = explicit ?? env['SOCKET_CLI_BAZEL_PATH']
@@ -65,7 +66,7 @@ export async function resolveBazelBinary(
     const resolved = path.resolve(cwd, explicit)
     if (!existsSync(resolved)) {
       throw new InputError(
-        `--bazel path does not exist: ${resolved}. Install bazelisk or bazel, or pass an existing path via --bazel.`,
+        `${explicitName} path does not exist: ${resolved}. Install bazelisk or bazel, or name an existing path with ${explicitName}.`,
       )
     }
     return resolveBazelExecutable(resolved)
@@ -82,6 +83,6 @@ export async function resolveBazelBinary(
   throw new InputError(
     'Could not find bazelisk or bazel on PATH. ' +
       'Install bazelisk (recommended; https://github.com/bazelbuild/bazelisk) ' +
-      'or bazel, or pass --bazel <path>.',
+      `or bazel, or name its path with ${explicitName}.`,
   )
 }
