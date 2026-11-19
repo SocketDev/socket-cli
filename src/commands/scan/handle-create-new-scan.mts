@@ -22,6 +22,7 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import {
   compressSocketFactsForUpload,
+  isFactsOnlyTypes,
   isReachabilityReportPath,
   snapshotSocketFacts,
 } from '../../utils/coana.mts'
@@ -40,6 +41,7 @@ import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketFactsContext } from '../manifest/run-manifest-facts.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -123,19 +125,32 @@ export type HandleCreateNewScanConfig = {
   workspace?: string | undefined
 }
 
-// Reachability analyses Bazel's JVM targets only; the facts' other targets
-// are scanned for their dependencies alone. False when no JVM target is left.
-async function bazelReachability(factsPath: string): Promise<boolean> {
+// The ecosystems of Bazel targets Coana analyses for reachability.
+const BAZEL_REACHABLE_TYPES: ReadonlySet<string> = new Set(['maven', 'pypi'])
+const isBazelReachable = (type: string): type is PURL_Type =>
+  BAZEL_REACHABLE_TYPES.has(type)
+
+// The ecosystems among the facts' targets that reachability analyses; the
+// others' targets are scanned for their dependencies alone.
+async function bazelReachableTypes(factsPath: string): Promise<PURL_Type[]> {
   const facts = JSON.parse(await fs.readFile(factsPath, 'utf8')) as {
     projects?: Array<{ id: string; type: string }>
   }
-  const others = (facts.projects ?? []).filter(p => p.type !== 'maven')
+  const reachable = new Set<PURL_Type>()
+  const others: string[] = []
+  for (const { id, type } of facts.projects ?? []) {
+    if (isBazelReachable(type)) {
+      reachable.add(type)
+    } else {
+      others.push(id)
+    }
+  }
   if (others.length) {
     logger.warn(
-      `Reachability analysis does not support these Bazel targets yet, so the scan holds their dependencies without it: ${others.map(p => p.id).join(', ')}`,
+      `Reachability analysis does not support these Bazel targets yet, so the scan holds their dependencies without it: ${others.join(', ')}`,
     )
   }
-  return others.length < (facts.projects ?? []).length
+  return [...reachable].sort()
 }
 
 async function createNewScan(
@@ -209,6 +224,7 @@ async function createNewScan(
       await fs.mkdir(factsContext.workDir.dir)
     }
     let bazelFacts: string[] | undefined
+    let bazelReachEcosystems: PURL_Type[] | undefined
     if (bazel) {
       logger.info('Generating Socket facts for the Bazel targets ...')
       const result = await runBazelFacts({
@@ -223,12 +239,19 @@ async function createNewScan(
         )
       }
       await keepFacts(factsContext.workDir, result)
-      // The scan is of the targets alone, and their JVM artifacts are only
-      // those the facts attribute.
+      // The scan is of the targets alone.
       bazelFacts = [result.targetPath]
-      factsOnlyTypes = ['maven']
       if (runReachability) {
-        runReachability = await bazelReachability(result.targetPath)
+        const reachable = await bazelReachableTypes(result.targetPath)
+        // Empty reachEcosystems means every ecosystem, so none left analyses
+        // none.
+        bazelReachEcosystems = reach.reachEcosystems.length
+          ? reach.reachEcosystems.filter(t => reachable.includes(t))
+          : reachable
+        if (isFactsOnlyTypes(reachable)) {
+          factsOnlyTypes = reachable
+        }
+        runReachability = bazelReachEcosystems.length > 0
       }
     } else if (autoManifest || reach.dynamicSbomInference) {
       logger.info('Auto-generating manifest files ...')
@@ -319,7 +342,9 @@ async function createNewScan(
     const { additionalScaIgnores, mergedReachabilityOptions } =
       applyFullExcludePaths({
         cwd,
-        reachabilityOptions: reach,
+        reachabilityOptions: bazelReachEcosystems
+          ? { ...reach, reachEcosystems: bazelReachEcosystems }
+          : reach,
         target: targets[0]!,
       })
 

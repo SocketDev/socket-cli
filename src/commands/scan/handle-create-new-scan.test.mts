@@ -18,6 +18,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
 
 import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 
 const {
   mockFetchCreateOrgFullScan,
@@ -28,6 +29,7 @@ const {
   mockGetPackageFilesForScan,
   mockPerformReachabilityAnalysis,
   mockReadOrDefaultSocketJson,
+  mockRunBazelFacts,
 } = vi.hoisted(() => ({
   mockFetchCreateOrgFullScan: vi.fn(),
   mockFetchSupportedScanFileNames: vi.fn(),
@@ -37,6 +39,7 @@ const {
   mockGetPackageFilesForScan: vi.fn(),
   mockPerformReachabilityAnalysis: vi.fn(),
   mockReadOrDefaultSocketJson: vi.fn(),
+  mockRunBazelFacts: vi.fn(),
 }))
 
 vi.mock('./fetch-create-org-full-scan.mts', () => ({
@@ -81,6 +84,13 @@ vi.mock('../manifest/detect-manifest-actions.mts', () => ({
 
 vi.mock('../manifest/generate-recursive-manifests.mts', () => ({
   generateRecursiveManifests: mockGenerateRecursiveManifests,
+}))
+
+vi.mock('../manifest/run-manifest-facts.mts', async importOriginal => ({
+  ...(await importOriginal<
+    typeof import('../manifest/run-manifest-facts.mts')
+  >()),
+  runBazelFacts: mockRunBazelFacts,
 }))
 
 vi.mock('../manifest/generate_auto_manifest.mts', () => ({
@@ -1024,5 +1034,101 @@ describe('handleCreateNewScan reachability fallback facts files', () => {
     await handleCreateNewScan(config)
 
     expect(existsSync(factsPath)).toBe(false)
+  })
+})
+
+describe('handleCreateNewScan with --bazel', () => {
+  let dir: string
+  let factsPath: string
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    dir = mkdtempSync(path.join(tmpdir(), 'socket-bazel-scan-'))
+    factsPath = path.join(dir, 'bazel.socket.facts.json')
+    writeFileSync(
+      factsPath,
+      JSON.stringify({
+        projects: [
+          { id: '//java:app', type: 'maven' },
+          { id: '//go:app', type: 'golang' },
+        ],
+      }),
+    )
+    mockRunBazelFacts.mockResolvedValue({
+      factsPath,
+      projects: [],
+      targetPath: factsPath,
+    })
+    mockFetchCreateOrgFullScan.mockResolvedValue({
+      data: { id: 'scan-id' },
+      ok: true,
+    })
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      data: { size: 1 },
+      ok: true,
+    })
+    mockFindSocketYmlSync.mockReturnValue({ ok: true })
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      data: { reachabilityReport: factsPath, tier1ReachabilityScanId: 't' },
+      ok: true,
+    })
+  })
+
+  afterEach(() => {
+    rmSync(dir, { force: true, recursive: true })
+  })
+
+  const bazelConfig = (reachEcosystems: PURL_Type[] = []) => {
+    const config = createConfig({
+      bazel: { root: dir, targets: ['//...'] },
+      cwd: dir,
+      targets: [dir],
+    })
+    config.reach.runReachabilityAnalysis = true
+    config.reach.reachEcosystems = reachEcosystems
+    return config
+  }
+
+  it('analyses only the ecosystems Coana analyses Bazel targets of', async () => {
+    await handleCreateNewScan(bazelConfig())
+    expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+      expect.objectContaining({
+        factsOnlyTypes: ['maven'],
+        reachabilityOptions: expect.objectContaining({
+          reachEcosystems: ['maven'],
+        }),
+      }),
+    )
+  })
+
+  it('runs no analysis when --reach-ecosystems names none of them', async () => {
+    await handleCreateNewScan(bazelConfig(['golang']))
+    expect(mockPerformReachabilityAnalysis).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalledWith(
+      [factsPath],
+      'fakeOrg',
+      expect.anything(),
+      expect.anything(),
+    )
+  })
+
+  it('fails the scan when facts generation fails', async () => {
+    mockRunBazelFacts.mockResolvedValueOnce(null)
+    await expect(handleCreateNewScan(bazelConfig())).rejects.toThrow(
+      'Socket facts generation failed for the Bazel targets //...',
+    )
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
+  })
+
+  it('warns of targets reachability does not analyse only when it runs', async () => {
+    const warn = vi.spyOn(logger, 'warn')
+    const config = bazelConfig()
+    config.reach.runReachabilityAnalysis = false
+    await handleCreateNewScan(config)
+    expect(warn).not.toHaveBeenCalledWith(
+      expect.stringContaining('Reachability analysis does not support'),
+    )
+    await handleCreateNewScan(bazelConfig())
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('//go:app'))
   })
 })
