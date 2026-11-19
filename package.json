@@ -1,6 +1,6 @@
 {
   "name": "socket",
-  "version": "2.1.0-rc.0",
+  "version": "1.16.0",
   "publishConfig": {
     "tag": "rc-2.1.0"
   },
