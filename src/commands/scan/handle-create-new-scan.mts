@@ -124,7 +124,7 @@ export type HandleCreateNewScanConfig = {
 }
 
 // The ecosystems of Bazel targets Coana analyses for reachability.
-const BAZEL_REACHABLE_TYPES = new Set(['maven', 'pypi'])
+const BAZEL_REACHABLE_TYPES = new Set(['maven', 'npm', 'pypi'])
 
 // The ecosystems among the facts' targets that reachability analyses; the
 // others' targets are scanned for their dependencies alone.
