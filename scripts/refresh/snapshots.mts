@@ -1,19 +1,17 @@
+import type { SpawnSyncOptions } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-
+import { isMainModule } from '../lib/is-main-module.mts'
+import type { ScriptMeta } from '../lib/run-main.mts'
+import { runMain } from '../lib/run-main.mts'
+import type { SnapshotDependencyName } from './snapshots/dependencies.mts'
 import {
-  SNAPSHOT_DEPENDENCIES,
   assertSnapshotDependenciesCurrent,
   normalizeSnapshotDependencyName,
+  SNAPSHOT_DEPENDENCIES,
 } from './snapshots/dependencies.mts'
-import { isMainModule } from '../lib/is-main-module.mts'
-import { runMain } from '../lib/run-main.mts'
-
-import type { SnapshotDependencyName } from './snapshots/dependencies.mts'
-import type { ScriptMeta } from '../lib/run-main.mts'
-import type { SpawnSyncOptions } from 'node:child_process'
 
 const ROOT = path.resolve(import.meta.dirname, '../..')
 const ARTIFACTS_ROOT = path.join(ROOT, 'build/native-test-artifacts')
@@ -171,7 +169,10 @@ export interface SnapshotWorkflowDependencies {
   createArtifactsDir(): Promise<string>
   assertDependenciesCurrent(): Promise<void>
   runNative(update: boolean, artifactsDir: string): void
-  runDependencyNative(dependencyName: SnapshotDependencyName, artifactsDir: string): void
+  runDependencyNative(
+    dependencyName: SnapshotDependencyName,
+    artifactsDir: string,
+  ): void
   runTerminal(update: boolean, artifactsDir: string): void
   writeTestResult(artifactsDir: string, sourceCommit: string): Promise<void>
   runReport(artifactsDir: string, reportPath: string): void
@@ -210,9 +211,12 @@ const DEFAULT_DEPENDENCIES: SnapshotWorkflowDependencies = {
     })
   },
   runDependencyNative(dependencyName, artifactsDir) {
-    run(['scripts/test/native.mts', ...dependencySnapshotArgs(dependencyName)], {
-      env: { ...process.env, SOCKET_CLI_NATIVE_TEST_ARTIFACTS: artifactsDir },
-    })
+    run(
+      ['scripts/test/native.mts', ...dependencySnapshotArgs(dependencyName)],
+      {
+        env: { ...process.env, SOCKET_CLI_NATIVE_TEST_ARTIFACTS: artifactsDir },
+      },
+    )
   },
   runTerminal(update, artifactsDir) {
     run(terminalSnapshotArgs(update), {

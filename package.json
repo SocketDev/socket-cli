@@ -1,6 +1,6 @@
 {
   "name": "socket",
-  "version": "2.1.0-rc.0",
+  "version": "1.16.0",
   "publishConfig": {
     "tag": "rc-2.1.0"
   },
@@ -98,6 +98,7 @@
     "test": "pnpm run check --all && run-s test:prepare test:unit integration-tests e2e-tests",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
     "test:unit": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts",
+    "test:unit:snapshot-dependencies": "pnpm run test:unit test/unit/scripts/refresh/snapshots/dependencies.test.mts test/unit/scripts/refresh/snapshots/swap-version.test.mts",
     "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts --update",
     "test:unit:coverage": "dotenvx -q run -f .env.test -- vitest run --config .config/vitest.config.mts --coverage",
     "test-ci": "run-s test:prepare test:unit integration-tests",

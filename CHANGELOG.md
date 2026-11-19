@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.16.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.16.0) - 2026-11-19
 
 ### Added
 - `socket manifest setup --dynamic-sbom-inference` can skip any build: one Socket can load is skipped together with its modules, leaving the builds beside and beneath it alone. The setup shows the files it will write before writing them.
@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `socket.json` settings apply from every directory above a scan's starting point, not only from that directory down.
 - `--dynamic-sbom-inference` builds a module that lives outside its reactor's directory (such as Maven's `<module>../core</module>`) only inside that reactor, instead of also building it on its own.
 - A build that fails to generate Socket facts now stops only the builds in and beneath its directory, and its failure is ignored when another build that includes it succeeds.
+- Updated the Coana CLI to v `15.15.2`.
 
 ### Fixed
 - `--dynamic-sbom-inference` builds a Gradle or sbt build nested in another build on its own as well, so the projects only its own settings include are no longer missed.

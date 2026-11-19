@@ -18,19 +18,19 @@ import { downloadBytes } from './download-bytes.mts'
 import { cachedDownload } from './download-cache.mts'
 import { NODE_VERSION } from './node-version.mts'
 import { updateSeaReadmeVersion } from './readme-version.mts'
-import { stageSynp } from './stage-synp.mts'
-import { stageUv } from './stage-uv.mts'
+import { stageSynp } from './stage/synp.mts'
+import { stageUv } from './stage/uv.mts'
 import { SEA_VERSION } from './version.mts'
 import { quotePowerShell } from '../utils/quote-powershell.mts'
 
-const HERE = path.dirname(fileURLToPath(import.meta.url))
-const ROOT = path.resolve(HERE, '../..')
+const SEA_DIRECTORY = path.dirname(fileURLToPath(import.meta.url))
+const REPOSITORY_ROOT = path.resolve(SEA_DIRECTORY, '../..')
 const MAX_PINNED_ARCHIVE_BYTES = 512 * 1024 * 1024
 const MAX_NODE_SUMS_BYTES = 1024 * 1024
 // `pnpm build:dist:src` starts by deleting `dist/`. Keep SEA artifacts outside
 // that managed distribution tree so an ordinary package build cannot erase
 // the output of a preceding SEA build.
-const DEFAULT_OUT = path.join(ROOT, 'build/sea')
+const DEFAULT_OUT = path.join(REPOSITORY_ROOT, 'build/sea')
 
 const TARGETS = [
   ['darwin', 'arm64', 'darwin-arm64'],
@@ -316,7 +316,10 @@ async function stageSocketPatch(
   const [platform, arch] = target
   const packagePlatform = platform === 'win32' ? 'win32' : platform
   const packageName = `@socketsecurity/socket-patch-${packagePlatform}-${arch}`
-  const lock = await fs.readFile(path.join(ROOT, 'pnpm-lock.yaml'), 'utf8')
+  const lock = await fs.readFile(
+    path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
+    'utf8',
+  )
   const integrity = findLockedPackageIntegrity(lock, packageName, version)
   if (!integrity) {
     return undefined
@@ -376,7 +379,7 @@ async function stageSocketPatch(
     flag: 'wx',
   })
   await fs.copyFile(
-    path.join(HERE, 'licenses/socket-patch-MIT.txt'),
+    path.join(SEA_DIRECTORY, 'licenses/socket-patch-MIT.txt'),
     path.join(payloadDirectory, 'socket-patch-LICENSE.txt'),
   )
   return {
@@ -413,7 +416,10 @@ async function stageCdxgenApi(
   }
 
   const packageName = '@cyclonedx/cdxgen'
-  const packageRoot = path.join(ROOT, 'node_modules/@cyclonedx/cdxgen')
+  const packageRoot = path.join(
+    REPOSITORY_ROOT,
+    'node_modules/@cyclonedx/cdxgen',
+  )
   const packagePath = path.join(packageRoot, 'package.json')
   if (!existsSync(packagePath)) {
     throw new Error(
@@ -436,7 +442,10 @@ async function stageCdxgenApi(
     )
   }
 
-  const lock = await fs.readFile(path.join(ROOT, 'pnpm-lock.yaml'), 'utf8')
+  const lock = await fs.readFile(
+    path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
+    'utf8',
+  )
   const integrity = findLockedPackageIntegrity(lock, packageName, version)
   if (!integrity) {
     throw new Error(
@@ -535,13 +544,13 @@ async function stageCdxgenApi(
   }
   await fs.copyFile(licensePath, path.join(payloadRoot, 'LICENSE'))
   await fs.copyFile(
-    path.join(HERE, 'adapters/cdxgen-worker.mjs'),
+    path.join(SEA_DIRECTORY, 'adapters/cdxgen-worker.mjs'),
     path.join(payloadRoot, 'sea-worker.mjs'),
   )
   const workerUtils = path.join(payloadRoot, 'utils')
   await fs.mkdir(workerUtils, { recursive: true })
   await fs.copyFile(
-    path.join(ROOT, 'src/utils/is-object-object.mjs'),
+    path.join(REPOSITORY_ROOT, 'src/utils/is-object-object.mjs'),
     path.join(workerUtils, 'is-object-object.mjs'),
   )
   // Keep a concrete VFS path for cdxgen's plugin-directory override. The
@@ -756,7 +765,7 @@ async function run(
   command: string,
   args: string[],
   env?: NodeJS.ProcessEnv,
-  cwd = ROOT,
+  cwd = REPOSITORY_ROOT,
 ): Promise<void> {
   const { spawn } = await import('node:child_process')
   await new Promise<void>((resolve, reject) => {
@@ -836,7 +845,10 @@ async function main(): Promise<void> {
       'No matching supported target; pass --platform and --arch explicitly for cross builds',
     )
   }
-  await updateSeaReadmeVersion(path.join(HERE, 'README.md'), NODE_VERSION)
+  await updateSeaReadmeVersion(
+    path.join(SEA_DIRECTORY, 'README.md'),
+    NODE_VERSION,
+  )
   const [, , triple] = target
   if (target[0] !== process.platform || target[1] !== process.arch) {
     throw new Error(
@@ -844,7 +856,7 @@ async function main(): Promise<void> {
     )
   }
   const packageJson = JSON.parse(
-    await fs.readFile(path.join(ROOT, 'package.json'), 'utf8'),
+    await fs.readFile(path.join(REPOSITORY_ROOT, 'package.json'), 'utf8'),
   ) as {
     version?: string
     dependencies?: Record<string, string>
@@ -864,7 +876,10 @@ async function main(): Promise<void> {
   }
   const socketPatchPackage = JSON.parse(
     await fs.readFile(
-      path.join(ROOT, 'node_modules/@socketsecurity/socket-patch/package.json'),
+      path.join(
+        REPOSITORY_ROOT,
+        'node_modules/@socketsecurity/socket-patch/package.json',
+      ),
       'utf8',
     ),
   ) as {
@@ -897,7 +912,7 @@ async function main(): Promise<void> {
   let releaseDotnetLock: (() => Promise<void>) | undefined
   try {
     releaseDotnetLock = await acquireBuildLock(
-      path.join(ROOT, '.cache/socket-sea-dotnet.lock'),
+      path.join(REPOSITORY_ROOT, '.cache/socket-sea-dotnet.lock'),
     )
   } catch (error) {
     await releaseOutputLock()
@@ -1028,7 +1043,10 @@ async function main(): Promise<void> {
     )
     const synpLock = synpPayload
       ? (parseYaml(
-          await fs.readFile(path.join(ROOT, 'pnpm-lock.yaml'), 'utf8'),
+          await fs.readFile(
+            path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
+            'utf8',
+          ),
         ) as {
           packages?: Record<
             string,
@@ -1063,7 +1081,7 @@ async function main(): Promise<void> {
       const source =
         filename === 'node-runtime-LICENSE'
           ? nodeRuntime.licenseFile
-          : path.join(ROOT, filename)
+          : path.join(REPOSITORY_ROOT, filename)
       if (!existsSync(source)) {
         throw new Error(`Required SEA VFS runtime file is missing: ${source}`)
       }
@@ -1155,7 +1173,7 @@ async function main(): Promise<void> {
       'pnpm',
       ['exec', 'rollup', '-c', '.config/rollup.sea.config.mjs'],
       {
-        SEA_BOOTSTRAP: path.join(HERE, 'bootstrap.mts'),
+        SEA_BOOTSTRAP: path.join(SEA_DIRECTORY, 'bootstrap.mts'),
         SEA_OUTPUT: bootstrap,
       },
     )

@@ -762,8 +762,6 @@ jobs:
           git fetch --no-tags --depth=1 origin "$CHECKOUT_REF"
           git checkout -q --detach FETCH_HEAD
 
-      - *install-node
-
       - name: Apply the bump
         env:
           PATCH_B64: ${{ needs.prepare.outputs.patch }}
