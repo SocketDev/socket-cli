@@ -9,7 +9,7 @@ import {
   captureCheckpoint,
   createRecording,
   expectTerminalAnimation,
-} from '../terminal/animation.mts'
+} from '../termless/animation.mts'
 import { normalizeBackendOutput } from '../terminal/output.mts'
 
 export interface NativeTestEnvironment {
@@ -145,7 +145,7 @@ export async function captureFlow(options: {
   )
   await expectTerminalAnimation(createRecording([checkpoint]), {
     flow,
-    snapshotsDir: path.join(process.cwd(), 'test/native-snapshots'),
+    snapshotsDir: path.join(process.cwd(), 'test/snapshots/termless'),
     artifactsDir:
       process.env['SOCKET_CLI_NATIVE_TEST_ARTIFACTS'] ??
       path.join(process.cwd(), 'build/native-test-artifacts'),

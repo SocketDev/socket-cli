@@ -15,7 +15,7 @@ Take the exact released version as `$ARGUMENTS`. Ask for it if missing. Read
 3. Refresh the native version screenshot without rebuilding:
 
    ```sh
-   node scripts/test/swap-snapshot-version.mts --dep socket-patch --from <old-version>
+   node scripts/refresh/snapshots/swap-version.mts --dep socket-patch --from <old-version>
    ```
 
    If the helper reports no matching version or insufficient row space, use

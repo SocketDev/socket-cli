@@ -5,29 +5,28 @@
  *   but cannot build the native CLI.
  *
  *   Usage:
- *     node scripts/test/swap-snapshot-version.mts --dep coana --from 15.15.0
+ *     node scripts/refresh/snapshots/swap-version.mts --dep coana --from 15.15.0
  */
 
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
+import { isMainModule } from '../../lib/is-main-module.mts'
+import type { ScriptMeta } from '../../lib/run-main.mts'
+import { runMain } from '../../lib/run-main.mts'
 
+import type { SnapshotDependency } from './dependencies.mts'
 import {
-  SNAPSHOT_DEPENDENCIES,
   findStaleSnapshotDependencies,
   normalizeSnapshotDependencyName,
   readPinnedVersion,
+  SNAPSHOT_DEPENDENCIES as snapshotDependencies,
   snapshotDependencyUpdateHint,
   swapVersionInSnapshot,
-} from './snapshot-dependencies.mts'
-import { isMainModule } from '../lib/is-main-module.mts'
-import { runMain } from '../lib/run-main.mts'
+} from './dependencies.mts'
 
-import type { SnapshotDependency } from './snapshot-dependencies.mts'
-import type { ScriptMeta } from '../lib/run-main.mts'
-
-const ROOT = path.resolve(import.meta.dirname, '../..')
+const ROOT = path.resolve(import.meta.dirname, '../../..')
 
 export interface SwapArgs {
   readonly dependencyName: string
@@ -52,7 +51,7 @@ export async function main(): Promise<void> {
   if (!name) {
     throw new Error(`Unknown snapshot dependency: ${dependencyName}`)
   }
-  const dependency: SnapshotDependency = SNAPSHOT_DEPENDENCIES[name]
+  const dependency: SnapshotDependency = snapshotDependencies[name]
   const to = await readPinnedVersion(dependency)
   const snapshots = dependency.versionSnapshots ?? dependency.snapshots
   // Swap every file in memory first, so a failure leaves none of them edited.
@@ -91,7 +90,7 @@ export async function main(): Promise<void> {
 const SCRIPT_META: ScriptMeta = {
   describe:
     "moves a pinned tool's native snapshots to its pinned version without a native build",
-  help: `Usage: node scripts/test/swap-snapshot-version.mts --dep <name> --from <old version>
+  help: `Usage: node scripts/refresh/snapshots/swap-version.mts --dep <name> --from <old version>
 
   --dep   coana, socket-patch or patch
   --from  the version the snapshots show now

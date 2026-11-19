@@ -18,14 +18,14 @@ import {
   captureCheckpoint,
   createRecording,
   expectTerminalAnimation,
-} from '../../lib/terminal/animation.mts'
+} from '../../lib/termless/animation.mts'
 
 const binary = process.env['SOCKET_CLI_NATIVE_TEST_BINARY']
 if (!binary) {
   throw new Error('Use pnpm test:native to run native CLI tests')
 }
 
-const snapshotDir = path.join(process.cwd(), 'test/native-snapshots')
+const snapshotDir = path.join(process.cwd(), 'test/snapshots/termless')
 const artifactDir =
   process.env['SOCKET_CLI_NATIVE_TEST_ARTIFACTS'] ??
   path.join(process.cwd(), 'build/native-test-artifacts')

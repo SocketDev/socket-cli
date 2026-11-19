@@ -1,20 +1,18 @@
+import type { SpawnSyncOptions } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-
+import { isMainModule } from '../lib/is-main-module.mts'
+import type { ScriptMeta } from '../lib/run-main.mts'
+import { runMain } from '../lib/run-main.mts'
+import { assertSnapshotDependenciesCurrent } from '../refresh/snapshots/dependencies.mts'
 import {
   persistNativeSigningReceipt,
   prepareNativeTestBinary,
 } from './apple-signing.mts'
-import { assertSnapshotDependenciesCurrent } from './snapshot-dependencies.mts'
-import { isMainModule } from '../lib/is-main-module.mts'
-import { runMain } from '../lib/run-main.mts'
-
-import type { ScriptMeta } from '../lib/run-main.mts'
-import type { SpawnSyncOptions } from 'node:child_process'
 
 type NativeManifest = {
   application: { name: string; version: string }
@@ -241,9 +239,8 @@ async function main(): Promise<number> {
       )
     }
     process.env['SOCKET_CLI_NATIVE_TEST_NODE_VERSION'] = nodeRuntime.version
-    process.env['SOCKET_CLI_NATIVE_TEST_UPDATE_SNAPSHOTS'] = String(
-      updatesSnapshots,
-    )
+    process.env['SOCKET_CLI_NATIVE_TEST_UPDATE_SNAPSHOTS'] =
+      String(updatesSnapshots)
     // Give this run private package-manager caches so npm npx and pnpm dlx
     // never contend with each other or other local/test-runner activity.
     process.env['HOME'] = path.join(stageDir, 'home')

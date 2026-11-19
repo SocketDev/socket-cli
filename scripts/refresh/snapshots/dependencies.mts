@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-const ROOT = path.resolve(import.meta.dirname, '../..')
+const ROOT = path.resolve(import.meta.dirname, '../../..')
 
 export interface SnapshotDependency {
   readonly packageName: string
@@ -18,9 +18,9 @@ export const SNAPSHOT_DEPENDENCIES = {
     source: 'src/constants.mts',
     versionPattern: /const COANA_CLI_VERSION = ['"]([^'"]+)['"]/,
     snapshots: [
-      'test/native-snapshots/socket-help-fix.help.svg',
-      'test/native-snapshots/socket-help-scan-create.help.svg',
-      'test/native-snapshots/socket-help-scan-reach.help.svg',
+      'test/snapshots/termless/cli.native.socket-help-fix.svg',
+      'test/snapshots/termless/cli.native.socket-help-scan-create.svg',
+      'test/snapshots/termless/cli.native.socket-help-scan-reach.svg',
     ],
     testNamePattern: 'captures native help for (fix|scan create|scan reach)',
   },
@@ -29,18 +29,18 @@ export const SNAPSHOT_DEPENDENCIES = {
     source: 'package.json',
     versionPattern: /"@socketsecurity\/socket-patch"\s*:\s*"([^"]+)"/,
     snapshots: [
-      'test/native-snapshots/socket-patch-apply-help.help.svg',
-      'test/native-snapshots/socket-patch-rollback-help.help.svg',
-      'test/native-snapshots/socket-patch-get-help.help.svg',
-      'test/native-snapshots/socket-patch-scan-help.help.svg',
-      'test/native-snapshots/socket-patch-list-help.help.svg',
-      'test/native-snapshots/socket-patch-remove-help.help.svg',
-      'test/native-snapshots/socket-patch-setup-help.help.svg',
-      'test/native-snapshots/socket-patch-repair-help.help.svg',
-      'test/native-snapshots/socket-patch-version.version.svg',
+      'test/snapshots/termless/cli.native.socket-patch-apply-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-rollback-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-get-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-scan-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-list-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-remove-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-setup-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-repair-help.svg',
+      'test/snapshots/termless/cli.native.socket-patch-version.svg',
     ],
     versionSnapshots: [
-      'test/native-snapshots/socket-patch-version.version.svg',
+      'test/snapshots/termless/cli.native.socket-patch-version.svg',
     ],
     testNamePattern:
       'captures bundled patch help for (apply|rollback|get|scan|list|remove|setup|repair)|captures bundled socket-patch version',
@@ -184,7 +184,7 @@ export function snapshotDependencyUpdateHint(
       dependency =>
         `Snapshot output for ${dependency.packageName}@${dependency.version} is stale:\n` +
         dependency.snapshots.map(snapshot => `  - ${snapshot}`).join('\n') +
-        `\nRun: pnpm snapshots:update:dep ${dependency.dependencyName}`,
+        `\nRun: pnpm snapshots:refresh:dep ${dependency.dependencyName}`,
     )
     .join('\n\n')
 }

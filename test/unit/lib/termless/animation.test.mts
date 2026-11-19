@@ -11,13 +11,13 @@ import {
   captureCheckpoint,
   createBlankCell,
   createRecording,
-  createTerminalAnimationSvg,
+  createTermlessAnimationSvg,
   emptyCell,
   expectTerminalAnimation,
   findLastOccupiedRow,
   isVisiblyOccupied,
   renderCaptured,
-} from '../../../lib/terminal/animation.mts'
+} from '../../../lib/termless/animation.mts'
 
 import type { AnimationFrame } from '@termless/core'
 
@@ -37,7 +37,7 @@ describe('terminal animation recorder', () => {
         duration: 400,
       },
     ]
-    const svg = createTerminalAnimationSvg(frames)
+    const svg = createTermlessAnimationSvg(frames)
     for (const text of ['frame-one', 'frame-two', 'frame-three']) {
       expect(svg).toContain(text)
     }

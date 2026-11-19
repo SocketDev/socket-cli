@@ -16,7 +16,7 @@ missing. Read [the pin and snapshot notes](references/pin-and-snapshots.md).
 2. Refresh the native help snapshots:
 
    ```sh
-   node scripts/test/swap-snapshot-version.mts \
+   node scripts/refresh/snapshots/swap-version.mts \
      --dep coana --from "$CURRENT_VERSION"
    ```
 

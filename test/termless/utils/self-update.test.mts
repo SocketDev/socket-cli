@@ -11,7 +11,7 @@ import {
   captureCheckpoint,
   createRecording,
   expectTerminalAnimation,
-} from '../../lib/terminal/animation.mts'
+} from '../../lib/termless/animation.mts'
 
 const { loggerLog } = vi.hoisted(() => ({ loggerLog: vi.fn() }))
 
@@ -27,7 +27,7 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: { log: loggerLog },
 }))
 
-const snapshotsDir = path.join(process.cwd(), 'test/native-snapshots')
+const snapshotsDir = path.join(process.cwd(), 'test/snapshots/termless')
 const artifactsDir =
   process.env['SOCKET_CLI_NATIVE_TEST_ARTIFACTS'] ??
   path.join(process.cwd(), 'build/native-test-artifacts')
@@ -78,7 +78,7 @@ describe('self-update terminal notice screenshot', () => {
     expect(terminal.screen.getText()).not.toContain('Socket 1.0.0 → 1.1.0.')
     const checkpoint = await captureCheckpoint(terminal, 'suppressed')
     await expectTerminalAnimation(createRecording([checkpoint]), {
-      flow: 'self-update-suppressed',
+      flow: 'suppressed',
       snapshotsDir,
       artifactsDir,
       expectedSequence: ['suppressed'],
@@ -107,7 +107,7 @@ async function captureNoticeAtWidth(cols: number, name: string): Promise<void> {
   expect(terminal.screen.getText()).toContain('Socket 1.0.0 → 1.1.0.')
   const checkpoint = await captureCheckpoint(terminal, name)
   await expectTerminalAnimation(createRecording([checkpoint]), {
-    flow: `self-update-notice-${name}`,
+    flow: `notice-${name}`,
     snapshotsDir,
     artifactsDir,
     expectedSequence: [name],

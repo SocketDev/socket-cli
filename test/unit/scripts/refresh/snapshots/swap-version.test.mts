@@ -2,19 +2,18 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
-
 import {
-  SNAPSHOT_DEPENDENCIES,
   readPinnedVersion,
+  SNAPSHOT_DEPENDENCIES as snapshotDependencies,
   swapVersionInSnapshot,
-} from '../../../../scripts/test/snapshot-dependencies.mts'
-import { parseSwapArgs } from '../../../../scripts/test/swap-snapshot-version.mts'
+} from '../../../../../scripts/refresh/snapshots/dependencies.mts'
+import { parseSwapArgs } from '../../../../../scripts/refresh/snapshots/swap-version.mts'
 
 describe('Coana snapshots', () => {
   it('round-trips the checked-in Coana snapshots', async () => {
-    const pinned = await readPinnedVersion(SNAPSHOT_DEPENDENCIES.coana)
+    const pinned = await readPinnedVersion(snapshotDependencies.coana)
     await Promise.all(
-      SNAPSHOT_DEPENDENCIES.coana.snapshots.map(async snapshot => {
+      snapshotDependencies.coana.snapshots.map(async snapshot => {
         const contents = await readFile(
           path.join(process.cwd(), snapshot),
           'utf8',

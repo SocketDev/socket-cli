@@ -3,7 +3,7 @@
 - The source pin is `dependencies.@socketsecurity/socket-patch` in
   `package.json`; pnpm records the resolved package and platform variants in
   `pnpm-lock.yaml`.
-- `scripts/test/snapshot-dependencies.mts` lists the native help snapshots and
+- `scripts/refresh/snapshots/dependencies.mts` lists the terminal help snapshots and
   the version snapshot. The version snapshot is the one that changes with a
   package version bump.
 - `src/sea/build-sea.mts` reads the exact package version, verifies installed
