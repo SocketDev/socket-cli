@@ -7,7 +7,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- `socket scan create --bazel-targets <patterns>` scans only the Bazel targets the patterns match, in place of manifest discovery.
 - `socket manifest setup --dynamic-sbom-inference` can skip any build: one Socket can load is skipped together with its modules, leaving the builds beside and beneath it alone. The setup shows the files it will write before writing them.
 - Configure or skip one build of a directory on its own, with `socket.json` settings under `defaults.manifest.builds` keyed by its build file name.
 - Socket facts for a self-contained .NET build include its runtime packs.
