@@ -151,7 +151,6 @@
     "@socketsecurity/config": "3.0.1",
     "@socketsecurity/registry": "1.1.17",
     "@socketsecurity/sdk": "4.0.3",
-    "@termless/vterm": "0.11.0",
     "@termless/core": "0.11.0",
     "@termless/xtermjs": "0.11.0",
     "@types/blessed": "0.1.25",

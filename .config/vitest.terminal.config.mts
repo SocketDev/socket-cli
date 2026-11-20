@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: { preserveSymlinks: false },
   test: {
     resolveSnapshotPath,
+    globalSetup: ['./test/lib/termless/build-cli.mts'],
     env: process.argv.some(arg => arg === '--update' || arg === '-u')
       ? { SOCKET_CLI_NATIVE_TEST_UPDATE_SNAPSHOTS: 'true' }
       : {},

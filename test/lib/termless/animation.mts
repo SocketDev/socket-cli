@@ -22,7 +22,7 @@ import type {
 export interface Checkpoint {
   readonly name: string
   readonly svg: string
-  readonly captured?: CapturedCheckpoint
+  readonly captured: CapturedCheckpoint
 }
 
 export interface CapturedCheckpoint {
@@ -232,7 +232,7 @@ export function createRecording(
     throw new Error('Recording needs a checkpoint')
   }
   const seen = new Set<string>()
-  const frozen: Checkpoint[] = []
+  const width = checkpoints[0]!.captured.cols
   for (const checkpoint of checkpoints) {
     if (!safeName.test(checkpoint.name)) {
       throw new Error(`Unsafe checkpoint name: ${checkpoint.name}`)
@@ -241,38 +241,20 @@ export function createRecording(
       throw new Error(`Duplicate checkpoint: ${checkpoint.name}`)
     }
     seen.add(checkpoint.name)
-    if (typeof checkpoint.svg !== 'string') {
-      throw new Error('Invalid checkpoint data')
-    }
-    const captured = checkpoint.captured
-    if (captured) {
-      if (
-        frozen.some(
-          item => item.captured && item.captured.cols !== captured.cols,
-        )
-      ) {
-        throw new Error(
-          'Captured checkpoints must have the same terminal width',
-        )
-      }
-      frozen.push(
-        Object.freeze({ name: checkpoint.name, svg: checkpoint.svg, captured }),
-      )
-    } else {
-      frozen.push(Object.freeze({ name: checkpoint.name, svg: checkpoint.svg }))
+    if (checkpoint.captured.cols !== width) {
+      throw new Error('Captured checkpoints must have the same terminal width')
     }
   }
   const sharedHeight = Math.max(
-    0,
-    ...frozen.map(item => item.captured?.height ?? 0),
+    ...checkpoints.map(item => item.captured.height),
   )
-  const normalized = frozen.map(checkpoint =>
-    checkpoint.captured
-      ? Object.freeze({
+  const normalized = checkpoints.map(checkpoint =>
+    checkpoint.captured.height === sharedHeight
+      ? checkpoint
+      : Object.freeze({
           ...checkpoint,
           svg: renderCaptured(checkpoint.captured, sharedHeight),
-        })
-      : checkpoint,
+        }),
   )
   return Object.freeze({ checkpoints: Object.freeze(normalized) })
 }

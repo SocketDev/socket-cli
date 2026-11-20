@@ -1,17 +1,19 @@
-import type { SpawnSyncOptions } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+
 import { isMainModule } from '../lib/is-main-module.mts'
-import type { ScriptMeta } from '../lib/run-main.mts'
 import { runMain } from '../lib/run-main.mts'
-import type { SnapshotDependencyName } from './snapshots/dependencies.mts'
 import {
+  SNAPSHOT_DEPENDENCIES,
   assertSnapshotDependenciesCurrent,
   normalizeSnapshotDependencyName,
-  SNAPSHOT_DEPENDENCIES,
 } from './snapshots/dependencies.mts'
+
+import type { ScriptMeta } from '../lib/run-main.mts'
+import type { SnapshotDependencyName } from './snapshots/dependencies.mts'
+import type { SpawnSyncOptions } from 'node:child_process'
 
 const ROOT = path.resolve(import.meta.dirname, '../..')
 const ARTIFACTS_ROOT = path.join(ROOT, 'build/native-test-artifacts')

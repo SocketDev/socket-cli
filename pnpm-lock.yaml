@@ -231,9 +231,6 @@ importers:
       '@termless/core':
         specifier: 0.11.0
         version: 0.11.0(node-pty@1.2.0-beta.18)
-      '@termless/vterm':
-        specifier: 0.11.0
-        version: 0.11.0(@termless/core@0.11.0(node-pty@1.2.0-beta.18))
       '@termless/xtermjs':
         specifier: 0.11.0
         version: 0.11.0(@termless/core@0.11.0(node-pty@1.2.0-beta.18))
@@ -2185,12 +2182,6 @@ packages:
         optional: true
       node-pty:
         optional: true
-
-  '@termless/vterm@0.11.0':
-    resolution: {integrity: sha512-+Mwoy7hRc5gloqGxojQbAuyBKcRslflI9D16oU/79jbukFg0RTDLPQXNXTjR39fY8JePSzNAu6qX8YChORp1aw==}
-    engines: {bun: '>=1.0.0', node: '>=23.6.0'}
-    peerDependencies:
-      '@termless/core': ^0.11.0
 
   '@termless/xtermjs@0.11.0':
     resolution: {integrity: sha512-0GL6F/65WIE11WKMBcw8nCb2fU+8yLfQJ1QE/0jH4NaFd7UROTbR8pdwzkaAZ2u9YVGXA1GFYAr+jBV/5EF7Uw==}
@@ -5508,10 +5499,6 @@ packages:
       jsdom:
         optional: true
 
-  vterm.js@0.13.2:
-    resolution: {integrity: sha512-fhNiN1q1HZa2r4vY3WlVCCAg6VKvQvIa2/8f4qPfKiLZCUMzo1vOHzrk/140LdHK6pfsTm3OoMRtAw1lt9uZeA==}
-    engines: {node: '>=23.6.0'}
-
   walk-up-path@4.0.0:
     resolution: {integrity: sha512-3hu+tD8YzSLGuFYtPRb48vdhKMi0KQV5sn+uWr8+7dMEq/2G/dtLrdDinkLjqq5TIbIBjYJ4Ax/n3YiaW7QM8A==}
     engines: {node: 20 || >=22}
@@ -7480,11 +7467,6 @@ snapshots:
       node-pty: 1.2.0-beta.18
       playwright: 1.65.0
       upng-js: 2.1.0
-
-  '@termless/vterm@0.11.0(@termless/core@0.11.0(node-pty@1.2.0-beta.18))':
-    dependencies:
-      '@termless/core': 0.11.0(node-pty@1.2.0-beta.18)
-      vterm.js: 0.13.2
 
   '@termless/xtermjs@0.11.0(@termless/core@0.11.0(node-pty@1.2.0-beta.18))':
     dependencies:
@@ -11286,8 +11268,6 @@ snapshots:
       - terser
       - tsx
       - yaml
-
-  vterm.js@0.13.2: {}
 
   walk-up-path@4.0.0: {}
 
