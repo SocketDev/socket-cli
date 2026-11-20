@@ -102,7 +102,7 @@ describe('runManifestFacts', () => {
     expect(calls[0]!.args.slice(0, 1)).toEqual(['generate-socket-facts'])
     expect(calls[0]!.args).not.toContain('--work-dir')
     expect(calls[0]!.request).toEqual({
-      buildRoot: cwd,
+      contract: 1,
       config: {
         bin: 'mvn',
         buildOpts: ['-Pci'],
@@ -111,7 +111,6 @@ describe('runManifestFacts', () => {
         javaHome: '$JAVA11_HOME',
         verbose: false,
       },
-      entryFile: 'pom.xml',
       excludeBase: cwd,
       excludePaths: ['docs/**'],
       hints: {
@@ -120,6 +119,7 @@ describe('runManifestFacts', () => {
         setupCommand: 'socket manifest setup',
         socketJson: 'socket.json',
       },
+      root: { dir: cwd, entryFile: 'pom.xml' },
       tool: 'maven',
     })
     expect(vi.mocked(spawnCoana).mock.calls[0]![1]).toBe('acme')
@@ -303,7 +303,7 @@ describe('keepFacts', () => {
 })
 
 describe('listDotnetSolutionMembers', () => {
-  it('lists the members once for the same request', async () => {
+  it('lists the members once for the same request, which takes no Java', async () => {
     coanaAnswers({ members: ['/r/A/A.csproj'] })
     const request = {
       buildOpts: [],
@@ -316,15 +316,13 @@ describe('listDotnetSolutionMembers', () => {
     expect(spawnCoana).toHaveBeenCalledOnce()
     expect(calls[0]!.args).toContain('--list-members')
     expect(calls[0]!.request).toEqual({
-      buildRoot: cwd,
+      contract: 1,
       config: {
         bin: 'dotnet',
         buildOpts: [],
         ignoreUnresolved: false,
-        javaHome: '$JAVA11_HOME',
         verbose: false,
       },
-      entryFile: 'All.sln',
       excludeBase: cwd,
       hints: {
         excludePathsFlag: '--exclude-paths',
@@ -332,6 +330,7 @@ describe('listDotnetSolutionMembers', () => {
         setupCommand: 'socket manifest setup',
         socketJson: 'socket.json',
       },
+      root: { dir: cwd, entryFile: 'All.sln' },
       tool: 'dotnet',
     })
   })
@@ -383,7 +382,7 @@ describe('listBuildProjects', () => {
     expect(calls[0]!.args).toContain('--list-projects')
     expect(calls[0]!.args).not.toContain('--work-dir')
     expect(calls[0]!.request).toMatchObject({
-      buildRoot: path.join(cwd, 'reactor'),
+      contract: 1,
       config: {
         bin: 'mvn',
         buildOpts: ['-Pci'],
@@ -391,9 +390,9 @@ describe('listBuildProjects', () => {
         javaHome: '$JAVA11_HOME',
         verbose: false,
       },
-      entryFile: 'pom.xml',
       excludeBase: cwd,
       excludePaths: ['reactor/moduleB'],
+      root: { dir: path.join(cwd, 'reactor'), entryFile: 'pom.xml' },
       tool: 'maven',
     })
   })
