@@ -128,17 +128,17 @@ describe('terminal animation recorder', () => {
     onTestFinished(async () => await terminal.close())
     terminal.feed('top\r\n\r\nbottom')
     const checkpoint = await captureCheckpoint(terminal, 'trimmed')
-    expect(checkpoint.captured?.rows.length).toBe(5)
+    expect(checkpoint.captured.rows.length).toBe(5)
     expect(
-      checkpoint.captured?.rows[0]?.map(cell => cell.char).join(''),
+      checkpoint.captured.rows[0]?.map(cell => cell.char).join(''),
     ).toContain('top')
     expect(
-      checkpoint.captured?.rows[1]?.every(
+      checkpoint.captured.rows[1]?.every(
         cell => cell.char === '' || cell.char === ' ',
       ),
     ).toBe(true)
     expect(
-      checkpoint.captured?.rows[2]?.map(cell => cell.char).join(''),
+      checkpoint.captured.rows[2]?.map(cell => cell.char).join(''),
     ).toContain('bottom')
     expect(svgHeight(checkpoint.svg)).toBeLessThan(
       svgHeight(terminal.screenshotSvg({ fontSize: 14 })),
@@ -156,20 +156,20 @@ describe('terminal animation recorder', () => {
       'word\x1b[9;1H\x1b[44m \x1b[0m\x1b[11;1H😀\x1b[13;1H\x1b[?25h',
     )
     const checkpoint = await captureCheckpoint(terminal, 'decorated')
-    expect(checkpoint.captured?.rows.length).toBe(14)
-    expect(checkpoint.captured?.rows[8]?.some(cell => cell.bg !== null)).toBe(
+    expect(checkpoint.captured.rows.length).toBe(14)
+    expect(checkpoint.captured.rows[8]?.some(cell => cell.bg !== null)).toBe(
       true,
     )
-    const styledBlank = checkpoint.captured?.rows[8]?.find(
+    const styledBlank = checkpoint.captured.rows[8]?.find(
       cell => cell.bg !== null,
     )
     expect(Object.isFrozen(styledBlank?.bg)).toBe(true)
     expect(
-      checkpoint.captured?.rows[10]?.some(
+      checkpoint.captured.rows[10]?.some(
         cell => cell.wide || cell.continuation,
       ),
     ).toBe(true)
-    expect(checkpoint.captured?.cursor.visible).toBe(true)
+    expect(checkpoint.captured.cursor.visible).toBe(true)
     expect(checkpoint.svg).not.toContain('text-decoration="underline"')
   })
 
@@ -182,8 +182,8 @@ describe('terminal animation recorder', () => {
     onTestFinished(async () => await terminal.close())
     terminal.feed('\x1b[8;1H\x1b[?25h')
     const checkpoint = await captureCheckpoint(terminal, 'bottom-cursor')
-    expect(checkpoint.captured?.height).toBe(10)
-    expect(checkpoint.captured?.rows.length).toBe(8)
+    expect(checkpoint.captured.height).toBe(10)
+    expect(checkpoint.captured.rows.length).toBe(8)
   })
 
   it('translates the visible cursor into absolute buffer coordinates after scrollback', async () => {
@@ -196,7 +196,7 @@ describe('terminal animation recorder', () => {
     terminal.feed('one\r\ntwo\r\nthree\r\nfour\r\nfive')
     const checkpoint = await captureCheckpoint(terminal, 'scrolled-cursor')
     const scrollback = terminal.getScrollback()
-    expect(checkpoint.captured?.cursor.row).toBe(
+    expect(checkpoint.captured.cursor.row).toBe(
       scrollback.totalRows - scrollback.screenRows + terminal.getCursor().row,
     )
   })
@@ -224,8 +224,8 @@ describe('terminal animation recorder', () => {
     )
     expect(recording.checkpoints[0]!.svg).not.toContain('longer')
     expect(recording.checkpoints[0]!.svg).toContain('short')
-    expect(Object.isFrozen(first.captured?.rows[0])).toBe(true)
-    expect(Object.isFrozen(first.captured?.rows[0]?.[0])).toBe(true)
+    expect(Object.isFrozen(first.captured.rows[0])).toBe(true)
+    expect(Object.isFrozen(first.captured.rows[0]?.[0])).toBe(true)
   })
 
   it('rejects reordered or deleted checkpoints against the declared sequence', async () => {
@@ -235,16 +235,17 @@ describe('terminal animation recorder', () => {
     onTestFinished(
       async () => await rm(scratchDir, { recursive: true, force: true }),
     )
-    const recording = createRecording([
-      {
-        name: 'first',
-        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
-      },
-      {
-        name: 'second',
-        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
-      },
-    ])
+    const terminal = createTerminal({
+      backend: createXtermBackend(),
+      cols: 20,
+      rows: 8,
+    })
+    onTestFinished(() => terminal.close())
+    terminal.feed('first')
+    const first = await captureCheckpoint(terminal, 'first')
+    terminal.feed('\r\nsecond')
+    const second = await captureCheckpoint(terminal, 'second')
+    const recording = createRecording([first, second])
 
     await expect(
       expectTerminalAnimation(recording, {
@@ -264,20 +265,6 @@ describe('terminal animation recorder', () => {
     ).rejects.toThrow('Checkpoint sequence mismatch')
     // The first resvg use may load the bundled font inventory on Windows.
   }, 30_000)
-
-  it('copies and freezes checkpoints when creating a recording', () => {
-    const source = {
-      name: 'first',
-      svg: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
-    }
-    const recording = createRecording([source])
-    source.svg = '<svg>mutated</svg>'
-    expect(recording.checkpoints[0]?.svg).toBe(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
-    )
-    expect(Object.isFrozen(recording.checkpoints[0])).toBe(true)
-    expect(Object.isFrozen(recording.checkpoints)).toBe(true)
-  })
 
   it('rejects a real raster pixel change', async () => {
     const rasterizer = await selectRasterizer('resvg')

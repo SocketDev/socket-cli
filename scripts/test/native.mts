@@ -5,6 +5,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { SEA_VERSION } from '../../src/sea/version.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import type { ScriptMeta } from '../lib/run-main.mts'
 import { runMain } from '../lib/run-main.mts'
@@ -118,9 +119,10 @@ function runPnpm(args: readonly string[], env = process.env): void {
 }
 
 async function main(): Promise<number> {
-  const packageInfo = JSON.parse(
+  const manifest = JSON.parse(
     await fs.readFile(PACKAGE_PATH, 'utf8'),
   ) as PackageMetadata
+  const packageInfo = { name: manifest.name, version: SEA_VERSION }
   const userArgs = process.argv.slice(2)
   const build = userArgs.includes('--build')
   const vitestArgs = userArgs.filter(
