@@ -6,7 +6,7 @@ A release config is required at `.config/release.json`, `release.json`, or `.rel
 
 ## Release recovery
 
-The npm workflow reserves the version tag and stages the verified package files. It does not create a GitHub release. Approve each stage ID with `pnpm run approve:npm <id>`; the command uses pnpm 11 for stage commands and dispatches `release-github.yml`. That workflow waits until every package for the version is public before publishing the GitHub release.
+The npm workflow reserves the version tag and stages the verified package files. It does not create a GitHub release. Approve each stage ID with `pnpm run approve:npm <id>`; the command uses the repository’s pinned pnpm for stage commands and dispatches `release-github.yml`. That workflow waits until every package for the version is public before publishing the GitHub release.
 
 | npm status | Action |
 | --- | --- |
@@ -24,10 +24,12 @@ The CLI already runs on Node. SEA keeps that runtime and uses Node's VFS to embe
 ## Build
 
 ```sh
-pnpm build:sea -- --prototype
+pnpm build:sea
 ```
 
 The builder uses Node <!-- socket-sea-node-version:start -->`v27.0.0-alpha.0.1.1`<!-- socket-sea-node-version:end -->. It verifies the Node archive against the release `SHASUMS256.txt`. Node 27 is a prerelease, so these builds are experimental.
+
+Release and native-build jobs use this same Node version. They install the pnpm version pinned in `package.json` and the npm version pinned in `.config/release-tools.json`. pnpm packs the tarballs, installs them in a clean consumer for smoke testing, and stages them for release. The native smoke test installs the launcher and its matching platform tarball offline.
 
 Build on the target OS and architecture. The builder supports `darwin`, `linux`, and `win32`, with `x64` and `arm64` archives where Node publishes them. Cross-target builds fail.
 
@@ -57,16 +59,29 @@ Use the executable's `--version` output and the adjacent manifest's recorded Soc
 
 ## Native terminal tests
 
-Use Node 26.13.0 and build the prototype on the host OS before running its native tests:
+Use the Node version in `src/sea/.node-version` and build the prototype on the host OS before running its native tests:
 
 Run `pnpm snapshots` to verify the terminal screenshots and print the HTML report path. Use `pnpm snapshots:termless:refresh` to refresh the images, `pnpm snapshots:vite:refresh` for Vitest unit snapshots, or `pnpm snapshots:refresh` for both.
 
 ```sh
-pnpm build:sea -- --prototype
-SOCKET_CLI_NATIVE_TEST_ARTIFACTS=build/native-test-artifacts/run-1 pnpm test:native test/native/commands/cli.native.test.mts test/native/commands/cli-behavior.native.test.mts
+pnpm build:sea
+SOCKET_CLI_NATIVE_TEST_ARTIFACTS=build/native-test-artifacts/run-1 pnpm test:sea test/native/commands/cli.native.test.mts test/native/commands/cli-behavior.native.test.mts
 node scripts/test/terminal-report.mts --artifacts build/native-test-artifacts/run-1 --output build/native-test-artifacts/run-1/index.html
 ```
 
 Choose a fresh run directory each time; it stores checkpoint PNG/SVG files, the animation, and signing receipt. On macOS, configured Developer ID credentials sign the staged binary; CI exposes signing secrets only on trusted pushes.
 
 Terminal images trim unused rows while preserving internal spacing. Each animation uses a shared height across its checkpoints.
+
+### Build, test, and publish the RC
+
+Run `pnpm build:sea` on the target OS and CPU. Before accepting the executable and manifest, the builder smoke tests `--help` and `--version`. Run `socket sea smoke-test` to verify that every staged file can be read from the mounted VFS with its original bytes. It also runs the embedded Coana cache helper against an empty temporary cache and checks its cache-miss exit code. On targets that bundle uv, the same command extracts it, runs `uv --version`, checks the pinned version, and removes the executable. The builder also runs `patch --version` on targets with socket-patch, generates .NET facts for a dependency-free project with package sources disabled, and checks cleanup of extracted tools. A minimal npm project also exercises the embedded cdxgen capability check. Run `pnpm test:sea` for the native suite.
+
+The release workflow builds the five platform packages on their matching runners. Each runner installs the actual `socket` launcher tarball with its matching platform tarball in an empty consumer and runs help and version through the installed command. The launcher declares exact-version optional dependencies under `@socketsecurity/socket-cli-<platform>-<arch>`. Linux packages target glibc. The pinned Node release provides macOS arm64, Linux arm64/x64 and Windows arm64/x64 archives.
+
+Use the existing publish workflow. To rehearse from a v1 checkout, choose **publish**, **dry-run**, and release major **2**. To release, prepare and merge the RC version first. The publish job stages verified platform tarballs before the launcher under `rc-2.1.0`. Approve platform stage IDs first and the launcher last with `pnpm run approve:npm <stage-id>`.
+
+For the first release of a new name, an npm organization maintainer must provision a short-lived granular token with write permission to create public packages in the `@socketsecurity` scope. It does not need 2FA bypass. Store it as `NPM_FIRST_STAGE_TOKEN` in the protected GitHub `publish-npm` environment. CI checks package names against the public registry before reserving the tag and supplies the token only for first-time native staging. Approval uses maintainer 2FA.
+
+Once each package exists, configure trusted staging for subsequent releases:
+`npm trust github @socketsecurity/<package> --repository SocketDev/socket-cli --file publish-npm.yml --environment publish-npm --allow-stage-publish`. Remove the bootstrap token when the initial stages are complete. Configure trust near the next publish since unused new connections expire after two days. See [npm stage](https://docs.npmjs.com/cli/v11/commands/npm-stage/) and [trusted publishers](https://docs.npmjs.com/trusted-publishers/).

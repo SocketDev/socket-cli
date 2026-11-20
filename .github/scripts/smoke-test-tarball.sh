@@ -9,6 +9,7 @@
 #
 # Inputs (environment):
 #   PKG          the package name to install and probe, e.g. socket
+#   VERSION      the verified release version
 #   RUNNER_TEMP  GitHub Actions temp dir; the tarball lives in $RUNNER_TEMP/dist
 set -euo pipefail
 
@@ -18,14 +19,11 @@ if [ -z "${PKG:-}" ]; then
 fi
 
 dist_dir="${RUNNER_TEMP:-/tmp}/dist"
-# The tarball name npm derives from the package name: scope separator dropped,
-# leading @ removed (@socketsecurity/cli -> socketsecurity-cli).
-slug="$(printf '%s' "$PKG" | sed 's|^@||; s|/|-|')"
-tarball="$(ls -t "$dist_dir/$slug"-*.tgz 2>/dev/null | head -1)"
-if [ -z "$tarball" ]; then
-  echo "No packed tarball for $PKG in $dist_dir." >&2
-  echo "Wanted: $dist_dir/$slug-<version>.tgz" >&2
-  ls -la "$dist_dir" >&2 || true
+# pnpm removes the scope marker and replaces the slash in the tarball name.
+slug=${PKG#@}
+tarball="$dist_dir/${slug//\//-}-${VERSION:?VERSION is required}.tgz"
+if [ ! -f "$tarball" ]; then
+  echo "Missing release tarball: $tarball" >&2
   exit 1
 fi
 
@@ -34,7 +32,7 @@ trap 'rm -rf "$consumer"' EXIT
 printf '%s\n' '{"name":"socket-cli-smoke","private":true}' > "$consumer/package.json"
 
 echo "Installing $(basename "$tarball") into a throwaway consumer"
-npm install --ignore-scripts --no-audit --no-fund --prefix "$consumer" "$tarball"
+(cd "$consumer" && pnpm add --ignore-scripts "$tarball")
 
 installed="$consumer/node_modules/$PKG"
 if [ ! -d "$installed" ]; then
@@ -42,7 +40,13 @@ if [ ! -d "$installed" ]; then
   exit 1
 fi
 
-bins="$(node -p "Object.keys(require('$installed/package.json').bin ?? {}).join(' ')")"
+manifest="$installed/package.json"
+if ! jq -e --arg name "$PKG" --arg version "$VERSION" '.name == $name and .version == $version' "$manifest" >/dev/null; then
+  echo "Installed manifest does not match $PKG@$VERSION." >&2
+  exit 1
+fi
+main_bin=${PKG##*/}
+bins="$(jq -er --arg main "$main_bin" '.bin | select(has($main)) | keys[]' "$manifest")"
 if [ -z "$bins" ]; then
   echo "$PKG declares no bin entries; nothing to probe." >&2
   exit 1
@@ -55,7 +59,11 @@ for bin in $bins; do
     exit 1
   fi
   echo "Running $bin --version"
-  "$bin_path" --version
+  reported="$("$bin_path" --version)"
+  if [[ "$bin" == "$main_bin" && "$reported" != "$VERSION" ]]; then
+    echo "$bin reported $reported; expected $VERSION." >&2
+    exit 1
+  fi
 done
 
 echo "$PKG installs and every declared executable runs."

@@ -64,7 +64,20 @@ export function parsePnpmLockfile(
   let result
   if (typeof lockfileContent === 'string') {
     try {
-      result = yaml.load(stripBom(lockfileContent))
+      const documents = yaml
+        .loadAll(stripBom(lockfileContent))
+        .filter(isObjectObject)
+      // pnpm 12 places package-manager metadata before the project graph.
+      result =
+        documents.find(
+          doc =>
+            !Object.values(doc['importers'] ?? {}).some(
+              importer =>
+                isObjectObject(importer) &&
+                ('packageManagerDependencies' in importer ||
+                  'configDependencies' in importer),
+            ),
+        ) ?? documents.at(-1)
     } catch {}
   }
   return isObjectObject(result) ? (result as LockfileObject) : null

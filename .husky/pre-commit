@@ -1,4 +1,5 @@
 if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
+  node scripts/ci/check-bin-eol.mjs || exit 1
   pnpm run lint-staged
 else
   echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"

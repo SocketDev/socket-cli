@@ -1,1 +1,2 @@
-* text=auto eol=lfs
+# pnpm rejects CRLF shebangs when packing the CLI from a Windows checkout.
+* text=auto eol=lf

@@ -20,28 +20,33 @@ describe('npm release availability', () => {
         wait,
       }),
     ).resolves.toBeUndefined()
-    expect(fetcher.mock.calls.map(([url, options]) => [url, options?.method])).toEqual([
-      [
-        'https://registry.npmjs.org/%40socketsecurity%2Fcli/1.14.2',
-        'HEAD',
-      ],
-      [
-        'https://registry.npmjs.org/%40socketsecurity%2Fcli/1.14.2',
-        'HEAD',
-      ],
+    expect(
+      fetcher.mock.calls.map(([url, options]) => [url, options?.method]),
+    ).toEqual([
+      ['https://registry.npmjs.org/%40socketsecurity%2Fcli/1.14.2', 'HEAD'],
+      ['https://registry.npmjs.org/%40socketsecurity%2Fcli/1.14.2', 'HEAD'],
     ])
     expect(wait).toHaveBeenCalledOnce()
   })
 
-  it('waits for all stable package versions and only socket for prereleases', async () => {
+  it('waits for all stable package versions and all native packages for prereleases', async () => {
     expect(releasePackagesForVersion('1.14.2')).toEqual([
       'socket',
       '@socketsecurity/cli',
       '@socketsecurity/cli-with-sentry',
     ])
-    expect(releasePackagesForVersion('2.1.0-rc.2')).toEqual(['socket'])
+    expect(releasePackagesForVersion('2.1.0-rc.2')).toEqual([
+      'socket',
+      '@socketsecurity/socket-cli-darwin-arm64',
+      '@socketsecurity/socket-cli-linux-arm64',
+      '@socketsecurity/socket-cli-linux-x64',
+      '@socketsecurity/socket-cli-win32-arm64',
+      '@socketsecurity/socket-cli-win32-x64',
+    ])
 
-    const fetcher = vi.fn<typeof fetch>(async () => new Response(null, { status: 200 }))
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 200 }),
+    )
     await expect(
       waitForReleasePackages('1.14.2', { fetcher }),
     ).resolves.toEqual(releasePackagesForVersion('1.14.2'))
@@ -49,7 +54,9 @@ describe('npm release availability', () => {
   })
 
   it('fails fast on registry errors other than pending or throttled responses', async () => {
-    const fetcher = vi.fn<typeof fetch>(async () => new Response(null, { status: 403 }))
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 403 }),
+    )
     await expect(
       waitForNpmVersion('socket', '2.1.0-rc.2', { fetcher }),
     ).rejects.toThrow('npm availability check returned HTTP 403')
@@ -74,7 +81,9 @@ describe('npm release availability', () => {
 
   it('times out without creating a release when the public version stays absent', async () => {
     let currentTime = 0
-    const fetcher = vi.fn<typeof fetch>(async () => new Response(null, { status: 404 }))
+    const fetcher = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 404 }),
+    )
     const wait = vi.fn(async (milliseconds: number) => {
       currentTime += milliseconds
     })

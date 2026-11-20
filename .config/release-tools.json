@@ -1,0 +1,13 @@
+{
+  "npm": {
+    "version": "11.21.3",
+    "integrity": "sha512-5Cf+jE+XctbhH/zjOOqXC+ity7eec/Tkk4Ql38tf6w+1htp2wYPHmE4c1R1Es3DY227Ac14+SLrlYJwkBicbTg=="
+  },
+  "pnpm": {
+    "darwin-arm64": "af43c44f22ef89191d83163c3ef9f5ee021a7368f401c95d92731be7d6b21cc5",
+    "linux-arm64": "22b23da8b00d12c2fdfc41b5533b65b467c7b178d93fdfe9128c491585dff1a4",
+    "linux-x64": "07ee196f91af1e21edb0c794401f4152932c74b0dba5d415dc4dbd5783f3c7af",
+    "win32-arm64": "3e423cb1b969b7e1cc02107b7414e03aca8bc9b0081f6cce0f697041a72a1f20",
+    "win32-x64": "0a9c1bc147202089b12d91f43349f6f9ae26df191ee704dee313ba3f9a0a8ffe"
+  }
+}

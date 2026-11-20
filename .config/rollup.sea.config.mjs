@@ -20,6 +20,7 @@ export default {
     file:
       process.env.SEA_OUTPUT || path.join(rootDir, 'dist/sea/bootstrap.cjs'),
     format: 'cjs',
+    intro: `const seaSmokeTest = ${JSON.stringify(JSON.parse(process.env.SEA_SMOKE_TEST || 'null'))};`,
     interop: 'auto',
   },
   external: [

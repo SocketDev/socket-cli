@@ -1,16 +1,23 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-import { RELEASE_PACKAGES } from './packages.mts'
+import { waitForNpmVersion } from './availability.mts'
+import { releasePackagesForVersion } from './packages.mts'
 import { npmDistTagForRelease } from './validate-npm-policy.mts'
-import { readReleasePolicy } from '../../src/sea/version.mts'
+import {
+  type ReleasePolicy,
+  readReleasePolicy,
+} from '../../src/sea/version.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 
 const STAGE_ID =
   /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/iu
-const PNPM_STAGE_VERSION = '11.17.0'
+const { packageManager } = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
+) as { packageManager: string }
 
 interface GitHubRepositoryContext {
   readonly nameWithOwner: string
@@ -23,9 +30,12 @@ function run(command: string, args: string[], inherit = false): string {
     stdio: inherit ? 'inherit' : ['ignore', 'pipe', 'pipe'],
     timeout: 120_000,
   })
+  if (result.error) {
+    throw result.error
+  }
   if (result.status !== 0) {
     throw new Error(
-      `${command} ${args.join(' ')} failed: ${result.stderr ?? ''}`,
+      `${command} ${args.join(' ')} failed: ${result.stderr || result.stdout || result.signal || result.status}`,
     )
   }
   return result.stdout?.trim() ?? ''
@@ -35,24 +45,33 @@ export function pnpmStageInvocation(
   version: string,
   args: string[],
 ): { command: string; args: string[] } {
-  const major = Number.parseInt(version.split('.')[0] ?? '', 10)
-  return major >= 11
+  return `pnpm@${version}` === packageManager
     ? { command: 'pnpm', args }
     : {
         command: 'corepack',
-        args: [`pnpm@${PNPM_STAGE_VERSION}`, '--pm-on-fail=ignore', ...args],
+        args: [packageManager, '--pm-on-fail=ignore', ...args],
       }
 }
 
 function runPnpmStage(args: string[], inherit = false): string {
-  const currentVersion = run('pnpm', ['--version'])
+  // pnpm run exposes the manager itself, bypassing non-executable Windows cmd shims.
+  const manager = process.env['npm_config_user_agent']?.startsWith('pnpm/')
+    ? process.env['npm_execpath'] || 'pnpm'
+    : 'pnpm'
+  const usesNode = /\.[cm]?js$/iu.test(manager)
+  const command = usesNode ? process.execPath : manager
+  const prefix = usesNode ? [manager] : []
+  const currentVersion = run(command, [...prefix, '--version'])
   const invocation = pnpmStageInvocation(currentVersion, args)
-  return run(invocation.command, invocation.args, inherit)
+  return invocation.command === 'pnpm'
+    ? run(command, [...prefix, ...args], inherit)
+    : run(invocation.command, invocation.args, inherit)
 }
 
 function validateStage(
   value: unknown,
   id: string,
+  policy: ReleasePolicy,
 ): { name: string; version: string } {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('npm returned an invalid stage.')
@@ -70,11 +89,15 @@ function validateStage(
   ) {
     throw new Error('npm stage ID, package, or version is invalid.')
   }
-  if (!RELEASE_PACKAGES.includes(name as (typeof RELEASE_PACKAGES)[number])) {
+  if (!releasePackagesForVersion(version).includes(name)) {
     throw new Error(`Unexpected npm package in stage: ${name}`)
   }
-  if (version.includes('-') && name !== 'socket') {
-    throw new Error('Prerelease stages may only contain the socket package.')
+  const expectedTag = npmDistTagForRelease(version, policy)
+  // npm makes the dist-tag immutable when the package is staged.
+  if (stage['tag'] !== expectedTag) {
+    throw new Error(
+      `Expected npm stage dist-tag ${expectedTag} for ${name}@${version}, got ${String(stage['tag'])}.`,
+    )
   }
   return { name, version }
 }
@@ -85,7 +108,7 @@ export function stageActionForStatus(status: unknown): StageAction {
   if (status === 'validating') {
     return 'wait'
   }
-  if (status === 'staged') {
+  if (status === 'staged' || status === 'awaiting_approval') {
     return 'approve'
   }
   if (status === 'published') {
@@ -171,10 +194,9 @@ async function approve(id: string): Promise<void> {
     } catch {
       throw new Error('npm stage view did not return JSON.')
     }
-    stage = validateStage(value, id)
+    stage = validateStage(value, id, policy)
     status = (value as Record<string, unknown>)['status']
     const action = stageActionForStatus(status)
-    npmDistTagForRelease(stage.version, policy)
     if (action === 'approve') {
       shouldApprove = true
       break
@@ -222,18 +244,33 @@ async function approve(id: string): Promise<void> {
         `Tag v${stage.version} does not contain ${stage.name}@${stage.version}.`,
       )
     }
+    if (stage.name === 'socket' && stage.version.includes('-')) {
+      await Promise.all(
+        releasePackagesForVersion(stage.version)
+          .slice(1)
+          .map(name =>
+            waitForNpmVersion(name, stage.version, { timeoutMs: 5000 }),
+          ),
+      )
+    }
     runPnpmStage(
       ['stage', 'approve', id, '--registry=https://registry.npmjs.org'],
       true,
     )
     process.stdout.write(`Approved ${stage.name}@${stage.version}.\n`)
   } else {
-    process.stdout.write(
-      `npm stage ${id} is already published; retrying GitHub release finalization.\n`,
-    )
+    process.stdout.write(`npm stage ${id} is already published.\n`)
   }
 
-  dispatchGitHubRelease(stage.version, repository)
+  // The socket stage starts one finalizer per release. That workflow waits for
+  // every sibling, so stable packages can still be approved in any order.
+  if (stage.name === 'socket') {
+    dispatchGitHubRelease(stage.version, repository)
+  } else {
+    process.stdout.write(
+      `The socket@${stage.version} stage triggers GitHub finalization. Retry its stage ID if finalization times out.\n`,
+    )
+  }
 }
 
 async function main(args = process.argv.slice(2)): Promise<void> {

@@ -15,7 +15,7 @@ supported SEA target and exposes the SEA/VFS APIs the builder uses. Build the
 native prototype first. It updates the README marker from the new pin:
 
 ```sh
-pnpm build:sea -- --prototype
+pnpm build:sea
 ```
 
 Then run the Node pin and SEA builder tests:
