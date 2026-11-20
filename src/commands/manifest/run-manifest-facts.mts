@@ -14,6 +14,7 @@ import { withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
 
+import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
 
@@ -95,9 +96,10 @@ export type RunManifestFactsResult = {
 // dependency); `undefined` = genuinely nothing to resolve, not a failure.
 export type RunManifestFactsOutcome = RunManifestFactsResult | null | undefined
 
-// The request `coana generate-socket-facts --request` reads.
+// The request `coana generate-socket-facts --request` reads, of the contract
+// version it states.
 type SocketFactsRequest = {
-  buildRoot: string
+  contract: typeof SOCKET_FACTS_REQUEST_CONTRACT
   config: {
     bin?: string | undefined
     buildOpts: string[]
@@ -107,12 +109,14 @@ type SocketFactsRequest = {
     javaHome?: string | undefined
     verbose: boolean
   }
-  entryFile?: string | undefined
   excludeBase: string
   excludePaths?: string[] | undefined
   hints: Omit<BuildOptionHints, 'flags'> & { flags: BuildOption[] }
+  root: BuildRoot
   tool: BuildTool
 }
+
+const SOCKET_FACTS_REQUEST_CONTRACT = 1
 
 type SocketFactsResult =
   | (RunManifestFactsResult & { status: 'generated' })
@@ -242,20 +246,21 @@ function toSocketFactsRequest({
   return {
     ok: true,
     data: {
-      buildRoot: path.resolve(cwd),
+      contract: SOCKET_FACTS_REQUEST_CONTRACT,
       config: {
         bin: resolvedBin,
         buildOpts,
         ...(excludeConfigs ? { excludeConfigs } : {}),
         ignoreUnresolved,
         ...(includeConfigs ? { includeConfigs } : {}),
-        ...(javaHome ? { javaHome } : {}),
+        // .NET builds take no Java.
+        ...(javaHome && ecosystem !== 'dotnet' ? { javaHome } : {}),
         verbose,
       },
-      ...(entryFile ? { entryFile } : {}),
       excludeBase: path.resolve(excludeBase ?? cwd),
       ...(excludePaths?.length ? { excludePaths } : {}),
       hints: toRequestHints(hints),
+      root: { dir: path.resolve(cwd), ...(entryFile ? { entryFile } : {}) },
       tool: ecosystem,
     },
   }
