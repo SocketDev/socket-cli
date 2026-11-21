@@ -5,6 +5,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { SEA_VERSION } from '../../src/sea/version.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import type { ScriptMeta } from '../lib/run-main.mts'
 import { runMain } from '../lib/run-main.mts'
@@ -25,7 +26,6 @@ const ROOT = path.resolve(import.meta.dirname, '../..')
 const PACKAGE_PATH = path.join(ROOT, 'package.json')
 type PackageMetadata = {
   name: string
-  version: string
 }
 const BUILD_DIR = path.join(ROOT, 'build/sea')
 const TRIPLE = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
@@ -72,10 +72,10 @@ async function verifyArtifact(
   const manifest = JSON.parse(manifestText) as NativeManifest
   if (
     manifest.application?.name !== packageInfo.name ||
-    manifest.application?.version !== packageInfo.version
+    manifest.application?.version !== SEA_VERSION
   ) {
     throw new Error(
-      `Native manifest is for ${manifest.application?.name}@${manifest.application?.version}; expected ${packageInfo.name}@${packageInfo.version}`,
+      `Native manifest is for ${manifest.application?.name}@${manifest.application?.version}; expected ${packageInfo.name}@${SEA_VERSION}`,
     )
   }
   if (manifest.target?.triple !== TRIPLE) {
@@ -229,7 +229,7 @@ async function main(): Promise<number> {
     process.env['SOCKET_CLI_NATIVE_TEST_STAGE'] = stageDir
     process.env['SOCKET_CLI_NATIVE_TEST_CAPABILITIES'] =
       manifest.capabilities.available.join(',')
-    process.env['SOCKET_CLI_NATIVE_TEST_VERSION'] = packageInfo.version
+    process.env['SOCKET_CLI_NATIVE_TEST_VERSION'] = SEA_VERSION
     const nodeRuntime = manifest.payloads.find(
       payload => payload.id === 'node-runtime',
     )
@@ -292,7 +292,7 @@ async function main(): Promise<number> {
     }
     if (
       version.status !== 0 ||
-      !version.stdout.trim().startsWith(packageInfo.version)
+      !version.stdout.trim().startsWith(SEA_VERSION)
     ) {
       throw new Error(
         `Native --version check failed (status ${version.status}): ${version.stdout}${version.stderr}`,

@@ -66,6 +66,9 @@ patchedDependencies:
   '@socketsecurity/registry@1.1.17':
     hash: 46f41d951e8ffbe5c0b41d6aa30a0281fe032e0bfd97d899a1f4766285bfb820
     path: patches/@socketsecurity__registry@1.1.17.patch
+  '@socketsecurity/sdk@4.0.3':
+    hash: 4a12f35c50a3360c68a367609b2de41514cd790f12eda5197b3f8a778ac7e1e2
+    path: patches/@socketsecurity__sdk@4.0.3.patch
   ansi-term@0.0.2:
     hash: 06bb5127b7689d6ab2ea833f9617b2c3fbe9fe0048ce1c6b59b81f7e25ccbccb
     path: patches/ansi-term@0.0.2.patch
@@ -227,7 +230,7 @@ importers:
         version: 1.1.17(patch_hash=46f41d951e8ffbe5c0b41d6aa30a0281fe032e0bfd97d899a1f4766285bfb820)
       '@socketsecurity/sdk':
         specifier: 4.0.3
-        version: 4.0.3
+        version: 4.0.3(patch_hash=4a12f35c50a3360c68a367609b2de41514cd790f12eda5197b3f8a778ac7e1e2)
       '@termless/core':
         specifier: 0.11.0
         version: 0.11.0(node-pty@1.2.0-beta.18)
@@ -7422,7 +7425,7 @@ snapshots:
 
   '@socketsecurity/registry@1.1.17(patch_hash=46f41d951e8ffbe5c0b41d6aa30a0281fe032e0bfd97d899a1f4766285bfb820)': {}
 
-  '@socketsecurity/sdk@4.0.3': {}
+  '@socketsecurity/sdk@4.0.3(patch_hash=4a12f35c50a3360c68a367609b2de41514cd790f12eda5197b3f8a778ac7e1e2)': {}
 
   '@socketsecurity/socket-patch-android-arm64@2.0.0':
     optional: true

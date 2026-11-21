@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- Socket CLI starts on Node 18.20.8 by falling back when the runtime cannot parse Unicode-set regular expressions.
+
 ## [1.16.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.16.0) - 2026-11-19
 
 ### Added
