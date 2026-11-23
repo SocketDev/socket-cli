@@ -46,7 +46,6 @@ export type ReachabilityOptions = {
   reachDisableExternalToolChecks: boolean
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
-  reachEnableAnalysisSplitting: boolean
   reachExcludePaths: string[]
   reachRetainFactsFile: boolean
   reachSkipCache: boolean
@@ -250,9 +249,8 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachDisableExternalToolChecks
       ? ['--disable-external-tool-checks']
       : []),
-    ...(reachabilityOptions.reachEnableAnalysisSplitting
-      ? []
-      : ['--disable-analysis-splitting']),
+    // Older Coana versions split analyses unless this is passed.
+    '--disable-analysis-splitting',
     '--run-without-docker',
     '--manifests-tar-hash',
     tarHash,

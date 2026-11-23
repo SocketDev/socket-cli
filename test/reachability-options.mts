@@ -20,7 +20,6 @@ export function makeReachabilityOptions(): ReachabilityOptions {
     reachDisableDependencyDownloads: false,
     reachDisableExternalToolChecks: false,
     reachEcosystems: [],
-    reachEnableAnalysisSplitting: false,
     reachExcludePaths: [],
     reachRetainFactsFile: false,
     reachSkipCache: false,

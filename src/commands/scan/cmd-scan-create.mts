@@ -62,6 +62,7 @@ export const CMD_NAME = 'create'
 // must not imply --reach.
 const DEPRECATED_NO_OP_REACH_FLAGS = new Set([
   'reachDisableAnalysisSplitting',
+  'reachEnableAnalysisSplitting',
   'reachLazyMode',
 ])
 
@@ -301,7 +302,7 @@ async function run(
     reachDisableAnalytics,
     reachDisableDependencyDownloads,
     reachDisableExternalToolChecks,
-    reachEnableAnalysisSplitting,
+    reachEnableAnalysisSplitting: _reachEnableAnalysisSplitting,
     reachFallbackToRegularScan,
     reachLazyMode: _reachLazyMode,
     reachRetainFactsFile,
@@ -712,7 +713,6 @@ async function run(
       reachDisableDependencyDownloads: Boolean(reachDisableDependencyDownloads),
       reachDisableExternalToolChecks: Boolean(reachDisableExternalToolChecks),
       reachEcosystems,
-      reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,
       reachFallbackToRegularScan: Boolean(reachFallbackToRegularScan),
       reachRetainFactsFile: Boolean(reachRetainFactsFile),
