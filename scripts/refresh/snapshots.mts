@@ -8,9 +8,9 @@ import type { ScriptMeta } from '../lib/run-main.mts'
 import { runMain } from '../lib/run-main.mts'
 import type { SnapshotDependencyName } from './snapshots/dependencies.mts'
 import {
+  SNAPSHOT_DEPENDENCIES,
   assertSnapshotDependenciesCurrent,
   normalizeSnapshotDependencyName,
-  SNAPSHOT_DEPENDENCIES,
 } from './snapshots/dependencies.mts'
 
 const ROOT = path.resolve(import.meta.dirname, '../..')
