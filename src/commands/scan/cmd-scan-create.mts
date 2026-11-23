@@ -298,13 +298,10 @@ async function run(
     reachContinueOnNoSourceFiles,
     reachDebug,
     reachDetailedAnalysisLogFile,
-    reachDisableAnalysisSplitting: _reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachDisableDependencyDownloads,
     reachDisableExternalToolChecks,
-    reachEnableAnalysisSplitting: _reachEnableAnalysisSplitting,
     reachFallbackToRegularScan,
-    reachLazyMode: _reachLazyMode,
     reachRetainFactsFile,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
@@ -339,13 +336,10 @@ async function run(
     reachContinueOnNoSourceFiles: boolean
     reachDebug: boolean
     reachDetailedAnalysisLogFile: boolean
-    reachDisableAnalysisSplitting: boolean
     reachDisableAnalytics: boolean
     reachDisableDependencyDownloads: boolean
     reachDisableExternalToolChecks: boolean
-    reachEnableAnalysisSplitting: boolean
     reachFallbackToRegularScan: boolean
-    reachLazyMode: boolean
     reachRetainFactsFile: boolean
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean

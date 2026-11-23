@@ -201,31 +201,13 @@ describe('socket scan reach', async () => {
       'reach',
       FLAG_DRY_RUN,
       '--reach-disable-analysis-splitting',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept deprecated --reach-disable-analysis-splitting flag (noop)',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
       '--reach-enable-analysis-splitting',
       '--org',
       'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should accept deprecated --reach-enable-analysis-splitting flag (noop)',
+    'should accept the deprecated analysis splitting flags (noop)',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)

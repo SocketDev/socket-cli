@@ -362,43 +362,18 @@ describe('socket scan create', async () => {
       '--branch',
       'abc',
       '--reach-disable-analysis-splitting',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should succeed when deprecated no-op --reach-disable-analysis-splitting is used without --reach',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(
-        code,
-        'should exit with code 0 for the deprecated no-op flag',
-      ).toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'create',
-      FLAG_ORG,
-      'fakeOrg',
-      'target',
-      FLAG_DRY_RUN,
-      '--repo',
-      'xyz',
-      '--branch',
-      'abc',
       '--reach-enable-analysis-splitting',
+      '--reach-lazy-mode',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should succeed when deprecated no-op --reach-enable-analysis-splitting is used without --reach',
+    'should succeed when deprecated no-op reach flags are used without --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
-        'should exit with code 0 for the deprecated no-op flag',
+        'should exit with code 0 for the deprecated no-op flags',
       ).toBe(0)
     },
   )
