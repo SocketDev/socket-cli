@@ -8,6 +8,7 @@ import process from 'node:process'
 import { isMainModule } from '../lib/is-main-module.mts'
 import type { ScriptMeta } from '../lib/run-main.mts'
 import { runMain } from '../lib/run-main.mts'
+import { SEA_VERSION } from '../../src/sea/version.mts'
 import { assertSnapshotDependenciesCurrent } from '../refresh/snapshots/dependencies.mts'
 import {
   persistNativeSigningReceipt,
@@ -118,9 +119,11 @@ function runPnpm(args: readonly string[], env = process.env): void {
 }
 
 async function main(): Promise<number> {
-  const packageInfo = JSON.parse(
+  const { name } = JSON.parse(
     await fs.readFile(PACKAGE_PATH, 'utf8'),
   ) as PackageMetadata
+  // The 1.x line builds its native CLI as the configured 2.1 prerelease.
+  const nativeApp: PackageMetadata = { name, version: SEA_VERSION }
   const userArgs = process.argv.slice(2)
   const build = userArgs.includes('--build')
   const vitestArgs = userArgs.filter(
@@ -208,7 +211,7 @@ async function main(): Promise<number> {
     if (process.platform !== 'win32') {
       await fs.chmod(binaryPath, 0o700)
     }
-    const manifest = await verifyArtifact(packageInfo, binaryPath, manifestPath)
+    const manifest = await verifyArtifact(nativeApp, binaryPath, manifestPath)
     const sourceDigest = manifest.payloads.find(
       payload => payload.id === 'socket-vfs',
     )!.sha256!
@@ -229,7 +232,7 @@ async function main(): Promise<number> {
     process.env['SOCKET_CLI_NATIVE_TEST_STAGE'] = stageDir
     process.env['SOCKET_CLI_NATIVE_TEST_CAPABILITIES'] =
       manifest.capabilities.available.join(',')
-    process.env['SOCKET_CLI_NATIVE_TEST_VERSION'] = packageInfo.version
+    process.env['SOCKET_CLI_NATIVE_TEST_VERSION'] = nativeApp.version
     const nodeRuntime = manifest.payloads.find(
       payload => payload.id === 'node-runtime',
     )
@@ -292,7 +295,7 @@ async function main(): Promise<number> {
     }
     if (
       version.status !== 0 ||
-      !version.stdout.trim().startsWith(packageInfo.version)
+      !version.stdout.trim().startsWith(nativeApp.version)
     ) {
       throw new Error(
         `Native --version check failed (status ${version.status}): ${version.stdout}${version.stderr}`,
