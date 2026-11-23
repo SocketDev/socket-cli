@@ -1,3 +1,5 @@
+import { SEA_VERSION } from '../../src/sea/version.mts'
+
 import type { SpawnSyncOptions } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -8,7 +10,6 @@ import process from 'node:process'
 import { isMainModule } from '../lib/is-main-module.mts'
 import type { ScriptMeta } from '../lib/run-main.mts'
 import { runMain } from '../lib/run-main.mts'
-import { SEA_VERSION } from '../../src/sea/version.mts'
 import { assertSnapshotDependenciesCurrent } from '../refresh/snapshots/dependencies.mts'
 import {
   persistNativeSigningReceipt,
@@ -73,10 +74,10 @@ async function verifyArtifact(
   const manifest = JSON.parse(manifestText) as NativeManifest
   if (
     manifest.application?.name !== packageInfo.name ||
-    manifest.application?.version !== packageInfo.version
+    manifest.application?.version !== SEA_VERSION
   ) {
     throw new Error(
-      `Native manifest is for ${manifest.application?.name}@${manifest.application?.version}; expected ${packageInfo.name}@${packageInfo.version}`,
+      `Native manifest is for ${manifest.application?.name}@${manifest.application?.version}; expected ${packageInfo.name}@${SEA_VERSION}`,
     )
   }
   if (manifest.target?.triple !== TRIPLE) {
