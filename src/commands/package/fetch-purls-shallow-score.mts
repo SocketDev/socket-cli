@@ -1,12 +1,11 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { handleApiCall } from '../../utils/api.mts'
+import { joinAnd } from '../../utils/arrays.mts'
+import { logger } from '../../utils/logger.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { PurlRecord } from '@socketsecurity/sdk'
 
 export type FetchPurlsShallowScoreOptions = {
   sdkOpts?: SetupSdkOptions | undefined
@@ -15,7 +14,7 @@ export type FetchPurlsShallowScoreOptions = {
 export async function fetchPurlsShallowScore(
   purls: string[],
   options?: FetchPurlsShallowScoreOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'batchPackageFetch'>>> {
+): Promise<CResult<PurlRecord[]>> {
   const { sdkOpts } = {
     __proto__: null,
     ...options,
@@ -35,7 +34,7 @@ export async function fetchPurlsShallowScore(
     sockSdk.batchPackageFetch(
       { components: purls.map(purl => ({ purl })) },
       {
-        alerts: 'true',
+        alerts: true,
       },
     ),
     { description: 'looking up package' },
@@ -44,10 +43,5 @@ export async function fetchPurlsShallowScore(
     return batchPackageCResult
   }
 
-  // TODO: Seems like there's a bug in the typing since we absolutely have to
-  // return the .data here.
-  return {
-    ok: true,
-    data: batchPackageCResult.data as SocketSdkSuccessResult<'batchPackageFetch'>,
-  }
+  return batchPackageCResult
 }

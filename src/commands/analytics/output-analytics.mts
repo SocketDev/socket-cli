@@ -1,11 +1,10 @@
 import fs from 'node:fs/promises'
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from '../../constants.mts'
 import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { mdTableStringNumber } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { fileLink } from '../../utils/terminal-link.mts'
@@ -270,6 +269,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
 
   const BarChart = /*@__PURE__*/ require('blessed-contrib/lib/widget/charts/bar.js')
   const bar = grid.set(4, 0, 1, 2, BarChart, {
+    screen,
     label: 'Top 5 alert types',
     barWidth: 10,
     barSpacing: 17,
@@ -393,6 +393,7 @@ function renderLineCharts(
 ): void {
   const LineChart = /*@__PURE__*/ require('blessed-contrib/lib/widget/charts/line.js')
   const line = grid.set(...coords, LineChart, {
+    screen,
     style: { line: 'cyan', text: 'cyan', baseline: 'black' },
     xLabelPadding: 0,
     xPadding: 0,

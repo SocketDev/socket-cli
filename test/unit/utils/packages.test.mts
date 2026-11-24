@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   readPackageJson,
   toEditablePackageJson,
-} from '@socketsecurity/registry/lib/packages'
+} from '../../../src/utils/packages.mts'
 
 describe('editable package.json', () => {
   let dir: string | undefined

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 'use strict'
 
+const { spawn } = require('node:child_process')
+
 void (async () => {
   const Module = require('node:module')
   const os = require('node:os')
@@ -11,13 +13,9 @@ void (async () => {
   const { default: constants } = require(
     path.join(rootPath, 'dist/constants.js'),
   )
-  const { spawn } = require(
-    path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js'),
-  )
-
   process.exitCode = 1
 
-  const spawnPromise = spawn(
+  const child = spawn(
     constants.execPath,
     [
       ...constants.nodeNoWarningsFlags,
@@ -38,13 +36,15 @@ void (async () => {
       stdio: 'inherit',
     },
   )
+  const childPromise = new Promise(resolve => {
+    child.once('close', (code, signalName) => resolve({ code, signalName }))
+  })
 
   // The child shares our process group and handles the signal itself; wait briefly for it
   // to exit (so its final output isn't printed after the prompt returns) and mirror its
   // exit below. SIGKILL and leave if it outlasts the grace, or on a second signal.
   const SHUTDOWN_GRACE_MS = 3_000
   const hardAbort = signalName => {
-    const child = spawnPromise.process
     if (child.exitCode === null && child.signalCode === null) {
       child.kill('SIGKILL')
     }
@@ -66,11 +66,11 @@ void (async () => {
   process.on('SIGTERM', onSigterm)
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
+  child.on('exit', (code, signalName) => {
     if (signalName) {
       // Mirror a signal death as the conventional 128 + signum exit code. Exit explicitly
       // rather than re-raising the signal: with our handlers installed the re-raise would
-      // race `await spawnPromise` resolving and could leave the default exitCode of 1.
+      // race `await childPromise` resolving and could leave the default exitCode of 1.
       const signum = os.constants.signals[signalName] ?? 0
       // eslint-disable-next-line n/no-process-exit
       process.exit(128 + signum)
@@ -80,5 +80,5 @@ void (async () => {
     }
   })
 
-  await spawnPromise
+  await childPromise
 })()

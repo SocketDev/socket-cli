@@ -1,0 +1,7 @@
+{
+  "name": "socket-cli-test-pnpm9",
+  "private": true,
+  "devDependencies": {
+    "pnpm": "9.15.0"
+  }
+}

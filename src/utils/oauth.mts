@@ -7,7 +7,7 @@ import path from 'node:path'
 import { HttpsProxyAgent } from 'hpagent'
 import open from 'open'
 
-import { isObjectObject as isRecord } from '@socketsecurity/registry/lib/objects'
+import { isRecord } from './is-record.mjs'
 
 import { getExtraCaCerts } from './api-transport.mts'
 

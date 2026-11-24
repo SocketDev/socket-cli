@@ -4,8 +4,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-
+import { normalizePath } from './path.mts'
 import {
   PACKAGE_JSON,
   PACKAGE_LOCK_JSON,

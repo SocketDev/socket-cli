@@ -20,8 +20,7 @@
 
 import { setTimeout as wait } from 'node:timers/promises'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-
+import { debugFn } from './debug.mts'
 import constants, { UNKNOWN_ERROR } from '../constants.mts'
 
 const {

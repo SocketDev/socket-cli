@@ -1,6 +1,5 @@
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants, { FLAG_PROD } from '../../constants.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 import type { EnvDetails } from '../../utils/package-environment.mts'
 
@@ -51,7 +50,7 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
       await spawn(npmExecPath, ['query', ':not(.dev)'], {
         cwd,
         // On Windows, npm is often a .cmd file that requires shell execution.
-        // The spawn function from @socketsecurity/registry will handle this properly
+        // The local spawn helper handles this properly
         // when shell is true.
         shell: constants.WIN32,
       })
@@ -75,7 +74,7 @@ export async function lsBun(
       await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], {
         cwd,
         // On Windows, bun is often a .cmd file that requires shell execution.
-        // The spawn function from @socketsecurity/registry will handle this properly
+        // The local spawn helper handles this properly
         // when shell is true.
         shell: constants.WIN32,
       })
@@ -120,7 +119,7 @@ export async function lsPnpm(
         {
           cwd,
           // On Windows, pnpm is often a .cmd file that requires shell execution.
-          // The spawn function from @socketsecurity/registry will handle this properly
+          // The local spawn helper handles this properly
           // when shell is true.
           shell: constants.WIN32,
         },
@@ -148,7 +147,7 @@ export async function lsVlt(
         {
           cwd,
           // On Windows, pnpm is often a .cmd file that requires shell execution.
-          // The spawn function from @socketsecurity/registry will handle this properly
+          // The local spawn helper handles this properly
           // when shell is true.
           shell: constants.WIN32,
         },
@@ -176,7 +175,7 @@ export async function lsYarnBerry(
         {
           cwd,
           // On Windows, yarn is often a .cmd file that requires shell execution.
-          // The spawn function from @socketsecurity/registry will handle this properly
+          // The local spawn helper handles this properly
           // when shell is true.
           shell: constants.WIN32,
         },
@@ -203,7 +202,7 @@ export async function lsYarnClassic(
       await spawn(pkgEnvDetails.agentExecPath, ['list', FLAG_PROD], {
         cwd,
         // On Windows, yarn is often a .cmd file that requires shell execution.
-        // The spawn function from @socketsecurity/registry will handle this properly
+        // The local spawn helper handles this properly
         // when shell is true.
         shell: constants.WIN32,
       })

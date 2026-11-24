@@ -12,7 +12,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({ logger: mockLogger }))
+vi.mock('../../utils/logger.mts', () => ({ logger: mockLogger }))
 vi.mock('../../constants.mts', () => ({
   default: {
     ENV: { SOCKET_CLI_API_TOKEN: '' },

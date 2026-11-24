@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { rootCertificates } from 'node:tls'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from './debug.mts'
 
 import constants from '../constants.mts'
 

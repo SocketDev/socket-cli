@@ -14,8 +14,6 @@ import path from 'node:path'
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import { resolveBazelBinary } from './bin-detect.mts'
 import { cleanUpBazelOutputRoot, makeBazelOutputUserRoot } from './cleanup.mts'
 import { ensureJavaOnPath } from './java-shim.mts'
@@ -26,6 +24,7 @@ import {
 } from './process.mts'
 import { provisionPythonShim } from './python-shim.mts'
 import { extractBazelToMaven } from './extract_bazel_to_maven.mts'
+import { spawn } from '../../../utils/spawn.mts'
 
 const FIXTURES = path.resolve(
   import.meta.dirname,

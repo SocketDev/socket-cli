@@ -6,7 +6,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { workerData } from 'node:worker_threads'
 
-import { isObjectObject } from '../../utils/is-object-object.mjs'
+import { isRecord } from '../../utils/is-record.mjs'
 
 const require = createRequire(import.meta.url)
 
@@ -65,7 +65,7 @@ async function main() {
     throw new Error('Synp returned an unsupported package-lock format')
   }
   const annotateDependencies = async (dependencies, modulesPath) => {
-    if (dependencies !== undefined && !isObjectObject(dependencies)) {
+    if (dependencies !== undefined && !isRecord(dependencies)) {
       throw new Error('Synp returned a malformed dependencies map')
     }
     for (const [name, entry] of Object.entries(dependencies || {})) {
@@ -97,14 +97,11 @@ async function main() {
     path.join(projectPath, 'node_modules'),
   )
   const findDependency = (name, ownDependencies, ancestorMaps) => {
-    if (
-      isObjectObject(ownDependencies) &&
-      Object.hasOwn(ownDependencies, name)
-    ) {
+    if (isRecord(ownDependencies) && Object.hasOwn(ownDependencies, name)) {
       return ownDependencies[name]
     }
     for (const map of ancestorMaps) {
-      if (isObjectObject(map) && Object.hasOwn(map, name)) {
+      if (isRecord(map) && Object.hasOwn(map, name)) {
         return map[name]
       }
     }
@@ -114,7 +111,7 @@ async function main() {
       return
     }
     collected.add(entry)
-    if (entry.requires !== undefined && !isObjectObject(entry.requires)) {
+    if (entry.requires !== undefined && !isRecord(entry.requires)) {
       throw new Error(`Synp returned a malformed requires map for '${name}'`)
     }
     const visibleMaps = [entry.dependencies, ...ancestorMaps]

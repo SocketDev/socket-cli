@@ -10,20 +10,14 @@ import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import fastGlob from 'fast-glob'
 import trash from 'trash'
-
-import { isDirEmptySync } from '@socketsecurity/registry/lib/fs'
-import { hasKeys } from '@socketsecurity/registry/lib/objects'
-import {
-  fetchPackageManifest,
-  readPackageJson,
-} from '@socketsecurity/registry/lib/packages'
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
-import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
+import { isDirEmptySync } from '../scripts/lib/fs.js'
+import { hasKeys } from '../scripts/lib/objects.js'
+import { readPackageJson } from '../scripts/lib/packages.js'
+import { normalizePath } from '../scripts/lib/path.js'
+import { escapeRegExp } from '../scripts/lib/regexps.js'
+import { naturalCompare } from '../scripts/lib/sorts.js'
+import { fetchPackageManifest, spawnAsync } from '../scripts/lib/spawn.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
@@ -34,6 +28,7 @@ import {
   includedModulesInventoryPlugin,
   writeCopiedPackageInventory,
 } from '../src/sea/rollup-provenance.mjs'
+import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 
 const {
   CONSTANTS,
@@ -70,13 +65,12 @@ const {
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const FLAGS = 'flags'
-const LICENSE_MD = `LICENSE.md`
+const LICENSE_MD = 'LICENSE.md'
 const SENTRY_NODE = '@sentry/node'
 const SEA_BUILD_ENV = 'SOCKET_SEA_BUILD'
 const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
 const UTILS = 'utils'
-const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 const VENDOR = 'vendor'
 
 // A fresh regexp per call: socketModifyPlugin advances lastIndex, so a shared
@@ -90,7 +84,10 @@ function newBareBlessedRequireRegExp() {
 function relativeBlessedPath(filepath) {
   return (
     normalizePath(
-      path.relative(path.dirname(filepath), constants.blessedPath),
+      path.relative(
+        path.dirname(path.resolve(filepath)),
+        constants.blessedPath,
+      ),
     ) || '.'
   )
 }
@@ -159,9 +156,7 @@ async function copyManifestScripts() {
       jarPath,
       path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
     )
-  } else if (
-    constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
-  ) {
+  } else if (constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]) {
     // Fail closed: a published build without the jar would ship a package whose
     // `socket manifest maven` / Maven reachability silently produces an empty
     // SBOM. Run `pnpm run build:maven-extension` before `build:dist`. (A local
@@ -184,7 +179,7 @@ async function copyBashCompletion() {
 }
 
 async function copyExternalPackages() {
-  const { blessedContribPath, blessedPath, socketRegistryPath } = constants
+  const { blessedContribPath, blessedPath } = constants
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
 
@@ -195,11 +190,7 @@ async function copyExternalPackages() {
       // have it bundled as ./external/blessed-contrib.
       .filter(n => n !== BLESSED_CONTRIB)
       // Copy the other packages over to ./external/.
-      .map(n =>
-        copyPackage(n, {
-          strict: n !== SOCKET_SECURITY_REGISTRY,
-        }),
-      ),
+      .map(n => copyPackage(n)),
     // Copy 'blessed-contrib' license over to
     // ./external/blessed-contrib/LICENSE.md.
     await fs.cp(
@@ -222,16 +213,6 @@ async function copyExternalPackages() {
       // would be dropped too).
       [blessedPath, ['lib/**/*.js', 'usr/*', 'vendor/**/*.js']],
       [blessedContribPath, ['lib/**/*.js', 'index.js']],
-      [
-        socketRegistryPath,
-        [
-          'external/**/*.js',
-          'lib/**/*.js',
-          'index.js',
-          'extensions.json',
-          'manifest.json',
-        ],
-      ],
     ].map(async ({ 0: thePath, 1: ignorePatterns }) => {
       await removeFiles(thePath, {
         exclude: [...alwaysIgnoredPatterns, ...ignorePatterns],
@@ -369,7 +350,7 @@ async function updatePackageLockFile() {
     return
   }
   try {
-    await spawn(
+    await spawnAsync(
       'pnpm',
       [
         'install',
@@ -524,6 +505,14 @@ export default async () => {
             switch (id) {
               case constantsSrcPath:
                 return CONSTANTS
+              case normalizePath(path.join(srcPath, 'constants/runtime.mts')):
+                return 'runtime-constants'
+              case normalizePath(path.join(utilsSrcPath, 'env.mts')):
+                return 'env-helpers'
+              case normalizePath(path.join(utilsSrcPath, 'spawn-sync.mts')):
+                return 'spawn-sync'
+              case normalizePath(path.join(utilsSrcPath, 'spinner.mts')):
+                return 'spinner'
               case flagsSrcPath:
                 return FLAGS
               case shadowNpmBinSrcPath:
@@ -590,20 +579,6 @@ export default async () => {
             // Copy external packages AFTER other operations to avoid conflicts.
             await copyExternalPackages()
             if (process.env[SEA_BUILD_ENV] === 'true') {
-              await writeCopiedPackageInventory({
-                root: rootPath,
-                packageName: SOCKET_SECURITY_REGISTRY,
-                packageRoot: path.join(
-                  rootPath,
-                  NODE_MODULES,
-                  SOCKET_SECURITY_REGISTRY,
-                ),
-                outputPackageRoot: constants.socketRegistryPath,
-                outputRoot: distPath,
-                inventoryFile:
-                  'THIRD-PARTY-NOTICES-external-socket-registry.json',
-                bundleId: 'external-socket-registry',
-              })
               await writeCopiedPackageInventory({
                 root: rootPath,
                 packageName: BLESSED,

@@ -22,6 +22,20 @@ const artifactDir =
 const tuiEnv: NodeJS.ProcessEnv = {}
 let api: Awaited<ReturnType<typeof createTuiApiFixture>>
 
+async function waitFor(terminal, text: string): Promise<void> {
+  try {
+    await terminal.waitFor(text, 30_000)
+  } catch (error) {
+    throw new Error(
+      `${String(error)}\nTerminal screen:\n${terminal.screen.getText()}\n` +
+        `Terminal scrollback:\n${terminal.scrollback.getText()}\n` +
+        `Terminal output:\n${terminal.output.getText()}\n` +
+        `Terminal exit: ${terminal.exitInfo ?? 'still running'}\n` +
+        `API requests: ${JSON.stringify(api?.requests)}`,
+    )
+  }
+}
+
 beforeAll(async () => {
   api = await createTuiApiFixture()
   Object.assign(tuiEnv, {
@@ -29,6 +43,9 @@ beforeAll(async () => {
     SOCKET_CLI_API_TOKEN: 'sktsec_local-fixture-token',
     SOCKET_CLI_API_BASE_URL: api.baseUrl,
     NODE_EXTRA_CA_CERTS: api.caFile,
+    // node-pty sets TERM=xterm-256color; point Blessed at its bundled entry so
+    // host terminfo differences cannot change the UI or break capability parsing.
+    TERMINFO: api.terminfoDir,
     TERM: 'xterm-256color',
     TZ: 'UTC',
     LC_ALL: 'C',
@@ -46,8 +63,8 @@ describe('native blessed terminal interfaces', () => {
       cwd,
       env: { NO_COLOR: '', CI: '1', ...tuiEnv },
     })
-    await terminal.waitFor('Top 5 alert types', 30_000)
-    await terminal.waitFor('Total critical alerts', 30_000)
+    await waitFor(terminal, 'Top 5 alert types')
+    await waitFor(terminal, 'Total critical alerts')
     await terminal.waitForStable(250, 10_000)
     expect(terminal.screen.getText()).toContain('Top 5 alert types')
     const checkpoint = await captureCheckpoint(terminal, 'charts')
@@ -71,8 +88,8 @@ describe('native blessed terminal interfaces', () => {
       cwd,
       env: { NO_COLOR: '', CI: '1', ...tuiEnv },
     })
-    await terminal.waitFor('Audit Logs for fixture-org', 30_000)
-    await terminal.waitFor('fixture@example.invalid', 30_000)
+    await waitFor(terminal, 'Audit Logs for fixture-org')
+    await waitFor(terminal, 'fixture@example.invalid')
     await terminal.waitForStable(250, 10_000)
     const checkpoint = await captureCheckpoint(terminal, 'table')
     terminal.press('q')
@@ -95,8 +112,8 @@ describe('native blessed terminal interfaces', () => {
       [binary!, 'threat-feed', '--org', 'fixture-org', '--filter', 'mal'],
       { cwd, env: { NO_COLOR: '', CI: '1', ...tuiEnv } },
     )
-    await terminal.waitFor('Threat feed', 30_000)
-    await terminal.waitFor('tui-fixture-package', 30_000)
+    await waitFor(terminal, 'Threat feed')
+    await waitFor(terminal, 'tui-fixture-package')
     await terminal.waitForStable(250, 10_000)
     const checkpoint = await captureCheckpoint(terminal, 'table')
     terminal.press('q')

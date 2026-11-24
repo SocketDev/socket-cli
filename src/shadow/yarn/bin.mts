@@ -1,26 +1,25 @@
 import { fileURLToPath } from 'node:url'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants, {
   FLAG_DRY_RUN,
   SOCKET_PUBLIC_API_TOKEN,
   YARN,
 } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
+import { debugFn } from '../../utils/debug.mts'
 import { resolvePublicApiToken } from '../../utils/sdk.mts'
 import { installYarnLinks } from '../../utils/shadow-links.mts'
+import { spawn } from '../../utils/spawn.mts'
 import { scanPackagesAndLogAlerts } from '../common.mts'
 import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
 import type { IpcObject } from '../../constants.mts'
-import type { DlxFlags } from '../common.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+} from '../../utils/spawn.mts'
+import type { DlxFlags } from '../common.mts'
 
 export type ShadowYarnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
@@ -127,7 +126,7 @@ export default async function shadowYarnBin(
       },
       stdio,
       // On Windows, yarn is often a .cmd file that requires shell execution.
-      // The spawn function from @socketsecurity/registry will handle this properly
+      // The local spawn helper handles this properly
       // when shell is true.
       shell: constants.WIN32,
     },

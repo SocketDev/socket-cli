@@ -1,7 +1,6 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-
 import constants from '../../constants.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
+import { debugFn } from '../../utils/debug.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'

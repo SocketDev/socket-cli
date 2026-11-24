@@ -126,7 +126,7 @@ index d16d8622706ac21b91879479100e164ddaa47201..7df5618c1718f4bb10de9f8942c5a198
  /* IMPORT */
  import colors from 'tiny-colors';
 -import whenExit from 'when-exit';
-+import signalExit from '@socketsecurity/registry/external/signal-exit';
++import whenExit from 'when-exit';
  import compare from './compare.js';
  /* MAIN */
  const Utils = {
@@ -149,7 +149,7 @@ index d16d8622706ac21b91879479100e164ddaa47201..7df5618c1718f4bb10de9f8942c5a198
      getExitSignal: () => {
          const aborter = new AbortController();
 -        whenExit(() => aborter.abort());
-+        signalExit.onExit(() => aborter.abort());
++        whenExit(() => aborter.abort());
          return aborter.signal;
      },
 -    getLatestVersion: async (name) => {
@@ -178,7 +178,7 @@ index d16d8622706ac21b91879479100e164ddaa47201..7df5618c1718f4bb10de9f8942c5a198
              return; // Probably piping stdout
 -        const log = () => console.log(`\n\n📦 Update available for ${colors.cyan(name)}: ${colors.gray(version)} → ${colors.green(latest)}`);
 -        whenExit(log);
-+        signalExit.onExit(logger);
++        whenExit(logger);
      }
  };
  /* EXPORT */
@@ -191,7 +191,7 @@ index 7ea4a2f03b0b479dc76b8b9f65d7573e2b6753b6..c9313e05868bfca8204d5221c2438473
      "ionstore": "^1.0.1",
      "tiny-colors": "^2.2.2",
 -    "when-exit": "^2.1.4"
-+    "@socketsecurity/registry": "^1"
++    "when-exit": "^2.1.4"
    },
    "devDependencies": {
      "fava": "^0.3.4",

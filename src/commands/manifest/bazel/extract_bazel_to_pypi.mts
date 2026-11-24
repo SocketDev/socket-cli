@@ -1,8 +1,6 @@
 import { existsSync, promises as fs, mkdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { resolveBazelBinary } from './bin-detect.mts'
 import { removeBazelTempdir } from './cleanup.mts'
 import { validateOutputBase } from './output-base-check.mts'
@@ -34,6 +32,7 @@ import {
   getBazelInvocationFlags,
 } from './workspace-detect.mts'
 import { InputError, getErrorCause } from '../../../utils/errors.mts'
+import { logger } from '../../../utils/logger.mts'
 
 import type { PypiHubCandidate } from './pypi-discovery.mts'
 import type { ExtractedPypiPackage, ReachedPypiLabel } from './pypi-parser.mts'

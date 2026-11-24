@@ -52,10 +52,10 @@ describe('npm stage approval', () => {
     expect(releasePackagesForVersion('2.1.0-rc.2')).toEqual(['socket'])
   })
 
-  it('uses pnpm 11 for stage commands when the workspace pnpm is older', () => {
+  it('uses pnpm 12 for stage commands when the workspace pnpm is older', () => {
     expect(pnpmStageInvocation('10.33.0', ['stage', 'view', id])).toEqual({
       command: 'corepack',
-      args: ['pnpm@11.17.0', '--pm-on-fail=ignore', 'stage', 'view', id],
+      args: ['pnpm@12.21.0', '--pm-on-fail=ignore', 'stage', 'view', id],
     })
     expect(pnpmStageInvocation('11.17.0', ['stage', 'view', id])).toEqual({
       command: 'pnpm',

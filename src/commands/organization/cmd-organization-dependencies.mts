@@ -1,21 +1,22 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { parsePurlsOption } from './dependencies-filters.mts'
+import { handleDependencies } from './handle-dependencies.mts'
 import constants, { FLAG_JSON, FLAG_MARKDOWN } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/meow-with-subcommands.mts'
+import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { parsePurlsOption } from './dependencies-filters.mts'
-import { handleDependencies } from './handle-dependencies.mts'
+
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 export const CMD_NAME = 'dependencies'
 

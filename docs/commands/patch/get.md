@@ -1,12 +1,15 @@
 # `socket patch get`
 
-Download a security patch by UUID, CVE, GHSA, PURL, or package name. By
-default, the command downloads and applies the selected patch:
+Get a security patch by UUID, CVE, GHSA, PURL, or package name. The command
+uses the project's existing patch mode, or hosted mode if none is configured.
+Hosted mode can rewrite dependency files to use Socket's patched packages.
 
 ```sh
-socket patch get <uuid> --org <slug>
+socket patch get <uuid> --org <slug> --save-only
 ```
 
-Use `--save-only` to download without applying. Use `--one-off` to apply a
-patch immediately without saving it in `.socket/`.
+Use `--save-only` to select agent mode and record the downloaded patch in
+`.socket/manifest.json` without applying it. Run `socket patch apply` to apply
+recorded patches to installed files. Use `--mode` to choose hosted, vendored,
+or agent behavior explicitly.
 Run `socket patch get --help` for identifier and confirmation options.

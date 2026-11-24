@@ -18,6 +18,12 @@ import {
   verifyPrivateVirtualStore,
 } from '../scripts/build-package-matrix.mts'
 
+const packageManager = (
+  JSON.parse(
+    await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+  ) as { packageManager: string }
+).packageManager
+
 function tarEntry(name: string, contents: string): Buffer {
   const data = Buffer.from(contents)
   const header = Buffer.alloc(512)
@@ -40,9 +46,7 @@ function tarEntry(name: string, contents: string): Buffer {
 
 describe('package matrix helpers', () => {
   it('accepts only the SEA prerelease version format', () => {
-    expect(currentPrereleaseVersion('2.1.0-rc.17')).toBe(
-      '2.1.0-rc.17',
-    )
+    expect(currentPrereleaseVersion('2.1.0-rc.17')).toBe('2.1.0-rc.17')
     expect(() => currentPrereleaseVersion('2.1.0')).toThrow(
       'Expected SEA version',
     )
@@ -55,9 +59,7 @@ describe('package matrix helpers', () => {
   })
 
   it('defines the four stable and prerelease package variants', () => {
-    expect(
-      makeVariants('2.1.0-rc.3').map(({ artifact }) => artifact),
-    ).toEqual([
+    expect(makeVariants('2.1.0-rc.3').map(({ artifact }) => artifact)).toEqual([
       'socket-1.14.1.tgz',
       'socket-2.1.0-rc.3.tgz',
       '@socketsecurity-cli-1.14.1.tgz',
@@ -89,10 +91,7 @@ describe('package matrix helpers', () => {
       ),
     ).toThrow('CLI bin map mismatch')
     expect(() =>
-      validatePackagedManifest(
-        manifest,
-        makeVariants('2.1.0-rc.0')[0]!,
-      ),
+      validatePackagedManifest(manifest, makeVariants('2.1.0-rc.0')[0]!),
     ).not.toThrow()
   })
 
@@ -128,6 +127,18 @@ describe('package matrix helpers', () => {
     ).toThrow('pnpm virtual store escaped the private workspace')
   })
 
+  it.skipIf(process.platform !== 'win32')(
+    'accepts Windows paths with different letter casing',
+    () => {
+      expect(() =>
+        validatePrivateVirtualStore(
+          'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\matrix-private-pnpm-test',
+          'c:\\users\\RUNNERADMIN\\AppData\\Local\\Temp\\matrix-private-pnpm-test\\node_modules\\.pnpm',
+        ),
+      ).not.toThrow()
+    },
+  )
+
   it('keeps a nested pnpm install local despite user-level global-store settings', async () => {
     const workspace = await mkdtemp(
       path.join(os.tmpdir(), 'matrix-private-pnpm-test-'),
@@ -148,7 +159,7 @@ describe('package matrix helpers', () => {
       JSON.stringify({
         name: 'matrix-private-pnpm-test',
         version: '1.0.0',
-        packageManager: 'pnpm@10.33.0',
+        packageManager,
         dependencies: { 'matrix-local-fixture': 'file:./fixture-package' },
       }),
     )
@@ -167,6 +178,7 @@ describe('package matrix helpers', () => {
           'install',
           '--offline',
           '--ignore-scripts',
+          '--pm-on-fail=ignore',
           '--config.enable-global-virtual-store=false',
           '--virtual-store-dir=node_modules/.pnpm',
         ],
@@ -180,7 +192,10 @@ describe('package matrix helpers', () => {
           'install',
           '--offline',
           '--frozen-lockfile=false',
+          '--pm-on-fail=ignore',
           '--config.confirmModulesPurge=false',
+          '--config.enable-global-virtual-store=false',
+          '--virtual-store-dir=node_modules/.pnpm',
         ],
         env,
       )

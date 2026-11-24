@@ -105,6 +105,43 @@ packages:
     expect(purls).toContain('pkg:npm/@types/node@20.11.19')
   })
 
+  it('should scan the project graph from a split pnpm lockfile', async () => {
+    const lockfileContent = `---
+lockfileVersion: '9.0'
+importers:
+  .:
+    packageManagerDependencies:
+      pnpm:
+        specifier: 12.21.0
+        version: 12.21.0
+packages:
+  '@pnpm/exe@12.21.0':
+    resolution: {integrity: sha512-tooling}
+snapshots:
+  '@pnpm/exe@12.21.0': {}
+---
+lockfileVersion: '9.0'
+importers:
+  .:
+    dependencies:
+      lodash:
+        specifier: 4.17.21
+        version: 4.17.21
+packages:
+  lodash@4.17.21:
+    resolution: {integrity: sha512-project}
+snapshots:
+  lodash@4.17.21: {}
+`
+
+    const lockfile = parsePnpmLockfile(lockfileContent)
+    expect(lockfile).toBeTruthy()
+    expect(Object.keys(lockfile!.packages ?? {})).toEqual(['lodash@4.17.21'])
+    expect(await extractPurlsFromPnpmLockfile(lockfile!)).toEqual(
+      expect.arrayContaining(['pkg:npm/lodash@4.17.21']),
+    )
+  })
+
   it('should extract PURLs from lockfile with transitive dependencies', async () => {
     const lockfileContent = `lockfileVersion: '6.0'
 

@@ -239,8 +239,8 @@ Socket CLI integrates with various third-party tools and services:
 - **Import order**: Node.js built-ins first, then third-party packages, then local imports
 - **Import grouping**: Group imports by source (Node.js, external packages, local modules)
 - **Type imports**: 🚨 ALWAYS use separate `import type` statements for TypeScript types, NEVER mix runtime imports with type imports in the same statement
-  - ✅ CORRECT: `import { readPackageJson } from '@socketsecurity/registry/lib/packages'` followed by `import type { PackageJson } from '@socketsecurity/registry/lib/packages'`
-  - ❌ FORBIDDEN: `import { readPackageJson, type PackageJson } from '@socketsecurity/registry/lib/packages'`
+  - ✅ CORRECT: `import { readPackageJson } from '../src/utils/packages.mts'` followed by `import type { PackageJson } from '../src/utils/packages.mts'`
+  - ❌ FORBIDDEN: `import { readPackageJson, type PackageJson } from '../src/utils/packages.mts'`
 
 ### Naming Conventions
 - **Constants**: Use `UPPER_SNAKE_CASE` for constants (e.g., `CMD_NAME`, `REPORT_LEVEL`)
@@ -270,7 +270,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Array length checks**: Use `!array.length` instead of `array.length === 0`. For `array.length > 0`, use `!!array.length` when function must return boolean, or `array.length` when used in conditional contexts
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 - **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
-- **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
+- **Process spawning**: Use `spawn` from `src/utils/spawn.mts`. Do not call Node.js `child_process.spawn` directly.
 - **Number formatting**: 🚨 REQUIRED - Use underscore separators (e.g., `20_000`) for large numeric literals. 🚨 FORBIDDEN - Do NOT modify number values inside strings
 
 ### Error Handling
@@ -294,7 +294,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Why this matters**: trash-cli enables recovery from accidental deletions via system trash/recycle bin
 
 ### Debugging and Troubleshooting
-- **CI vs Local Differences**: CI uses published npm packages, not local versions. Be defensive when using @socketsecurity/registry features
+- **CI vs Local Differences**: CI uses published npm packages, not local versions. Verify behavior against the local helper implementations.
 - **Package Manager Detection**: When checking for executables, use `existsSync()` not `fs.access()` for consistency
 
 ### Formatting

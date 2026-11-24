@@ -137,7 +137,6 @@ for (const patchCommand of [
   'scan',
   'list',
   'remove',
-  'setup',
   'repair',
 ]) {
   it(`captures bundled patch help for ${patchCommand}`, async () => {
@@ -147,7 +146,7 @@ for (const patchCommand of [
       expectedText: `Usage: socket-patch ${patchCommand}`,
       exitCode: 0,
       cols: 140,
-      rows: 200,
+      rows: 400,
     })
   }, 60_000)
 }
@@ -184,7 +183,7 @@ describe('native Socket CLI', () => {
       args: [FLAG_HELP],
       expectedText: 'CLI for Socket.dev',
       exitCode: 0,
-      rows: 200,
+      rows: 400,
       cols: 140,
     })
   }, 30_000)

@@ -30,7 +30,10 @@ describe('generate-report', () => {
   it('grades alerts using the resolved action on each alert', () => {
     const scan = getScanWithEnvVars().map(artifact => ({
       ...artifact,
-      alerts: artifact.alerts?.map(alert => ({ ...alert, action: 'error' as const })),
+      alerts: artifact.alerts?.map(alert => ({
+        ...alert,
+        action: 'error' as const,
+      })),
     }))
 
     const result = generateReport(scan, {
@@ -52,16 +55,21 @@ describe('generate-report', () => {
     })
 
     expect(result.ok && result.data.healthy).toBe(true)
-    expect(result.ok && 'alerts' in result.data && result.data.alerts.size).toBe(0)
+    expect(
+      result.ok && 'alerts' in result.data && result.data.alerts.size,
+    ).toBe(0)
   })
 
   it('should accept empty args', () => {
-    const result = generateReport(withAlertActions([], { securityPolicyRules: [] } as SecurityPolicyData), {
+    const result = generateReport(
+      withAlertActions([], { securityPolicyRules: [] } as SecurityPolicyData),
+      {
         orgSlug: 'fakeOrg',
         scanId: 'scan-ai-dee',
         fold: 'none',
         reportLevel: 'warn',
-      })
+      },
+    )
 
     expect(result).toMatchInlineSnapshot(`
       {
@@ -83,19 +91,22 @@ describe('generate-report', () => {
   describe('report shape', () => {
     describe('report-level=warn', () => {
       it('should return a healthy report without alerts when there are no violations', () => {
-        const result = generateReport(withAlertActions(getSimpleCleanScan(), {
+        const result = generateReport(
+          withAlertActions(getSimpleCleanScan(), {
             securityPolicyRules: {
               gptSecurity: {
                 action: 'ignore',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -118,19 +129,22 @@ describe('generate-report', () => {
       })
 
       it('should return a sick report with alert when an alert violates at error', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'error',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -181,19 +195,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report with alert when an alert violates at warn', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'warn',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -241,19 +258,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert violates at monitor', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'monitor',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -276,19 +296,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert violates at ignore', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'ignore',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -311,19 +334,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert violates at defer', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'defer',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -346,17 +372,20 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert has no policy value', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {},
             },
             securityPolicyDefault: 'medium',
-          } as SecurityPolicyData), {
+          } as SecurityPolicyData),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -379,15 +408,18 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {},
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -412,19 +444,22 @@ describe('generate-report', () => {
 
     describe('report-level=ignore', () => {
       it('should return a healthy report without alerts when there are no violations', () => {
-        const result = generateReport(withAlertActions(getSimpleCleanScan(), {
+        const result = generateReport(
+          withAlertActions(getSimpleCleanScan(), {
             securityPolicyRules: {
               gptSecurity: {
                 action: 'ignore',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -447,19 +482,22 @@ describe('generate-report', () => {
       })
 
       it('should return a sick report with alert when an alert violates at error', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'error',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -508,19 +546,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report with alert when an alert violates at warn', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'warn',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -568,19 +609,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report with alert when an alert violates at monitor', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'monitor',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -628,19 +672,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report with alert when an alert violates at ignore', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'ignore',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -688,19 +735,22 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert violates at defer', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {
                 action: 'defer',
               },
             },
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -723,17 +773,20 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert has no policy value', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {
               envVars: {},
             },
             securityPolicyDefault: 'medium',
-          } as SecurityPolicyData), {
+          } as SecurityPolicyData),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -756,15 +809,18 @@ describe('generate-report', () => {
       })
 
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
-        const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+        const result = generateReport(
+          withAlertActions(getScanWithEnvVars(), {
             securityPolicyRules: {},
             securityPolicyDefault: 'medium',
-          }), {
+          }),
+          {
             orgSlug: 'fakeOrg',
             scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore',
-          })
+          },
+        )
 
         expect(result).toMatchInlineSnapshot(`
           {
@@ -790,19 +846,22 @@ describe('generate-report', () => {
 
   describe('fold', () => {
     it('should not fold anything when fold=none', () => {
-      const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+      const result = generateReport(
+        withAlertActions(getScanWithEnvVars(), {
           securityPolicyRules: {
             envVars: {
               action: 'error',
             },
           },
           securityPolicyDefault: 'medium',
-        }), {
+        }),
+        {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
           fold: 'none',
           reportLevel: 'warn',
-        })
+        },
+      )
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -848,19 +907,22 @@ describe('generate-report', () => {
     })
 
     it('should fold the file locations when fold=file', () => {
-      const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+      const result = generateReport(
+        withAlertActions(getScanWithEnvVars(), {
           securityPolicyRules: {
             envVars: {
               action: 'error',
             },
           },
           securityPolicyDefault: 'medium',
-        }), {
+        }),
+        {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
           fold: 'file',
           reportLevel: 'warn',
-        })
+        },
+      )
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -896,19 +958,22 @@ describe('generate-report', () => {
     })
 
     it('should fold the files up when fold=version', () => {
-      const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+      const result = generateReport(
+        withAlertActions(getScanWithEnvVars(), {
           securityPolicyRules: {
             envVars: {
               action: 'error',
             },
           },
           securityPolicyDefault: 'medium',
-        }), {
+        }),
+        {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
           fold: 'version',
           reportLevel: 'warn',
-        })
+        },
+      )
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -942,19 +1007,22 @@ describe('generate-report', () => {
     })
 
     it('should fold the versions up when fold=pkg', () => {
-      const result = generateReport(withAlertActions(getScanWithEnvVars(), {
+      const result = generateReport(
+        withAlertActions(getScanWithEnvVars(), {
           securityPolicyRules: {
             envVars: {
               action: 'error',
             },
           },
           securityPolicyDefault: 'medium',
-        }), {
+        }),
+        {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
           fold: 'pkg',
           reportLevel: 'warn',
-        })
+        },
+      )
 
       expect(result).toMatchInlineSnapshot(`
         {

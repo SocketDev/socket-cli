@@ -12,7 +12,7 @@
  * No Starlark source is read by this module. All semantic interpretation
  * comes from Bazel itself (`mod show_extension`, `cquery`).
  */
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { logger } from '../../../utils/logger.mts'
 
 // The importer token Bazel prints for a hub generated for the root module
 // itself (`(imported by <root>, …)`). Hubs imported only by rulesets

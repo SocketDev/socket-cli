@@ -22,8 +22,8 @@
  * - utils/telemetry/integration.mts (telemetry tracking)
  */
 
+import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import constants from '../constants.mts'
 import {
   clampApiTimeout,
@@ -34,8 +34,6 @@ import {
   resolveDefaultApiToken,
   setupSdk,
 } from './sdk.mts'
-
-import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
 
 // Mock node:fs for certificate file reading.
 const mockReadFileSync = vi.hoisted(() => vi.fn())
@@ -53,7 +51,9 @@ vi.mock('node:tls', () => ({
 
 // Mock node:https for HttpsAgent.
 const MockHttpsAgent = vi.hoisted(() =>
-  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsAgent: true })),
+  vi.fn(function (opts) {
+    return { ...opts, _isHttpsAgent: true }
+  }),
 )
 vi.mock('node:https', () => ({
   Agent: MockHttpsAgent,
@@ -61,10 +61,14 @@ vi.mock('node:https', () => ({
 
 // Mock hpagent proxy agents.
 const MockHttpProxyAgent = vi.hoisted(() =>
-  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpProxyAgent: true })),
+  vi.fn(function (opts) {
+    return { ...opts, _isHttpProxyAgent: true }
+  }),
 )
 const MockHttpsProxyAgent = vi.hoisted(() =>
-  vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsProxyAgent: true })),
+  vi.fn(function (opts) {
+    return { ...opts, _isHttpsProxyAgent: true }
+  }),
 )
 vi.mock('hpagent', () => ({
   HttpProxyAgent: MockHttpProxyAgent,
@@ -83,10 +87,6 @@ const mockDebugApiResponse = vi.hoisted(() => vi.fn())
 vi.mock('./debug.mts', () => ({
   debugApiRequest: mockDebugApiRequest,
   debugApiResponse: mockDebugApiResponse,
-}))
-
-// Mock registry debug functions used by getExtraCaCerts.
-vi.mock('@socketsecurity/registry/lib/debug', () => ({
   debugDir: vi.fn(),
   debugFn: vi.fn(),
 }))
@@ -119,10 +119,12 @@ vi.mock('./oauth.mts', () => ({
 
 // Mock SocketSdk.
 const MockSocketSdk = vi.hoisted(() =>
-  vi.fn().mockImplementation((token, options) => ({
-    options,
-    token,
-  })),
+  vi.fn(function (token, options) {
+    return {
+      options,
+      token,
+    }
+  }),
 )
 
 const mockCreateUserAgentFromPkgJson = vi.hoisted(() =>

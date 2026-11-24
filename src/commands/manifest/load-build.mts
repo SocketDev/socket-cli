@@ -1,7 +1,6 @@
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import { membershipOf } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
+import { pluralize } from '../../utils/words.mts'
 
 import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'

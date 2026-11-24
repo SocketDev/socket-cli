@@ -23,7 +23,7 @@ vi.mock('../../../src/sea/runtime.mts', () => ({
   isStandaloneSea: vi.fn(() => false),
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('../../../src/utils/logger.mts', () => ({
   logger: { log: loggerLog },
 }))
 

@@ -4,16 +4,17 @@ const spawnMock = vi.fn(async () => ({ stdout: '11.6.0' }))
 const resolveBinPathSyncMock = vi.fn(() => '/fake/npm-cli.js')
 const whichBinMock = vi.fn(async () => 'npm')
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({
+vi.mock('../src/utils/spawn.mts', () => ({
   spawn: spawnMock,
 }))
 
-vi.mock('@socketsecurity/registry/lib/bin', () => ({
+vi.mock('../src/utils/bin.mts', () => ({
   resolveBinPathSync: resolveBinPathSyncMock,
   whichBin: whichBinMock,
 }))
 
-vi.mock('../src/utils/fs.mts', () => ({
+vi.mock('../src/utils/fs.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../src/utils/fs.mts')>()),
   findUp: vi.fn(async () => undefined),
 }))
 
@@ -30,6 +31,10 @@ vi.mock('../src/constants.mts', async importOriginal => {
   }
 })
 
+const { detectPackageEnvironment } = await import(
+  '../src/utils/package-environment.mts'
+)
+
 describe('detectPackageEnvironment - Windows npm version detection', () => {
   it('detects npm version when resolved to JS entrypoint', async () => {
     spawnMock.mockClear()
@@ -38,9 +43,6 @@ describe('detectPackageEnvironment - Windows npm version detection', () => {
     resolveBinPathSyncMock.mockReturnValue('/fake/npm-cli.js')
     spawnMock.mockResolvedValue({ stdout: '11.6.0' })
 
-    const { detectPackageEnvironment } = await import(
-      '../src/utils/package-environment.mts'
-    )
     const details = await detectPackageEnvironment({ cwd: process.cwd() })
 
     expect(details.agent).toBe('npm')
@@ -62,9 +64,6 @@ describe('detectPackageEnvironment - Windows npm version detection', () => {
     })
     spawnMock.mockResolvedValue({ stdout: '10.5.0' })
 
-    const { detectPackageEnvironment } = await import(
-      '../src/utils/package-environment.mts'
-    )
     const details = await detectPackageEnvironment({ cwd: process.cwd() })
 
     expect(details.agent).toBe('npm')
@@ -87,9 +86,6 @@ describe('detectPackageEnvironment - Windows npm version detection', () => {
     resolveBinPathSyncMock.mockReturnValue('/fake/npm.cmd')
     spawnMock.mockResolvedValue({ stdout: '9.8.1' })
 
-    const { detectPackageEnvironment } = await import(
-      '../src/utils/package-environment.mts'
-    )
     const details = await detectPackageEnvironment({ cwd: process.cwd() })
 
     expect(details.agent).toBe('npm')

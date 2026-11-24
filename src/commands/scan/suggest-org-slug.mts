@@ -1,6 +1,5 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
-
+import { logger } from '../../utils/logger.mts'
+import { select } from '../../utils/prompts.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 export async function suggestOrgSlug(): Promise<string | void> {
