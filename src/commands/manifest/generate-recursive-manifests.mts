@@ -661,9 +661,10 @@ async function runCandidate(
   candidate: Candidate,
   options: SocketFactsRunOptions,
 ): Promise<Run | undefined> {
-  const reachability = ctx.context.workDir.withFiles
-    ? ctx.resolveSettings(options.ecosystem, candidate.root).reachability()
-    : undefined
+  const reachability =
+    ctx.context.workDir.purpose === 'reachability'
+      ? ctx.resolveSettings(options.ecosystem, candidate.root).reachability()
+      : undefined
   // A run a later build turns out to cover is dropped before its facts are
   // placed.
   const result = await runManifestFacts({
@@ -770,7 +771,7 @@ export async function generateRecursiveManifests({
     for (const root of roots) {
       const settings = resolveSettings(tool, root)
       if (
-        context.workDir?.withFiles &&
+        context.workDir?.purpose === 'reachability' &&
         !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
       ) {
         settings.reachability()

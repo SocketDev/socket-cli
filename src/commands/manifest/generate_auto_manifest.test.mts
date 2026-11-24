@@ -429,7 +429,11 @@ describe('generateAutoManifest — JVM facts', () => {
       maven: true,
       sbt: true,
     }
-    const workDir = { dir: '/w', entries: new Map(), withFiles: true }
+    const workDir = {
+      dir: '/w',
+      entries: new Map(),
+      purpose: 'reachability' as const,
+    }
     await generateAutoManifest({
       context: { workDir },
       cwd: '/tmp/repo',
@@ -471,7 +475,11 @@ describe('generateAutoManifest — JVM facts', () => {
       },
     } as SocketJson)
     const context = {
-      workDir: { dir: '/w', entries: new Map(), withFiles: true },
+      workDir: {
+        dir: '/w',
+        entries: new Map(),
+        purpose: 'reachability' as const,
+      },
     }
     await generateAutoManifest({
       context,
@@ -507,7 +515,11 @@ describe('generateAutoManifest — JVM facts', () => {
     await expect(
       generateAutoManifest({
         context: {
-          workDir: { dir: '/w', entries: new Map(), withFiles: true },
+          workDir: {
+            dir: '/w',
+            entries: new Map(),
+            purpose: 'reachability' as const,
+          },
         },
         cwd: '/tmp/repo',
         detected: { ...baseDetected, gradle: true, count: 1 },

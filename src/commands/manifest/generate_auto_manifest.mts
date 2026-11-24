@@ -101,7 +101,7 @@ export async function generateAutoManifest({
   const generatesFacts = (tool: BuildTool) =>
     detected[tool] && !getSkipReason(tool, sockJson.defaults?.manifest?.[tool])
   const reachabilityByTool = new Map(
-    context?.workDir?.withFiles
+    context?.workDir?.purpose === 'reachability'
       ? BUILD_TOOLS.filter(generatesFacts).map(tool => [
           tool,
           socketJsonReachability(tool, { dir: cwd, sockJson }),
