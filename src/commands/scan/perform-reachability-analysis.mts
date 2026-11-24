@@ -6,7 +6,7 @@ import path from 'node:path'
 import { isOmittedReachValue } from './reachability-units.mts'
 import constants, { COANA_CLI_VERSION } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { spawnCoana } from '../../utils/coana-release.mts'
+import { spawnCoana } from '../../utils/coana/release.mts'
 import {
   extractTier1ReachabilityScanId,
   isReachabilityReportPath,

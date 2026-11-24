@@ -62,7 +62,7 @@ vi.mock('../../utils/organization.mts', () => ({
   hasEnterpriseOrgPlan: mockHasEnterpriseOrgPlan,
 }))
 
-vi.mock('../../utils/coana-release.mts', () => ({
+vi.mock('../../utils/coana/release.mts', () => ({
   spawnCoana: mockSpawnCoana,
 }))
 

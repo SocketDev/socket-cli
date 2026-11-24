@@ -1071,6 +1071,8 @@
 !/src/sea/readme-version.mts
 !/src/sea/.node-version
 !/src/sea/node-version.mts
+!/src/sea/paths/
+!/src/sea/paths/**
 !/src/sea/licenses/cdxgen-third-party/boolbase-1.0.0-ISC.txt
 !/src/sea/licenses/cdxgen-third-party/err-code-2.0.3-MIT.txt
 !/src/sea/licenses/cdxgen-third-party/imurmurhash-0.1.4-MIT.txt
@@ -1128,7 +1130,8 @@
 !/src/utils/bin.mts
 !/src/utils/check-input.mts
 !/src/utils/cmd.mts
-!/src/utils/coana-release.mts
+!/src/utils/coana/
+!/src/utils/coana/**
 !/src/utils/coana-release.test.mts
 !/src/utils/coana.mts
 !/src/utils/coana.test.mts

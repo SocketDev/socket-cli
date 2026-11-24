@@ -77,7 +77,7 @@ export function parsePnpmLockfile(
         ) ?? documents.at(-1)
     } catch {}
   }
-  return isRecord(result) ? (result as LockfileObject) : null
+  return isRecord(result) ? (result as unknown as LockfileObject) : null
 }
 
 export function parsePnpmLockfileVersion(version: unknown): SemVer | undefined {

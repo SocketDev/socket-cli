@@ -23,7 +23,7 @@ import {
 } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { joinAnd } from '../../utils/arrays.mts'
-import { spawnCoana } from '../../utils/coana-release.mts'
+import { spawnCoana } from '../../utils/coana/release.mts'
 import {
   isReachabilityReportPath,
   isSocketFactsFile,

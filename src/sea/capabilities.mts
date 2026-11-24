@@ -7,6 +7,7 @@ export type SeaCapabilities = {
 
 export function createSeaCapabilities({
   hasCdxgen,
+  hasCoana = false,
   hasSocketPatch,
   hasSynp,
   hasUv,
@@ -15,6 +16,7 @@ export function createSeaCapabilities({
 }: {
   triple: string
   hasCdxgen: boolean
+  hasCoana?: boolean
   hasSynp: boolean
   hasSocketPatch: boolean
   hasUv: boolean
@@ -25,6 +27,7 @@ export function createSeaCapabilities({
       'socket-core',
       'manifest-dotnet-facts',
       ...(hasSocketPatch ? ['socket-patch'] : []),
+      ...(hasCoana ? ['coana'] : []),
       ...(hasUv ? ['uv'] : []),
     ],
     unavailable: [
@@ -58,11 +61,16 @@ export function createSeaCapabilities({
           ? 'The Synp API is bundled for Yarn Classic, but source provenance remains unverified and its third-party notice inventory has missing-license-text obligations.'
           : 'No Synp API payload is embedded because no compatible cdxgen VFS API payload is available for this target.',
       },
-      {
-        id: 'coana',
-        reason:
-          'No Coana executable or verified payload is embedded in this core SEA build.',
-      },
+      ...(!hasCoana
+        ? [
+            {
+              id: 'coana',
+              reason: triple.startsWith('win-')
+                ? 'Coana is not available for Windows SEA builds.'
+                : 'No verified Coana CLI and analyzer payloads are embedded in this SEA build.',
+            },
+          ]
+        : []),
       ...(!hasSocketPatch
         ? [
             {

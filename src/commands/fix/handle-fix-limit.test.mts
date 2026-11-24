@@ -23,7 +23,7 @@ const mockGitUntrackedFiles = vi.hoisted(() =>
   vi.fn(async () => ({ ok: true, data: [] })),
 )
 
-vi.mock('../../utils/coana-release.mts', () => ({
+vi.mock('../../utils/coana/release.mts', () => ({
   spawnCoana: mockSpawnCoana,
 }))
 

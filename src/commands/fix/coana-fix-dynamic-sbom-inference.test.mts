@@ -22,7 +22,7 @@ const mockGitUntrackedFiles = vi.hoisted(() =>
 const mockGitCommit = vi.hoisted(() => vi.fn())
 const mockGenerateSocketFactsForFix = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/coana-release.mts', () => ({
+vi.mock('../../utils/coana/release.mts', () => ({
   spawnCoana: mockSpawnCoana,
 }))
 

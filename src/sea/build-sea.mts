@@ -18,10 +18,12 @@ import { cachedDownload } from './download-cache.mts'
 import { NODE_VERSION } from './node-version.mts'
 import { findLockedPackageIntegrity, parsePnpmLock } from './pnpm-lock.mts'
 import { updateSeaReadmeVersion } from './readme-version.mts'
+import { stageCoana } from './stage/coana.mts'
 import { stageSynp } from './stage/synp.mts'
 import { stageUv } from './stage/uv.mts'
 import { SEA_VERSION } from './version.mts'
 import { digestVfs } from './vfs-digest.mts'
+import { getErrorCause } from '../utils/errors.mts'
 import { quotePowerShell } from '../utils/quote-powershell.mts'
 
 const SEA_DIRECTORY = path.dirname(fileURLToPath(import.meta.url))
@@ -40,6 +42,27 @@ const TARGETS = [
   ['win32', 'arm64', 'win-arm64'],
   ['win32', 'x64', 'win-x64'],
 ] as const
+
+export function getSocketPatchPackageName(
+  platform: string,
+  arch: string,
+  options?: { libc?: 'glibc' | 'musl' | undefined } | undefined,
+): string {
+  if (platform === 'linux') {
+    const libc = options?.libc
+    const packageLibc = libc === 'musl' ? 'musl' : 'gnu'
+    return `@socketsecurity/socket-patch-linux-${arch}-${packageLibc}`
+  }
+  const packagePlatform = platform === 'win32' ? 'win32' : platform
+  return `@socketsecurity/socket-patch-${packagePlatform}-${arch}`
+}
+
+function detectLinuxLibc(): 'glibc' | 'musl' {
+  const { header } = process.report.getReport() as {
+    header?: { glibcVersionRuntime?: string }
+  }
+  return header?.glibcVersionRuntime ? 'glibc' : 'musl'
+}
 
 function sha256(data: Buffer): string {
   return createHash('sha256').update(data).digest('hex')
@@ -300,8 +323,9 @@ async function stageSocketPatch(
   | undefined
 > {
   const [platform, arch] = target
-  const packagePlatform = platform === 'win32' ? 'win32' : platform
-  const packageName = `@socketsecurity/socket-patch-${packagePlatform}-${arch}`
+  const packageName = getSocketPatchPackageName(platform, arch, {
+    libc: platform === 'linux' ? detectLinuxLibc() : undefined,
+  })
   const lock = await fs.readFile(
     path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
     'utf8',
@@ -536,8 +560,8 @@ async function stageCdxgenApi(
   const workerUtils = path.join(payloadRoot, 'utils')
   await fs.mkdir(workerUtils, { recursive: true })
   await fs.copyFile(
-    path.join(REPOSITORY_ROOT, 'src/utils/is-object-object.mjs'),
-    path.join(workerUtils, 'is-object-object.mjs'),
+    path.join(REPOSITORY_ROOT, 'src/utils/is-record.mjs'),
+    path.join(workerUtils, 'is-record.mjs'),
   )
   // Keep a concrete VFS path for cdxgen's plugin-directory override. The
   // marker does not install or expose any plugin executable.
@@ -940,6 +964,7 @@ async function main(): Promise<void> {
           : undefined
         return { cdxgenApi, synpPayload }
       })(),
+      stageCoana(stage, target[0], target[1], nodeRuntime.executable),
       stageUv(stage, target[0], target[1]),
       // Rollup copies this helper into manifest-scripts for standalone builds.
       run('pnpm', ['run', 'build:maven-extension']),
@@ -948,19 +973,23 @@ async function main(): Promise<void> {
       '.NET facts helper',
       'socket-patch payload',
       'cdxgen and synp payloads',
+      'Coana payload',
       'uv payload',
       'Maven manifest extension',
     ] as const
     const prepResults = await Promise.allSettled(prepTasks)
-    const prepErrors = prepResults.flatMap((result, index) =>
-      result.status === 'rejected'
-        ? [
-            new Error(`SEA preparation failed: ${prepLabels[index]}`, {
-              cause: result.reason,
-            }),
-          ]
-        : [],
-    )
+    delete process.env['SOCKET_CLI_API_TOKEN']
+    const prepErrors = prepResults.flatMap((result, index) => {
+      if (result.status !== 'rejected') {
+        return []
+      }
+      return [
+        new Error(
+          `SEA preparation failed: ${prepLabels[index]}: ${getErrorCause(result.reason)}`,
+          { cause: result.reason },
+        ),
+      ]
+    })
     if (prepErrors.length > 0) {
       throw new AggregateError(
         prepErrors,
@@ -979,8 +1008,13 @@ async function main(): Promise<void> {
       }>
     ).value
     const uvPayload = (
-      prepResults[3] as PromiseFulfilledResult<
+      prepResults[4] as PromiseFulfilledResult<
         Awaited<ReturnType<typeof stageUv>>
+      >
+    ).value
+    const coanaPayload = (
+      prepResults[3] as PromiseFulfilledResult<
+        Awaited<ReturnType<typeof stageCoana>>
       >
     ).value
     const socketPatchHashFile = socketPatch
@@ -1101,6 +1135,7 @@ async function main(): Promise<void> {
     const capabilities = createSeaCapabilities({
       triple,
       hasCdxgen: Boolean(cdxgenApi),
+      hasCoana: Boolean(coanaPayload),
       hasSynp: Boolean(synpPayload),
       hasSocketPatch: Boolean(socketPatch),
       hasUv: Boolean(uvPayload),
@@ -1115,6 +1150,7 @@ async function main(): Promise<void> {
     // materialized only at invocation time.
     const archivePaths = seaArchivePaths({
       hasCdxgen: Boolean(cdxgenApi),
+      hasCoana: Boolean(coanaPayload),
       hasSynp: Boolean(synpPayload),
       hasUv: Boolean(uvPayload),
       rootFiles,
@@ -1144,6 +1180,8 @@ async function main(): Promise<void> {
         SEA_OUTPUT: bootstrap,
         SEA_SMOKE_TEST: JSON.stringify({
           digest: digestVfs(stage, archivePaths),
+          coanaVersion: coanaPayload?.version,
+          coanaNodeVersion: coanaPayload ? NODE_VERSION : undefined,
           uvVersion: uvPayload?.version,
         }),
       },
@@ -1326,6 +1364,29 @@ async function main(): Promise<void> {
         file: 'tools/synp/',
         entrypoint: 'tools/synp/bin/synp.js',
         sha256: synpPayload.integrity,
+      })
+    }
+    if (coanaPayload) {
+      payloads.push({
+        id: 'coana',
+        version: coanaPayload.version,
+        file: `${coanaPayload.vfsDirectory}/`,
+        sha256: await digestTree(coanaPayload.directory),
+        components: {
+          cli: {
+            sha256: coanaPayload.cliSha256,
+            size: coanaPayload.cliSize,
+          },
+          analyzers: {
+            sha256: coanaPayload.analyzersSha256,
+            size: coanaPayload.analyzersSize,
+          },
+          node: {
+            version: NODE_VERSION,
+            sha256: coanaPayload.nodeSha256,
+            size: coanaPayload.nodeSize,
+          },
+        },
       })
     }
     if (uvPayload) {

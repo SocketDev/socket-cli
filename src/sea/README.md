@@ -47,7 +47,7 @@ The build stages and embeds the `cdxgen` and `synp` APIs for darwin-arm64, but t
 
 Rollup creates a notice inventory from each bundled dependency graph. Some pinned packages omit their license text from npm; exact package-version entries in `.config/rollup.cdxgen-sea.config.mjs` and `src/sea/rollup-provenance.mjs` supply the missing text. A dependency bump cannot reuse a mismatched entry, so the inventory records a missing-text obligation. README files are not used as license text or shipped as notice documents.
 
-The build does not embed Coana, Python, or a JVM toolchain. It does not add a runtime path to download helper tools. Socket API requests and project inputs keep their existing network behavior.
+The 2.x RC embeds Coana's CLI and analyzers for Linux and macOS. Its build needs a Socket API token with Coana artifact access; without access, the build fails. Windows, Python, and JVM capabilities remain unavailable. The runtime does not download helper tools.
 
 ## Manifest
 

@@ -118,12 +118,15 @@ describe('SEA lockfile metadata', () => {
       dependencies: { '@socketsecurity/socket-patch': string }
     }
     const version = packageJson.dependencies['@socketsecurity/socket-patch']
-    for (const libc of ['gnu', 'musl'] as const) {
-      const packageName = getSocketPatchPackageName('linux', 'x64', libc)
+    for (const libc of ['glibc', 'musl'] as const) {
+      const packageName = getSocketPatchPackageName('linux', 'x64', { libc })
       expect(findLockedPackageIntegrity(lock, packageName, version)).toMatch(
         /^sha512-/,
       )
     }
+    expect(getSocketPatchPackageName('linux', 'x64')).toBe(
+      '@socketsecurity/socket-patch-linux-x64-gnu',
+    )
   })
 })
 

@@ -7,6 +7,8 @@ import { Readable, type Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 
+import { SEA_COANA_VFS_PATHS } from './paths/coana.mts'
+
 import type { StdioOptions } from 'node:child_process'
 
 /**
@@ -61,10 +63,12 @@ type SeaGlobal = typeof globalThis & { __socketSeaVfsRoot?: string }
 // absent files remain unavailable and fail closed here.
 const embeddedJsToolEntrypoints = Object.freeze({
   cdxgen: 'tools/cdxgen/sea-worker.mjs',
+  'coana-cache': 'dist/coana-cache.mjs',
   synp: 'tools/synp/bin/synp.js',
 })
 
 const embeddedNativeToolPaths = Object.freeze({
+  'coana-node': SEA_COANA_VFS_PATHS.node,
   uv: (platform: string) =>
     `tools/uv/${platform === 'win32' ? 'uv.exe' : 'uv'}`,
 })
@@ -152,9 +156,18 @@ export function getEmbeddedAsset(id: string): Buffer {
   }
 }
 
+export function getEmbeddedVfsPath(relativePath: string): string {
+  const root = getVfsRoot()
+  const resolved = path.resolve(root, relativePath)
+  if (!resolved.startsWith(`${root}${path.sep}`)) {
+    throw new Error('Embedded VFS path is outside the archive root')
+  }
+  return resolved
+}
+
 /** Fail closed unless the build manifest explicitly advertises this tool. */
 export function assertEmbeddedToolAvailable(
-  id: 'cdxgen' | 'synp',
+  id: 'cdxgen' | 'coana' | 'synp',
   capability?: 'manifest-cdxgen-npm-lock-v3' | 'manifest-cdxgen-yarn-classic',
 ): void {
   if (!isStandaloneSea()) {
@@ -193,7 +206,7 @@ export function assertEmbeddedToolAvailable(
     ? [capability]
     : id === 'cdxgen'
       ? ['manifest-cdxgen-npm-lock-v3', 'manifest-cdxgen-yarn-classic']
-      : ['synp']
+      : [id]
   if (required.some(tool => manifest.available.includes(tool))) {
     return
   }
@@ -218,7 +231,7 @@ export function assertEmbeddedToolAvailable(
 }
 
 export async function getBundledTool(id: string): Promise<string> {
-  if (id !== 'socket-patch' && id !== 'uv') {
+  if (id !== 'socket-patch' && id !== 'uv' && id !== 'coana-node') {
     throw new Error(
       `Bundled tool '${id}' is not configured in this SEA foundation`,
     )
@@ -229,12 +242,18 @@ export async function getBundledTool(id: string): Promise<string> {
     )
   }
 
-  if (id === 'uv') {
-    const relative = embeddedNativeToolPaths.uv(process.platform)
+  if (id === 'uv' || id === 'coana-node') {
+    const relative =
+      id === 'uv'
+        ? embeddedNativeToolPaths.uv(process.platform)
+        : embeddedNativeToolPaths['coana-node']
     const source = path.join(getVfsRoot(), relative)
     const binary = await fs.readFile(source)
     const expectedDigest = await fs.readFile(
-      path.join(getVfsRoot(), 'tools/uv/uv.sha256'),
+      path.join(
+        getVfsRoot(),
+        id === 'uv' ? 'tools/uv/uv.sha256' : SEA_COANA_VFS_PATHS.nodeDigest,
+      ),
       'utf8',
     )
     const actualDigest = createHash('sha256').update(binary).digest('hex')
@@ -242,7 +261,7 @@ export async function getBundledTool(id: string): Promise<string> {
       !/^[a-f0-9]{64}$/.test(expectedDigest.trim()) ||
       actualDigest !== expectedDigest.trim()
     ) {
-      throw new Error('Embedded uv payload failed SHA-256 verification')
+      throw new Error(`Embedded ${id} payload failed SHA-256 verification`)
     }
     const directory = await fs.mkdtemp(
       path.join(os.tmpdir(), 'socket-cli-sea-'),

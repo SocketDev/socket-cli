@@ -377,11 +377,7 @@ export async function expectTerminalAnimation(
             )
           }
           try {
-            await assertSamePixels(
-              baselineRasterizer,
-              expectedSvg,
-              actualSvg,
-            )
+            await assertSamePixels(baselineRasterizer, expectedSvg, actualSvg)
           } catch (error) {
             await writeFile(
               path.join(flowDir, `${checkpoint.name}.expected.png`),
