@@ -8,7 +8,8 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import fastGlob from 'fast-glob'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
@@ -167,6 +168,43 @@ describe('glob utilities', () => {
       expect(results.map(normalizePath).sort()).toEqual([
         `${mockFixturePath}/src/index.ts`,
         `${mockFixturePath}/src/utils.ts`,
+      ])
+    })
+
+    it('disables fast-glob uniqueness when filtering', async () => {
+      mockTestFs({ [`${mockFixturePath}/package.json`]: '{}' })
+      const globStreamSpy = vi.spyOn(fastGlob, 'globStream')
+
+      try {
+        await globWithGitIgnore(['**/*'], {
+          cwd: mockFixturePath,
+          filter: filterJsonFiles,
+        })
+
+        expect(globStreamSpy).toHaveBeenLastCalledWith(
+          ['**/*'],
+          expect.objectContaining({ unique: false }),
+        )
+      } finally {
+        globStreamSpy.mockRestore()
+      }
+    })
+
+    it('deduplicates overlapping matches after filtering', async () => {
+      mockTestFs({
+        [`${mockFixturePath}/package.json`]: '{}',
+        [`${mockFixturePath}/src/package.json`]: '{}',
+        [`${mockFixturePath}/src/readme.md`]: '',
+      })
+
+      const results = await globWithGitIgnore(['**/*.json', 'src/**/*'], {
+        cwd: mockFixturePath,
+        filter: filterJsonFiles,
+      })
+
+      expect(results.map(normalizePath).sort()).toEqual([
+        `${mockFixturePath}/package.json`,
+        `${mockFixturePath}/src/package.json`,
       ])
     })
 

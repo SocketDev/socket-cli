@@ -257,9 +257,13 @@ describe('v1 release workflow contract', () => {
     const manifest = JSON.parse(
       readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
     ) as { publishConfig?: { tag?: string }; version?: string }
-    // The stable v1 lane and the 2.1 prerelease lane both write this version.
+    const releasePolicy = JSON.parse(
+      readFileSync(new URL('../.config/release.json', import.meta.url), 'utf8'),
+    ) as { identifier: string; versionHint: string }
     expect(manifest.version).toMatch(/^(?:1\.\d+\.\d+|2\.1\.0-rc\.\d+)$/u)
-    expect(manifest.publishConfig?.tag).toBe('rc-2.1.0')
+    expect(manifest.publishConfig?.tag).toBe(
+      `${releasePolicy.identifier}-${releasePolicy.versionHint}`,
+    )
     expect(workflow.on.workflow_dispatch.inputs['release-major']?.default).toBe(
       '1',
     )

@@ -436,6 +436,9 @@ export async function globWithGitIgnore(
         ]
       : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
     ...additionalOptions,
+    // fast-glob's uniqueness set retains every match before the streaming
+    // filter runs. Filtered scans deduplicate only supported paths below.
+    unique: filter ? false : additionalOptions.unique,
     // Skip dirs the running user cannot read instead of aborting on the first
     // `EACCES`. Pinned after `...additionalOptions` so a caller's options bag
     // cannot flip it off; it is a safety invariant, not a tunable.
@@ -483,7 +486,7 @@ export async function globWithGitIgnore(
   // optional caller filter drops non-matches before they accumulate. On the slow
   // path each surviving entry is also re-checked against its gitignore ancestor
   // chain, which carries the full negation support fast-glob lacks.
-  const results: string[] = []
+  const results = new Set<string>()
   const stream = fastGlob.globStream(
     patterns as string[],
     globOptions,
@@ -502,9 +505,9 @@ export async function globWithGitIgnore(
     if (filter && !filter(p)) {
       continue
     }
-    results.push(p)
+    results.add(p)
   }
-  return results
+  return [...results]
 }
 
 export async function globWorkspace(

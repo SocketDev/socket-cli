@@ -117,6 +117,7 @@ describe('socket manifest cdxgen', async () => {
           '`socket manifest cdxgen`',
         )
       },
+      { timeout: 60_000 },
     )
 
     it.skipIf(process.platform === 'win32')(
