@@ -13,7 +13,7 @@ const MAX_ARCHIVE_BYTES = 5 * 1024 * 1024 * 1024
 export class ArtifactUploadError extends Error {
   constructor(code) {
     super(
-      `Artifact upload failed. Where: release artifact service. Saw: ${code}; wanted three verified tarballs stored successfully. Fix: inspect the release inputs and retry the job.`,
+      `Artifact upload failed. Where: release artifact service. Saw: ${code}; wanted the verified tarballs stored successfully. Fix: inspect the release inputs and retry the job.`,
     )
     this.code = code
   }
@@ -82,14 +82,20 @@ function artifactHttpsUrl(value) {
   }
 }
 
-export async function readReleaseTarballs(directory) {
+export async function readReleaseTarballs(directory, single = false) {
   try {
     if (!(await lstat(directory)).isDirectory()) {
       throw new Error('invalid directory')
     }
     const names = (await readdir(directory)).sort()
     if (
-      names.length !== 3 ||
+      (single
+        ? names.length !== 1
+        : names.length !== 3 &&
+          !(
+            names.length === 1 &&
+            /^socket-[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+\.tgz$/u.test(names[0])
+          )) ||
       names.some(name => !/^[\da-z][\w.+-]*\.tgz$/i.test(name))
     ) {
       throw new Error('invalid tarballs')
@@ -159,18 +165,30 @@ export async function uploadReleaseArtifact(config, dependencies = {}) {
   const ids = readArtifactBackendIds(token)
   const baseUrl = artifactHttpsUrl(env.ACTIONS_RESULTS_URL)
   const expiresAt = artifactExpiration(env.GITHUB_RETENTION_DAYS)
-  const names = await readReleaseTarballs(directory)
+  const names = await readReleaseTarballs(directory, name.startsWith('native-'))
   const scratch = await mkdtemp(
     path.join(env.RUNNER_TEMP ?? os.tmpdir(), 'release-artifact-'),
   )
   try {
     const archive = path.join(scratch, 'artifact.zip')
     try {
-      await execute('zip', ['-q', '-0', archive, ...names], {
-        cwd: directory,
-        timeout: 120_000,
-        maxBuffer: 1024 * 1024,
-      })
+      // Windows ships bsdtar. Use its system path to avoid Git's tar on PATH;
+      // -a selects ZIP from the .zip suffix and -cf creates the named archive.
+      // On macOS and Linux, zip -q -0 quietly stores the already-compressed .tgz files.
+      await execute(
+        process.platform === 'win32'
+          ? path.join(process.env.SystemRoot, 'System32', 'tar.exe')
+          : 'zip',
+        process.platform === 'win32'
+          ? ['-a', '-cf', archive, ...names]
+          : ['-q', '-0', archive, ...names],
+        {
+          cwd: directory,
+          timeout: 120_000,
+          // Cap each output stream at 1 MiB (1,024 KiB × 1,024 bytes per KiB).
+          maxBuffer: 1_048_576,
+        },
+      )
     } catch {
       throw new ArtifactUploadError('ARCHIVE_CREATION_FAILED')
     }

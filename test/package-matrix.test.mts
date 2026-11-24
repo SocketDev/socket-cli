@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
@@ -17,12 +24,6 @@ import {
   validatePrivateVirtualStore,
   verifyPrivateVirtualStore,
 } from '../scripts/build-package-matrix.mts'
-
-const packageManager = (
-  JSON.parse(
-    await readFile(new URL('../package.json', import.meta.url), 'utf8'),
-  ) as { packageManager: string }
-).packageManager
 
 function tarEntry(name: string, contents: string): Buffer {
   const data = Buffer.from(contents)
@@ -59,11 +60,13 @@ describe('package matrix helpers', () => {
   })
 
   it('defines the four stable and prerelease package variants', () => {
-    expect(makeVariants('2.1.0-rc.3').map(({ artifact }) => artifact)).toEqual([
-      'socket-1.14.1.tgz',
+    expect(
+      makeVariants('1.16.0', '2.1.0-rc.3').map(({ artifact }) => artifact),
+    ).toEqual([
+      'socket-1.16.0.tgz',
       'socket-2.1.0-rc.3.tgz',
-      '@socketsecurity-cli-1.14.1.tgz',
-      '@socketsecurity-cli-with-sentry-1.14.1.tgz',
+      '@socketsecurity-cli-1.16.0.tgz',
+      '@socketsecurity-cli-with-sentry-1.16.0.tgz',
     ])
   })
 
@@ -87,16 +90,57 @@ describe('package matrix helpers', () => {
     expect(() =>
       validatePackagedManifest(
         { ...manifest, bin: { socket: 'wrong.js' } },
-        makeVariants('2.1.0-rc.0')[0]!,
+        makeVariants('1.14.1', '2.1.0-rc.0')[0]!,
       ),
     ).toThrow('CLI bin map mismatch')
     expect(() =>
-      validatePackagedManifest(manifest, makeVariants('2.1.0-rc.0')[0]!),
+      validatePackagedManifest(
+        manifest,
+        makeVariants('1.14.1', '2.1.0-rc.0')[0]!,
+      ),
     ).not.toThrow()
   })
 
+  it('requires the native launcher and exact platform pins for the RC', () => {
+    const variant = makeVariants('1.14.1', '2.1.0-rc.3')[1]!
+    const manifest = {
+      name: 'socket',
+      version: variant.version,
+      bin: { socket: 'socket.cjs' },
+      optionalDependencies: {
+        '@socketsecurity/socket-cli-darwin-arm64': variant.version,
+        '@socketsecurity/socket-cli-linux-arm64': variant.version,
+        '@socketsecurity/socket-cli-linux-x64': variant.version,
+        '@socketsecurity/socket-cli-win32-arm64': variant.version,
+        '@socketsecurity/socket-cli-win32-x64': variant.version,
+      },
+    }
+    expect(() => validatePackagedManifest(manifest, variant)).not.toThrow()
+    expect(() =>
+      validatePackagedManifest(
+        {
+          ...manifest,
+          bin: { socket: 'bin/cli.js' },
+        },
+        variant,
+      ),
+    ).toThrow('CLI bin map mismatch')
+    expect(() =>
+      validatePackagedManifest(
+        {
+          ...manifest,
+          optionalDependencies: {
+            ...manifest.optionalDependencies,
+            '@socketsecurity/socket-cli-linux-x64': 'latest',
+          },
+        },
+        variant,
+      ),
+    ).toThrow('optional dependencies mismatch')
+  })
+
   it('validates the legacy CLI bin alias on the scoped package', () => {
-    const variant = makeVariants('2.1.0-rc.0')[2]!
+    const variant = makeVariants('1.14.1', '2.1.0-rc.0')[2]!
     const standardBins = {
       socket: 'bin/cli.js',
       'socket-npm': 'bin/npm-cli.js',
@@ -116,34 +160,42 @@ describe('package matrix helpers', () => {
     ).not.toThrow()
   })
 
-  it('requires pnpm to keep its virtual store inside the private workspace', () => {
-    const workspace = '/tmp/private-package-workspace'
-    expect(() => validatePrivateVirtualStore(workspace, '.pnpm')).not.toThrow()
-    expect(() =>
-      validatePrivateVirtualStore(
-        workspace,
-        '../../../../shared/pnpm/store/links',
-      ),
-    ).toThrow('pnpm virtual store escaped the private workspace')
+  it('accepts workspace aliases and rejects redirected virtual stores', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'matrix-paths-'))
+    const workspace = path.join(directory, 'workspace')
+    const alias = path.join(directory, 'alias')
+    const store = path.join(workspace, 'node_modules', '.pnpm')
+    const shared = path.join(directory, 'shared')
+    try {
+      await mkdir(store, { recursive: true })
+      await mkdir(shared)
+      await symlink(workspace, alias, 'junction')
+      await expect(
+        validatePrivateVirtualStore(alias, store),
+      ).resolves.toBeUndefined()
+      await expect(
+        validatePrivateVirtualStore(alias, '.pnpm'),
+      ).resolves.toBeUndefined()
+      await expect(validatePrivateVirtualStore(alias, shared)).rejects.toThrow(
+        'pnpm virtual store escaped the private workspace',
+      )
+
+      await rm(store, { recursive: true })
+      await symlink(shared, store, 'junction')
+      await expect(validatePrivateVirtualStore(alias, '.pnpm')).rejects.toThrow(
+        'pnpm virtual store escaped the private workspace',
+      )
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 
-  it.skipIf(process.platform !== 'win32')(
-    'accepts Windows paths with different letter casing',
-    () => {
-      expect(() =>
-        validatePrivateVirtualStore(
-          'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\matrix-private-pnpm-test',
-          'c:\\users\\RUNNERADMIN\\AppData\\Local\\Temp\\matrix-private-pnpm-test\\node_modules\\.pnpm',
-        ),
-      ).not.toThrow()
-    },
-  )
-
   it('keeps a nested pnpm install local despite user-level global-store settings', async () => {
-    const workspace = await mkdtemp(
+    const directory = await mkdtemp(
       path.join(os.tmpdir(), 'matrix-private-pnpm-test-'),
     )
-    const userConfig = path.join(workspace, 'user.npmrc')
+    const workspace = path.join(directory, 'workspace')
+    await mkdir(workspace)
     const fixturePackage = path.join(workspace, 'fixture-package')
     await mkdir(fixturePackage)
     await writeFile(
@@ -159,17 +211,27 @@ describe('package matrix helpers', () => {
       JSON.stringify({
         name: 'matrix-private-pnpm-test',
         version: '1.0.0',
-        packageManager,
         dependencies: { 'matrix-local-fixture': 'file:./fixture-package' },
       }),
     )
+    const userConfig = path.join(directory, 'user.npmrc')
     await writeFile(path.join(workspace, '.npmrc'), 'audit=false\n')
     await writeFile(userConfig, 'enable-global-virtual-store=true\n')
-    const env = createPrivatePnpmEnvironment(workspace, {
+    const userEnv = {
       ...process.env,
+      pnpm_config_cache_dir: path.join(directory, 'cache'),
+      pnpm_config_store_dir: path.join(directory, 'shared-store'),
+      pnpm_config_enable_global_virtual_store: 'true',
       npm_config_userconfig: userConfig,
       NPM_CONFIG_USERCONFIG: userConfig,
-    })
+    }
+    const env = createPrivatePnpmEnvironment(workspace, userEnv)
+    const nestedInstall = [
+      'install',
+      '--offline',
+      '--frozen-lockfile=false',
+      '--config.confirmModulesPurge=false',
+    ]
     try {
       run(
         workspace,
@@ -178,30 +240,22 @@ describe('package matrix helpers', () => {
           'install',
           '--offline',
           '--ignore-scripts',
-          '--pm-on-fail=ignore',
           '--config.enable-global-virtual-store=false',
           '--virtual-store-dir=node_modules/.pnpm',
         ],
         env,
       )
       await verifyPrivateVirtualStore(workspace)
-      run(
-        workspace,
-        'pnpm',
-        [
-          'install',
-          '--offline',
-          '--frozen-lockfile=false',
-          '--pm-on-fail=ignore',
-          '--config.confirmModulesPurge=false',
-          '--config.enable-global-virtual-store=false',
-          '--virtual-store-dir=node_modules/.pnpm',
-        ],
-        env,
-      )
+      run(workspace, 'pnpm', nestedInstall, env)
       await verifyPrivateVirtualStore(workspace)
+
+      // Prove the same install escapes when the private environment is omitted.
+      run(workspace, 'pnpm', nestedInstall, userEnv)
+      await expect(verifyPrivateVirtualStore(workspace)).rejects.toThrow(
+        'pnpm virtual store escaped the private workspace',
+      )
     } finally {
-      await rm(workspace, { recursive: true, force: true })
+      await rm(directory, { recursive: true, force: true })
     }
   }, 30_000)
 

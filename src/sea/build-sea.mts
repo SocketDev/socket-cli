@@ -9,17 +9,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 
 import { seaArchivePaths } from './archive-paths.mts'
-import { findLockedPackageIntegrity, parsePnpmLock } from './pnpm-lock.mts'
 import { acquireBuildLock } from './build/lock.mts'
 import { publishArtifactPair } from './build/publish.mts'
+import { smokeTestSea } from './build/smoke-test.mts'
 import { createSeaCapabilities } from './capabilities.mts'
 import { downloadBytes } from './download-bytes.mts'
 import { cachedDownload } from './download-cache.mts'
 import { NODE_VERSION } from './node-version.mts'
+import { findLockedPackageIntegrity, parsePnpmLock } from './pnpm-lock.mts'
 import { updateSeaReadmeVersion } from './readme-version.mts'
 import { stageSynp } from './stage/synp.mts'
 import { stageUv } from './stage/uv.mts'
 import { SEA_VERSION } from './version.mts'
+import { digestVfs } from './vfs-digest.mts'
 import { quotePowerShell } from '../utils/quote-powershell.mts'
 
 const SEA_DIRECTORY = path.dirname(fileURLToPath(import.meta.url))
@@ -33,34 +35,11 @@ const DEFAULT_OUT = path.join(REPOSITORY_ROOT, 'build/sea')
 
 const TARGETS = [
   ['darwin', 'arm64', 'darwin-arm64'],
-  ['darwin', 'x64', 'darwin-x64'],
   ['linux', 'arm64', 'linux-arm64'],
   ['linux', 'x64', 'linux-x64'],
   ['win32', 'arm64', 'win-arm64'],
   ['win32', 'x64', 'win-x64'],
 ] as const
-
-export function getSocketPatchPackageName(
-  platform: string,
-  arch: string,
-  libc?: 'gnu' | 'musl',
-): string {
-  if (platform === 'linux') {
-    if (!libc) {
-      throw new Error('Linux socket-patch package selection requires libc')
-    }
-    return `@socketsecurity/socket-patch-linux-${arch}-${libc}`
-  }
-  const packagePlatform = platform === 'win32' ? 'win32' : platform
-  return `@socketsecurity/socket-patch-${packagePlatform}-${arch}`
-}
-
-function detectLinuxLibc(): 'gnu' | 'musl' {
-  const { header } = process.report.getReport() as {
-    header?: { glibcVersionRuntime?: string }
-  }
-  return header?.glibcVersionRuntime ? 'gnu' : 'musl'
-}
 
 function sha256(data: Buffer): string {
   return createHash('sha256').update(data).digest('hex')
@@ -203,6 +182,8 @@ export function findNodeArchiveSha256(
   return matches.length === 1 ? matches[0] : undefined
 }
 
+export { findLockedPackageIntegrity } from './pnpm-lock.mts'
+
 function readTarEntries(
   archive: Buffer,
   binaryEntry: string,
@@ -319,11 +300,8 @@ async function stageSocketPatch(
   | undefined
 > {
   const [platform, arch] = target
-  const packageName = getSocketPatchPackageName(
-    platform,
-    arch,
-    platform === 'linux' ? detectLinuxLibc() : undefined,
-  )
+  const packagePlatform = platform === 'win32' ? 'win32' : platform
+  const packageName = `@socketsecurity/socket-patch-${packagePlatform}-${arch}`
   const lock = await fs.readFile(
     path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
     'utf8',
@@ -558,8 +536,8 @@ async function stageCdxgenApi(
   const workerUtils = path.join(payloadRoot, 'utils')
   await fs.mkdir(workerUtils, { recursive: true })
   await fs.copyFile(
-    path.join(REPOSITORY_ROOT, 'src/utils/is-record.mjs'),
-    path.join(workerUtils, 'is-record.mjs'),
+    path.join(REPOSITORY_ROOT, 'src/utils/is-object-object.mjs'),
+    path.join(workerUtils, 'is-object-object.mjs'),
   )
   // Keep a concrete VFS path for cdxgen's plugin-directory override. The
   // marker does not install or expose any plugin executable.
@@ -775,7 +753,7 @@ async function run(
   env?: NodeJS.ProcessEnv,
   cwd = REPOSITORY_ROOT,
 ): Promise<void> {
-  const { spawn } = await import('node:child_process')
+  const { default: spawn } = await import('cross-spawn')
   await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
@@ -798,18 +776,15 @@ export function parseArgs(
   platform?: string
   arch?: string
   outputDir: string
-  prototype: boolean
 } {
   const result: {
     platform?: string
     arch?: string
     outputDir: string
-    prototype: boolean
   } = {
     outputDir: env['SOCKET_CLI_SEA_OUTPUT_DIR']
       ? path.resolve(env['SOCKET_CLI_SEA_OUTPUT_DIR'])
       : DEFAULT_OUT,
-    prototype: false,
   }
   for (const arg of argv) {
     if (arg === '--') {
@@ -817,9 +792,7 @@ export function parseArgs(
     }
     const [key, ...rest] = arg.replace(/^--/, '').split('=')
     const value = rest.join('=')
-    if (key === 'prototype' && value === '') {
-      result.prototype = true
-    } else if (key === 'platform') {
+    if (key === 'platform') {
       result.platform = value
     } else if (key === 'arch') {
       result.arch = value
@@ -838,11 +811,6 @@ export function parseArgs(
 
 async function main(): Promise<void> {
   const options = parseArgs()
-  if (!options.prototype) {
-    throw new Error(
-      'This is an experimental core-only prototype, not a release builder. Pass --prototype explicitly.',
-    )
-  }
   const target = TARGETS.find(
     ([platform, arch]) =>
       (options.platform ?? process.platform) === platform &&
@@ -1152,16 +1120,12 @@ async function main(): Promise<void> {
       rootFiles,
     })
     if (process.platform === 'win32') {
-      const sourceList = archivePaths
-        .map(filename => quotePowerShell(path.join(stage, filename)))
-        .join(', ')
+      // Windows PowerShell's Compress-Archive may emit backslashes in ZIP
+      // entry names. Node's VFS resolves POSIX paths such as dist/cli.js.
+      // Git Bash also ships GNU tar, which cannot write ZIP archives.
       await run(
-        'powershell',
-        [
-          '-NoProfile',
-          '-Command',
-          `Compress-Archive -LiteralPath @(${sourceList}) -DestinationPath ${quotePowerShell(archive)} -Force`,
-        ],
+        path.join(process.env['SystemRoot']!, 'System32', 'tar.exe'),
+        ['--format', 'zip', '-cf', archive, ...archivePaths],
         undefined,
         stage,
       )
@@ -1178,6 +1142,10 @@ async function main(): Promise<void> {
       {
         SEA_BOOTSTRAP: path.join(SEA_DIRECTORY, 'bootstrap.mts'),
         SEA_OUTPUT: bootstrap,
+        SEA_SMOKE_TEST: JSON.stringify({
+          digest: digestVfs(stage, archivePaths),
+          uvVersion: uvPayload?.version,
+        }),
       },
     )
 
@@ -1203,6 +1171,13 @@ async function main(): Promise<void> {
       await run('codesign', ['--sign', '-', output])
     }
 
+    await smokeTestSea(
+      output,
+      path.join(stage, 'smoke-test'),
+      SEA_VERSION,
+      socketPatchVersion,
+      capabilities,
+    )
     const appVersion = SEA_VERSION
     const payloads: Array<Record<string, unknown>> = [
       {

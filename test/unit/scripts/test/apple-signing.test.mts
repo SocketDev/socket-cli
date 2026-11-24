@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   persistNativeSigningReceipt,
   prepareNativeTestBinary,
-} from '../../../../scripts/test/apple-signing.mts'
+} from '../../../../scripts/lib/apple-signing.mts'
 
 const dirs: string[] = []
 afterEach(async () => {

@@ -29,13 +29,20 @@ describe('npm release availability', () => {
     expect(wait).toHaveBeenCalledOnce()
   })
 
-  it('waits for all stable package versions and only socket for prereleases', async () => {
+  it('waits for all stable package versions and all native packages for prereleases', async () => {
     expect(releasePackagesForVersion('1.14.2')).toEqual([
       'socket',
       '@socketsecurity/cli',
       '@socketsecurity/cli-with-sentry',
     ])
-    expect(releasePackagesForVersion('2.1.0-rc.2')).toEqual(['socket'])
+    expect(releasePackagesForVersion('2.1.0-rc.2')).toEqual([
+      'socket',
+      '@socketsecurity/socket-cli-darwin-arm64',
+      '@socketsecurity/socket-cli-linux-arm64',
+      '@socketsecurity/socket-cli-linux-x64',
+      '@socketsecurity/socket-cli-win32-arm64',
+      '@socketsecurity/socket-cli-win32-x64',
+    ])
 
     const fetcher = vi.fn<typeof fetch>(
       async () => new Response(null, { status: 200 }),

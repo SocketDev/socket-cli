@@ -20,7 +20,7 @@ target:
 ```sh
 pnpm run test:unit \
   test/unit/sea/build-sea.test.mts test/unit/sea/runtime.test.mts
-pnpm build:sea -- --prototype
+pnpm build:sea
 ```
 
 Confirm the adjacent `build/sea/*.manifest.json` reports the new uv version

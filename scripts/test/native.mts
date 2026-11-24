@@ -1,4 +1,3 @@
-import type { SpawnSyncOptions } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { promises as fs } from 'node:fs'
@@ -13,7 +12,8 @@ import { assertSnapshotDependenciesCurrent } from '../refresh/snapshots/dependen
 import {
   persistNativeSigningReceipt,
   prepareNativeTestBinary,
-} from './apple-signing.mts'
+} from '../lib/apple-signing.mts'
+import type { SpawnSyncOptions } from 'node:child_process'
 
 type NativeManifest = {
   application: { name: string; version: string }
@@ -129,12 +129,17 @@ async function main(): Promise<number> {
   const vitestArgs = userArgs.filter(
     arg => arg !== '--build' && arg !== '--require-apple-signature',
   )
+  if (vitestArgs.length === 0) {
+    vitestArgs.push('test/native')
+  }
   const updatesSnapshots = vitestArgs.some(
     arg => arg === '-u' || arg === '--update',
   )
   if (
     !updatesSnapshots &&
-    vitestArgs.some(arg => arg.endsWith('cli.native.test.mts'))
+    vitestArgs.some(
+      arg => arg === 'test/native' || arg.endsWith('cli.native.test.mts'),
+    )
   ) {
     await assertSnapshotDependenciesCurrent()
   }
@@ -196,10 +201,7 @@ async function main(): Promise<number> {
     process.env['SOCKET_CLI_NATIVE_TEST_ARTIFACTS'] = artifactsDir
     process.env['SOCKET_CLI_NATIVE_TEST_RECEIPT_PATH'] = receiptPath
     if (build) {
-      runPnpm(
-        ['build:sea', '--', '--prototype'],
-        sanitizeNativeEnvironment(process.env),
-      )
+      runPnpm(['build:sea'], sanitizeNativeEnvironment(process.env))
     }
 
     // Snapshot the verified artifact into this run's private stage so another
@@ -353,11 +355,11 @@ function sanitizeNativeEnvironment(
 
 const SCRIPT_META: ScriptMeta = {
   describe: 'runs integration tests against the host-native Socket SEA binary',
-  help: `Usage: pnpm run test:native [vitest options]
-       pnpm run test:native:build [vitest options]
+  help: `Usage: pnpm run test:sea [vitest options]
+       pnpm build:sea && pnpm test:sea [vitest options]
 
   The native lane requires a matching build/sea/socket-<platform>-<arch> binary
-  and manifest. The :build variant creates the prototype first. Native test
+  and manifest. Build it first with pnpm build:sea. Native test
   package-manager caches are isolated and test files run serially.
 
   Pass Vitest options after the script name to filter test files or tests.`,

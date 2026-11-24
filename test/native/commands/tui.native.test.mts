@@ -12,7 +12,7 @@ import {
 
 const binary = process.env['SOCKET_CLI_NATIVE_TEST_BINARY']
 if (!binary) {
-  throw new Error('Use pnpm test:native to run native CLI tests')
+  throw new Error('Use pnpm test:sea to run native CLI tests')
 }
 
 const snapshotDir = path.join(process.cwd(), 'test/snapshots/termless')

@@ -9,7 +9,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 
-import { parsePnpmLock } from '../src/sea/pnpm-lock.mts'
+import { readPnpmLock } from '../src/sea/pnpm-lock.mts'
 
 const root = path.resolve(
   path.dirname(url.fileURLToPath(import.meta.url)),
@@ -146,10 +146,10 @@ function thirdPartyNoticePlugin() {
       const packages = new Map()
       const sourceModules = new Map()
       const unmappedModuleCount = { count: 0 }
-      const lock = parsePnpmLock(
-        await fs.readFile(path.join(root, 'pnpm-lock.yaml'), 'utf8'),
-        await fs.readFile(path.join(root, 'pnpm-workspace.yaml'), 'utf8'),
-      )
+      const lock = await readPnpmLock(root)
+      if (!lock || typeof lock.packages !== 'object' || !lock.packages) {
+        throw new Error('pnpm-lock.yaml does not contain a packages graph')
+      }
       const lockPackages = lock.packages
       const patchedDependencies = lock.patchedDependencies ?? {}
       for (const id of this.getModuleIds()) {

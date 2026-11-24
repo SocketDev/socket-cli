@@ -9,6 +9,7 @@ import url from 'node:url'
 import { babel as babelPlugin } from '@rollup/plugin-babel'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
+import replacePlugin from '@rollup/plugin-replace'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const rootDir = path.join(__dirname, '..')
@@ -36,6 +37,14 @@ export default {
       babelrc: false,
       configFile: path.join(__dirname, 'babel.config.js'),
       extensions: ['.mjs', '.js', '.ts', '.mts'],
+    }),
+    replacePlugin({
+      preventAssignment: true,
+      values: {
+        INLINED_SEA_SMOKE_TEST: JSON.stringify(
+          JSON.parse(process.env.SEA_SMOKE_TEST || 'null'),
+        ),
+      },
     }),
     commonjsPlugin(),
   ],
