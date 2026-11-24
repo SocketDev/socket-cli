@@ -97,7 +97,7 @@ const SCRIPT_META: ScriptMeta = {
 
   Run it after bumping the pin. It fails without editing anything when a
   snapshot does not show the old version or a row has no room for the new one.
-  Fall back to pnpm snapshots:update:dep <name> in that case.`,
+  Fall back to pnpm snapshots:refresh:dep <name> in that case.`,
 }
 
 if (isMainModule(import.meta.url)) {

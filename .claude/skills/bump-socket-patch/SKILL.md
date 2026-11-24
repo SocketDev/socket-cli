@@ -19,7 +19,7 @@ Take the exact released version as `$ARGUMENTS`. Ask for it if missing. Read
    ```
 
    If the helper reports no matching version or insufficient row space, use
-   `pnpm snapshots:update:dep socket-patch` with a native build.
+   `pnpm snapshots:refresh:dep socket-patch` with a native build.
 4. Add or replace the Unreleased entry:
 
    ```sh
@@ -34,7 +34,7 @@ Take the exact released version as `$ARGUMENTS`. Ask for it if missing. Read
    ```sh
    pnpm run test:unit:snapshot-dependencies
    pnpm run test:unit test/unit/sea/build-sea.test.mts
-   pnpm snapshots:update:dep socket-patch
+   pnpm snapshots:refresh:dep socket-patch
    ```
 
    Review any changed help snapshots. Inspect the generated
