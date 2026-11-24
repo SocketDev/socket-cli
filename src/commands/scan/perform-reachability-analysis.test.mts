@@ -185,7 +185,7 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
     rmSync(scanCwd, { force: true, recursive: true })
   })
 
-  it('always passes the uploaded tar hash and --run-without-docker to Coana', async () => {
+  it('always passes the uploaded tar hash, --run-without-docker and --disable-analysis-splitting to Coana', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
       orgSlug: TEST_ORG_SLUG,
@@ -196,6 +196,7 @@ describe('performReachabilityAnalysis manifests tar hash', () => {
 
     const args = mockSpawnCoana.mock.calls[0]![0] as string[]
     expect(args).toContain('--run-without-docker')
+    expect(args).toContain('--disable-analysis-splitting')
     expect(args[args.indexOf('--manifests-tar-hash') + 1]).toBe(TEST_TAR_HASH)
   })
 

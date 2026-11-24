@@ -162,12 +162,9 @@ async function run(
     reachContinueOnNoSourceFiles,
     reachDebug,
     reachDetailedAnalysisLogFile,
-    reachDisableAnalysisSplitting: _reachDisableAnalysisSplitting,
     reachDisableAnalytics,
     reachDisableDependencyDownloads,
     reachDisableExternalToolChecks,
-    reachEnableAnalysisSplitting,
-    reachLazyMode: _reachLazyMode,
     reachRetainFactsFile,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
@@ -188,12 +185,9 @@ async function run(
     reachContinueOnNoSourceFiles: boolean
     reachDebug: boolean
     reachDetailedAnalysisLogFile: boolean
-    reachDisableAnalysisSplitting: boolean
     reachDisableAnalytics: boolean
     reachDisableDependencyDownloads: boolean
     reachDisableExternalToolChecks: boolean
-    reachEnableAnalysisSplitting: boolean
-    reachLazyMode: boolean
     reachRetainFactsFile: boolean
     reachSkipCache: boolean
     reachUseOnlyPregeneratedSboms: boolean
@@ -321,7 +315,6 @@ async function run(
       reachDisableDependencyDownloads: Boolean(reachDisableDependencyDownloads),
       reachDisableExternalToolChecks: Boolean(reachDisableExternalToolChecks),
       reachEcosystems,
-      reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,
       reachRetainFactsFile: Boolean(reachRetainFactsFile),
       reachSkipCache: Boolean(reachSkipCache),

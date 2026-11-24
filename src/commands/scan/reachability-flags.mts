@@ -139,8 +139,9 @@ export const reachabilityFlags: MeowFlags = {
   reachEnableAnalysisSplitting: {
     type: 'boolean',
     default: false,
+    hidden: true,
     description:
-      'Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.',
+      'Deprecated: Analysis splitting is no longer supported. This flag is a no-op.',
   },
   reachEcosystems: {
     type: 'string',

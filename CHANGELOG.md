@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- `--reach-enable-analysis-splitting` is deprecated and does nothing, as reachability scans no longer split the analysis into several runs. Scripts that pass it keep working.
+
 ## [1.16.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.16.0) - 2026-11-19
 
 ### Added

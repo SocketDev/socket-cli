@@ -137,7 +137,6 @@ describe('socket scan create', async () => {
             --reach-disable-dependency-downloads  Only analyze dependencies that are already installed (e.g. in the project's .venv, vendor directory or module cache). Missing dependencies count as installation failures.
             --reach-disable-external-tool-checks  Disable external tool checks during reachability analysis.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: cargo, composer, gem, golang, maven, npm, nuget, pypi. Defaults to all supported ecosystems.
-            --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
             --reach-fallback-to-regular-scan  If reachability analysis fails, continue with a regular SCA scan (without reachability results) instead of halting. By default, the CLI halts on reachability errors.
             --reach-retain-facts-file  Keep the \`.socket.facts.json\` reachability report that the analysis writes to the scan directory instead of deleting it after a successful scan. Delete it once inspected: later reachability scans ignore it, but a scan without --reach uploads it as an SBOM carrying stale reachability results.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
@@ -363,16 +362,18 @@ describe('socket scan create', async () => {
       '--branch',
       'abc',
       '--reach-disable-analysis-splitting',
+      '--reach-enable-analysis-splitting',
+      '--reach-lazy-mode',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should succeed when deprecated no-op --reach-disable-analysis-splitting is used without --reach',
+    'should succeed when deprecated no-op reach flags are used without --reach',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
-        'should exit with code 0 for the deprecated no-op flag',
+        'should exit with code 0 for the deprecated no-op flags',
       ).toBe(0)
     },
   )
