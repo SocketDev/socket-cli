@@ -20,7 +20,7 @@ missing. Read [the pin and snapshot notes](references/pin-and-snapshots.md).
      --dep coana --from "$CURRENT_VERSION"
    ```
 
-   If the helper cannot update them, run `pnpm snapshots:update:dep coana` with
+   If the helper cannot update them, run `pnpm snapshots:refresh:dep coana` with
    a built native CLI.
 3. Add or replace the Unreleased changelog entry:
 
