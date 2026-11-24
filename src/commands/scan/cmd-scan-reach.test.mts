@@ -1,6 +1,8 @@
+import { once } from 'node:events'
+import { createServer } from 'node:http'
 import path from 'node:path'
 
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import constants, {
   FLAG_CONFIG,
@@ -655,6 +657,29 @@ describe('socket scan reach', async () => {
   )
 
   describe('non dry-run tests', () => {
+    const api = createServer((_request, response) => {
+      response.writeHead(401, { 'content-type': 'application/json' })
+      response.end(JSON.stringify({ message: 'Invalid test token' }))
+    })
+
+    beforeAll(async () => {
+      api.listen(0, '127.0.0.1')
+      await once(api, 'listening')
+    })
+    afterAll(async () => {
+      await api[Symbol.asyncDispose]()
+    })
+
+    function runWithInvalidToken(cmd: string[]) {
+      const address = api.address()
+      if (!address || typeof address === 'string') {
+        throw new Error('Expected a local test API port')
+      }
+      return spawnSocketCli(binCliPath, cmd, {
+        env: { SOCKET_CLI_API_BASE_URL: `http://127.0.0.1:${address.port}` },
+      })
+    }
+
     cmdit(
       [
         'scan',
@@ -667,7 +692,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle reach analysis on test fixture',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         // Should fail due to fake token/org, but validates command parsing.
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -689,7 +714,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle npm ecosystem specification',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -710,7 +735,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle custom memory limit',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -731,7 +756,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle custom timeout',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -752,7 +777,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle path exclusions',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -772,10 +797,10 @@ describe('socket scan reach', async () => {
       ],
       'should handle analytics disabled',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
+        expect(output).toContain('401')
       },
     )
 
@@ -792,7 +817,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle cache skipping',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -812,7 +837,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle JSON output format',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         // JSON output typically suppresses banner in stderr.
         const output = stdout + stderr
@@ -833,7 +858,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle markdown output format',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         // Markdown output typically suppresses banner in stderr.
         const output = stdout + stderr
@@ -860,7 +885,7 @@ describe('socket scan reach', async () => {
       ],
       'should handle comprehensive flag combination',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await runWithInvalidToken(cmd)
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)

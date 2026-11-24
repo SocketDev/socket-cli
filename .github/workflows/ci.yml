@@ -884,10 +884,33 @@ jobs:
             sea-downloads-v1-${{ matrix.target }}-
 
       - name: Test screenshot and signing helpers
+        id: terminal-helpers
+        env:
+          SOCKET_CLI_NATIVE_TEST_ARTIFACTS: &terminal_artifacts build/terminal-test-artifacts/${{ matrix.target }}
+          NODE_OPTIONS: ${{ matrix.target == 'darwin-arm64' && '--max-old-space-size=4096' || '' }}
         shell: bash
         run: |
           pnpm exec vitest run --config .config/vitest.config.mts test/unit/scripts/test/apple-signing.test.mts
           pnpm exec vitest run --config .config/vitest.terminal.config.mts
+
+      - name: Show failed scan setup screenshots
+        if: failure() && steps.terminal-helpers.outcome == 'failure'
+        env:
+          SOCKET_CLI_NATIVE_TEST_ARTIFACTS: *terminal_artifacts
+        shell: bash
+        run: |
+          python - <<'PYTHON'
+          import os
+          import pathlib
+          import sys
+          import xml.etree.ElementTree as ET
+          sys.stdout.reconfigure(encoding='utf-8')
+          for svg in (pathlib.Path(os.environ['SOCKET_CLI_NATIVE_TEST_ARTIFACTS']) / 'npm-scan-setup').glob('*.svg'):
+              if svg.name in ('menu.svg', 'canceled.svg'):
+                  print(svg.name)
+                  for row in ET.parse(svg).iter('{http://www.w3.org/2000/svg}text'):
+                      print(''.join(row.itertext()).rstrip())
+          PYTHON
 
       - name: Verify .NET SDK
         shell: bash
