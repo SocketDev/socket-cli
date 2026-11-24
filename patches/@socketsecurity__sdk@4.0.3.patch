@@ -1,0 +1,17 @@
+diff --git a/dist/index.js b/dist/index.js
+index 560bf62014ca80557d244be75207c74dddbf488f..2fe84d14a83fd82464fac9d627a6ea06fc5262da 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -19306,9 +19306,9 @@ var require_width = /* @__PURE__ */ __commonJSMin(((exports) => {
+ 	let leadingNonPrintingRegex;
+ 	let emojiRegex;
+ 	try {
+-		zeroWidthClusterRegex = /^(?:\p{Control}|\p{Default_Ignorable_Code_Point}|\p{Mark}|\p{Surrogate})+$/v;
+-		leadingNonPrintingRegex = /^[\p{Default_Ignorable_Code_Point}\p{Control}\p{Format}\p{Mark}\p{Surrogate}]+/v;
+-		emojiRegex = /^\p{RGI_Emoji}$/v;
++		zeroWidthClusterRegex = new RegExp('^(?:\\p{Control}|\\p{Default_Ignorable_Code_Point}|\\p{Mark}|\\p{Surrogate})+$', 'v');
++		leadingNonPrintingRegex = new RegExp('^[\\p{Default_Ignorable_Code_Point}\\p{Control}\\p{Format}\\p{Mark}\\p{Surrogate}]+', 'v');
++		emojiRegex = new RegExp('^\\p{RGI_Emoji}$', 'v');
+ 	} catch {
+ 		zeroWidthClusterRegex = /^(?:\p{Control}|\p{Default_Ignorable_Code_Point}|\p{Mark})+$/u;
+ 		leadingNonPrintingRegex = /^[\p{Default_Ignorable_Code_Point}\p{Control}\p{Format}\p{Mark}]+/u;

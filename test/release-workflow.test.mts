@@ -6,6 +6,9 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
+import { npmDistTagForRelease } from '../scripts/release/validate-npm-policy.mts'
+import { SEA_RELEASE_POLICY } from '../src/sea/version.mts'
+
 interface ReleaseStep {
   if?: string
   env?: Record<string, string>
@@ -256,14 +259,12 @@ describe('v1 release workflow contract', () => {
 
     const manifest = JSON.parse(
       readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
-    ) as { publishConfig?: { tag?: string }; version?: string }
-    const releasePolicy = JSON.parse(
-      readFileSync(new URL('../.config/release.json', import.meta.url), 'utf8'),
-    ) as { identifier: string; versionHint: string }
+    ) as { publishConfig?: { tag?: string }; version: string }
     expect(manifest.version).toMatch(/^(?:1\.\d+\.\d+|2\.1\.0-rc\.\d+)$/u)
-    expect(manifest.publishConfig?.tag).toBe(
-      `${releasePolicy.identifier}-${releasePolicy.versionHint}`,
+    expect(npmDistTagForRelease(manifest.version, SEA_RELEASE_POLICY)).toBe(
+      manifest.version.startsWith('1.') ? 'latest' : SEA_RELEASE_POLICY.distTag,
     )
+    expect(manifest.publishConfig?.tag).toBe(SEA_RELEASE_POLICY.distTag)
     expect(workflow.on.workflow_dispatch.inputs['release-major']?.default).toBe(
       '1',
     )
