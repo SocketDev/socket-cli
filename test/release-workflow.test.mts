@@ -88,8 +88,10 @@ describe('v1 release workflow contract', () => {
       .map(step => step.run ?? '')
     expect(scripts.join('\n')).not.toMatch(/promote\.mts|git push/)
     expect(Object.keys(workflow.jobs).sort()).toEqual([
+      'native-packages',
       'prepare',
       'publish',
+      'rehearse',
       'release-pr',
       'verify',
     ])
@@ -124,7 +126,7 @@ describe('v1 release workflow contract', () => {
     )
     const verify = steps[verifyIndex]
     expect(verify?.if).toBe('${{ inputs.dry-run == false }}')
-    expect(verify?.run).toContain('.commit.verification.verified')
+    expect(verify?.run).toContain('verify-release.mts" commit')
     expect(verifyIndex).toBe(checkoutIndex + 1)
   })
 
@@ -133,8 +135,7 @@ describe('v1 release workflow contract', () => {
       step => step.name === 'Stage release packages',
     )
     expect(stage?.run).toContain('--json')
-    expect(stage?.run).toContain('stageId')
-    expect(stage?.run).toContain('output.search(/^(?:\\{|\\[)/mu)')
+    expect(stage?.run).toContain('verify-release.mts" stage-output')
     expect(stage?.run).toContain('pnpm run approve:npm <stage-id>')
     const tag = workflow.jobs.publish.steps.find(
       step => step.name === 'Reserve release tag once',
@@ -149,12 +150,6 @@ describe('v1 release workflow contract', () => {
   })
 
   it('parses npm stage JSON after pnpm progress output', () => {
-    const stage = workflow.jobs.publish.steps.find(
-      step => step.name === 'Stage release packages',
-    )
-    const parser = stage?.run?.split("<<'NODE'\n")[1]?.split('\nNODE')[0]
-    expect(parser).toBeDefined()
-
     const directory = mkdtempSync(path.join(tmpdir(), 'npm-stage-output-'))
     const outputPath = path.join(directory, 'output.json')
     const summaryPath = path.join(directory, 'summary.md')
@@ -165,6 +160,7 @@ describe('v1 release workflow contract', () => {
         outputPath,
         [
           'GET https://example.invalid/idtoken 200 193ms',
+          '[WARN] Registry request was retried',
           'Staging socket@2.1.0-rc.0',
           JSON.stringify({
             socket: {
@@ -176,11 +172,13 @@ describe('v1 release workflow contract', () => {
           '',
         ].join('\n'),
       )
-      execFileSync(
-        process.execPath,
-        ['--input-type=module', '-', outputPath, summaryPath, tarballPath],
-        { input: parser },
-      )
+      execFileSync(process.execPath, [
+        '.github/scripts/verify-release.mts',
+        'stage-output',
+        outputPath,
+        summaryPath,
+        tarballPath,
+      ])
       expect(readFileSync(summaryPath, 'utf8')).toContain(stageId)
     } finally {
       rmSync(directory, { recursive: true, force: true })
@@ -192,9 +190,7 @@ describe('v1 release workflow contract', () => {
       step => step.name === 'Stage release packages',
     )
     expect(stage?.env?.VERSION).toBe('${{ needs.verify.outputs.version }}')
-    expect(stage?.run).toContain(
-      'if [[ "$VERSION" == *-* ]]; then EXPECTED=1; fi',
-    )
+    expect(stage?.run).toContain('verify-release.mts" tarball-count')
     expect(stage?.run).not.toContain('NPM_PRERELEASE_RELEASE')
   })
 
@@ -224,19 +220,19 @@ describe('v1 release workflow contract', () => {
     expect(finalize?.run).not.toContain('releases/tags/${TAG}')
   })
 
-  it('publishes only socket for the configured prerelease policy', () => {
+  it('publishes the native CLI for the configured prerelease policy', () => {
     const verifySteps = workflow.jobs.verify.steps
     const versionGuard = verifySteps.find(
-      step => step.name === 'Validate release policy and choose npm dist-tag',
+      step => step.name === 'Resolve release metadata',
     )
     const versionGuardIndex = verifySteps.findIndex(
-      step => step.name === 'Validate release policy and choose npm dist-tag',
+      step => step.name === 'Resolve release metadata',
     )
     const buildIndex = verifySteps.findIndex(
-      step => step.name === 'Build Maven manifest extension jar',
+      step => step.name === 'Pack native launcher',
     )
     expect(versionGuard).toBeDefined()
-    expect(versionGuard?.if).toBe('${{ inputs.dry-run == false }}')
+    expect(versionGuard?.if).toBeUndefined()
     expect(versionGuard?.run).toContain('validate-npm-policy.mts')
     expect(versionGuardIndex).toBeGreaterThanOrEqual(0)
     expect(versionGuardIndex).toBeLessThan(buildIndex)
@@ -247,16 +243,17 @@ describe('v1 release workflow contract', () => {
     expect(prepareStep?.env?.SOCKET_CLI_RELEASE_MAJOR).toBe(
       '${{ inputs.release-major }}',
     )
-    expect(
-      workflow.jobs.verify.steps.find(
-        step => step.name === 'Build and pack @socketsecurity/cli (legacy)',
-      )?.if,
-    ).toBe("${{ env.NPM_PRERELEASE_RELEASE != 'true' }}")
-    expect(
-      workflow.jobs.verify.steps.find(
-        step => step.name === 'Build and pack @socketsecurity/cli-with-sentry',
-      )?.if,
-    ).toBe("${{ env.NPM_PRERELEASE_RELEASE != 'true' }}")
+    const stable = verifySteps.find(
+      step => step.name === 'Build, pack, and smoke test stable packages',
+    )
+    expect(stable?.if).toBe(
+      "${{ !contains(steps.release-meta.outputs.version, '-') }}",
+    )
+    expect(stable?.run?.match(/^pack .+$/gmu)).toEqual([
+      'pack socket',
+      'pack @socketsecurity/cli INLINED_SOCKET_CLI_LEGACY_BUILD=1',
+      'pack @socketsecurity/cli-with-sentry INLINED_SOCKET_CLI_SENTRY_BUILD=1',
+    ])
 
     const manifest = JSON.parse(
       readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
@@ -307,7 +304,7 @@ describe('v1 release workflow contract', () => {
     expect(workflow.jobs.verify.permissions['id-token']).toBeUndefined()
     expect(workflow.on.workflow_dispatch.inputs['dry-run']?.default).toBe(true)
     expect(workflow.jobs.publish.if).toBe(
-      "${{ inputs.mode == 'publish' && inputs.dry-run == false }}",
+      "${{ !cancelled() && needs.verify.result == 'success' && (needs.native-packages.result == 'success' || (!contains(needs.verify.outputs.version, '-') && needs.native-packages.result == 'skipped')) && inputs.mode == 'publish' && inputs.dry-run == false }}",
     )
   })
 

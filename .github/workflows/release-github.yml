@@ -61,6 +61,19 @@ jobs:
             exit 1
           fi
 
+      - name: Install release toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f scripts/setup/release-tools.sh ]]; then
+            bash scripts/setup/release-tools.sh
+          else
+            # Older reserved tags can be finalized again and predate the shared installer.
+            tools=$(mktemp -d "$RUNNER_TEMP/release-tools-src.XXXXXX")
+            git archive "$GITHUB_WORKFLOW_SHA" scripts/setup/release-tools.sh .config/release-tools.json src/sea/.node-version package.json | tar -x -C "$tools"
+            bash "$tools/scripts/setup/release-tools.sh"
+          fi
+
       - name: Validate release policy and wait for npm publication
         id: metadata
         working-directory: ${{ runner.temp }}

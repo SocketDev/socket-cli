@@ -82,8 +82,13 @@ async function createUploadFixture() {
   }
   const execute = vi.fn(
     async (command: string, args: string[], options: { cwd: string }) => {
-      expect(command).toBe('zip')
-      expect(args.slice(0, 2)).toEqual(['-q', '-0'])
+      const windows = process.platform === 'win32'
+      expect(command).toBe(
+        windows
+          ? path.join(process.env['SystemRoot']!, 'System32', 'tar.exe')
+          : 'zip',
+      )
+      expect(args.slice(0, 2)).toEqual(windows ? ['-a', '-cf'] : ['-q', '-0'])
       expect(args.slice(3)).toEqual([...files].sort())
       expect(options).toMatchObject({ cwd: directory, timeout: 120_000 })
       await writeFile(args[2]!, archiveBytes)

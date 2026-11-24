@@ -6,7 +6,7 @@ first; publishing is a separate dispatch after that PR is merged.
 | Lane | Release line | npm packages | npm dist-tag |
 | --- | --- | --- | --- |
 | Stable | v1.x | `socket`, `@socketsecurity/cli`, `@socketsecurity/cli-with-sentry` | `latest` |
-| Native prerelease | 2.1.0 RCs | `socket` only | `rc-2.1.0` |
+| Native prerelease | 2.1.0 RCs | `socket` launcher and five exact-version platform packages | `rc-2.1.0` |
 
 The package list is enforced by `scripts/release/packages.mts`. The build
 matrix is defined in `scripts/build-package-matrix.mts`. Prerelease versions
@@ -22,5 +22,6 @@ preparation PR.
 
 After the merged version PR, the separate `mode=publish` workflow builds and
 tests package tarballs. Stable releases stage all three packages; RC releases
-stage only `socket`. A human approves each npm stage ID locally. Approval and
+stage the five platform packages and the `socket` launcher. Approve the platform
+stages first, then the launcher. Approval and
 GitHub release creation are not part of the bump skill.

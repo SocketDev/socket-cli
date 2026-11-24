@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /* eslint-disable no-await-in-loop -- Package variants and staged files must be processed serially. */
-import { spawnSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isDeepStrictEqual } from 'node:util'
 import { gunzipSync } from 'node:zlib'
 
 import crossSpawn from 'cross-spawn'
@@ -13,22 +14,21 @@ import { parse as parseYaml } from 'yaml'
 
 import { isMainModule } from './lib/is-main-module.mts'
 import { type ScriptMeta, runMain } from './lib/run-main.mts'
+import { nativeOptionalDependencies } from './release/packages.mts'
 import { SEA_RELEASE_POLICY, SEA_VERSION } from '../src/sea/version.mts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_OUTPUT = path.join(ROOT, 'build/package-matrix')
 const PRE_RELEASE_PREFIX = `${SEA_RELEASE_POLICY.versionHint}-${SEA_RELEASE_POLICY.identifier}.`
 const VARIANTS = [
-  { expectedName: 'socket', version: '1.14.1' },
   { expectedName: 'socket' },
+  { expectedName: 'socket', native: true },
   {
     expectedName: '@socketsecurity/cli',
-    version: '1.14.1',
     env: { INLINED_SOCKET_CLI_LEGACY_BUILD: '1' },
   },
   {
     expectedName: '@socketsecurity/cli-with-sentry',
-    version: '1.14.1',
     env: { INLINED_SOCKET_CLI_SENTRY_BUILD: '1' },
   },
 ] as const
@@ -37,6 +37,7 @@ type Variant = {
   expectedName: string
   version: string
   artifact: string
+  native?: boolean
   env?: Record<string, string>
 }
 
@@ -59,9 +60,40 @@ export function currentPrereleaseVersion(version: string): string {
   return parsed.version
 }
 
-export function makeVariants(version: string): Variant[] {
+function stableMatrixVersion(manifestVersion: string): string {
+  if (semver.satisfies(manifestVersion, '1.x')) {
+    return manifestVersion
+  }
+  const tags = execFileSync(
+    'git',
+    ['tag', '--merged', 'HEAD', '--list', 'v1.*'],
+    {
+      cwd: ROOT,
+      encoding: 'utf8',
+    },
+  )
+  const stable = semver.maxSatisfying(
+    tags
+      .trim()
+      .split('\n')
+      .map(tag => tag.slice(1)),
+    '1.x',
+  )
+  if (!stable) {
+    throw new Error(
+      'Fetch the stable v1 release tags before building the matrix from a prerelease checkout.',
+    )
+  }
+  return stable
+}
+
+export function makeVariants(
+  stableVersion: string,
+  prereleaseVersion: string,
+): Variant[] {
   return VARIANTS.map(variant => {
-    const resolvedVersion = 'version' in variant ? variant.version : version
+    const resolvedVersion =
+      'native' in variant ? prereleaseVersion : stableVersion
     return {
       ...variant,
       version: resolvedVersion,
@@ -87,22 +119,23 @@ export function updateRootManifest(raw: string, version: string): string {
   return updated
 }
 
-export function validatePrivateVirtualStore(
+export async function validatePrivateVirtualStore(
   workspace: string,
   virtualStoreDir: unknown,
-): void {
+): Promise<void> {
   if (typeof virtualStoreDir !== 'string') {
     throw new Error('pnpm did not report its virtual store directory')
   }
-  const actual = path.resolve(workspace, 'node_modules', virtualStoreDir)
-  const expected = path.resolve(workspace, 'node_modules/.pnpm')
-  const matches =
-    process.platform === 'win32'
-      ? actual.toLowerCase() === expected.toLowerCase()
-      : actual === expected
-  if (!matches) {
+  // Resolve workspace aliases (including Windows short paths), but keep the
+  // expected suffix literal so a redirected node_modules or .pnpm is rejected.
+  const [root, actual] = await Promise.all([
+    fs.realpath(workspace),
+    fs.realpath(path.resolve(workspace, 'node_modules', virtualStoreDir)),
+  ])
+  const expected = path.join(root, 'node_modules', '.pnpm')
+  if (actual !== expected) {
     throw new Error(
-      `pnpm virtual store escaped the private workspace: ${actual}; expected ${expected}; configured ${virtualStoreDir}`,
+      `pnpm virtual store escaped the private workspace: ${actual}`,
     )
   }
 }
@@ -138,23 +171,11 @@ export async function verifyPrivateVirtualStore(
   const modules = parseYaml(await fs.readFile(modulesPath, 'utf8')) as {
     virtualStoreDir?: unknown
   }
-  let workspacePath = workspace
-  let virtualStoreDir = modules.virtualStoreDir
-  if (process.platform === 'win32' && typeof virtualStoreDir === 'string') {
-    workspacePath = await fs.realpath(workspace)
-    const actualPath = await fs.realpath(
-      path.resolve(workspace, 'node_modules', virtualStoreDir),
-    )
-    virtualStoreDir = path.relative(
-      path.join(workspacePath, 'node_modules'),
-      actualPath,
-    )
-  }
-  validatePrivateVirtualStore(workspacePath, virtualStoreDir)
+  await validatePrivateVirtualStore(workspace, modules.virtualStoreDir)
 }
 
 export function readPackagedManifest(bytes: Buffer): Record<string, unknown> {
-  // npm pack produces a gzip compressed POSIX tar archive.
+  // pnpm packs npm packages as gzip-compressed POSIX tar archives.
   const tar = gunzipSync(bytes)
   for (let offset = 0; offset + 512 <= tar.length; ) {
     const header = tar.subarray(offset, offset + 512)
@@ -199,9 +220,21 @@ export function validatePackagedManifest(
     'socket-pnpm': 'bin/pnpm-cli.js',
     'socket-yarn': 'bin/yarn-cli.js',
   }
-  const expectedBins =
-    variant.expectedName === '@socketsecurity/cli' &&
-    variant.env?.['INLINED_SOCKET_CLI_LEGACY_BUILD']
+  if (
+    variant.native &&
+    !isDeepStrictEqual(
+      manifest['optionalDependencies'],
+      nativeOptionalDependencies(variant.version),
+    )
+  ) {
+    throw new Error(
+      `Native launcher optional dependencies mismatch: ${variant.artifact}`,
+    )
+  }
+  const expectedBins = variant.native
+    ? { socket: 'socket.cjs' }
+    : variant.expectedName === '@socketsecurity/cli' &&
+        variant.env?.['INLINED_SOCKET_CLI_LEGACY_BUILD']
       ? { cli: 'bin/cli.js', ...standardBins }
       : variant.expectedName === '@socketsecurity/cli-with-sentry'
         ? {
@@ -221,7 +254,7 @@ export function validatePackagedManifest(
       `Tarball metadata mismatch: expected ${variant.expectedName}@${variant.version}, got ${String(manifest['name'])}@${String(manifest['version'])}`,
     )
   }
-  if (JSON.stringify(manifest['bin']) !== JSON.stringify(expectedBins)) {
+  if (!isDeepStrictEqual(manifest['bin'], expectedBins)) {
     throw new Error(`Tarball CLI bin map mismatch: ${variant.artifact}`)
   }
 }
@@ -303,7 +336,6 @@ async function main(): Promise<void> {
   }
   const output = args.length ? path.resolve(ROOT, args[1]!) : DEFAULT_OUTPUT
   await assertOutputAvailable(output)
-  const variants = makeVariants(currentPrereleaseVersion(SEA_VERSION))
   const temporary = await fs.mkdtemp(
     path.join(os.tmpdir(), 'socket-package-matrix-'),
   )
@@ -322,6 +354,12 @@ async function main(): Promise<void> {
     const packagePath = path.join(workspace, 'package.json')
     const lockPath = path.join(workspace, 'pnpm-lock.yaml')
     const basePackage = await fs.readFile(packagePath, 'utf8')
+    const variants = makeVariants(
+      stableMatrixVersion(
+        (JSON.parse(basePackage) as { version: string }).version,
+      ),
+      currentPrereleaseVersion(SEA_VERSION),
+    )
     const baseLock = await fs.readFile(lockPath, 'utf8')
     run(
       workspace,
@@ -330,7 +368,6 @@ async function main(): Promise<void> {
         'install',
         '--frozen-lockfile',
         '--ignore-scripts',
-        '--pm-on-fail=ignore',
         '--config.enable-global-virtual-store=false',
         '--virtual-store-dir=node_modules/.pnpm',
       ],
@@ -347,6 +384,21 @@ async function main(): Promise<void> {
         updateRootManifest(basePackage, variant.version),
       )
       await fs.writeFile(lockPath, baseLock)
+      if (variant.native) {
+        // The release stages the native launcher for this version; platform
+        // binaries are built and tested on their respective runners.
+        run(
+          workspace,
+          'pnpm',
+          ['pack:native', 'root', '--out', stagedOutput],
+          privateEnv,
+        )
+        await verifyPackagedVariant(
+          path.join(stagedOutput, variant.artifact),
+          variant,
+        )
+        continue
+      }
       const env = {
         ...privateEnv,
         INLINED_SOCKET_CLI_PUBLISHED_BUILD: '1',

@@ -19,8 +19,10 @@
 !/.github/actions/repo/upload-artifact/index.mjs
 !/.github/actions/repo/cache-downloads/action.yml
 !/.github/actions/repo/cache-downloads/index.mts
+!/.github/scripts/download-release-artifacts.mts
 !/.github/scripts/pin-readme-assets.mjs
-!/.github/scripts/smoke-test-tarball.sh
+!/.github/scripts/smoke-test-tarball.mts
+!/.github/scripts/verify-release.mts
 !/.github/workflows/ci.yml
 !/.github/workflows/e2e-tests.yml
 !/.github/workflows/publish-npm.yml
@@ -246,6 +248,7 @@
 !/test/utils/sea.mts
 !/test/unit/sea/download-bytes.test.mts
 !/test/unit/sea/download-cache.test.mts
+!/test/unit/sea/pnpm-lock.test.mts
 !/test/unit/sea/runtime.test.mts
 !/test/unit/sea/version.test.mts
 !/test/unit/utils/
@@ -361,7 +364,7 @@
 !/.npmrc
 !/.oxlintignore
 !/.oxlintrc.json
-!/.pnpmrc
+!/.config/release-tools.json
 !/.vscode/extensions.json
 !/CHANGELOG.md
 !/CLAUDE.md
@@ -396,13 +399,17 @@
 !/patches/string_decoder@0.10.31.patch
 !/patches/tiny-updater@3.5.3.patch
 !/pnpm-lock.yaml
+!/pnpm-workspace.yaml
 !/requirements.json
 !/scripts/babel/transform-set-proto-plugin.js
 !/scripts/babel/transform-url-parse-plugin.js
 !/scripts/check-commit-pii.js
 !/scripts/check.mts
 !/scripts/ci/check-actions.mts
+!/scripts/ci/check-bin-eol.sh
 !/scripts/setup/node.mts
+!/scripts/setup/firewall.sh
+!/scripts/setup/release-tools.sh
 !/scripts/setup/uv.mts
 !/scripts/ci/upload-artifact.mjs
 !/scripts/constants.js
@@ -413,6 +420,8 @@
 !/scripts/lint.mts
 !/scripts/release/add-unreleased.mts
 !/scripts/release/availability.mts
+!/scripts/release/native-packages.mts
+!/scripts/release/native-launcher.cjs
 !/scripts/release/approve-npm.mts
 !/scripts/release/prepare.mts
 !/scripts/release/changelog.mts
@@ -428,7 +437,7 @@
 !/scripts/release/validate-npm-policy.mts
 !/scripts/rollup/socket-modify-plugin.js
 !/scripts/test/native.mts
-!/scripts/test/apple-signing.mts
+!/scripts/lib/apple-signing.mts
 !/scripts/test/integration.mts
 !/scripts/update.mts
 !/scripts/utils/fs.js
@@ -1076,9 +1085,12 @@
 !/src/sea/licenses/socket-patch-MIT.txt
 !/src/sea/build/lock.mts
 !/src/sea/build/publish.mts
+!/src/sea/build/smoke-test.mts
 !/src/sea/rollup-provenance.mjs
+!/src/sea/pnpm-lock.mts
 !/src/sea/runtime.mts
 !/src/sea/download-bytes.mts
+!/src/sea/vfs-digest.mts
 !/src/sea/version.mts
 !/src/shadow/common.mts
 !/src/shadow/npm-base.mts

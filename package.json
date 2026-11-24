@@ -46,8 +46,6 @@
     "build:maven-extension": "bash src/commands/manifest/scripts/maven-extension/build-jar.sh",
     "build:sea": "node src/sea/build-sea.mts",
     "build:package-matrix": "node scripts/build-package-matrix.mts",
-    "test:native": "node scripts/test/native.mts",
-    "test:native:build": "node scripts/test/native.mts --build",
     "snapshots": "node scripts/refresh/snapshots.mts",
     "build:sea:internal:bootstrap": "rollup -c .config/rollup.sea.config.mjs",
     "check": "node scripts/check.mts",
@@ -107,7 +105,9 @@
     "snapshots:termless:refresh": "node scripts/refresh/snapshots.mts --update",
     "snapshots:vite:refresh": "pnpm run test:unit:update",
     "snapshots:refresh": "pnpm run snapshots:termless:refresh && pnpm run snapshots:vite:refresh",
-    "snapshots:refresh:dep": "node scripts/refresh/snapshots.mts --update --dep"
+    "snapshots:refresh:dep": "node scripts/refresh/snapshots.mts --update --dep",
+    "test:sea": "node scripts/test/native.mts",
+    "pack:native": "node scripts/release/native-packages.mts"
   },
   "dependencies": {
     "@inquirer/confirm": "5.1.16",
@@ -228,7 +228,9 @@
     "yaml": "2.8.1",
     "yargs-parser": "21.1.1",
     "yoctocolors-cjs": "2.1.3",
-    "zod": "4.1.8"
+    "zod": "4.1.8",
+    "@sentry/node": "11.12.0",
+    "supports-color": "7.2.0"
   },
   "typeCoverage": {
     "cache": true,
@@ -243,9 +245,9 @@
   },
   "engines": {
     "node": ">=18.20.8",
-    "pnpm": ">=12.21.0"
+    "pnpm": ">=12.23.0"
   },
-  "packageManager": "pnpm@12.21.0",
+  "packageManager": "pnpm@12.23.0",
   "files": [
     "bin/**",
     "dist/**",

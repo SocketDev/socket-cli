@@ -5,8 +5,8 @@ import semver from 'semver'
 
 import { readFileUtf8 } from './fs.mts'
 import { isRecord } from './objects.mts'
-import { idToNpmPurl } from './spec.mts'
 import { stripBom } from './strings.mts'
+import { idToNpmPurl } from './spec.mts'
 
 import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import type { SemVer } from 'semver'
@@ -60,28 +60,24 @@ export function isPnpmDepPath(maybeDepPath: string): boolean {
 export function parsePnpmLockfile(
   lockfileContent: unknown,
 ): LockfileObject | null {
-  let result: unknown
+  let result
   if (typeof lockfileContent === 'string') {
     try {
       const documents = loadAll(stripBom(lockfileContent)).filter(isRecord)
-      result = documents.findLast(hasProjectDependencies) ?? documents.at(-1)
+      // pnpm 12 places package-manager metadata before the project graph.
+      result =
+        documents.find(
+          doc =>
+            !Object.values(doc['importers'] ?? {}).some(
+              importer =>
+                isRecord(importer) &&
+                ('packageManagerDependencies' in importer ||
+                  'configDependencies' in importer),
+            ),
+        ) ?? documents.at(-1)
     } catch {}
   }
-  return isRecord(result) ? (result as unknown as LockfileObject) : null
-}
-
-function hasProjectDependencies(document: Record<string, unknown>): boolean {
-  const importers = document['importers']
-  if (!isRecord(importers)) {
-    return false
-  }
-  return Object.values(importers).some(
-    importer =>
-      isRecord(importer) &&
-      ['dependencies', 'devDependencies', 'optionalDependencies'].some(
-        key => isRecord(importer[key]) && Object.keys(importer[key]).length > 0,
-      ),
-  )
+  return isRecord(result) ? (result as LockfileObject) : null
 }
 
 export function parsePnpmLockfileVersion(version: unknown): SemVer | undefined {

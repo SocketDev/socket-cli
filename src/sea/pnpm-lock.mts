@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+
 import { parse, parseAllDocuments } from 'yaml'
 
 interface PnpmLockPackage {
@@ -30,6 +33,9 @@ export function parsePnpmLock(
 ): PnpmLock {
   const packageDocuments: PnpmLock[] = []
   for (const document of parseAllDocuments(source)) {
+    if (document.errors.length) {
+      throw document.errors[0]
+    }
     const value = document.toJS() as PnpmLock | undefined
     const packages = value?.packages
     if (!packages || typeof packages !== 'object' || Array.isArray(packages)) {
@@ -79,6 +85,23 @@ function hasProjectDependencies(lockfile: PnpmLock): boolean {
         importer.optionalDependencies,
       ].some(section => Object.keys(section ?? {}).length > 0),
   )
+}
+
+export async function readPnpmLock(
+  root: string,
+  lockfile = 'pnpm-lock.yaml',
+): Promise<PnpmLock> {
+  const source = await readFile(path.join(root, lockfile), 'utf8')
+  const workspace = await readFile(
+    path.join(root, 'pnpm-workspace.yaml'),
+    'utf8',
+  ).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOENT') {
+      return undefined
+    }
+    throw error
+  })
+  return parsePnpmLock(source, workspace)
 }
 
 export function findLockedPackageIntegrity(

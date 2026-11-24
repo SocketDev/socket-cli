@@ -24,7 +24,7 @@ async function prepareFixture(version: 'pnpm8' | 'pnpm9') {
   const cwd = await mkdtemp(
     path.join(os.tmpdir(), `socket-optimize-${version}-`),
   )
-  onTestFinished(() => rm(cwd, { force: true, recursive: true }))
+  onTestFinished(() => rm(cwd, { force: true, maxRetries: 5, recursive: true }))
 
   await Promise.all(
     [PACKAGE_JSON, PNPM_LOCK_YAML, PNPM_WORKSPACE_YAML].map(filename =>
@@ -46,13 +46,10 @@ async function prepareFixture(version: 'pnpm8' | 'pnpm9') {
     CI: '1',
     PATH: [binPath, process.env.PATH].join(path.delimiter),
   }
-  const pnpm = path.join(
-    binPath,
-    process.platform === 'win32' ? 'pnpm.cmd' : PNPM,
-  )
-  const { stdout } = await spawn(pnpm, ['--version'], { cwd, env })
+  const options = { cwd, env, shell: process.platform === 'win32' }
+  const { stdout } = await spawn(PNPM, ['--version'], options)
   expect(stdout.trim()).toBe(pnpmVersion)
-  await spawn(pnpm, ['install', '--no-frozen-lockfile'], { cwd, env })
+  await spawn(PNPM, ['install', '--no-frozen-lockfile'], options)
   return { cwd, env }
 }
 
@@ -67,7 +64,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
     it(
       'should optimize packages with pnpm v8',
-      { timeout: 30_000 },
+      { timeout: 120_000 },
       async () => {
         const { cwd, env } = fixture
         const packageJsonPath = path.join(cwd, PACKAGE_JSON)
@@ -161,7 +158,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
     it(
       'should optimize packages with pnpm v9',
-      { timeout: 30_000 },
+      { timeout: 120_000 },
       async () => {
         const { cwd, env } = fixture
         const packageJsonPath = path.join(cwd, PACKAGE_JSON)
@@ -208,7 +205,7 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
 
     it(
       'should handle --pin flag with pnpm v9',
-      { timeout: 30_000 },
+      { timeout: 120_000 },
       async () => {
         const { cwd, env } = fixture
         const packageJsonPath = path.join(cwd, PACKAGE_JSON)

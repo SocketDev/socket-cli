@@ -16,7 +16,7 @@ dry run for the requested lane:
 gh workflow run publish-npm.yml --ref v1.x \
   -f mode=release-pr -f dry-run=true -f release-major=1
 
-# Native 2.1 prerelease: socket only
+# Native 2.1 prerelease: socket launcher and five platform packages
 gh workflow run publish-npm.yml --ref v1.x \
   -f mode=release-pr -f dry-run=true -f release-major=2
 ```

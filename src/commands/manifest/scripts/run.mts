@@ -563,8 +563,26 @@ async function invokeDotnetTool(
     : opts.env
   return await withTmpDir('socket-dotnet-facts-', async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
+    // An external dotnet process cannot open Node's in-process VFS mount.
+    let executableDll = toolDll
+    if (isStandaloneSea()) {
+      const toolDir = path.join(tmp, 'dotnet-tool')
+      await fs.mkdir(toolDir)
+      const embeddedDir = path.dirname(toolDll)
+      // fs.cp delegates to the host filesystem. Read the DLL and its
+      // adjacent runtime files through the VFS and write them to disk.
+      /* eslint-disable no-await-in-loop -- Finish each copy before temporary-directory cleanup can run. */
+      for (const name of await fs.readdir(embeddedDir)) {
+        await fs.writeFile(
+          path.join(toolDir, name),
+          await fs.readFile(path.join(embeddedDir, name)),
+        )
+      }
+      /* eslint-enable no-await-in-loop */
+      executableDll = path.join(toolDir, path.basename(toolDll))
+    }
     const args = [
-      toolDll,
+      executableDll,
       '--records',
       recordsFile,
       '--entry',

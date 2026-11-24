@@ -5,12 +5,12 @@ import { createTerminal } from '@termless/core'
 import { createXtermBackend } from '@termless/xtermjs'
 import { expect, onTestFinished } from 'vitest'
 
+import { normalizeBackendOutput } from '../terminal/output.mts'
 import {
   captureCheckpoint,
   createRecording,
   expectTerminalAnimation,
 } from '../termless/animation.mts'
-import { normalizeBackendOutput } from '../terminal/output.mts'
 
 export interface NativeTestEnvironment {
   readonly binary: string
@@ -131,12 +131,16 @@ export async function captureFlow(options: {
     cwd: fixture.cwd,
     env: nativeSpawnEnvironment(args, env),
   })
-  await fixture.terminal.waitFor(expectedText, 30_000)
-  await fixture.terminal.waitForStable(200, 30_000)
+  // These commands exit on their own. Poll the process before reading the full
+  // terminal so a missing diagnostic is reported with the actual exit and screen.
   await expect
-    .poll(() => fixture.terminal.exitInfo, { timeout: 30_000 })
-    .toBe(`exit=${exitCode}`)
+    .poll(() => fixture.terminal.exitInfo, { timeout: 50_000 })
+    .not.toBeNull()
+  await fixture.terminal.waitForStable(200, 5_000)
   fixture.normalizer.flush()
+  expect(fixture.terminal.exitInfo, fixture.terminal.screen.getText()).toBe(
+    `exit=${exitCode}`,
+  )
   expect(fixture.terminal.scrollback.getText().trim()).toBe('')
   expect(fixture.terminal.screen.getText()).toContain(expectedText)
   const checkpoint = await captureCheckpoint(

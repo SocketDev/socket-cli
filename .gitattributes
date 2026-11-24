@@ -3,3 +3,5 @@
 # Generated terminal image baselines are reviewed through the screenshot report.
 test/snapshots/termless/**/*.svg binary linguist-generated=true
 test/snapshots/termless/**/*.png binary linguist-generated=true
+
+# pnpm rejects CRLF shebangs when packing the CLI from a Windows checkout.

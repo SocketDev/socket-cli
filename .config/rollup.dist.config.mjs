@@ -10,6 +10,7 @@ import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import fastGlob from 'fast-glob'
 import trash from 'trash'
+
 import constants from '../scripts/constants.js'
 import { isDirEmptySync } from '../scripts/lib/fs.js'
 import { hasKeys } from '../scripts/lib/objects.js'
@@ -17,7 +18,7 @@ import { readPackageJson } from '../scripts/lib/packages.js'
 import { normalizePath } from '../scripts/lib/path.js'
 import { escapeRegExp } from '../scripts/lib/regexps.js'
 import { naturalCompare } from '../scripts/lib/sorts.js'
-import { fetchPackageManifest, spawnAsync } from '../scripts/lib/spawn.js'
+import { spawnAsync } from '../scripts/lib/spawn.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
@@ -28,7 +29,10 @@ import {
   includedModulesInventoryPlugin,
   writeCopiedPackageInventory,
 } from '../src/sea/rollup-provenance.mjs'
-import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
+import baseConfig, {
+  EXTERNAL_PACKAGES,
+  getBuildPackageName,
+} from './rollup.base.config.mjs'
 
 const {
   CONSTANTS,
@@ -47,16 +51,13 @@ const {
   SLASH_NODE_MODULES_SLASH,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
-  SOCKET_CLI_LEGACY_PACKAGE_NAME,
   SOCKET_CLI_NPM_BIN_NAME,
   SOCKET_CLI_NPX_BIN_NAME,
-  SOCKET_CLI_PACKAGE_NAME,
   SOCKET_CLI_PNPM_BIN_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
   SOCKET_CLI_SENTRY_NPM_BIN_NAME,
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
-  SOCKET_CLI_SENTRY_PACKAGE_NAME,
   SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
   SOCKET_CLI_SENTRY_YARN_BIN_NAME,
   SOCKET_CLI_YARN_BIN_NAME,
@@ -65,7 +66,7 @@ const {
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const FLAGS = 'flags'
-const LICENSE_MD = 'LICENSE.md'
+const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
 const SEA_BUILD_ENV = 'SOCKET_SEA_BUILD'
 const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
@@ -84,10 +85,7 @@ function newBareBlessedRequireRegExp() {
 function relativeBlessedPath(filepath) {
   return (
     normalizePath(
-      path.relative(
-        path.dirname(path.resolve(filepath)),
-        constants.blessedPath,
-      ),
+      path.relative(path.dirname(filepath), constants.blessedPath),
     ) || '.'
   )
 }
@@ -262,44 +260,33 @@ function blessedContribInventoryPlugin(filepath) {
   })
 }
 
-async function copyPackage(pkgName, options) {
-  const { strict = true } = { __proto__: null, ...options }
+async function copyPackage(pkgName) {
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const pkgDestPath = path.join(constants.externalPath, pkgName)
   const pkgNmPath = path.join(nmPath, pkgName)
   // Copy entire package folder over to dist with dereference to follow symlinks.
   await fs.cp(pkgNmPath, pkgDestPath, { recursive: true, dereference: true })
-  if (strict) {
-    // Add 'use strict' directive to js files.
-    const jsFiles = await fastGlob.glob(['**/*.js'], {
-      absolute: true,
-      cwd: pkgDestPath,
-      ignore: [NODE_MODULES_GLOB_RECURSIVE],
-    })
-    await Promise.all(
-      jsFiles.map(async p => {
-        const content = await fs.readFile(p, 'utf8')
-        // Start by trimming the hashbang.
-        const hashbang = /^#!.*(?:\r?\n)*/.exec(content)?.[0] ?? ''
-        let trimmed = content.slice(hashbang.length).trimStart()
-        // Then, trim "use strict" directive.
-        const useStrict =
-          /^(['"])use strict\1;?(?:\r?\n)*/.exec(trimmed)?.[0] ?? ''
-        trimmed = trimmed.slice(useStrict.length).trimStart()
-        // Add back hashbang and add "use strict" directive.
-        const modded = `${hashbang.trim()}${hashbang ? os.EOL : ''}${useStrict.trim() || "'use strict'"}${os.EOL}${os.EOL}${trimmed}`
-        await fs.writeFile(p, modded, 'utf8')
-      }),
-    )
-  }
-}
-
-let _sentryManifest
-async function getSentryManifest() {
-  if (_sentryManifest === undefined) {
-    _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
-  }
-  return _sentryManifest
+  // Add 'use strict' directive to js files.
+  const jsFiles = await fastGlob.glob(['**/*.js'], {
+    absolute: true,
+    cwd: pkgDestPath,
+    ignore: [NODE_MODULES_GLOB_RECURSIVE],
+  })
+  await Promise.all(
+    jsFiles.map(async p => {
+      const content = await fs.readFile(p, 'utf8')
+      // Start by trimming the hashbang.
+      const hashbang = /^#!.*(?:\r?\n)*/.exec(content)?.[0] ?? ''
+      let trimmed = content.slice(hashbang.length).trimStart()
+      // Then, trim "use strict" directive.
+      const useStrict =
+        /^(['"])use strict\1;?(?:\r?\n)*/.exec(trimmed)?.[0] ?? ''
+      trimmed = trimmed.slice(useStrict.length).trimStart()
+      // Add back hashbang and add "use strict" directive.
+      const modded = `${hashbang.trim()}${hashbang ? os.EOL : ''}${useStrict.trim() || "'use strict'"}${os.EOL}${os.EOL}${trimmed}`
+      await fs.writeFile(p, modded, 'utf8')
+    }),
+  )
 }
 
 async function updatePackageJson() {
@@ -310,22 +297,23 @@ async function updatePackageJson() {
   const bin = resetBin(editablePkgJson.content.bin)
   const dependencies = resetDependencies(editablePkgJson.content.dependencies)
   editablePkgJson.update({
-    name: SOCKET_CLI_PACKAGE_NAME,
+    name: getBuildPackageName(),
     description: SOCKET_DESCRIPTION,
     bin,
     dependencies: hasKeys(dependencies) ? dependencies : undefined,
   })
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
     editablePkgJson.update({
-      name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
       bin: {
         [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
         ...bin,
       },
     })
   } else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
+    const sentry = await readPackageJson(
+      path.join(constants.rootPath, NODE_MODULES, SENTRY_NODE),
+    )
     editablePkgJson.update({
-      name: SOCKET_CLI_SENTRY_PACKAGE_NAME,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
       bin: {
         [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
@@ -337,7 +325,7 @@ async function updatePackageJson() {
       },
       dependencies: {
         ...dependencies,
-        [SENTRY_NODE]: (await getSentryManifest()).version,
+        [SENTRY_NODE]: sentry.version,
       },
     })
   }
@@ -349,22 +337,18 @@ async function updatePackageLockFile() {
   if (!existsSync(rootPackageLockPath)) {
     return
   }
-  try {
-    await spawnAsync(
-      'pnpm',
-      [
-        'install',
-        '--frozen-lockfile=false',
-        '--config.confirmModulesPurge=false',
-      ],
-      {
-        cwd: constants.rootPath,
-        stdio: 'inherit',
-      },
-    )
-  } catch (e) {
-    console.warn('Failed to update pnpm lockfile:', e?.message)
-  }
+  await spawnAsync(
+    'pnpm',
+    [
+      'install',
+      '--frozen-lockfile=false',
+      '--config.confirmModulesPurge=false',
+    ],
+    {
+      cwd: constants.rootPath,
+      stdio: 'inherit',
+    },
+  )
 }
 
 async function removeEmptyDirs(thePath) {
@@ -505,14 +489,6 @@ export default async () => {
             switch (id) {
               case constantsSrcPath:
                 return CONSTANTS
-              case normalizePath(path.join(srcPath, 'constants/runtime.mts')):
-                return 'runtime-constants'
-              case normalizePath(path.join(utilsSrcPath, 'env.mts')):
-                return 'env-helpers'
-              case normalizePath(path.join(utilsSrcPath, 'spawn-sync.mts')):
-                return 'spawn-sync'
-              case normalizePath(path.join(utilsSrcPath, 'spinner.mts')):
-                return 'spinner'
               case flagsSrcPath:
                 return FLAGS
               case shadowNpmBinSrcPath:

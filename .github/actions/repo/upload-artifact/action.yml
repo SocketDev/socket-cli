@@ -1,11 +1,11 @@
 name: Upload verified release tarballs
-description: Upload the three verified tarballs using the Actions artifact service.
+description: Upload verified release tarballs using the Actions artifact service.
 inputs:
   name:
     description: Artifact name
     default: npm-release-tarballs
   path:
-    description: Directory containing exactly three verified tarballs
+    description: Directory containing the verified release tarballs
     required: true
 outputs:
   artifact-id:
