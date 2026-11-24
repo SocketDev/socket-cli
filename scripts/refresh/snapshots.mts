@@ -6,9 +6,9 @@ import process from 'node:process'
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 import {
-  SNAPSHOT_DEPENDENCIES,
   assertSnapshotDependenciesCurrent,
   normalizeSnapshotDependencyName,
+  SNAPSHOT_DEPENDENCIES as snapshotDependencies,
 } from './snapshots/dependencies.mts'
 
 import type { ScriptMeta } from '../lib/run-main.mts'
@@ -34,7 +34,7 @@ function missingSnapshotDependencyError(): Error {
     'Provide a dependency name. Usage: pnpm snapshots:refresh:dep <name>. ' +
       'Examples: pnpm snapshots:refresh:dep coana, pnpm snapshots:refresh:dep socket-patch, or pnpm snapshots:refresh:dep patch. ' +
       'Socket Python CLI still needs a snapshot mapping. ' +
-      `Currently mapped: ${Object.keys(SNAPSHOT_DEPENDENCIES).join(', ')}, socket-patch.`,
+      `Currently mapped: ${Object.keys(snapshotDependencies).join(', ')}, socket-patch.`,
   )
 }
 
@@ -78,7 +78,7 @@ export function dependencySnapshotArgs(
   dependencyName: SnapshotDependencyName,
 ): string[] {
   const config =
-    SNAPSHOT_DEPENDENCIES[normalizeSnapshotDependencyName(dependencyName)!]
+    snapshotDependencies[normalizeSnapshotDependencyName(dependencyName)!]
   return [
     '--build',
     'test/native/commands/cli.native.test.mts',

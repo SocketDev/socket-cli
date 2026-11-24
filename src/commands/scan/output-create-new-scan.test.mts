@@ -11,9 +11,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { outputCreateNewScan } from './output-create-new-scan.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { FullScanResult } from '@socketsecurity/sdk'
 

@@ -1,14 +1,19 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { createServer } from 'node:https'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 
 export interface TuiApiFixture {
   readonly baseUrl: string
   readonly caFile: string
+  readonly requests: string[]
+  readonly terminfoDir: string
   close(): Promise<void>
 }
+
+const require = createRequire(import.meta.url)
 
 const analytics = Array.from({ length: 3 }, (_, index) => ({
   id: index + 1,
@@ -69,6 +74,12 @@ export async function createTuiApiFixture(): Promise<TuiApiFixture> {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'socket-tui-api-'))
   const keyPath = path.join(tempDir, 'key.pem')
   const certPath = path.join(tempDir, 'cert.pem')
+  const terminfoDir = path.join(tempDir, 'terminfo')
+  const bundledTerminfo = path.resolve(
+    path.dirname(require.resolve('blessed')),
+    '../usr/xterm-256color',
+  )
+  const requests: string[] = []
   let server: ReturnType<typeof createServer> | undefined
   try {
     execFileSync(
@@ -92,10 +103,16 @@ export async function createTuiApiFixture(): Promise<TuiApiFixture> {
       ],
       { stdio: 'ignore', timeout: 30_000 },
     )
+    await mkdir(path.join(terminfoDir, 'x'), { recursive: true })
+    await copyFile(
+      bundledTerminfo,
+      path.join(terminfoDir, 'x', 'xterm-256color'),
+    )
     server = createServer(
       { key: await readFile(keyPath), cert: await readFile(certPath) },
       (request, response) => {
         const route = request.url ?? ''
+        requests.push(route)
         const body = route.startsWith('/orgs/fixture-org/threat-feed')
           ? threatFeed
           : route.startsWith('/analytics/org/')
@@ -128,6 +145,8 @@ export async function createTuiApiFixture(): Promise<TuiApiFixture> {
     return {
       baseUrl: `https://127.0.0.1:${address.port}`,
       caFile: certPath,
+      requests,
+      terminfoDir,
       async close() {
         try {
           await new Promise<void>((resolve, reject) =>

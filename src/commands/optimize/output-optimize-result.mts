@@ -1,8 +1,7 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
-
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { pluralize } from '../../utils/words.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 

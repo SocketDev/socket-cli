@@ -83,7 +83,7 @@ vi.mock('../../utils/path-resolve.mts', () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 
-vi.mock('@socketsecurity/registry/lib/logger', () => ({
+vi.mock('../../utils/logger.mts', () => ({
   logger: {
     info: mockLoggerInfo,
     success: mockLoggerSuccess,

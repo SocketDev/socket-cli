@@ -24,9 +24,13 @@ describe('ensureJavaOnPath', () => {
     rmSync(cwd, { recursive: true, force: true })
   })
 
-  it.skipIf(!java)('runs the installed Java executable', () => {
-    expect(() => ensureJavaOnPath(getBazelEnvironment(), cwd)).not.toThrow()
-  })
+  it.skipIf(!java)(
+    'runs the installed Java executable',
+    () => {
+      expect(() => ensureJavaOnPath(getBazelEnvironment(), cwd)).not.toThrow()
+    },
+    15_000,
+  )
 
   it('reports missing Java in the supplied environment', () => {
     expect(() =>

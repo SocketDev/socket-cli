@@ -19,5 +19,5 @@ Patch subcommands:
 - [rollback](patch/rollback.md)
 - [list](patch/list.md)
 - [remove](patch/remove.md)
-- [setup](patch/setup.md)
+- [migrating from setup](patch/setup.md)
 - [repair](patch/repair.md)

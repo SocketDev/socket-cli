@@ -2,10 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
-
 import constants from '../../constants.mts'
 import { getBashrcDetails } from '../../utils/completion.mts'
+import { debugFn } from '../../utils/debug.mts'
 
 import type { CResult } from '../../types.mts'
 

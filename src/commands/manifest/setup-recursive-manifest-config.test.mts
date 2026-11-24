@@ -15,7 +15,7 @@ vi.mock('./discover-manifest-roots.mts', async importOriginal => {
 vi.mock('./enumerate-workspaces.mts', () => ({
   enumerateWorkspaces: vi.fn(),
 }))
-vi.mock('@socketsecurity/registry/lib/prompts', () => ({
+vi.mock('../../utils/prompts.mts', () => ({
   select: vi.fn(),
 }))
 vi.mock('./setup-manifest-config.mts', () => ({
@@ -25,9 +25,6 @@ vi.mock('./setup-manifest-config.mts', () => ({
   setupSbt: vi.fn(),
 }))
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { select } from '@socketsecurity/registry/lib/prompts'
-
 import { findBuildToolCandidates } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { setupMaven } from './setup-manifest-config.mts'
@@ -36,6 +33,8 @@ import {
   scanBuildRoots,
   setupRecursiveManifestConfig,
 } from './setup-recursive-manifest-config.mts'
+import { logger } from '../../utils/logger.mts'
+import { select } from '../../utils/prompts.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'

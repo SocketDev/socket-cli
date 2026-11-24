@@ -35,28 +35,28 @@ See the [Command reference](docs/commands/README.md) for usage guides.
 
 | Command | Description |
 |---------|-------------|
-| `socket patch scan` | Scan installed packages for available security patches |
-| `socket patch get <uuid> --org <slug>` | Download a patch by UUID and store it locally |
+| `socket patch scan` | Find and apply available patches (preview with `--dry-run`) |
+| `socket patch get <uuid> --org <slug> --save-only` | Download and record a patch for agent-mode apply |
 | `socket patch apply` | Apply downloaded patches to `node_modules` |
 | `socket patch rollback [purl\|uuid]` | Rollback patches and restore original files |
 | `socket patch list [--json]` | List all patches in the local manifest |
 | `socket patch remove <purl\|uuid>` | Remove a patch from the manifest (rolls back by default) |
-| `socket patch setup [--yes]` | Add `socket patch apply` to `postinstall` scripts |
 | `socket patch repair` | Download missing blobs and clean up unused blobs |
 
 **Quick start:**
 
 ```bash
-# Scan for available patches, download, and apply.
+# Preview and then apply hosted lockfile changes.
+socket patch scan --dry-run
 socket patch scan
-socket patch apply
 
 # Or download a specific patch by UUID.
-socket patch get <uuid> --org <org-slug>
+socket patch get <uuid> --org <org-slug> --save-only
 socket patch apply
 
-# Add to postinstall so patches reapply on npm install.
-socket patch setup --yes
+# Agent mode records and applies patches to installed files.
+socket patch scan --mode agent
+socket patch apply
 ```
 
 Free patches work without authentication. For paid patches, set `SOCKET_CLI_API_TOKEN` and `SOCKET_CLI_ORG_SLUG`.

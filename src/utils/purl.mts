@@ -23,13 +23,18 @@
  * See: https://github.com/package-url/purl-spec
  */
 
-import { PackageURL, type PurlQualifiers } from '@socketregistry/packageurl-js'
-import { isObjectObject } from '@socketsecurity/registry/lib/objects'
+import { PackageURL } from '@socketregistry/packageurl-js'
+
+import { isRecord } from './objects.mts'
 
 import type { SocketArtifact } from './alert/artifact.mts'
 import type { PURL_Type } from './ecosystem.mts'
 
-export type PurlObject<T> = T & { type: PURL_Type }
+export { PackageURL } from '@socketregistry/packageurl-js'
+
+export type PurlObject<T> = T & { name: string; type: PURL_Type }
+
+export type PurlQualifiers = Record<string, string>
 
 export type PurlLike = string | PackageURL | SocketArtifact
 
@@ -85,11 +90,11 @@ export function createPurlObject(
   options?: CreatePurlObjectOptions | undefined,
 ): PurlObject<PackageURL> | undefined {
   let opts: CreatePurlObjectOptions | undefined
-  if (isObjectObject(type)) {
+  if (isRecord(type)) {
     opts = { __proto__: null, ...type } as CreatePurlObjectOptions
     type = opts.type as string
     name = opts.name as string
-  } else if (isObjectObject(name)) {
+  } else if (isRecord(name)) {
     opts = { __proto__: null, ...name } as CreatePurlObjectOptions
     name = opts.name as string
   } else {

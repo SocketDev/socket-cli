@@ -10,6 +10,8 @@ export default defineConfig({
     'terminal-link',
     'yargs-parser',
   ],
+  // CI pins pnpm with checksummed binaries; update it alongside those workflows.
+  depFields: { packageManager: false },
   // Interactive mode disabled for automation.
   interactive: false,
   // Use minimal logging similar to ncu loglevel.

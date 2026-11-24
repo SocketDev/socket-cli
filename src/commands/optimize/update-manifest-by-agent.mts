@@ -1,12 +1,8 @@
-import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
+import { writeFile } from 'node:fs/promises'
 
-import constants from '../../constants.mts'
+import { isMap } from 'yaml'
 
-import type { Overrides } from './types.mts'
-import type { Agent } from '../../utils/package-environment.mts'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
-
-const {
+import {
   BUN,
   NPM,
   OVERRIDES,
@@ -15,7 +11,13 @@ const {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} = constants
+} from '../../constants.mts'
+import { getOwn, hasKeys, isObject } from '../../utils/objects.mts'
+
+import type { PnpmWorkspaceOverrides } from './get-overrides-by-agent.mts'
+import type { Overrides, PnpmOrYarnOverrides } from './types.mts'
+import type { Agent } from '../../utils/package-environment.mts'
+import type { EditablePackageJson } from '../../utils/packages.mts'
 
 const depFields = [
   'dependencies',
@@ -161,6 +163,31 @@ export function updatePnpmField(
   overrides: Overrides,
 ) {
   updatePkgJsonField(editablePkgJson, PNPM, overrides)
+}
+
+export async function updatePnpmWorkspaceOverrides(
+  { document, filename, originalOverrides, source }: PnpmWorkspaceOverrides,
+  overrides: PnpmOrYarnOverrides,
+): Promise<void> {
+  const changes = Object.entries(overrides).filter(
+    ([name, spec]) => getOwn(originalOverrides, name) !== spec,
+  )
+  if (changes.length === 0) {
+    return
+  }
+  const existing = document.get(OVERRIDES, true)
+  if (isMap(existing)) {
+    for (const [name, spec] of changes) {
+      existing.set(name, spec)
+    }
+  } else {
+    document.set(OVERRIDES, overrides)
+  }
+  const updated = String(document)
+  await writeFile(
+    filename,
+    source.includes('\r\n') ? updated.replaceAll('\n', '\r\n') : updated,
+  )
 }
 
 export function updateManifest(

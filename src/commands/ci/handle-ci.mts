@@ -1,14 +1,13 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { envAsString } from '@socketsecurity/registry/lib/env'
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import constants from '../../constants.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
+import { envAsString } from '../../utils/env.mts'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
 } from '../../utils/git.mts'
+import { logger } from '../../utils/logger.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 

@@ -18,7 +18,7 @@ const { mockCleanupBundledTool, mockGetBundledTool, mockSea, mockSpawn } =
     mockSea: vi.fn(),
   }))
 
-vi.mock('@socketsecurity/registry/lib/spawn', () => ({ spawn: mockSpawn }))
+vi.mock('../../utils/spawn.mts', () => ({ spawn: mockSpawn }))
 vi.mock('../../sea/runtime.mts', () => ({
   cleanupBundledTool: mockCleanupBundledTool,
   getBundledTool: mockGetBundledTool,

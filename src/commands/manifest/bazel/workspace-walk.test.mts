@@ -10,8 +10,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
+import { logger } from '../../../utils/logger.mts'
 import { findWorkspaceRoots } from './workspace-walk.mts'
 
 function touch(file: string): void {

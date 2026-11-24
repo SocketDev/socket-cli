@@ -10,7 +10,7 @@ import { runMain } from '../lib/run-main.mts'
 
 const STAGE_ID =
   /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/iu
-const PNPM_STAGE_VERSION = '11.17.0'
+const PNPM_STAGE_VERSION = '12.21.0'
 
 interface GitHubRepositoryContext {
   readonly nameWithOwner: string

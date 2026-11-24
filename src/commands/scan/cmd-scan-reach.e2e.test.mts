@@ -5,10 +5,9 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 import constants from '../../constants.mts'
+import { logger } from '../../utils/logger.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan')
 const systemTmpDir = tmpdir()

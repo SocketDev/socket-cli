@@ -1,7 +1,3 @@
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
-
 import { applyLogin } from './apply-login.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
@@ -10,12 +6,14 @@ import constants, {
   CONFIG_KEY_AUTH_TYPE,
   CONFIG_KEY_DEFAULT_ORG,
 } from '../../constants.mts'
+import { joinAnd } from '../../utils/arrays.mts'
 import {
   getConfigValueOrUndef,
   isConfigFromFlag,
   updateConfigValue,
 } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { logger } from '../../utils/logger.mts'
 import {
   OAUTH_ISSUER,
   beginOAuthLogin,
@@ -23,6 +21,7 @@ import {
   saveOAuthCredentials,
 } from '../../utils/oauth.mts'
 import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
+import { confirm, password, select } from '../../utils/prompts.mts'
 import {
   getDefaultApiBaseUrl,
   getDefaultProxyUrl,
@@ -32,7 +31,7 @@ import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
+import type { Choice, Separator } from '../../utils/prompts.mts'
 
 type OrgChoice = Choice<string>
 type OrgChoices = Array<Separator | OrgChoice>

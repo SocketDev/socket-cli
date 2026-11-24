@@ -43,8 +43,7 @@
 
 import { randomUUID } from 'node:crypto'
 
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
+import { debugDir, debugFn } from '../debug.mts'
 import { setupSdk } from '../sdk.mts'
 
 import type { TelemetryEvent } from './types.mts'

@@ -3,9 +3,8 @@
 
 import { createRequire } from 'node:module'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from './constants.mts'
+import { logger } from './utils/logger.mts'
 
 if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   const require = createRequire(import.meta.url)

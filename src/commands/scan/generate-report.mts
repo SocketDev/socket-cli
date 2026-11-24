@@ -3,8 +3,11 @@ import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.m
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
-import type { ALERT_ACTION, SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type {
+  ALERT_ACTION,
+  SocketArtifact,
+} from '../../utils/alert/artifact.mts'
+import type { Spinner } from '../../utils/spinner.mts'
 
 type AlertKey = string
 type EcoMap = Map<string, ReportLeafNode | PackageMap>
@@ -99,88 +102,86 @@ export function generateReport(
       version = UNKNOWN_VALUE,
     } = artifact
 
-    alerts?.forEach(
-      (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
-        const action = alert.action as ALERT_ACTION | undefined
-        switch (action) {
-            case constants.REPORT_LEVEL_ERROR: {
-              healthy = false
-              if (!short) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-            case constants.REPORT_LEVEL_WARN: {
-              if (!short && reportLevel !== constants.REPORT_LEVEL_ERROR) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-            case constants.REPORT_LEVEL_MONITOR: {
-              if (
-                !short &&
-                reportLevel !== constants.REPORT_LEVEL_WARN &&
-                reportLevel !== constants.REPORT_LEVEL_ERROR
-              ) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            case constants.REPORT_LEVEL_IGNORE: {
-              if (
-                !short &&
-                reportLevel !== constants.REPORT_LEVEL_MONITOR &&
-                reportLevel !== constants.REPORT_LEVEL_WARN &&
-                reportLevel !== constants.REPORT_LEVEL_ERROR
-              ) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            default: {
-              // Alerts without a resolved policy action are not reportable.
-            }
+    alerts?.forEach((alert: NonNullable<SocketArtifact['alerts']>[number]) => {
+      const action = alert.action as ALERT_ACTION | undefined
+      switch (action) {
+        case constants.REPORT_LEVEL_ERROR: {
+          healthy = false
+          if (!short) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+          break
         }
-      },
-    )
+        case constants.REPORT_LEVEL_WARN: {
+          if (!short && reportLevel !== constants.REPORT_LEVEL_ERROR) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+          break
+        }
+        case constants.REPORT_LEVEL_MONITOR: {
+          if (
+            !short &&
+            reportLevel !== constants.REPORT_LEVEL_WARN &&
+            reportLevel !== constants.REPORT_LEVEL_ERROR
+          ) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+          break
+        }
+
+        case constants.REPORT_LEVEL_IGNORE: {
+          if (
+            !short &&
+            reportLevel !== constants.REPORT_LEVEL_MONITOR &&
+            reportLevel !== constants.REPORT_LEVEL_WARN &&
+            reportLevel !== constants.REPORT_LEVEL_ERROR
+          ) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+          break
+        }
+
+        default: {
+          // Alerts without a resolved policy action are not reportable.
+        }
+      }
+    })
   })
 
   spinner?.successAndStop(`Generated reported in ${Date.now() - now} ms`)

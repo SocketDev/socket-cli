@@ -18,9 +18,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { outputScanReach } from './output-scan-reach.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { ReachabilityAnalysisResult } from './perform-reachability-analysis.mts'
 import type { CResult } from '../../types.mts'

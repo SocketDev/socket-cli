@@ -35,7 +35,7 @@ vi.mock('../../../../src/constants.mts', async importOriginal => {
     }),
   }
 })
-vi.mock('@socketsecurity/registry/lib/logger', () => ({ logger: mockLogger }))
+vi.mock('../../../../src/utils/logger.mts', () => ({ logger: mockLogger }))
 vi.mock('../../../../src/utils/sdk.mts', () => ({
   getDefaultProxyUrl: mockProxyUrl,
 }))

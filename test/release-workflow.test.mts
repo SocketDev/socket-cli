@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import semver from 'semver'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
@@ -260,11 +261,30 @@ describe('v1 release workflow contract', () => {
     const manifest = JSON.parse(
       readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
     ) as { publishConfig?: { tag?: string }; version: string }
-    expect(manifest.version).toMatch(/^(?:1\.\d+\.\d+|2\.1\.0-rc\.\d+)$/u)
+    const releasePolicy = JSON.parse(
+      readFileSync(new URL('../.config/release.json', import.meta.url), 'utf8'),
+    ) as { distTag: string; identifier: string; versionHint: string }
+    const manifestVersion = semver.parse(manifest.version)
+    const releaseHint = semver.parse(releasePolicy.versionHint)
+    expect(manifestVersion).not.toBeNull()
+    expect(releaseHint).not.toBeNull()
+    const isStableV1 =
+      manifestVersion?.major === 1 &&
+      manifestVersion.prerelease.length === 0 &&
+      manifestVersion.build.length === 0
+    const isConfiguredPrerelease =
+      manifestVersion?.major === releaseHint?.major &&
+      manifestVersion.minor === releaseHint?.minor &&
+      manifestVersion.patch === releaseHint?.patch &&
+      manifestVersion.prerelease[0] === releasePolicy.identifier &&
+      manifestVersion.prerelease.length === 2 &&
+      typeof manifestVersion.prerelease[1] === 'number' &&
+      manifestVersion.build.length === 0
+    expect(isStableV1 || isConfiguredPrerelease).toBe(true)
     expect(npmDistTagForRelease(manifest.version, SEA_RELEASE_POLICY)).toBe(
-      manifest.version.startsWith('1.') ? 'latest' : SEA_RELEASE_POLICY.distTag,
+      isStableV1 ? 'latest' : SEA_RELEASE_POLICY.distTag,
     )
-    expect(manifest.publishConfig?.tag).toBe(SEA_RELEASE_POLICY.distTag)
+    expect(manifest.publishConfig?.tag).toBe(releasePolicy.distTag)
     expect(workflow.on.workflow_dispatch.inputs['release-major']?.default).toBe(
       '1',
     )

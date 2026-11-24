@@ -44,8 +44,10 @@
 !/scripts/rollup/
 !/scripts/setup/
 !/scripts/test/
+!/scripts/test/tools/
+!/scripts/test/tools/pnpm*/
+!/scripts/test/tools/pnpm*/package.json
 !/scripts/test/terminal-report.mts
-!/scripts/test/snapshots.mts
 !/scripts/utils/
 !/shadow-bin/
 !/src/
@@ -253,17 +255,11 @@
 !/test/unit/lib/native/
 !/test/unit/lib/native/cli-harness.test.mts
 !/test/unit/lib/native/command-inventory.test.mts
-!/test/unit/lib/optimize-svg.test.mts
 !/test/unit/lib/terminal/
-!/test/unit/lib/terminal/animation.test.mts
-!/test/unit/utils/self-update.terminal.test.mts
 !/test/unit/lib/terminal/output.test.mts
 !/test/unit/scripts/
 !/test/unit/scripts/test/
 !/test/unit/scripts/constants.test.mts
-!/test/native-snapshots/
-!/test/native-snapshots/**
-!/test/unit/scripts/test/snapshots.test.mts
 !/test/package-matrix.test.mts
 !/test/fixtures/
 !/test/fixtures/commands/
@@ -437,7 +433,6 @@
 !/scripts/update.mts
 !/scripts/utils/fs.js
 !/scripts/utils/packages.js
-!/scripts/utils/registry-helpers.js
 !/sd
 !/shadow-bin/npm
 !/shadow-bin/npx
@@ -1046,6 +1041,8 @@
 !/src/commands/yarn/cmd-yarn.mts
 !/src/commands/yarn/cmd-yarn.test.mts
 !/src/constants.mts
+!/src/constants/
+!/src/constants/**
 !/src/external/blessed-contrib/lib/layout/grid.mjs
 !/src/external/blessed-contrib/lib/widget/charts/bar.mjs
 !/src/external/blessed-contrib/lib/widget/charts/line.mjs
@@ -1055,7 +1052,6 @@
 !/src/npm-cli.mts
 !/src/npx-cli.mts
 !/src/pnpm-cli.mts
-!/src/registry-constants.mts
 !/src/sea/README.md
 !/src/sea/adapters/cdxgen-worker.mjs
 !/src/sea/adapters/cdxgen.mts
@@ -1170,8 +1166,8 @@
 !/src/utils/npm-config.mts
 !/src/utils/npm-spec.mts
 !/src/utils/objects.mts
-!/src/utils/is-object-object.mjs
-!/src/utils/is-object-object.d.mts
+!/src/utils/is-record.mjs
+!/src/utils/is-record.d.mts
 !/src/utils/organization.mts
 !/src/utils/output-formatting.mts
 !/src/utils/package-environment.mts

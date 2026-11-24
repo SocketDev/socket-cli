@@ -1,7 +1,6 @@
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import constants from '../../constants.mts'
 import { getNpmBinPath } from '../../utils/npm-paths.mts'
+import { spawn } from '../../utils/spawn.mts'
 
 export async function runRawNpm(
   argv: string[] | readonly string[],
@@ -10,7 +9,7 @@ export async function runRawNpm(
 
   const spawnPromise = spawn(getNpmBinPath(), argv as string[], {
     // On Windows, npm is often a .cmd file that requires shell execution.
-    // The spawn function from @socketsecurity/registry will handle this properly
+    // The local spawn helper handles this properly
     // when shell is true.
     shell: constants.WIN32,
     stdio: 'inherit',

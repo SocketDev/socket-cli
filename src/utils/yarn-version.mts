@@ -1,5 +1,4 @@
-import { spawnSync } from '@socketsecurity/registry/lib/spawn'
-
+import { spawnSync } from './spawn-sync.mts'
 import { getYarnBinPath } from './yarn-paths.mts'
 import constants, { FLAG_VERSION, UTF8 } from '../constants.mts'
 
@@ -11,13 +10,13 @@ export function isYarnBerry(): boolean {
       const result = spawnSync(yarnBinPath, [FLAG_VERSION], {
         encoding: UTF8,
         // On Windows, yarn is often a .cmd file that requires shell execution.
-        // The spawn function from @socketsecurity/registry will handle this properly
+        // The local spawn helper handles this properly
         // when shell is true.
         shell: constants.WIN32,
       })
 
       if (result.status === 0 && result.stdout) {
-        const version = result.stdout
+        const version = result.stdout.toString()
         // Yarn Berry starts from version 2.x
         const majorVersion = parseInt(version.split('.')[0]!, 10)
         _isYarnBerry = majorVersion >= 2

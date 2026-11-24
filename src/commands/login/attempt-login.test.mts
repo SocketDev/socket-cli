@@ -36,11 +36,11 @@ const { mocks } = vi.hoisted(() => {
   }
 })
 
-vi.mock('@socketsecurity/registry/lib/arrays', () => ({
+vi.mock('../../utils/arrays.mts', () => ({
   joinAnd: (values: string[]) => values.join(', '),
 }))
-vi.mock('@socketsecurity/registry/lib/logger', () => ({ logger: mocks.logger }))
-vi.mock('@socketsecurity/registry/lib/prompts', () => ({
+vi.mock('../../utils/logger.mts', () => ({ logger: mocks.logger }))
+vi.mock('../../utils/prompts.mts', () => ({
   confirm: mocks.confirm,
   password: mocks.password,
   select: mocks.select,

@@ -2,15 +2,7 @@
 
 const path = require('node:path')
 
-const registryConstants = require('@socketsecurity/registry/lib/constants')
-
-const {
-  kInternalsSymbol,
-  [kInternalsSymbol]: {
-    attributes: registryConstantsAttribs,
-    createConstantsObject,
-  },
-} = registryConstants
+const { envAsBoolean, envAsString } = require('./lib/env.js')
 
 const CONSTANTS = 'constants'
 const INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION =
@@ -33,7 +25,6 @@ const SHADOW_YARN_BIN = 'shadow-yarn-bin'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
-const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_LEGACY_PACKAGE_NAME = '@socketsecurity/cli'
 const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
 const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
@@ -41,127 +32,102 @@ const SOCKET_CLI_PNPM_BIN_NAME = 'socket-pnpm'
 const SOCKET_CLI_YARN_BIN_NAME = 'socket-yarn'
 const SOCKET_CLI_PACKAGE_NAME = 'socket'
 const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
+const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PNPM_BIN_NAME = 'socket-pnpm-with-sentry'
 const SOCKET_CLI_SENTRY_YARN_BIN_NAME = 'socket-yarn-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 
-const LAZY_ENV = () => {
-  const { env } = process
-  const { envAsBoolean, envAsString } = require('@socketsecurity/registry/lib/env')
-  return Object.freeze({
-    // Lazily access registryConstants.ENV.
-    ...registryConstants.ENV,
-    // Flag set to determine if this is the Legacy build.
+const rootPath = path.resolve(__dirname, '..')
+const externalPath = process.env['SOCKET_SEA_EXTERNAL_DIR']
+  ? path.resolve(process.env['SOCKET_SEA_EXTERNAL_DIR'])
+  : path.join(rootPath, 'external')
+const getEnv = () =>
+  Object.freeze({
+    VITEST: envAsBoolean(process.env.VITEST),
     [INLINED_SOCKET_CLI_LEGACY_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_LEGACY_BUILD],
+      process.env[INLINED_SOCKET_CLI_LEGACY_BUILD],
     ),
-    // Flag set to determine if this is a published build.
     [INLINED_SOCKET_CLI_PUBLISHED_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
+      process.env[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
     ),
-    [INLINED_SOCKET_CLI_VERSION]: envAsString(env[INLINED_SOCKET_CLI_VERSION]),
-    // Flag set to determine if this is the Sentry build.
+    [INLINED_SOCKET_CLI_VERSION]: envAsString(
+      process.env[INLINED_SOCKET_CLI_VERSION],
+    ),
     [INLINED_SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_SENTRY_BUILD],
+      process.env[INLINED_SOCKET_CLI_SENTRY_BUILD],
     ),
   })
-}
 
-const lazyBlessedContribPath = () =>
-  path.join(constants.externalPath, 'blessed-contrib')
-
-const lazyBlessedPath = () => path.join(constants.externalPath, 'blessed')
-
-const lazyConfigPath = () => path.join(constants.rootPath, '.config')
-
-const lazyDistPath = () =>
-  process.env.SOCKET_SEA_DIST_DIR
+module.exports = Object.freeze({
+  CONSTANTS,
+  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
+  INLINED_SOCKET_CLI_HOMEPAGE,
+  INLINED_SOCKET_CLI_LEGACY_BUILD,
+  INLINED_SOCKET_CLI_NAME,
+  INLINED_SOCKET_CLI_PUBLISHED_BUILD,
+  INLINED_SOCKET_CLI_SENTRY_BUILD,
+  INLINED_SOCKET_CLI_SYNP_VERSION,
+  INLINED_SOCKET_CLI_VERSION,
+  INLINED_SOCKET_CLI_VERSION_HASH,
+  INSTRUMENT_WITH_SENTRY,
+  ROLLUP_EXTERNAL_SUFFIX,
+  SHADOW_NPM_BIN,
+  SHADOW_NPM_INJECT,
+  SHADOW_NPX_BIN,
+  SHADOW_PNPM_BIN,
+  SHADOW_YARN_BIN,
+  SLASH_NODE_MODULES_SLASH,
+  SOCKET_CLI_BIN_NAME,
+  SOCKET_CLI_BIN_NAME_ALIAS,
+  SOCKET_CLI_LEGACY_PACKAGE_NAME,
+  SOCKET_CLI_NPM_BIN_NAME,
+  SOCKET_CLI_NPX_BIN_NAME,
+  SOCKET_CLI_PNPM_BIN_NAME,
+  SOCKET_CLI_YARN_BIN_NAME,
+  SOCKET_CLI_PACKAGE_NAME,
+  SOCKET_CLI_SENTRY_BIN_NAME,
+  SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
+  SOCKET_CLI_SENTRY_NPM_BIN_NAME,
+  SOCKET_CLI_SENTRY_NPX_BIN_NAME,
+  SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
+  SOCKET_CLI_SENTRY_YARN_BIN_NAME,
+  SOCKET_CLI_SENTRY_PACKAGE_NAME,
+  get ENV() {
+    return getEnv()
+  },
+  blessedContribPath: path.join(externalPath, 'blessed-contrib'),
+  blessedOptions: {},
+  blessedPath: path.join(externalPath, 'blessed'),
+  configPath: path.join(rootPath, '.config'),
+  distPath: process.env.SOCKET_SEA_DIST_DIR
     ? path.resolve(process.env.SOCKET_SEA_DIST_DIR)
-    : path.join(constants.rootPath, 'dist')
-
-const lazyExternalPath = () =>
-  process.env.SOCKET_SEA_EXTERNAL_DIR
-    ? path.resolve(process.env.SOCKET_SEA_EXTERNAL_DIR)
-    : path.join(constants.rootPath, 'external')
-
-const lazyRootPackageJsonPath = () =>
-  path.join(constants.rootPath, 'package.json')
-
-const lazyRootPackageLockPath = () =>
-  path.join(constants.rootPath, 'pnpm-lock.yaml')
-
-const lazyRootPath = () => path.resolve(__dirname, '..')
-
-const lazySocketRegistryPath = () =>
-  path.join(constants.externalPath, '@socketsecurity/registry')
-
-const lazySrcPath = () => path.join(constants.rootPath, 'src')
-
-const constants = createConstantsObject(
-  {
-    ...registryConstantsAttribs.props,
-    CONSTANTS,
-    ENV: undefined,
-    INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
-    INLINED_SOCKET_CLI_HOMEPAGE,
-    INLINED_SOCKET_CLI_LEGACY_BUILD,
-    INLINED_SOCKET_CLI_NAME,
-    INLINED_SOCKET_CLI_PUBLISHED_BUILD,
-    INLINED_SOCKET_CLI_SENTRY_BUILD,
-    INLINED_SOCKET_CLI_SYNP_VERSION,
-    INLINED_SOCKET_CLI_VERSION,
-    INLINED_SOCKET_CLI_VERSION_HASH,
-    INSTRUMENT_WITH_SENTRY,
-    ROLLUP_EXTERNAL_SUFFIX,
-    SHADOW_NPM_BIN,
-    SHADOW_NPM_INJECT,
-    SHADOW_NPX_BIN,
-    SHADOW_PNPM_BIN,
-    SHADOW_YARN_BIN,
-    SLASH_NODE_MODULES_SLASH,
-    SOCKET_CLI_BIN_NAME,
-    SOCKET_CLI_BIN_NAME_ALIAS,
-    SOCKET_CLI_LEGACY_PACKAGE_NAME,
-    SOCKET_CLI_NPM_BIN_NAME,
-    SOCKET_CLI_NPX_BIN_NAME,
-    SOCKET_CLI_PNPM_BIN_NAME,
-    SOCKET_CLI_YARN_BIN_NAME,
-    SOCKET_CLI_PACKAGE_NAME,
-    SOCKET_CLI_SENTRY_BIN_NAME,
-    SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
-    SOCKET_CLI_SENTRY_NPM_BIN_NAME,
-    SOCKET_CLI_SENTRY_NPX_BIN_NAME,
-    SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
-    SOCKET_CLI_SENTRY_YARN_BIN_NAME,
-    SOCKET_CLI_SENTRY_PACKAGE_NAME,
-    blessedContribPath: undefined,
-    blessedOptions: undefined,
-    blessedPath: undefined,
-    configPath: undefined,
-    distPath: undefined,
-    externalPath: undefined,
-    rootPackageJsonPath: undefined,
-    rootPath: undefined,
-    socketRegistryPath: undefined,
-    srcPath: undefined,
-  },
-  {
-    getters: {
-      ...registryConstantsAttribs.getters,
-      ENV: LAZY_ENV,
-      blessedContribPath: lazyBlessedContribPath,
-      blessedPath: lazyBlessedPath,
-      configPath: lazyConfigPath,
-      distPath: lazyDistPath,
-      externalPath: lazyExternalPath,
-      rootPackageJsonPath: lazyRootPackageJsonPath,
-      rootPackageLockPath: lazyRootPackageLockPath,
-      rootPath: lazyRootPath,
-      socketRegistryPath: lazySocketRegistryPath,
-      srcPath: lazySrcPath,
-    },
-  },
-)
-module.exports = constants
+    : path.join(rootPath, 'dist'),
+  externalPath,
+  rootPackageJsonPath: path.join(rootPath, 'package.json'),
+  rootPackageLockPath: path.join(rootPath, 'pnpm-lock.yaml'),
+  rootPath,
+  srcPath: path.join(rootPath, 'src'),
+  AT_LATEST: '@latest',
+  BIOME_JSON: 'biome.json',
+  CI: 'CI',
+  DOT_GIT_DIR: '.git',
+  EMPTY_FILE: '/* empty */\n',
+  ESLINT_CONFIG_JS: 'eslint.config.js',
+  GITIGNORE: '.gitignore',
+  LATEST: 'latest',
+  LICENSE: 'LICENSE',
+  LICENSE_GLOB: 'LICEN[CS]E{[.-]*,}',
+  LICENSE_GLOB_RECURSIVE: '**/LICEN[CS]E{[.-]*,}',
+  MANIFEST_JSON: 'manifest.json',
+  NODE_MODULES: 'node_modules',
+  NODE_MODULES_GLOB_RECURSIVE: '**/node_modules',
+  PACKAGE_JSON: 'package.json',
+  PACKAGE_LOCK_JSON: 'package-lock.json',
+  PNPM_LOCK_YAML: 'pnpm-lock.yaml',
+  README_MD: 'README.md',
+  TSCONFIG_JSON: 'tsconfig.json',
+  UTF8: 'utf8',
+  VITEST: 'VITEST',
+})

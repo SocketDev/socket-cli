@@ -1,15 +1,5 @@
 import { fileURLToPath } from 'node:url'
 
-import {
-  isNpmAuditFlag,
-  isNpmLoglevelFlag,
-  isNpmNodeOptionsFlag,
-  isNpmProgressFlag,
-} from '@socketsecurity/registry/lib/agent'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { getOwn } from '@socketsecurity/registry/lib/objects'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import { ensureIpcInStdio } from './stdio-ipc.mts'
 import constants, {
   FLAG_LOGLEVEL,
@@ -18,17 +8,22 @@ import constants, {
   NPX,
   SOCKET_PUBLIC_API_TOKEN,
 } from '../constants.mts'
+import {
+  isNpmAuditFlag,
+  isNpmLoglevelFlag,
+  isNpmNodeOptionsFlag,
+  isNpmProgressFlag,
+} from '../utils/agent.mts'
 import { cmdFlagsToString, isNpmLockfileScanCommand } from '../utils/cmd.mts'
+import { isDebug } from '../utils/debug.mts'
 import { findUp } from '../utils/fs.mts'
+import { getOwn } from '../utils/objects.mts'
 import { resolvePublicApiToken } from '../utils/sdk.mts'
 import { installNpmLinks, installNpxLinks } from '../utils/shadow-links.mts'
+import { spawn } from '../utils/spawn.mts'
 
 import type { IpcObject } from '../constants.mts'
-import type {
-  SpawnExtra,
-  SpawnOptions,
-  SpawnResult,
-} from '@socketsecurity/registry/lib/spawn'
+import type { SpawnExtra, SpawnOptions, SpawnResult } from '../utils/spawn.mts'
 
 export type ShadowBinOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

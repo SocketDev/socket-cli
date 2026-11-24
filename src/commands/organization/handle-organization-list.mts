@@ -1,7 +1,6 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { fetchOrganization } from './fetch-organization-list.mts'
 import { outputOrganizationList } from './output-organization-list.mts'
+import { debugDir, debugFn } from '../../utils/debug.mts'
 
 import type { OutputKind } from '../../types.mts'
 

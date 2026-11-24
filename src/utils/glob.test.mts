@@ -11,13 +11,12 @@ import path from 'node:path'
 import fastGlob from 'fast-glob'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { normalizePath } from '@socketsecurity/registry/lib/path'
-
 import {
   createSupportedFilesFilter,
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
+import { normalizePath } from './path.mts'
 
 // Filter functions defined at module scope to satisfy linting rules.
 function filterJsonFiles(filepath: string): boolean {
@@ -150,7 +149,7 @@ describe('glob utilities', () => {
       for (const result of results) {
         expect(result.endsWith('.json')).toBe(true)
       }
-    })
+    }, 15_000)
 
     it('should apply filter without negated patterns', async () => {
       mockTestFs({

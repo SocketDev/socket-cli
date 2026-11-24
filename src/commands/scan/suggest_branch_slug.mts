@@ -1,6 +1,6 @@
-import { select } from '@socketsecurity/registry/lib/prompts'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
+import { select } from '../../utils/prompts.mts'
+import { spawn } from '../../utils/spawn.mts'
+import { stripAnsi } from '../../utils/strings.mts'
 
 export async function suggestBranchSlug(
   repoDefaultBranch: string | undefined,

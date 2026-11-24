@@ -1,5 +1,3 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import {
   expandEnvVarRefs,
   formatMissingEnvVarRefs,
@@ -7,6 +5,7 @@ import {
 import { tailBuildOutput } from './run-manifest-facts.mts'
 import { enumerateWorkspaces as enumerateWorkspacesScript } from './scripts/run.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
+import { logger } from '../../utils/logger.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
