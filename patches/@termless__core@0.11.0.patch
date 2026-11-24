@@ -1,0 +1,13 @@
+diff --git a/dist/backends-CRpWNI-T.mjs b/dist/backends-CRpWNI-T.mjs
+index 81de773c4f73a2b4c53ecb5249d906c21b4ebdfe..7504a072f7b3d63a69318b1947d0d45d4d184a99 100644
+--- a/dist/backends-CRpWNI-T.mjs
++++ b/dist/backends-CRpWNI-T.mjs
+@@ -113,7 +113,7 @@ function spawnNodePty(options) {
+ 		kill(signal) {
+ 			const sig = signal === 1 ? "SIGHUP" : signal === 9 ? "SIGKILL" : "SIGTERM";
+ 			try {
+-				ptyProcess.kill(sig);
++				ptyProcess.kill(process.platform === "win32" ? undefined : sig);
+ 			} catch {}
+ 		},
+ 		get exitCode() {

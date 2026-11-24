@@ -22,7 +22,7 @@ import type {
 export interface Checkpoint {
   readonly name: string
   readonly svg: string
-  readonly captured?: CapturedCheckpoint
+  readonly captured: CapturedCheckpoint
 }
 
 export interface CapturedCheckpoint {
@@ -66,6 +66,18 @@ export async function assertSamePixels(
       .digest('hex')
     throw new Error(
       `Terminal screenshot pixels differ (${expected.width}x${expected.height}, ${expectedHash} vs ${actual.width}x${actual.height}, ${actualHash})`,
+    )
+  }
+}
+
+export function assertSnapshotSvg(
+  expectedSvg: string,
+  actualSvg: string,
+  snapshotPath: string,
+): void {
+  if (expectedSvg !== actualSvg) {
+    throw new Error(
+      `Terminal SVG snapshot is stale: ${snapshotPath}. Run pnpm run snapshots:termless:refresh and commit the updated snapshot.`,
     )
   }
 }
@@ -232,7 +244,7 @@ export function createRecording(
     throw new Error('Recording needs a checkpoint')
   }
   const seen = new Set<string>()
-  const frozen: Checkpoint[] = []
+  const width = checkpoints[0]!.captured.cols
   for (const checkpoint of checkpoints) {
     if (!safeName.test(checkpoint.name)) {
       throw new Error(`Unsafe checkpoint name: ${checkpoint.name}`)
@@ -241,38 +253,20 @@ export function createRecording(
       throw new Error(`Duplicate checkpoint: ${checkpoint.name}`)
     }
     seen.add(checkpoint.name)
-    if (typeof checkpoint.svg !== 'string') {
-      throw new Error('Invalid checkpoint data')
-    }
-    const captured = checkpoint.captured
-    if (captured) {
-      if (
-        frozen.some(
-          item => item.captured && item.captured.cols !== captured.cols,
-        )
-      ) {
-        throw new Error(
-          'Captured checkpoints must have the same terminal width',
-        )
-      }
-      frozen.push(
-        Object.freeze({ name: checkpoint.name, svg: checkpoint.svg, captured }),
-      )
-    } else {
-      frozen.push(Object.freeze({ name: checkpoint.name, svg: checkpoint.svg }))
+    if (checkpoint.captured.cols !== width) {
+      throw new Error('Captured checkpoints must have the same terminal width')
     }
   }
   const sharedHeight = Math.max(
-    0,
-    ...frozen.map(item => item.captured?.height ?? 0),
+    ...checkpoints.map(item => item.captured.height),
   )
-  const normalized = frozen.map(checkpoint =>
-    checkpoint.captured
-      ? Object.freeze({
+  const normalized = checkpoints.map(checkpoint =>
+    checkpoint.captured.height === sharedHeight
+      ? checkpoint
+      : Object.freeze({
           ...checkpoint,
           svg: renderCaptured(checkpoint.captured, sharedHeight),
-        })
-      : checkpoint,
+        }),
   )
   return Object.freeze({ checkpoints: Object.freeze(normalized) })
 }
@@ -366,23 +360,46 @@ export async function expectTerminalAnimation(
           options.snapshotsDir,
           `${owner}.${options.flow}${checkpoints.length > 1 ? `.${checkpoint.name}` : ''}.svg`,
         )
+        const actualSvg = await readFile(
+          path.join(flowDir, `${checkpoint.name}.svg`),
+          'utf8',
+        )
         if (baselineRasterizer) {
-          const expectedSvg = await readFile(svgPath, 'utf8')
+          let expectedSvg: string
+          try {
+            expectedSvg = await readFile(svgPath, 'utf8')
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+              throw error
+            }
+            throw new Error(
+              `Terminal SVG snapshot is missing: ${svgPath}. Run pnpm run snapshots:termless:refresh and commit the updated snapshot.`,
+            )
+          }
           try {
             await assertSamePixels(
               baselineRasterizer,
               expectedSvg,
-              checkpoint.svg,
+              actualSvg,
             )
           } catch (error) {
             await writeFile(
               path.join(flowDir, `${checkpoint.name}.expected.png`),
               await baselineRasterizer.toPng(expectedSvg, 1),
             )
-            throw error
+            const message =
+              error instanceof Error ? error.message : String(error)
+            throw new Error(
+              `${message}\nRun pnpm run snapshots:termless:refresh and commit the updated snapshot.`,
+            )
+          }
+          // Termless serializes equivalent SVG differently on some operating
+          // systems; Linux is the canonical tracked SVG snapshot platform.
+          if (process.platform === 'linux') {
+            assertSnapshotSvg(expectedSvg, actualSvg, svgPath)
           }
         } else {
-          await expect(checkpoint.svg).toMatchFileSnapshot(svgPath)
+          await expect(actualSvg).toMatchFileSnapshot(svgPath)
         }
       }),
     )

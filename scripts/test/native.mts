@@ -1,5 +1,3 @@
-import { SEA_VERSION } from '../../src/sea/version.mts'
-
 import type { SpawnSyncOptions } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -7,6 +5,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { SEA_VERSION } from '../../src/sea/version.mts'
 import { isMainModule } from '../lib/is-main-module.mts'
 import type { ScriptMeta } from '../lib/run-main.mts'
 import { runMain } from '../lib/run-main.mts'
