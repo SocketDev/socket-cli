@@ -88,12 +88,11 @@ const generalFlags: MeowFlags = {
     description:
       'Run `socket manifest auto` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See `socket manifest auto --help`. For Gradle, sbt, Maven and .NET, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.',
   },
-  bazelTargets: {
-    type: 'string',
-    isMultiple: true,
+  bazel: {
+    type: 'boolean',
     hidden: true,
     description:
-      'Scan only these Bazel targets: Bazel target patterns from the workspace root, comma-separated or repeated, for example `//app/...,-//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles: the scan fails if the patterns match any other target, such as a `java_import`.',
+      'Scan only the Bazel targets the patterns after `--` name, as `bazel build` takes them, from the workspace root TARGET, for example `socket scan create . --bazel -- //app/... -//app/legacy/...`. Replaces manifest discovery. Supports JVM targets the workspace compiles: the scan fails if the patterns match any other target, such as a `java_import`.',
   },
   branch: {
     type: 'string',
@@ -388,7 +387,12 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
   const uvMembers = !!cli.flags['uvMembers']
-  const bazelTargets = cmdFlagValueToArray(cli.flags['bazelTargets'])
+  const bazelScan = !!cli.flags['bazel']
+  // As Bazel's own command line takes them, after `--`, where a negative
+  // pattern is no flag; the parser appends them to the TARGETs.
+  const dashDash = argv.indexOf('--')
+  const bazelTargets =
+    bazelScan && dashDash !== -1 ? argv.slice(dashDash + 1) : []
 
   let {
     autoManifest,
@@ -422,7 +426,7 @@ async function run(
   if (typeof autoManifest !== 'boolean') {
     // A Bazel scan replaces the manifest discovery this default is about.
     if (
-      !bazelTargets.length &&
+      !bazelScan &&
       sockJson.defaults?.scan?.create?.autoManifest !== undefined
     ) {
       autoManifest = sockJson.defaults.scan.create.autoManifest
@@ -468,7 +472,8 @@ async function run(
   let updatedInput = false
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input.length ? cli.input : []
+  const input = cli.input.slice(0, cli.input.length - bazelTargets.length)
+  let targets = input.length ? input : []
 
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
@@ -485,7 +490,7 @@ async function run(
   }
 
   const bazelRoot =
-    bazelTargets.length && targets.length === 1
+    bazelScan && targets.length === 1
       ? path.resolve(cwd, targets[0]!)
       : undefined
   const bazel: BazelScan | undefined =
@@ -541,7 +546,7 @@ async function run(
     !autoManifest &&
     !dynamicSbomInference &&
     !uvMembers &&
-    !bazelTargets.length &&
+    !bazelScan &&
     !hasFactsFile
   ) {
     logger.info(
@@ -555,7 +560,7 @@ async function run(
     )
     logger.error('```')
     logger.error(
-      `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
+      `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}${bazelScan ? ` -- ${bazelTargets.join(' ')}` : ''}`,
     )
     logger.error('```')
     logger.error('')
@@ -652,39 +657,42 @@ async function run(
     {
       nook: true,
       test:
-        !bazelTargets.length ||
-        (!autoManifest && !dynamicSbomInference && !uvMembers),
+        !bazelScan || (!autoManifest && !dynamicSbomInference && !uvMembers),
       message:
-        '--bazel-targets scans the Bazel targets alone and cannot be combined with --auto-manifest, --dynamic-sbom-inference or --uv-members',
+        '--bazel scans the Bazel targets alone and cannot be combined with --auto-manifest, --dynamic-sbom-inference or --uv-members',
       fail: 'select one source of generated SBOMs',
     },
     {
       nook: true,
-      test: !bazelTargets.length || !!bazel,
+      test: !bazelScan || !!bazelTargets.length,
       message:
-        '--bazel-targets needs exactly one TARGET, the root of a Bazel workspace: the directory with its MODULE.bazel, REPO.bazel, WORKSPACE or WORKSPACE.bazel file',
+        '--bazel needs the target patterns to scan after `--`, for example `socket scan create . --bazel -- //app/... -//app/legacy/...`',
+      fail: 'no Bazel target patterns',
+    },
+    {
+      nook: true,
+      // Before `--` the parser reads it as short flags, which are letters only.
+      test:
+        !bazelScan ||
+        !(dashDash === -1 ? argv : argv.slice(0, dashDash)).some(
+          a => /^-[^-\d]/.test(a) && /[^A-Za-z]/.test(a.slice(1)),
+        ),
+      message:
+        'A Bazel target pattern before `--` is read as flags: give every pattern after `--`, for example `socket scan create . --bazel -- //app/... -//app/legacy/...`',
+      fail: 'move the patterns after `--`',
+    },
+    {
+      nook: true,
+      test: !bazelScan || !!bazel,
+      message:
+        '--bazel needs exactly one TARGET before `--`, the root of a Bazel workspace: the directory with its MODULE.bazel, REPO.bazel, WORKSPACE or WORKSPACE.bazel file',
       fail: 'no Bazel workspace root',
     },
     {
       nook: true,
-      // No flag starts `-/`, `-@` or `-:`, and the parser keeps a number such
-      // as `-1` as a value.
-      test: !argv.some(
-        (a, i) =>
-          /^-[/@:]/.test(a) ||
-          ((a === '--bazel-targets' || a === '--bazelTargets') &&
-            /^-[^-]/.test(argv[i + 1] ?? '') &&
-            !/^-(\d+(\.\d+)?|\.\d+)$/.test(argv[i + 1] ?? '')),
-      ),
+      test: !bazelScan || !excludePaths.length,
       message:
-        'A negative Bazel target pattern given as its own value is read as flags: write it as `--bazel-targets=-//app/legacy/...`, or in a comma list such as `--bazel-targets //app/...,-//app/legacy/...`',
-      fail: 'attach the negative pattern with `=`',
-    },
-    {
-      nook: true,
-      test: !bazelTargets.length || !excludePaths.length,
-      message:
-        '--bazel-targets selects what to scan by target pattern: leave targets out with a negative pattern such as `-//app/legacy/...` instead of --exclude-paths',
+        '--bazel selects what to scan by target pattern: leave targets out with a negative pattern such as `-//app/legacy/...` instead of --exclude-paths',
       fail: 'drop --exclude-paths',
     },
     {

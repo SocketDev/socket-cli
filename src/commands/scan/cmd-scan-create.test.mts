@@ -95,9 +95,11 @@ describe('socket scan create', async () => {
     async () => {
       const result = await spawnSocketCli(binCliPath, [
         ...bazelBaseArgs,
-        '--bazel-targets',
-        '//app/...',
+        '--bazel',
         '.',
+        '--',
+        '//app/...',
+        '-//app/legacy/...',
       ])
       expect(result.code).toBe(0)
       expect(result.stdout).toContain('[DryRun]: Bailing now')
@@ -106,34 +108,29 @@ describe('socket scan create', async () => {
 
   it.each([
     {
-      args: ['--bazel-targets', '//app/...', 'app'],
+      args: ['--bazel', 'app', '--', '//app/...'],
       error: 'the root of a Bazel workspace',
     },
     {
-      args: ['--bazel-targets', '//app/...', '--auto-manifest', '.'],
+      args: ['--bazel', '//app/...', '.', '--', '//lib/...'],
+      error: 'the root of a Bazel workspace',
+    },
+    {
+      args: ['--bazel', '--auto-manifest', '.', '--', '//app/...'],
       error: 'cannot be combined',
     },
     {
-      args: ['--bazel-targets', '//app/...', '--exclude-paths', 'app', '.'],
+      args: ['--bazel', '--exclude-paths', 'app', '.', '--', '//app/...'],
       error: 'instead of --exclude-paths',
     },
+    { args: ['--bazel', '.'], error: 'target patterns to scan after `--`' },
     {
-      args: [
-        '--bazel-targets',
-        '//app/...',
-        '--bazel-targets',
-        '-//app/legacy/...',
-        '.',
-      ],
-      error: 'attach the negative pattern',
+      args: ['--bazel', '-//app/legacy/...', '.', '--', '//app/...'],
+      error: 'is read as flags',
     },
     {
-      args: ['--bazel-targets', '//app/...', '-//app/legacy/...', '.'],
-      error: 'attach the negative pattern',
-    },
-    {
-      args: ['--bazelTargets', '-app/legacy/...', '.'],
-      error: 'attach the negative pattern',
+      args: ['--bazel', '-app/legacy/...', '.', '--', '//app/...'],
+      error: 'is read as flags',
     },
   ])(
     'rejects invalid Bazel scan options: $args',
