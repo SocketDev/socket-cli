@@ -12,8 +12,8 @@
  * the build copies there.
  *
  * Related Files:
- * - utils/coana-release.mts (implementation)
- * - vendor/coana-cache.mjs (the cache script)
+ * - utils/coana/release.mts (implementation)
+ * - src/vendor/coana-cache.mjs (the cache script)
  */
 
 import { promises as fs } from 'node:fs'
@@ -32,7 +32,7 @@ import {
 
 import { spawn } from './spawn.mts'
 import constants, { SOCKET_CLI_API_TOKEN_VARIABLES } from '../constants.mts'
-import { spawnCoana } from './coana-release.mts'
+import { spawnCoana } from './coana/release.mts'
 import { overrideCachedConfig, resetConfigForTesting } from './config.mts'
 import {
   getCliUserAgent,

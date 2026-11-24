@@ -7,12 +7,15 @@ import os from 'node:os'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 
+import { SEA_COANA_VFS_PATHS } from './paths/coana.mts'
 import { cleanupBundledTool, getBundledTool } from './runtime.mts'
 import { digestVfs } from './vfs-digest.mts'
 
 // The builder records its inputs in the bootstrap, outside the archive being tested.
 declare const INLINED_SEA_SMOKE_TEST: null | {
   digest: string
+  coanaVersion?: string
+  coanaNodeVersion?: string
   uvVersion?: string
 }
 
@@ -60,6 +63,31 @@ async function smokeTest(): Promise<void> {
       process.stdout.write(output)
     } finally {
       await cleanupBundledTool(uv)
+    }
+  }
+  if (seaSmokeTest.coanaVersion) {
+    assert.equal(
+      await fs
+        .stat(path.join(__dirname, SEA_COANA_VFS_PATHS.cliWrapper))
+        .then(stat => stat.isFile()),
+      true,
+    )
+    assert.equal(
+      await fs
+        .stat(path.join(__dirname, SEA_COANA_VFS_PATHS.analyzers, 'repos'))
+        .then(stat => stat.isDirectory()),
+      true,
+    )
+    const node = await getBundledTool('coana-node')
+    try {
+      const output = execFileSync(node, ['--version'], {
+        encoding: 'utf8',
+        timeout: 15_000,
+      })
+      assert.equal(output.trim(), `v${seaSmokeTest.coanaNodeVersion}`)
+      process.stdout.write(output)
+    } finally {
+      await cleanupBundledTool(node)
     }
   }
   console.log('VFS smoke test passed')

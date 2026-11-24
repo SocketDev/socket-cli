@@ -18,7 +18,7 @@ const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
 const mockGitUntrackedFiles = vi.hoisted(() => vi.fn())
 const mockGitCommit = vi.hoisted(() => vi.fn())
 
-vi.mock('../../utils/coana-release.mts', () => ({
+vi.mock('../../utils/coana/release.mts', () => ({
   spawnCoana: mockSpawnCoana,
 }))
 

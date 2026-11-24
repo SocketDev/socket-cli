@@ -7,6 +7,8 @@ user-invocable: true
 
 # Bump the Coana CLI
 
+For a new release, check for the Socket CLI PR created by Coana's `Publish CLI` workflow (`publish-cli.yml`). It normally opens the PR and refreshes `src/vendor/coana-cache.mjs`. Continue on that PR instead of opening a duplicate. Use these steps for a manual bump.
+
 Take the exact Coana version as `$ARGUMENTS` in `X.Y.Z` form; ask if it is
 missing. Read [the pin and snapshot notes](references/pin-and-snapshots.md).
 

@@ -90,7 +90,7 @@ function relativeBlessedPath(filepath) {
   )
 }
 
-// The cache script vendored from coana-package-manager, which coana-release.mts
+// The cache script vendored from coana-package-manager, which coana/release.mts
 // runs with `node`.
 async function copyCoanaCache() {
   const filepath = path.join(constants.srcPath, 'vendor/coana-cache.mjs')
@@ -489,6 +489,14 @@ export default async () => {
             switch (id) {
               case constantsSrcPath:
                 return CONSTANTS
+              case normalizePath(path.join(srcPath, 'constants/runtime.mts')):
+                return 'runtime-constants'
+              case normalizePath(path.join(utilsSrcPath, 'env.mts')):
+                return 'env-helpers'
+              case normalizePath(path.join(utilsSrcPath, 'spawn-sync.mts')):
+                return 'spawn-sync'
+              case normalizePath(path.join(utilsSrcPath, 'spinner.mts')):
+                return 'spinner'
               case flagsSrcPath:
                 return FLAGS
               case shadowNpmBinSrcPath:
