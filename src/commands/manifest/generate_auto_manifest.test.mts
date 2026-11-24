@@ -475,7 +475,7 @@ describe('generateAutoManifest — JVM facts', () => {
       const workDir = {
         dir: path.join(cwd, 'work'),
         entries: new Map(),
-        withFiles: true,
+        purpose: 'reachability',
       }
       await generateAutoManifest({
         context: { workDir },

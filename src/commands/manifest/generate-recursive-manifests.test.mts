@@ -104,7 +104,11 @@ async function writeIntoWorkDir(
 }
 
 function newWorkDir(parent = '/'): SocketFactsWorkDir {
-  return { dir: path.join(parent, 'work'), entries: new Map(), withFiles: true }
+  return {
+    dir: path.join(parent, 'work'),
+    entries: new Map(),
+    purpose: 'reachability',
+  }
 }
 
 function mockFacts(
@@ -421,7 +425,7 @@ describe('generateRecursiveManifests', () => {
         false,
       )
       expect(existsSync(path.join(app, 'pom.xml.socket.facts.json'))).toBe(true)
-      expect(ownWorkDir?.withFiles).toBe(false)
+      expect(ownWorkDir?.purpose).toBe('upload')
       expect(existsSync(ownWorkDir!.dir)).toBe(false)
     } finally {
       await fs.rm(outer, { recursive: true, force: true })

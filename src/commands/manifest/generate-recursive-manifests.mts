@@ -698,9 +698,10 @@ function runOptions(
       excludeBase: ctx.realCwd,
       excludePaths: ctx.excludePaths,
       hints: {
-        continueOnInstallErrorsFlag: ctx.context.workDir.withFiles
-          ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
-          : undefined,
+        continueOnInstallErrorsFlag:
+          ctx.context.workDir.purpose === 'reachability'
+            ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+            : undefined,
         excludePathsFlag: EXCLUDE_PATHS_FLAG,
         flags: ctx.optionFlags,
         setupCommand: DSI_SETUP_COMMAND,
@@ -848,7 +849,7 @@ export async function generateRecursiveManifests({
   const outcomes = context.workDir
     ? await walk(context.workDir)
     : await withTmpDir('socket-facts-work-', dir =>
-        walk({ dir, entries: new Map(), withFiles: false }),
+        walk({ dir, entries: new Map(), purpose: 'upload' }),
       )
 
   if (!outcomes.some(o => o.status === 'failed')) {

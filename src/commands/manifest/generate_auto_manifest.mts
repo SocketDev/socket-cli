@@ -114,9 +114,10 @@ export async function generateAutoManifest({
   const generatedFiles: string[] = []
   const hints: BuildOptionHints = {
     ...AUTO_MANIFEST_HINTS,
-    continueOnInstallErrorsFlag: context?.workDir?.withFiles
-      ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
-      : undefined,
+    continueOnInstallErrorsFlag:
+      context?.workDir?.purpose === 'reachability'
+        ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
+        : undefined,
     excludePathsFlag,
   }
 

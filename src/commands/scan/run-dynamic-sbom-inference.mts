@@ -31,8 +31,8 @@ export type FactsTarget =
 
 export type FactsConsumer = FactsTarget['consumer']
 
-// Only reachability installs the dependencies its analysis reads.
-export type KeptRootsDir = Omit<SocketFactsWorkDir, 'withFiles'>
+// The consumer sets the purpose.
+export type KeptRootsDir = Omit<SocketFactsWorkDir, 'purpose'>
 
 export type DynamicSbomInferenceResult = {
   // Facts files of dropped runs, which the scan must not collect.
@@ -93,7 +93,10 @@ export async function runDynamicSbomInference({
   const outcomes = await generateRecursiveManifests({
     context: {
       ...context,
-      workDir: workDir && { ...workDir, withFiles: consumer === 'reach' },
+      workDir: workDir && {
+        ...workDir,
+        purpose: consumer === 'reach' ? 'reachability' : 'fix',
+      },
     },
     cwd,
     excludePaths,

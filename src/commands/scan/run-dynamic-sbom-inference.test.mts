@@ -56,15 +56,15 @@ describe('runDynamicSbomInference', () => {
   it.for([
     {
       consumer: 'reach',
-      expected: { ...workDir, withFiles: true },
+      expected: { ...workDir, purpose: 'reachability' },
     },
     {
       consumer: 'fix',
-      expected: { ...workDir, withFiles: false },
+      expected: { ...workDir, purpose: 'fix' },
     },
     { consumer: 'upload', expected: undefined },
   ] as const)(
-    'generates every build root for $consumer, installing files only for reach',
+    'generates every build root for $consumer, with the purpose it reads the facts for',
     async ({ consumer, expected }) => {
       mockGenerateRecursiveManifests.mockResolvedValueOnce([generated])
 

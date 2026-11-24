@@ -520,7 +520,7 @@ describe('handleCreateNewScan excludePaths', () => {
       expect.objectContaining({
         context: expect.objectContaining({
           orgSlug: config.orgSlug,
-          workDir: expect.objectContaining({ withFiles: true }),
+          workDir: expect.objectContaining({ purpose: 'reachability' }),
         }),
       }),
     )

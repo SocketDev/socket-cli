@@ -175,7 +175,7 @@ async function createNewScan(
         ? {
             dir: path.join(manifestTmpDir, 'socket-facts-work'),
             entries: new Map(),
-            withFiles: true,
+            purpose: 'reachability',
           }
         : undefined,
     }

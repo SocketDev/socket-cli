@@ -68,9 +68,12 @@ export type SocketFactsWorkDir = {
   dir: string
   // By the facts file Coana places a root's facts at.
   entries: Map<string, SocketFactsSidecarEntry>
-  // Reachability only: also install the dependencies the analysis reads.
-  withFiles: boolean
+  // What the facts are for, as Coana's `--purpose` takes it: a fix or reachability resolution keeps the state its
+  // Coana run reads.
+  purpose: SocketFactsPurpose
 }
+
+export type SocketFactsPurpose = 'upload' | 'fix' | 'reachability'
 
 export type SocketFactsContext = {
   // The Coana that reads `workDir` must be the one that wrote it.
@@ -364,13 +367,11 @@ export async function runManifestFacts({
   const { workDir } = context
   const { message, result } = await runGenerateSocketFacts<SocketFactsResult>(
     request.data,
-    workDir
-      ? [
-          ...(workDir.withFiles ? ['--with-files'] : []),
-          '--work-dir',
-          workDir.dir,
-        ]
-      : [],
+    [
+      '--purpose',
+      workDir?.purpose ?? 'upload',
+      ...(workDir ? ['--work-dir', workDir.dir] : []),
+    ],
     context,
   )
 
@@ -386,7 +387,7 @@ export async function runManifestFacts({
   if (result.status === 'empty') {
     return undefined
   }
-  if (workDir && !result.sidecarEntry) {
+  if (workDir && workDir.purpose !== 'upload' && !result.sidecarEntry) {
     process.exitCode = 1
     logger.fail(
       `Coana returned no sidecar entry for \`${result.targetPath}\`, which reachability analysis and socket fix need. This is a Coana bug; please report it to Socket.`,

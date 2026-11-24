@@ -170,15 +170,16 @@ describe('runManifestFacts', () => {
     const workDir: SocketFactsWorkDir = {
       dir: '/w',
       entries: new Map(),
-      withFiles: true,
+      purpose: 'reachability',
     }
     const result = await runManifestFacts({
       ...baseArgs,
       context: { workDir },
       cwd,
     })
-    expect(calls[0]!.args.slice(-3)).toEqual([
-      '--with-files',
+    expect(calls[0]!.args.slice(-4)).toEqual([
+      '--purpose',
+      'reachability',
       '--work-dir',
       '/w',
     ])
@@ -186,7 +187,7 @@ describe('runManifestFacts', () => {
     expect(workDir.entries.size).toBe(0)
   })
 
-  it('keeps state without installing files for socket fix', async () => {
+  it('keeps state for socket fix', async () => {
     coanaAnswers({
       factsPath: '/w/y/f',
       projects: [],
@@ -194,10 +195,43 @@ describe('runManifestFacts', () => {
       status: 'generated',
       targetPath: '/r/f',
     })
-    const workDir = { dir: '/w', entries: new Map(), withFiles: false }
+    const workDir: SocketFactsWorkDir = {
+      dir: '/w',
+      entries: new Map(),
+      purpose: 'fix',
+    }
     await runManifestFacts({ ...baseArgs, context: { workDir }, cwd })
-    expect(calls[0]!.args.slice(-2)).toEqual(['--work-dir', '/w'])
-    expect(calls[0]!.args).not.toContain('--with-files')
+    expect(calls[0]!.args.slice(-4)).toEqual([
+      '--purpose',
+      'fix',
+      '--work-dir',
+      '/w',
+    ])
+  })
+
+  it('generates facts for upload without a work dir, or staged in one without its state', async () => {
+    coanaAnswers({
+      factsPath: '/w/y/f',
+      projects: [],
+      status: 'generated',
+      targetPath: '/r/f',
+    })
+    const workDir: SocketFactsWorkDir = {
+      dir: '/w',
+      entries: new Map(),
+      purpose: 'upload',
+    }
+    expect(
+      await runManifestFacts({ ...baseArgs, context: { workDir }, cwd }),
+    ).toMatchObject({ factsPath: '/w/y/f', targetPath: '/r/f' })
+    expect(calls[0]!.args.slice(-4)).toEqual([
+      '--purpose',
+      'upload',
+      '--work-dir',
+      '/w',
+    ])
+    await runManifestFacts({ ...baseArgs, cwd })
+    expect(calls[1]!.args.slice(-2)).toEqual(['--purpose', 'upload'])
   })
 
   it('fails when Coana keeps no sidecar entry in the work dir', async () => {
@@ -207,7 +241,11 @@ describe('runManifestFacts', () => {
       status: 'generated',
       targetPath: '/r/f',
     })
-    const workDir = { dir: '/w', entries: new Map(), withFiles: true }
+    const workDir: SocketFactsWorkDir = {
+      dir: '/w',
+      entries: new Map(),
+      purpose: 'reachability',
+    }
     expect(
       await runManifestFacts({ ...baseArgs, context: { workDir }, cwd }),
     ).toBeNull()
@@ -274,7 +312,11 @@ describe('keepFacts', () => {
     await fs.writeFile(factsPath, 'generated')
     await fs.writeFile(targetPath, 'committed')
     const sidecarEntry = { factsFile: targetPath, stateDir: '/w/x' }
-    const workDir = { dir: '/w', entries: new Map(), withFiles: true }
+    const workDir: SocketFactsWorkDir = {
+      dir: '/w',
+      entries: new Map(),
+      purpose: 'reachability',
+    }
 
     await keepFacts(workDir, {
       factsPath,
