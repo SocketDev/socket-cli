@@ -301,7 +301,8 @@ describe('generateRecursiveManifests', () => {
         expect([...workDir.entries.keys()]).toEqual([
           path.join(reactorA, 'pom.xml.socket.facts.json'),
         ])
-        // The file there is not this scan's, so it is not to be collected.
+        // A discarded independent build of the module excludes its old file
+        // from the scan.
         expect(
           outcomes.find(o => o.dir === sharedLib)?.discardedFactsPath,
         ).toBe(builtAlone ? sharedFacts : undefined)
