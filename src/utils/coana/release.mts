@@ -221,8 +221,7 @@ type CoanaCliDir = { dir: string; version: string }
 
 /**
  * The directory of the Coana CLI's `cli` component for `versionSpec`, an exact
- * version or a range, and the version it holds, downloading it into the cache
- * when the cache lacks it.
+ * version or a range, downloading it into the cache when the cache lacks it.
  * `env` reaches the cache script, which reads `XDG_CACHE_HOME` from it.
  */
 async function getCoanaCliDir(

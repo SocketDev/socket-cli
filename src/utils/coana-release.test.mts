@@ -5,7 +5,6 @@
  * - spawnCoana: runs cli-wrapper.mjs from the cache with the caller's args,
  *   cwd and environment, sets the variables Coana reads, leaves the user's
  *   API token variables out, and surfaces a failing run's output.
- * - spawnCoana with a minimum version: refuses an older Coana.
  * - spawnCoana in the standalone build: caches every embedded component.
  *
  * Testing Approach:
