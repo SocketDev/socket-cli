@@ -86,7 +86,7 @@ export async function generateAutoManifest({
   cwd: string
   // Scan-root-relative `--exclude-paths`: skip excluded subprojects.
   excludePaths?: string[] | undefined
-  // The invoking command's flag for `excludePaths`, when it takes one.
+  // A failure message must name an option the invoking command accepts.
   excludePathsFlag?: string | undefined
   outputKind: OutputKind
   verbose: boolean

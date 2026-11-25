@@ -13,8 +13,8 @@ export type GeneratedSocketFacts = {
   // Facts files of dropped runs, which Coana must not read.
   discardedPaths: string[]
   paths: string[]
-  // What Coana kept of each build root, for `--socket-facts-sidecar`; written
-  // outside the repository.
+  // Records each build root's saved state for `--socket-facts-sidecar`.
+  // The file lives outside the repository.
   sidecarFile: string
   remove: () => Promise<void>
   restore: () => Promise<void>

@@ -26,9 +26,9 @@ export type BuildOptionHints = {
   // Reachability scans only: reachability cannot install a dependency that
   // `ignoreUnresolved` lets through, so it must be told to continue too.
   continueOnInstallErrorsFlag?: string | undefined
-  // The invoking command's option that leaves paths out of the scan.
   excludePathsFlag?: string | undefined
-  // Taken as flags; every other option is set in `socketJson`.
+  // The invoking command accepts these options as flags. Users set the rest in
+  // `socketJson`.
   flags: ReadonlySet<BuildOption>
   // Wizard that writes `socketJson`.
   setupCommand: string
@@ -55,8 +55,7 @@ const FLAG_HINTS: BuildOptionHints = {
   socketJson: SOCKET_JSON,
 }
 
-// What a later Coana run needs of one generated build root; passed back to it
-// unread.
+// The CLI passes this build root's entry back to Coana unchanged.
 export type SocketFactsSidecarEntry = {
   factsFile: string
   stateDir: string
@@ -91,7 +90,6 @@ export type RunManifestFactsResult = {
   factsPath: string
   projects: SocketFactsProject[]
   sidecarEntry?: SocketFactsSidecarEntry | undefined
-  // Where the facts belong.
   targetPath: string
 }
 
@@ -176,7 +174,8 @@ async function runGenerateSocketFacts<T>(
       {
         coanaVersion: context.coanaVersion,
         minimumVersion: COANA_CLI_VERSION,
-        // Coana logs to stdout; keep the command's own stdout machine-readable.
+        // Redirect Coana's logs to stderr to keep the command's stdout
+        // machine-readable.
         stdio: ['inherit', 2, 'inherit'],
       },
     )
@@ -199,8 +198,8 @@ export type SocketFactsRequestOptions = {
   // The file in `cwd` to build: Maven's POM (unset leaves Maven's default),
   // dotnet's solution or project (required).
   entryFile?: string | undefined
-  // What `excludePaths` are relative to, as a build can reach modules outside
-  // its own directory; `cwd` when unset.
+  // A build can include modules outside its directory, so exclusions are
+  // relative to this base. Defaults to `cwd`.
   excludeBase?: string | undefined
   excludeConfigs?: string | undefined
   excludePaths?: string[] | undefined
@@ -216,8 +215,9 @@ export type SocketFactsRunOptions = SocketFactsRequestOptions & {
   context?: SocketFactsContext | undefined
 }
 
-// SOCKET_CLI_*_PATH, else `bin`, the project wrapper, then PATH; standalone,
-// JVM tools take only SOCKET_CLI_*_PATH, as no JVM tooling is bundled.
+// Check SOCKET_CLI_*_PATH, then `bin`, the project wrapper and PATH.
+// Standalone JVM builds require SOCKET_CLI_*_PATH because the CLI ships without
+// JVM tooling.
 function toSocketFactsRequest({
   bin,
   buildOpts,
@@ -258,7 +258,6 @@ function toSocketFactsRequest({
         ...(excludeConfigs ? { excludeConfigs } : {}),
         ignoreUnresolved,
         ...(includeConfigs ? { includeConfigs } : {}),
-        // .NET builds take no Java.
         ...(javaHome && ecosystem !== 'dotnet' ? { javaHome } : {}),
         verbose,
       },
@@ -303,7 +302,7 @@ export async function listDotnetSolutionMembers({
   }
   return await getOrInsert(
     membersByRequest,
-    // The Coana that answers is part of the question.
+    // Different Coana releases can list the same solution differently.
     JSON.stringify([context.coanaVersion, request.data]),
     async () => {
       const { result } = await runGenerateSocketFacts<SolutionMembers>(
@@ -319,8 +318,8 @@ export async function listDotnetSolutionMembers({
   )
 }
 
-// Resolves nothing; undefined, after reporting why, when the build cannot list
-// its projects.
+// Lists projects without resolving dependencies.
+// A failed listing reports the reason and returns undefined.
 export async function listBuildProjects({
   context = {},
   ...options
@@ -345,8 +344,8 @@ export async function listBuildProjects({
   return result.status === 'listed' ? result.projects : undefined
 }
 
-// A failure sets a non-zero exit code; only a failed build is Coana's to
-// report. With a work dir, the facts stay there until keepFacts places them.
+// Failures set a nonzero exit code. Coana reports build failures.
+// With a work directory, facts stay there until keepFacts places them.
 export async function runManifestFacts({
   context = {},
   ...options

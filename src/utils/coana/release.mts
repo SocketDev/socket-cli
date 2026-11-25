@@ -76,8 +76,7 @@ type CoanaSpawnOptions = {
   coanaVersion?: string | undefined
   cwd?: string | URL | undefined
   env?: Record<string, string | undefined> | undefined
-  // The oldest Coana the command exists in; checked against the version a
-  // pinned spec resolves to.
+  // The resolved Coana release must meet the minimum version for this command.
   minimumVersion?: string | undefined
   repoName?: string | undefined
   spinner?: Spinner | undefined
@@ -222,9 +221,8 @@ type CoanaCliDir = { dir: string; version: string }
 
 /**
  * The directory of the Coana CLI's `cli` component for `versionSpec`, an exact
- * version or a range, and the version it holds, downloading it into the cache
- * when the cache lacks it. `env` reaches the cache script, which reads
- * `XDG_CACHE_HOME` from it.
+ * version or a range, downloading it into the cache when the cache lacks it.
+ * `env` reaches the cache script, which reads `XDG_CACHE_HOME` from it.
  */
 async function getCoanaCliDir(
   versionSpec: string,

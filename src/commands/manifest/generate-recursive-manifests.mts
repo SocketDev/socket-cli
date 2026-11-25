@@ -722,7 +722,7 @@ async function runCandidate(
 }
 
 // Builds `root` unless earlier builds cover it, then adds what it loaded to
-// `covered` and keeps its facts.
+// `covered` and copies its staged facts to their target path.
 export async function buildUncoveredRoot({
   config,
   context,

@@ -416,8 +416,8 @@ async function coanaFixWithFacts(
     }
   }
   const sidecarFile = factsSlot?.generated?.sidecarFile
-  // Discovery only needs which artifacts the facts files resolve; applying
-  // fixes also reads what facts generation kept of each build root.
+  // Discovery reads the artifacts resolved by the facts files.
+  // Applying a fix also reads the saved state for each build root.
   const discoveryFlags = factsSlot?.generated?.artifactsFlags ?? []
   const factsFlags = [
     ...discoveryFlags,
