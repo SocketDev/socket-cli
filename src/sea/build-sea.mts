@@ -916,15 +916,6 @@ async function main(): Promise<void> {
   const releaseOutputLock = await acquireBuildLock(
     path.join(out, '.socket-sea.lock'),
   )
-  let releaseDotnetLock: (() => Promise<void>) | undefined
-  try {
-    releaseDotnetLock = await acquireBuildLock(
-      path.join(REPOSITORY_ROOT, '.cache/socket-sea-dotnet.lock'),
-    )
-  } catch (error) {
-    await releaseOutputLock()
-    throw error
-  }
   let nodeRuntime: Awaited<ReturnType<typeof pinnedNode>> | undefined
   let node = ''
   let stageDirectory: string | undefined
@@ -1373,11 +1364,7 @@ async function main(): Promise<void> {
         })
       }
     } finally {
-      try {
-        await releaseDotnetLock()
-      } finally {
-        await releaseOutputLock()
-      }
+      await releaseOutputLock()
     }
   }
 }
