@@ -93,7 +93,6 @@ export type EcosystemBuildConfig = {
 // root here, on top of its existing root-only ecosystem-wide meaning for
 // auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
 // so it skips too.
-// Only Gradle and sbt take `facts: false`, which generates pom files instead.
 export function getSkipReason(
   ecosystem: BuildTool,
   section:
