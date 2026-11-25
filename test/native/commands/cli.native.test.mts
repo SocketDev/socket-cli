@@ -10,6 +10,11 @@ import {
   FLAG_VERSION,
 } from '../../../src/constants.mts'
 import {
+  CDXGEN_FIXTURE_OUTPUT,
+  assertCdxgenFixtureOutput,
+  writeCdxgenFixture,
+} from '../../../src/sea/build/cdxgen-fixture.mts'
+import {
   captureFlow,
   createNativeTerminalFixture,
 } from '../../lib/native/cli-harness.mts'
@@ -217,6 +222,34 @@ describe('native Socket CLI', () => {
       env: {},
     })
   }, 30_000)
+
+  it.each(['npm', 'yarn'] as const)(
+    'captures the bundled cdxgen SBOM for %s',
+    async mode => {
+      await captureFlow({
+        flow: `socket-cdxgen-${mode}`,
+        args: ['manifest', 'cdxgen', '--type', 'npm', FLAG_CONFIG, '{}'],
+        expectedText: `${CDXGEN_FIXTURE_OUTPUT} created!`,
+        exitCode: 0,
+        cols: 140,
+        rows: 24,
+        checkpointName: 'sbom',
+        prepare: ({ cwd }) => writeCdxgenFixture(cwd, mode),
+        verify: ({ cwd }) => assertCdxgenFixtureOutput(cwd, mode),
+      })
+    },
+    60_000,
+  )
+
+  it('captures the bundled uv version in the SEA smoke test', async () => {
+    await captureFlow({
+      flow: 'socket-sea-uv',
+      args: ['sea', 'smoke-test'],
+      expectedText: 'uv ',
+      exitCode: 0,
+      checkpointName: 'version',
+    })
+  }, 60_000)
 
   it('captures the scan setup selection and cancellation interaction', async () => {
     const fixture = await createNativeTerminalFixture(24)

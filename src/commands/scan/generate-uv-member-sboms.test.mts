@@ -22,7 +22,7 @@ vi.mock('../../utils/spawn.mts', () => ({ spawn: mockSpawn }))
 vi.mock('../../sea/runtime.mts', () => ({
   cleanupBundledTool: mockCleanupBundledTool,
   getBundledTool: mockGetBundledTool,
-  isStandaloneSea: mockSea,
+  isSea: mockSea,
 }))
 
 const sbom = JSON.stringify({

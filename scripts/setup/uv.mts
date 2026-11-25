@@ -13,21 +13,17 @@ import path from 'node:path'
 import process from 'node:process'
 import { promisify } from 'node:util'
 
+import { uvReleaseUrl } from '../../src/paths/uv.mts'
+import pins from '../../src/sea/stage/uv-pins.json' with { type: 'json' }
 import { isMainModule } from '../lib/is-main-module.mts'
 import { runMain } from '../lib/run-main.mts'
 
 const execFile = promisify(execFileCallback)
-const UV_VERSION = '0.12.15'
-const UV_DIGESTS = {
-  arm64:
-    'wtjxaDy/A91/eSUbn927LdJEsQy9JRpFfmaXqOxiSafoi+wHEFaNWvjxOpqwoMAky7UrBd0icT6PCttBpagKvA==',
-  x64: 'HnyqtvfbH/vq3MTydIYAbCr6hS8kC8kuZpXxrGJ/Nr2dac/wJQA3Z6S9bx95TYCTBdOZ1kPbDjtrzfIgwi4xDw==',
-}
-
 export interface UvRelease {
   archiveRoot: string
   asset: string
   digest: string
+  url: string
   version: string
 }
 
@@ -71,13 +67,13 @@ export function uvSetupRelease(platform: string, arch: string): UvRelease {
       'a platform outside Linux x64 or arm64',
     )
   }
-  const target = arch === 'x64' ? 'x86_64' : 'aarch64'
-  const archiveRoot = 'uv-' + target + '-unknown-linux-gnu'
+  const pin = pins.targets[`linux-${arch}`]
   return {
-    archiveRoot,
-    asset: archiveRoot + '.tar.gz',
-    digest: UV_DIGESTS[arch],
-    version: UV_VERSION,
+    archiveRoot: path.posix.dirname(pin.executable),
+    asset: pin.archive,
+    digest: pin.sha256,
+    url: uvReleaseUrl(pin.archive),
+    version: pins.version,
   }
 }
 
@@ -128,11 +124,7 @@ export async function installUvForCi(
   const fetcher = dependencies.fetcher ?? fetch
   const extract = dependencies.extract ?? extractUvArchive
   const probe = dependencies.probe ?? probeUvVersion
-  const url =
-    'https://github.com/astral-sh/uv/releases/download/' +
-    release.version +
-    '/' +
-    release.asset
+  const { url } = release
   let bytes: Buffer
   try {
     const response = await fetcher(url, {
@@ -149,11 +141,11 @@ export async function installUvForCi(
     }
     throw new UvSetupError('DOWNLOAD_FAILED', url, 'a failed download')
   }
-  if (createHash('sha512').update(bytes).digest('base64') !== release.digest) {
+  if (createHash('sha256').update(bytes).digest('hex') !== release.digest) {
     throw new UvSetupError(
       'CHECKSUM_MISMATCH',
       release.asset,
-      'a SHA-512 digest mismatch',
+      'a SHA-256 digest mismatch',
     )
   }
   const directory = await mkdtemp(path.join(runnerTemp, 'socket-uv-'))

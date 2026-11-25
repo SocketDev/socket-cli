@@ -16,7 +16,7 @@ import path from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 import cmdShim from 'cmd-shim'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { resolveBazelBinary } from './bin-detect.mts'
 import {
@@ -406,11 +406,9 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
 
   it('stops what a launcher started when the timeout expires', async () => {
     const record = writeParentLauncher({ detached: false })
-    await expect(
-      spawnBazel(launcher, [], { cwd, timeout: 500 }),
-    ).rejects.toBeInstanceOf(BazelTimeoutError)
+    await expireLauncherTimeout(record)
     expect(await waitForExit(readChildPid(record))).toBe(true)
-  })
+  }, 30_000)
 
   it('stops what a launcher started when cancelled', async () => {
     const record = writeParentLauncher({ detached: false })
@@ -424,21 +422,37 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
 
   it('settles a timeout when an escaped process keeps the output open', async () => {
     const record = writeParentLauncher({ detached: true })
-    const startedAt = Date.now()
     try {
-      await expect(
-        spawnBazel(launcher, [], { cwd, timeout: 500 }),
-      ).rejects.toBeInstanceOf(BazelTimeoutError)
-      expect(Date.now() - startedAt).toBeLessThan(15_000)
+      await expireLauncherTimeout(record)
     } finally {
-      const pid = readChildPid(record)
-      if (isAlive(pid)) {
-        process.kill(pid, 'SIGKILL')
+      if (existsSync(record)) {
+        const pid = readChildPid(record)
+        if (isAlive(pid)) {
+          process.kill(pid, 'SIGKILL')
+        }
+        // Windows can report process exit before inherited handles release the cwd.
+        expect(await waitForExit(pid)).toBe(true)
       }
-      // Windows can report process exit before inherited handles release the cwd.
-      expect(await waitForExit(pid)).toBe(true)
     }
   }, 30_000)
+
+  async function expireLauncherTimeout(record: string): Promise<void> {
+    // Give the real launcher time to report its child before firing the timeout.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const result = spawnBazel(launcher, [], { cwd, timeout: 500 }).catch(
+      (e: unknown) => e,
+    )
+    try {
+      await waitForFile(record)
+    } finally {
+      try {
+        await vi.runAllTimersAsync()
+      } finally {
+        vi.useRealTimers()
+      }
+    }
+    expect(await result).toBeInstanceOf(BazelTimeoutError)
+  }
 
   function writeParentLauncher(options: { detached: boolean }): string {
     const record = path.join(cwd, 'child.pid')
@@ -447,7 +461,9 @@ if (args.includes('info')) { process.stdout.write(${JSON.stringify(`install_base
       `const { spawn } = require('node:child_process')
 const fs = require('node:fs')
 const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { detached: ${options.detached}, stdio: 'inherit' })
-fs.writeFileSync(${JSON.stringify(record)}, String(child.pid))
+const record = ${JSON.stringify(record)}
+fs.writeFileSync(record + '.tmp', String(child.pid))
+fs.renameSync(record + '.tmp', record)
 ${options.detached ? 'child.unref()' : ''}
 `,
     )
@@ -498,9 +514,13 @@ async function waitForExit(pid: number): Promise<boolean> {
 }
 
 async function waitForFile(file: string): Promise<void> {
-  while (!existsSync(file)) {
+  const deadline = Date.now() + 10_000
+  while (!existsSync(file) && Date.now() < deadline) {
     // eslint-disable-next-line no-await-in-loop
     await sleep(50)
+  }
+  if (!existsSync(file)) {
+    throw new Error('Bazel test launcher did not report its child PID')
   }
 }
 

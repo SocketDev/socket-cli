@@ -5,9 +5,11 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { gunzipSync, inflateRawSync } from 'node:zlib'
 
+import { uvLicenseUrl, uvReleaseUrl } from '../../paths/uv.mts'
 import { downloadBytes } from '../download-bytes.mts'
 import { cachedDownload } from '../download-cache.mts'
 import pins from './uv-pins.json' with { type: 'json' }
+import { seaNativeToolPaths } from '../paths/native-tools.mts'
 
 const UV_VERSION = pins.version
 const MAX_ARCHIVE_BYTES = 40 * 1024 * 1024
@@ -21,7 +23,6 @@ type UvTargetPin = {
   archive: string
   sha256: string
   executable: string
-  binary: string
 }
 
 type UvPins = {
@@ -29,8 +30,6 @@ type UvPins = {
   version: string
   license: string
   repository: string
-  releaseBaseUrl: string
-  licenseBaseUrl: string
   licenseFiles: Array<{ name: string; sha256: string }>
   targets: Record<Target, UvTargetPin>
 }
@@ -417,7 +416,7 @@ export async function stageUv(
   }
   const target = targetFor(platform, arch)
   const pin = uvPins.targets[target]
-  const sourceUrl = `${uvPins.releaseBaseUrl}/${pin.archive}`
+  const sourceUrl = uvReleaseUrl(pin.archive)
   const archive = await cachedDownload(
     sourceUrl,
     {
@@ -445,10 +444,11 @@ export async function stageUv(
     : readTarExecutable(archive, pin.executable)
   validateBinary(executable, target)
 
-  const payloadRoot = path.join(stageRoot, 'tools/uv')
+  const paths = seaNativeToolPaths('uv', platform)
+  const binaryPath = path.join(stageRoot, paths.binary)
+  const payloadRoot = path.dirname(binaryPath)
   await fs.rm(payloadRoot, { recursive: true, force: true })
   await fs.mkdir(payloadRoot, { recursive: true })
-  const binaryPath = path.join(payloadRoot, pin.binary)
   await fs.writeFile(binaryPath, executable, {
     flag: 'wx',
     mode: 0o755,
@@ -458,13 +458,13 @@ export async function stageUv(
   }
   validateUvVersion(binaryPath)
   const binaryDigest = sha256(executable)
-  await fs.writeFile(path.join(payloadRoot, 'uv.sha256'), `${binaryDigest}\n`, {
+  await fs.writeFile(path.join(stageRoot, paths.digest), `${binaryDigest}\n`, {
     flag: 'wx',
   })
 
   const licenseFiles: StagedUv['licenseFiles'] = []
   for (const license of uvPins.licenseFiles) {
-    const sourceUrl = `${uvPins.licenseBaseUrl}/${license.name}`
+    const sourceUrl = uvLicenseUrl(license.name)
     const bytes = await cachedDownload(
       sourceUrl,
       {
@@ -533,7 +533,7 @@ export async function stageUv(
     archive: pin.archive,
     sourceUrl,
     declaredArchiveSha256: pin.sha256,
-    binaryPath: path.relative(stageRoot, binaryPath).split(path.sep).join('/'),
+    binaryPath: paths.binary,
     binarySha256: binaryDigest,
     binarySize: executable.length,
     licenseFiles,

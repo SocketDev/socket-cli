@@ -7,8 +7,11 @@ import { Readable, type Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 
-import { SEA_COANA_VFS_PATHS } from './paths/coana.mts'
+import { SEA_CAPABILITIES_PATH } from './paths/archive.mts'
+import { SEA_COANA_CACHE_PATH } from './paths/coana-cache.mts'
+import { seaNativeToolPaths } from './paths/native-tools.mts'
 
+import type { SeaNativeTool } from './paths/native-tools.mts'
 import type { StdioOptions } from 'node:child_process'
 
 /**
@@ -47,7 +50,6 @@ const sea = (() => {
   try {
     return createRequire(import.meta.url)('node:sea') as {
       isSea?: () => boolean
-      getAsset?: (key: string) => ArrayBuffer | Uint8Array
     }
   } catch {
     // The regular Socket CLI supports Node releases predating `node:sea`.
@@ -62,15 +64,9 @@ type SeaGlobal = typeof globalThis & { __socketSeaVfsRoot?: string }
 // are staged under the archive root by a later helper-payload build slice;
 // absent files remain unavailable and fail closed here.
 const embeddedJsToolEntrypoints = Object.freeze({
-  cdxgen: 'tools/cdxgen/sea-worker.mjs',
-  'coana-cache': 'dist/coana-cache.mjs',
+  cdxgen: 'tools/cdxgen/sea-worker.js',
+  'coana-cache': SEA_COANA_CACHE_PATH,
   synp: 'tools/synp/bin/synp.js',
-})
-
-const embeddedNativeToolPaths = Object.freeze({
-  'coana-node': SEA_COANA_VFS_PATHS.node,
-  uv: (platform: string) =>
-    `tools/uv/${platform === 'win32' ? 'uv.exe' : 'uv'}`,
 })
 
 function getVfsRoot(): string {
@@ -126,34 +122,8 @@ function signalFromAbortReason(reason: unknown): NodeJS.Signals | null {
     : null
 }
 
-export function isStandaloneSea(): boolean {
+export function isSea(): boolean {
   return typeof sea.isSea === 'function' && sea.isSea()
-}
-
-export function getEmbeddedAsset(id: string): Buffer {
-  if (!isStandaloneSea()) {
-    throw new Error(
-      `Embedded asset '${id}' is available only in the standalone Socket build`,
-    )
-  }
-  const files: Record<string, string> = {
-    'socket-patch': `resources/${process.platform === 'win32' ? 'socket-patch.exe' : 'socket-patch'}`,
-    'socket-patch-sha256': 'resources/socket-patch.sha256',
-  }
-  const relative = files[id]
-  const root = (globalThis as SeaGlobal).__socketSeaVfsRoot
-  if (!relative || !root) {
-    throw new Error(
-      `Standalone Socket asset '${id}' is missing from this build`,
-    )
-  }
-  try {
-    return readFileSync(path.join(root, relative))
-  } catch {
-    throw new Error(
-      `Standalone Socket asset '${id}' is missing from this build`,
-    )
-  }
 }
 
 export function getEmbeddedVfsPath(relativePath: string): string {
@@ -167,10 +137,10 @@ export function getEmbeddedVfsPath(relativePath: string): string {
 
 /** Fail closed unless the build manifest explicitly advertises this tool. */
 export function assertEmbeddedToolAvailable(
-  id: 'cdxgen' | 'coana' | 'synp',
+  id: 'cdxgen' | 'synp',
   capability?: 'manifest-cdxgen-npm-lock-v3' | 'manifest-cdxgen-yarn-classic',
 ): void {
-  if (!isStandaloneSea()) {
+  if (!isSea()) {
     return
   }
   const root = (globalThis as SeaGlobal).__socketSeaVfsRoot
@@ -180,7 +150,7 @@ export function assertEmbeddedToolAvailable(
       throw new Error('missing VFS root')
     }
     capabilities = JSON.parse(
-      readFileSync(path.join(root, 'resources/capabilities.json'), 'utf8'),
+      readFileSync(path.join(root, SEA_CAPABILITIES_PATH), 'utf8'),
     )
   } catch {
     throw new Error(
@@ -230,73 +200,24 @@ export function assertEmbeddedToolAvailable(
   )
 }
 
-export async function getBundledTool(id: string): Promise<string> {
-  if (id !== 'socket-patch' && id !== 'uv' && id !== 'coana-node') {
-    throw new Error(
-      `Bundled tool '${id}' is not configured in this SEA foundation`,
-    )
-  }
-  if (!isStandaloneSea()) {
+export async function getBundledTool(id: SeaNativeTool): Promise<string> {
+  if (!isSea()) {
     throw new Error(
       `Bundled tool '${id}' is available only in the standalone Socket build`,
     )
   }
-
-  if (id === 'uv' || id === 'coana-node') {
-    const relative =
-      id === 'uv'
-        ? embeddedNativeToolPaths.uv(process.platform)
-        : embeddedNativeToolPaths['coana-node']
-    const source = path.join(getVfsRoot(), relative)
-    const binary = await fs.readFile(source)
-    const expectedDigest = await fs.readFile(
-      path.join(
-        getVfsRoot(),
-        id === 'uv' ? 'tools/uv/uv.sha256' : SEA_COANA_VFS_PATHS.nodeDigest,
-      ),
-      'utf8',
-    )
-    const actualDigest = createHash('sha256').update(binary).digest('hex')
-    if (
-      !/^[a-f0-9]{64}$/.test(expectedDigest.trim()) ||
-      actualDigest !== expectedDigest.trim()
-    ) {
-      throw new Error(`Embedded ${id} payload failed SHA-256 verification`)
-    }
-    const directory = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'socket-cli-sea-'),
-    )
-    const filename = path.join(directory, path.basename(relative))
-    try {
-      await fs.writeFile(filename, binary, { flag: 'wx', mode: 0o700 })
-      if (process.platform !== 'win32') {
-        await fs.chmod(filename, 0o700)
-      }
-      extractedToolDirectories.set(filename, directory)
-      return filename
-    } catch (error) {
-      await fs.rm(directory, { recursive: true, force: true })
-      throw error
-    }
-  }
-
-  const binary = getEmbeddedAsset('socket-patch')
-  const expectedDigest = getEmbeddedAsset('socket-patch-sha256')
-    .toString('utf8')
-    .trim()
-  const actualDigest = createHash('sha256').update(binary).digest('hex')
-  if (
-    !/^[a-f0-9]{64}$/.test(expectedDigest) ||
-    actualDigest !== expectedDigest
-  ) {
-    throw new Error('Embedded socket-patch payload failed SHA-256 verification')
+  const paths = seaNativeToolPaths(id, process.platform)
+  const root = getVfsRoot()
+  const [binary, digest] = await Promise.all([
+    fs.readFile(path.join(root, paths.binary)),
+    fs.readFile(path.join(root, paths.digest), 'utf8'),
+  ])
+  if (createHash('sha256').update(binary).digest('hex') !== digest.trim()) {
+    throw new Error(`Embedded ${id} payload failed SHA-256 verification`)
   }
 
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-cli-sea-'))
-  const filename = path.join(
-    directory,
-    process.platform === 'win32' ? 'socket-patch.exe' : 'socket-patch',
-  )
+  const filename = path.join(directory, path.basename(paths.binary))
   try {
     await fs.writeFile(filename, binary, { flag: 'wx', mode: 0o700 })
     if (process.platform !== 'win32') {
@@ -305,9 +226,18 @@ export async function getBundledTool(id: string): Promise<string> {
     extractedToolDirectories.set(filename, directory)
     return filename
   } catch (error) {
-    await fs.rm(directory, { recursive: true, force: true })
+    await removeExtractedToolDirectory(directory)
     throw error
   }
+}
+
+function removeExtractedToolDirectory(directory: string): Promise<void> {
+  return fs.rm(directory, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  })
 }
 
 export async function cleanupBundledTool(filename: string): Promise<void> {
@@ -315,8 +245,8 @@ export async function cleanupBundledTool(filename: string): Promise<void> {
   if (!directory) {
     return
   }
+  await removeExtractedToolDirectory(directory)
   extractedToolDirectories.delete(filename)
-  await fs.rm(directory, { recursive: true, force: true })
 }
 
 export async function runEmbeddedJsTool(
@@ -324,7 +254,7 @@ export async function runEmbeddedJsTool(
   args: readonly string[],
   options: EmbeddedToolRunOptions = {},
 ): Promise<EmbeddedToolRunResult> {
-  if (!isStandaloneSea()) {
+  if (!isSea()) {
     throw new Error(
       `Embedded JavaScript tool '${id}' is available only in the standalone Socket build`,
     )

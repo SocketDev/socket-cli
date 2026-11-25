@@ -1,7 +1,7 @@
 import updateNotifier from 'tiny-updater'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { isStandaloneSea } from '../../../src/sea/runtime.mts'
+import { isSea } from '../../../src/sea/runtime.mts'
 import {
   formatUpdateNotice,
   runSelfUpdateCheck,
@@ -14,7 +14,7 @@ vi.mock('tiny-updater', () => ({
 }))
 
 vi.mock('../../../src/sea/runtime.mts', () => ({
-  isStandaloneSea: vi.fn(() => false),
+  isSea: vi.fn(() => false),
 }))
 
 vi.mock('../../../src/utils/logger.mts', () => ({
@@ -23,14 +23,14 @@ vi.mock('../../../src/utils/logger.mts', () => ({
 
 describe('formatUpdateNotice', () => {
   it('uses package manager guidance for npm installations', () => {
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
     expect(formatUpdateNotice('1.0.0', '1.1.0')).toBe(
       'Socket 1.0.0 → 1.1.0. Update with your favorite package manager.',
     )
   })
 
   it('uses the Socket update command for standalone SEA builds', () => {
-    vi.mocked(isStandaloneSea).mockReturnValue(true)
+    vi.mocked(isSea).mockReturnValue(true)
     expect(formatUpdateNotice('1.0.0', '1.1.0')).toBe(
       'Socket 1.0.0 → 1.1.0. Run: socket update',
     )
@@ -45,7 +45,7 @@ describe('runSelfUpdateCheck', () => {
   it('checks the public npm registry', async () => {
     vi.stubEnv('NO_UPDATE_NOTIFIER', '')
     vi.stubEnv('SOCKET_CLI_FORCE_UPDATE_NOTIFIER', '')
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
     await runSelfUpdateCheck()
 
     expect(updateNotifier).toHaveBeenCalledTimes(1)
@@ -63,7 +63,7 @@ describe('runSelfUpdateCheck', () => {
     vi.stubEnv('NO_UPDATE_NOTIFIER', '')
     vi.stubEnv('SOCKET_CLI_FORCE_UPDATE_NOTIFIER', '1')
     vi.mocked(updateNotifier).mockClear()
-    vi.mocked(isStandaloneSea).mockReturnValue(true)
+    vi.mocked(isSea).mockReturnValue(true)
     await runSelfUpdateCheck()
     expect(updateNotifier).not.toHaveBeenCalled()
   })
@@ -71,7 +71,7 @@ describe('runSelfUpdateCheck', () => {
   it('bypasses the notifier cache when forced', async () => {
     vi.stubEnv('NO_UPDATE_NOTIFIER', '')
     vi.stubEnv('SOCKET_CLI_FORCE_UPDATE_NOTIFIER', '1')
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
     vi.mocked(updateNotifier).mockClear()
 
     await runSelfUpdateCheck()
@@ -83,7 +83,7 @@ describe('runSelfUpdateCheck', () => {
   it('suppresses the update check when NO_UPDATE_NOTIFIER is set', async () => {
     vi.stubEnv('NO_UPDATE_NOTIFIER', '1')
     vi.stubEnv('SOCKET_CLI_FORCE_UPDATE_NOTIFIER', '1')
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
     vi.mocked(updateNotifier).mockClear()
     vi.mocked(loggerLog).mockClear()
 

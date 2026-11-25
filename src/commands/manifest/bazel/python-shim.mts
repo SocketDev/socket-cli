@@ -11,7 +11,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { findBazelExecutable, prependBazelPath } from './process.mts'
-import { isStandaloneSea } from '../../../sea/runtime.mts'
+import { isSea } from '../../../sea/runtime.mts'
 import { InputError } from '../../../utils/errors.mts'
 
 export type PythonShimResult = {
@@ -53,7 +53,7 @@ export async function provisionPythonShim(
   env: NodeJS.ProcessEnv,
   cwd: string,
 ): Promise<PythonShimResult> {
-  if (isStandaloneSea()) {
+  if (isSea()) {
     const override = env['SOCKET_CLI_PYTHON_PATH']
     if (!override) {
       throw new InputError(

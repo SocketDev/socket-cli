@@ -2,7 +2,7 @@
 
 import { spawn } from './spawn.mts'
 import constants, { NPM, PNPM } from '../constants.mts'
-import { isStandaloneSea } from '../sea/runtime.mts'
+import { isSea } from '../sea/runtime.mts'
 import { shadowNpmInstall } from '../shadow/npm/install.mts'
 
 import type { EnvDetails } from './package-environment.mts'
@@ -50,7 +50,7 @@ export function runAgentInstall(
   const { agent, agentExecPath, pkgPath } = pkgEnvDetails
   const { args = [], spinner, ...spawnOptions } = options
   const isNpm = agent === NPM
-  if (isNpm && !isStandaloneSea()) {
+  if (isNpm && !isSea()) {
     return shadowNpmInstall({
       agentExecPath,
       cwd: pkgPath,

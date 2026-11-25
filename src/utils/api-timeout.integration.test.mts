@@ -41,6 +41,8 @@ let isolatedHome = ''
 let certificatePath = ''
 // Milliseconds: this sets a three-minute lifetime for the test certificate.
 const TEST_CERT_VALIDITY_MS = 3 * 60 * 1000
+const OPENSSL_TIMEOUT_MS = 15_000
+const SETUP_TIMEOUT_MS = 2 * OPENSSL_TIMEOUT_MS + 10_000
 
 function handleRequest(
   request: IncomingMessage,
@@ -133,17 +135,23 @@ async function generateLocalhostCertificate(
     new Promise<void>((resolve, reject) => {
       const openssl = spawn('openssl', args, {
         cwd: workingDirectory,
-        stdio: 'ignore',
+        stdio: ['ignore', 'ignore', 'pipe'],
+        timeout: OPENSSL_TIMEOUT_MS,
         windowsHide: true,
       })
+      let stderr = ''
+      openssl.stderr.setEncoding('utf8')
+      openssl.stderr.on('data', (chunk: string) => {
+        stderr += chunk
+      })
       openssl.once('error', reject)
-      openssl.once('close', code => {
+      openssl.once('close', (code, signal) => {
         if (code === 0) {
           resolve()
         } else {
           reject(
             new Error(
-              `OpenSSL failed to create the test certificate (${code})`,
+              `OpenSSL ${args[0]} failed (${code ?? signal}): ${stderr.trim()}`,
             ),
           )
         }
@@ -153,7 +161,9 @@ async function generateLocalhostCertificate(
     'req',
     '-new',
     '-newkey',
-    'rsa:2048',
+    'ec',
+    '-pkeyopt',
+    'ec_paramgen_curve:P-256',
     '-nodes',
     '-sha256',
     '-subj',
@@ -286,7 +296,7 @@ describe('v1 direct Socket API timeout configuration', () => {
         '[ localhost ]',
         'basicConstraints = critical,CA:FALSE',
         'subjectAltName = DNS:localhost,IP:127.0.0.1',
-        'keyUsage = critical,digitalSignature,keyEncipherment',
+        'keyUsage = critical,digitalSignature',
         'extendedKeyUsage = serverAuth',
         '',
       ].join('\n'),
@@ -336,7 +346,7 @@ describe('v1 direct Socket API timeout configuration', () => {
     apiFetch = api.apiFetch
     queryApi = api.queryApiSafeTextWithStatus
     sendApiRequest = api.sendApiRequest
-  })
+  }, SETUP_TIMEOUT_MS)
 
   afterAll(async () => {
     for (const timer of responseTimers) {
@@ -349,7 +359,14 @@ describe('v1 direct Socket API timeout configuration', () => {
       })
     }
     vi.unstubAllEnvs()
-    rmSync(isolatedHome, { force: true, recursive: true })
+    if (isolatedHome) {
+      rmSync(isolatedHome, {
+        force: true,
+        recursive: true,
+        maxRetries: 5,
+        retryDelay: 100,
+      })
+    }
   })
 
   it('applies configured timeout to direct GET and POST requests', async () => {

@@ -86,7 +86,7 @@ export async function stageSynp(
         ...process.env,
         SEA_SYNP_INPUT: path.join(
           STAGE_DIRECTORY,
-          '../adapters/synp-worker.mjs',
+          '../adapters/synp-worker.mts',
         ),
         SEA_SYNP_OUTPUT: outputRoot,
       },

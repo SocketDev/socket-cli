@@ -10,6 +10,7 @@ import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 
 import { readPnpmLock } from '../src/sea/pnpm-lock.mts'
+import { seaWorkerTypeScript } from '../src/sea/rollup-workers.mts'
 
 const root = path.resolve(
   path.dirname(url.fileURLToPath(import.meta.url)),
@@ -492,19 +493,23 @@ function thirdPartyNoticePlugin() {
 }
 
 export default {
-  input:
-    process.env.SEA_CDXGEN_INPUT ||
-    path.join(root, 'node_modules/@cyclonedx/cdxgen/lib/cli/index.js'),
+  input: {
+    'lib/cli/index':
+      process.env.SEA_CDXGEN_INPUT ||
+      path.join(root, 'node_modules/@cyclonedx/cdxgen/lib/cli/index.js'),
+    'sea-worker': path.join(root, 'src/sea/adapters/cdxgen-worker.mts'),
+  },
   output: {
     dir:
       process.env.SEA_CDXGEN_OUTPUT || path.join(root, 'dist/sea-cdxgen-api'),
     format: 'es',
-    entryFileNames: 'lib/cli/index.js',
+    entryFileNames: '[name].js',
     chunkFileNames: 'lib/cli/chunks/[name]-[hash].js',
     assetFileNames: 'lib/cli/assets/[name]-[hash][extname]',
   },
   external: id => id.startsWith('node:'),
   plugins: [
+    seaWorkerTypeScript(),
     nodeResolve({ preferBuiltins: true, exportConditions: ['node'] }),
     jsonPlugin(),
     commonjsPlugin(),

@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import constants from '../../constants.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { isStandaloneSea } from '../../sea/runtime.mts'
+import { isSea } from '../../sea/runtime.mts'
 import { errorMessage } from '../../utils/errors.mts'
 import { safeReadFile } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
@@ -42,7 +42,7 @@ export async function convertSbtToMaven({
 
   let selectedBin: string
   try {
-    selectedBin = resolveBuildToolBin('sbt', cwd, bin, isStandaloneSea())
+    selectedBin = resolveBuildToolBin('sbt', cwd, bin, isSea())
   } catch (error) {
     process.exitCode = 1
     logger.fail(error instanceof Error ? error.message : String(error))

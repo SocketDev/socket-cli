@@ -11,6 +11,10 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import fastGlob from 'fast-glob'
 import trash from 'trash'
 
+import baseConfig, {
+  EXTERNAL_PACKAGES,
+  getBuildPackageName,
+} from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import { isDirEmptySync } from '../scripts/lib/fs.js'
 import { hasKeys } from '../scripts/lib/objects.js'
@@ -26,13 +30,13 @@ import {
   normalizeId,
 } from '../scripts/utils/packages.js'
 import {
+  COANA_CACHE_SOURCE_PATH,
+  coanaCacheDistPath,
+} from '../src/paths/coana.mts'
+import {
   includedModulesInventoryPlugin,
   writeCopiedPackageInventory,
 } from '../src/sea/rollup-provenance.mjs'
-import baseConfig, {
-  EXTERNAL_PACKAGES,
-  getBuildPackageName,
-} from './rollup.base.config.mjs'
 
 const {
   CONSTANTS,
@@ -93,8 +97,8 @@ function relativeBlessedPath(filepath) {
 // The cache script vendored from coana-package-manager, which coana/release.mts
 // runs with `node`.
 async function copyCoanaCache() {
-  const filepath = path.join(constants.srcPath, 'vendor/coana-cache.mjs')
-  const destPath = path.join(constants.distPath, 'coana-cache.mjs')
+  const filepath = path.join(constants.srcPath, COANA_CACHE_SOURCE_PATH)
+  const destPath = coanaCacheDistPath(constants.distPath)
   await fs.copyFile(filepath, destPath)
 }
 

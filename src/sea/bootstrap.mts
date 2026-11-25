@@ -1,21 +1,22 @@
 /** Load the complete root Socket distribution relative to the SEA VFS main. */
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { once } from 'node:events'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { Worker } from 'node:worker_threads'
 
-import { SEA_COANA_VFS_PATHS } from './paths/coana.mts'
-import { cleanupBundledTool, getBundledTool } from './runtime.mts'
+import {
+  cleanupBundledTool,
+  getBundledTool,
+  isSea,
+  runEmbeddedJsTool,
+} from './runtime.mts'
 import { digestVfs } from './vfs-digest.mts'
 
 // The builder records its inputs in the bootstrap, outside the archive being tested.
 declare const INLINED_SEA_SMOKE_TEST: null | {
   digest: string
-  coanaVersion?: string
-  coanaNodeVersion?: string
+  nodeVersion?: string
   uvVersion?: string
 }
 
@@ -37,60 +38,50 @@ async function smokeTest(): Promise<void> {
     seaSmokeTest.digest,
     'Embedded VFS differs from build inputs',
   )
-  // The SEA ships the Coana cache helper. A lookup in a private empty cache
-  // exercises its VFS entrypoint without fetching a Coana release.
-  const cache = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-coana-smoke-'))
-  try {
-    const worker = new Worker(path.join(__dirname, 'dist/coana-cache.mjs'), {
-      argv: ['lookup', '0.0.0', 'cli'],
-      env: { ...process.env, XDG_CACHE_HOME: cache },
-    })
-    const [code] = await once(worker, 'exit')
-    assert.equal(code, 4, 'Expected a Coana cache miss')
-  } finally {
-    await fs.rm(cache, { recursive: true, force: true })
+  if (isSea()) {
+    const cache = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'socket-coana-smoke-'),
+    )
+    try {
+      const result = await runEmbeddedJsTool(
+        'coana-cache',
+        ['lookup', '0.0.0', 'cli'],
+        { env: { XDG_CACHE_HOME: cache }, stdio: 'pipe' },
+      )
+      assert.equal(
+        result.code,
+        4,
+        result.stderr || 'Expected a Coana cache miss',
+      )
+    } finally {
+      await fs.rm(cache, { recursive: true, force: true })
+    }
   }
   if (seaSmokeTest.uvVersion) {
-    const uv = await getBundledTool('uv')
-    try {
-      const output = execFileSync(uv, ['--version'], {
-        encoding: 'utf8',
-        timeout: 15_000,
-      })
-      const [name, version] = output.trim().split(/\s+/u)
-      assert.equal(name, 'uv')
-      assert.equal(version, seaSmokeTest.uvVersion)
-      process.stdout.write(output)
-    } finally {
-      await cleanupBundledTool(uv)
-    }
+    const output = await readBundledVersion('uv')
+    const [name, version] = output.trim().split(/\s+/u)
+    assert.equal(name, 'uv')
+    assert.equal(version, seaSmokeTest.uvVersion)
+    process.stdout.write(`${name} ${version}\n`)
   }
-  if (seaSmokeTest.coanaVersion) {
-    assert.equal(
-      await fs
-        .stat(path.join(__dirname, SEA_COANA_VFS_PATHS.cliWrapper))
-        .then(stat => stat.isFile()),
-      true,
-    )
-    assert.equal(
-      await fs
-        .stat(path.join(__dirname, SEA_COANA_VFS_PATHS.analyzers, 'repos'))
-        .then(stat => stat.isDirectory()),
-      true,
-    )
-    const node = await getBundledTool('coana-node')
-    try {
-      const output = execFileSync(node, ['--version'], {
-        encoding: 'utf8',
-        timeout: 15_000,
-      })
-      assert.equal(output.trim(), `v${seaSmokeTest.coanaNodeVersion}`)
-      process.stdout.write(output)
-    } finally {
-      await cleanupBundledTool(node)
-    }
+  if (seaSmokeTest.nodeVersion) {
+    const output = await readBundledVersion('node')
+    assert.equal(output.trim(), `v${seaSmokeTest.nodeVersion}`)
+    process.stdout.write(output)
   }
   console.log('VFS smoke test passed')
+}
+
+async function readBundledVersion(id: 'node' | 'uv'): Promise<string> {
+  const executable = await getBundledTool(id)
+  try {
+    return execFileSync(executable, ['--version'], {
+      encoding: 'utf8',
+      timeout: 15_000,
+    })
+  } finally {
+    await cleanupBundledTool(executable)
+  }
 }
 
 if (

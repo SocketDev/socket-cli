@@ -37,17 +37,17 @@ The builder creates a private temporary copy of the distribution. It does not re
 
 The builder stages independent payloads in parallel. It waits for all staging jobs before cleanup. It builds the .NET facts helper before Rollup copies the distribution.
 
-Verified source downloads are cached under `~/.cache/socket-sea/downloads`; each cache hit is checked against its pinned digest, and Node's `SHASUMS256.txt` is fetched fresh for each build. The runtime executable does not access this cache or download helper tools.
+The builder caches downloads in `~/.cache/socket-sea/downloads` and checks each cache hit against its pinned digest. It fetches Node's `SHASUMS256.txt` on every build.
 
 ## Embedded tools
 
 The build embeds the .NET facts helper, `socket-patch`, and `uv` when a verified payload exists for the target. The .NET helper still needs a compatible .NET SDK from the project or `PATH`. The scan command uses `SOCKET_CLI_UV_PATH` when set. Otherwise, it extracts embedded `uv` to a temporary directory when needed.
 
-The build stages and embeds the `cdxgen` and `synp` APIs for darwin-arm64, but the manifest marks both features unavailable. Their source provenance and third-party notice obligations are not resolved, so the CLI refuses to run them. Their notice files stay with this build because the payloads are already embedded in the executable.
+The bundled `cdxgen` generates SBOMs from npm lockfile v3 and Yarn Classic projects. Yarn Classic needs an existing `node_modules` directory for Synp. The manifest records source verification and third-party notices.
 
 Rollup creates a notice inventory from each bundled dependency graph. Some pinned packages omit their license text from npm; exact package-version entries in `.config/rollup.cdxgen-sea.config.mjs` and `src/sea/rollup-provenance.mjs` supply the missing text. A dependency bump cannot reuse a mismatched entry, so the inventory records a missing-text obligation. README files are not used as license text or shipped as notice documents.
 
-The 2.x RC embeds Coana's CLI and analyzers for Linux and macOS. Its build needs a Socket API token with Coana artifact access; without access, the build fails. Windows, Python, and JVM capabilities remain unavailable. The runtime does not download helper tools.
+The Node CLI and SEA download Coana from the Socket API on a cache miss. The SEA bundles Node to run Coana. SEA builds need no Coana credentials. Python and JVM runtimes remain external.
 
 ## Manifest
 
@@ -75,7 +75,9 @@ Terminal images trim unused rows while preserving internal spacing. Each animati
 
 ### Build, test, and publish the RC
 
-Run `pnpm build:sea` on the target OS and CPU. Before accepting the executable and manifest, the builder smoke tests `--help` and `--version`. Run `socket sea smoke-test` to verify that every staged file can be read from the mounted VFS with its original bytes. It also runs the embedded Coana cache helper against an empty temporary cache and checks its cache-miss exit code. On targets that bundle uv, the same command extracts it, runs `uv --version`, checks the pinned version, and removes the executable. The builder also runs `patch --version` on targets with socket-patch, generates .NET facts for a dependency-free project with package sources disabled, and checks cleanup of extracted tools. A minimal npm project also exercises the embedded cdxgen capability check. Run `pnpm test:sea` for the native suite.
+Run `pnpm build:sea` on the target OS and CPU. The builder checks help and version output and runs `patch --version` where available. It generates .NET facts with package sources disabled and generates SBOMs for npm and Yarn Classic fixtures.
+
+`socket sea smoke-test` verifies VFS integrity and checks that an empty Coana cache reports a miss. It checks the bundled Node and uv versions and removes the extracted executables. Run `pnpm test:sea` for the native suite.
 
 The release workflow builds the five platform packages on their matching runners. Each runner installs the actual `socket` launcher tarball with its matching platform tarball in an empty consumer and runs help and version through the installed command. The launcher declares exact-version optional dependencies under `@socketsecurity/socket-cli-<platform>-<arch>`. Linux packages target glibc. The pinned Node release provides macOS arm64, Linux arm64/x64 and Windows arm64/x64 archives.
 

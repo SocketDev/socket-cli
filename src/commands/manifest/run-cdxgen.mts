@@ -10,10 +10,7 @@ import {
   convertYarnClassicToNpmLock,
   removeOwnedPackageLock,
 } from '../../sea/adapters/synp.mts'
-import {
-  assertEmbeddedToolAvailable,
-  isStandaloneSea,
-} from '../../sea/runtime.mts'
+import { assertEmbeddedToolAvailable, isSea } from '../../sea/runtime.mts'
 import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx.mts'
 import { findUp } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
@@ -72,7 +69,7 @@ function argvObjectToArray(argvObj: ArgvObject): string[] {
 }
 
 export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
-  if (isStandaloneSea()) {
+  if (isSea()) {
     const unsupported = new Set([
       'deep',
       'evidence',
@@ -294,7 +291,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
         if (abortController.signal.aborted) {
           const reason = abortController.signal.reason as { code?: unknown }
           if (typeof reason?.code === 'string') {
-            if (isStandaloneSea()) {
+            if (isSea()) {
               await removeOwnedPackageLock(generatedLock)
               const canceled = Promise.resolve({
                 code: null,

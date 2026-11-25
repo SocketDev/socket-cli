@@ -8,7 +8,6 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { gunzipSync } from 'node:zlib'
 
-import { seaArchivePaths } from './archive-paths.mts'
 import { acquireBuildLock } from './build/lock.mts'
 import { publishArtifactPair } from './build/publish.mts'
 import { smokeTestSea } from './build/smoke-test.mts'
@@ -16,9 +15,18 @@ import { createSeaCapabilities } from './capabilities.mts'
 import { downloadBytes } from './download-bytes.mts'
 import { cachedDownload } from './download-cache.mts'
 import { NODE_VERSION } from './node-version.mts'
-import { findLockedPackageIntegrity, parsePnpmLock } from './pnpm-lock.mts'
+import {
+  SEA_CAPABILITIES_PATH,
+  SEA_RESOURCES_DIRECTORY,
+  seaArchivePaths,
+} from './paths/archive.mts'
+import {
+  SEA_NODE_LICENSE_PATH,
+  SEA_SOCKET_PATCH_LICENSE_PATH,
+  seaNativeToolPaths,
+} from './paths/native-tools.mts'
+import { findLockedPackageIntegrity } from './pnpm-lock.mts'
 import { updateSeaReadmeVersion } from './readme-version.mts'
-import { stageCoana } from './stage/coana.mts'
 import { stageSynp } from './stage/synp.mts'
 import { stageUv } from './stage/uv.mts'
 import { SEA_VERSION } from './version.mts'
@@ -70,6 +78,21 @@ function sha256(data: Buffer): string {
 
 async function digestFile(filename: string): Promise<string> {
   return sha256(await fs.readFile(filename))
+}
+
+async function stageNodeRuntime(
+  stage: string,
+  platform: string,
+  executable: string,
+) {
+  const paths = seaNativeToolPaths('node', platform)
+  const binary = path.join(stage, paths.binary)
+  await fs.mkdir(path.dirname(binary), { recursive: true })
+  await fs.copyFile(executable, binary)
+  const sha256 = await digestFile(binary)
+  const { size } = await fs.stat(binary)
+  await fs.writeFile(path.join(stage, paths.digest), `${sha256}\n`)
+  return { file: paths.binary, sha256, size }
 }
 
 async function digestTree(directory: string): Promise<string> {
@@ -358,8 +381,8 @@ async function stageSocketPatch(
       `${packageName}@${version} failed pnpm lockfile integrity verification`,
     )
   }
-  const executableName =
-    platform === 'win32' ? 'socket-patch.exe' : 'socket-patch'
+  const binaryPath = seaNativeToolPaths('socket-patch', platform).binary
+  const executableName = path.basename(binaryPath)
   const binaryEntry = `package/${executableName}`
   const entries = readTarEntries(tarball, binaryEntry)
   const metadata = JSON.parse(
@@ -382,15 +405,15 @@ async function stageSocketPatch(
   }
   const binary = entries.get(binaryEntry)!
   validateNativeBinary(binary, platform, arch)
-  const payloadDirectory = path.join(stage, 'resources')
-  await fs.mkdir(payloadDirectory, { recursive: true })
-  await fs.writeFile(path.join(payloadDirectory, executableName), binary, {
+  const output = path.join(stage, binaryPath)
+  await fs.mkdir(path.dirname(output), { recursive: true })
+  await fs.writeFile(output, binary, {
     mode: 0o755,
     flag: 'wx',
   })
   await fs.copyFile(
     path.join(SEA_DIRECTORY, 'licenses/socket-patch-MIT.txt'),
-    path.join(payloadDirectory, 'socket-patch-LICENSE.txt'),
+    path.join(stage, SEA_SOCKET_PATCH_LICENSE_PATH),
   )
   return {
     packageName,
@@ -416,15 +439,9 @@ type StagedCdxgenApi = {
 }
 
 async function stageCdxgenApi(
-  target: readonly [string, string, string],
   stage: string,
   version: string,
-): Promise<StagedCdxgenApi | undefined> {
-  // Only darwin-arm64 has been qualified with the Node 27 VFS Worker smoke.
-  if (target[0] !== 'darwin' || target[1] !== 'arm64') {
-    return undefined
-  }
-
+): Promise<StagedCdxgenApi> {
   const packageName = '@cyclonedx/cdxgen'
   const packageRoot = path.join(
     REPOSITORY_ROOT,
@@ -553,16 +570,6 @@ async function stageCdxgenApi(
     throw new Error(`Required cdxgen license file is missing: ${licensePath}`)
   }
   await fs.copyFile(licensePath, path.join(payloadRoot, 'LICENSE'))
-  await fs.copyFile(
-    path.join(SEA_DIRECTORY, 'adapters/cdxgen-worker.mjs'),
-    path.join(payloadRoot, 'sea-worker.mjs'),
-  )
-  const workerUtils = path.join(payloadRoot, 'utils')
-  await fs.mkdir(workerUtils, { recursive: true })
-  await fs.copyFile(
-    path.join(REPOSITORY_ROOT, 'src/utils/is-record.mjs'),
-    path.join(workerUtils, 'is-record.mjs'),
-  )
   // Keep a concrete VFS path for cdxgen's plugin-directory override. The
   // marker does not install or expose any plugin executable.
   const pluginsDirectory = path.join(payloadRoot, 'plugins-empty')
@@ -930,18 +937,23 @@ async function main(): Promise<void> {
     const stageExternal = path.join(stage, 'external')
     await fs.mkdir(stageDist, { recursive: true })
     await fs.mkdir(stageExternal, { recursive: true })
-    await fs.mkdir(path.join(stage, 'resources'), { recursive: true })
+    await fs.mkdir(path.join(stage, SEA_RESOURCES_DIRECTORY), {
+      recursive: true,
+    })
 
     const cdxgenVersion = packageJson.devDependencies?.['@cyclonedx/cdxgen']
-    if (
-      !cdxgenVersion ||
-      !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(cdxgenVersion)
-    ) {
+    const synpVersion = packageJson.devDependencies?.['synp']
+    const exactVersion = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
+    if (!cdxgenVersion || !exactVersion.test(cdxgenVersion)) {
       throw new Error(
         '@cyclonedx/cdxgen must have an exact version in devDependencies to build the SEA payload',
       )
     }
-    const synpVersion = packageJson.devDependencies?.['synp']
+    if (!synpVersion || !exactVersion.test(synpVersion)) {
+      throw new Error(
+        'synp must have an exact version in devDependencies to build the Yarn Classic SEA payload',
+      )
+    }
     const prepTasks = [
       // The 1.14.x distribution includes this first-party helper. Build it
       // before Rollup copies manifest-scripts into the private distribution.
@@ -949,22 +961,11 @@ async function main(): Promise<void> {
       run('pnpm', ['run', 'build:dotnet-tool']),
       stageSocketPatch(target, stage, socketPatchVersion, socketPatchLicense),
       (async () => {
-        const cdxgenApi = await stageCdxgenApi(target, stage, cdxgenVersion)
-        if (
-          cdxgenApi &&
-          (!synpVersion ||
-            !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(synpVersion))
-        ) {
-          throw new Error(
-            'synp must have an exact version in devDependencies to build the Yarn Classic SEA payload',
-          )
-        }
-        const synpPayload = cdxgenApi
-          ? await stageSynp(stage, synpVersion!)
-          : undefined
+        const cdxgenApi = await stageCdxgenApi(stage, cdxgenVersion)
+        const synpPayload = await stageSynp(stage, synpVersion)
         return { cdxgenApi, synpPayload }
       })(),
-      stageCoana(stage, target[0], target[1], nodeRuntime.executable),
+      stageNodeRuntime(stage, target[0], node),
       stageUv(stage, target[0], target[1]),
       // Rollup copies this helper into manifest-scripts for standalone builds.
       run('pnpm', ['run', 'build:maven-extension']),
@@ -973,12 +974,11 @@ async function main(): Promise<void> {
       '.NET facts helper',
       'socket-patch payload',
       'cdxgen and synp payloads',
-      'Coana payload',
+      'Node runtime',
       'uv payload',
       'Maven manifest extension',
     ] as const
     const prepResults = await Promise.allSettled(prepTasks)
-    delete process.env['SOCKET_CLI_API_TOKEN']
     const prepErrors = prepResults.flatMap((result, index) => {
       if (result.status !== 'rejected') {
         return []
@@ -1004,7 +1004,7 @@ async function main(): Promise<void> {
     const { cdxgenApi, synpPayload } = (
       prepResults[2] as PromiseFulfilledResult<{
         cdxgenApi: Awaited<ReturnType<typeof stageCdxgenApi>>
-        synpPayload: Awaited<ReturnType<typeof stageSynp>> | undefined
+        synpPayload: Awaited<ReturnType<typeof stageSynp>>
       }>
     ).value
     const uvPayload = (
@@ -1012,16 +1012,17 @@ async function main(): Promise<void> {
         Awaited<ReturnType<typeof stageUv>>
       >
     ).value
-    const coanaPayload = (
+    const nodePayload = (
       prepResults[3] as PromiseFulfilledResult<
-        Awaited<ReturnType<typeof stageCoana>>
+        Awaited<ReturnType<typeof stageNodeRuntime>>
       >
     ).value
-    const socketPatchHashFile = socketPatch
-      ? path.join(stage, 'resources', 'socket-patch.sha256')
-      : undefined
-    if (socketPatch && socketPatchHashFile) {
-      await fs.writeFile(socketPatchHashFile, `${socketPatch.digest}\n`)
+    const patchPaths = seaNativeToolPaths('socket-patch', target[0])
+    if (socketPatch) {
+      await fs.writeFile(
+        path.join(stage, patchPaths.digest),
+        `${socketPatch.digest}\n`,
+      )
     }
 
     // Rollup depends on the completed helper and copies it into stageDist.
@@ -1051,23 +1052,12 @@ async function main(): Promise<void> {
         INLINED_SOCKET_CLI_PUBLISHED_BUILD: 'true',
       },
     )
-    const synpLock = synpPayload
-      ? parsePnpmLock(
-          await fs.readFile(
-            path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'),
-            'utf8',
-          ),
-        )
-      : undefined
-    const synpLocator = synpPayload ? `synp@${synpPayload.version}` : undefined
-    const synpLockIntegrity = synpLocator
-      ? synpLock?.packages?.[synpLocator]?.resolution?.integrity
-      : undefined
-    if (
-      synpPayload &&
-      (typeof synpLockIntegrity !== 'string' ||
-        !synpLockIntegrity.startsWith('sha512-'))
-    ) {
+    const synpLockIntegrity = findLockedPackageIntegrity(
+      await fs.readFile(path.join(REPOSITORY_ROOT, 'pnpm-lock.yaml'), 'utf8'),
+      synpPayload.packageName,
+      synpPayload.version,
+    )
+    if (!synpLockIntegrity?.startsWith('sha512-')) {
       throw new Error(
         `pnpm-lock.yaml has no integrity for synp@${synpPayload.version}`,
       )
@@ -1080,11 +1070,11 @@ async function main(): Promise<void> {
       'requirements.json',
       'translations.json',
       'LICENSE',
-      'node-runtime-LICENSE',
+      SEA_NODE_LICENSE_PATH,
     ]
     for (const filename of rootFiles) {
       const source =
-        filename === 'node-runtime-LICENSE'
+        filename === SEA_NODE_LICENSE_PATH
           ? nodeRuntime.licenseFile
           : path.join(REPOSITORY_ROOT, filename)
       if (!existsSync(source)) {
@@ -1134,27 +1124,20 @@ async function main(): Promise<void> {
     }
     const capabilities = createSeaCapabilities({
       triple,
-      hasCdxgen: Boolean(cdxgenApi),
-      hasCoana: Boolean(coanaPayload),
-      hasSynp: Boolean(synpPayload),
+      hasCdxgen: true,
+      hasSynp: true,
       hasSocketPatch: Boolean(socketPatch),
-      hasUv: Boolean(uvPayload),
+      hasUv: true,
       socketPatchVersion,
     })
     await fs.writeFile(
-      path.join(stage, 'resources/capabilities.json'),
+      path.join(stage, SEA_CAPABILITIES_PATH),
       `${JSON.stringify(capabilities, null, 2)}\n`,
     )
     // VFS archives and named SEA assets are mutually exclusive in Node 27.
     // Native tools belong in the archive too, then are read from the VFS and
     // materialized only at invocation time.
-    const archivePaths = seaArchivePaths({
-      hasCdxgen: Boolean(cdxgenApi),
-      hasCoana: Boolean(coanaPayload),
-      hasSynp: Boolean(synpPayload),
-      hasUv: Boolean(uvPayload),
-      rootFiles,
-    })
+    const archivePaths = seaArchivePaths(rootFiles)
     if (process.platform === 'win32') {
       // Windows PowerShell's Compress-Archive may emit backslashes in ZIP
       // entry names. Node's VFS resolves POSIX paths such as dist/cli.js.
@@ -1180,8 +1163,7 @@ async function main(): Promise<void> {
         SEA_OUTPUT: bootstrap,
         SEA_SMOKE_TEST: JSON.stringify({
           digest: digestVfs(stage, archivePaths),
-          coanaVersion: coanaPayload?.version,
-          coanaNodeVersion: coanaPayload ? NODE_VERSION : undefined,
+          nodeVersion: NODE_VERSION,
           uvVersion: uvPayload?.version,
         }),
       },
@@ -1221,15 +1203,14 @@ async function main(): Promise<void> {
       {
         id: 'node-runtime',
         version: NODE_VERSION,
-        file: path.basename(node),
-        sha256: await digestFile(node),
+        ...nodePayload,
         license: 'MIT',
         notices: [
           {
             type: 'license',
             value: 'MIT',
-            path: 'node-runtime-LICENSE',
-            sha256: await digestFile(path.join(stage, 'node-runtime-LICENSE')),
+            path: SEA_NODE_LICENSE_PATH,
+            sha256: await digestFile(path.join(stage, SEA_NODE_LICENSE_PATH)),
           },
         ],
       },
@@ -1285,130 +1266,101 @@ async function main(): Promise<void> {
           {
             type: 'license',
             value: socketPatch.license,
-            path: 'resources/socket-patch-LICENSE.txt',
+            path: SEA_SOCKET_PATCH_LICENSE_PATH,
           },
         ],
         file: `SEA asset: socket-patch`,
-        source: `resources/${triple.startsWith('win-') ? 'socket-patch.exe' : 'socket-patch'}`,
-        digestFile: 'resources/socket-patch.sha256',
+        source: patchPaths.binary,
+        digestFile: patchPaths.digest,
         sha256: socketPatch.digest,
       })
     }
-    if (cdxgenApi) {
-      payloads.push({
-        id: 'cdxgen-api',
-        version: cdxgenApi.version,
-        package: cdxgenApi.packageName,
-        declaredLockIntegrity: cdxgenApi.declaredLockIntegrity,
-        sourceVerification: 'unverified',
-        sourceVerificationReason:
-          'The frozen lockfile SRI is recorded as declared metadata. Installed Rollup module hashes are provided separately and are not authenticated against the locked tarballs or generated bundle bytes.',
-        sourceInventory: {
-          file: 'tools/cdxgen/ROLLUP-SOURCE-INVENTORY.json',
-          sha256: cdxgenApi.sourceInventorySha256,
-          moduleCount: cdxgenApi.sourceModuleCount,
+    payloads.push({
+      id: 'cdxgen-api',
+      version: cdxgenApi.version,
+      package: cdxgenApi.packageName,
+      declaredLockIntegrity: cdxgenApi.declaredLockIntegrity,
+      sourceVerification: 'unverified',
+      sourceVerificationReason:
+        'The frozen lockfile SRI is recorded as declared metadata. Installed Rollup module hashes are provided separately and are not authenticated against the locked tarballs or generated bundle bytes.',
+      sourceInventory: {
+        file: 'tools/cdxgen/ROLLUP-SOURCE-INVENTORY.json',
+        sha256: cdxgenApi.sourceInventorySha256,
+        moduleCount: cdxgenApi.sourceModuleCount,
+      },
+      license: cdxgenApi.license,
+      notices: [
+        {
+          type: 'license',
+          value: cdxgenApi.license,
+          path: 'tools/cdxgen/LICENSE',
         },
-        license: cdxgenApi.license,
-        notices: [
-          {
-            type: 'license',
-            value: cdxgenApi.license,
-            path: 'tools/cdxgen/LICENSE',
-          },
-          {
-            type: 'third-party-notice-inventory',
-            path: 'tools/cdxgen/THIRD-PARTY-NOTICES.json',
-          },
-        ],
-        thirdPartyNotices: {
-          inventory: 'tools/cdxgen/THIRD-PARTY-NOTICES.json',
-          documents: cdxgenApi.noticeDocuments,
-          packageCount: cdxgenApi.noticePackageCount,
-          licenseTextCount: cdxgenApi.licenseTextCount,
-          noticeTextCount: cdxgenApi.noticeTextCount,
-          flaggedObligationCount: cdxgenApi.obligationCount,
+        {
+          type: 'third-party-notice-inventory',
+          path: 'tools/cdxgen/THIRD-PARTY-NOTICES.json',
         },
-        file: 'tools/cdxgen/',
-        entrypoint: 'tools/cdxgen/sea-worker.mjs',
-        sha256: cdxgenApi.digest,
-      })
-    }
-    if (synpPayload && typeof synpLockIntegrity === 'string') {
-      payloads.push({
-        id: 'synp-api',
-        version: synpPayload.version,
-        package: synpPayload.packageName,
-        declaredLockIntegrity: synpLockIntegrity,
-        sourceVerification: 'unverified',
-        sourceVerificationReason:
-          'The frozen lockfile SRI and staged payload digest are recorded. No per-module source inventory is emitted, and neither value authenticates installed or transformed source bytes against the locked tarball.',
-        license: synpPayload.license,
-        notices: [
-          {
-            type: 'license',
-            value: synpPayload.license,
-            path: 'tools/synp/LICENSE',
-          },
-          {
-            type: 'third-party-notice-inventory',
-            path: 'tools/synp/THIRD-PARTY-NOTICES.json',
-          },
-        ],
-        thirdPartyNotices: {
-          inventory: 'tools/synp/THIRD-PARTY-NOTICES.json',
-          inventorySha256: synpPayload.noticeInventorySha256,
-          documents: synpPayload.noticeDocuments,
-          packageCount: synpPayload.noticePackageCount,
-          flaggedObligationCount: synpPayload.obligationCount,
+      ],
+      thirdPartyNotices: {
+        inventory: 'tools/cdxgen/THIRD-PARTY-NOTICES.json',
+        documents: cdxgenApi.noticeDocuments,
+        packageCount: cdxgenApi.noticePackageCount,
+        licenseTextCount: cdxgenApi.licenseTextCount,
+        noticeTextCount: cdxgenApi.noticeTextCount,
+        flaggedObligationCount: cdxgenApi.obligationCount,
+      },
+      file: 'tools/cdxgen/',
+      entrypoint: 'tools/cdxgen/sea-worker.js',
+      sha256: cdxgenApi.digest,
+    })
+    payloads.push({
+      id: 'synp-api',
+      version: synpPayload.version,
+      package: synpPayload.packageName,
+      declaredLockIntegrity: synpLockIntegrity,
+      sourceVerification: 'unverified',
+      sourceVerificationReason:
+        'The frozen lockfile SRI and staged payload digest are recorded. No per-module source inventory is emitted, and neither value authenticates installed or transformed source bytes against the locked tarball.',
+      license: synpPayload.license,
+      notices: [
+        {
+          type: 'license',
+          value: synpPayload.license,
+          path: 'tools/synp/LICENSE',
         },
-        file: 'tools/synp/',
-        entrypoint: 'tools/synp/bin/synp.js',
-        sha256: synpPayload.integrity,
-      })
-    }
-    if (coanaPayload) {
-      payloads.push({
-        id: 'coana',
-        version: coanaPayload.version,
-        file: `${coanaPayload.vfsDirectory}/`,
-        sha256: await digestTree(coanaPayload.directory),
-        components: {
-          cli: {
-            sha256: coanaPayload.cliSha256,
-            size: coanaPayload.cliSize,
-          },
-          analyzers: {
-            sha256: coanaPayload.analyzersSha256,
-            size: coanaPayload.analyzersSize,
-          },
-          node: {
-            version: NODE_VERSION,
-            sha256: coanaPayload.nodeSha256,
-            size: coanaPayload.nodeSize,
-          },
+        {
+          type: 'third-party-notice-inventory',
+          path: 'tools/synp/THIRD-PARTY-NOTICES.json',
         },
-      })
-    }
-    if (uvPayload) {
-      payloads.push({
-        id: 'uv',
-        package: uvPayload.packageName,
-        version: uvPayload.version,
-        target: uvPayload.target,
-        source: uvPayload.sourceUrl,
-        archiveSha256: uvPayload.declaredArchiveSha256,
-        binary: uvPayload.binaryPath,
-        sha256: uvPayload.binarySha256,
-        size: uvPayload.binarySize,
-        license: uvPayload.license,
-        notices: uvPayload.noticeDocuments,
-        noticeInventory: {
-          path: uvPayload.noticeInventoryPath,
-          sha256: uvPayload.noticeInventorySha256,
-        },
-        noticeObligations: uvPayload.noticeObligations,
-      })
-    }
+      ],
+      thirdPartyNotices: {
+        inventory: 'tools/synp/THIRD-PARTY-NOTICES.json',
+        inventorySha256: synpPayload.noticeInventorySha256,
+        documents: synpPayload.noticeDocuments,
+        packageCount: synpPayload.noticePackageCount,
+        flaggedObligationCount: synpPayload.obligationCount,
+      },
+      file: 'tools/synp/',
+      entrypoint: 'tools/synp/bin/synp.js',
+      sha256: synpPayload.integrity,
+    })
+    payloads.push({
+      id: 'uv',
+      package: uvPayload.packageName,
+      version: uvPayload.version,
+      target: uvPayload.target,
+      source: uvPayload.sourceUrl,
+      archiveSha256: uvPayload.declaredArchiveSha256,
+      binary: uvPayload.binaryPath,
+      sha256: uvPayload.binarySha256,
+      size: uvPayload.binarySize,
+      license: uvPayload.license,
+      notices: uvPayload.noticeDocuments,
+      noticeInventory: {
+        path: uvPayload.noticeInventoryPath,
+        sha256: uvPayload.noticeInventorySha256,
+      },
+      noticeObligations: uvPayload.noticeObligations,
+    })
     const manifest = {
       schemaVersion: 1,
       target: { os: target[0], arch: target[1], triple },

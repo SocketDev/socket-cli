@@ -1,13 +1,5 @@
 import { execFile } from 'node:child_process'
-import {
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  stat,
-  writeFile,
-} from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,7 +7,6 @@ import { promisify } from 'node:util'
 
 import { describe, expect, it } from 'vitest'
 
-import { seaArchivePaths } from '../../../src/sea/archive-paths.mts'
 import {
   findNodeArchiveSha256,
   getSocketPatchPackageName,
@@ -23,6 +14,7 @@ import {
   sha512IntegrityHex,
 } from '../../../src/sea/build-sea.mts'
 import { createSeaCapabilities } from '../../../src/sea/capabilities.mts'
+import { seaArchivePaths } from '../../../src/sea/paths/archive.mts'
 import { findLockedPackageIntegrity } from '../../../src/sea/pnpm-lock.mts'
 import {
   NODE_VERSION_END,
@@ -170,7 +162,25 @@ describe('SEA README Node version', () => {
 })
 
 describe('SEA capability policy', () => {
-  it('keeps optional tools unavailable unless their payloads are present', () => {
+  it.each([false, true])(
+    'advertises the available SBOM modes with Synp present: %s',
+    hasSynp => {
+      const capabilities = createSeaCapabilities({
+        triple: 'linux-x64',
+        hasCdxgen: true,
+        hasSynp,
+        hasSocketPatch: false,
+        hasUv: true,
+      })
+      expect(capabilities.available).toContain('manifest-cdxgen-npm-lock-v3')
+      expect(
+        capabilities.available.includes('manifest-cdxgen-yarn-classic'),
+      ).toBe(hasSynp)
+      expect(capabilities.available.includes('synp')).toBe(hasSynp)
+    },
+  )
+
+  it('advertises on-demand Coana with the core build capabilities', () => {
     expect(
       createSeaCapabilities({
         triple: 'linux-x64',
@@ -179,18 +189,13 @@ describe('SEA capability policy', () => {
         hasSocketPatch: false,
         hasUv: false,
       }).available,
-    ).toEqual(['socket-core', 'manifest-dotnet-facts'])
+    ).toEqual(['socket-core', 'manifest-dotnet-facts', 'coana'])
   })
 })
 
 describe('SEA archive paths', () => {
   it('archives staged native tools through their shared tools parent', () => {
-    const paths = seaArchivePaths({
-      hasCdxgen: true,
-      hasSynp: true,
-      hasUv: true,
-      rootFiles: ['package.json'],
-    })
+    const paths = seaArchivePaths(['package.json'])
     expect(paths.filter(item => item === 'tools')).toHaveLength(1)
     expect(paths).not.toContain('tools/cdxgen')
     expect(paths).not.toContain('tools/synp')
@@ -257,10 +262,6 @@ describe('SEA bootstrap Rollup config', () => {
       const payload = path.join(resources, 'payload')
       await writeFile(payload, 'build')
       await mkdir(path.join(directory, 'dist'))
-      await copyFile(
-        path.join(root, 'src/vendor/coana-cache.mjs'),
-        path.join(directory, 'dist/coana-cache.mjs'),
-      )
       const entries = ['resources', 'dist']
       await execFileAsync(
         process.execPath,

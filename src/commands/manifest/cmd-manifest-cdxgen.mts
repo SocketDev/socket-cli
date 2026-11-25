@@ -9,7 +9,7 @@ import colors from 'yoctocolors-cjs'
 import { runCdxgen } from './run-cdxgen.mts'
 import constants, { FLAG_HELP } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { isStandaloneSea } from '../../sea/runtime.mts'
+import { isSea } from '../../sea/runtime.mts'
 import { joinAnd } from '../../utils/arrays.mts'
 import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
 import { logger } from '../../utils/logger.mts'
@@ -300,7 +300,7 @@ async function run(
   // The standalone build must not start cdxgen just to display its help:
   // cdxgen is an optional payload and can be unavailable for this target.
   // Keep this local help useful without resolving or installing that payload.
-  if (yargv.help && isStandaloneSea()) {
+  if (yargv.help && isSea()) {
     logger.log(`
 Usage
   socket manifest cdxgen [options] [path]
@@ -340,7 +340,7 @@ Only one npm project is supported in this standalone build. Other cdxgen modes a
 
   const { spawnPromise } = await runCdxgen(yargv)
 
-  if (isStandaloneSea()) {
+  if (isSea()) {
     // The embedded Worker exposes an awaited result. Avoid translating its
     // synthetic exit event into process.exit(), which can bypass CLI error
     // formatting and telemetry drain on rejection or cancellation.

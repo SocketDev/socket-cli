@@ -16,10 +16,12 @@
  * - src/vendor/coana-cache.mjs (the cache script)
  */
 
+import { createHash } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { c as createTar } from 'tar'
 import {
   afterAll,
   afterEach,
@@ -30,8 +32,7 @@ import {
   vi,
 } from 'vitest'
 
-import { spawn } from './spawn.mts'
-import constants, { SOCKET_CLI_API_TOKEN_VARIABLES } from '../constants.mts'
+import * as api from './api.mts'
 import { spawnCoana } from './coana/release.mts'
 import { overrideCachedConfig, resetConfigForTesting } from './config.mts'
 import {
@@ -39,7 +40,16 @@ import {
   getDefaultApiBaseUrl,
   resolveDefaultApiToken,
 } from './sdk.mts'
+import { spawn } from './spawn.mts'
+import constants, { SOCKET_CLI_API_TOKEN_VARIABLES } from '../constants.mts'
+import {
+  COANA_CLI_WRAPPER_FILENAME,
+  coanaCacheDistPath,
+  coanaCliWrapperPath,
+} from '../paths/coana.mts'
+import * as seaRuntime from '../sea/runtime.mts'
 
+const CACHE_SCRIPT = coanaCacheDistPath(constants.distPath)
 const VERSION = '1.2.3'
 
 // Prints what it was run with, or fails the way Coana does for some errors.
@@ -83,20 +93,10 @@ describe('spawnCoana', () => {
     process.env['XDG_CACHE_HOME'] = path.join(tmpDir, 'cache')
     const extracted = path.join(tmpDir, 'extracted')
     await fs.mkdir(extracted)
-    await fs.writeFile(
-      path.join(extracted, 'cli-wrapper.mjs'),
-      FAKE_CLI_WRAPPER,
-    )
+    await fs.writeFile(coanaCliWrapperPath(extracted), FAKE_CLI_WRAPPER)
     await spawn(
       'node',
-      [
-        path.join(constants.distPath, 'coana-cache.mjs'),
-        'install',
-        VERSION,
-        'cli',
-        'a'.repeat(64),
-        extracted,
-      ],
+      [CACHE_SCRIPT, 'install', VERSION, 'cli', 'a'.repeat(64), extracted],
       { stdio: 'pipe' },
     )
   })
@@ -119,6 +119,66 @@ describe('spawnCoana', () => {
 
     expect(run.args).toEqual(['run', '.'])
     expect(run.cwd).toBe(tmpDir)
+  })
+
+  it('downloads and runs Coana on the first SEA invocation', async () => {
+    const archive = path.join(tmpDir, 'coana.tar.gz')
+    const fixture = path.join(tmpDir, 'download-fixture')
+    await fs.mkdir(fixture)
+    await fs.writeFile(coanaCliWrapperPath(fixture), FAKE_CLI_WRAPPER)
+    await createTar({ cwd: fixture, file: archive, gzip: true }, [
+      COANA_CLI_WRAPPER_FILENAME,
+    ])
+    const bytes = await fs.readFile(archive)
+    const version = '1.2.4'
+    const url = 'https://example.test/coana.tar.gz'
+    const sea = vi.spyOn(seaRuntime, 'isSea').mockReturnValue(true)
+    const node = vi
+      .spyOn(seaRuntime, 'getBundledTool')
+      .mockResolvedValue(process.execPath)
+    const cache = vi
+      .spyOn(seaRuntime, 'runEmbeddedJsTool')
+      .mockResolvedValueOnce({ code: 4, signal: null })
+      .mockImplementation(async (_id, args, options) => {
+        const result = await spawn(process.execPath, [CACHE_SCRIPT, ...args], {
+          env: options?.env,
+          stdio: 'pipe',
+        })
+        return { code: 0, signal: null, stdout: result.stdout }
+      })
+    const request = vi.spyOn(api, 'sendApiRequest').mockResolvedValue({
+      ok: true,
+      data: {
+        version,
+        components: {
+          cli: {
+            sha256: createHash('sha256').update(bytes).digest('hex'),
+            size: bytes.length,
+            url,
+          },
+        },
+      },
+    })
+    const download = vi
+      .spyOn(api, 'apiFetch')
+      .mockResolvedValue(new Response(new Uint8Array(bytes)))
+    try {
+      const options = { coanaVersion: version, cwd: tmpDir }
+      expect((await runFake(options)).args).toEqual(['run', '.'])
+      expect((await runFake(options)).args).toEqual(['run', '.'])
+      expect(request).toHaveBeenCalledOnce()
+      expect(request).toHaveBeenCalledWith('orgs/acme/coana-cli/artifacts', {
+        body: { components: ['cli'], version },
+        method: 'POST',
+      })
+      expect(download).toHaveBeenCalledOnce()
+      expect(download).toHaveBeenCalledWith(url, expect.anything())
+      expect(node).toHaveBeenCalledWith('node')
+    } finally {
+      for (const spy of [sea, node, cache, request, download]) {
+        spy.mockRestore()
+      }
+    }
   })
 
   it('strips npm_package_* env vars to avoid E2BIG in big monorepos', async () => {

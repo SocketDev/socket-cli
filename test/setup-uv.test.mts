@@ -15,6 +15,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parse } from 'yaml'
 
 import { installUvForCi, uvSetupRelease } from '../scripts/setup/uv.mts'
+import pins from '../src/sea/stage/uv-pins.json' with { type: 'json' }
 
 const directories: string[] = []
 
@@ -26,7 +27,7 @@ async function uvFixture(arch = 'x64') {
   const bytes = Buffer.from('fixture uv archive bytes')
   const release = {
     ...uvSetupRelease('linux', arch),
-    digest: createHash('sha512').update(bytes).digest('base64'),
+    digest: createHash('sha256').update(bytes).digest('hex'),
   }
   const fetcher = vi.fn<typeof fetch>(async () => new Response(bytes))
   const extract = vi.fn(async (archive: string, destination: string) => {
@@ -35,12 +36,15 @@ async function uvFixture(arch = 'x64') {
     const bin = path.join(destination, release.archiveRoot)
     await mkdir(bin, { recursive: true })
     const executable = path.join(bin, 'uv')
-    await writeFile(executable, '#!/bin/sh\nprintf "uv 0.12.15\\n"\n')
+    await writeFile(
+      executable,
+      `#!/bin/sh\nprintf "uv ${release.version}\\n"\n`,
+    )
     await chmod(executable, 0o755)
   })
   const probe = vi.fn(async () => {
     expect(await readFile(githubPath, 'utf8')).toBe('existing-bin\n')
-    return 'uv 0.12.15 (fixture)'
+    return `uv ${release.version} (fixture)`
   })
   return {
     dependencies: { extract, fetcher, probe, release },
@@ -69,15 +73,13 @@ describe('verified uv installation', () => {
       const installation = fixture.dependencies.extract.mock.calls[0]![1]
       expect(result).toEqual({
         bin: path.join(installation, 'uv-' + target + '-unknown-linux-gnu'),
-        version: '0.12.15',
+        version: pins.version,
       })
       expect(await readFile(fixture.options.githubPath, 'utf8')).toBe(
         'existing-bin\n' + result.bin + '\n',
       )
       expect(fixture.dependencies.fetcher).toHaveBeenCalledExactlyOnceWith(
-        'https://github.com/astral-sh/uv/releases/download/0.12.15/uv-' +
-          target +
-          '-unknown-linux-gnu.tar.gz',
+        `https://github.com/astral-sh/uv/releases/download/${pins.version}/uv-${target}-unknown-linux-gnu.tar.gz`,
         { redirect: 'follow', signal: expect.any(AbortSignal) },
       )
       expect(fixture.dependencies.extract).toHaveBeenCalledTimes(1)
@@ -194,7 +196,7 @@ describe('verified uv installation', () => {
     },
   )
 
-  it.each(['uv 0.12.14', 'python 0.12.15', ''])(
+  it.each(['uv 0.0.0', `python ${pins.version}`, ''])(
     'rejects version output %j before exporting PATH',
     async output => {
       const fixture = await uvFixture()
@@ -236,7 +238,7 @@ describe('verified uv installation', () => {
         })
       },
     )
-    fixture.dependencies.probe.mockResolvedValueOnce('uv 0.12.15')
+    fixture.dependencies.probe.mockResolvedValueOnce(`uv ${pins.version}`)
     const second = await installUvForCi(fixture.options, fixture.dependencies)
     expect(second.bin).not.toBe(first.bin)
     expect(fixture.dependencies.fetcher).toHaveBeenCalledTimes(2)

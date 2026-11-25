@@ -8,6 +8,8 @@ import url from 'node:url'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 
+import { seaWorkerTypeScript } from '../src/sea/rollup-workers.mts'
+
 const root = path.resolve(
   path.dirname(url.fileURLToPath(import.meta.url)),
   '..',
@@ -192,7 +194,7 @@ function noticesPlugin() {
 export default {
   input:
     process.env.SEA_SYNP_INPUT ||
-    path.join(root, 'src/sea/adapters/synp-worker.mjs'),
+    path.join(root, 'src/sea/adapters/synp-worker.mts'),
   output: {
     dir: process.env.SEA_SYNP_OUTPUT || path.join(root, 'dist/sea-synp'),
     format: 'cjs',
@@ -215,6 +217,7 @@ export default {
       'worker_threads',
     ].includes(id),
   plugins: [
+    seaWorkerTypeScript(),
     nodeResolve({ preferBuiltins: true, exportConditions: ['node'] }),
     commonjsPlugin(),
     noticesPlugin(),

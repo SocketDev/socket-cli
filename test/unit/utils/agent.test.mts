@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { NPM } from '../../../src/constants.mts'
-import { isStandaloneSea } from '../../../src/sea/runtime.mts'
+import { isSea } from '../../../src/sea/runtime.mts'
 import { shadowNpmInstall } from '../../../src/shadow/npm/install.mts'
 import { runAgentInstall } from '../../../src/utils/agent.mts'
 
@@ -12,7 +12,7 @@ vi.mock('../../../src/shadow/npm/install.mts', () => ({
 }))
 
 vi.mock('../../../src/sea/runtime.mts', () => ({
-  isStandaloneSea: vi.fn(() => false),
+  isSea: vi.fn(() => false),
 }))
 
 vi.mock('../../../src/utils/spawn.mts', () => ({
@@ -30,7 +30,7 @@ describe('runAgentInstall', () => {
   } as EnvDetails
 
   it('uses the npm shadow installer outside standalone SEA', () => {
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
 
     expect(runAgentInstall(npmDetails, { args: ['--ignore-scripts'] })).toBe(
       'shadow-result',
@@ -44,7 +44,7 @@ describe('runAgentInstall', () => {
   })
 
   it('runs npm directly in standalone SEA', () => {
-    vi.mocked(isStandaloneSea).mockReturnValue(true)
+    vi.mocked(isSea).mockReturnValue(true)
 
     expect(runAgentInstall(npmDetails)).toBe('spawn-result')
     expect(shadowNpmInstall).not.toHaveBeenCalled()

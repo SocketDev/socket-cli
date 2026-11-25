@@ -12,8 +12,7 @@ import { fileURLToPath } from 'node:url'
 import util from 'node:util'
 import { workerData } from 'node:worker_threads'
 
-// eslint-disable-next-line import-x/no-unresolved, n/no-missing-import -- The worker path resolves in its staged SEA VFS payload.
-import { isRecord } from './utils/is-record.mjs'
+import { isRecord } from '../../utils/objects.mts'
 
 const ipc = workerData?.socketIpc
 if (
@@ -28,28 +27,26 @@ if (
 // cdxgen probes host tools while importing its API. A nonempty allowlist
 // prevents those probes from spawning commands; the restricted npm API path
 // does not need any subprocesses.
-process.env.CDXGEN_PLUGINS_DIR = path.join(
+process.env['CDXGEN_PLUGINS_DIR'] = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   'plugins-empty',
 )
-process.env.CDXGEN_ALLOWED_COMMANDS = 'socket-sea-no-commands-allowed'
+process.env['CDXGEN_ALLOWED_COMMANDS'] = 'socket-sea-no-commands-allowed'
 
 const denied = () => {
   throw new Error(
     'Standalone cdxgen cannot start subprocesses or access the network',
   )
 }
-for (const name of [
-  'spawn',
-  'spawnSync',
-  'exec',
-  'execSync',
-  'execFile',
-  'execFileSync',
-  'fork',
-]) {
-  childProcess[name] = denied
-}
+Object.assign(childProcess, {
+  spawn: denied,
+  spawnSync: denied,
+  exec: denied,
+  execSync: denied,
+  execFile: denied,
+  execFileSync: denied,
+  fork: denied,
+})
 for (const module of [http, https]) {
   module.request = denied
   module.get = denied
@@ -66,10 +63,10 @@ syncBuiltinESMExports()
 
 const isolatedRoot = path.resolve(ipc.projectPath)
 const originalRoot = path.resolve(ipc.sourceRoot)
-const packageJson = JSON.parse(
+const packageJson: unknown = JSON.parse(
   await readFile(path.join(isolatedRoot, 'package.json'), 'utf8'),
 )
-const packageLock = JSON.parse(
+const packageLock: unknown = JSON.parse(
   await readFile(path.join(isolatedRoot, 'package-lock.json'), 'utf8'),
 )
 if (!isRecord(packageJson)) {
@@ -78,17 +75,18 @@ if (!isRecord(packageJson)) {
 if (!isRecord(packageLock)) {
   throw new Error('Malformed npm package-lock.json')
 }
-if (![1, 3].includes(packageLock.lockfileVersion)) {
+const lockfileVersion = packageLock['lockfileVersion']
+if (lockfileVersion !== 1 && lockfileVersion !== 3) {
   throw new Error(
     'The standalone cdxgen API supports package-lock versions 1 and 3 only',
   )
 }
-if (packageJson.workspaces || packageJson.workspace) {
+if (packageJson['workspaces'] || packageJson['workspace']) {
   throw new Error('The standalone cdxgen API does not support workspaces')
 }
-const hasLocalDependency = value =>
+const hasLocalDependency = (value: unknown) =>
   typeof value === 'string' && /^(?:file:|link:|workspace:)/i.test(value)
-const validPackageName = name => {
+const validPackageName = (name: string) => {
   if (typeof name !== 'string' || !name || name.includes('\\')) {
     return false
   }
@@ -97,7 +95,7 @@ const validPackageName = name => {
     return false
   }
   return name.startsWith('@')
-    ? parts.length === 2 && parts[0].length > 1
+    ? parts.length === 2 && parts[0]!.length > 1
     : parts.length === 1
 }
 for (const group of [
@@ -121,9 +119,9 @@ for (const group of [
   }
 }
 const inspectV1Dependencies = (
-  dependencies,
+  dependencies: unknown,
   dependencyPath = 'dependencies',
-) => {
+): void => {
   if (dependencies === undefined) {
     return
   }
@@ -137,42 +135,43 @@ const inspectV1Dependencies = (
     if (!isRecord(dependency)) {
       throw new Error(`Malformed package-lock v1 dependency '${name}'`)
     }
-    if (typeof dependency.version !== 'string' || !dependency.version) {
+    if (typeof dependency['version'] !== 'string' || !dependency['version']) {
       throw new Error(`Malformed package-lock v1 version for '${name}'`)
     }
     for (const metadataKey of [
       '_socketOptionalDependencies',
       '_socketPeerDependencies',
     ]) {
+      const metadata = dependency[metadataKey]
       if (
-        dependency[metadataKey] !== undefined &&
-        (!Array.isArray(dependency[metadataKey]) ||
-          dependency[metadataKey].some(item => typeof item !== 'string'))
+        metadata !== undefined &&
+        (!Array.isArray(metadata) ||
+          metadata.some(item => typeof item !== 'string'))
       ) {
         throw new Error(`Malformed Synp dependency metadata for '${name}'`)
       }
     }
     if (
-      hasLocalDependency(dependency.version) ||
-      hasLocalDependency(dependency.resolved) ||
-      dependency.link
+      hasLocalDependency(dependency['version']) ||
+      hasLocalDependency(dependency['resolved']) ||
+      dependency['link']
     ) {
       throw new Error(
         'The standalone cdxgen API does not support local or linked lockfile entries',
       )
     }
     inspectV1Dependencies(
-      dependency.dependencies,
+      dependency['dependencies'],
       `${dependencyPath}.${name}.dependencies`,
     )
   }
 }
 const checkRootDependencyGroup = (
-  group,
-  lockDependencies,
-  groupName,
-  optional,
-  optionalNames = new Set(),
+  group: unknown,
+  lockDependencies: unknown,
+  groupName: string,
+  optional: boolean,
+  optionalNames = new Set<string>(),
 ) => {
   if (group === undefined) {
     return
@@ -193,48 +192,58 @@ const checkRootDependencyGroup = (
   }
 }
 
-if (packageLock.lockfileVersion === 1) {
-  const rootDependencies = packageLock.dependencies ?? {}
+if (lockfileVersion === 1) {
+  const rootDependencies = packageLock['dependencies'] ?? {}
   if (!isRecord(rootDependencies)) {
     throw new Error('Malformed package-lock v1 dependencies map')
   }
   inspectV1Dependencies(rootDependencies)
   checkRootDependencyGroup(
-    packageJson.dependencies,
+    packageJson['dependencies'],
     rootDependencies,
     'dependencies',
     false,
-    new Set(Object.keys(packageJson.optionalDependencies || {})),
+    new Set(Object.keys(packageJson['optionalDependencies'] || {})),
   )
   checkRootDependencyGroup(
-    packageJson.devDependencies,
+    packageJson['devDependencies'],
     rootDependencies,
     'devDependencies',
     false,
   )
   checkRootDependencyGroup(
-    packageJson.optionalDependencies,
+    packageJson['optionalDependencies'],
     rootDependencies,
     'optionalDependencies',
     true,
   )
   checkRootDependencyGroup(
-    packageJson.peerDependencies,
+    packageJson['peerDependencies'],
     rootDependencies,
     'peerDependencies',
     true,
   )
 
-  const resolveV1Dependency = (name, ownDependencies, ancestorMaps) =>
+  const resolveV1Dependency = (
+    name: string,
+    ownDependencies: unknown,
+    ancestorMaps: readonly unknown[],
+  ) =>
     Boolean(
       (isRecord(ownDependencies) && Object.hasOwn(ownDependencies, name)) ||
         ancestorMaps.some(map => isRecord(map) && Object.hasOwn(map, name)),
     )
-  const validateV1Graph = (dependencies, ancestorMaps = []) => {
+  const validateV1Graph = (
+    dependencies: unknown,
+    ancestorMaps: readonly unknown[] = [],
+  ): void => {
     for (const [packageName, dependency] of Object.entries(
       dependencies || {},
     )) {
-      const requires = dependency.requires
+      if (!isRecord(dependency)) {
+        throw new Error(`Malformed package-lock v1 dependency '${packageName}'`)
+      }
+      const requires = dependency['requires']
       if (requires !== undefined && !isRecord(requires)) {
         throw new Error(
           `Malformed package-lock v1 requires map for '${packageName}'`,
@@ -247,8 +256,8 @@ if (packageLock.lockfileVersion === 1) {
           `Malformed package-lock v1 requirement spec for '${packageName}'`,
         )
       }
-      const optional = new Set(dependency._socketOptionalDependencies || [])
-      const peers = new Set(dependency._socketPeerDependencies || [])
+      const optional = dependency['_socketOptionalDependencies']
+      const peers = dependency['_socketPeerDependencies']
       const visibleMaps = [dependencies, ...ancestorMaps]
       for (const requiredName of Object.keys(requires || {})) {
         if (!validPackageName(requiredName)) {
@@ -259,24 +268,27 @@ if (packageLock.lockfileVersion === 1) {
         if (
           !resolveV1Dependency(
             requiredName,
-            dependency.dependencies,
+            dependency['dependencies'],
             visibleMaps,
           ) &&
-          !optional.has(requiredName) &&
-          !Object.hasOwn(dependency.optionalDependencies || {}, requiredName) &&
-          !peers.has(requiredName)
+          !(Array.isArray(optional) && optional.includes(requiredName)) &&
+          !Object.hasOwn(
+            dependency['optionalDependencies'] || {},
+            requiredName,
+          ) &&
+          !(Array.isArray(peers) && peers.includes(requiredName))
         ) {
           throw new Error(
             `package-lock v1 is missing required '${requiredName}' for '${packageName}'`,
           )
         }
       }
-      validateV1Graph(dependency.dependencies, visibleMaps)
+      validateV1Graph(dependency['dependencies'], visibleMaps)
     }
   }
   validateV1Graph(rootDependencies)
 } else {
-  const packages = packageLock.packages
+  const packages = packageLock['packages']
   if (
     !isRecord(packages) ||
     !Object.hasOwn(packages, '') ||
@@ -300,13 +312,13 @@ if (packageLock.lockfileVersion === 1) {
       ) {
         throw new Error(`Invalid package-lock v3 package path '${packagePath}'`)
       }
-      if (typeof dependency.version !== 'string' || !dependency.version) {
+      if (typeof dependency['version'] !== 'string' || !dependency['version']) {
         throw new Error(`Missing package-lock v3 version for '${packagePath}'`)
       }
       if (
-        hasLocalDependency(dependency.version) ||
-        hasLocalDependency(dependency.resolved) ||
-        dependency.link
+        hasLocalDependency(dependency['version']) ||
+        hasLocalDependency(dependency['resolved']) ||
+        dependency['link']
       ) {
         throw new Error(
           'The standalone cdxgen API does not support local or linked lockfile entries',
@@ -315,7 +327,7 @@ if (packageLock.lockfileVersion === 1) {
     }
   }
 
-  const resolveV3Dependency = (name, packagePath) => {
+  const resolveV3Dependency = (name: string, packagePath: string) => {
     let current = packagePath
     while (current) {
       const candidate = `${current}/node_modules/${name}`
@@ -328,11 +340,11 @@ if (packageLock.lockfileVersion === 1) {
     return Object.hasOwn(packages, `node_modules/${name}`)
   }
   const validateV3DependencyGroup = (
-    group,
-    packagePath,
-    groupName,
-    optional,
-    optionalNames = new Set(),
+    group: unknown,
+    packagePath: string,
+    groupName: string,
+    optional: boolean,
+    optionalNames = new Set<string>(),
   ) => {
     if (group === undefined) {
       return
@@ -355,9 +367,13 @@ if (packageLock.lockfileVersion === 1) {
     }
   }
   const rootOptionalNames = new Set(
-    Object.keys(packageJson.optionalDependencies || {}),
+    Object.keys(packageJson['optionalDependencies'] || {}),
   )
-  const validateV3RootGroup = (group, groupName, optional) => {
+  const validateV3RootGroup = (
+    group: unknown,
+    groupName: string,
+    optional: boolean,
+  ) => {
     if (group === undefined) {
       return
     }
@@ -376,51 +392,60 @@ if (packageLock.lockfileVersion === 1) {
       }
     }
   }
-  validateV3RootGroup(packageJson.dependencies, 'dependencies', false)
-  validateV3RootGroup(packageJson.devDependencies, 'devDependencies', false)
+  validateV3RootGroup(packageJson['dependencies'], 'dependencies', false)
+  validateV3RootGroup(packageJson['devDependencies'], 'devDependencies', false)
   validateV3RootGroup(
-    packageJson.optionalDependencies,
+    packageJson['optionalDependencies'],
     'optionalDependencies',
     true,
   )
-  validateV3RootGroup(packageJson.peerDependencies, 'peerDependencies', true)
+  validateV3RootGroup(packageJson['peerDependencies'], 'peerDependencies', true)
   for (const [packagePath, dependency] of Object.entries(packages)) {
+    if (!isRecord(dependency)) {
+      throw new Error(`Malformed package-lock v3 record '${packagePath}'`)
+    }
     validateV3DependencyGroup(
-      dependency.dependencies,
+      dependency['dependencies'],
       packagePath,
       'dependencies',
       false,
-      new Set(Object.keys(dependency.optionalDependencies || {})),
+      new Set(Object.keys(dependency['optionalDependencies'] || {})),
     )
     validateV3DependencyGroup(
-      dependency.devDependencies,
+      dependency['devDependencies'],
       packagePath,
       'devDependencies',
       packagePath !== '',
     )
     validateV3DependencyGroup(
-      dependency.optionalDependencies,
+      dependency['optionalDependencies'],
       packagePath,
       'optionalDependencies',
       true,
     )
     validateV3DependencyGroup(
-      dependency.peerDependencies,
+      dependency['peerDependencies'],
       packagePath,
       'peerDependencies',
       true,
     )
   }
 }
-// eslint-disable-next-line import-x/no-unresolved, n/no-missing-import -- The package is staged beside this worker in the SEA VFS.
-const { createNodejsBom } = await import('./lib/cli/index.js')
+// Rollup stages the API alongside this worker. Load it after setting up the worker.
+const cdxgenEntrypoint = './lib/cli/index.js'
+const { createNodejsBom } = (await import(cdxgenEntrypoint)) as {
+  createNodejsBom: (
+    root: string,
+    options: Record<string, unknown>,
+  ) => Promise<{ bomJson?: unknown } | undefined>
+}
 
 let incompleteNotice = ''
-const originalConsole = new Map()
-for (const method of ['log', 'warn', 'error']) {
+const originalConsole = new Map<'log' | 'warn' | 'error', typeof console.log>()
+for (const method of ['log', 'warn', 'error'] as const) {
   const original = console[method]
   originalConsole.set(method, original)
-  console[method] = (...args) => {
+  console[method] = (...args: unknown[]) => {
     const message = util.format(...args)
     if (
       message.includes('Unable to parse') &&
@@ -459,7 +484,7 @@ if (incompleteNotice) {
 if (!bom?.bomJson) {
   throw new Error('cdxgen did not produce an npm BOM')
 }
-const rewriteTemporaryPath = sourceValue => {
+const rewriteTemporaryPath = (sourceValue: string) => {
   const sourcePath = path.resolve(
     path.isAbsolute(sourceValue)
       ? sourceValue
@@ -473,7 +498,7 @@ const rewriteTemporaryPath = sourceValue => {
   }
   return sourceValue
 }
-const rewriteSourcePaths = (value, inEvidence = false) => {
+const rewriteSourcePaths = (value: unknown, inEvidence = false): void => {
   if (!value || typeof value !== 'object') {
     return
   }
@@ -483,13 +508,19 @@ const rewriteSourcePaths = (value, inEvidence = false) => {
     }
     return
   }
-  if (value.name === 'SrcFile' && typeof value.value === 'string') {
-    value.value = rewriteTemporaryPath(value.value)
+  if (!isRecord(value)) {
+    return
+  }
+  if (value['name'] === 'SrcFile' && typeof value['value'] === 'string') {
+    value['value'] = rewriteTemporaryPath(value['value'])
   } else if (
-    value.name === 'cdx:npm:binPaths' &&
-    typeof value.value === 'string'
+    value['name'] === 'cdx:npm:binPaths' &&
+    typeof value['value'] === 'string'
   ) {
-    value.value = value.value.split(', ').map(rewriteTemporaryPath).join(', ')
+    value['value'] = value['value']
+      .split(', ')
+      .map(rewriteTemporaryPath)
+      .join(', ')
   }
   const evidence = inEvidence || Object.hasOwn(value, 'identity')
   for (const [key, child] of Object.entries(value)) {

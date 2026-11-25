@@ -7,7 +7,6 @@ export type SeaCapabilities = {
 
 export function createSeaCapabilities({
   hasCdxgen,
-  hasCoana = false,
   hasSocketPatch,
   hasSynp,
   hasUv,
@@ -16,7 +15,6 @@ export function createSeaCapabilities({
 }: {
   triple: string
   hasCdxgen: boolean
-  hasCoana?: boolean
   hasSynp: boolean
   hasSocketPatch: boolean
   hasUv: boolean
@@ -27,47 +25,31 @@ export function createSeaCapabilities({
       'socket-core',
       'manifest-dotnet-facts',
       ...(hasSocketPatch ? ['socket-patch'] : []),
-      ...(hasCoana ? ['coana'] : []),
+      'coana',
+      ...(hasCdxgen ? ['manifest-cdxgen-npm-lock-v3'] : []),
+      ...(hasCdxgen && hasSynp ? ['manifest-cdxgen-yarn-classic', 'synp'] : []),
       ...(hasUv ? ['uv'] : []),
     ],
     unavailable: [
       ...(hasCdxgen
         ? [
             {
-              id: 'manifest-cdxgen-npm-lock-v3',
-              reason:
-                'The restricted npm lock v3 path passed local command smoke, but installed Rollup module bytes are not authenticated against the frozen package tarballs or generated bundle. See the explicitly unverified source inventory.',
-            },
-            {
               id: 'cdxgen-other-modes',
               reason:
-                'Only one npm package-lock.json v3 project is implemented; other project types and modes are not included.',
-            },
-            {
-              id: 'manifest-cdxgen-yarn-classic',
-              reason:
-                'Synp v1.9.14 API conversion and cdxgen package-lock v1 API smoke passed, but Synp Rollup provenance remains unauthenticated and its third-party notice inventory has missing-license-text obligations.',
+                'The bundled cdxgen supports npm lockfile v3 and Yarn Classic with Synp.',
             },
           ]
         : [
             {
               id: 'cdxgen',
-              reason: `No cdxgen API payload is embedded for ${triple}; only darwin-arm64 has a qualified VFS bundle.`,
+              reason: `No cdxgen API payload is embedded for ${triple}.`,
             },
           ]),
-      {
-        id: 'synp',
-        reason: hasSynp
-          ? 'The Synp API is bundled for Yarn Classic, but source provenance remains unverified and its third-party notice inventory has missing-license-text obligations.'
-          : 'No Synp API payload is embedded because no compatible cdxgen VFS API payload is available for this target.',
-      },
-      ...(!hasCoana
+      ...(!hasCdxgen || !hasSynp
         ? [
             {
-              id: 'coana',
-              reason: triple.startsWith('win-')
-                ? 'Coana is not available for Windows SEA builds.'
-                : 'No verified Coana CLI and analyzer payloads are embedded in this SEA build.',
+              id: 'synp',
+              reason: `The Yarn Classic adapter is unavailable for ${triple}.`,
             },
           ]
         : []),
