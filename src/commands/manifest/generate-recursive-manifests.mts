@@ -86,8 +86,6 @@ export type EcosystemBuildConfig = {
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome: string | undefined
-  // Maven's `--file` in mavenOpts, which buildOpts leaves out.
-  mavenFile: string | undefined
   // Set when this build root should be skipped entirely (never invoked).
   skipReason: string | undefined
   verbose: boolean
@@ -123,33 +121,23 @@ const MAVEN_OTHER_F_OPTS = new Set([
   'fn',
 ])
 
-// Maven 3.9 builds the first of several `--file`s.
-function splitMavenFileOpts(opts: string[]): {
-  file: string | undefined
-  opts: string[]
-} {
-  const files: string[] = []
+function withoutMavenFileOpts(opts: string[]): string[] {
   const kept: string[] = []
   for (let i = 0, { length } = opts; i < length; i += 1) {
     const opt = opts[i]!
     const name = opt.replace(/^--?/, '')
-    const { 0: key, 1: value } = name.split(/=(.*)/s)
     if (opt === name || MAVEN_OTHER_F_OPTS.has(name)) {
       kept.push(opt)
     } else if (MAVEN_FILE_OPTS.has(name)) {
       i += 1
-      if (i < length) {
-        files.push(opts[i]!)
-      }
-    } else if (MAVEN_FILE_OPTS.has(key!) && value !== undefined) {
-      files.push(value)
-    } else if (opt.startsWith('-f') && !opt.startsWith('--')) {
-      files.push(opt.slice(2).replace(/^=/, ''))
-    } else {
+    } else if (
+      !MAVEN_FILE_OPTS.has(name.split('=')[0]!) &&
+      !(opt.startsWith('-f') && !opt.startsWith('--'))
+    ) {
       kept.push(opt)
     }
   }
-  return { file: files[0], opts: kept }
+  return kept
 }
 
 type Candidate = {
@@ -880,7 +868,6 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: undefined,
-      mavenFile: undefined,
       skipReason: getSkipReason(ecosystem, config?.disabled),
       verbose: Boolean(config?.verbose),
     }
@@ -895,7 +882,6 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      mavenFile: undefined,
       skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
       verbose: Boolean(config?.verbose),
     }
@@ -910,24 +896,19 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      mavenFile: undefined,
       skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
       verbose: Boolean(config?.verbose),
     }
   }
   const config = sockJson.defaults?.manifest?.maven
   const bin = config?.bin ?? undefined
-  const { file, opts } = splitMavenFileOpts(
-    parseBuildToolOpts(config?.mavenOpts ?? undefined),
-  )
   return {
     bin: bin ?? resolveBuildToolBin('maven', dir),
-    buildOpts: opts,
+    buildOpts: parseBuildToolOpts(config?.mavenOpts ?? undefined),
     excludeConfigs: config?.excludeConfigs ?? '',
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome ?? undefined,
-    mavenFile: file,
     skipReason: getSkipReason(ecosystem, config?.disabled),
     verbose: Boolean(config?.verbose),
   }
@@ -941,10 +922,14 @@ export function resolveWalkConfig(
   sockJson: SocketJson,
 ): EcosystemBuildConfig {
   const config = resolveEcosystemConfig(ecosystem, dir, sockJson)
-  if (config.mavenFile !== undefined) {
+  if (ecosystem !== 'maven') {
+    return config
+  }
+  const buildOpts = withoutMavenFileOpts(config.buildOpts)
+  if (buildOpts.length !== config.buildOpts.length) {
     logger.warn(
       `Ignoring --file in mavenOpts for ${dir}: each POM there is built by its own file.`,
     )
   }
-  return config
+  return { ...config, buildOpts }
 }

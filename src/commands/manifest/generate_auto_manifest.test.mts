@@ -340,19 +340,16 @@ describe('generateAutoManifest — JVM facts', () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
   })
 
-  it("builds a Maven root's pom.xml by name, apart from a Gradle build beside it", async () => {
+  it('runs Maven where the scan starts, leaving it to find its POM', async () => {
     await generateAutoManifest({
       cwd: '/tmp/repo',
       detected: { ...baseDetected, gradle: true, maven: true, count: 2 },
       outputKind: 'text',
       verbose: false,
     })
-    expect(callFor('maven')).toMatchObject({
-      cwd: '/tmp/repo',
-      entryFile: 'pom.xml',
-    })
+    expect(callFor('maven')).toMatchObject({ buildOpts: [], cwd: '/tmp/repo' })
+    expect(callFor('maven')?.entryFile).toBeUndefined()
     expect(callFor('gradle')).toMatchObject({ cwd: '/tmp/repo' })
-    expect(callFor('gradle')?.entryFile).toBeUndefined()
   })
 
   it('takes each JVM build tool its socket.json section as the walk does', async () => {
@@ -393,67 +390,29 @@ describe('generateAutoManifest — JVM facts', () => {
     expect(callFor('sbt')).toMatchObject({ bin: 'sbt', buildOpts: ['-Dx=1'] })
   })
 
-  it.for([
-    ['--file sub/app.xml', 'sub', 'app.xml'],
-    ['-fsub/app.xml', 'sub', 'app.xml'],
-    ['--file=sub', 'sub', 'pom.xml'],
-    ['-f sub -f other.xml', 'sub', 'pom.xml'],
-  ] as const)(
-    'builds the POM `%s` in mavenOpts names, keeping it out of the build options',
-    async ({ 0: fileOpts, 1: dir, 2: entryFile }) => {
-      const cwd = await fs.realpath(
-        await fs.mkdtemp(path.join(tmpdir(), 'auto-manifest-file-')),
-      )
-      try {
-        await fs.mkdir(path.join(cwd, 'sub'))
-        vi.mocked(readOrDefaultSocketJson).mockReturnValue({
-          defaults: {
-            manifest: { maven: { bin: 'mvn', mavenOpts: `-Pci ${fileOpts}` } },
-          },
-        } as SocketJson)
-        await generateAutoManifest({
-          cwd,
-          detected: { ...baseDetected, maven: true, count: 1 },
-          outputKind: 'text',
-          verbose: false,
-        })
-        expect(callFor('maven')).toMatchObject({
-          buildOpts: ['-Pci'],
-          cwd: path.join(cwd, dir),
-          entryFile,
-          excludeBase: cwd,
-        })
-      } finally {
-        await fs.rm(cwd, { recursive: true, force: true })
-      }
-    },
-  )
-
-  it('runs a relative bin from the scan root when --file moves Maven into another directory', async () => {
-    const cwd = await fs.realpath(
-      await fs.mkdtemp(path.join(tmpdir(), 'auto-manifest-bin-')),
-    )
-    try {
-      await fs.mkdir(path.join(cwd, 'sub'))
+  // Maven resolves `--settings` from where it starts, and reports a `--file`
+  // without its argument.
+  it.for(['-f sub/pom.xml -s settings.xml', '-Pci --file'])(
+    'passes mavenOpts `%s` to Maven as written, from the scan root',
+    async mavenOpts => {
       vi.mocked(readOrDefaultSocketJson).mockReturnValue({
-        defaults: {
-          manifest: { maven: { bin: './mvnw', mavenOpts: '-f sub' } },
-        },
+        defaults: { manifest: { maven: { bin: './mvnw', mavenOpts } } },
       } as SocketJson)
       await generateAutoManifest({
-        cwd,
+        cwd: '/tmp/repo',
         detected: { ...baseDetected, maven: true, count: 1 },
         outputKind: 'text',
         verbose: false,
       })
       expect(callFor('maven')).toMatchObject({
-        bin: path.join(cwd, 'mvnw'),
-        cwd: path.join(cwd, 'sub'),
+        bin: './mvnw',
+        buildOpts: mavenOpts.split(' '),
+        cwd: '/tmp/repo',
+        excludeBase: '/tmp/repo',
       })
-    } finally {
-      await fs.rm(cwd, { recursive: true, force: true })
-    }
-  })
+      expect(callFor('maven')?.entryFile).toBeUndefined()
+    },
+  )
 
   it('places the facts of each build it generates, with its sidecar entry', async () => {
     const cwd = await fs.realpath(

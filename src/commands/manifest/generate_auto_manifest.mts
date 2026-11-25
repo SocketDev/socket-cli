@@ -22,7 +22,6 @@ import {
   SOCKET_JSON,
 } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
-import { isDirSync } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
@@ -60,24 +59,6 @@ function abortFactsRunIfFailed(
       `Auto-manifest generation failed for the ${ecosystem} project; aborting (see the errors above).`,
     )
   }
-}
-
-// Maven's `-f, --file`: "Force the use of an alternate POM file (or directory
-// with pom.xml)" (`mvn --help`), relative to where Maven runs.
-function mavenRoot(cwd: string, file: string | undefined): BuildRoot {
-  if (file === undefined) {
-    return { dir: cwd, entryFile: 'pom.xml' }
-  }
-  const named = path.resolve(cwd, file)
-  return isDirSync(named)
-    ? { dir: named, entryFile: 'pom.xml' }
-    : { dir: path.dirname(named), entryFile: path.basename(named) }
-}
-
-// A command naming a path runs that file, relative to `dir`; a bare name is
-// looked up on PATH.
-function binIn(dir: string, bin: string): string {
-  return /[/\\]/.test(bin) ? path.resolve(dir, bin) : bin
 }
 
 function abortManifestRunIfFailed(
@@ -205,12 +186,13 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
     logger.log('Detected a Maven pom.xml build, generating Socket facts...')
-    const config = resolveEcosystemConfig('maven', cwd, sockJson)
-    await generateFacts('maven', mavenRoot(cwd, config.mavenFile), {
-      ...config,
-      // Maven runs in the POM's directory, which `--file` can move.
-      bin: binIn(cwd, config.bin),
-    })
+    // Maven resolves relative arguments such as `--file` and `--settings`
+    // from where it starts, so it starts here with mavenOpts as written.
+    await generateFacts(
+      'maven',
+      { dir: cwd },
+      resolveEcosystemConfig('maven', cwd, sockJson),
+    )
   }
 
   if (!sockJson?.defaults?.manifest?.dotnet?.disabled && detected.dotnet) {
