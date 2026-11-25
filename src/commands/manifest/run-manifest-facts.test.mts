@@ -35,9 +35,7 @@ const baseArgs = {
 let cwd = ''
 let calls: Call[] = []
 
-// Answers each Coana run by writing `text` as its result file, or nothing when
-// `text` is undefined.
-function coanaWrites(text: string | undefined, ok = true): void {
+function coanaWritesResultFile(text: string | undefined, ok = true): void {
   vi.mocked(spawnCoana).mockImplementation(async args => {
     const list = [...args]
     const request = JSON.parse(
@@ -53,10 +51,11 @@ function coanaWrites(text: string | undefined, ok = true): void {
   })
 }
 
-// Answers each Coana run with `result`, as `coana generate-socket-facts` writes
-// it, or writes nothing when `result` is undefined.
 function coanaAnswers(result: unknown, ok = true): void {
-  coanaWrites(result === undefined ? undefined : JSON.stringify(result), ok)
+  coanaWritesResultFile(
+    result === undefined ? undefined : JSON.stringify(result),
+    ok,
+  )
 }
 
 beforeEach(async () => {
@@ -272,7 +271,7 @@ describe('runManifestFacts', () => {
     },
     {
       name: 'writes an unreadable result',
-      answer: () => coanaWrites('{"status":"gener'),
+      answer: () => coanaWritesResultFile('{"status":"gener'),
       reported: () => "Coana's result is unreadable",
     },
   ])('fails the root when Coana $name', async ({ answer, reported }) => {
@@ -480,7 +479,7 @@ describe('listBuildProjects', () => {
   })
 
   it('lists nothing when Coana writes an unreadable result', async () => {
-    coanaWrites('')
+    coanaWritesResultFile('')
     expect(await listBuildProjects({ ...listArgs, cwd })).toBeUndefined()
   })
 })

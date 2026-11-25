@@ -49,8 +49,7 @@ function mavenRoots(...dirs: string[]): BuildRoot[] {
   return dirs.map(dir => ({ dir, entryFile: 'pom.xml' }))
 }
 
-// A Maven project of the build at `buildRoot`, loaded from `pomFile`.
-function project(
+function mavenProject(
   buildRoot: string,
   subprojectDir: string,
   pomFile = 'pom.xml',
@@ -197,8 +196,8 @@ describe('setupRecursiveManifestConfig', () => {
           return undefined
         }
         return [
-          project(cwd, '.', entryFile),
-          ...(modules[rel] ?? []).map(dir => project(cwd, dir)),
+          mavenProject(cwd, '.', entryFile),
+          ...(modules[rel] ?? []).map(dir => mavenProject(cwd, dir)),
         ]
       })
   const answer = (answers: Answers) =>
@@ -330,7 +329,7 @@ describe('setupRecursiveManifestConfig', () => {
       if (cwd === file('legacy') && (attempts += 1) === 1) {
         return undefined
       }
-      return [project(cwd, '.')]
+      return [mavenProject(cwd, '.')]
     })
     vi.mocked(setupMaven).mockImplementation(async config => {
       config.javaHome = '/opt/jdk-8'
@@ -350,7 +349,7 @@ describe('setupRecursiveManifestConfig', () => {
     await setupRecursiveManifestConfig(repo, false)
 
     expect(attempts).toBe(2)
-    // A listing's remedies point at this wizard, not at flags.
+    // A listing's remedies point at this wizard.
     expect(
       vi
         .mocked(listBuildProjects)
