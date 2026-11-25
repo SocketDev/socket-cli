@@ -92,8 +92,7 @@ export type SocketFactsContext = {
   workDir?: SocketFactsWorkDir | undefined
 }
 
-// What a reachability scan's analysis reads of a build's settings; only set
-// fields are sent.
+// A reachability scan sends Coana only the settings configured for this build.
 export type ReachabilitySettings = {
   build?: ReachabilityBuild | undefined
   javaHome?: string | undefined

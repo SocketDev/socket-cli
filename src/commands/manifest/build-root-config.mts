@@ -41,8 +41,8 @@ export type ResolvedBuildRootSettings = {
   disabledBy: DisabledBy | undefined
   // The key of the build's own `defaults.manifest.builds` entry.
   entryKey: string | undefined
-  // The cascaded `reachability` settings, checked in every socket.json that
-  // sets them; throws an InputError naming an invalid one.
+  // Checks reachability settings in every socket.json that supplies them.
+  // An invalid setting raises an InputError naming the file and field.
   reachability: () => ReachabilitySettings | undefined
   // The cascaded settings, the build's own entries applied last.
   sockJson: SocketJson
@@ -338,8 +338,8 @@ export function displayPath(file: string): string {
   return rel.startsWith('..') || path.isAbsolute(rel) ? file : rel || '.'
 }
 
-// Why `tool`'s reachability `field` cannot be `value`, as the rest of a
-// sentence about it; undefined when it can.
+// Returns a phrase explaining why the tool rejects this field value.
+// Returns undefined for a valid value.
 export function reachabilityProblem(
   tool: BuildTool,
   field: string,

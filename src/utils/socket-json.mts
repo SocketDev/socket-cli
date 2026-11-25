@@ -32,10 +32,12 @@ import type { CResult } from '../types.mts'
 
 export const REACHABILITY_BUILDS = ['compile', 'none'] as const
 
-// Whether a reachability analysis builds the project first; unset is "none".
+// Controls whether reachability analysis builds the project first.
+// Defaults to "none".
 export type ReachabilityBuild = (typeof REACHABILITY_BUILDS)[number]
 
-// Read only by reachability scans; a null field clears an inherited value.
+// Only reachability scans read these settings.
+// A null field clears its inherited value.
 export type JvmReachabilityDefaults = {
   build?: ReachabilityBuild | undefined | null
   // JDK the analysis takes the program to run on, as written.
