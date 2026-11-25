@@ -345,7 +345,7 @@ describe('keepFacts', () => {
 
 describe('listDotnetSolutionMembers', () => {
   it('lists the members once for the same request, which takes no Java', async () => {
-    coanaAnswers({ members: ['/r/A/A.csproj'] })
+    coanaAnswers({ members: ['/r/A/A.csproj'], status: 'members' })
     const request = {
       buildOpts: [],
       cwd,
@@ -377,7 +377,7 @@ describe('listDotnetSolutionMembers', () => {
   })
 
   it('cannot tell when the SDK cannot read the solution', async () => {
-    coanaAnswers({ members: null })
+    coanaAnswers({ members: null, status: 'members' })
     expect(
       await listDotnetSolutionMembers({
         buildOpts: [],
@@ -385,6 +385,17 @@ describe('listDotnetSolutionMembers', () => {
         entryFile: 'All.slnx',
       }),
     ).toBeUndefined()
+  })
+
+  it('lists nothing when Coana reports a failed listing', async () => {
+    coanaAnswers({ blame: 'coana', reason: 'crashed', status: 'failed' }, false)
+    expect(
+      await listDotnetSolutionMembers({
+        buildOpts: [],
+        cwd,
+        entryFile: 'Crashed.sln',
+      }),
+    ).toEqual([])
   })
 
   it('lists nothing when Coana fails', async () => {

@@ -126,7 +126,9 @@ type SocketFactsResult =
   | { status: 'empty' }
   | { status: 'failed' }
 
-type SolutionMembers = { members: string[] | null }
+type SolutionMembers =
+  | { members: string[] | null; status: 'members' }
+  | { status: 'failed' }
 
 type ProjectList =
   | { projects: SocketFactsProject[]; status: 'listed' }
@@ -285,8 +287,9 @@ export async function keepFacts(
 
 const membersByRequest = new Map<string, Promise<string[] | undefined>>()
 
-// The projects a dotnet solution builds; undefined when the SDK cannot read
-// it, empty when the listing fails, which the build itself then reports.
+// The projects a dotnet solution builds. Undefined when the SDK cannot read
+// it, so a readable twin may stand in; empty when the listing fails, which the
+// build itself then reports.
 export async function listDotnetSolutionMembers({
   context = {},
   ...options
@@ -308,7 +311,7 @@ export async function listDotnetSolutionMembers({
         ['--list-members'],
         context,
       )
-      if (!result) {
+      if (result?.status !== 'members') {
         return []
       }
       return result.members ?? undefined
