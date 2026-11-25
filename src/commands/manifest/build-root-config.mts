@@ -366,7 +366,7 @@ export function socketJsonPath(dir: string): string {
   return displayPath(path.join(dir, SOCKET_JSON))
 }
 
-// The `reachability` settings of `tool` in one socket.json, checked.
+// An invalid setting raises an InputError naming the file.
 export function socketJsonReachability(
   tool: BuildTool,
   { dir, sockJson }: SocketJsonInDir,
