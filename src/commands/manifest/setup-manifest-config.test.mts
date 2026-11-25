@@ -13,6 +13,7 @@ vi.mock('../../utils/prompts.mts', () => ({
   select: vi.fn(async ({ default: def }: { default?: string }) => def ?? ''),
 }))
 
+import { cascadedReachability } from './build-root-config.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -24,6 +25,7 @@ import { logger } from '../../utils/logger.mts'
 import { input, select } from '../../utils/prompts.mts'
 import {
   getDefaultSocketJson,
+  readSocketJsonChain,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 
@@ -580,6 +582,8 @@ describe('setupManifestConfig', () => {
   afterEach(async () => {
     vi.mocked(select).mockReset()
     vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
+    vi.mocked(input).mockReset()
+    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
     await fs.rm(parent, { recursive: true, force: true })
   })
 
@@ -619,6 +623,55 @@ describe('setupManifestConfig', () => {
     expect(written.defaults.manifest.maven).toEqual({
       reachability: { build: 'none' },
     })
+  })
+
+  it.for([
+    [
+      'keeps the parent JDK for a scan here after a no',
+      false,
+      {
+        javaHome: '/opt/jdk-17',
+      },
+    ],
+    [
+      'clears the parent JDK for a scan here after a blank JDK',
+      true,
+      undefined,
+    ],
+  ] as const)('%s', async ({ 1: wantsJavaHome, 2: scanned }) => {
+    await writeSocketJson(parent, {
+      ...getDefaultSocketJson(),
+      defaults: {
+        manifest: { maven: { reachability: { javaHome: '/opt/jdk-17' } } },
+      },
+    })
+    const cwd = path.join(parent, 'app')
+    await fs.mkdir(cwd)
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
+      if (message === 'Select ecosystem manifest generator to configure') {
+        return 'maven'
+      }
+      if (message === 'Use a different Java for reachability analysis?') {
+        return wantsJavaHome
+      }
+      if (message.startsWith('Do you want to write the new config')) {
+        return true
+      }
+      return def ?? ''
+    })
+    vi.mocked(input).mockImplementation(async ({ default: def, message }) =>
+      message.startsWith('What JDK should reachability analysis use?')
+        ? ''
+        : (def ?? ''),
+    )
+    vi.spyOn(logger, 'log').mockImplementation(() => logger)
+    vi.spyOn(logger, 'info').mockImplementation(() => logger)
+
+    await setupManifestConfig(cwd)
+
+    expect(cascadedReachability('maven', readSocketJsonChain(cwd))).toEqual(
+      scanned,
+    )
   })
 })
 
