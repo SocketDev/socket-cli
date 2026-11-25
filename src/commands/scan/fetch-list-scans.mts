@@ -7,6 +7,7 @@ import type { FullScanListResult } from '@socketsecurity/sdk'
 
 export type FetchOrgFullScanListConfig = {
   branch: string
+  commitHash?: string | undefined
   direction: string
   from_time: string
   orgSlug: string
@@ -35,7 +36,17 @@ export async function fetchOrgFullScanList(
   }
   const sockSdk = sockSdkCResult.data
 
-  const { branch, direction, from_time, orgSlug, page, perPage, repo, sort } = {
+  const {
+    branch,
+    commitHash,
+    direction,
+    from_time,
+    orgSlug,
+    page,
+    perPage,
+    repo,
+    sort,
+  } = {
     __proto__: null,
     ...config,
   } as FetchOrgFullScanListConfig
@@ -43,6 +54,7 @@ export async function fetchOrgFullScanList(
   return await handleApiCall(
     sockSdk.listFullScans(orgSlug, {
       ...(branch ? { branch } : {}),
+      ...(commitHash ? { commit_hash: commitHash } : {}),
       ...(repo ? { repo } : {}),
       ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
       ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),

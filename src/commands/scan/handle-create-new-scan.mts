@@ -7,6 +7,7 @@ import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
+import { handleDiffScan } from './handle-diff-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
@@ -85,6 +86,7 @@ export type GeneratedScanFiles = {
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
+  baselineScanId?: string | undefined
   branchName: string
   commitHash: string
   commitMessage: string
@@ -116,6 +118,7 @@ export type HandleCreateNewScanConfig = {
 async function createNewScan(
   {
     autoManifest,
+    baselineScanId,
     branchName,
     commitHash,
     commitMessage,
@@ -471,16 +474,27 @@ async function createNewScan(
 
     if (report && fullScanCResult.ok) {
       if (scanId) {
-        await handleScanReport({
-          filepath: '-',
-          fold: constants.FOLD_SETTING_VERSION,
-          includeLicensePolicy: true,
-          orgSlug,
-          outputKind,
-          reportLevel,
-          scanId,
-          short: false,
-        })
+        if (baselineScanId) {
+          await handleDiffScan({
+            depth: 2,
+            file: '',
+            id1: baselineScanId,
+            id2: scanId,
+            orgSlug,
+            outputKind,
+          })
+        } else {
+          await handleScanReport({
+            filepath: '-',
+            fold: constants.FOLD_SETTING_VERSION,
+            includeLicensePolicy: true,
+            orgSlug,
+            outputKind,
+            reportLevel,
+            scanId,
+            short: false,
+          })
+        }
       } else {
         await outputCreateNewScan(
           {

@@ -51,6 +51,19 @@ export async function outputDiffScan(
     return
   }
 
+  const changedArtifacts = [
+    ...result.data.artifacts.added,
+    ...result.data.artifacts.updated,
+    ...result.data.artifacts.replaced,
+  ]
+  if (
+    changedArtifacts.some(artifact =>
+      artifact.alerts?.some(alert => alert.action === 'error'),
+    )
+  ) {
+    process.exitCode = 1
+  }
+
   const dashboardUrl = result.data.diff_report_url
   const dashboardMessage = dashboardUrl
     ? `\n View this diff scan in the Socket dashboard: ${colors.cyan(dashboardUrl)}`

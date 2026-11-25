@@ -1,5 +1,6 @@
 import { detectCiPullRequestContext } from './detect-ci-pull-request-context.mts'
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
+import { selectBaselineScan } from './select-baseline-scan.mts'
 import constants from '../../constants.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
 import {
@@ -31,6 +32,23 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   const cwd = process.cwd()
   const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
   const repoName = await getRepoName(cwd)
+  let baselineScanId: string | undefined
+
+  if (pullRequest) {
+    const baselineCResult = await selectBaselineScan({
+      branch: pullRequestContext.baseBranch ?? '',
+      commitHash: pullRequestContext.baseCommitHash ?? '',
+      orgSlug,
+      repo: repoName,
+    })
+    if (!baselineCResult.ok) {
+      process.exitCode = baselineCResult.code ?? 1
+      logger.log(serializeResultJson(baselineCResult))
+      return
+    }
+    baselineScanId = baselineCResult.data.id
+    debugFn('notice', `Selected PR baseline scan ${baselineScanId}`)
+  }
 
   debugFn(
     'notice',
@@ -52,6 +70,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,
     pullRequest,
+    baselineScanId,
     reach: {
       dynamicSbomInference: undefined,
       excludePaths: [],

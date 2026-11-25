@@ -475,8 +475,9 @@
 !/src/commands/ci/fetch-default-org-slug.test.mts
 !/src/commands/ci/handle-ci.mts
 !/src/commands/ci/handle-ci.test.mts
-!/src/commands/ci/detect-ci-pull-request-context.mts
 !/src/commands/ci/detect-ci-pull-request-context.test.mts
+!/src/commands/ci/select-baseline-scan.mts
+!/src/commands/ci/select-baseline-scan.test.mts
 !/src/commands/cli.test.mts
 !/src/commands/config/cmd-config-auto.mts
 !/src/commands/config/cmd-config-auto.test.mts
@@ -1004,6 +1005,7 @@
 !/src/commands/scan/output-create-new-scan.test.mts
 !/src/commands/scan/output-delete-scan.mts
 !/src/commands/scan/output-diff-scan.mts
+!/src/commands/scan/output-diff-scan.test.mts
 !/src/commands/scan/output-list-scans.mts
 !/src/commands/scan/output-scan-config-result.mts
 !/src/commands/scan/output-scan-github.mts
