@@ -25,7 +25,8 @@ export type ReachabilityStepOptions = {
   inheritedReachability?: unknown
 }
 
-// As written, so that the wizard can replace an invalid value.
+// As written. The wizard leaves invalid inherited values out of its defaults
+// and replaces invalid values only in this directory's socket.json.
 function inheritedReachabilityOf(cwd: string, tool: BuildTool): unknown {
   const dir = path.resolve(cwd)
   const parent = path.dirname(dir)
@@ -782,8 +783,8 @@ async function askForIgnoreUnresolvedFlag(
   })
 }
 
-// The fields of `value` that `tool`'s builds take, warning about the rest the
-// answers replace; an inherited invalid value is its own socket.json's to fix.
+// The wizard warns about invalid local values and replaces them with the answers.
+// Invalid inherited values need to be fixed in the socket.json that sets them.
 function validReachability(
   tool: BuildTool,
   value: unknown,
@@ -829,8 +830,8 @@ function effectiveValue(
   return Object.hasOwn(own, field) ? own[field] : inherited[field]
 }
 
-// A "no" to a value's question keeps the value in effect; "none" is written
-// only to override an inherited "compile".
+// Answering no to a value prompt keeps the effective value.
+// The wizard writes "none" to override an inherited "compile".
 async function setupReachability(
   tool: BuildTool,
   config: { reachability?: unknown },
@@ -961,7 +962,7 @@ async function setupReachabilityValue(
   if (applyAnswer(reachability as Record<string, string>, field, answer)) {
     return canceledByUser()
   }
-  // A blank answer must also clear an inherited value, not fall back to it.
+  // A blank answer writes null to clear an inherited value.
   if (answer === '' && inherited[field]) {
     reachability[field] = null
   }

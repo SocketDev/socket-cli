@@ -103,8 +103,8 @@ describe('reachability step', () => {
   const REACHABILITY_QUESTION =
     'Use a different Java for reachability analysis?'
 
-  // Answers the reachability question with `wantsJavaHome` and its JDK prompt
-  // with `javaHome`; every other prompt keeps its default.
+  // Answers the JDK choice with `wantsJavaHome` and the path prompt with `javaHome`.
+  // Other prompts keep their defaults.
   function answerReachability(wantsJavaHome: boolean, javaHome = ''): void {
     vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
       message === REACHABILITY_QUESTION ? wantsJavaHome : (def ?? ''),
@@ -273,8 +273,8 @@ describe('reachability build step', () => {
   const BUILD_QUESTION =
     'Build project before reachability analysis? Note: A failed build fails the scan.'
 
-  // Answers the build question with `wantsBuild`; every other prompt keeps
-  // its default. Returns the build question's shown default per call.
+  // Answers the build prompt with `wantsBuild` and accepts the other defaults.
+  // Returns the build prompt's displayed default for each call.
   function answerBuild(wantsBuild: boolean): unknown[] {
     const shown: unknown[] = []
     vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
@@ -411,8 +411,8 @@ describe('reachability runtime step', () => {
   const RUNTIME_QUESTION =
     'Start the reachability analysis of a framework-dependent .NET build on a given runtime?'
 
-  // Answers the runtime question with `wantsRuntime` and its prompt with
-  // `runtimeVersion`; records each runtime prompt.
+  // Answers the runtime choice with `wantsRuntime` and the version prompt with `runtimeVersion`.
+  // Records each runtime prompt.
   function answerRuntime(wantsRuntime: boolean, runtimeVersion = '') {
     const asked: Array<Parameters<typeof input>[0]> = []
     vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
