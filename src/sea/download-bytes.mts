@@ -1,4 +1,6 @@
 /* eslint-disable no-await-in-loop -- Retry attempts must run sequentially. */
+import { errorMessage } from '../utils/errors.mts'
+
 const MAX_ATTEMPTS = 3
 const RETRY_DELAYS = [500, 1_000] as const
 const RETRYABLE_HTTP_STATUSES = new Set([408, 429, 500, 502, 503, 504])
@@ -20,10 +22,6 @@ type DownloadBytesOptions = {
   maxBytes?: number | undefined
   timeoutMs?: number | undefined
   acceptedStatuses?: readonly number[] | undefined
-}
-
-export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 export function isRetryable(error: unknown): boolean {

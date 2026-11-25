@@ -34,7 +34,7 @@ import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 import { getExtraCaCerts } from './api-transport.mts'
 import { getConfigValueOrUndef, isConfigFromFlag } from './config.mts'
 import { debugApiRequest, debugApiResponse } from './debug.mts'
-import { getErrorCause } from './errors.mts'
+import { errorMessage } from './errors.mts'
 import { logger } from './logger.mts'
 import { readOAuthCredentials, resolveOAuthAccessToken } from './oauth.mts'
 import { isNonEmptyString } from './strings.mts'
@@ -275,7 +275,7 @@ export async function setupSdk(
     return {
       ok: false,
       message: 'Auth Error',
-      cause: getErrorCause(error),
+      cause: errorMessage(error),
     }
   }
 

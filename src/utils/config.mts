@@ -29,7 +29,7 @@ import config from '@socketsecurity/config'
 
 import { debugConfig, debugDir, debugFn } from './debug.mts'
 import { getEditableJsonClass } from './editable-json.mts'
-import { getErrorCause } from './errors.mts'
+import { errorMessage } from './errors.mts'
 import { safeReadFileSync } from './fs.mts'
 import { logger } from './logger.mts'
 import { naturalCompare } from './sorts.mts'
@@ -190,7 +190,7 @@ export function findSocketYmlSync(
         return {
           ok: false,
           message: `Found file but was unable to parse ${ymlPath}`,
-          cause: getErrorCause(e),
+          cause: errorMessage(e),
         }
       }
     }
