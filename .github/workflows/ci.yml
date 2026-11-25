@@ -334,7 +334,7 @@ jobs:
         shell: pwsh
         env:
           SOCKET_BAZEL_E2E: '1'
-          SFW_CUSTOM_REGISTRIES: 'bypass:bcr.bazel.build,bypass:release-assets.githubusercontent.com,bypass:repo.maven.apache.org'
+          SFW_CUSTOM_REGISTRIES: 'bypass:bcr.bazel.build,bypass:release-assets.githubusercontent.com,bypass:repo.maven.apache.org,bypass:repo1.maven.org'
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
           pnpm exec vitest run --config .config/vitest.e2e.config.mts src/commands/manifest/bazel/bazel-native.e2e.test.mts

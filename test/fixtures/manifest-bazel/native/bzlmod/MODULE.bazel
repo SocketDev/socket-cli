@@ -6,6 +6,9 @@ maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "socket_fixture",
     artifacts = ["junit:junit:4.13.2"],
-    repositories = ["https://repo.maven.apache.org/maven2"],
+    repositories = [
+        "https://repo.maven.apache.org/maven2",
+        "https://repo1.maven.org/maven2",
+    ],
 )
 use_repo(maven, "socket_fixture")

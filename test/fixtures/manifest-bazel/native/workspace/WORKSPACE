@@ -33,5 +33,8 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 maven_install(
     name = "maven",
     artifacts = ["junit:junit:4.13.2"],
-    repositories = ["https://repo.maven.apache.org/maven2"],
+    repositories = [
+        "https://repo.maven.apache.org/maven2",
+        "https://repo1.maven.org/maven2",
+    ],
 )
