@@ -13,14 +13,12 @@
 !/.github/actions/repo/
 !/.github/actions/repo/cache-downloads/
 !/.github/actions/repo/upload-artifact/
-!/.github/codeql/
 !/.github/scripts/
 !/.github/workflows/
 !/.github/actions/repo/upload-artifact/action.yml
 !/.github/actions/repo/upload-artifact/index.mjs
 !/.github/actions/repo/cache-downloads/action.yml
 !/.github/actions/repo/cache-downloads/index.mts
-!/.github/codeql/Placeholder.cs
 !/.github/scripts/download-release-artifacts.mts
 !/.github/scripts/pin-readme-assets.mjs
 !/.github/scripts/smoke-test-tarball.mts
