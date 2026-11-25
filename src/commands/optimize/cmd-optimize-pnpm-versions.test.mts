@@ -8,6 +8,8 @@ import { beforeEach, describe, expect, it, onTestFinished } from 'vitest'
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
+  FLAG_PIN,
+  FLAG_PROD,
   PACKAGE_JSON,
   PNPM,
   PNPM_LOCK_YAML,
@@ -19,11 +21,9 @@ import { readPackageJson } from '../../utils/packages.mts'
 import { spawn } from '../../utils/spawn.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
-async function prepareFixture(version: 'pnpm8' | 'pnpm9') {
-  const source = path.join(fixtureBaseDir, version)
-  const cwd = await mkdtemp(
-    path.join(os.tmpdir(), `socket-optimize-${version}-`),
-  )
+async function prepareFixture() {
+  const source = path.join(fixtureBaseDir, 'pnpm10')
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'socket-optimize-pnpm10-'))
   onTestFinished(() => rm(cwd, { force: true, maxRetries: 5, recursive: true }))
 
   await Promise.all(
@@ -32,15 +32,10 @@ async function prepareFixture(version: 'pnpm8' | 'pnpm9') {
     ),
   )
 
-  // Keep the pnpm executable outside the tree its install command rewrites.
-  const fixture = await readPackageJson(path.join(cwd, PACKAGE_JSON))
-  const pnpmVersion = fixture.dependencies!.pnpm
-  const binPath = path.resolve(
-    testPath,
-    '../scripts/test/tools',
-    version,
-    'node_modules/.bin',
-  )
+  // pnpm 10 exercises the pre-11 package.json override format.
+  const toolDir = path.resolve(testPath, '../scripts/test/tools/pnpm10')
+  const tool = await readPackageJson(path.join(toolDir, PACKAGE_JSON))
+  const binPath = path.join(toolDir, 'node_modules/.bin')
   const env = {
     ...process.env,
     CI: '1',
@@ -48,189 +43,128 @@ async function prepareFixture(version: 'pnpm8' | 'pnpm9') {
   }
   const options = { cwd, env, shell: process.platform === 'win32' }
   const { stdout } = await spawn(PNPM, ['--version'], options)
-  expect(stdout.trim()).toBe(pnpmVersion)
+  expect(stdout.trim()).toBe(tool.devDependencies?.pnpm)
   await spawn(PNPM, ['install', '--no-frozen-lockfile'], options)
   return { cwd, env }
 }
 
-describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
+describe('socket optimize - pnpm 10', { timeout: 120_000 }, () => {
   const { binCliPath } = constants
+  let fixture: Awaited<ReturnType<typeof prepareFixture>>
+  beforeEach(async () => {
+    fixture = await prepareFixture()
+  }, 120_000)
 
-  describe('pnpm v8', () => {
-    let fixture: Awaited<ReturnType<typeof prepareFixture>>
-    beforeEach(async () => {
-      fixture = await prepareFixture('pnpm8')
-    }, 120_000)
+  it(
+    'should handle --prod flag with pnpm 10',
+    { timeout: 60_000 },
+    async () => {
+      const { cwd, env } = fixture
+      const packageJsonPath = path.join(cwd, PACKAGE_JSON)
+      const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
-    it(
-      'should optimize packages with pnpm v8',
-      { timeout: 120_000 },
-      async () => {
-        const { cwd, env } = fixture
-        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
-        const pkgJsonBefore = await readPackageJson(packageJsonPath)
+      // Check abab is in dependencies (production), axios in devDependencies.
+      expect(pkgJsonBefore.dependencies?.abab).toBe('2.0.6')
+      expect(pkgJsonBefore.devDependencies?.axios).toBe('1.3.2')
 
-        // Check abab is the expected version..
-        expect(pkgJsonBefore.dependencies?.abab).toBe('2.0.6')
+      // Use dry-run to avoid hanging issues with npm ls.
+      const { code, stderr, stdout } = await spawnSocketCli(
+        binCliPath,
+        [
+          'optimize',
+          cwd,
+          FLAG_PROD,
+          FLAG_DRY_RUN,
+          FLAG_CONFIG,
+          '{"apiToken":"fake-token"}',
+        ],
+        {
+          cwd,
+          env,
+          timeout: 10_000,
+        },
+      )
 
-        const { code, stderr, stdout } = await spawnSocketCli(
-          binCliPath,
-          ['optimize', cwd, FLAG_CONFIG, '{}'],
-          {
-            cwd,
-            env,
-          },
-        )
+      // With dry-run, should exit early.
+      expect(stdout).toContain('[DryRun]: Bailing now')
+      expect(code, stderr).toBe(0)
+    },
+  )
 
-        // stderr contains the Socket banner and info messages
-        expect(stderr, 'should show optimization message').toContain(
-          'Optimizing packages for pnpm',
-        )
-        // Check for Socket.dev optimized overrides message (may be phrased differently).
-        // Note: In CI mode, pnpm v8 may encounter worker errors.
-        expect(
-          stdout.includes('Socket.dev optimized overrides') ||
-            stdout.includes('ERROR') ||
-            stdout.includes('Worker'),
-          'should attempt optimization',
-        ).toBe(true)
-        // Exit code might be non-zero if worker error occurred in CI mode.
-        expect([0, 1].includes(code), 'exit code should be 0 or 1').toBe(true)
+  it(
+    'should optimize packages with pnpm 10',
+    { timeout: 120_000 },
+    async () => {
+      const { cwd, env } = fixture
+      const packageJsonPath = path.join(cwd, PACKAGE_JSON)
+      const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
-        const pkgJsonAfter = await readPackageJson(packageJsonPath)
-        // Overrides should be added since abab is in Socket registry.
-        expect(pkgJsonAfter.overrides).toBeDefined()
-        // Override format varies by pnpm version.
-        const ababOverride = (pkgJsonAfter.overrides as JsonContent)?.abab
-        expect(
-          ababOverride === '$abab' ||
-            ababOverride === 'npm:@socketregistry/abab@^1.0.8' ||
-            ababOverride === '@socketregistry/abab@^1.0.8',
-        ).toBe(true)
-        // Check that pnpm-lock.yaml exists and was modified.
-        const lockPath = path.join(cwd, PNPM_LOCK_YAML)
-        expect(existsSync(lockPath)).toBe(true)
-      },
-    )
+      // Check abab is the expected version.
+      expect(pkgJsonBefore.dependencies?.abab).toBe('2.0.6')
 
-    it(
-      'should handle --prod flag with pnpm v8',
-      { timeout: 60_000 },
-      async () => {
-        const { cwd, env } = fixture
-        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
-        const pkgJsonBefore = await readPackageJson(packageJsonPath)
+      const { code, stderr, stdout } = await spawnSocketCli(
+        binCliPath,
+        ['optimize', cwd, FLAG_CONFIG, '{}'],
+        {
+          cwd,
+          env,
+        },
+      )
 
-        // Check abab is in dependencies (production), axios in devDependencies.
-        expect(pkgJsonBefore.dependencies?.abab).toBe('2.0.6')
-        expect(pkgJsonBefore.devDependencies?.axios).toBe('1.3.2')
+      // stderr contains the Socket banner and info messages
+      expect(stderr, 'should show optimization message').toContain(
+        'Optimizing packages for pnpm',
+      )
+      // Overrides applied since abab is in Socket registry.
+      // The message format varies: "Added X Socket.dev optimized overrides" or "Socket.dev optimized overrides applied".
+      expect(stdout, 'should show overrides applied').toContain(
+        'Socket.dev optimized overrides',
+      )
+      expect(code, stderr).toBe(0)
 
-        // Use dry-run to avoid hanging issues with npm ls.
-        const { code, stderr, stdout } = await spawnSocketCli(
-          binCliPath,
-          [
-            'optimize',
-            cwd,
-            '--prod',
-            FLAG_DRY_RUN,
-            FLAG_CONFIG,
-            '{"apiToken":"fake-token"}',
-          ],
-          {
-            cwd,
-            env,
-            timeout: 10_000,
-          },
-        )
+      const pkgJsonAfter = await readPackageJson(packageJsonPath)
+      // Overrides should be added since abab is in Socket registry.
+      expect(pkgJsonAfter.overrides).toBeDefined()
+      // Override format varies by pnpm version.
+      const ababOverride = (pkgJsonAfter.overrides as JsonContent)?.abab
+      expect(
+        ababOverride === '$abab' ||
+          ababOverride === 'npm:@socketregistry/abab@^1.0.8' ||
+          ababOverride === '@socketregistry/abab@^1.0.8',
+      ).toBe(true)
+      // The install and optimization leave a lockfile in the fixture.
+      const lockPath = path.join(cwd, PNPM_LOCK_YAML)
+      expect(existsSync(lockPath)).toBe(true)
+    },
+  )
 
-        // With dry-run, should exit early.
-        expect(stdout).toContain('[DryRun]: Bailing now')
-        expect(code, stderr).toBe(0)
-      },
-    )
-  })
+  it(
+    'should handle --pin flag with pnpm 10',
+    { timeout: 120_000 },
+    async () => {
+      const { cwd, env } = fixture
+      const packageJsonPath = path.join(cwd, PACKAGE_JSON)
 
-  describe('pnpm v9', () => {
-    let fixture: Awaited<ReturnType<typeof prepareFixture>>
-    beforeEach(async () => {
-      fixture = await prepareFixture('pnpm9')
-    }, 120_000)
+      const { code, stderr } = await spawnSocketCli(
+        binCliPath,
+        ['optimize', cwd, FLAG_PIN, FLAG_CONFIG, '{}'],
+        {
+          cwd,
+          env,
+        },
+      )
 
-    it(
-      'should optimize packages with pnpm v9',
-      { timeout: 120_000 },
-      async () => {
-        const { cwd, env } = fixture
-        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
-        const pkgJsonBefore = await readPackageJson(packageJsonPath)
+      // stderr contains the Socket banner and info messages
+      expect(stderr, 'should show optimization message').toContain(
+        'Optimizing packages for pnpm',
+      )
+      expect(code, stderr).toBe(0)
 
-        // Check abab is the expected version.
-        expect(pkgJsonBefore.dependencies?.abab).toBe('2.0.6')
-
-        const { code, stderr, stdout } = await spawnSocketCli(
-          binCliPath,
-          ['optimize', cwd, FLAG_CONFIG, '{}'],
-          {
-            cwd,
-            env,
-          },
-        )
-
-        // stderr contains the Socket banner and info messages
-        expect(stderr, 'should show optimization message').toContain(
-          'Optimizing packages for pnpm',
-        )
-        // Overrides applied since abab is in Socket registry.
-        // The message format varies: "Added X Socket.dev optimized overrides" or "Socket.dev optimized overrides applied".
-        expect(stdout, 'should show overrides applied').toContain(
-          'Socket.dev optimized overrides',
-        )
-        expect(code, stderr).toBe(0)
-
-        const pkgJsonAfter = await readPackageJson(packageJsonPath)
-        // Overrides should be added since abab is in Socket registry.
-        expect(pkgJsonAfter.overrides).toBeDefined()
-        // Override format varies by pnpm version.
-        const ababOverride = (pkgJsonAfter.overrides as JsonContent)?.abab
-        expect(
-          ababOverride === '$abab' ||
-            ababOverride === 'npm:@socketregistry/abab@^1.0.8' ||
-            ababOverride === '@socketregistry/abab@^1.0.8',
-        ).toBe(true)
-        // Check that pnpm-lock.yaml exists and was modified.
-        const lockPath = path.join(cwd, PNPM_LOCK_YAML)
-        expect(existsSync(lockPath)).toBe(true)
-      },
-    )
-
-    it(
-      'should handle --pin flag with pnpm v9',
-      { timeout: 120_000 },
-      async () => {
-        const { cwd, env } = fixture
-        const packageJsonPath = path.join(cwd, PACKAGE_JSON)
-
-        const { code, stderr } = await spawnSocketCli(
-          binCliPath,
-          ['optimize', cwd, '--pin', FLAG_CONFIG, '{}'],
-          {
-            cwd,
-            env,
-          },
-        )
-
-        // stderr contains the Socket banner and info messages
-        expect(stderr, 'should show optimization message').toContain(
-          'Optimizing packages for pnpm',
-        )
-        expect(code, stderr).toBe(0)
-
-        const pkgJsonAfter = await readPackageJson(packageJsonPath)
-        // Overrides should be added since abab is in Socket registry.
-        expect(pkgJsonAfter.overrides).toBeDefined()
-        // With --pin flag, the override uses $ syntax to pin to exact version.
-        expect((pkgJsonAfter.overrides as JsonContent)?.abab).toBe('$abab')
-      },
-    )
-  })
+      const pkgJsonAfter = await readPackageJson(packageJsonPath)
+      // Overrides should be added since abab is in Socket registry.
+      expect(pkgJsonAfter.overrides).toBeDefined()
+      // With --pin flag, the override uses $ syntax to pin to exact version.
+      expect((pkgJsonAfter.overrides as JsonContent)?.abab).toBe('$abab')
+    },
+  )
 })

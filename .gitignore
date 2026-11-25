@@ -316,8 +316,7 @@
 !/test/fixtures/commands/optimize/
 !/test/fixtures/commands/optimize/npm/
 !/test/fixtures/commands/optimize/pnpm/
-!/test/fixtures/commands/optimize/pnpm8/
-!/test/fixtures/commands/optimize/pnpm9/
+!/test/fixtures/commands/optimize/pnpm10/
 !/test/fixtures/commands/optimize/yarn/
 !/test/fixtures/commands/patch/
 !/test/fixtures/commands/patch/npm/
@@ -388,14 +387,11 @@
 !/patches/ansi-term@0.0.2.patch
 !/patches/blessed-contrib@4.11.0.patch
 !/patches/blessed@0.1.81.patch
-!/patches/brace-expansion@2.0.2.patch
 !/patches/bresenham@0.0.3.patch
 !/patches/drawille-blessed-contrib@1.0.0.patch
 !/patches/drawille-canvas-blessed-contrib@0.1.3.patch
 !/patches/graceful-fs@4.2.11.patch
-!/patches/lodash@4.17.21.patch
 !/patches/meow@13.2.0.patch
-!/patches/rollup@4.50.1.patch
 !/patches/string_decoder@0.10.31.patch
 !/patches/tiny-updater@3.5.3.patch
 !/pnpm-lock.yaml
