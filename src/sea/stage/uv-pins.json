@@ -1,10 +1,8 @@
 {
   "package": "uv",
-  "version": "0.12.15",
+  "version": "0.13.10",
   "license": "MIT OR Apache-2.0",
   "repository": "https://github.com/astral-sh/uv",
-  "releaseBaseUrl": "https://github.com/astral-sh/uv/releases/download/0.12.15",
-  "licenseBaseUrl": "https://raw.githubusercontent.com/astral-sh/uv/0.12.15",
   "licenseFiles": [
     {
       "name": "LICENSE-MIT",
@@ -18,39 +16,33 @@
   "targets": {
     "darwin-arm64": {
       "archive": "uv-aarch64-apple-darwin.tar.gz",
-      "sha256": "dc304b9ed1b24174572290fba60ac3f6fe63c73a671f0439e62a91375841964d",
-      "executable": "uv-aarch64-apple-darwin/uv",
-      "binary": "uv"
+      "sha256": "e419bf07533bdbf48795fc793601c834dd79db57a8c49ce8e25cfe3a8639958d",
+      "executable": "uv-aarch64-apple-darwin/uv"
     },
     "darwin-x64": {
       "archive": "uv-x86_64-apple-darwin.tar.gz",
-      "sha256": "e9ca61775532368fe518ab03e7a354c7ecab8ccb3c7d941c775fcc4a362b801b",
-      "executable": "uv-x86_64-apple-darwin/uv",
-      "binary": "uv"
+      "sha256": "153e03197588204c04fc4c81cc4bafbfa4280222a385e4ee36a87aeec0ae63b4",
+      "executable": "uv-x86_64-apple-darwin/uv"
     },
     "linux-arm64": {
       "archive": "uv-aarch64-unknown-linux-gnu.tar.gz",
-      "sha256": "0e9a3499b0587d449c9ff684c0160da607826e4af1cee220bc87f378702d3e08",
-      "executable": "uv-aarch64-unknown-linux-gnu/uv",
-      "binary": "uv"
+      "sha256": "14590f644805a6234ffe071154340669e38137f38e60aa9629690119704107d2",
+      "executable": "uv-aarch64-unknown-linux-gnu/uv"
     },
     "linux-x64": {
       "archive": "uv-x86_64-unknown-linux-gnu.tar.gz",
-      "sha256": "f97935763c04be3e692460a7aaeaaab8fc3b78fcf8b389da820b38ae7423a638",
-      "executable": "uv-x86_64-unknown-linux-gnu/uv",
-      "binary": "uv"
+      "sha256": "bf65ac1a0af10f92c522d91ac096c7c0a39657647b155577e7836c2cbbb4526c",
+      "executable": "uv-x86_64-unknown-linux-gnu/uv"
     },
     "win32-arm64": {
       "archive": "uv-aarch64-pc-windows-msvc.zip",
-      "sha256": "a37c8e96cb1260488c8510b64c848533a3a82a2fdf9e905de7c2700ceebf6437",
-      "executable": "uv.exe",
-      "binary": "uv.exe"
+      "sha256": "f223bcd3fa010174ffeeb885cc1d5334bb81388640c65baa5b8b42b47017337e",
+      "executable": "uv.exe"
     },
     "win32-x64": {
       "archive": "uv-x86_64-pc-windows-msvc.zip",
-      "sha256": "477bd99a84e34891f2bd4c9152ddeb74e971accccbc59c0f0301f11f08a32d46",
-      "executable": "uv.exe",
-      "binary": "uv.exe"
+      "sha256": "297b3881fe1adfb922becc2c1613202abb41dc83ea5ff43d472aa087ca1f8683",
+      "executable": "uv.exe"
     }
   }
 }

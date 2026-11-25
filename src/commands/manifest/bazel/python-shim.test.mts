@@ -17,9 +17,9 @@ import {
   getBazelEnvironmentValue,
 } from './process.mts'
 import { provisionPythonShim } from './python-shim.mts'
-import { isStandaloneSea } from '../../../sea/runtime.mts'
+import { isSea } from '../../../sea/runtime.mts'
 
-vi.mock('../../../sea/runtime.mts', () => ({ isStandaloneSea: vi.fn() }))
+vi.mock('../../../sea/runtime.mts', () => ({ isSea: vi.fn() }))
 
 const python = await findBazelExecutable(
   process.platform === 'win32' ? 'python' : 'python3',
@@ -32,7 +32,7 @@ describe('provisionPythonShim', () => {
   const shims: string[] = []
 
   beforeEach(() => {
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
     cwd = mkdtempSync(path.join(os.tmpdir(), 'bazel python '))
   })
 
@@ -137,7 +137,7 @@ describe('provisionPythonShim', () => {
       if (!python) {
         throw new Error('Python fixture is unavailable')
       }
-      vi.mocked(isStandaloneSea).mockReturnValue(true)
+      vi.mocked(isSea).mockReturnValue(true)
       const env = getBazelEnvironment({
         SOCKET_CLI_PYTHON_PATH: path.relative(cwd, python),
         Path: 'existing-path',

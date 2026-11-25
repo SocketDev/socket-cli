@@ -13,41 +13,41 @@
  */
 
 import { createHash } from 'node:crypto'
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
 import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 
 import semver from 'semver'
 import { x as extractTar } from 'tar'
 
-import { debugDir, debugFn } from '../debug.mts'
-import { logger } from '../logger.mts'
-import { spawn } from '../spawn.mts'
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
 import constants, {
   COANA_CLI_VERSION,
   ERROR_UNABLE_RESOLVE_ORG,
   SOCKET_CLI_API_TOKEN_VARIABLES,
 } from '../../constants.mts'
+import {
+  COANA_CACHE_FILENAME,
+  coanaCacheDistPath,
+  coanaCliWrapperPath,
+} from '../../paths/coana.mts'
+import {
+  cleanupBundledTool,
+  getBundledTool,
+  isSea,
+  runEmbeddedJsTool,
+} from '../../sea/runtime.mts'
 import { apiFetch, sendApiRequest } from '../api.mts'
+import { debugDir, debugFn } from '../debug.mts'
 import { errorMessage } from '../errors.mts'
 import { withTmpDir } from '../fs.mts'
+import { logger } from '../logger.mts'
 import {
   getCliUserAgent,
   getDefaultApiBaseUrl,
   getDefaultProxyUrl,
   resolveDefaultApiToken,
 } from '../sdk.mts'
-import { SEA_COANA_VFS_PATHS } from '../../sea/paths/coana.mts'
-import {
-  assertEmbeddedToolAvailable,
-  cleanupBundledTool,
-  getBundledTool,
-  getEmbeddedVfsPath,
-  isStandaloneSea,
-  runEmbeddedJsTool,
-} from '../../sea/runtime.mts'
+import { spawn } from '../spawn.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SpawnOptions } from '../spawn.mts'
@@ -82,7 +82,6 @@ type CoanaSpawnOptions = {
 }
 
 const CACHE_NOT_WRITABLE_EXIT_CODE = 3
-const COANA_CACHE_SCRIPT = 'coana-cache.mjs'
 const COMPONENT = 'cli'
 const NOT_CACHED_EXIT_CODE = 4
 const SHA256_REGEXP = /^[0-9a-f]{64}$/
@@ -102,7 +101,7 @@ function cacheResultToCResult(result: CoanaCacheResult): CResult<string> {
         ? 'Cannot write to the Coana cache'
         : 'The Coana cache failed',
     cause:
-      result.stderr || `${COANA_CACHE_SCRIPT} exited with ${result.exitCode}`,
+      result.stderr || `${COANA_CACHE_FILENAME} exited with ${result.exitCode}`,
   }
 }
 
@@ -385,7 +384,7 @@ async function runCoanaCache(
   args: string[],
   env: NodeJS.ProcessEnv,
 ): Promise<CoanaCacheResult> {
-  if (isStandaloneSea()) {
+  if (isSea()) {
     const result = await runEmbeddedJsTool('coana-cache', args, {
       env,
       stdio: 'pipe',
@@ -399,7 +398,7 @@ async function runCoanaCache(
   try {
     const result = await spawn(
       constants.execPath,
-      [path.join(constants.distPath, COANA_CACHE_SCRIPT), ...args],
+      [coanaCacheDistPath(constants.distPath), ...args],
       { env, stdio: 'pipe' },
     )
     return {
@@ -418,74 +417,6 @@ async function runCoanaCache(
       stdout: String((e as any)?.stdout ?? '').trim(),
     }
   }
-}
-
-async function cacheEmbeddedCoana(
-  env: NodeJS.ProcessEnv,
-): Promise<{ cliPath: string; analyzersPath: string }> {
-  const manifest = JSON.parse(
-    await fs.readFile(getEmbeddedVfsPath(SEA_COANA_VFS_PATHS.manifest), 'utf8'),
-  ) as {
-    components?: Record<string, { sha256?: unknown }>
-    version?: unknown
-  }
-  const manifestComponents = manifest.components
-  if (
-    manifest.version !== COANA_CLI_VERSION ||
-    !manifestComponents ||
-    typeof manifestComponents !== 'object'
-  ) {
-    throw new Error(
-      `Embedded Coana metadata does not match pinned version ${COANA_CLI_VERSION}`,
-    )
-  }
-  const components = await Promise.all(
-    (['analyzers', 'cli'] as const).map(async component => {
-      const sha256 = manifestComponents[component]?.sha256
-      if (typeof sha256 !== 'string' || !SHA256_REGEXP.test(sha256)) {
-        throw new Error(`Embedded Coana ${component} metadata is invalid`)
-      }
-      const lookup = await runCoanaCache(
-        ['lookup', COANA_CLI_VERSION, component],
-        env,
-      )
-      if (lookup.exitCode === NOT_CACHED_EXIT_CODE) {
-        const cached = await withTmpDir(
-          'socket-coana-embedded-',
-          async source => {
-            const extracted = path.join(source, 'component')
-            await fs.cp(
-              getEmbeddedVfsPath(
-                component === 'cli'
-                  ? SEA_COANA_VFS_PATHS.cli
-                  : SEA_COANA_VFS_PATHS.analyzers,
-              ),
-              extracted,
-              { recursive: true },
-            )
-            return await runCoanaCache(
-              ['install', COANA_CLI_VERSION, component, sha256, extracted],
-              env,
-            )
-          },
-        )
-        if (cached.exitCode !== 0 || !cached.stdout) {
-          throw new Error(
-            cached.stderr || `Could not install embedded Coana ${component}`,
-          )
-        }
-        return [component, cached.stdout] as const
-      } else if (lookup.exitCode === 0 && lookup.stdout) {
-        return [component, lookup.stdout] as const
-      } else {
-        throw new Error(
-          lookup.stderr || `Could not read the Coana ${component} cache`,
-        )
-      }
-    }),
-  )
-  const paths = Object.fromEntries(components)
-  return { cliPath: paths['cli']!, analyzersPath: paths['analyzers']! }
 }
 
 /**
@@ -518,32 +449,7 @@ export async function spawnCoana(
   } as CoanaSpawnOptions
 
   const localPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
-  const standaloneSea = isStandaloneSea()
-  if (
-    standaloneSea &&
-    localPath &&
-    (localPath.endsWith('.js') || localPath.endsWith('.mjs'))
-  ) {
-    return {
-      ok: false,
-      message:
-        'Cannot launch a JavaScript Coana CLI from the standalone Socket build',
-      cause:
-        'SOCKET_CLI_COANA_LOCAL_PATH must name a native Coana executable; the standalone JavaScript Worker adapter is not configured.',
-    }
-  }
-  if (
-    standaloneSea &&
-    !localPath &&
-    (coanaVersion || COANA_CLI_VERSION) !== COANA_CLI_VERSION
-  ) {
-    return {
-      ok: false,
-      message: 'The standalone Socket build includes one Coana version',
-      cause: `This build includes Coana ${COANA_CLI_VERSION}; remove the version override or use that version.`,
-    }
-  }
-
+  const runningInSea = isSea()
   let apiToken: string | undefined
   try {
     apiToken = await resolveDefaultApiToken()
@@ -588,37 +494,18 @@ export async function spawnCoana(
     }
   }
 
-  let embeddedPaths: { cliPath: string; analyzersPath: string } | undefined
-  if (standaloneSea && !localPath) {
-    try {
-      assertEmbeddedToolAvailable('coana')
-      embeddedPaths = await cacheEmbeddedCoana(userEnv)
-      env['REPOS_PATH'] = embeddedPaths.analyzersPath
-    } catch (error) {
-      return {
-        ok: false,
-        message: 'Could not prepare the embedded Coana CLI',
-        cause: errorMessage(error),
-      }
-    }
-  }
-
   let scriptPath = localPath
   if (!scriptPath) {
-    if (embeddedPaths) {
-      scriptPath = path.join(embeddedPaths.cliPath, 'cli-wrapper.mjs')
-    } else {
-      const coanaDirCResult = await getCoanaCliDir(
-        coanaVersion || COANA_CLI_VERSION,
-        org,
-        userEnv,
-        spinner,
-      )
-      if (!coanaDirCResult.ok) {
-        return coanaDirCResult
-      }
-      scriptPath = path.join(coanaDirCResult.data, 'cli-wrapper.mjs')
+    const coanaDir = await getCoanaCliDir(
+      coanaVersion || COANA_CLI_VERSION,
+      org,
+      userEnv,
+      spinner,
+    )
+    if (!coanaDir.ok) {
+      return coanaDir
     }
+    scriptPath = coanaCliWrapperPath(coanaDir.data)
   }
 
   // A local path may name a native binary.
@@ -627,8 +514,8 @@ export async function spawnCoana(
   try {
     const executable = isBinary
       ? scriptPath
-      : standaloneSea
-        ? (nodePath = await getBundledTool('coana-node'))
+      : runningInSea
+        ? (nodePath = await getBundledTool('node'))
         : constants.execPath
     const spawnResult = await spawn(
       executable,

@@ -6,7 +6,7 @@ import { resolveBuildToolBin, socketFactsFileName } from './build-tool.mts'
 import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
-import { isStandaloneSea } from '../../../sea/runtime.mts'
+import { isSea } from '../../../sea/runtime.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
 import { getOrInsert } from '../../../utils/get-or-insert.mts'
 import { spawn } from '../../../utils/spawn.mts'
@@ -294,12 +294,7 @@ async function invokeGradle(
   task: string,
   tmpDirPrefix: string,
 ): Promise<ManifestRunResult> {
-  const bin = resolveBuildToolBin(
-    'gradle',
-    opts.projectDir,
-    opts.bin,
-    isStandaloneSea(),
-  )
+  const bin = resolveBuildToolBin('gradle', opts.projectDir, opts.bin, isSea())
   const initScript = manifestScriptsPath(initScriptFilename)
   return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
@@ -353,12 +348,7 @@ async function invokeSbtIn(
   pluginDestFilename: string,
   task: string,
 ): Promise<ManifestRunResult> {
-  const bin = resolveBuildToolBin(
-    'sbt',
-    opts.projectDir,
-    opts.bin,
-    isStandaloneSea(),
-  )
+  const bin = resolveBuildToolBin('sbt', opts.projectDir, opts.bin, isSea())
   await writeSbtPlugin(globalBase, pluginSourceFilename, pluginDestFilename)
   const recordsFile = path.join(globalBase, 'records.tsv')
   // The global base is shared across sbt roots: a build that dies before
@@ -431,12 +421,7 @@ async function invokeMaven(
   coanaTask: string,
   tmpDirPrefix: string,
 ): Promise<ManifestRunResult> {
-  const bin = resolveBuildToolBin(
-    'maven',
-    opts.projectDir,
-    opts.bin,
-    isStandaloneSea(),
-  )
+  const bin = resolveBuildToolBin('maven', opts.projectDir, opts.bin, isSea())
   const jarPath = manifestScriptsPath(
     'maven-extension',
     'coana-maven-extension.jar',
@@ -565,7 +550,7 @@ async function invokeDotnetTool(
     const recordsFile = path.join(tmp, 'records.tsv')
     // An external dotnet process cannot open Node's in-process VFS mount.
     let executableDll = toolDll
-    if (isStandaloneSea()) {
+    if (isSea()) {
       const toolDir = path.join(tmp, 'dotnet-tool')
       await fs.mkdir(toolDir)
       const embeddedDir = path.dirname(toolDll)

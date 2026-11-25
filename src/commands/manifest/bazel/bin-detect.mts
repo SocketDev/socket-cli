@@ -11,7 +11,7 @@ import {
   isNodeScript,
   resolveBazelExecutable,
 } from './process.mts'
-import { isStandaloneSea } from '../../../sea/runtime.mts'
+import { isSea } from '../../../sea/runtime.mts'
 import { InputError } from '../../../utils/errors.mts'
 
 /**
@@ -28,7 +28,7 @@ export async function resolveBazelBinary(
   env: NodeJS.ProcessEnv,
   cwd: string,
 ): Promise<string> {
-  if (isStandaloneSea()) {
+  if (isSea()) {
     const override = explicit ?? env['SOCKET_CLI_BAZEL_PATH']
     if (!override) {
       throw new InputError(

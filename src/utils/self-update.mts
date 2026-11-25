@@ -2,11 +2,11 @@ import updateNotifier from 'tiny-updater'
 
 import { logger } from './logger.mts'
 import constants from '../constants.mts'
-import { isStandaloneSea } from '../sea/runtime.mts'
+import { isSea } from '../sea/runtime.mts'
 
 /** Format a release notice for the current Socket distribution. */
 export function formatUpdateNotice(current: string, latest: string): string {
-  return isStandaloneSea()
+  return isSea()
     ? `Socket ${current} → ${latest}. Run: socket update`
     : `Socket ${current} → ${latest}. Update with your favorite package manager.`
 }
@@ -21,7 +21,7 @@ export async function runSelfUpdateCheck(): Promise<void> {
   // A standalone executable cannot be updated through the npm package path.
   // Keep its startup independent from registry metadata and avoid suggesting
   // that an npm CLI update can replace this artifact.
-  if (isStandaloneSea()) {
+  if (isSea()) {
     return
   }
 

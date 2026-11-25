@@ -29,7 +29,7 @@ import constants, {
 } from '../constants.mts'
 import { findUp } from './fs.mts'
 import { isYarnBerry } from './yarn-version.mts'
-import { isStandaloneSea } from '../sea/runtime.mts'
+import { isSea } from '../sea/runtime.mts'
 
 import type { SpawnExtra } from './spawn.mts'
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
@@ -61,7 +61,7 @@ export async function spawnDlx(
   // Standalone builds must never turn a missing embedded helper into a
   // package-manager install. Keep this guard ahead of lockfile detection and
   // shadow-bin loading so every generic dlx caller fails closed consistently.
-  if (isStandaloneSea()) {
+  if (isSea()) {
     throw new Error(
       `Cannot run '${packageSpec.name}' from a standalone Socket CLI: this helper is not bundled for this target, and runtime package installation is disabled.`,
     )

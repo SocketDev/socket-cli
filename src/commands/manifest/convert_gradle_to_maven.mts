@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import constants from '../../constants.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { isStandaloneSea } from '../../sea/runtime.mts'
+import { isSea } from '../../sea/runtime.mts'
 import { logger } from '../../utils/logger.mts'
 import { spawn } from '../../utils/spawn.mts'
 
@@ -24,7 +24,7 @@ export async function convertGradleToMaven({
 
   let selectedBin: string
   try {
-    selectedBin = resolveBuildToolBin('gradle', cwd, bin, isStandaloneSea())
+    selectedBin = resolveBuildToolBin('gradle', cwd, bin, isSea())
   } catch (error) {
     process.exitCode = 1
     logger.fail(error instanceof Error ? error.message : String(error))

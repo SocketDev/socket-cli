@@ -11,7 +11,7 @@ import constants from '../../constants.mts'
 import {
   cleanupBundledTool,
   getBundledTool,
-  isStandaloneSea,
+  isSea,
 } from '../../sea/runtime.mts'
 
 import type { CliCommandContext } from '../../utils/meow-with-subcommands.mts'
@@ -87,17 +87,17 @@ async function run(
 ): Promise<void> {
   const { ENV } = constants
 
-  const standalone = isStandaloneSea()
-  if (standalone && isSelfUpdate(argv)) {
+  const runningInSea = isSea()
+  if (runningInSea && isSelfUpdate(argv)) {
     throw new Error(
       'socket-patch self-update is unavailable in the standalone Socket build because it cannot replace the bundled executable.',
     )
   }
-  let explicitBinPath = standalone
+  let explicitBinPath = runningInSea
     ? ENV.SOCKET_CLI_SOCKET_PATCH_PATH
     : undefined
   let bundledBinPath: string | undefined
-  if (standalone) {
+  if (runningInSea) {
     // The explicit override takes precedence; otherwise extract only the
     // verified embedded payload. Neither branch consults PATH.
     if (explicitBinPath) {

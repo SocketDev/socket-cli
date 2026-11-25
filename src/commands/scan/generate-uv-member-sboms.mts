@@ -12,7 +12,7 @@ import constants from '../../constants.mts'
 import {
   cleanupBundledTool,
   getBundledTool,
-  isStandaloneSea,
+  isSea,
 } from '../../sea/runtime.mts'
 import { InputError, getErrorMessage } from '../../utils/errors.mts'
 import { isDirSync } from '../../utils/fs.mts'
@@ -27,7 +27,7 @@ const UV_SBOM_FILENAME = 'socket-uv-cdx.json'
 const UV_PATH_ENV = 'SOCKET_CLI_UV_PATH'
 
 function resolveUvExecutable(): string {
-  if (!isStandaloneSea()) {
+  if (!isSea()) {
     return 'uv'
   }
   const override = process.env[UV_PATH_ENV]

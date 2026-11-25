@@ -114,6 +114,7 @@ export async function captureFlow(options: {
   checkpointName?: string
   env?: NodeJS.ProcessEnv
   prepare?: (fixture: NativeTerminalFixture) => Promise<void>
+  verify?: (fixture: NativeTerminalFixture) => Promise<void>
 }): Promise<void> {
   const { binary } = readNativeTestEnvironment()
   const {
@@ -143,6 +144,7 @@ export async function captureFlow(options: {
   )
   expect(fixture.terminal.scrollback.getText().trim()).toBe('')
   expect(fixture.terminal.screen.getText()).toContain(expectedText)
+  await options.verify?.(fixture)
   const checkpoint = await captureCheckpoint(
     fixture.terminal,
     options.checkpointName ?? 'help',

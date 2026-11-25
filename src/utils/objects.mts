@@ -1,4 +1,3 @@
-import { isRecord } from './is-record.mjs'
 const { fromEntries: ObjectFromEntries, hasOwn: ObjectHasOwn } = Object
 const { ownKeys: ReflectOwnKeys } = Reflect
 
@@ -49,7 +48,11 @@ export function isObject(value: any): value is object {
   return value !== null && typeof value === 'object'
 }
 
-export { isRecord }
+export function isRecord(
+  value: unknown,
+): value is Record<PropertyKey, unknown> {
+  return isObject(value) && !Array.isArray(value)
+}
 
 export function toSortedObject<T extends Record<string, any>>(
   obj: T,

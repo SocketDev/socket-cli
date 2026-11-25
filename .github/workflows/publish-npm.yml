@@ -321,12 +321,9 @@ jobs:
       - name: Build and test the SEA
         env:
           NODE_OPTIONS: ${{ runner.os == 'macOS' && '--max-old-space-size=4096' || '' }}
-          SOCKET_CLI_API_TOKEN: ${{ startsWith(needs.verify.outputs.version, '2.') && !startsWith(matrix.target, 'win32-') && secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW || '' }} # zizmor: ignore[secrets-outside-env]
-          SOCKET_CLI_COANA_REQUIRED: ${{ startsWith(needs.verify.outputs.version, '2.') && '1' || '0' }}
         shell: bash
         run: |
           pnpm build:sea
-          unset SOCKET_CLI_API_TOKEN
           pnpm test:sea
 
       - name: Pack verified platform binary

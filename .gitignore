@@ -194,10 +194,12 @@
 !/src/external/blessed-contrib/lib/layout/
 !/src/external/blessed-contrib/lib/widget/
 !/src/external/blessed-contrib/lib/widget/charts/
+!/src/paths/
+!/src/paths/*.mts
 !/src/sea/
-!/src/sea/archive-paths.mts
 !/src/sea/adapters/
 !/src/sea/build/
+!/src/sea/build/cdxgen-fixture.mts
 !/src/sea/stage/
 !/src/sea/stage/**
 !/src/sea/download-cache.mts
@@ -1062,9 +1064,9 @@
 !/src/npx-cli.mts
 !/src/pnpm-cli.mts
 !/src/sea/README.md
-!/src/sea/adapters/cdxgen-worker.mjs
+!/src/sea/adapters/cdxgen-worker.mts
 !/src/sea/adapters/cdxgen.mts
-!/src/sea/adapters/synp-worker.mjs
+!/src/sea/adapters/synp-worker.mts
 !/src/sea/adapters/synp.mts
 !/src/sea/bootstrap.mts
 !/src/sea/build-sea.mts
@@ -1089,6 +1091,7 @@
 !/src/sea/build/publish.mts
 !/src/sea/build/smoke-test.mts
 !/src/sea/rollup-provenance.mjs
+!/src/sea/rollup-workers.mts
 !/src/sea/pnpm-lock.mts
 !/src/sea/runtime.mts
 !/src/sea/download-bytes.mts
@@ -1181,8 +1184,6 @@
 !/src/utils/npm-config.mts
 !/src/utils/npm-spec.mts
 !/src/utils/objects.mts
-!/src/utils/is-record.mjs
-!/src/utils/is-record.d.mts
 !/src/utils/organization.mts
 !/src/utils/output-formatting.mts
 !/src/utils/package-environment.mts

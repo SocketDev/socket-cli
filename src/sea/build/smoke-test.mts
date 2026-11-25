@@ -4,6 +4,11 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 
+import {
+  assertCdxgenFixtureOutput,
+  writeCdxgenFixture,
+} from './cdxgen-fixture.mts'
+
 import type { SeaCapabilities } from '../capabilities.mts'
 
 const exec = promisify(execFile)
@@ -43,8 +48,8 @@ export async function smokeTestSea(
     TEMP: tmp,
     TMPDIR: tmp,
   }
-  const run = (args: string[], timeout = 30_000) =>
-    exec(executable, args, { cwd, env, timeout, windowsHide: true })
+  const run = (args: string[], timeout = 30_000, directory = cwd) =>
+    exec(executable, args, { cwd: directory, env, timeout, windowsHide: true })
 
   assert.match((await run(['--help'])).stdout, /\$ socket <command>/u)
   assert.equal(
@@ -86,22 +91,20 @@ export async function smokeTestSea(
     [],
   )
 
-  const cdxgen = capabilities.unavailable.find(
-    tool => tool.id === 'manifest-cdxgen-npm-lock-v3' || tool.id === 'cdxgen',
-  )
-  if (cdxgen) {
-    await fs.writeFile(
-      path.join(cwd, 'package.json'),
-      '{"name":"smoke","version":"1.0.0"}',
+  for (const [mode, capability] of [
+    ['npm', 'manifest-cdxgen-npm-lock-v3'],
+    ['yarn', 'manifest-cdxgen-yarn-classic'],
+  ] as const) {
+    assert.ok(
+      capabilities.available.includes(capability),
+      `Missing ${capability}`,
     )
-    await fs.writeFile(
-      path.join(cwd, 'package-lock.json'),
-      '{"lockfileVersion":3,"packages":{}}',
-    )
-    await assert.rejects(
-      run(['manifest', 'cdxgen', '--type', 'npm']),
-      (err: Error & { code?: number; stderr?: string }) =>
-        err.code === 1 && Boolean(err.stderr?.includes(cdxgen.reason)),
-    )
+    const project = path.join(cwd, mode)
+    // eslint-disable-next-line no-await-in-loop -- Verify each generated SBOM before the next command.
+    await writeCdxgenFixture(project, mode)
+    // eslint-disable-next-line no-await-in-loop
+    await run(['manifest', 'cdxgen', '--type', 'npm'], 60_000, project)
+    // eslint-disable-next-line no-await-in-loop
+    await assertCdxgenFixtureOutput(project, mode)
   }
 }

@@ -19,6 +19,7 @@
     "../scripts/release/packages.mts",
     "../scripts/refresh/**/*.mts",
     "../scripts/test/**/*.mts",
+    "../src/paths/*.mts",
     "../src/sea/version.mts"
   ],
   "exclude": ["../node_modules/**"]

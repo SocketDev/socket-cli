@@ -5,7 +5,7 @@ import { createXtermBackend } from '@termless/xtermjs'
 import updateNotifier from 'tiny-updater'
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 
-import { isStandaloneSea } from '../../../src/sea/runtime.mts'
+import { isSea } from '../../../src/sea/runtime.mts'
 import { runSelfUpdateCheck } from '../../../src/utils/self-update.mts'
 import {
   captureCheckpoint,
@@ -20,7 +20,7 @@ vi.mock('tiny-updater', () => ({
 }))
 
 vi.mock('../../../src/sea/runtime.mts', () => ({
-  isStandaloneSea: vi.fn(() => false),
+  isSea: vi.fn(() => false),
 }))
 
 vi.mock('../../../src/utils/logger.mts', () => ({
@@ -40,7 +40,7 @@ describe('self-update terminal notice screenshot', () => {
   it('captures mocked update notices at standard and wrapped widths', async () => {
     vi.stubEnv('NO_UPDATE_NOTIFIER', '')
     vi.stubEnv('SOCKET_CLI_FORCE_UPDATE_NOTIFIER', '1')
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
     vi.mocked(updateNotifier).mockImplementation(async options => {
       options.logCallback?.('socket', '1.0.0', '1.1.0')
       return true
@@ -54,7 +54,7 @@ describe('self-update terminal notice screenshot', () => {
   it('captures a stable command line when the notice is suppressed', async () => {
     vi.stubEnv('NO_UPDATE_NOTIFIER', '1')
     vi.stubEnv('SOCKET_CLI_FORCE_UPDATE_NOTIFIER', '1')
-    vi.mocked(isStandaloneSea).mockReturnValue(false)
+    vi.mocked(isSea).mockReturnValue(false)
     vi.mocked(updateNotifier).mockClear()
     vi.mocked(loggerLog).mockReset()
 

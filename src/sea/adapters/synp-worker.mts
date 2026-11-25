@@ -2,15 +2,23 @@
 
 import { createHash } from 'node:crypto'
 import { open, readFile, stat } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 import { workerData } from 'node:worker_threads'
 
-import { isRecord } from '../../utils/is-record.mjs'
+import synp from 'synp'
 
-const require = createRequire(import.meta.url)
+import { isRecord } from '../../utils/objects.mts'
 
-async function main() {
+type DependencyMap = Record<string, Dependency>
+type Dependency = {
+  _socketOptionalDependencies?: string[]
+  _socketPeerDependencies?: string[]
+  dependencies?: DependencyMap
+  dev?: boolean
+  requires?: unknown
+}
+
+async function main(): Promise<void> {
   const ipc = workerData && workerData.socketIpc
   if (
     !ipc ||
@@ -59,12 +67,17 @@ async function main() {
     throw new Error('Embedded Synp requires an existing node_modules directory')
   }
 
-  const synp = require('synp')
-  const converted = JSON.parse(synp.yarnToNpm(projectPath, false))
+  const converted = JSON.parse(synp.yarnToNpm(projectPath, false)) as {
+    lockfileVersion: number
+    dependencies?: DependencyMap
+  }
   if (converted.lockfileVersion !== 1) {
     throw new Error('Synp returned an unsupported package-lock format')
   }
-  const annotateDependencies = async (dependencies, modulesPath) => {
+  const annotateDependencies = async (
+    dependencies: DependencyMap | undefined,
+    modulesPath: string,
+  ): Promise<void> => {
     if (dependencies !== undefined && !isRecord(dependencies)) {
       throw new Error('Synp returned a malformed dependencies map')
     }
@@ -96,7 +109,11 @@ async function main() {
     converted.dependencies,
     path.join(projectPath, 'node_modules'),
   )
-  const findDependency = (name, ownDependencies, ancestorMaps) => {
+  const findDependency = (
+    name: string,
+    ownDependencies: DependencyMap | undefined,
+    ancestorMaps: ReadonlyArray<DependencyMap | undefined>,
+  ): Dependency | undefined => {
     if (isRecord(ownDependencies) && Object.hasOwn(ownDependencies, name)) {
       return ownDependencies[name]
     }
@@ -106,7 +123,12 @@ async function main() {
       }
     }
   }
-  const collectDependencies = (name, entry, ancestorMaps, collected) => {
+  const collectDependencies = (
+    name: string,
+    entry: Dependency | undefined,
+    ancestorMaps: ReadonlyArray<DependencyMap | undefined>,
+    collected: Set<Dependency>,
+  ): void => {
     if (!entry || collected.has(entry)) {
       return
     }
@@ -128,7 +150,7 @@ async function main() {
       )
     }
   }
-  const productionEntries = new Set()
+  const productionEntries = new Set<Dependency>()
   for (const name of [
     ...Object.keys(packageJson.dependencies || {}),
     ...Object.keys(packageJson.optionalDependencies || {}),
@@ -140,7 +162,7 @@ async function main() {
       productionEntries,
     )
   }
-  const developmentEntries = new Set()
+  const developmentEntries = new Set<Dependency>()
   for (const name of Object.keys(packageJson.devDependencies || {})) {
     collectDependencies(
       name,
