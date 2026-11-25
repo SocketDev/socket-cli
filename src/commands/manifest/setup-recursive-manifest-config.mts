@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 
 import micromatch from 'micromatch'
 
@@ -854,20 +855,6 @@ async function runEcosystemWizard(
   })
 }
 
-// Accepting every prompt's default leaves an ecosystem's section empty (see
-// askForBin in setup-manifest-config.mts); an empty one changes nothing.
-function dropIfEmpty(
-  manifest: Record<string, unknown>,
-  ecosystem: BuildTool,
-): boolean {
-  const section = manifest[ecosystem] as Record<string, unknown> | undefined
-  if (section && Object.keys(section).length) {
-    return true
-  }
-  delete manifest[ecosystem]
-  return false
-}
-
 async function askYesNo(message: string): Promise<boolean | null> {
   return (await select({
     message,
@@ -932,8 +919,8 @@ async function setupRootDefaults(
     }
     const own = draftSettings(draft, cwd)
     const manifest = manifestOf(own)
-    const section = { ...getEcosystemSection(own, ecosystem) }
-    manifest[ecosystem] = section
+    const before = getEcosystemSection(own, ecosystem)
+    const section = { ...before }
     const inherited = getEcosystemSection(
       draftCascade(draft, path.dirname(cwd)),
       ecosystem,
@@ -945,9 +932,16 @@ async function setupRootDefaults(
     if (!result.ok || result.data.canceled) {
       return result
     }
-    if (dropIfEmpty(manifest, ecosystem)) {
-      stageSettings(draft, cwd, own, `configure ${label} defaults`)
+    const changed = changedFields(section, inherited)
+    if (isDeepStrictEqual(changed, before)) {
+      continue
     }
+    if (Object.keys(changed).length) {
+      manifest[ecosystem] = changed
+    } else {
+      delete manifest[ecosystem]
+    }
+    stageSettings(draft, cwd, own, `configure ${label} defaults`)
   }
   return notCanceled()
 }

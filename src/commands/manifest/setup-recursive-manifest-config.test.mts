@@ -650,6 +650,54 @@ describe('setupRecursiveManifestConfig', () => {
     })
   })
 
+  // Runs the real Maven wizard for the defaults of legacy, which holds only
+  // nested projects, accepting every default under a parent's reachability.
+  async function acceptDefaultsUnder(): Promise<void> {
+    const actual = await vi.importActual<
+      typeof import('./setup-manifest-config.mts')
+    >('./setup-manifest-config.mts')
+    vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
+    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
+    await fs.rm(file('legacy/pom.xml'))
+    await writeSettings('.', {
+      maven: { reachability: { build: 'compile', javaHome: '/opt/jdk-17' } },
+    })
+    loads({})
+    const rules: Answers = [
+      ['Configure Maven defaults for any nested projects?', true],
+      ['old (maven)', 'inherit'],
+      ['tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ]
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
+      asked.push(message)
+      const rule = rules.find(({ 0: start }) => message.startsWith(start))
+      return (rule ? rule[1] : (def ?? '')) as never
+    })
+
+    const result = await setupRecursiveManifestConfig(file('legacy'), false)
+    expect(result).toEqual({ ok: true, data: { canceled: false } })
+    expect(asked).toContain('Configure Maven defaults for any nested projects?')
+  }
+
+  it('leaves accepted inherited values in directory defaults to the parent', async () => {
+    await acceptDefaultsUnder()
+
+    expect(existsSync(file('legacy/socket.json'))).toBe(false)
+  })
+
+  it('keeps a directory default that differs from the inherited value', async () => {
+    await writeSettings('legacy', {
+      maven: { reachability: { build: 'none' } },
+    })
+
+    await acceptDefaultsUnder()
+
+    expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+      reachability: { build: 'none' },
+    })
+  })
+
   describe('after a no to building before reachability analysis', () => {
     const BUILD_QUESTION =
       'Build project before reachability analysis? Note: A failed build fails the scan.'
