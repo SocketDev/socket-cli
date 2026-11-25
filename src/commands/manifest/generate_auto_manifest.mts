@@ -1,5 +1,5 @@
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
-import { socketJsonReachability } from './build-root-config.mts'
+import { cascadedReachability } from './build-root-config.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
@@ -18,7 +18,10 @@ import {
 } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
 import { logger } from '../../utils/logger.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import {
+  readOrDefaultSocketJson,
+  readSocketJsonChain,
+} from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
@@ -100,11 +103,15 @@ export async function generateAutoManifest({
   // checked only for those, and before any build runs.
   const generatesFacts = (tool: BuildTool) =>
     detected[tool] && !getSkipReason(tool, sockJson.defaults?.manifest?.[tool])
-  const reachabilityByTool = new Map(
+  const reachabilityChain =
     context?.workDir?.purpose === 'reachability'
+      ? readSocketJsonChain(cwd)
+      : undefined
+  const reachabilityByTool = new Map(
+    reachabilityChain
       ? BUILD_TOOLS.filter(generatesFacts).map(tool => [
           tool,
-          socketJsonReachability(tool, { dir: cwd, sockJson }),
+          cascadedReachability(tool, reachabilityChain),
         ])
       : [],
   )

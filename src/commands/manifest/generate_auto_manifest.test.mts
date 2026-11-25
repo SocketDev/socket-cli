@@ -29,6 +29,7 @@ vi.mock('./handle-manifest-conda.mts', () => ({
 vi.mock('../../utils/socket-json.mts', async importOriginal => ({
   ...(await importOriginal<typeof import('../../utils/socket-json.mts')>()),
   readOrDefaultSocketJson: vi.fn(() => ({})),
+  readSocketJsonChain: vi.fn(() => []),
 }))
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
@@ -38,9 +39,25 @@ import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { logger } from '../../utils/logger.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import {
+  readOrDefaultSocketJson,
+  readSocketJsonChain,
+} from '../../utils/socket-json.mts'
 
 import type { SocketJson } from '../../utils/socket-json.mts'
+
+// What both of auto-manifest's socket.json reads see: cwd's own file, and
+// the chain of `parents` down to it.
+function useSettings(
+  sockJson: SocketJson,
+  parents: Array<{ dir: string; sockJson: SocketJson }> = [],
+): void {
+  vi.mocked(readOrDefaultSocketJson).mockReturnValue(sockJson)
+  vi.mocked(readSocketJsonChain).mockReturnValue([
+    ...parents,
+    { dir: '/tmp/repo', sockJson },
+  ])
+}
 
 const baseDetected = {
   bazel: false,
@@ -52,6 +69,22 @@ const baseDetected = {
   gradle: false,
   maven: false,
   sbt: false,
+}
+
+// The reachability settings a reachability scan of a Maven build at
+// /tmp/repo sends.
+async function mavenReachabilitySent(): Promise<unknown> {
+  vi.mocked(runManifestFacts).mockClear()
+  await generateAutoManifest({
+    context: {
+      workDir: { dir: '/w', entries: new Map(), purpose: 'reachability' },
+    },
+    cwd: '/tmp/repo',
+    detected: { ...baseDetected, maven: true, count: 1 },
+    outputKind: 'text',
+    verbose: false,
+  })
+  return vi.mocked(runManifestFacts).mock.calls[0]?.[0].reachability
 }
 
 describe('generateAutoManifest — bazel branch', () => {
@@ -334,7 +367,7 @@ function callFor(ecosystem: string) {
 describe('generateAutoManifest — JVM facts', () => {
   beforeEach(() => {
     vi.mocked(runManifestFacts).mockReset()
-    vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
+    useSettings({} as SocketJson)
   })
 
   it('runs Maven where the scan starts, leaving it to find its POM', async () => {
@@ -412,7 +445,7 @@ describe('generateAutoManifest — JVM facts', () => {
   )
 
   it("sends each tool's reachability settings on a reachability scan only", async () => {
-    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+    useSettings({
       defaults: {
         manifest: {
           dotnet: { reachability: { runtimeVersion: '8.0' } },
@@ -469,7 +502,7 @@ describe('generateAutoManifest — JVM facts', () => {
   })
 
   it("fails a reachability scan on an invalid setting of a detected tool, before any build, not of another's", async () => {
-    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+    useSettings({
       defaults: {
         manifest: { dotnet: { reachability: { javaHome: '/jdk' } } },
       },
@@ -504,7 +537,7 @@ describe('generateAutoManifest — JVM facts', () => {
   })
 
   it('does not check the settings of a tool that generates pom files', async () => {
-    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+    useSettings({
       defaults: {
         manifest: {
           gradle: { facts: false, reachability: { runtimeVersion: '8.0' } },
@@ -529,6 +562,50 @@ describe('generateAutoManifest — JVM facts', () => {
     ).resolves.toBeDefined()
   })
 
+  it('sends the reachability settings a parent socket.json cascades to, unless cwd clears them', async () => {
+    const parent = {
+      dir: '/tmp',
+      sockJson: {
+        defaults: {
+          manifest: {
+            maven: { reachability: { build: 'compile', javaHome: '/jdk-17' } },
+          },
+        },
+      } as SocketJson,
+    }
+
+    useSettings({} as SocketJson, [parent])
+    expect(await mavenReachabilitySent()).toEqual({
+      build: 'compile',
+      javaHome: '/jdk-17',
+    })
+
+    useSettings(
+      {
+        defaults: { manifest: { maven: { reachability: { javaHome: null } } } },
+      } as SocketJson,
+      [parent],
+    )
+    expect(await mavenReachabilitySent()).toEqual({ build: 'compile' })
+  })
+
+  it('fails a reachability scan on an invalid setting a parent socket.json cascades to', async () => {
+    useSettings({} as SocketJson, [
+      {
+        dir: '/tmp',
+        sockJson: {
+          defaults: {
+            manifest: { maven: { reachability: { build: 'always' } } },
+          },
+        } as SocketJson,
+      },
+    ])
+
+    await expect(mavenReachabilitySent()).rejects.toThrow(
+      /maven\.reachability\.build` in .*tmp.socket\.json is "always"/,
+    )
+    expect(runManifestFacts).not.toHaveBeenCalled()
+  })
 })
 
 describe('generateAutoManifest — conda branch', () => {

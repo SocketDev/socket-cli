@@ -293,17 +293,16 @@ export function createBuildRootSettingsResolver(
       disabledBy,
       entryKey,
       reachability: () => {
-        for (const file of chain) {
-          socketJsonReachability(tool, file)
+        const cascaded = cascadedReachability(tool, chain)
+        if (!entryKey || !entry) {
+          return cascaded
         }
-        if (entryKey && entry) {
-          checkReachability(
-            tool,
-            entry['reachability'],
-            `${buildsSetting(entryKey)}.reachability`,
-            socketJsonPath(root.dir),
-          )
-        }
+        checkReachability(
+          tool,
+          entry['reachability'],
+          `${buildsSetting(entryKey)}.reachability`,
+          socketJsonPath(root.dir),
+        )
         return reachabilitySettings(section['reachability'])
       },
       sockJson: {
@@ -364,6 +363,20 @@ export function reachabilityProblem(
 
 export function socketJsonPath(dir: string): string {
   return displayPath(path.join(dir, SOCKET_JSON))
+}
+
+// The `reachability` settings of `tool` that `chain` cascades to, checked in
+// every socket.json that sets them.
+export function cascadedReachability(
+  tool: BuildTool,
+  chain: readonly SocketJsonInDir[],
+): ReachabilitySettings | undefined {
+  for (const file of chain) {
+    socketJsonReachability(tool, file)
+  }
+  return reachabilitySettings(
+    mergeSocketJsonChain(chain).defaults?.manifest?.[tool]?.reachability,
+  )
 }
 
 // An invalid setting raises an InputError naming the file.
