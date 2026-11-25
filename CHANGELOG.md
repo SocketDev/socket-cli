@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- Updated the Coana CLI to v `15.15.4`.
+
 ## [1.16.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.16.1) - 2026-11-24
 
 ### Changed
