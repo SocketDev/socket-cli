@@ -23,7 +23,7 @@ vi.mock('../../utils/config.mts', () => ({
   isConfigFromFlag: mockIsConfigFromFlag,
 }))
 vi.mock('../../utils/errors.mts', () => ({
-  getErrorCause: (error: unknown) =>
+  errorMessage: (error: unknown) =>
     error instanceof Error ? error.message : 'Unknown error',
 }))
 vi.mock('../../utils/oauth.mts', () => ({ logoutOAuth: mockLogoutOAuth }))

@@ -34,7 +34,7 @@ import {
   getBazelInvocationFlags,
 } from './workspace-detect.mts'
 import { findWorkspaceRoots } from './workspace-walk.mts'
-import { getErrorCause } from '../../../utils/errors.mts'
+import { errorMessage } from '../../../utils/errors.mts'
 import { IGNORED_DIRS } from '../../../utils/glob.mts'
 import { logger } from '../../../utils/logger.mts'
 
@@ -430,7 +430,7 @@ async function writeCompletenessSummary(args: {
   } catch (e) {
     if (verbose) {
       logger.log(
-        `[VERBOSE] completeness summary not written (${getErrorCause(e)}); the run result still carries the signal`,
+        `[VERBOSE] completeness summary not written (${errorMessage(e)}); the run result still carries the signal`,
       )
     }
   }
@@ -676,7 +676,7 @@ export async function extractBazelToMaven(
     if (pythonShimDir) {
       await removeBazelTempdir(pythonShimDir)
     }
-    logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
+    logger.fail(`Unexpected error in bazel2maven: ${errorMessage(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')
       logger.log(e)
@@ -772,7 +772,7 @@ export async function extractBazelToMaven(
         // here": record it so the run is flagged not-complete (a hard failure
         // when nothing else was analyzable, partial otherwise) rather than
         // silently skipped.
-        const reason = getErrorCause(e)
+        const reason = errorMessage(e)
         if (verbose) {
           logger.log(
             `[VERBOSE] workspace ${workspaceRoot}: load failed (${reason})`,
@@ -959,7 +959,7 @@ export async function extractBazelToMaven(
           // Best-effort per hub: a write failure must not abort the walk and
           // discard the manifests other hubs already produced.
           logger.warn(
-            `@${repoName}: failed to write manifest (${getErrorCause(e)}); skipping this hub`,
+            `@${repoName}: failed to write manifest (${errorMessage(e)}); skipping this hub`,
           )
           hubsFailed += 1
           hubOutcomes.push({
@@ -1162,7 +1162,7 @@ export async function extractBazelToMaven(
       workspaceOutcomes,
     }
   } catch (e) {
-    logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
+    logger.fail(`Unexpected error in bazel2maven: ${errorMessage(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')
       logger.log(e)

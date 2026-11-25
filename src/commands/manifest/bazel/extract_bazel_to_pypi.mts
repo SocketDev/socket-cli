@@ -31,7 +31,7 @@ import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
 } from './workspace-detect.mts'
-import { InputError, getErrorCause } from '../../../utils/errors.mts'
+import { InputError, errorMessage } from '../../../utils/errors.mts'
 import { logger } from '../../../utils/logger.mts'
 
 import type { PypiHubCandidate } from './pypi-discovery.mts'
@@ -298,7 +298,7 @@ export async function extractBazelToPypi(
       ok: true,
     }
   } catch (e) {
-    logger.fail(`Unexpected error in bazel2pypi: ${getErrorCause(e)}`)
+    logger.fail(`Unexpected error in bazel2pypi: ${errorMessage(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')
       logger.log(e)

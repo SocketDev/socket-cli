@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
-import { getErrorCause } from '../../../utils/errors.mts'
+import { errorMessage } from '../../../utils/errors.mts'
 import { logger } from '../../../utils/logger.mts'
 
 import type { RepoProbe } from './repo-discovery.mts'
@@ -449,7 +449,7 @@ export async function validatePypiHub(
     if (verbose) {
       logger.log(
         `[VERBOSE] discovery: probe @${hubName}: REJECT (probe threw):`,
-        getErrorCause(e),
+        errorMessage(e),
       )
     }
     return { valid: false, stdout: '' }

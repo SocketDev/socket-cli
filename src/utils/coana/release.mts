@@ -31,7 +31,7 @@ import constants, {
   SOCKET_CLI_API_TOKEN_VARIABLES,
 } from '../../constants.mts'
 import { apiFetch, sendApiRequest } from '../api.mts'
-import { getErrorCause } from '../errors.mts'
+import { errorMessage } from '../errors.mts'
 import { withTmpDir } from '../fs.mts'
 import {
   getCliUserAgent,
@@ -149,7 +149,7 @@ function coanaSpawnErrorResult(e: unknown): CResult<string> {
   }
   const detailSuffix = details.length ? ` (${details.join(', ')})` : ''
   // Coana logs some failures, e.g. unresolved Gradle dependencies, to stdout.
-  const detail = stderr || stdout || getErrorCause(e)
+  const detail = stderr || stdout || errorMessage(e)
   const message =
     typeof exitCode === 'string'
       ? `Failed to launch Coana${detailSuffix}: ${detail}`
@@ -276,7 +276,7 @@ async function getCoanaCliDir(
     return {
       ok: false,
       message: `Failed to get the Coana CLI ${versionSpec}`,
-      cause: getErrorCause(e),
+      cause: errorMessage(e),
     }
   }
 
@@ -598,7 +598,7 @@ export async function spawnCoana(
       return {
         ok: false,
         message: 'Could not prepare the embedded Coana CLI',
-        cause: getErrorCause(error),
+        cause: errorMessage(error),
       }
     }
   }
