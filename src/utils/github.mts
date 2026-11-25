@@ -266,6 +266,44 @@ export async function prExistForBranch(
   return false
 }
 
+export async function upsertPullRequestComment({
+  body,
+  marker,
+  owner,
+  pullRequest,
+  repo,
+}: {
+  body: string
+  marker: string
+  owner: string
+  pullRequest: number
+  repo: string
+}): Promise<void> {
+  const octokit = getOctokit()
+  const comments = await octokit.paginate(octokit.issues.listComments, {
+    issue_number: pullRequest,
+    owner,
+    per_page: 100,
+    repo,
+  })
+  const existing = comments.find(comment => comment.body?.includes(marker))
+  if (existing) {
+    await octokit.issues.updateComment({
+      body,
+      comment_id: existing.id,
+      owner,
+      repo,
+    })
+    return
+  }
+  await octokit.issues.createComment({
+    body,
+    issue_number: pullRequest,
+    owner,
+    repo,
+  })
+}
+
 export async function setGitRemoteGithubRepoUrl(
   owner: string,
   repo: string,

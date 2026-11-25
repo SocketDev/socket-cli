@@ -1163,6 +1163,8 @@
 !/src/utils/github-errors.mts
 !/src/utils/github-errors.test.mts
 !/src/utils/github.mts
+!/src/commands/ci/publish-pr-comments.mts
+!/src/commands/ci/publish-pr-comments.test.mts
 !/src/utils/glob-content-dedup.test.mts
 !/src/utils/glob.mts
 !/src/utils/glob.test.mts
