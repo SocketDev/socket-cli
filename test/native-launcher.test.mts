@@ -79,30 +79,48 @@ describe('installed native launcher', () => {
 
   it.skipIf(process.platform === 'win32').each(['host', 'without execve'])(
     'passes a targeted termination signal to the running executable (%s)',
+    { timeout: 15_000 },
     async mode => {
       // A service supervisor signals the launcher PID directly (no terminal group).
-      const options = []
-      if (mode === 'without execve') {
-        const preload = path.join(root, 'old-node.cjs')
-        await writeFile(preload, 'process.execve = undefined')
-        options.push('--require', preload)
-      }
+      const options =
+        mode === 'without execve'
+          ? ['--import', 'data:text/javascript,process.execve=undefined']
+          : []
+      const fixture = `
+        process.once('SIGTERM', () => {
+          process.stdout.write(' SIGTERM', () => process.kill(process.pid, 'SIGTERM'))
+        })
+        setTimeout(() => process.exit(1), 10_000)
+        process.stdout.write('ready')
+      `
       const child = spawn(
         process.execPath,
-        [...options, launcher, '-c', 'printf "%s\\n" "$$"; exec sleep 20'],
+        [
+          ...options,
+          launcher,
+          '-c',
+          'exec "$@"',
+          'fixture',
+          process.execPath,
+          '-e',
+          fixture,
+        ],
         { stdio: ['ignore', 'pipe', 'pipe'] },
       )
-      const exited = once(child, 'exit')
-      const [output] = await once(child.stdout, 'data')
-      const nativePid = Number(String(output).trim())
+      let output = ''
+      child.stdout.setEncoding('utf8').on('data', chunk => {
+        output += chunk
+      })
+      const closed = once(child, 'close')
       try {
-        child.kill('SIGTERM')
-        await expect(exited).resolves.toEqual([null, 'SIGTERM'])
-        expect(() => process.kill(nativePid, 0)).toThrow()
+        await Promise.race([once(child.stdout, 'data'), closed])
+        expect(child.kill('SIGTERM')).toBe(true)
+        await expect(closed).resolves.toEqual([null, 'SIGTERM'])
+        expect(output).toBe('ready SIGTERM')
       } finally {
-        try {
-          process.kill(nativePid, 'SIGKILL')
-        } catch {}
+        if (child.exitCode === null && child.signalCode === null) {
+          child.kill('SIGKILL')
+        }
       }
     },
   )
