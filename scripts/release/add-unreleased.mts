@@ -12,7 +12,7 @@
  *
  *   Example — the Coana bump, which reruns on every Coana release:
  *     node scripts/release/add-unreleased.mts \
- *       --replace '^Updated the Coana CLI to v ' \
+ *       --replace-prefix 'Updated the Coana CLI to v ' \
  *       'Updated the Coana CLI to v `15.10.28`.'
  */
 
@@ -31,7 +31,7 @@ const DEFAULT_SECTION = 'Changed'
 export interface AddUnreleasedArgs {
   readonly entry: string
   readonly file: string
-  readonly replace: RegExp | undefined
+  readonly replacePrefix: string | undefined
   readonly section: string
 }
 
@@ -44,7 +44,7 @@ export interface AddUnreleasedArgs {
 export function parseArgs(argv: readonly string[]): AddUnreleasedArgs {
   const positional: string[] = []
   let file = DEFAULT_FILE
-  let replace: RegExp | undefined
+  let replacePrefix: string | undefined
   let section = DEFAULT_SECTION
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const arg = argv[i]!
@@ -59,17 +59,19 @@ export function parseArgs(argv: readonly string[]): AddUnreleasedArgs {
       i += 1
       if (arg === '--file') {
         file = value
-      } else if (arg === '--replace') {
-        // Unicode mode for parity with the patterns in changelog.mts. Not
-        // global: `addUnreleasedEntry` matches once per bullet, and a lastIndex
-        // carried between bullets would skip every other one.
-        replace = new RegExp(value, 'u')
+      } else if (arg === '--replace-prefix') {
+        if (!value.trim()) {
+          throw new Error(
+            '[add-unreleased] --replace-prefix needs nonblank text.',
+          )
+        }
+        replacePrefix = value
       } else if (arg === '--section') {
         section = value
       } else {
         throw new Error(
           `[add-unreleased] unknown flag ${arg}.\n` +
-            '  Known: --file, --replace, --section.',
+            '  Known: --file, --replace-prefix, --section.',
         )
       }
     } else {
@@ -90,7 +92,7 @@ export function parseArgs(argv: readonly string[]): AddUnreleasedArgs {
   if (!entry) {
     throw new Error('[add-unreleased] the entry is empty.')
   }
-  return { entry, file, replace, section }
+  return { entry, file, replacePrefix, section }
 }
 
 function log(message: string): void {
@@ -98,9 +100,16 @@ function log(message: string): void {
 }
 
 function main(): void {
-  const { entry, file, replace, section } = parseArgs(process.argv.slice(2))
+  const { entry, file, replacePrefix, section } = parseArgs(
+    process.argv.slice(2),
+  )
   const changelog = readFileSync(file, 'utf8')
-  const updated = addUnreleasedEntry({ changelog, entry, replace, section })
+  const updated = addUnreleasedEntry({
+    changelog,
+    entry,
+    replacePrefix,
+    section,
+  })
   if (updated === changelog) {
     log(`${file} already reads "${entry}" under ## [Unreleased] / ${section}.`)
     return
@@ -115,11 +124,9 @@ const SCRIPT_META: ScriptMeta = {
     "adds one note under CHANGELOG.md's ## [Unreleased] heading, leaving the version and the release headings to the release workflow",
   help: `Usage: node scripts/release/add-unreleased.mts [flags] <entry>
 
-  --file <path>      changelog to edit (default: ${DEFAULT_FILE})
-  --replace <regex>  rewrite the first bullet in the section whose text matches,
-                     instead of appending a second one — for a note that reruns,
-                     such as a dependency bump updating its own line
-  --section <name>   Keep a Changelog section (default: ${DEFAULT_SECTION})
+  --file <path>           changelog to edit (default: ${DEFAULT_FILE})
+  --replace-prefix <text> rewrite the first bullet that starts with this text
+  --section <name>        Keep a Changelog section (default: ${DEFAULT_SECTION})
 
   <entry> is the bullet's text; a leading "- " is optional. The block is created
   when the previous release consumed it, so there is always somewhere to write.

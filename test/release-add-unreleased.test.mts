@@ -24,7 +24,7 @@ const RELEASED = [
   '',
 ].join('\n')
 
-const COANA = /^Updated the Coana CLI to v /u
+const COANA_PREFIX = 'Updated the Coana CLI to v '
 
 function build(...blocks: readonly string[]): string {
   return [PREAMBLE, ...blocks].join('\n')
@@ -120,7 +120,7 @@ describe('addUnreleasedEntry', () => {
     )
   })
 
-  // A bump reruns on every upstream release. Without `replace` the block would
+  // A bump reruns on every upstream release. Without a prefix the block would
   // accumulate one stale bullet per run.
   it('rewrites a matching bullet in place instead of stacking', () => {
     const changelog = build(
@@ -139,13 +139,33 @@ describe('addUnreleasedEntry', () => {
     const updated = addUnreleasedEntry({
       changelog,
       entry: 'Updated the Coana CLI to v `15.10.28`.',
-      replace: COANA,
+      replacePrefix: COANA_PREFIX,
     })
     expect(updated).not.toContain('15.10.26.')
     expect(
       updated.match(/- Updated the Coana CLI to v `15\.10\.28`\./gu),
     ).toHaveLength(1)
     expect(updated).toContain('### Fixed\n- A bug.')
+  })
+
+  it('matches punctuation in the replacement prefix literally', () => {
+    const previousEntry = 'Updated tool [cli] v1.'
+    const entry = 'Updated tool [cli] v2.'
+    const changelog = build(
+      [
+        '## [Unreleased]',
+        '',
+        '### Changed',
+        '- Updated tool c v1.',
+        `- ${previousEntry}`,
+        '',
+      ].join('\n'),
+      RELEASED,
+    )
+
+    const args = parseArgs(['--replace-prefix', 'Updated tool [cli] ', entry])
+    const updated = addUnreleasedEntry({ ...args, changelog })
+    expect(updated).toBe(changelog.replace(previousEntry, entry))
   })
 
   it('only replaces within the named section', () => {
@@ -162,7 +182,7 @@ describe('addUnreleasedEntry', () => {
     const updated = addUnreleasedEntry({
       changelog,
       entry: 'Updated the Coana CLI to v `15.10.28`.',
-      replace: COANA,
+      replacePrefix: COANA_PREFIX,
     })
     expect(updated).toContain(
       '### Fixed\n- Updated the Coana CLI to v `15.10.26`.',
@@ -238,13 +258,13 @@ describe('addUnreleasedEntry', () => {
     const once = addUnreleasedEntry({
       changelog: build(RELEASED),
       entry: 'Updated the Coana CLI to v `15.10.28`.',
-      replace: COANA,
+      replacePrefix: COANA_PREFIX,
     })
     expect(
       addUnreleasedEntry({
         changelog: once,
         entry: 'Updated the Coana CLI to v `15.10.28`.',
-        replace: COANA,
+        replacePrefix: COANA_PREFIX,
       }),
     ).toBe(once)
   })
@@ -254,7 +274,7 @@ describe('addUnreleasedEntry', () => {
     const changelog = addUnreleasedEntry({
       changelog: build(RELEASED),
       entry: 'Updated the Coana CLI to v `15.10.28`.',
-      replace: COANA,
+      replacePrefix: COANA_PREFIX,
     })
     const heading = changelogHeading(
       '1.1.163',
@@ -279,7 +299,7 @@ describe('parseArgs', () => {
     expect(parseArgs(['A note.'])).toEqual({
       entry: 'A note.',
       file: 'CHANGELOG.md',
-      replace: undefined,
+      replacePrefix: undefined,
       section: 'Changed',
     })
   })
@@ -290,15 +310,19 @@ describe('parseArgs', () => {
       'Fixed',
       '--file',
       'docs/CHANGELOG.md',
-      '--replace',
-      '^Updated ',
+      '--replace-prefix',
+      'Updated ',
       'A note.',
     ])
     expect(args.section).toBe('Fixed')
     expect(args.file).toBe('docs/CHANGELOG.md')
-    expect(args.replace?.source).toBe('^Updated ')
-    // Global would carry lastIndex between bullets and skip every other one.
-    expect(args.replace?.global).toBe(false)
+    expect(args.replacePrefix).toBe('Updated ')
+  })
+
+  it('rejects a blank replacement prefix', () => {
+    expect(() => parseArgs(['--replace-prefix', ' ', 'A note.'])).toThrow(
+      /--replace-prefix/u,
+    )
   })
 
   it('tolerates a leading bullet marker on the entry', () => {
