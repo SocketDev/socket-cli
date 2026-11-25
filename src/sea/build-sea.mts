@@ -23,7 +23,7 @@ import { stageSynp } from './stage/synp.mts'
 import { stageUv } from './stage/uv.mts'
 import { SEA_VERSION } from './version.mts'
 import { digestVfs } from './vfs-digest.mts'
-import { getErrorCause } from '../utils/errors.mts'
+import { errorMessage } from '../utils/errors.mts'
 import { quotePowerShell } from '../utils/quote-powershell.mts'
 
 const SEA_DIRECTORY = path.dirname(fileURLToPath(import.meta.url))
@@ -985,7 +985,7 @@ async function main(): Promise<void> {
       }
       return [
         new Error(
-          `SEA preparation failed: ${prepLabels[index]}: ${getErrorCause(result.reason)}`,
+          `SEA preparation failed: ${prepLabels[index]}: ${errorMessage(result.reason)}`,
           { cause: result.reason },
         ),
       ]

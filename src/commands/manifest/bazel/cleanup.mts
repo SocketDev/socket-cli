@@ -16,7 +16,7 @@ import {
   getBazelEnvironmentValue,
   spawnBazel,
 } from './process.mts'
-import { getErrorCause, isErrnoException } from '../../../utils/errors.mts'
+import { errorMessage, isErrnoException } from '../../../utils/errors.mts'
 import { logger } from '../../../utils/logger.mts'
 
 import type { BazelQueryOptions } from './query-runner.mts'
@@ -54,7 +54,7 @@ export async function removeBazelTempdir(dir: string): Promise<boolean> {
     return true
   } catch (error) {
     logger.warn(
-      `Bazel temporary directory could not be removed: ${dir}. ${getErrorCause(error)}`,
+      `Bazel temporary directory could not be removed: ${dir}. ${errorMessage(error)}`,
     )
     return false
   }
@@ -105,7 +105,7 @@ export async function cleanUpBazelOutputRoot(
     listed = findServerPids(root)
   } catch (e) {
     logger.warn(
-      `Bazel output root kept because its servers could not be checked: ${root}. ${getErrorCause(e)}`,
+      `Bazel output root kept because its servers could not be checked: ${root}. ${errorMessage(e)}`,
     )
   }
   const servers = new Set(listed)
@@ -168,7 +168,7 @@ export async function shutDownBazelServer(
     pid = readServerPid(outputBase)
     await spawnBazel(opts.bin, [...startupFlags, 'shutdown'], spawnOptions)
   } catch (error) {
-    logger.warn(`Bazel shutdown failed in ${opts.cwd}. ${getErrorCause(error)}`)
+    logger.warn(`Bazel shutdown failed in ${opts.cwd}. ${errorMessage(error)}`)
   }
   return pid
 }
@@ -240,7 +240,7 @@ async function stopBazelServer(pid: number): Promise<boolean> {
   } catch (e) {
     if (!isErrnoException(e) || e.code !== 'ESRCH') {
       logger.warn(
-        `Bazel server ${pid} could not be stopped. ${getErrorCause(e)}`,
+        `Bazel server ${pid} could not be stopped. ${errorMessage(e)}`,
       )
       return false
     }

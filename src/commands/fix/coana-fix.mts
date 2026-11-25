@@ -30,7 +30,7 @@ import {
 } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
-import { getErrorCause } from '../../utils/errors.mts'
+import { errorMessage } from '../../utils/errors.mts'
 import { readJsonSync, withTmpDir } from '../../utils/fs.mts'
 import {
   gitCheckoutBranch,
@@ -763,9 +763,7 @@ async function coanaFixWithFacts(
       }
     } else if (!fixCResult.ok) {
       if (!silence) {
-        logger.error(
-          `Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`,
-        )
+        logger.error(`Update failed for ${ghsaId}: ${errorMessage(fixCResult)}`)
       }
       // Clean up temp file on failure.
       try {

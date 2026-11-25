@@ -32,7 +32,7 @@ import {
   debugDir,
   debugFn,
 } from './debug.mts'
-import { getErrorCause, isErrnoException } from './errors.mts'
+import { errorMessage, isErrnoException } from './errors.mts'
 import { logger } from './logger.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
 import {
@@ -658,7 +658,7 @@ export async function queryApiSafeTextWithStatus(
     return {
       ok: false,
       message: 'Authentication Error',
-      cause: getErrorCause(error),
+      cause: errorMessage(error),
     }
   }
   if (!apiToken) {
@@ -751,7 +751,7 @@ export async function queryApiSafeTextWithStatus(
 
     const cause =
       isErrnoException(e) && e.code === 'ETIMEDOUT'
-        ? `${getErrorCause(e)} (path: ${path})`
+        ? `${errorMessage(e)} (path: ${path})`
         : `Unexpected error reading response text (path: ${path})`
 
     return {
@@ -827,7 +827,7 @@ export async function sendApiRequest<T>(
     return {
       ok: false,
       message: 'Authentication Error',
-      cause: getErrorCause(error),
+      cause: errorMessage(error),
     }
   }
   if (!apiToken) {
@@ -922,7 +922,7 @@ export async function sendApiRequest<T>(
     debugDir('error', e)
     const cause =
       isErrnoException(e) && e.code === 'ETIMEDOUT'
-        ? `${getErrorCause(e)} (path: ${path})`
+        ? `${errorMessage(e)} (path: ${path})`
         : `Unexpected error parsing response JSON (path: ${path})`
     return {
       ok: false,

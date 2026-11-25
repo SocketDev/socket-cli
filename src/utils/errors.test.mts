@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest'
 import {
   AuthError,
   InputError,
+  errorMessage,
   formatErrorWithDetail,
-  getErrorCause,
   getErrorMessage,
   getErrorMessageOr,
   isErrnoException,
@@ -121,22 +121,22 @@ describe('getErrorMessageOr', () => {
   })
 })
 
-describe('getErrorCause', () => {
+describe('errorMessage', () => {
   it('should extract error message as cause', () => {
     const error = new Error('Something went wrong')
-    expect(getErrorCause(error)).toBe('Something went wrong')
+    expect(errorMessage(error)).toBe('Something went wrong')
   })
 
   it('should return UNKNOWN_ERROR for non-error values', () => {
-    expect(getErrorCause(null)).toBe(UNKNOWN_ERROR)
-    expect(getErrorCause(undefined)).toBe(UNKNOWN_ERROR)
-    expect(getErrorCause('string')).toBe(UNKNOWN_ERROR)
-    expect(getErrorCause(123)).toBe(UNKNOWN_ERROR)
+    expect(errorMessage(null)).toBe(UNKNOWN_ERROR)
+    expect(errorMessage(undefined)).toBe(UNKNOWN_ERROR)
+    expect(errorMessage('string')).toBe(UNKNOWN_ERROR)
+    expect(errorMessage(123)).toBe(UNKNOWN_ERROR)
   })
 
   it('should return UNKNOWN_ERROR for error with empty message', () => {
     const error = new Error('')
-    expect(getErrorCause(error)).toBe(UNKNOWN_ERROR)
+    expect(errorMessage(error)).toBe(UNKNOWN_ERROR)
   })
 })
 

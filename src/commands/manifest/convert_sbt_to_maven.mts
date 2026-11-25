@@ -4,7 +4,7 @@ import path from 'node:path'
 import constants from '../../constants.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import { isStandaloneSea } from '../../sea/runtime.mts'
-import { getErrorCause } from '../../utils/errors.mts'
+import { errorMessage } from '../../utils/errors.mts'
 import { safeReadFile } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
 import { spawn } from '../../utils/spawn.mts'
@@ -154,7 +154,7 @@ export async function convertSbtToMaven({
           copied.push(destPath)
         } catch (e) {
           logger.warn(
-            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${getErrorCause(e)}`,
+            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${errorMessage(e)}`,
           )
         }
       }
