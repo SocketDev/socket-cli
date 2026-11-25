@@ -475,6 +475,8 @@
 !/src/commands/ci/fetch-default-org-slug.test.mts
 !/src/commands/ci/handle-ci.mts
 !/src/commands/ci/handle-ci.test.mts
+!/src/commands/ci/detect-ci-pull-request-context.mts
+!/src/commands/ci/detect-ci-pull-request-context.test.mts
 !/src/commands/cli.test.mts
 !/src/commands/config/cmd-config-auto.mts
 !/src/commands/config/cmd-config-auto.test.mts

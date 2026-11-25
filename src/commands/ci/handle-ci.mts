@@ -26,10 +26,11 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   }
 
   const orgSlug = orgSlugCResult.data
+  const pullRequestContext = await detectCiPullRequestContext()
+  const { number: pullRequest } = pullRequestContext
   const cwd = process.cwd()
   const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
   const repoName = await getRepoName(cwd)
-  const { number: pullRequest } = await detectCiPullRequestContext()
 
   debugFn(
     'notice',
