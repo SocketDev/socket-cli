@@ -1130,6 +1130,8 @@
 !/src/utils/bin.mts
 !/src/utils/check-input.mts
 !/src/utils/cmd.mts
+!/src/utils/ci-exit-code.mts
+!/src/utils/ci-exit-code.test.mts
 !/src/utils/coana/
 !/src/utils/coana/**
 !/src/utils/coana-release.test.mts

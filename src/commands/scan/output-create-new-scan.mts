@@ -2,6 +2,7 @@ import open from 'open'
 import terminalLink from 'terminal-link'
 
 import constants from '../../constants.mts'
+import { setCiExitCode } from '../../utils/ci-exit-code.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { logger } from '../../utils/logger.mts'
 import { confirm } from '../../utils/prompts.mts'
@@ -17,6 +18,7 @@ export type ReachabilityFallback = {
 }
 
 export type CreateNewScanOptions = {
+  failureKind?: 'api' | 'infrastructure' | undefined
   interactive?: boolean | undefined
   outputKind?: OutputKind | undefined
   // Set when --reach-fallback-to-regular-scan downgraded the run, so machine
@@ -30,6 +32,7 @@ export async function outputCreateNewScan(
   options?: CreateNewScanOptions | undefined,
 ) {
   const {
+    failureKind = 'infrastructure',
     interactive = false,
     outputKind = 'text',
     reachabilityFallback,
@@ -37,7 +40,7 @@ export async function outputCreateNewScan(
   } = { __proto__: null, ...options } as CreateNewScanOptions
 
   if (!result.ok) {
-    process.exitCode = result.code ?? 1
+    setCiExitCode(failureKind, result.code ?? 1)
   }
 
   const wasSpinning = !!spinner?.isSpinning
@@ -65,7 +68,7 @@ export async function outputCreateNewScan(
 
   if (!result.data.id) {
     logger.fail('Did not receive a scan ID from the API.')
-    process.exitCode = 1
+    setCiExitCode('api')
   }
 
   if (outputKind === 'markdown') {

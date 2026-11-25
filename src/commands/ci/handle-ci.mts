@@ -1,5 +1,6 @@
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import constants from '../../constants.mts'
+import { setCiExitCode } from '../../utils/ci-exit-code.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
 import { envAsString } from '../../utils/env.mts'
 import {
@@ -32,7 +33,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   if (!orgSlugCResult.ok) {
     debugFn('warn', 'Failed to get default org slug')
     debugDir('inspect', { orgSlugCResult })
-    process.exitCode = orgSlugCResult.code ?? 1
+    setCiExitCode('api', orgSlugCResult.code ?? 1)
     // Always assume json mode.
     logger.log(serializeResultJson(orgSlugCResult))
     return

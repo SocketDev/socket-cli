@@ -24,11 +24,15 @@ describe('socket ci', async () => {
 
           Options
             --auto-manifest     Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
+            --disable-blocking  Return success for findings and infrastructure failures, but keep usage errors non-zero.
+            --exit-code-on-api-error  Exit code for Socket API errors (default: 3). Ignored with --disable-blocking.
 
           This command is intended to use in CI runs to allow automated systems to
           accept or reject a current build. It will use the default org of the
-          Socket API token. The exit code will be non-zero when the scan does not pass
-          your security policy.
+          Socket API token. Exit codes are 0 for success, 1 for blocking findings, 2
+          for usage errors, 3 for infrastructure errors, and 130 for interruption.
+          --disable-blocking returns 0 for findings and runtime failures, but not
+          usage errors. --exit-code-on-api-error changes the API failure code.
 
           The --auto-manifest flag does the same as the one from \`socket scan create\`
           but is not enabled by default since the CI is less likely to be set up with
@@ -37,7 +41,9 @@ describe('socket ci', async () => {
 
           Examples
             $ socket ci
-            $ socket ci --auto-manifest"
+            $ socket ci --auto-manifest
+            $ socket ci --disable-blocking
+            $ socket ci --exit-code-on-api-error 5"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

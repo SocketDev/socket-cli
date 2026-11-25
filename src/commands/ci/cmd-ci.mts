@@ -1,6 +1,10 @@
 import { handleCi } from './handle-ci.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import {
+  setCiExitCode,
+  setCiExitCodePolicy,
+} from '../../utils/ci-exit-code.mts'
 import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -24,6 +28,18 @@ const config: CliCommandConfig = {
       description:
         'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
+    disableBlocking: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Return success for findings and infrastructure failures, but keep usage errors non-zero.',
+    },
+    exitCodeOnApiError: {
+      type: 'number',
+      default: 3,
+      description:
+        'Exit code for Socket API errors (default: 3). Ignored with --disable-blocking.',
+    },
   },
   help: (command, _config) => `
     Usage
@@ -34,8 +50,10 @@ const config: CliCommandConfig = {
 
     This command is intended to use in CI runs to allow automated systems to
     accept or reject a current build. It will use the default org of the
-    Socket API token. The exit code will be non-zero when the scan does not pass
-    your security policy.
+    Socket API token. Exit codes are 0 for success, 1 for blocking findings, 2
+    for usage errors, 3 for infrastructure errors, and 130 for interruption.
+    --disable-blocking returns 0 for findings and runtime failures, but not
+    usage errors. --exit-code-on-api-error changes the API failure code.
 
     The --auto-manifest flag does the same as the one from \`socket scan create\`
     but is not enabled by default since the CI is less likely to be set up with
@@ -45,6 +63,8 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}
       $ ${command} --auto-manifest
+      $ ${command} --disable-blocking
+      $ ${command} --exit-code-on-api-error 5
   `,
 }
 
@@ -70,6 +90,22 @@ async function run(
 
   if (dryRun) {
     logger.log(constants.DRY_RUN_BAILING_NOW)
+    return
+  }
+
+  const exitCodeOnApiError = Number(cli.flags['exitCodeOnApiError'])
+  setCiExitCodePolicy({
+    disableBlocking: Boolean(cli.flags['disableBlocking']),
+    exitCodeOnApiError,
+  })
+
+  if (
+    !Number.isInteger(exitCodeOnApiError) ||
+    exitCodeOnApiError < 0 ||
+    exitCodeOnApiError > 255
+  ) {
+    logger.fail('--exit-code-on-api-error must be an integer from 0 to 255.')
+    setCiExitCode('usage')
     return
   }
 

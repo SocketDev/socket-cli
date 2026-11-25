@@ -18,7 +18,6 @@ import {
   REQUIREMENTS_TXT,
   SOCKET_JSON,
 } from '../../constants.mts'
-import { InputError } from '../../utils/errors.mts'
 import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
@@ -52,7 +51,7 @@ function abortFactsRunIfFailed(
   outcome: RunManifestFactsOutcome,
 ): void {
   if (outcome === null) {
-    throw new InputError(
+    throw new Error(
       `Auto-manifest generation failed for the ${ecosystem} project; aborting (see the errors above).`,
     )
   }
@@ -63,7 +62,7 @@ function abortManifestRunIfFailed(
   beforeExitCode: string | number | undefined,
 ): void {
   if (process.exitCode && process.exitCode !== beforeExitCode) {
-    throw new InputError(
+    throw new Error(
       `Auto-manifest generation failed for the ${ecosystem} project; aborting (see the errors above).`,
     )
   }
