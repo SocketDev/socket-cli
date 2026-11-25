@@ -102,7 +102,7 @@ vi.mock('./config.mts', () => ({
 }))
 
 vi.mock('./errors.mts', () => ({
-  getErrorCause: (error: unknown) =>
+  errorMessage: (error: unknown) =>
     error instanceof Error ? error.message : 'Unknown error',
 }))
 

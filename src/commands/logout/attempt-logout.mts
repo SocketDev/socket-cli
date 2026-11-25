@@ -1,7 +1,7 @@
 import { applyLogout } from './apply-logout.mts'
 import constants from '../../constants.mts'
 import { isConfigFromFlag } from '../../utils/config.mts'
-import { getErrorCause } from '../../utils/errors.mts'
+import { errorMessage } from '../../utils/errors.mts'
 import { logger } from '../../utils/logger.mts'
 import { logoutOAuth } from '../../utils/oauth.mts'
 import { getDefaultProxyUrl } from '../../utils/sdk.mts'
@@ -37,6 +37,6 @@ export async function attemptLogout() {
     }
   } catch (error) {
     logger.fail('Failed to complete logout steps')
-    logger.warn(getErrorCause(error))
+    logger.warn(errorMessage(error))
   }
 }

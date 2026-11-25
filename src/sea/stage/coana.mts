@@ -11,6 +11,7 @@ import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
 import { COANA_CLI_VERSION } from '../../constants.mts'
 import { apiFetch, sendApiRequest } from '../../utils/api.mts'
 import { envAsBoolean } from '../../utils/env.mts'
+import { errorMessage } from '../../utils/errors.mts'
 import { SEA_COANA_VFS_PATHS, seaCoanaPaths } from '../paths/coana.mts'
 
 const COMPONENTS = ['analyzers', 'cli'] as const
@@ -91,7 +92,7 @@ async function fetchArtifacts(org: string): Promise<CoanaArtifacts> {
   )
   if (!result.ok) {
     throw new Error(
-      `the Socket API denied Coana artifact access: ${result.message}${result.cause ? ` (${result.cause})` : ''}`,
+      result.cause ? `${result.message} (${result.cause})` : result.message,
     )
   }
   return parseArtifacts(result.data)
@@ -228,7 +229,7 @@ export async function stageCoana(
     artifacts = await fetchArtifacts(org.data)
   } catch (error) {
     throw new Error(
-      `Coana ${COANA_CLI_VERSION} download failed for ${org.data}. Where: Socket API artifact access. Saw: ${error instanceof Error ? error.message : String(error)}; wanted: the pinned CLI and analyzer artifacts. Fix: ensure SOCKET_API_TOKEN_FOR_CLI_AND_SFW can access Coana reachability artifacts for this organization, then retry the 2.x RC build.`,
+      `Could not fetch Coana ${COANA_CLI_VERSION} artifacts for ${org.data}: ${errorMessage(error)}. Check that the build token can access Coana artifacts for this organization.`,
       { cause: error },
     )
   }

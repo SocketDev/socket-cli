@@ -5,7 +5,7 @@ import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import constants from '../../constants.mts'
 import { getBashrcDetails } from '../../utils/completion.mts'
 import { debugDir, debugFn } from '../../utils/debug.mts'
-import { getErrorCause } from '../../utils/errors.mts'
+import { errorMessage } from '../../utils/errors.mts'
 import { logger } from '../../utils/logger.mts'
 import { confirm } from '../../utils/prompts.mts'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
@@ -82,7 +82,7 @@ async function setupShadowNpm(query: string): Promise<void> {
       }
     } catch (e) {
       throw new Error(
-        `There was an issue setting up the alias: ${getErrorCause(e)}`,
+        `There was an issue setting up the alias: ${errorMessage(e)}`,
       )
     }
   }

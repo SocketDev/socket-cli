@@ -117,7 +117,7 @@ vi.mock('./config.mts', () => ({
   isConfigFromFlag: mockIsConfigFromFlag,
 }))
 vi.mock('./errors.mts', () => ({
-  getErrorCause: (error: unknown) =>
+  errorMessage: (error: unknown) =>
     error instanceof Error ? error.message : 'Unknown error',
 }))
 

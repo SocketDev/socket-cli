@@ -9,7 +9,7 @@
  * Key Functions:
  * - captureException: Send errors to Sentry for monitoring
  * - formatErrorWithDetail: Format errors with detailed context
- * - getErrorCause: Get error cause with fallback to UNKNOWN_ERROR
+ * - errorMessage: Get an error message with fallback to UNKNOWN_ERROR
  * - getErrorMessage: Extract error message from any thrown value
  *
  * Error Handling Strategy:
@@ -108,9 +108,9 @@ export function getErrorMessageOr(error: unknown, fallback: string): string {
  * @returns The error message or UNKNOWN_ERROR constant
  *
  * @example
- * return { ok: false, message: 'Operation failed', cause: getErrorCause(e) }
+ * return { ok: false, message: 'Operation failed', cause: errorMessage(e) }
  */
-export function getErrorCause(error: unknown): string {
+export function errorMessage(error: unknown): string {
   return getErrorMessageOr(error, UNKNOWN_ERROR)
 }
 
@@ -132,6 +132,6 @@ export function formatErrorWithDetail(
   baseMessage: string,
   error: unknown,
 ): string {
-  const errorMessage = getErrorMessage(error)
-  return `${baseMessage}${errorMessage ? `: ${errorMessage}` : ''}`
+  const detail = getErrorMessage(error)
+  return `${baseMessage}${detail ? `: ${detail}` : ''}`
 }

@@ -1,5 +1,5 @@
 import { LATEST } from '../constants.mts'
-import { getErrorCause } from './errors.mts'
+import { errorMessage } from './errors.mts'
 import { cacheFetch, getOctokit } from './github.mts'
 import { getPurlObject } from './purl.mts'
 
@@ -65,7 +65,7 @@ export async function convertPurlToGhsas(
   } catch (e) {
     return {
       ok: false,
-      message: `Failed to convert PURL to GHSA: ${getErrorCause(e)}`,
+      message: `Failed to convert PURL to GHSA: ${errorMessage(e)}`,
     }
   }
 }
