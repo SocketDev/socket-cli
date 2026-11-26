@@ -1,4 +1,4 @@
-import { buildRootPath } from './discover-manifest-roots.mts'
+import { buildRootPath } from './scripts/build-tool.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { logger } from '../../utils/logger.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'

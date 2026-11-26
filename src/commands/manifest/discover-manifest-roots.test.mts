@@ -5,7 +5,6 @@ import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
-  buildRootPath,
   findBuildToolCandidates,
   hasRootMarker,
   isBuildRootCovered,
@@ -13,6 +12,7 @@ import {
   membershipOf,
   sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
+import { buildRootPath } from './scripts/build-tool.mts'
 import { testPath } from '../../../test/utils.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 

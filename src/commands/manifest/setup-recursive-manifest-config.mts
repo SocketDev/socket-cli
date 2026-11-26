@@ -10,12 +10,10 @@ import {
 } from './build-root-config.mts'
 import {
   addMembership,
-  buildRootPath,
   emptyMembership,
   findBuildToolCandidates,
   isBuildCovered,
   isPathInside,
-  realpathOrResolved,
   sortByDepthThenPath,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
@@ -26,7 +24,11 @@ import {
 } from './generate-recursive-manifests.mts'
 import { loadBuild, withModules } from './load-build.mts'
 import { DSI_SETUP_COMMAND, EXCLUDE_PATHS_FLAG } from './run-manifest-facts.mts'
-import { BUILD_FILES, ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
+import {
+  BUILD_FILES,
+  ECOSYSTEM_LABELS,
+  buildRootPath,
+} from './scripts/build-tool.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -36,6 +38,7 @@ import {
 import { SOCKET_JSON } from '../../constants.mts'
 import { joinAnd } from '../../utils/arrays.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
+import { realpathOrResolved } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
 import { select } from '../../utils/prompts.mts'

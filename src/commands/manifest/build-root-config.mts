@@ -1,8 +1,12 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { buildRootPath, isBuildFile } from './discover-manifest-roots.mts'
-import { BUILD_FILES, BUILD_TOOLS } from './scripts/build-tool.mts'
+import { isBuildFile } from './discover-manifest-roots.mts'
+import {
+  BUILD_FILES,
+  BUILD_TOOLS,
+  buildRootPath,
+} from './scripts/build-tool.mts'
 import { SOCKET_JSON } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'

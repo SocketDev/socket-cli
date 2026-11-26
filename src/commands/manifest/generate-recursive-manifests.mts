@@ -9,7 +9,6 @@ import {
 } from './build-root-config.mts'
 import {
   addMembership,
-  buildRootPath,
   emptyMembership,
   findBuildToolCandidates,
   hasRootMarker,
@@ -18,7 +17,6 @@ import {
   isPathInside,
   isRootCovered,
   membershipOf,
-  realpathOrResolved,
   unionMemberships,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
@@ -31,9 +29,13 @@ import {
   keepFacts,
   runManifestFacts,
 } from './run-manifest-facts.mts'
-import { BUILD_FILES, resolveBuildToolBin } from './scripts/build-tool.mts'
+import {
+  BUILD_FILES,
+  buildRootPath,
+  resolveBuildToolBin,
+} from './scripts/build-tool.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
-import { withTmpDir } from '../../utils/fs.mts'
+import { realpathOrResolved, withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'

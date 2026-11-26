@@ -17,13 +17,13 @@ vi.mock('./run-manifest-facts.mts', async importOriginal => ({
   runManifestFacts: vi.fn(),
 }))
 
-import { buildRootPath } from './discover-manifest-roots.mts'
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import {
   listBuildProjects,
   listDotnetSolutionMembers,
   runManifestFacts,
 } from './run-manifest-facts.mts'
+import { buildRootPath } from './scripts/build-tool.mts'
 import { testPath } from '../../../test/utils.mts'
 import { logger } from '../../utils/logger.mts'
 import {

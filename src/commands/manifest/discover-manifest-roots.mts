@@ -102,8 +102,6 @@ export function withoutDisabledFlags(sockJson: SocketJson): SocketJson {
   } as SocketJson
 }
 
-export { buildRootPath, realpathOrResolved }
-
 // Coverage compares files by their realpath-resolved directory.
 async function realFilePath(file: string): Promise<string> {
   return path.join(

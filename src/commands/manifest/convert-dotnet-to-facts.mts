@@ -1,9 +1,7 @@
 import { findDotnetEntries } from './detect-manifest-actions.mts'
-import {
-  emptyMembership,
-  realpathOrResolved,
-} from './discover-manifest-roots.mts'
+import { emptyMembership } from './discover-manifest-roots.mts'
 import { buildUncoveredRoot } from './generate-recursive-manifests.mts'
+import { realpathOrResolved } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
 
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
