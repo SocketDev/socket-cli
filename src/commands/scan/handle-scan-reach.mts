@@ -15,6 +15,7 @@ import { logger } from '../../utils/logger.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { pluralize } from '../../utils/words.mts'
 import {
+  EXCLUDE_PATHS_HINTS,
   createSocketFactsWorkDir,
   socketFactsSidecar,
 } from '../manifest/run-manifest-facts.mts'
@@ -66,6 +67,7 @@ async function runScanReach(
       },
       cwd,
       excludePaths: reachabilityOptions.excludePaths,
+      hints: EXCLUDE_PATHS_HINTS,
       purlTypes: dsi.purlTypes,
     })
     scanTargets = Array.from(

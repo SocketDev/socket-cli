@@ -7,10 +7,7 @@ import {
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import {
-  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
-  runManifestFacts,
-} from './run-manifest-facts.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import {
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
@@ -24,6 +21,7 @@ import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
 import type {
   BuildOptionHints,
+  CommandHints,
   RunManifestFactsOutcome,
   SocketFactsContext,
 } from './run-manifest-facts.mts'
@@ -71,7 +69,7 @@ export async function generateAutoManifest({
   cwd,
   detected,
   excludePaths,
-  excludePathsFlag,
+  hints: commandHints,
   outputKind,
   verbose,
 }: {
@@ -81,20 +79,13 @@ export async function generateAutoManifest({
   // Scan-root-relative `--exclude-paths`: skip excluded subprojects.
   excludePaths?: string[] | undefined
   // A failure message must name an option the invoking command accepts.
-  excludePathsFlag?: string | undefined
+  hints?: CommandHints | undefined
   outputKind: OutputKind
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
   const generatedFiles: string[] = []
-  const hints: BuildOptionHints = {
-    ...AUTO_MANIFEST_HINTS,
-    continueOnInstallErrorsFlag:
-      context?.workDir?.purpose === 'reachability'
-        ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
-        : undefined,
-    excludePathsFlag,
-  }
+  const hints: BuildOptionHints = { ...AUTO_MANIFEST_HINTS, ...commandHints }
 
   if (verbose) {
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)

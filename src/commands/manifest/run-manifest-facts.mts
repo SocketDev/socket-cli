@@ -23,9 +23,6 @@ export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 // Where the invoking command lets the user set each build option, so a remedy
 // in Coana's failure report names something they can actually set.
 export type BuildOptionHints = {
-  // Reachability scans only: reachability cannot install a dependency that
-  // `ignoreUnresolved` lets through, so it must be told to continue too.
-  continueOnInstallErrorsFlag?: string | undefined
   excludePathsFlag?: string | undefined
   // The invoking command accepts these options as flags. Users set the rest in
   // `socketJson`.
@@ -35,6 +32,9 @@ export type BuildOptionHints = {
   socketJson: string
 }
 
+// What the invoking command takes as flags, for every build it generates.
+export type CommandHints = Pick<BuildOptionHints, 'excludePathsFlag' | 'flags'>
+
 // The first Coana release with `generate-socket-facts`.
 const SOCKET_FACTS_MIN_COANA_VERSION = '15.15.4'
 
@@ -43,8 +43,15 @@ export const DSI_SETUP_COMMAND =
 
 export const EXCLUDE_PATHS_FLAG = '--exclude-paths'
 
-export const REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG =
+const REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG =
   '--reach-continue-on-install-errors'
+
+// The scan and fix commands take `--exclude-paths`; users set the other build
+// options in socket.json.
+export const EXCLUDE_PATHS_HINTS: CommandHints = {
+  excludePathsFlag: EXCLUDE_PATHS_FLAG,
+  flags: new Set(),
+}
 
 // The single-build manifest commands take every option as a flag.
 const FLAG_HINTS: BuildOptionHints = {
@@ -115,7 +122,12 @@ type SocketFactsRequest = {
   }
   excludeBase: string
   excludePaths?: string[] | undefined
-  hints: Omit<BuildOptionHints, 'flags'> & { flags: BuildOption[] }
+  hints: Omit<BuildOptionHints, 'flags'> & {
+    // Reachability scans only: reachability cannot install a dependency that
+    // `ignoreUnresolved` lets through, so it must be told to continue too.
+    continueOnInstallErrorsFlag?: string | undefined
+    flags: BuildOption[]
+  }
   root: BuildRoot
   tool: BuildTool
 }
@@ -134,6 +146,10 @@ type SolutionMembers =
 type ProjectList =
   | { projects: SocketFactsProject[]; status: 'listed' }
   | { status: 'failed' }
+
+function purposeOf({ workDir }: SocketFactsContext): SocketFactsPurpose {
+  return workDir?.purpose ?? 'upload'
+}
 
 async function readResult<T>(
   resultFile: string,
@@ -217,21 +233,24 @@ export type SocketFactsRunOptions = SocketFactsRequestOptions & {
 // Check SOCKET_CLI_*_PATH, then `bin`, the project wrapper and PATH.
 // Standalone JVM builds require SOCKET_CLI_*_PATH because the CLI ships without
 // JVM tooling.
-function toSocketFactsRequest({
-  bin,
-  buildOpts,
-  cwd,
-  ecosystem,
-  entryFile,
-  excludeBase,
-  excludeConfigs,
-  excludePaths,
-  hints = FLAG_HINTS,
-  ignoreUnresolved = false,
-  includeConfigs,
-  javaHome,
-  verbose = false,
-}: SocketFactsRequestOptions): CResult<SocketFactsRequest> {
+function toSocketFactsRequest(
+  {
+    bin,
+    buildOpts,
+    cwd,
+    ecosystem,
+    entryFile,
+    excludeBase,
+    excludeConfigs,
+    excludePaths,
+    hints = FLAG_HINTS,
+    ignoreUnresolved = false,
+    includeConfigs,
+    javaHome,
+    verbose = false,
+  }: SocketFactsRequestOptions,
+  purpose: SocketFactsPurpose,
+): CResult<SocketFactsRequest> {
   let resolvedBin: string
   try {
     resolvedBin = resolveBuildToolBin(
@@ -262,7 +281,16 @@ function toSocketFactsRequest({
       },
       excludeBase: path.resolve(excludeBase ?? cwd),
       ...(excludePaths?.length ? { excludePaths } : {}),
-      hints: { ...hints, flags: [...hints.flags].sort() },
+      hints: {
+        ...hints,
+        ...(purpose === 'reachability'
+          ? {
+              continueOnInstallErrorsFlag:
+                REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
+            }
+          : {}),
+        flags: [...hints.flags].sort(),
+      },
       root: { dir: path.resolve(cwd), ...(entryFile ? { entryFile } : {}) },
       tool: ecosystem,
     },
@@ -310,7 +338,10 @@ export async function listDotnetSolutionMembers({
 }: Omit<SocketFactsRequestOptions, 'ecosystem'> & {
   context?: SocketFactsContext | undefined
 }): Promise<string[] | undefined> {
-  const request = toSocketFactsRequest({ ...options, ecosystem: 'dotnet' })
+  const request = toSocketFactsRequest(
+    { ...options, ecosystem: 'dotnet' },
+    purposeOf(context),
+  )
   if (!request.ok) {
     // Left for the build itself to report.
     return []
@@ -340,7 +371,7 @@ export async function listBuildProjects({
   ...options
 }: SocketFactsRunOptions): Promise<SocketFactsProject[] | undefined> {
   const { cwd, ecosystem, entryFile } = options
-  const request = toSocketFactsRequest(options)
+  const request = toSocketFactsRequest(options, purposeOf(context))
   if (!request.ok) {
     logger.fail(`${request.message}: ${request.cause}`)
     return undefined
@@ -377,7 +408,7 @@ export async function runManifestFacts({
     return null
   }
 
-  const request = toSocketFactsRequest(options)
+  const request = toSocketFactsRequest(options, purposeOf(context))
   if (!request.ok) {
     process.exitCode = 1
     logger.fail(`${request.message}: ${request.cause}`)
@@ -389,7 +420,7 @@ export async function runManifestFacts({
     request.data,
     [
       '--purpose',
-      workDir?.purpose ?? 'upload',
+      purposeOf(context),
       ...(workDir ? ['--work-dir', workDir.dir] : []),
     ],
     context,

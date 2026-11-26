@@ -24,8 +24,6 @@ import { loadBuild, withModules } from './load-build.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import {
   DSI_SETUP_COMMAND,
-  EXCLUDE_PATHS_FLAG,
-  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   keepFacts,
   runManifestFacts,
 } from './run-manifest-facts.mts'
@@ -48,8 +46,8 @@ import type {
 } from './discover-manifest-roots.mts'
 import type { LoadedBuild } from './load-build.mts'
 import type {
-  BuildOption,
   BuildOptionHints,
+  CommandHints,
   RunManifestFactsOutcome,
   RunManifestFactsResult,
   SocketFactsContext,
@@ -133,8 +131,8 @@ type WalkContext = {
   // file at its target as it was.
   context: SocketFactsContext & { workDir: SocketFactsWorkDir }
   excludePaths: string[] | undefined
+  hints: CommandHints
   ignoreUnresolved: boolean | undefined
-  optionFlags: ReadonlySet<BuildOption>
   realCwd: string
   resolveSettings: (
     tool: BuildTool,
@@ -649,12 +647,7 @@ function runOptions(
       excludeBase: ctx.realCwd,
       excludePaths: ctx.excludePaths,
       hints: {
-        continueOnInstallErrorsFlag:
-          ctx.context.workDir.purpose === 'reachability'
-            ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
-            : undefined,
-        excludePathsFlag: EXCLUDE_PATHS_FLAG,
-        flags: ctx.optionFlags,
+        ...ctx.hints,
         setupCommand: DSI_SETUP_COMMAND,
         socketJson: socketJsonPath(root.dir),
       },
@@ -740,8 +733,8 @@ export async function generateRecursiveManifests({
   context = {},
   cwd,
   excludePaths,
+  hints = { flags: new Set() },
   ignoreUnresolved,
-  optionFlags = new Set(),
   purlTypes,
   verbose,
 }: {
@@ -749,11 +742,11 @@ export async function generateRecursiveManifests({
   context?: SocketFactsContext | undefined
   cwd: string
   excludePaths?: string[] | undefined
+  // Hints send the options the command takes no flag for to each build root's
+  // socket.json.
+  hints?: CommandHints | undefined
   // When set, overrides every build root's own socket.json setting.
   ignoreUnresolved?: boolean | undefined
-  // Options the invoking command takes as flags; hints send the rest to each
-  // build root's socket.json.
-  optionFlags?: ReadonlySet<BuildOption> | undefined
   purlTypes?: readonly PURL_Type[] | undefined
   verbose: boolean
 }): Promise<RecursiveManifestOutcome[]> {
@@ -785,8 +778,8 @@ export async function generateRecursiveManifests({
     const ctx: WalkContext = {
       context: { ...context, workDir },
       excludePaths,
+      hints,
       ignoreUnresolved,
-      optionFlags,
       realCwd,
       resolveSettings,
       verbose,

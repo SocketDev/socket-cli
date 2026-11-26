@@ -933,7 +933,11 @@ describe('generateRecursiveManifests', () => {
       projects: [],
     }))
 
-    await generateRecursiveManifests({ cwd: monorepo, verbose: false })
+    await generateRecursiveManifests({
+      cwd: monorepo,
+      hints: { excludePathsFlag: '--exclude-paths', flags: new Set() },
+      verbose: false,
+    })
 
     const calls = vi.mocked(runManifestFacts).mock.calls.map(([opts]) => opts)
     const verboseByCall = new Map(
@@ -1265,9 +1269,6 @@ describe('generateRecursiveManifests', () => {
     expect(vi.mocked(runManifestFacts).mock.calls.length).toBeGreaterThan(1)
     for (const [opts] of vi.mocked(runManifestFacts).mock.calls) {
       expect(opts.context).toEqual(context)
-      expect(opts.hints?.continueOnInstallErrorsFlag).toBe(
-        '--reach-continue-on-install-errors',
-      )
     }
   })
 
@@ -1715,7 +1716,10 @@ describe('generateRecursiveManifests', () => {
       await generateRecursiveManifests({
         context,
         cwd: outer,
-        optionFlags: new Set(['verbose']),
+        hints: {
+          excludePathsFlag: '--exclude-paths',
+          flags: new Set(['verbose']),
+        },
         verbose: false,
       })
 
@@ -1725,7 +1729,6 @@ describe('generateRecursiveManifests', () => {
           cwd: path.join(outer, 'legacy'),
           entryFile: 'pom.xml',
           hints: {
-            continueOnInstallErrorsFlag: undefined,
             excludePathsFlag: '--exclude-paths',
             flags: new Set(['verbose']),
             setupCommand: 'socket manifest setup --dynamic-sbom-inference',

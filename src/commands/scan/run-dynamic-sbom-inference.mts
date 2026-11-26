@@ -16,6 +16,7 @@ import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { RecursiveManifestOutcome } from '../manifest/generate-recursive-manifests.mts'
 import type {
+  CommandHints,
   SocketFactsContext,
   SocketFactsWorkDir,
 } from '../manifest/run-manifest-facts.mts'
@@ -70,17 +71,20 @@ export async function runDynamicSbomInference({
   context,
   cwd,
   excludePaths,
+  hints,
   purlTypes,
 }: {
   context: SocketFactsContext
   cwd: string
   excludePaths: string[]
+  hints: CommandHints
   purlTypes: readonly PURL_Type[]
 }): Promise<DynamicSbomInferenceResult> {
   const outcomes = await generateRecursiveManifests({
     context,
     cwd,
     excludePaths,
+    hints,
     purlTypes,
     verbose: false,
   })

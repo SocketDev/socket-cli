@@ -3,7 +3,7 @@ import path from 'node:path'
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
-import { EXCLUDE_PATHS_FLAG } from './run-manifest-facts.mts'
+import { EXCLUDE_PATHS_HINTS } from './run-manifest-facts.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -128,7 +128,7 @@ async function run(
     detected,
     cwd,
     excludePaths,
-    excludePathsFlag: EXCLUDE_PATHS_FLAG,
+    hints: EXCLUDE_PATHS_HINTS,
     outputKind,
     verbose,
   })

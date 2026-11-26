@@ -54,6 +54,10 @@ vi.mock('./run-dynamic-sbom-inference.mts', () => ({
 }))
 
 vi.mock('../manifest/run-manifest-facts.mts', () => ({
+  EXCLUDE_PATHS_HINTS: {
+    excludePathsFlag: '--exclude-paths',
+    flags: new Set(),
+  },
   createSocketFactsWorkDir: async (dir: string, purpose: string) => ({
     dir,
     entries: new Map(),
@@ -402,6 +406,7 @@ describe('handleScanReach', () => {
         },
         cwd: '/repo',
         excludePaths: ['vendor/**'],
+        hints: { excludePathsFlag: '--exclude-paths', flags: new Set() },
         purlTypes: ['maven', 'nuget'],
       })
       expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(

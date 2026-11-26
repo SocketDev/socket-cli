@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import { useOnlySocketFactsArtifactsFlags } from '../../utils/coana.mts'
 import {
+  EXCLUDE_PATHS_HINTS,
   createSocketFactsWorkDir,
   socketFactsSidecar,
 } from '../manifest/run-manifest-facts.mts'
@@ -83,6 +84,7 @@ export async function generateSocketFactsForFix({
         context: { ...context, workDir },
         cwd,
         excludePaths,
+        hints: EXCLUDE_PATHS_HINTS,
         purlTypes,
       })
     artifactsFlags = useOnlySocketFactsArtifactsFlags(factsOnlyTypes)

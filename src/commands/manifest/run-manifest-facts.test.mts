@@ -182,6 +182,9 @@ describe('runManifestFacts', () => {
       '--work-dir',
       '/w',
     ])
+    expect(calls[0]!.request.hints.continueOnInstallErrorsFlag).toBe(
+      '--reach-continue-on-install-errors',
+    )
     expect(result).toMatchObject({ sidecarEntry: entry })
     expect(workDir.entries.size).toBe(0)
   })

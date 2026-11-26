@@ -43,7 +43,10 @@ import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { Remap } from '../../utils/objects.mts'
-import type { SocketFactsContext } from '../manifest/run-manifest-facts.mts'
+import type {
+  CommandHints,
+  SocketFactsContext,
+} from '../manifest/run-manifest-facts.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Supported-files response keys whose files count as pre-generated SBOMs:
@@ -89,13 +92,14 @@ export type GeneratedScanFiles = {
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
   branchName: string
+  // The flags the invoking command takes that facts generation's remedies may
+  // name; none by default.
+  buildOptionHints?: CommandHints | undefined
   commitHash: string
   commitMessage: string
   committers: string
   cwd: string
   defaultBranch: boolean
-  // The invoking command's flag for `reach.excludePaths`, when it takes one.
-  excludePathsFlag?: string | undefined
   // Supplies the complete scan input and replaces manifest discovery.
   generateScanFiles?: (() => Promise<GeneratedScanFiles>) | undefined
   interactive: boolean
@@ -122,12 +126,12 @@ async function createNewScan(
   {
     autoManifest,
     branchName,
+    buildOptionHints = { flags: new Set() },
     commitHash,
     commitMessage,
     committers,
     cwd,
     defaultBranch,
-    excludePathsFlag,
     interactive,
     orgSlug,
     outputKind,
@@ -194,6 +198,7 @@ async function createNewScan(
         const dynamicResult = await runDynamicSbomInference({
           context: factsContext,
           cwd,
+          hints: buildOptionHints,
           excludePaths: reach.excludePaths,
           purlTypes: reach.dynamicSbomInference,
         })
@@ -222,7 +227,7 @@ async function createNewScan(
           cwd,
           detected,
           excludePaths: reach.excludePaths,
-          excludePathsFlag,
+          hints: buildOptionHints,
           outputKind,
           verbose: false,
         })

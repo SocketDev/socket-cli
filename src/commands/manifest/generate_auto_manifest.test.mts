@@ -279,7 +279,7 @@ describe('generateAutoManifest — bazel branch', () => {
       await generateAutoManifest({
         cwd: '/tmp/repo',
         detected: { ...baseDetected, maven: true, count: 1 },
-        excludePathsFlag,
+        hints: { excludePathsFlag, flags: new Set() },
         outputKind: 'text',
         verbose: false,
       })
