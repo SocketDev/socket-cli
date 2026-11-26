@@ -11,8 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Updated the Coana CLI to v `15.15.4`.
-- Coana now generates Socket facts for Gradle, Maven, sbt and .NET builds, so generating them downloads Coana and needs network access and a Socket API token.
-- `--reach-version` and `--fix-version` also select the Coana that generates Socket facts, which must be 15.15.4 or newer.
+- The Coana CLI now generates Socket facts for Gradle, Maven, sbt and .NET builds, so generating them downloads the Coana CLI and needs network access and a Socket API token.
+- `--reach-version` and `--fix-version` also select the Coana CLI that generates Socket facts, which must be 15.15.4 or newer.
 - With `--dynamic-sbom-inference`, reachability analyzes each JVM project on the classpath its build resolved, and `socket fix` restores a build's files when an upgrade does not take.
 - `--ignore-unresolved` no longer lets through a build whose resolution did not run, or a failure that names no project.
 - `--dynamic-sbom-inference` passes `mavenOpts` to Maven as written, without warning about a `--file` in them: each POM is still built by its own file.
