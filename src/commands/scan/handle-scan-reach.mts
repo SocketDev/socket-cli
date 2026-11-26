@@ -14,14 +14,16 @@ import { withTmpDir } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { pluralize } from '../../utils/words.mts'
+import {
+  createSocketFactsWorkDir,
+  socketFactsSidecar,
+} from '../manifest/run-manifest-facts.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
-import type {
-  DynamicSbomInferenceResult,
-  KeptRootsDir,
-} from './run-dynamic-sbom-inference.mts'
+import type { DynamicSbomInferenceResult } from './run-dynamic-sbom-inference.mts'
 import type { OutputKind } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
+import type { SocketFactsWorkDir } from '../manifest/run-manifest-facts.mts'
 
 export type HandleScanReachConfig = {
   cwd: string
@@ -45,7 +47,7 @@ async function runScanReach(
   }: HandleScanReachConfig,
   // The ecosystems --dynamic-sbom-inference generates facts for, with the
   // work dir Coana's run reads.
-  dsi: { purlTypes: FactsOnlyTypes; workDir: KeptRootsDir } | undefined,
+  dsi: { purlTypes: FactsOnlyTypes; workDir: SocketFactsWorkDir } | undefined,
 ) {
   const { spinner } = constants
 
@@ -57,12 +59,14 @@ async function runScanReach(
   if (dsi) {
     logger.info('Generating Socket facts for each build root ...')
     dynamicResult = await runDynamicSbomInference({
-      consumer: 'reach',
-      context: { coanaVersion: reachabilityOptions.reachVersion, orgSlug },
+      context: {
+        coanaVersion: reachabilityOptions.reachVersion,
+        orgSlug,
+        workDir: dsi.workDir,
+      },
       cwd,
       excludePaths: reachabilityOptions.excludePaths,
       purlTypes: dsi.purlTypes,
-      workDir: dsi.workDir,
     })
     scanTargets = Array.from(
       new Set([...scanTargets, ...dynamicResult.factsPaths]),
@@ -140,7 +144,7 @@ async function runScanReach(
     outputPath,
     packagePaths,
     reachabilityOptions: mergedReachabilityOptions,
-    socketFactsSidecar: dsi && [...dsi.workDir.entries.values()],
+    socketFactsSidecar: dsi && socketFactsSidecar(dsi.workDir),
     spinner,
     target: targets[0]!,
   })
@@ -172,11 +176,13 @@ export async function handleScanReach(
   const purlTypes = config.reachabilityOptions.dynamicSbomInference
   // Coana's run reads what facts generation keeps in the work dir.
   return purlTypes
-    ? await withTmpDir('socket-dynamic-sbom-inference-', dir =>
-        runScanReach(config, {
-          purlTypes,
-          workDir: { dir, entries: new Map() },
-        }),
+    ? await withTmpDir(
+        'socket-dynamic-sbom-inference-',
+        async dir =>
+          await runScanReach(config, {
+            purlTypes,
+            workDir: await createSocketFactsWorkDir(dir, 'reachability'),
+          }),
       )
     : await runScanReach(config, undefined)
 }

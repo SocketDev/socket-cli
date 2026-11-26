@@ -34,6 +34,7 @@ describe('generateSocketFactsForFix', () => {
 
   async function generate() {
     return await generateSocketFactsForFix({
+      context: { coanaVersion: '1.2.3', orgSlug: 'acme' },
       cwd,
       excludePaths: [],
       findFactsPaths: async () => [existing, fresh].filter(p => existsSync(p)),
@@ -70,10 +71,10 @@ describe('generateSocketFactsForFix', () => {
   it('keeps what Coana kept of each build root outside the repository', async () => {
     const entry = { factsFile: fresh, stateDir: path.join(tmpDir, 'work', 'x') }
     let workDirExisted = false
-    mockRunDynamicSbomInference.mockImplementation(async ({ workDir }) => {
-      workDirExisted = existsSync(workDir.dir)
+    mockRunDynamicSbomInference.mockImplementation(async ({ context }) => {
+      workDirExisted = existsSync(context.workDir.dir)
       await fs.writeFile(fresh, 'generated')
-      workDir.entries.set(entry.factsFile, entry)
+      context.workDir.entries.set(entry.factsFile, entry)
       return {
         discardedFactsPaths: [],
         factsOnlyTypes: ['maven', 'nuget'],
@@ -86,13 +87,16 @@ describe('generateSocketFactsForFix', () => {
     expect(workDirExisted).toBe(true)
     expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
       expect.objectContaining({
-        consumer: 'fix',
-        context: { coanaVersion: undefined, orgSlug: undefined },
-        purlTypes: ['maven'],
-        workDir: {
-          dir: path.join(tmpDir, 'work'),
-          entries: new Map([[entry.factsFile, entry]]),
+        context: {
+          coanaVersion: '1.2.3',
+          orgSlug: 'acme',
+          workDir: {
+            dir: path.join(tmpDir, 'work'),
+            entries: new Map([[entry.factsFile, entry]]),
+            purpose: 'fix',
+          },
         },
+        purlTypes: ['maven'],
       }),
     )
     expect(artifactsFlags).toEqual([

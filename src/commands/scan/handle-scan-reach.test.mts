@@ -53,6 +53,17 @@ vi.mock('./run-dynamic-sbom-inference.mts', () => ({
     paths.filter(p => !discarded?.includes(p)),
 }))
 
+vi.mock('../manifest/run-manifest-facts.mts', () => ({
+  createSocketFactsWorkDir: async (dir: string, purpose: string) => ({
+    dir,
+    entries: new Map(),
+    purpose,
+  }),
+  socketFactsSidecar: (workDir: { entries: Map<string, unknown> }) => [
+    ...workDir.entries.values(),
+  ],
+}))
+
 vi.mock('../../constants.mts', () => ({
   default: {
     kInternalsSymbol: mockSentryInternalsSymbol,
@@ -356,8 +367,8 @@ describe('handleScanReach', () => {
         stateDir: '/work/a',
       }
       mockRunDynamicSbomInference.mockImplementationOnce(
-        async ({ workDir }) => {
-          workDir.entries.set(entry.factsFile, entry)
+        async ({ context }) => {
+          context.workDir.entries.set(entry.factsFile, entry)
           return {
             factsOnlyTypes: ['maven'],
             factsPaths: [
@@ -379,19 +390,19 @@ describe('handleScanReach', () => {
       })
 
       expect(mockRunDynamicSbomInference).toHaveBeenCalledWith({
-        consumer: 'reach',
         context: {
           coanaVersion: baseReachabilityOptions.reachVersion,
           orgSlug: 'fakeOrg',
+          // A caller-owned dir that outlives the analysis reading it.
+          workDir: {
+            dir: expect.any(String),
+            entries: new Map([[entry.factsFile, entry]]),
+            purpose: 'reachability',
+          },
         },
         cwd: '/repo',
         excludePaths: ['vendor/**'],
         purlTypes: ['maven', 'nuget'],
-        // A caller-owned dir that outlives the analysis reading it.
-        workDir: {
-          dir: expect.any(String),
-          entries: new Map([[entry.factsFile, entry]]),
-        },
       })
       expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
         [

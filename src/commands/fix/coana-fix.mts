@@ -396,13 +396,12 @@ async function coanaFixWithFacts(
       logger.info('Generating Socket facts for each build ...')
     }
     factsSlot.generated = await generateSocketFactsForFix({
-      coanaVersion,
+      context: { coanaVersion, orgSlug },
       cwd,
       excludePaths,
       purlTypes: factsSlot.purlTypes,
       findFactsPaths: async () =>
         (await findScanFilepaths()).filter(isSocketFactsFile),
-      orgSlug,
       tmpDir: factsSlot.tmpDir,
     })
     scanFilepaths = await withoutDiscardedFacts(

@@ -23,17 +23,6 @@ import type {
 const DSI_SETTINGS_DOCS_URL =
   'https://github.com/SocketDev/socket-cli/blob/v1.x/docs/dynamic-sbom-inference-settings.md'
 
-// Who consumes the facts: Coana for `fix` and `reach`, with the work dir that
-// collects what its run reads, or only the scan upload.
-export type FactsTarget =
-  | { consumer: 'upload'; workDir?: undefined }
-  | { consumer: 'fix' | 'reach'; workDir: KeptRootsDir }
-
-export type FactsConsumer = FactsTarget['consumer']
-
-// The consumer sets the purpose.
-export type KeptRootsDir = Omit<SocketFactsWorkDir, 'purpose'>
-
 export type DynamicSbomInferenceResult = {
   // Facts files of dropped runs, which the scan must not collect.
   discardedFactsPaths: string[]
@@ -47,12 +36,12 @@ export type DynamicSbomInferenceResult = {
 // build root without them is one it leaves out.
 function checkFactsForCoana(
   outcomes: RecursiveManifestOutcome[],
-  consumer: Exclude<FactsConsumer, 'upload'>,
+  workDir: SocketFactsWorkDir,
   hasFacts: boolean,
 ): void {
   const hasDisabled = outcomes.some(o => o.status === 'skippedDisabled')
   // Coana (15.14.1) refuses a facts-only reachability run without any facts.
-  if (consumer === 'reach' && !hasFacts) {
+  if (workDir.purpose === 'reachability' && !hasFacts) {
     throw new InputError(
       [
         'No build root produced Socket facts, which reachability analysis with --dynamic-sbom-inference needs.',
@@ -75,29 +64,21 @@ function checkFactsForCoana(
 }
 
 // Recursively discovers and generates Socket facts for every independent
-// build root of the selected ecosystems under `cwd`.
+// build root of the selected ecosystems under `cwd`. Without a work dir, the
+// facts are only uploaded.
 export async function runDynamicSbomInference({
-  consumer,
   context,
   cwd,
   excludePaths,
   purlTypes,
-  workDir,
-}: FactsTarget & {
-  context: Omit<SocketFactsContext, 'workDir'>
+}: {
+  context: SocketFactsContext
   cwd: string
   excludePaths: string[]
   purlTypes: readonly PURL_Type[]
 }): Promise<DynamicSbomInferenceResult> {
-  const coanaReadsFacts = consumer !== 'upload'
   const outcomes = await generateRecursiveManifests({
-    context: {
-      ...context,
-      workDir: workDir && {
-        ...workDir,
-        purpose: consumer === 'reach' ? 'reachability' : 'fix',
-      },
-    },
+    context,
     cwd,
     excludePaths,
     purlTypes,
@@ -134,8 +115,9 @@ export async function runDynamicSbomInference({
   const factsPaths = outcomes
     .filter(o => o.status === 'generated')
     .map(o => o.factsPath!)
-  if (coanaReadsFacts) {
-    checkFactsForCoana(outcomes, consumer, !!factsPaths.length)
+  const { workDir } = context
+  if (workDir && workDir.purpose !== 'upload') {
+    checkFactsForCoana(outcomes, workDir, !!factsPaths.length)
   }
   return {
     discardedFactsPaths: outcomes.flatMap(o =>

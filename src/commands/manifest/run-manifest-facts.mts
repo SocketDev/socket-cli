@@ -269,6 +269,22 @@ function toSocketFactsRequest({
   }
 }
 
+// The work directory must outlive the Coana run that reads it.
+export async function createSocketFactsWorkDir(
+  dir: string,
+  purpose: SocketFactsPurpose,
+): Promise<SocketFactsWorkDir> {
+  await fs.mkdir(dir, { recursive: true })
+  return { dir, entries: new Map(), purpose }
+}
+
+// What `--socket-facts-sidecar` reads for the kept build roots.
+export function socketFactsSidecar(
+  workDir: SocketFactsWorkDir,
+): SocketFactsSidecarEntry[] {
+  return [...workDir.entries.values()]
+}
+
 // Puts a kept build root's facts where they belong, and keeps its sidecar
 // entry for the Coana run that reads `workDir`.
 export async function keepFacts(

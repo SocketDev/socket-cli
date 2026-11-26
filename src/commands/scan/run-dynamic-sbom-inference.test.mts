@@ -9,7 +9,6 @@ import {
   withoutDiscardedFacts,
 } from './run-dynamic-sbom-inference.mts'
 
-import type { FactsConsumer } from './run-dynamic-sbom-inference.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 
 const { mockGenerateRecursiveManifests, mockWarn } = vi.hoisted(() => ({
@@ -33,15 +32,21 @@ const generated = {
 }
 
 const context = { coanaVersion: '1.2.3' }
-const workDir = { dir: '/work', entries: new Map() }
+
+function workDirFor(purpose: Purpose) {
+  return purpose === 'upload'
+    ? undefined
+    : { dir: '/work', entries: new Map(), purpose }
+}
+
+type Purpose = 'fix' | 'reachability' | 'upload'
 
 function run(
-  consumer: FactsConsumer,
+  purpose: Purpose,
   purlTypes: readonly PURL_Type[] = ['maven', 'nuget'],
 ) {
   return runDynamicSbomInference({
-    ...(consumer === 'upload' ? { consumer } : { consumer, workDir }),
-    context,
+    context: { ...context, workDir: workDirFor(purpose) },
     cwd: '/repo',
     excludePaths: ['vendor/**'],
     purlTypes,
@@ -53,25 +58,15 @@ describe('runDynamicSbomInference', () => {
     vi.clearAllMocks()
   })
 
-  it.for([
-    {
-      consumer: 'reach',
-      expected: { ...workDir, purpose: 'reachability' },
-    },
-    {
-      consumer: 'fix',
-      expected: { ...workDir, purpose: 'fix' },
-    },
-    { consumer: 'upload', expected: undefined },
-  ] as const)(
-    'generates every build root for $consumer, with the purpose it reads the facts for',
-    async ({ consumer, expected }) => {
+  it.for(['reachability', 'fix', 'upload'] as const)(
+    'generates every build root for %s, with the work dir its facts are for',
+    async purpose => {
       mockGenerateRecursiveManifests.mockResolvedValueOnce([generated])
 
-      await run(consumer)
+      await run(purpose)
 
       expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith({
-        context: { ...context, workDir: expected },
+        context: { ...context, workDir: workDirFor(purpose) },
         cwd: '/repo',
         excludePaths: ['vendor/**'],
         purlTypes: ['maven', 'nuget'],
@@ -102,7 +97,7 @@ describe('runDynamicSbomInference', () => {
       { dir: '/repo/c', ecosystem: 'sbt', status: 'empty' },
     ])
 
-    expect((await run('reach')).factsOnlyTypes.sort()).toEqual([
+    expect((await run('reachability')).factsOnlyTypes.sort()).toEqual([
       'maven',
       'nuget',
     ])
@@ -150,27 +145,27 @@ describe('runDynamicSbomInference', () => {
   ])('throws when $name', async ({ error, outcomes, purlTypes }) => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
 
-    await expect(run('reach', purlTypes)).rejects.toThrow(error)
+    await expect(run('reachability', purlTypes)).rejects.toThrow(error)
   })
 
   it.for([
     {
-      consumer: 'fix',
+      purpose: 'fix',
       outcomes: [{ dir: '/repo/a', ecosystem: 'maven', status: 'empty' }],
     },
     // Without Coana, the roots socket.json skips are not left out of anything.
     {
-      consumer: 'upload',
+      purpose: 'upload',
       outcomes: [
         { dir: '/repo/a', ecosystem: 'maven', status: 'skippedDisabled' },
       ],
     },
   ] as const)(
-    'lets $consumer proceed quietly without facts',
-    async ({ consumer, outcomes }) => {
+    'lets $purpose proceed quietly without facts',
+    async ({ outcomes, purpose }) => {
       mockGenerateRecursiveManifests.mockResolvedValueOnce(outcomes)
 
-      expect((await run(consumer)).factsPaths).toEqual([])
+      expect((await run(purpose)).factsPaths).toEqual([])
       expect(mockWarn).not.toHaveBeenCalled()
     },
   )
@@ -181,7 +176,7 @@ describe('runDynamicSbomInference', () => {
       { dir: '/repo/b', ecosystem: 'maven', status: 'skippedDisabled' },
     ])
 
-    await run('reach')
+    await run('reachability')
 
     expect(mockWarn).toHaveBeenCalledWith(
       expect.stringMatching(/leaves out the build roots socket.json skips/),

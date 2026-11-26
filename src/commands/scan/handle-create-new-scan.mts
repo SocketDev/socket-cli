@@ -1,4 +1,4 @@
-import { mkdir, unlink } from 'node:fs/promises'
+import { unlink } from 'node:fs/promises'
 import path from 'node:path'
 
 import micromatch from 'micromatch'
@@ -31,6 +31,10 @@ import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { pluralize } from '../../utils/words.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
+import {
+  createSocketFactsWorkDir,
+  socketFactsSidecar,
+} from '../manifest/run-manifest-facts.mts'
 import { buildToolsFor } from '../manifest/scripts/build-tool.mts'
 
 import type { ReachabilityFallback } from './output-create-new-scan.mts'
@@ -172,15 +176,11 @@ async function createNewScan(
       coanaVersion: reach.reachVersion,
       orgSlug,
       workDir: reach.runReachabilityAnalysis
-        ? {
-            dir: path.join(manifestTmpDir, 'socket-facts-work'),
-            entries: new Map(),
-            purpose: 'reachability',
-          }
+        ? await createSocketFactsWorkDir(
+            path.join(manifestTmpDir, 'socket-facts-work'),
+            'reachability',
+          )
         : undefined,
-    }
-    if (factsContext.workDir) {
-      await mkdir(factsContext.workDir.dir)
     }
     if (autoManifest || reach.dynamicSbomInference) {
       logger.info('Auto-generating manifest files ...')
@@ -192,9 +192,6 @@ async function createNewScan(
         // one at cwd. This runs on its own, so nothing outside those
         // ecosystems is generated unless --auto-manifest also asked for it.
         const dynamicResult = await runDynamicSbomInference({
-          ...(factsContext.workDir
-            ? { consumer: 'reach', workDir: factsContext.workDir }
-            : { consumer: 'upload' }),
           context: factsContext,
           cwd,
           excludePaths: reach.excludePaths,
@@ -342,9 +339,8 @@ async function createNewScan(
         packagePaths,
         reachabilityOptions: mergedReachabilityOptions,
         repoName,
-        socketFactsSidecar: factsContext.workDir && [
-          ...factsContext.workDir.entries.values(),
-        ],
+        socketFactsSidecar:
+          factsContext.workDir && socketFactsSidecar(factsContext.workDir),
         spinner,
         target: targets[0]!,
       })
