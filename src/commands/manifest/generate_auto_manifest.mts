@@ -29,8 +29,7 @@ import type { BuildTool } from './scripts/build-tool.mts'
 import type { OutputKind } from '../../types.mts'
 
 // Auto-manifest reads every build option from the root socket.json.
-const AUTO_MANIFEST_HINTS: BuildOptionHints = {
-  flags: new Set(),
+const AUTO_MANIFEST_HINTS: Omit<BuildOptionHints, keyof CommandHints> = {
   setupCommand: 'socket manifest setup',
   socketJson: SOCKET_JSON,
 }
@@ -79,7 +78,7 @@ export async function generateAutoManifest({
   // Scan-root-relative `--exclude-paths`: skip excluded subprojects.
   excludePaths?: string[] | undefined
   // A failure message must name an option the invoking command accepts.
-  hints?: CommandHints | undefined
+  hints: CommandHints
   outputKind: OutputKind
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {

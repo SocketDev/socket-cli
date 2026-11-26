@@ -382,13 +382,13 @@ describe('handleCreateNewScan excludePaths', () => {
       { dir: '/repo/service-c', ecosystem: 'maven', status: 'empty' },
     ])
 
-    const buildOptionHints = {
+    const hints = {
       excludePathsFlag: '--exclude-paths',
       flags: new Set<never>(),
     }
     const config = {
       ...createConfig({ autoManifest: true, targets: ['/repo'] }),
-      buildOptionHints,
+      hints,
     }
     config.reach.dynamicSbomInference = ['maven', 'nuget']
 
@@ -398,12 +398,12 @@ describe('handleCreateNewScan excludePaths', () => {
       expect.objectContaining({
         context: expect.objectContaining({ workDir: undefined }),
         cwd: '/repo',
-        hints: buildOptionHints,
+        hints,
       }),
     )
     expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
       expect.objectContaining({
-        hints: buildOptionHints,
+        hints,
         detected: expect.objectContaining({
           gradle: false,
           maven: false,

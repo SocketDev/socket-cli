@@ -13,6 +13,10 @@ import {
   sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
 import { buildRootPath } from './scripts/build-tool.mts'
+import {
+  mavenProject,
+  socketFactsProject,
+} from '../../../test/socket-facts-projects.mts'
 import { testPath } from '../../../test/utils.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 
@@ -331,16 +335,12 @@ describe('membershipOf', () => {
   })
 
   it('takes project dirs and existing build files in the scan root', async () => {
-    const at = (rel: string) => path.resolve(scanRoot, rel)
     const membership = await membershipOf(
       [
-        { buildFiles: [at('build/member/pom.xml')], dir: at('build/member') },
-        { buildFiles: [at('sibling/pom.xml')], dir: at('sibling') },
-        {
-          buildFiles: [at('build/absent/build.gradle')],
-          dir: at('build/absent'),
-        },
-        { buildFiles: [at('../outside/pom.xml')], dir: at('../outside') },
+        mavenProject(scanRoot, 'build/member'),
+        mavenProject(scanRoot, 'sibling'),
+        socketFactsProject(scanRoot, 'build/absent', ['build.gradle']),
+        mavenProject(scanRoot, '../outside'),
       ],
       scanRoot,
     )

@@ -6,7 +6,10 @@ import { InputError } from '../../utils/errors.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
-import { DSI_SETUP_COMMAND } from '../manifest/run-manifest-facts.mts'
+import {
+  DSI_SETUP_COMMAND,
+  coanaReadsFacts,
+} from '../manifest/run-manifest-facts.mts'
 import {
   PURL_TYPE_BY_TOOL,
   buildToolLabelsFor,
@@ -18,7 +21,6 @@ import type { RecursiveManifestOutcome } from '../manifest/generate-recursive-ma
 import type {
   CommandHints,
   SocketFactsContext,
-  SocketFactsWorkDir,
 } from '../manifest/run-manifest-facts.mts'
 
 const DSI_SETTINGS_DOCS_URL =
@@ -37,12 +39,12 @@ export type DynamicSbomInferenceResult = {
 // build root without them is one it leaves out.
 function checkFactsForCoana(
   outcomes: RecursiveManifestOutcome[],
-  workDir: SocketFactsWorkDir,
+  forReachability: boolean,
   hasFacts: boolean,
 ): void {
   const hasDisabled = outcomes.some(o => o.status === 'skippedDisabled')
   // Coana (15.14.1) refuses a facts-only reachability run without any facts.
-  if (workDir.purpose === 'reachability' && !hasFacts) {
+  if (forReachability && !hasFacts) {
     throw new InputError(
       [
         'No build root produced Socket facts, which reachability analysis with --dynamic-sbom-inference needs.',
@@ -119,9 +121,12 @@ export async function runDynamicSbomInference({
   const factsPaths = outcomes
     .filter(o => o.status === 'generated')
     .map(o => o.factsPath!)
-  const { workDir } = context
-  if (workDir && workDir.purpose !== 'upload') {
-    checkFactsForCoana(outcomes, workDir, !!factsPaths.length)
+  if (coanaReadsFacts(context)) {
+    checkFactsForCoana(
+      outcomes,
+      context.workDir?.purpose === 'reachability',
+      !!factsPaths.length,
+    )
   }
   return {
     discardedFactsPaths: outcomes.flatMap(o =>

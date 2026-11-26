@@ -14,6 +14,7 @@ import {
   listDotnetSolutionMembers,
   runManifestFacts,
 } from './run-manifest-facts.mts'
+import { mavenProject } from '../../../test/socket-facts-projects.mts'
 import { spawnCoana } from '../../utils/coana/release.mts'
 import { logger } from '../../utils/logger.mts'
 
@@ -74,7 +75,7 @@ afterEach(async () => {
 
 describe('runManifestFacts', () => {
   it('asks Coana for one build root with its options as written', async () => {
-    const projects = [{ buildFiles: [path.join(cwd, 'pom.xml')], dir: cwd }]
+    const projects = [mavenProject(cwd, '.')]
     coanaAnswers({
       factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
       projects,
@@ -455,7 +456,7 @@ describe('listBuildProjects', () => {
   }
 
   it('asks Coana to list the build root, unresolved, with its options as written', async () => {
-    const projects = [{ buildFiles: [path.join(cwd, 'pom.xml')], dir: cwd }]
+    const projects = [mavenProject(cwd, '.')]
     coanaAnswers({ buildRoot: cwd, projects, status: 'listed' })
     expect(
       await listBuildProjects({

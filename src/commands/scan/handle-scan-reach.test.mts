@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
+import { EXCLUDE_PATHS_HINTS } from '../manifest/run-manifest-facts.mts'
 
 const {
   mockCheckCommandInput,
@@ -53,22 +54,8 @@ vi.mock('./run-dynamic-sbom-inference.mts', () => ({
     paths.filter(p => !discarded?.includes(p)),
 }))
 
-vi.mock('../manifest/run-manifest-facts.mts', () => ({
-  EXCLUDE_PATHS_HINTS: {
-    excludePathsFlag: '--exclude-paths',
-    flags: new Set(),
-  },
-  createSocketFactsWorkDir: async (dir: string, purpose: string) => ({
-    dir,
-    entries: new Map(),
-    purpose,
-  }),
-  socketFactsSidecar: (workDir: { entries: Map<string, unknown> }) => [
-    ...workDir.entries.values(),
-  ],
-}))
-
-vi.mock('../../constants.mts', () => ({
+vi.mock('../../constants.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../constants.mts')>()),
   default: {
     kInternalsSymbol: mockSentryInternalsSymbol,
     [mockSentryInternalsSymbol]: {
@@ -80,10 +67,6 @@ vi.mock('../../constants.mts', () => ({
       successAndStop: vi.fn(),
     },
   },
-  // glob.mts pulls NODE_MODULES through the import chain; re-export it
-  // here so the streaming-iterables loader inside fast-glob is happy.
-  NODE_MODULES: 'node_modules',
-  UNKNOWN_ERROR: 'unknown',
 }))
 
 vi.mock('../../utils/check-input.mts', () => ({
@@ -406,7 +389,7 @@ describe('handleScanReach', () => {
         },
         cwd: '/repo',
         excludePaths: ['vendor/**'],
-        hints: { excludePathsFlag: '--exclude-paths', flags: new Set() },
+        hints: EXCLUDE_PATHS_HINTS,
         purlTypes: ['maven', 'nuget'],
       })
       expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(

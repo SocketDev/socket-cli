@@ -92,9 +92,6 @@ export type GeneratedScanFiles = {
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
   branchName: string
-  // The flags the invoking command takes that facts generation's remedies may
-  // name; none by default.
-  buildOptionHints?: CommandHints | undefined
   commitHash: string
   commitMessage: string
   committers: string
@@ -102,6 +99,9 @@ export type HandleCreateNewScanConfig = {
   defaultBranch: boolean
   // Supplies the complete scan input and replaces manifest discovery.
   generateScanFiles?: (() => Promise<GeneratedScanFiles>) | undefined
+  // The flags the invoking command takes that facts generation's remedies may
+  // name; none by default.
+  hints?: CommandHints | undefined
   interactive: boolean
   orgSlug: string
   pendingHead: boolean
@@ -126,12 +126,12 @@ async function createNewScan(
   {
     autoManifest,
     branchName,
-    buildOptionHints = { flags: new Set() },
     commitHash,
     commitMessage,
     committers,
     cwd,
     defaultBranch,
+    hints = { flags: new Set() },
     interactive,
     orgSlug,
     outputKind,
@@ -199,7 +199,7 @@ async function createNewScan(
           context: factsContext,
           cwd,
           excludePaths: reach.excludePaths,
-          hints: buildOptionHints,
+          hints,
           purlTypes: reach.dynamicSbomInference,
         })
         scanTargets = Array.from(
@@ -227,7 +227,7 @@ async function createNewScan(
           cwd,
           detected,
           excludePaths: reach.excludePaths,
-          hints: buildOptionHints,
+          hints,
           outputKind,
           verbose: false,
         })

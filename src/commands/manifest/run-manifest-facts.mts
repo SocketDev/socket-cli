@@ -151,6 +151,10 @@ function purposeOf({ workDir }: SocketFactsContext): SocketFactsPurpose {
   return workDir?.purpose ?? 'upload'
 }
 
+export function coanaReadsFacts(context: SocketFactsContext): boolean {
+  return purposeOf(context) !== 'upload'
+}
+
 async function readResult<T>(
   resultFile: string,
 ): Promise<{ error?: string | undefined; result: T | undefined }> {
@@ -249,7 +253,7 @@ function toSocketFactsRequest(
     javaHome,
     verbose = false,
   }: SocketFactsRequestOptions,
-  purpose: SocketFactsPurpose,
+  context: SocketFactsContext,
 ): CResult<SocketFactsRequest> {
   let resolvedBin: string
   try {
@@ -283,7 +287,7 @@ function toSocketFactsRequest(
       ...(excludePaths?.length ? { excludePaths } : {}),
       hints: {
         ...hints,
-        ...(purpose === 'reachability'
+        ...(purposeOf(context) === 'reachability'
           ? {
               continueOnInstallErrorsFlag:
                 REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
@@ -333,7 +337,7 @@ export async function listDotnetSolutionMembers({
 }): Promise<string[] | undefined> {
   const request = toSocketFactsRequest(
     { ...options, ecosystem: 'dotnet' },
-    purposeOf(context),
+    context,
   )
   if (!request.ok) {
     // Left for the build itself to report.
@@ -364,7 +368,7 @@ export async function listBuildProjects({
   ...options
 }: SocketFactsRunOptions): Promise<SocketFactsProject[] | undefined> {
   const { cwd, ecosystem, entryFile } = options
-  const request = toSocketFactsRequest(options, purposeOf(context))
+  const request = toSocketFactsRequest(options, context)
   if (!request.ok) {
     logger.fail(`${request.message}: ${request.cause}`)
     return undefined
@@ -401,7 +405,7 @@ export async function runManifestFacts({
     return null
   }
 
-  const request = toSocketFactsRequest(options, purposeOf(context))
+  const request = toSocketFactsRequest(options, context)
   if (!request.ok) {
     process.exitCode = 1
     logger.fail(`${request.message}: ${request.cause}`)
@@ -431,7 +435,7 @@ export async function runManifestFacts({
   if (result.status === 'empty') {
     return undefined
   }
-  if (workDir && workDir.purpose !== 'upload' && !result.sidecarEntry) {
+  if (coanaReadsFacts(context) && !result.sidecarEntry) {
     process.exitCode = 1
     logger.fail(
       `Coana returned no sidecar entry for \`${result.targetPath}\`, which reachability analysis and socket fix need. This is a Coana bug; please report it to Socket.`,

@@ -677,7 +677,6 @@ async function run(
   await handleCreateNewScan({
     autoManifest: Boolean(autoManifest),
     branchName: branchName as string,
-    buildOptionHints: EXCLUDE_PATHS_HINTS,
     commitHash: (commitHash && String(commitHash)) || '',
     commitMessage: (commitMessage && String(commitMessage)) || '',
     committers: (committers && String(committers)) || '',
@@ -686,6 +685,7 @@ async function run(
     generateScanFiles: uvMemberDirs
       ? () => generateUvMemberSboms(uvMemberDirs)
       : undefined,
+    hints: EXCLUDE_PATHS_HINTS,
     interactive: Boolean(interactive),
     orgSlug,
     outputKind,

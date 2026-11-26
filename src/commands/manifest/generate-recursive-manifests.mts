@@ -24,6 +24,7 @@ import { loadBuild, withModules } from './load-build.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import {
   DSI_SETUP_COMMAND,
+  createSocketFactsWorkDir,
   keepFacts,
   runManifestFacts,
 } from './run-manifest-facts.mts'
@@ -39,11 +40,7 @@ import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { ResolvedBuildRootSettings } from './build-root-config.mts'
-import type {
-  BuildRoot,
-  Membership,
-  RootBuildOptions,
-} from './discover-manifest-roots.mts'
+import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { LoadedBuild } from './load-build.mts'
 import type {
   BuildOptionHints,
@@ -154,19 +151,13 @@ function statusOf(loader: Loader | undefined): RecursiveManifestOutcomeStatus {
   return loader?.skipped ? 'skippedDisabled' : 'skippedCovered'
 }
 
-// The options a build's listings take besides the build itself.
-export function buildToolScriptOptions(
-  config: Pick<EcosystemBuildConfig, 'bin' | 'buildOpts'>,
-  excludeBase: string | undefined,
-  excludePaths: string[] | undefined,
-  context?: SocketFactsContext | undefined,
-): RootBuildOptions {
+// A failure's remedy is the build root's socket.json, which the dynamic SBOM
+// inference wizard writes.
+export function dsiHints(hints: CommandHints, dir: string): BuildOptionHints {
   return {
-    bin: config.bin,
-    buildOpts: config.buildOpts,
-    context,
-    excludeBase,
-    excludePaths,
+    ...hints,
+    setupCommand: DSI_SETUP_COMMAND,
+    socketJson: socketJsonPath(dir),
   }
 }
 
@@ -298,8 +289,11 @@ async function walkTool(
       return ancestor && skipOf(ancestor) ? 'skip' : undefined
     })
 
-  const optionsFor = (candidate: Candidate) =>
-    runOptions(ctx, ecosystem, candidate, configFor(candidate))
+  const options = new Map<number, SocketFactsRunOptions>()
+  const optionsFor = (candidate: Candidate): SocketFactsRunOptions =>
+    getOrInsert(options, candidate.index, () =>
+      runOptions(ctx, ecosystem, candidate, configFor(candidate)),
+    )
 
   // A solution the SDK cannot read, built through its twin instead.
   const superseded = new Map<number, Promise<boolean>>()
@@ -479,7 +473,7 @@ async function walkTool(
       continue
     }
     // eslint-disable-next-line no-await-in-loop
-    const run = await runCandidate(ctx, ecosystem, next, configFor(next))
+    const run = await runCandidate(ctx, next, optionsFor(next))
     if (run) {
       runs.set(next.index, run)
       unsettled = true
@@ -646,11 +640,7 @@ function runOptions(
       // directory (Maven `../x` modules, relocated Gradle projects).
       excludeBase: ctx.realCwd,
       excludePaths: ctx.excludePaths,
-      hints: {
-        ...ctx.hints,
-        setupCommand: DSI_SETUP_COMMAND,
-        socketJson: socketJsonPath(root.dir),
-      },
+      hints: dsiHints(ctx.hints, root.dir),
     }),
     ignoreUnresolved: ctx.ignoreUnresolved ?? dirConfig.ignoreUnresolved,
     verbose: ctx.verbose || dirConfig.verbose,
@@ -659,11 +649,9 @@ function runOptions(
 
 async function runCandidate(
   ctx: WalkContext,
-  ecosystem: BuildTool,
   candidate: Candidate,
-  dirConfig: EcosystemBuildConfig,
+  options: SocketFactsRunOptions,
 ): Promise<Run | undefined> {
-  const options = runOptions(ctx, ecosystem, candidate, dirConfig)
   // A run a later build turns out to cover is dropped before its facts are
   // placed.
   const result = await runManifestFacts({ ...options, staged: true })
@@ -703,17 +691,7 @@ export async function buildUncoveredRoot({
   hints?: BuildOptionHints | undefined
   root: BuildRoot
 }): Promise<RunManifestFactsOutcome | 'covered'> {
-  if (
-    await isRootCovered(
-      covered,
-      ecosystem,
-      root,
-      buildToolScriptOptions(config, excludeBase, excludePaths, context),
-    )
-  ) {
-    return 'covered'
-  }
-  const result = await runManifestFacts({
+  const options: SocketFactsRunOptions = {
     ...socketFactsRunOptions(ecosystem, root, config, {
       context,
       excludeBase,
@@ -721,7 +699,11 @@ export async function buildUncoveredRoot({
       hints,
     }),
     cwd: cwd ?? root.dir,
-  })
+  }
+  if (await isRootCovered(covered, ecosystem, root, options)) {
+    return 'covered'
+  }
+  const result = await runManifestFacts(options)
   if (result) {
     addMembership(covered, await membershipOf(result.projects))
   }
@@ -733,7 +715,7 @@ export async function generateRecursiveManifests({
   context = {},
   cwd,
   excludePaths,
-  hints = { flags: new Set() },
+  hints,
   ignoreUnresolved,
   purlTypes,
   verbose,
@@ -744,7 +726,7 @@ export async function generateRecursiveManifests({
   excludePaths?: string[] | undefined
   // Hints send the options the command takes no flag for to each build root's
   // socket.json.
-  hints?: CommandHints | undefined
+  hints: CommandHints
   // When set, overrides every build root's own socket.json setting.
   ignoreUnresolved?: boolean | undefined
   purlTypes?: readonly PURL_Type[] | undefined
@@ -793,8 +775,9 @@ export async function generateRecursiveManifests({
   }
   const outcomes = context.workDir
     ? await walk(context.workDir)
-    : await withTmpDir('socket-facts-work-', dir =>
-        walk({ dir, entries: new Map(), purpose: 'upload' }),
+    : await withTmpDir(
+        'socket-facts-work-',
+        async dir => await walk(await createSocketFactsWorkDir(dir, 'upload')),
       )
 
   if (!outcomes.some(o => o.status === 'failed')) {

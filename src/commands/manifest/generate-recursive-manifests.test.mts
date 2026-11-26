@@ -19,6 +19,7 @@ vi.mock('./run-manifest-facts.mts', async importOriginal => ({
 
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import {
+  EXCLUDE_PATHS_HINTS,
   listBuildProjects,
   listDotnetSolutionMembers,
   runManifestFacts,
@@ -58,15 +59,6 @@ type TestFacts = {
   targetPath?: string | undefined
 }
 
-function reported({
-  factsPath,
-  projects,
-  sidecarEntry,
-  targetPath = factsPath,
-}: TestFacts) {
-  return { factsPath, projects, sidecarEntry, targetPath }
-}
-
 // Answers like Coana given a work dir: the facts go into a state dir of the
 // run's own, keyed by its build root as Coana's are.
 async function writeIntoWorkDir(
@@ -102,7 +94,9 @@ function mockFacts(
   vi.mocked(runManifestFacts).mockImplementation(
     async (options): Promise<RunManifestFactsOutcome> => {
       const facts = await impl(options)
-      return facts ? reported(facts) : facts
+      return (
+        facts && { ...facts, targetPath: facts.targetPath ?? facts.factsPath }
+      )
     },
   )
 }
@@ -811,7 +805,7 @@ describe('generateRecursiveManifests', () => {
 
     await generateRecursiveManifests({
       cwd: monorepo,
-      hints: { excludePathsFlag: '--exclude-paths', flags: new Set() },
+      hints: EXCLUDE_PATHS_HINTS,
       verbose: false,
     })
 
