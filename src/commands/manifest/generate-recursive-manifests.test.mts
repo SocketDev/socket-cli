@@ -24,6 +24,10 @@ import {
   runManifestFacts,
 } from './run-manifest-facts.mts'
 import { buildRootPath } from './scripts/build-tool.mts'
+import {
+  mavenProject,
+  socketFactsProject,
+} from '../../../test/socket-facts-projects.mts'
 import { testPath } from '../../../test/utils.mts'
 import { logger } from '../../utils/logger.mts'
 import {
@@ -33,6 +37,7 @@ import {
 
 import type {
   RunManifestFactsOutcome,
+  SocketFactsProject,
   SocketFactsWorkDir,
 } from './run-manifest-facts.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -45,29 +50,12 @@ function messageText(value: unknown): string {
   return String(value).replaceAll('\\', '/')
 }
 
-type TestProject = {
-  manifestFiles?: Array<{ file: string }> | undefined
-  subprojectDir: string
-  [field: string]: unknown
-}
-
 // `targetPath` is `factsPath` unless the run wrote into a work dir.
 type TestFacts = {
   factsPath: string
-  projects: TestProject[]
+  projects: SocketFactsProject[]
   sidecarEntry?: { factsFile: string; stateDir: string } | undefined
   targetPath?: string | undefined
-}
-
-// What Coana reports of `projects`, as the build tool at `buildRoot` lists
-// them.
-function listed(buildRoot: string, projects: readonly TestProject[]) {
-  return projects.map(project => ({
-    buildFiles: (project.manifestFiles ?? []).map(({ file }) =>
-      path.resolve(buildRoot, file),
-    ),
-    dir: path.resolve(buildRoot, project.subprojectDir),
-  }))
 }
 
 function reported({
@@ -76,12 +64,7 @@ function reported({
   sidecarEntry,
   targetPath = factsPath,
 }: TestFacts) {
-  return {
-    factsPath,
-    projects: listed(path.dirname(targetPath), projects),
-    sidecarEntry,
-    targetPath,
-  }
+  return { factsPath, projects, sidecarEntry, targetPath }
 }
 
 // Answers like Coana given a work dir: the facts go into a state dir of the
@@ -150,19 +133,15 @@ const pomNames = path.join(
 const reactor = path.join(monorepo, 'reactor')
 const dualMarkerDir = path.join(monorepo, 'dual-marker-dir')
 
-function relOf(dir: string): string {
-  return path.relative(monorepo, dir).replaceAll('\\', '/')
+function gradleFacts(cwd: string, dirs: string[]) {
+  return {
+    factsPath: path.join(cwd, 'gradle.socket.facts.json'),
+    projects: dirs.map(dir => socketFactsProject(cwd, dir)),
+  }
 }
 
-function mavenProject(subprojectDir: string) {
-  return {
-    type: 'maven' as const,
-    name: subprojectDir,
-    id: subprojectDir,
-    subprojectDir,
-    manifestFiles: [{ file: `${subprojectDir}/pom.xml` }],
-    children: [],
-  }
+function relOf(dir: string): string {
+  return path.relative(monorepo, dir).replaceAll('\\', '/')
 }
 
 describe('generateRecursiveManifests', () => {
@@ -181,20 +160,8 @@ describe('generateRecursiveManifests', () => {
         return {
           factsPath: path.join(cwd, '.socket.facts.json'),
           projects: [
-            {
-              type: 'maven',
-              name: 'moduleA',
-              subprojectDir: 'moduleA',
-              manifestFiles: [{ file: 'moduleA/pom.xml' }],
-              children: [],
-            },
-            {
-              type: 'maven',
-              name: 'moduleB',
-              subprojectDir: 'moduleB',
-              manifestFiles: [{ file: 'moduleB/pom.xml' }],
-              children: [],
-            },
+            mavenProject(cwd, 'moduleA'),
+            mavenProject(cwd, 'moduleB'),
           ],
         }
       }
@@ -263,16 +230,7 @@ describe('generateRecursiveManifests', () => {
             )),
             projects:
               cwd === reactorA
-                ? [
-                    {
-                      type: 'maven',
-                      name: 'shared-lib',
-                      id: 'shared-lib',
-                      subprojectDir: `../${sharedLibName}`,
-                      manifestFiles: [{ file: `../${sharedLibName}/pom.xml` }],
-                      children: [],
-                    },
-                  ]
+                ? [mavenProject(cwd, `../${sharedLibName}`)]
                 : [],
           }
         })
@@ -342,15 +300,7 @@ describe('generateRecursiveManifests', () => {
               path.join(main, 'gradle.socket.facts.json'),
               cwd,
             )),
-            projects: [
-              {
-                type: 'maven' as const,
-                name: 'root',
-                id: 'root',
-                subprojectDir: '.',
-                children: [],
-              },
-            ],
+            projects: [socketFactsProject(main, '.')],
           }
         })
 
@@ -407,19 +357,7 @@ describe('generateRecursiveManifests', () => {
             path.join(cwd, 'pom.xml.socket.facts.json'),
             'generated',
           )),
-          projects:
-            cwd === app
-              ? [
-                  {
-                    type: 'maven',
-                    name: 'lib',
-                    id: 'lib',
-                    subprojectDir: '../aaa-lib',
-                    manifestFiles: [{ file: '../aaa-lib/pom.xml' }],
-                    children: [],
-                  },
-                ]
-              : [],
+          projects: cwd === app ? [mavenProject(cwd, '../aaa-lib')] : [],
         }
       })
 
@@ -457,28 +395,14 @@ describe('generateRecursiveManifests', () => {
         if (cwd === outer && ecosystem === 'maven') {
           return {
             factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
-            projects: [
-              {
-                type: 'maven',
-                name: 'shared',
-                subprojectDir: 'shared',
-                manifestFiles: [{ file: 'shared/alt.xml' }],
-                children: [],
-              },
-            ],
+            projects: [mavenProject(cwd, 'shared', 'alt.xml')],
           }
         }
         if (cwd === outer && ecosystem === 'gradle') {
           return {
             factsPath: path.join(cwd, 'gradle.socket.facts.json'),
             projects: [
-              {
-                type: 'maven',
-                name: 'gradle-member',
-                subprojectDir: 'gradle-member',
-                manifestFiles: [{ file: 'gradle-member/build.gradle' }],
-                children: [],
-              },
+              socketFactsProject(cwd, 'gradle-member', ['build.gradle']),
             ],
           }
         }
@@ -518,18 +442,7 @@ describe('generateRecursiveManifests', () => {
         factsPath: path.join(cwd, 'sbt.socket.facts.json'),
         projects:
           cwd === outer
-            ? [
-                {
-                  type: 'maven',
-                  name: 'member',
-                  subprojectDir: 'member',
-                  manifestFiles: [
-                    { file: 'build.sbt' },
-                    { file: 'member/build.sbt' },
-                  ],
-                  children: [],
-                },
-              ]
+            ? [socketFactsProject(cwd, 'member', ['../build.sbt', 'build.sbt'])]
             : [],
       }))
 
@@ -560,15 +473,7 @@ describe('generateRecursiveManifests', () => {
         factsPath: path.join(cwd, 'gradle.socket.facts.json'),
         projects:
           cwd === outer
-            ? [
-                {
-                  type: 'maven',
-                  name: 'tools',
-                  subprojectDir: 'tools',
-                  manifestFiles: [{ file: 'tools/build.gradle' }],
-                  children: [],
-                },
-              ]
+            ? [socketFactsProject(cwd, 'tools', ['build.gradle'])]
             : [],
       }))
 
@@ -603,20 +508,8 @@ describe('generateRecursiveManifests', () => {
           return {
             factsPath: path.join(buildRoot, 'x.xml.socket.facts.json'),
             projects: [
-              {
-                type: 'maven',
-                name: 'member',
-                subprojectDir: 'member',
-                manifestFiles: [{ file: 'member/pom.xml' }],
-                dependencies: [],
-              },
-              {
-                type: 'maven',
-                name: 'escaped',
-                subprojectDir: '../escaped',
-                manifestFiles: [{ file: '../escaped/pom.xml' }],
-                dependencies: [],
-              },
+              mavenProject(buildRoot, 'member'),
+              mavenProject(buildRoot, '../escaped'),
             ],
           }
         }
@@ -732,16 +625,7 @@ describe('generateRecursiveManifests', () => {
         }
         return {
           factsPath: path.join(cwd, 'pom.xml.socket.facts.json'),
-          projects: [
-            {
-              type: 'maven',
-              name: 'core',
-              id: 'core',
-              subprojectDir: '../core',
-              manifestFiles: [{ file: '../core/pom.xml' }],
-              children: [],
-            },
-          ],
+          projects: [mavenProject(cwd, '../core')],
         }
       })
 
@@ -835,15 +719,7 @@ describe('generateRecursiveManifests', () => {
       vi.mocked(listDotnetSolutionMembers).mockClear()
       mockFacts(async ({ cwd, entryFile }) => ({
         factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
-        projects: [
-          {
-            type: 'maven',
-            name: 'app',
-            subprojectDir: '',
-            manifestFiles: [{ file: 'pom.xml' }],
-            children: [],
-          },
-        ],
+        projects: [mavenProject(cwd, '.')],
       }))
       const outcomes = await generateRecursiveManifests({
         cwd: dir,
@@ -1304,15 +1180,7 @@ describe('generateRecursiveManifests', () => {
       factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
       projects:
         cwd === pomNames && entryFile === 'pom.xml'
-          ? [
-              {
-                type: 'maven',
-                name: 'bare',
-                subprojectDir: 'bare',
-                manifestFiles: [{ file: 'bare/pom' }],
-                children: [],
-              },
-            ]
+          ? [mavenProject(cwd, 'bare', 'pom')]
           : [],
     }))
 
@@ -1380,16 +1248,6 @@ describe('generateRecursiveManifests', () => {
 
   describe('with a Gradle build nested in another that includes its directory', () => {
     let outer = ''
-    const gradleFacts = (cwd: string, dirs: string[]) => ({
-      factsPath: path.join(cwd, 'gradle.socket.facts.json'),
-      projects: dirs.map(subprojectDir => ({
-        type: 'maven' as const,
-        name: subprojectDir,
-        id: subprojectDir,
-        subprojectDir,
-        children: [],
-      })),
-    })
 
     beforeEach(async () => {
       outer = await fs.realpath(
@@ -1495,7 +1353,7 @@ describe('generateRecursiveManifests', () => {
           },
         })
         vi.mocked(listBuildProjects).mockResolvedValue(
-          listed(sub, gradleFacts(sub, [...subProjects]).projects),
+          gradleFacts(sub, [...subProjects]).projects,
         )
         mockFacts(async ({ cwd }) => gradleFacts(cwd, ['.']))
         const warnSpy = vi
@@ -1575,16 +1433,7 @@ describe('generateRecursiveManifests', () => {
       factsPath: path.join(cwd, '.socket.facts.json'),
       projects:
         cwd === reactor && ecosystem === 'maven'
-          ? [
-              {
-                type: 'maven',
-                name: 'moduleA',
-                id: 'moduleA',
-                subprojectDir: 'moduleA',
-                manifestFiles: [{ file: 'moduleA/pom.xml' }],
-                children: [],
-              },
-            ]
+          ? [mavenProject(cwd, 'moduleA')]
           : [],
     }))
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
@@ -1645,12 +1494,7 @@ describe('generateRecursiveManifests', () => {
           path.join(cwd, `${entryFile}.socket.facts.json`),
           'generated',
         )),
-        projects: [
-          {
-            ...mavenProject('.'),
-            manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
-          },
-        ],
+        projects: [mavenProject(cwd, '.', entryFile ?? 'pom.xml')],
       }))
     })
     afterEach(async () => {
@@ -1659,11 +1503,9 @@ describe('generateRecursiveManifests', () => {
 
     it('loads it without resolving, and skips what it loads with it, wherever that is', async () => {
       vi.mocked(listBuildProjects).mockResolvedValue(
-        listed(path.join(outer, 'legacy'), [
-          mavenProject('.'),
-          mavenProject('old'),
-          mavenProject('../aaa-module'),
-        ]),
+        ['.', 'old', '../aaa-module'].map(dir =>
+          mavenProject(path.join(outer, 'legacy'), dir),
+        ),
       )
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
@@ -1707,9 +1549,9 @@ describe('generateRecursiveManifests', () => {
     })
 
     it('loads it with the Coana, org and hints its build would run with', async () => {
-      vi.mocked(listBuildProjects).mockResolvedValue(
-        listed(path.join(outer, 'legacy'), [mavenProject('.')]),
-      )
+      vi.mocked(listBuildProjects).mockResolvedValue([
+        mavenProject(path.join(outer, 'legacy'), '.'),
+      ])
       const context = { coanaVersion: '1.2.3', orgSlug: 'acme' }
       vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
@@ -1741,20 +1583,15 @@ describe('generateRecursiveManifests', () => {
     it('reports a skipped build that another build includes as part of that build, warning that the skip does not apply', async () => {
       await fs.mkdir(path.join(outer, 'zzz-reactor'), { recursive: true })
       await fs.writeFile(pom('zzz-reactor'), '<project/>')
-      vi.mocked(listBuildProjects).mockResolvedValue(
-        listed(path.join(outer, 'legacy'), [mavenProject('.')]),
-      )
+      vi.mocked(listBuildProjects).mockResolvedValue([
+        mavenProject(path.join(outer, 'legacy'), '.'),
+      ])
       mockFacts(async ({ cwd, entryFile }) => ({
         factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
         projects:
           cwd === path.join(outer, 'zzz-reactor')
-            ? [mavenProject('.'), mavenProject('../legacy')]
-            : [
-                {
-                  ...mavenProject('.'),
-                  manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
-                },
-              ],
+            ? [mavenProject(cwd, '.'), mavenProject(cwd, '../legacy')]
+            : [mavenProject(cwd, '.', entryFile ?? 'pom.xml')],
       }))
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
@@ -1821,14 +1658,8 @@ describe('generateRecursiveManifests', () => {
       await fs.mkdtemp(path.join(tmpdir(), 'covered-solution-')),
     )
     const at = (rel: string) => path.join(outer, rel)
-    const projectRecord = (file: string) => ({
-      type: 'nuget' as const,
-      name: file,
-      id: file,
-      subprojectDir: path.dirname(file),
-      manifestFiles: [{ file }],
-      children: [],
-    })
+    const projectRecord = (buildRoot: string, file: string) =>
+      socketFactsProject(buildRoot, path.dirname(file), [path.basename(file)])
     const members: Record<string, string[]> = {
       'App.sln': [at('p/a/A.csproj')],
       'R.sln': [at('p/a/A.csproj'), at('p/c/C.csproj')],
@@ -1862,18 +1693,18 @@ describe('generateRecursiveManifests', () => {
       vi.mocked(listDotnetSolutionMembers).mockImplementation(
         async ({ entryFile }) => members[entryFile ?? ''],
       )
-      vi.mocked(listBuildProjects).mockResolvedValue(
-        listed(at('skip'), [projectRecord('../p/a/A.csproj')]),
-      )
+      vi.mocked(listBuildProjects).mockResolvedValue([
+        projectRecord(at('skip'), '../p/a/A.csproj'),
+      ])
       mockFacts(async ({ cwd, entryFile }) => ({
         factsPath: path.join(cwd, `${entryFile}.socket.facts.json`),
         projects:
           entryFile === 'R.sln'
             ? [
-                projectRecord('../p/a/A.csproj'),
-                projectRecord('../p/c/C.csproj'),
+                projectRecord(cwd, '../p/a/A.csproj'),
+                projectRecord(cwd, '../p/c/C.csproj'),
               ]
-            : [projectRecord(entryFile ?? '')],
+            : [projectRecord(cwd, entryFile ?? '')],
       }))
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 

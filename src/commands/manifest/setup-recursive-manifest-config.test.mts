@@ -34,11 +34,11 @@ import {
   scanBuildRoots,
   setupRecursiveManifestConfig,
 } from './setup-recursive-manifest-config.mts'
+import { mavenProject } from '../../../test/socket-facts-projects.mts'
 import { logger } from '../../utils/logger.mts'
 import { select } from '../../utils/prompts.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
-import type { SocketFactsProject } from './run-manifest-facts.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 function dirRoots(...dirs: string[]): BuildRoot[] {
@@ -47,15 +47,6 @@ function dirRoots(...dirs: string[]): BuildRoot[] {
 
 function mavenRoots(...dirs: string[]): BuildRoot[] {
   return dirs.map(dir => ({ dir, entryFile: 'pom.xml' }))
-}
-
-function mavenProject(
-  buildRoot: string,
-  subprojectDir: string,
-  pomFile = 'pom.xml',
-): SocketFactsProject {
-  const dir = path.resolve(buildRoot, subprojectDir)
-  return { buildFiles: [path.join(dir, pomFile)], dir }
 }
 
 describe('scanBuildRoots', () => {
