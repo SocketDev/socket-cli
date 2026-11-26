@@ -1338,32 +1338,35 @@ async function main(): Promise<void> {
         {
           capability: 'coana',
           executable: 'java',
-          resolution: "a build's javaHome setting, JAVA_HOME or PATH",
-          requirement: 'A JDK, for JVM projects.',
+          resolution:
+            'SOCKET_REACH_BUILD_JAVA_HOME, socket.json javaHome, sbt --java-home, JAVA_HOME or PATH',
+          requirement:
+            'A Java runtime for the build tool, to generate Socket facts for JVM projects.',
         },
         {
           capability: 'coana',
           executable: 'mvn',
           resolution: 'SOCKET_CLI_MAVEN_PATH',
-          requirement: 'Maven, for Maven projects.',
+          requirement: 'Maven, to generate Socket facts for Maven projects.',
         },
         {
           capability: 'coana',
           executable: 'gradle',
           resolution: 'SOCKET_CLI_GRADLE_PATH',
-          requirement: 'Gradle, for Gradle projects.',
+          requirement: 'Gradle, to generate Socket facts for Gradle projects.',
         },
         {
           capability: 'coana',
           executable: 'sbt',
           resolution: 'SOCKET_CLI_SBT_PATH',
-          requirement: 'sbt, for sbt projects.',
+          requirement: 'sbt, to generate Socket facts for sbt projects.',
         },
         {
           capability: 'coana',
           executable: 'dotnet',
-          resolution: 'socket manifest dotnet --bin or PATH',
-          requirement: 'A .NET SDK compatible with the selected project.',
+          resolution: 'socket manifest dotnet --bin, socket.json bin or PATH',
+          requirement:
+            'A .NET SDK compatible with the selected project, to generate Socket facts for .NET projects.',
         },
       ],
       capabilities,
