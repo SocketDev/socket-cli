@@ -331,13 +331,8 @@ async function walkTool(
       return ancestor && skipOf(ancestor) ? 'skip' : undefined
     })
 
-  const scriptOpts = (candidate: Candidate) =>
-    buildToolScriptOptions(
-      configFor(candidate),
-      ctx.realCwd,
-      ctx.excludePaths,
-      ctx.context,
-    )
+  const optionsFor = (candidate: Candidate) =>
+    runOptions(ctx, ecosystem, candidate, configFor(candidate))
 
   // A solution the SDK cannot read, built through its twin instead.
   const superseded = new Map<number, Promise<boolean>>()
@@ -348,25 +343,25 @@ async function walkTool(
             emptyMembership(),
             ecosystem,
             candidate.root,
-            scriptOpts(candidate),
+            optionsFor(candidate),
           )
         : false,
     )
 
   const isCovered = (covered: Membership, candidate: Candidate) =>
-    isBuildCovered(covered, ecosystem, candidate.root, scriptOpts(candidate))
+    isBuildCovered(covered, ecosystem, candidate.root, optionsFor(candidate))
   const isRunCovered = (covered: Membership, run: Run) =>
     isBuildCovered(
       covered,
       ecosystem,
       run.root,
-      scriptOpts(run),
+      optionsFor(run),
       run.membership,
     )
   // Whether a build loads `candidate`'s project, even one that is a build of
   // its own: what excuses its failure.
   const isLoadedBy = (covered: Membership, candidate: Candidate) =>
-    isRootCovered(covered, ecosystem, candidate.root, scriptOpts(candidate))
+    isRootCovered(covered, ecosystem, candidate.root, optionsFor(candidate))
   const isCheaplyCovered = (covered: Membership, candidate: Candidate) =>
     !candidate.marker && isBuildRootCovered(covered, ecosystem, candidate.root)
 
@@ -503,9 +498,7 @@ async function walkTool(
     }
     if (skipOf(next) === 'load') {
       // eslint-disable-next-line no-await-in-loop
-      const loaded = await loadBuild(
-        runOptions(ctx, ecosystem, next, configFor(next)),
-      )
+      const loaded = await loadBuild(optionsFor(next))
       const why = describeDisabledBy(ecosystem, resolvedFor(next).disabledBy!)
       if (loaded) {
         loads.set(next.index, { ...next, ...loaded })
