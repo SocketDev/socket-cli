@@ -152,7 +152,7 @@ describe('runManifestFacts', () => {
     )
   })
 
-  it('generates into the work dir with files for reachability, leaving the facts there', async () => {
+  it('stages into the work dir for reachability, leaving the facts there', async () => {
     const stateDir = path.join(cwd, 'state')
     const entry = {
       factsFile: path.join(cwd, 'pom.xml.socket.facts.json'),
@@ -174,6 +174,7 @@ describe('runManifestFacts', () => {
       ...baseArgs,
       context: { workDir },
       cwd,
+      staged: true,
     })
     expect(calls[0]!.args.slice(-4)).toEqual([
       '--purpose',
@@ -198,7 +199,12 @@ describe('runManifestFacts', () => {
       entries: new Map(),
       purpose: 'fix',
     }
-    await runManifestFacts({ ...baseArgs, context: { workDir }, cwd })
+    await runManifestFacts({
+      ...baseArgs,
+      context: { workDir },
+      cwd,
+      staged: true,
+    })
     expect(calls[0]!.args.slice(-4)).toEqual([
       '--purpose',
       'fix',
@@ -220,7 +226,12 @@ describe('runManifestFacts', () => {
       purpose: 'upload',
     }
     expect(
-      await runManifestFacts({ ...baseArgs, context: { workDir }, cwd }),
+      await runManifestFacts({
+        ...baseArgs,
+        context: { workDir },
+        cwd,
+        staged: true,
+      }),
     ).toMatchObject({ factsPath: '/w/y/f', targetPath: '/r/f' })
     expect(calls[0]!.args.slice(-4)).toEqual([
       '--purpose',
@@ -228,8 +239,32 @@ describe('runManifestFacts', () => {
       '--work-dir',
       '/w',
     ])
-    await runManifestFacts({ ...baseArgs, cwd })
+    await runManifestFacts({ ...baseArgs, cwd, staged: true })
     expect(calls[1]!.args.slice(-2)).toEqual(['--purpose', 'upload'])
+  })
+
+  it('places the facts at their target with their sidecar entry unless staged', async () => {
+    const stateDir = path.join(cwd, 'work', 'state')
+    const factsPath = path.join(stateDir, 'pom.xml.socket.facts.json')
+    const targetPath = path.join(cwd, 'pom.xml.socket.facts.json')
+    await fs.mkdir(stateDir, { recursive: true })
+    await fs.writeFile(factsPath, 'generated')
+    const sidecarEntry = { factsFile: targetPath, stateDir }
+    coanaAnswers({
+      factsPath,
+      projects: [],
+      sidecarEntry,
+      status: 'generated',
+      targetPath,
+    })
+    const workDir: SocketFactsWorkDir = {
+      dir: path.join(cwd, 'work'),
+      entries: new Map(),
+      purpose: 'reachability',
+    }
+    await runManifestFacts({ ...baseArgs, context: { workDir }, cwd })
+    expect(await fs.readFile(targetPath, 'utf8')).toBe('generated')
+    expect([...workDir.entries]).toEqual([[targetPath, sidecarEntry]])
   })
 
   it('fails when Coana keeps no sidecar entry in the work dir', async () => {

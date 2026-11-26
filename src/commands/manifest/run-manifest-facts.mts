@@ -344,11 +344,14 @@ export async function listBuildProjects({
 }
 
 // Failures set a nonzero exit code. Coana reports build failures.
-// With a work directory, facts stay there until keepFacts places them.
+// A staged run leaves its facts in the work directory for keepFacts to place.
 export async function runManifestFacts({
   context = {},
+  staged = false,
   ...options
-}: SocketFactsRunOptions): Promise<RunManifestFactsOutcome> {
+}: SocketFactsRunOptions & {
+  staged?: boolean | undefined
+}): Promise<RunManifestFactsOutcome> {
   const { cwd, ecosystem, entryFile } = options
   if (ecosystem === 'sbt' && !looksLikeSbtBuild(cwd)) {
     process.exitCode = 1
@@ -395,10 +398,14 @@ export async function runManifestFacts({
     )
     return null
   }
-  return {
+  const facts: RunManifestFactsResult = {
     factsPath: result.factsPath,
     projects: result.projects,
     sidecarEntry: result.sidecarEntry,
     targetPath: result.targetPath,
   }
+  if (!staged) {
+    await keepFacts(workDir, facts)
+  }
+  return facts
 }

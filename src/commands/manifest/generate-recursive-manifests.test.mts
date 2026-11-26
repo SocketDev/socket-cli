@@ -360,6 +360,9 @@ describe('generateRecursiveManifests', () => {
           verbose: false,
         })
 
+        expect(
+          vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.staged),
+        ).toEqual([true, true])
         const generated = outcomes.filter(o => o.status === 'generated')
         expect(generated).toHaveLength(1)
         const { factsPath } = generated[0]!

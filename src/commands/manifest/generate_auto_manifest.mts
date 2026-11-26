@@ -9,7 +9,6 @@ import {
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import {
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
-  keepFacts,
   runManifestFacts,
 } from './run-manifest-facts.mts'
 import {
@@ -116,9 +115,6 @@ export async function generateAutoManifest({
         hints,
       }),
     )
-    if (outcome) {
-      await keepFacts(context?.workDir, outcome)
-    }
     abortFactsRunIfFailed(tool, outcome)
   }
 

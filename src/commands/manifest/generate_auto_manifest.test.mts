@@ -1,7 +1,3 @@
-import { existsSync, promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the helpers BEFORE importing generateAutoManifest.
@@ -413,43 +409,6 @@ describe('generateAutoManifest — JVM facts', () => {
       expect(callFor('maven')?.entryFile).toBeUndefined()
     },
   )
-
-  it('places the facts of each build it generates, with its sidecar entry', async () => {
-    const cwd = await fs.realpath(
-      await fs.mkdtemp(path.join(tmpdir(), 'auto-manifest-keep-')),
-    )
-    try {
-      const stateDir = path.join(cwd, 'work', 'state')
-      const factsPath = path.join(stateDir, 'pom.xml.socket.facts.json')
-      const targetPath = path.join(cwd, 'pom.xml.socket.facts.json')
-      await fs.mkdir(stateDir, { recursive: true })
-      await fs.writeFile(factsPath, 'generated')
-      const sidecarEntry = { factsFile: targetPath, stateDir }
-      vi.mocked(runManifestFacts).mockResolvedValue({
-        factsPath,
-        projects: [],
-        sidecarEntry,
-        targetPath,
-      })
-      const workDir = {
-        dir: path.join(cwd, 'work'),
-        entries: new Map(),
-        purpose: 'reachability',
-      }
-      await generateAutoManifest({
-        context: { workDir },
-        cwd,
-        detected: { ...baseDetected, maven: true, count: 1 },
-        outputKind: 'text',
-        verbose: false,
-      })
-      expect(existsSync(targetPath)).toBe(true)
-      expect(await fs.readFile(targetPath, 'utf8')).toBe('generated')
-      expect([...workDir.entries]).toEqual([[targetPath, sidecarEntry]])
-    } finally {
-      await fs.rm(cwd, { recursive: true, force: true })
-    }
-  })
 })
 
 describe('generateAutoManifest — conda branch', () => {

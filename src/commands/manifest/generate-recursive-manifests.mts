@@ -671,7 +671,9 @@ async function runCandidate(
   dirConfig: EcosystemBuildConfig,
 ): Promise<Run | undefined> {
   const options = runOptions(ctx, ecosystem, candidate, dirConfig)
-  const result = await runManifestFacts(options)
+  // A run a later build turns out to cover is dropped before its facts are
+  // placed.
+  const result = await runManifestFacts({ ...options, staged: true })
   if (result === null) {
     return undefined
   }
@@ -685,7 +687,7 @@ async function runCandidate(
 }
 
 // Builds `root` unless earlier builds cover it, then adds what it loaded to
-// `covered` and copies its staged facts to their target path.
+// `covered`.
 export async function buildUncoveredRoot({
   config,
   context,
@@ -728,7 +730,6 @@ export async function buildUncoveredRoot({
     cwd: cwd ?? root.dir,
   })
   if (result) {
-    await keepFacts(context?.workDir, result)
     addMembership(covered, await membershipOf(result.projects))
   }
   return result
