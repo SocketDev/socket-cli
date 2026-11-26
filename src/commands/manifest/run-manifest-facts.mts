@@ -10,7 +10,7 @@ import { SOCKET_JSON } from '../../constants.mts'
 import { isSea } from '../../sea/runtime.mts'
 import { spawnCoana } from '../../utils/coana/release.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
-import { withTmpDir } from '../../utils/fs.mts'
+import { readJson, withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
 
@@ -142,7 +142,7 @@ async function readResult<T>(
     return { result: undefined }
   }
   try {
-    return { result: JSON.parse(await fs.readFile(resultFile, 'utf8')) as T }
+    return { result: (await readJson(resultFile)) as T }
   } catch (e) {
     return {
       error: `Coana's result is unreadable (${getErrorMessageOr(e, String(e))})`,
