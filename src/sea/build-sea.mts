@@ -1336,7 +1336,31 @@ async function main(): Promise<void> {
       },
       runtimeRequirements: [
         {
-          capability: 'manifest-dotnet-facts',
+          capability: 'coana',
+          executable: 'java',
+          resolution: "a build's javaHome setting, JAVA_HOME or PATH",
+          requirement: 'A JDK, for JVM projects.',
+        },
+        {
+          capability: 'coana',
+          executable: 'mvn',
+          resolution: 'SOCKET_CLI_MAVEN_PATH',
+          requirement: 'Maven, for Maven projects.',
+        },
+        {
+          capability: 'coana',
+          executable: 'gradle',
+          resolution: 'SOCKET_CLI_GRADLE_PATH',
+          requirement: 'Gradle, for Gradle projects.',
+        },
+        {
+          capability: 'coana',
+          executable: 'sbt',
+          resolution: 'SOCKET_CLI_SBT_PATH',
+          requirement: 'sbt, for sbt projects.',
+        },
+        {
+          capability: 'coana',
           executable: 'dotnet',
           resolution: 'socket manifest dotnet --bin or PATH',
           requirement: 'A .NET SDK compatible with the selected project.',
