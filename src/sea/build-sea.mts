@@ -1334,7 +1334,14 @@ async function main(): Promise<void> {
           'external',
         ),
       },
-      runtimeRequirements: [],
+      runtimeRequirements: [
+        {
+          capability: 'manifest-dotnet-facts',
+          executable: 'dotnet',
+          resolution: 'socket manifest dotnet --bin or PATH',
+          requirement: 'A .NET SDK compatible with the selected project.',
+        },
+      ],
       capabilities,
     }
     const manifestStage = path.join(stage, 'artifact.manifest.json')

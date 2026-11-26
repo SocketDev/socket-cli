@@ -47,7 +47,7 @@ The bundled `cdxgen` generates SBOMs from npm lockfile v3 and Yarn Classic proje
 
 Rollup creates a notice inventory from each bundled dependency graph. Some pinned packages omit their license text from npm; exact package-version entries in `.config/rollup.cdxgen-sea.config.mjs` and `src/sea/rollup-provenance.mjs` supply the missing text. A dependency bump cannot reuse a mismatched entry, so the inventory records a missing-text obligation. README files are not used as license text or shipped as notice documents.
 
-The Node CLI and SEA download Coana from the Socket API on a cache miss. The SEA bundles Node to run Coana. SEA builds need no Coana credentials. Python, JVM and .NET runtimes remain external.
+The Node CLI and SEA download Coana from the Socket API on a cache miss. The SEA bundles Node to run Coana. SEA builds need no Coana credentials. Python and JVM runtimes and the .NET SDK remain external.
 
 ## Manifest
 

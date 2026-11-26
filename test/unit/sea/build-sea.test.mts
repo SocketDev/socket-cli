@@ -189,7 +189,7 @@ describe('SEA capability policy', () => {
         hasSocketPatch: false,
         hasUv: false,
       }).available,
-    ).toEqual(['socket-core', 'coana'])
+    ).toEqual(['socket-core', 'manifest-dotnet-facts', 'coana'])
   })
 })
 
