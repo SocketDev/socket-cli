@@ -632,8 +632,8 @@ async function loadOrAsk(
   for (;;) {
     const config = buildConfig(walk, build)
     // eslint-disable-next-line no-await-in-loop
-    const loaded = await loadBuild({
-      ...socketFactsRunOptions(build.ecosystem, build.root, config, {
+    const loaded = await loadBuild(
+      socketFactsRunOptions(build.ecosystem, build.root, config, {
         excludeBase: walk.cwd,
         excludePaths: walk.excludePaths,
         // A failure's remedy is this wizard's answers, for the scan to read.
@@ -644,8 +644,7 @@ async function loadOrAsk(
           socketJson: socketJsonPath(build.root.dir),
         },
       }),
-      scanRoot: walk.cwd,
-    })
+    )
     if (loaded) {
       return { ok: true, data: { canceled: false, loaded } }
     }

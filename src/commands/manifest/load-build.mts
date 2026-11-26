@@ -12,18 +12,15 @@ export type LoadedBuild = {
 }
 
 // Lets the build tool load a build, resolving nothing, for what it includes.
-export async function loadBuild({
-  scanRoot,
-  ...options
-}: SocketFactsRunOptions & { scanRoot: string }): Promise<
-  LoadedBuild | undefined
-> {
+export async function loadBuild(
+  options: SocketFactsRunOptions,
+): Promise<LoadedBuild | undefined> {
   const projects = await listBuildProjects(options)
   if (!projects) {
     return undefined
   }
   return {
-    membership: await membershipOf(projects, scanRoot),
+    membership: await membershipOf(projects, options.excludeBase),
     modules: Math.max(0, projects.length - 1),
   }
 }

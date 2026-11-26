@@ -503,10 +503,9 @@ async function walkTool(
     }
     if (skipOf(next) === 'load') {
       // eslint-disable-next-line no-await-in-loop
-      const loaded = await loadBuild({
-        ...runOptions(ctx, ecosystem, next, configFor(next)),
-        scanRoot: ctx.realCwd,
-      })
+      const loaded = await loadBuild(
+        runOptions(ctx, ecosystem, next, configFor(next)),
+      )
       const why = describeDisabledBy(ecosystem, resolvedFor(next).disabledBy!)
       if (loaded) {
         loads.set(next.index, { ...next, ...loaded })
