@@ -75,7 +75,7 @@ Terminal images trim unused rows while preserving internal spacing. Each animati
 
 ### Build, test, and publish the RC
 
-Run `pnpm build:sea` on the target OS and CPU. The builder checks help and version output and runs `patch --version` where available. It generates .NET facts with package sources disabled and generates SBOMs for npm and Yarn Classic fixtures.
+Run `pnpm build:sea` on the target OS and CPU. The builder checks help and version output and runs `patch --version` where available. It generates SBOMs for npm and Yarn Classic fixtures.
 
 `socket sea smoke-test` verifies VFS integrity and checks that an empty Coana cache reports a miss. It checks the bundled Node and uv versions and removes the extracted executables. Run `pnpm test:sea` for the native suite.
 

@@ -3,11 +3,11 @@ import path from 'node:path'
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { excludePathsFlag } from './manifest-flags.mts'
+import { EXCLUDE_PATHS_HINTS } from './run-manifest-facts.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { debugDir } from '../../utils/debug.mts'
-import { withTmpDir } from '../../utils/fs.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { logger } from '../../utils/logger.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -124,16 +124,14 @@ async function run(
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
   assertValidExcludePaths(excludePaths)
 
-  await withTmpDir('socket-manifest-auto-', tmpDir =>
-    generateAutoManifest({
-      detected,
-      cwd,
-      excludePaths,
-      outputKind,
-      tmpDir,
-      verbose,
-    }),
-  )
+  await generateAutoManifest({
+    detected,
+    cwd,
+    excludePaths,
+    hints: EXCLUDE_PATHS_HINTS,
+    outputKind,
+    verbose,
+  })
 
   logger.success(
     `Finished. Should have attempted to generate manifest files for ${detected.count} targets.`,

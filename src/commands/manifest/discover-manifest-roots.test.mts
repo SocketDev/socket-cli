@@ -5,7 +5,6 @@ import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
-  buildRootPath,
   findBuildToolCandidates,
   hasRootMarker,
   isBuildRootCovered,
@@ -13,6 +12,11 @@ import {
   membershipOf,
   sortByDepthThenPath,
 } from './discover-manifest-roots.mts'
+import { buildRootPath } from './scripts/build-tool.mts'
+import {
+  mavenProject,
+  socketFactsProject,
+} from '../../../test/socket-facts-projects.mts'
 import { testPath } from '../../../test/utils.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
 
@@ -311,17 +315,6 @@ describe('isBuildRootCovered', () => {
   )
 })
 
-function mavenProject(subprojectDir: string, file: string) {
-  return {
-    type: 'maven' as const,
-    name: subprojectDir,
-    id: subprojectDir,
-    subprojectDir,
-    manifestFiles: [{ file }],
-    children: [],
-  }
-}
-
 describe('membershipOf', () => {
   let scanRoot = ''
 
@@ -341,14 +334,13 @@ describe('membershipOf', () => {
     await fs.rm(scanRoot, { recursive: true, force: true })
   })
 
-  it('takes project dirs and existing build files anywhere in the scan root, relative to the build root', async () => {
+  it('takes project dirs and existing build files in the scan root', async () => {
     const membership = await membershipOf(
-      path.join(scanRoot, 'build'),
       [
-        mavenProject('member', 'member/pom.xml'),
-        mavenProject('../sibling', '../sibling/pom.xml'),
-        mavenProject('absent', 'absent/build.gradle'),
-        mavenProject('../../outside', '../../outside/pom.xml'),
+        mavenProject(scanRoot, 'build/member'),
+        mavenProject(scanRoot, 'sibling'),
+        socketFactsProject(scanRoot, 'build/absent', ['build.gradle']),
+        mavenProject(scanRoot, '../outside'),
       ],
       scanRoot,
     )

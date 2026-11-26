@@ -47,6 +47,7 @@ import { hasDefaultApiToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJsonUp } from '../../utils/socket-json.mts'
 import { socketDashboardLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
+import { EXCLUDE_PATHS_HINTS } from '../manifest/run-manifest-facts.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
 import type { MeowFlags } from '../../flags.mts'
@@ -684,6 +685,7 @@ async function run(
     generateScanFiles: uvMemberDirs
       ? () => generateUvMemberSboms(uvMemberDirs)
       : undefined,
+    hints: EXCLUDE_PATHS_HINTS,
     interactive: Boolean(interactive),
     orgSlug,
     outputKind,

@@ -16,14 +16,13 @@ import { logger } from '../../utils/logger.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
-import { hasResolvedPathsSidecarEntries } from '../manifest/scripts/sidecar.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '../../utils/spinner.mts'
-import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
+import type { SocketFactsSidecarEntry } from '../manifest/run-manifest-facts.mts'
 import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {
@@ -63,10 +62,9 @@ export type ReachabilityAnalysisOptions = {
   outputPath?: string | undefined
   packagePaths: string[]
   reachabilityOptions: ReachabilityOptions
-  // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
-  // reuses these paths instead of re-resolving the build.
-  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
   repoName?: string | undefined
+  // What facts generation kept of each build root, for Coana to read back.
+  socketFactsSidecar?: SocketFactsSidecarEntry[] | undefined
   spinner?: Spinner | undefined
   target: string
 }
@@ -88,7 +86,7 @@ export async function performReachabilityAnalysis(
     packagePaths,
     reachabilityOptions,
     repoName,
-    resolvedPathsSidecar,
+    socketFactsSidecar,
     spinner,
     target,
   } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
@@ -189,20 +187,16 @@ export async function performReachabilityAnalysis(
   spinner?.start()
   spinner?.infoAndStop('Running reachability analysis with Coana...')
 
-  // Temp file for --compute-artifacts-sidecar, removed in the finally below.
+  // Temp file for --socket-facts-sidecar, removed in the finally below.
   // Written even when empty with factsOnlyTypes: `coana run` rejects the
   // facts-only flag without one.
   let sidecarPath: string | undefined
-  if (
-    factsOnlyTypes ||
-    (resolvedPathsSidecar &&
-      hasResolvedPathsSidecarEntries(resolvedPathsSidecar))
-  ) {
+  if (factsOnlyTypes || socketFactsSidecar?.length) {
     sidecarPath = path.join(
       tmpdir(),
-      `socket-compute-artifacts-sidecar-${randomUUID()}.json`,
+      `socket-facts-sidecar-${randomUUID()}.json`,
     )
-    await fs.writeFile(sidecarPath, JSON.stringify(resolvedPathsSidecar ?? {}))
+    await fs.writeFile(sidecarPath, JSON.stringify(socketFactsSidecar ?? []))
   }
 
   // Build Coana arguments.
@@ -268,7 +262,7 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
       ? ['--use-only-pregenerated-sboms']
       : []),
-    ...(sidecarPath ? ['--compute-artifacts-sidecar', sidecarPath] : []),
+    ...(sidecarPath ? ['--socket-facts-sidecar', sidecarPath] : []),
   ]
 
   // In machine-readable modes (--json/--markdown) the final payload is written

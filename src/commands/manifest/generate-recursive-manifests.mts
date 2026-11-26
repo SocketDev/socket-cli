@@ -1,5 +1,3 @@
-import { existsSync, promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import {
@@ -11,7 +9,6 @@ import {
 } from './build-root-config.mts'
 import {
   addMembership,
-  buildRootPath,
   emptyMembership,
   findBuildToolCandidates,
   hasRootMarker,
@@ -20,24 +17,24 @@ import {
   isPathInside,
   isRootCovered,
   membershipOf,
-  realpathOrResolved,
   unionMemberships,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import { loadBuild, withModules } from './load-build.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
-import { runManifestFacts } from './run-manifest-facts.mts'
-import {
-  BUILD_FILES,
-  resolveBuildToolBin,
-  socketFactsFileName,
-} from './scripts/build-tool.mts'
 import {
   DSI_SETUP_COMMAND,
-  REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
-} from './scripts/resolution-report-render.mts'
+  createSocketFactsWorkDir,
+  keepFacts,
+  runManifestFacts,
+} from './run-manifest-facts.mts'
+import {
+  BUILD_FILES,
+  buildRootPath,
+  resolveBuildToolBin,
+} from './scripts/build-tool.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
-import { withTmpDir } from '../../utils/fs.mts'
+import { realpathOrResolved, withTmpDir } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -46,15 +43,15 @@ import type { ResolvedBuildRootSettings } from './build-root-config.mts'
 import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { LoadedBuild } from './load-build.mts'
 import type {
+  BuildOptionHints,
+  CommandHints,
   RunManifestFactsOutcome,
   RunManifestFactsResult,
+  SocketFactsContext,
+  SocketFactsRunOptions,
+  SocketFactsWorkDir,
 } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
-import type {
-  BuildOption,
-  BuildOptionHints,
-} from './scripts/resolution-report-render.mts'
-import type { SidecarAccumulator } from './scripts/sidecar.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
@@ -109,43 +106,6 @@ function getSkipReason(
   return undefined
 }
 
-// Maven 3's options starting with `f`; its GnuParser takes a long name after
-// one dash too, and splits `-fX` and `-f=X` into `-f X`.
-const MAVEN_FILE_OPTS = new Set(['f', 'file'])
-const MAVEN_OTHER_F_OPTS = new Set([
-  'fae',
-  'fail-at-end',
-  'fail-fast',
-  'fail-never',
-  'ff',
-  'fn',
-])
-
-// Each POM is built by its own `--file`, so a user one is dropped.
-function withoutMavenFileOpts(dir: string, opts: string[]): string[] {
-  const kept: string[] = []
-  for (let i = 0, { length } = opts; i < length; i += 1) {
-    const opt = opts[i]!
-    const name = opt.replace(/^--?/, '')
-    if (opt === name || MAVEN_OTHER_F_OPTS.has(name)) {
-      kept.push(opt)
-    } else if (MAVEN_FILE_OPTS.has(name)) {
-      i += 1
-    } else if (
-      !MAVEN_FILE_OPTS.has(name.split('=')[0]!) &&
-      !(opt.startsWith('-f') && !opt.startsWith('--'))
-    ) {
-      kept.push(opt)
-    }
-  }
-  if (kept.length !== opts.length) {
-    logger.warn(
-      `Ignoring --file in mavenOpts for ${dir}: each POM there is built by its own file.`,
-    )
-  }
-  return kept
-}
-
 type Candidate = {
   index: number
   // A build of its own (see hasRootMarker): covered only by the builds that
@@ -154,20 +114,8 @@ type Candidate = {
   root: BuildRoot
 }
 
-type SidecarEntry = NonNullable<ReturnType<SidecarAccumulator['get']>>
-
-// A copy of a facts file, if there was one, and its sidecar entry.
-type FactsState = {
-  facts: string | undefined
-  sidecar: SidecarEntry | undefined
-}
-
 type Run = Candidate & {
-  // The facts file's real path.
-  factsKey: string | undefined
   membership: Membership
-  // What the run wrote, written back once the walk keeps it.
-  output: FactsState | undefined
   // Undefined when the build had nothing to resolve.
   result: RunManifestFactsResult | undefined
 }
@@ -176,23 +124,18 @@ type Run = Candidate & {
 type Load = Candidate & LoadedBuild
 
 type WalkContext = {
-  backupDir: () => Promise<string>
+  // Every run writes into the work dir, so a dropped run leaves the facts
+  // file at its target as it was.
+  context: SocketFactsContext & { workDir: SocketFactsWorkDir }
   excludePaths: string[] | undefined
-  // What each facts file held before the walk, by real path; undefined when a
-  // run wrote it away from its own directory (Gradle's `-p`) before it was
-  // saved.
-  originals: Map<string, FactsState | undefined>
+  hints: CommandHints
   ignoreUnresolved: boolean | undefined
-  optionFlags: ReadonlySet<BuildOption>
   realCwd: string
   resolveSettings: (
     tool: BuildTool,
     root: BuildRoot,
   ) => ResolvedBuildRootSettings
-  sbtTmpDir: string | undefined
-  sidecarAcc: SidecarAccumulator | undefined
   verbose: boolean
-  withFiles: boolean | undefined
 }
 
 type Loader = { path: string; skipped: boolean }
@@ -208,17 +151,47 @@ function statusOf(loader: Loader | undefined): RecursiveManifestOutcomeStatus {
   return loader?.skipped ? 'skippedDisabled' : 'skippedCovered'
 }
 
-// The options the build-tool scripts take besides the build itself.
-export function buildToolScriptOptions(
-  config: Pick<EcosystemBuildConfig, 'bin' | 'buildOpts'>,
-  excludeBase: string | undefined,
-  excludePaths: string[] | undefined,
-) {
+// A failure's remedy is the build root's socket.json, which the dynamic SBOM
+// inference wizard writes.
+export function dsiHints(hints: CommandHints, dir: string): BuildOptionHints {
   return {
-    bin: config.bin,
+    ...hints,
+    setupCommand: DSI_SETUP_COMMAND,
+    socketJson: socketJsonPath(dir),
+  }
+}
+
+export function socketFactsRunOptions(
+  ecosystem: BuildTool,
+  root: BuildRoot,
+  config: EcosystemBuildConfig,
+  {
+    context,
     excludeBase,
     excludePaths,
-    toolOpts: config.buildOpts,
+    hints,
+  }: {
+    context?: SocketFactsContext | undefined
+    excludeBase: string | undefined
+    excludePaths: string[] | undefined
+    hints?: BuildOptionHints | undefined
+  },
+): SocketFactsRunOptions {
+  return {
+    bin: config.bin,
+    buildOpts: config.buildOpts,
+    context,
+    cwd: root.dir,
+    ecosystem,
+    entryFile: root.entryFile,
+    excludeBase,
+    excludeConfigs: config.excludeConfigs,
+    excludePaths,
+    hints,
+    ignoreUnresolved: config.ignoreUnresolved,
+    includeConfigs: config.includeConfigs,
+    javaHome: config.javaHome,
+    verbose: config.verbose,
   }
 }
 
@@ -316,8 +289,11 @@ async function walkTool(
       return ancestor && skipOf(ancestor) ? 'skip' : undefined
     })
 
-  const scriptOpts = (candidate: Candidate) =>
-    buildToolScriptOptions(configFor(candidate), ctx.realCwd, ctx.excludePaths)
+  const options = new Map<number, SocketFactsRunOptions>()
+  const optionsFor = (candidate: Candidate): SocketFactsRunOptions =>
+    getOrInsert(options, candidate.index, () =>
+      runOptions(ctx, ecosystem, candidate, configFor(candidate)),
+    )
 
   // A solution the SDK cannot read, built through its twin instead.
   const superseded = new Map<number, Promise<boolean>>()
@@ -328,25 +304,25 @@ async function walkTool(
             emptyMembership(),
             ecosystem,
             candidate.root,
-            scriptOpts(candidate),
+            optionsFor(candidate),
           )
         : false,
     )
 
   const isCovered = (covered: Membership, candidate: Candidate) =>
-    isBuildCovered(covered, ecosystem, candidate.root, scriptOpts(candidate))
+    isBuildCovered(covered, ecosystem, candidate.root, optionsFor(candidate))
   const isRunCovered = (covered: Membership, run: Run) =>
     isBuildCovered(
       covered,
       ecosystem,
       run.root,
-      scriptOpts(run),
+      optionsFor(run),
       run.membership,
     )
   // Whether a build loads `candidate`'s project, even one that is a build of
   // its own: what excuses its failure.
   const isLoadedBy = (covered: Membership, candidate: Candidate) =>
-    isRootCovered(covered, ecosystem, candidate.root, scriptOpts(candidate))
+    isRootCovered(covered, ecosystem, candidate.root, optionsFor(candidate))
   const isCheaplyCovered = (covered: Membership, candidate: Candidate) =>
     !candidate.marker && isBuildRootCovered(covered, ecosystem, candidate.root)
 
@@ -483,14 +459,7 @@ async function walkTool(
     }
     if (skipOf(next) === 'load') {
       // eslint-disable-next-line no-await-in-loop
-      const loaded = await loadBuild({
-        config: configFor(next),
-        ecosystem,
-        excludePaths: ctx.excludePaths,
-        root: next.root,
-        scanRoot: ctx.realCwd,
-        verbose: ctx.verbose,
-      })
+      const loaded = await loadBuild(optionsFor(next))
       const why = describeDisabledBy(ecosystem, resolvedFor(next).disabledBy!)
       if (loaded) {
         loads.set(next.index, { ...next, ...loaded })
@@ -504,7 +473,7 @@ async function walkTool(
       continue
     }
     // eslint-disable-next-line no-await-in-loop
-    const run = await runCandidate(ctx, ecosystem, next, configFor(next))
+    const run = await runCandidate(ctx, next, optionsFor(next))
     if (run) {
       runs.set(next.index, run)
       unsettled = true
@@ -542,7 +511,7 @@ async function walkTool(
   }
 
   const keptSet = new Set(kept)
-  const keptKeys = new Set(kept.map(run => run.factsKey))
+  const keptTargets = new Set(kept.map(run => run.result?.targetPath))
   const outcomes: RecursiveManifestOutcome[] = []
   for (const candidate of candidates) {
     const { index, root } = candidate
@@ -550,12 +519,12 @@ async function walkTool(
     if (run && keptSet.has(run)) {
       if (run.result) {
         // eslint-disable-next-line no-await-in-loop
-        await putFacts(ctx, run.result.factsPath, run.factsKey!, run.output)
+        await keepFacts(ctx.context.workDir, run.result)
       }
       outcomes.push({
         ...root,
         ecosystem,
-        ...(run.result ? { factsPath: run.result.factsPath } : {}),
+        ...(run.result ? { factsPath: run.result.targetPath } : {}),
         status: run.result ? 'generated' : 'empty',
       })
       continue
@@ -569,8 +538,8 @@ async function walkTool(
         logger.info(
           `Dropping the Socket facts of ${buildRootPath(root)}: ${describeLoader(loader)}.`,
         )
-        if (!keptKeys.has(run.factsKey)) {
-          discardedFactsPath = run.factsKey
+        if (!keptTargets.has(run.result.targetPath)) {
+          discardedFactsPath = run.result.targetPath
         }
       }
       status = statusOf(loader)
@@ -657,131 +626,52 @@ async function warnUnappliedEntry(
   )
 }
 
-async function runCandidate(
+// Shared by listing and generation, so both run the same Coana, org and hints.
+function runOptions(
   ctx: WalkContext,
   ecosystem: BuildTool,
-  candidate: Candidate,
+  { root }: Candidate,
   dirConfig: EcosystemBuildConfig,
-): Promise<Run | undefined> {
-  const { root } = candidate
-  const expectedFactsPath = path.join(
-    root.dir,
-    socketFactsFileName(ecosystem, root.entryFile) ?? '',
-  )
-  const expectedKey = await realpathOrResolved(expectedFactsPath)
-  if (!ctx.originals.has(expectedKey)) {
-    ctx.originals.set(
-      expectedKey,
-      await saveFacts(
-        ctx,
-        expectedFactsPath,
-        expectedKey,
-        `${ecosystem}-${candidate.index}`,
-      ),
-    )
-  }
-  const result = await runManifestFacts({
-    bin: dirConfig.bin,
-    buildOpts: dirConfig.buildOpts,
-    cwd: root.dir,
-    ecosystem,
-    entryFile: root.entryFile,
-    // Relative to the scan root: a build can reach modules outside its own
-    // directory (Maven `../x` modules, relocated Gradle projects).
-    excludeBase: ctx.realCwd,
-    excludeConfigs: dirConfig.excludeConfigs,
-    excludePaths: ctx.excludePaths,
-    hints: {
-      continueOnInstallErrorsFlag: ctx.withFiles
-        ? REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG
-        : undefined,
-      flags: ctx.optionFlags,
-      setupCommand: DSI_SETUP_COMMAND,
-      socketJson: socketJsonPath(root.dir),
-    },
+): SocketFactsRunOptions {
+  return {
+    ...socketFactsRunOptions(ecosystem, root, dirConfig, {
+      context: ctx.context,
+      // Relative to the scan root: a build can reach modules outside its own
+      // directory (Maven `../x` modules, relocated Gradle projects).
+      excludeBase: ctx.realCwd,
+      excludePaths: ctx.excludePaths,
+      hints: dsiHints(ctx.hints, root.dir),
+    }),
     ignoreUnresolved: ctx.ignoreUnresolved ?? dirConfig.ignoreUnresolved,
-    includeConfigs: dirConfig.includeConfigs,
-    javaHome: dirConfig.javaHome,
-    sidecarAcc: ctx.sidecarAcc,
-    tmpDir: ecosystem === 'sbt' ? ctx.sbtTmpDir : undefined,
     verbose: ctx.verbose || dirConfig.verbose,
-    withFiles: ctx.withFiles,
-  })
+  }
+}
+
+async function runCandidate(
+  ctx: WalkContext,
+  candidate: Candidate,
+  options: SocketFactsRunOptions,
+): Promise<Run | undefined> {
+  // A run a later build turns out to cover is dropped before its facts are
+  // placed.
+  const result = await runManifestFacts({ ...options, staged: true })
   if (result === null) {
     return undefined
   }
-  let factsKey: string | undefined
-  let output: FactsState | undefined
-  if (result) {
-    factsKey = await realpathOrResolved(result.factsPath)
-    output = await saveFacts(
-      ctx,
-      result.factsPath,
-      factsKey,
-      `${ecosystem}-${candidate.index}.out`,
-    )
-    if (!ctx.originals.has(factsKey)) {
-      ctx.originals.set(factsKey, undefined)
-    }
-    await putFacts(ctx, result.factsPath, factsKey, ctx.originals.get(factsKey))
-  }
   return {
     ...candidate,
-    factsKey,
-    // Gradle's `-p` can root the build away from `root.dir`.
     membership: result
-      ? await membershipOf(
-          path.dirname(result.factsPath),
-          result.projects,
-          ctx.realCwd,
-        )
+      ? await membershipOf(result.projects, ctx.realCwd)
       : emptyMembership(),
-    output,
-    result: result ?? undefined,
+    result,
   }
-}
-
-// Puts `state` in place of a facts file and its sidecar entry; an unknown state
-// leaves the file and drops the entry.
-async function putFacts(
-  ctx: WalkContext,
-  file: string,
-  key: string,
-  state: FactsState | undefined,
-): Promise<void> {
-  if (state?.sidecar) {
-    ctx.sidecarAcc?.set(key, state.sidecar)
-  } else {
-    ctx.sidecarAcc?.delete(key)
-  }
-  if (!state) {
-    return
-  }
-  if (state.facts) {
-    await fs.copyFile(state.facts, file)
-  } else {
-    await fs.rm(file, { force: true })
-  }
-}
-
-async function saveFacts(
-  ctx: WalkContext,
-  file: string,
-  key: string,
-  name: string,
-): Promise<FactsState> {
-  let facts: string | undefined
-  if (existsSync(file)) {
-    facts = path.join(await ctx.backupDir(), name)
-    await fs.copyFile(file, facts)
-  }
-  return { facts, sidecar: ctx.sidecarAcc?.get(key) }
 }
 
 // Builds `root` unless earlier builds cover it, then adds what it loaded to
 // `covered`.
 export async function buildUncoveredRoot({
   config,
+  context,
   covered,
   cwd,
   ecosystem,
@@ -789,11 +679,9 @@ export async function buildUncoveredRoot({
   excludePaths,
   hints,
   root,
-  sidecarAcc,
-  tmpDir,
-  withFiles,
 }: {
   config: EcosystemBuildConfig
+  context?: SocketFactsContext | undefined
   covered: Membership
   // Where the build runs, as the user named it; `root.dir` by default.
   cwd?: string | undefined
@@ -802,83 +690,47 @@ export async function buildUncoveredRoot({
   excludePaths?: string[] | undefined
   hints?: BuildOptionHints | undefined
   root: BuildRoot
-  sidecarAcc?: SidecarAccumulator | undefined
-  tmpDir?: string | undefined
-  withFiles?: boolean | undefined
 }): Promise<RunManifestFactsOutcome | 'covered'> {
-  const { bin, buildOpts } = config
-  if (
-    await isRootCovered(
-      covered,
-      ecosystem,
-      root,
-      buildToolScriptOptions(config, excludeBase, excludePaths),
-    )
-  ) {
+  const options: SocketFactsRunOptions = {
+    ...socketFactsRunOptions(ecosystem, root, config, {
+      context,
+      excludeBase,
+      excludePaths,
+      hints,
+    }),
+    cwd: cwd ?? root.dir,
+  }
+  if (await isRootCovered(covered, ecosystem, root, options)) {
     return 'covered'
   }
-  const result = await runManifestFacts({
-    bin,
-    buildOpts,
-    cwd: cwd ?? root.dir,
-    ecosystem,
-    entryFile: root.entryFile,
-    excludeBase,
-    excludeConfigs: config.excludeConfigs,
-    excludePaths,
-    hints,
-    ignoreUnresolved: config.ignoreUnresolved,
-    includeConfigs: config.includeConfigs,
-    javaHome: config.javaHome,
-    sidecarAcc,
-    tmpDir,
-    verbose: config.verbose,
-    withFiles,
-  })
+  const result = await runManifestFacts(options)
   if (result) {
-    addMembership(
-      covered,
-      await membershipOf(path.dirname(result.factsPath), result.projects),
-    )
+    addMembership(covered, await membershipOf(result.projects))
   }
   return result
 }
 
 // A failure fails the walk only when no kept or skipped build loads it.
 export async function generateRecursiveManifests({
+  context = {},
   cwd,
   excludePaths,
+  hints,
   ignoreUnresolved,
-  optionFlags = new Set(),
   purlTypes,
-  sbtTmpDir,
-  sidecarAcc,
   verbose,
-  withFiles,
 }: {
+  // Without a work dir, the walk writes into one of its own.
+  context?: SocketFactsContext | undefined
   cwd: string
   excludePaths?: string[] | undefined
+  // Hints send the options the command takes no flag for to each build root's
+  // socket.json.
+  hints: CommandHints
   // When set, overrides every build root's own socket.json setting.
   ignoreUnresolved?: boolean | undefined
-  // Options the invoking command takes as flags; hints send the rest to each
-  // build root's socket.json.
-  optionFlags?: ReadonlySet<BuildOption> | undefined
   purlTypes?: readonly PURL_Type[] | undefined
-  // Reachability path only: caller-supplied directory to use as sbt's shared
-  // global base across every sbt root in this run. sbt provisions the Scala
-  // toolchain under `<base>/boot`, which withFiles' artifactPaths point into,
-  // so when the caller intends to consume those paths after this call
-  // returns (e.g. reachability analysis), it must supply a directory that
-  // outlives this call and delete it once it's done - mirrors
-  // ManifestScriptOptions.tmpDir one level up. Unset ⇒ an ephemeral shared
-  // dir is allocated and cleaned up before this call returns, matching
-  // runManifestFacts' own withFiles-less default.
-  sbtTmpDir?: string | undefined
-  // Reachability path only: run build tools with files and fold resolved
-  // artifact paths into sidecarAcc, keyed by each root's own factsPath.
-  sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
-  withFiles?: boolean | undefined
 }): Promise<RecursiveManifestOutcome[]> {
   const rootSockJson = readOrDefaultSocketJson(cwd)
   // Candidate dirs come back realpath-resolved (findBuildToolCandidates); cwd
@@ -904,25 +756,15 @@ export async function generateRecursiveManifests({
   // A failure another build excuses leaves the exit code it set.
   const exitCodeBefore = process.exitCode
 
-  let backupDir: string | undefined
-  const runAll = async (resolvedSbtTmpDir: string | undefined) => {
+  const walk = async (workDir: SocketFactsWorkDir) => {
     const ctx: WalkContext = {
-      backupDir: async () => {
-        backupDir ??= await fs.mkdtemp(
-          path.join(tmpdir(), 'socket-facts-backup-'),
-        )
-        return backupDir
-      },
+      context: { ...context, workDir },
       excludePaths,
+      hints,
       ignoreUnresolved,
-      optionFlags,
-      originals: new Map(),
       realCwd,
       resolveSettings,
-      sbtTmpDir: resolvedSbtTmpDir,
-      sidecarAcc,
       verbose,
-      withFiles,
     }
     const outcomes: RecursiveManifestOutcome[] = []
     for (const { 0: ecosystem, 1: roots } of candidatesByTool) {
@@ -931,26 +773,12 @@ export async function generateRecursiveManifests({
     }
     return outcomes
   }
-
-  // A shared global base across every sbt root in this run lets sbt's own
-  // Scala-toolchain cache under <base>/boot survive between invocations
-  // instead of being reprovisioned per root (the plugin file is rewritten and
-  // records.tsv is removed before every invocation, so reuse is safe). A
-  // caller-supplied sbtTmpDir is reused as-is (the caller owns its lifetime);
-  // otherwise one is allocated and cleaned up here, but only when there's an
-  // sbt root to benefit from sharing it at all.
-  let outcomes: RecursiveManifestOutcome[]
-  try {
-    outcomes = sbtTmpDir
-      ? await runAll(sbtTmpDir)
-      : candidatesByTool.get('sbt')?.length
-        ? await withTmpDir('socket-sbt-facts-shared-', runAll)
-        : await runAll(undefined)
-  } finally {
-    if (backupDir) {
-      await fs.rm(backupDir, { recursive: true, force: true })
-    }
-  }
+  const outcomes = context.workDir
+    ? await walk(context.workDir)
+    : await withTmpDir(
+        'socket-facts-work-',
+        async dir => await walk(await createSocketFactsWorkDir(dir, 'upload')),
+      )
 
   if (!outcomes.some(o => o.status === 'failed')) {
     process.exitCode = exitCodeBefore
@@ -1016,10 +844,7 @@ export function resolveEcosystemConfig(
   const bin = config?.bin ?? undefined
   return {
     bin: bin ?? resolveBuildToolBin('maven', dir),
-    buildOpts: withoutMavenFileOpts(
-      dir,
-      parseBuildToolOpts(config?.mavenOpts ?? undefined),
-    ),
+    buildOpts: parseBuildToolOpts(config?.mavenOpts ?? undefined),
     excludeConfigs: config?.excludeConfigs ?? '',
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',

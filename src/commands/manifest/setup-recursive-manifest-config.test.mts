@@ -12,8 +12,9 @@ vi.mock('./discover-manifest-roots.mts', async importOriginal => {
     findBuildToolCandidates: vi.fn(actual.findBuildToolCandidates),
   }
 })
-vi.mock('./enumerate-workspaces.mts', () => ({
-  enumerateWorkspaces: vi.fn(),
+vi.mock('./run-manifest-facts.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./run-manifest-facts.mts')>()),
+  listBuildProjects: vi.fn(),
 }))
 vi.mock('../../utils/prompts.mts', () => ({
   select: vi.fn(),
@@ -26,18 +27,18 @@ vi.mock('./setup-manifest-config.mts', () => ({
 }))
 
 import { findBuildToolCandidates } from './discover-manifest-roots.mts'
-import { enumerateWorkspaces } from './enumerate-workspaces.mts'
+import { listBuildProjects } from './run-manifest-facts.mts'
 import { setupMaven } from './setup-manifest-config.mts'
 import {
   discoverBuildRoots,
   scanBuildRoots,
   setupRecursiveManifestConfig,
 } from './setup-recursive-manifest-config.mts'
+import { mavenProject } from '../../../test/socket-facts-projects.mts'
 import { logger } from '../../utils/logger.mts'
 import { select } from '../../utils/prompts.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
-import type { SocketFactsSbomProject } from './scripts/facts.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 function dirRoots(...dirs: string[]): BuildRoot[] {
@@ -46,17 +47,6 @@ function dirRoots(...dirs: string[]): BuildRoot[] {
 
 function mavenRoots(...dirs: string[]): BuildRoot[] {
   return dirs.map(dir => ({ dir, entryFile: 'pom.xml' }))
-}
-
-function project(subprojectDir: string): SocketFactsSbomProject {
-  return {
-    type: 'maven',
-    name: subprojectDir,
-    id: subprojectDir,
-    subprojectDir,
-    manifestFiles: [{ file: `${subprojectDir}/pom.xml` }],
-    children: [],
-  }
 }
 
 describe('scanBuildRoots', () => {
@@ -187,7 +177,7 @@ describe('setupRecursiveManifestConfig', () => {
   // listed as undefined can't be loaded.
   const loads = (modules: Record<string, string[] | undefined>) =>
     vi
-      .mocked(enumerateWorkspaces)
+      .mocked(listBuildProjects)
       .mockImplementation(async ({ cwd, entryFile }) => {
         const rel = path
           .relative(repo, path.join(cwd, entryFile ?? ''))
@@ -196,16 +186,10 @@ describe('setupRecursiveManifestConfig', () => {
         if (rel in modules && !modules[rel]) {
           return undefined
         }
-        return {
-          buildRoot: cwd,
-          projects: [
-            {
-              ...project('.'),
-              manifestFiles: [{ file: entryFile ?? 'pom.xml' }],
-            },
-            ...(modules[rel] ?? []).map(project),
-          ],
-        }
+        return [
+          mavenProject(cwd, '.', entryFile),
+          ...(modules[rel] ?? []).map(dir => mavenProject(cwd, dir)),
+        ]
       })
   const answer = (answers: Answers) =>
     vi.mocked(select).mockImplementation(async ({ choices, message }) => {
@@ -239,7 +223,7 @@ describe('setupRecursiveManifestConfig', () => {
       // eslint-disable-next-line no-await-in-loop
       await fs.writeFile(file(rel), '<project/>')
     }
-    vi.mocked(enumerateWorkspaces).mockReset()
+    vi.mocked(listBuildProjects).mockReset()
     vi.mocked(setupMaven).mockReset()
     vi.spyOn(logger, 'log').mockImplementation(() => logger)
     vi.spyOn(logger, 'info').mockImplementation(() => logger)
@@ -332,11 +316,11 @@ describe('setupRecursiveManifestConfig', () => {
 
   it('loads a build again after configuring it, and skips it once it loads', async () => {
     let attempts = 0
-    vi.mocked(enumerateWorkspaces).mockImplementation(async ({ cwd }) => {
+    vi.mocked(listBuildProjects).mockImplementation(async ({ cwd }) => {
       if (cwd === file('legacy') && (attempts += 1) === 1) {
         return undefined
       }
-      return { buildRoot: cwd, projects: [project('.')] }
+      return [mavenProject(cwd, '.')]
     })
     vi.mocked(setupMaven).mockImplementation(async config => {
       config.javaHome = '/opt/jdk-8'
@@ -356,6 +340,19 @@ describe('setupRecursiveManifestConfig', () => {
     await setupRecursiveManifestConfig(repo, false)
 
     expect(attempts).toBe(2)
+    // A listing's remedies point at this wizard.
+    expect(
+      vi
+        .mocked(listBuildProjects)
+        .mock.calls.map(([{ hints }]) => [hints?.setupCommand, hints?.flags]),
+    ).toEqual(
+      vi
+        .mocked(listBuildProjects)
+        .mock.calls.map(() => [
+          'socket manifest setup --dynamic-sbom-inference',
+          new Set(),
+        ]),
+    )
     expect(await readSettings('legacy')).toMatchObject({
       defaults: {
         manifest: {

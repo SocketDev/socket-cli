@@ -10,22 +10,28 @@ import {
 } from './build-root-config.mts'
 import {
   addMembership,
-  buildRootPath,
   emptyMembership,
   findBuildToolCandidates,
   isBuildCovered,
   isPathInside,
-  realpathOrResolved,
   sortByDepthThenPath,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import {
-  buildToolScriptOptions,
+  dsiHints,
   resolveEcosystemConfig,
+  socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { loadBuild, withModules } from './load-build.mts'
-import { BUILD_FILES, ECOSYSTEM_LABELS } from './scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from './scripts/resolution-report-render.mts'
+import {
+  DSI_SETUP_COMMAND,
+  EXCLUDE_PATHS_HINTS,
+} from './run-manifest-facts.mts'
+import {
+  BUILD_FILES,
+  ECOSYSTEM_LABELS,
+  buildRootPath,
+} from './scripts/build-tool.mts'
 import {
   setupDotnet,
   setupGradle,
@@ -35,6 +41,7 @@ import {
 import { SOCKET_JSON } from '../../constants.mts'
 import { joinAnd } from '../../utils/arrays.mts'
 import { loadSocketConfig } from '../../utils/config.mts'
+import { realpathOrResolved } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
 import { select } from '../../utils/prompts.mts'
@@ -396,12 +403,18 @@ function membershipFor(
   return getOrInsert(map, ecosystem, emptyMembership)
 }
 
-function buildConfig(walk: Walk, { ecosystem, root }: WalkBuild) {
-  return resolveEcosystemConfig(
+// What the scan would run `build` with, under the answers so far.
+function buildRunOptions(walk: Walk, { ecosystem, root }: WalkBuild) {
+  const config = resolveEcosystemConfig(
     ecosystem,
     root.dir,
     resolveDraftSettings(walk.draft, ecosystem, root).sockJson,
   )
+  return socketFactsRunOptions(ecosystem, root, config, {
+    excludeBase: walk.cwd,
+    excludePaths: walk.excludePaths,
+    hints: dsiHints(EXCLUDE_PATHS_HINTS, root.dir),
+  })
 }
 
 // Whether a build `covered` stands for already loads `build`.
@@ -414,11 +427,7 @@ async function isLoadedBy(
     covered,
     build.ecosystem,
     build.root,
-    buildToolScriptOptions(
-      buildConfig(walk, build),
-      walk.cwd,
-      walk.excludePaths,
-    ),
+    buildRunOptions(walk, build),
   )
 }
 
@@ -627,14 +636,7 @@ async function loadOrAsk(
 ): Promise<CResult<{ canceled: boolean; loaded?: LoadOutcome | undefined }>> {
   for (;;) {
     // eslint-disable-next-line no-await-in-loop
-    const loaded = await loadBuild({
-      config: buildConfig(walk, build),
-      ecosystem: build.ecosystem,
-      excludePaths: walk.excludePaths,
-      root: build.root,
-      scanRoot: walk.cwd,
-      verbose: false,
-    })
+    const loaded = await loadBuild(buildRunOptions(walk, build))
     if (loaded) {
       return { ok: true, data: { canceled: false, loaded } }
     }

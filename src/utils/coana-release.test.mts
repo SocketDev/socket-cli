@@ -41,7 +41,10 @@ import {
   resolveDefaultApiToken,
 } from './sdk.mts'
 import { spawn } from './spawn.mts'
-import constants, { SOCKET_CLI_API_TOKEN_VARIABLES } from '../constants.mts'
+import constants, {
+  COANA_CLI_VERSION,
+  SOCKET_CLI_API_TOKEN_VARIABLES,
+} from '../constants.mts'
 import {
   COANA_CLI_WRAPPER_FILENAME,
   coanaCacheDistPath,
@@ -91,13 +94,18 @@ describe('spawnCoana', () => {
       await fs.mkdtemp(path.join(os.tmpdir(), 'socket-coana-release-')),
     )
     process.env['XDG_CACHE_HOME'] = path.join(tmpDir, 'cache')
-    const extracted = path.join(tmpDir, 'extracted')
-    await fs.mkdir(extracted)
-    await fs.writeFile(coanaCliWrapperPath(extracted), FAKE_CLI_WRAPPER)
-    await spawn(
-      'node',
-      [CACHE_SCRIPT, 'install', VERSION, 'cli', 'a'.repeat(64), extracted],
-      { stdio: 'pipe' },
+    // An install moves the files out of its extracted dir.
+    await Promise.all(
+      [VERSION, COANA_CLI_VERSION].map(async version => {
+        const extracted = path.join(tmpDir, `extracted-${version}`)
+        await fs.mkdir(extracted)
+        await fs.writeFile(coanaCliWrapperPath(extracted), FAKE_CLI_WRAPPER)
+        await spawn(
+          'node',
+          [CACHE_SCRIPT, 'install', version, 'cli', 'a'.repeat(64), extracted],
+          { stdio: 'pipe' },
+        )
+      }),
     )
   })
 
@@ -285,6 +293,27 @@ describe('spawnCoana', () => {
       expect(env[name]).toBeUndefined()
     },
   )
+
+  it('refuses a Coana older than the minimum, naming the minimum', async () => {
+    const result = await spawnCoana(['run', '.'], 'acme', {
+      coanaVersion: VERSION,
+      minimumVersion: COANA_CLI_VERSION,
+      stdio: 'pipe',
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.message).toBe(`Coana ${VERSION} is too old for this command`)
+    expect(result.cause).toContain(`Coana ${COANA_CLI_VERSION} or newer`)
+  })
+
+  it('runs a Coana at the minimum', async () => {
+    const run = await runFake({
+      coanaVersion: COANA_CLI_VERSION,
+      minimumVersion: COANA_CLI_VERSION,
+    })
+
+    expect(run.args).toEqual(['run', '.'])
+  })
 
   it('surfaces captured stdout when stderr is empty (Coana logs some failures to stdout)', async () => {
     const result = await spawnCoana(['fail'], 'acme', {

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { makeReachabilityOptions } from '../../../test/reachability-options.mts'
+import { EXCLUDE_PATHS_HINTS } from '../manifest/run-manifest-facts.mts'
 
 const {
   mockCheckCommandInput,
@@ -53,7 +54,8 @@ vi.mock('./run-dynamic-sbom-inference.mts', () => ({
     paths.filter(p => !discarded?.includes(p)),
 }))
 
-vi.mock('../../constants.mts', () => ({
+vi.mock('../../constants.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../constants.mts')>()),
   default: {
     kInternalsSymbol: mockSentryInternalsSymbol,
     [mockSentryInternalsSymbol]: {
@@ -65,10 +67,6 @@ vi.mock('../../constants.mts', () => ({
       successAndStop: vi.fn(),
     },
   },
-  // glob.mts pulls NODE_MODULES through the import chain; re-export it
-  // here so the streaming-iterables loader inside fast-glob is happy.
-  NODE_MODULES: 'node_modules',
-  UNKNOWN_ERROR: 'unknown',
 }))
 
 vi.mock('../../utils/check-input.mts', () => ({
@@ -112,10 +110,7 @@ describe('handleScanReach', () => {
         tier1ReachabilityScanId: undefined,
       },
     })
-    mockRunDynamicSbomInference.mockResolvedValue({
-      factsPaths: [],
-      resolvedPathsSidecar: undefined,
-    })
+    mockRunDynamicSbomInference.mockResolvedValue({ factsPaths: [] })
   })
 
   it('applies excludePaths to manifest discovery and reachability analysis', async () => {
@@ -353,20 +348,23 @@ describe('handleScanReach', () => {
       excludePaths: ['vendor/**'],
     }
 
-    it('generates per-build-root facts, merges them into manifest discovery, and forwards the sidecar', async () => {
-      mockRunDynamicSbomInference.mockResolvedValueOnce({
-        factsOnlyTypes: ['maven'],
-        factsPaths: [
-          '/repo/service-a/.socket.facts.json',
-          '/repo/service-b/.socket.facts.json',
-        ],
-        resolvedPathsSidecar: {
-          '/repo/service-a/.socket.facts.json': {
-            projects: [],
-            components: [],
-          },
+    it('generates per-build-root facts, merges them into manifest discovery, and forwards what Coana kept of them', async () => {
+      const entry = {
+        factsFile: '/repo/service-a/.socket.facts.json',
+        stateDir: '/work/a',
+      }
+      mockRunDynamicSbomInference.mockImplementationOnce(
+        async ({ context }) => {
+          context.workDir.entries.set(entry.factsFile, entry)
+          return {
+            factsOnlyTypes: ['maven'],
+            factsPaths: [
+              '/repo/service-a/.socket.facts.json',
+              '/repo/service-b/.socket.facts.json',
+            ],
+          }
         },
-      })
+      )
 
       await handleScanReach({
         cwd: '/repo',
@@ -379,12 +377,20 @@ describe('handleScanReach', () => {
       })
 
       expect(mockRunDynamicSbomInference).toHaveBeenCalledWith({
-        consumer: 'reach',
+        context: {
+          coanaVersion: baseReachabilityOptions.reachVersion,
+          orgSlug: 'fakeOrg',
+          // A caller-owned dir that outlives the analysis reading it.
+          workDir: {
+            dir: expect.any(String),
+            entries: new Map([[entry.factsFile, entry]]),
+            purpose: 'reachability',
+          },
+        },
         cwd: '/repo',
         excludePaths: ['vendor/**'],
+        hints: EXCLUDE_PATHS_HINTS,
         purlTypes: ['maven', 'nuget'],
-        // A caller-owned dir that outlives the analysis consuming its paths.
-        sbtTmpDir: expect.any(String),
       })
       expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
         [
@@ -398,12 +404,7 @@ describe('handleScanReach', () => {
       expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
         expect.objectContaining({
           factsOnlyTypes: ['maven'],
-          resolvedPathsSidecar: {
-            '/repo/service-a/.socket.facts.json': {
-              projects: [],
-              components: [],
-            },
-          },
+          socketFactsSidecar: [entry],
           // The reachability target stays the user's own, never a facts file.
           target: '/repo',
         }),
@@ -475,7 +476,7 @@ describe('handleScanReach', () => {
 
       expect(mockRunDynamicSbomInference).not.toHaveBeenCalled()
       expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
-        expect.objectContaining({ resolvedPathsSidecar: undefined }),
+        expect.objectContaining({ socketFactsSidecar: undefined }),
       )
     })
   })

@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger.mts'
 import { camelToKebab } from '../../utils/strings.mts'
-import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
+import { DSI_SETUP_COMMAND } from '../manifest/run-manifest-facts.mts'
 
 // Build options that `socket manifest <tool>` takes as flags but the scan
 // commands read from each build's socket.json, so passing them does nothing.

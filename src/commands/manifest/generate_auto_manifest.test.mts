@@ -19,11 +19,9 @@ vi.mock('./convert_sbt_to_maven.mts', () => ({
 vi.mock('./convert-dotnet-to-facts.mts', () => ({
   convertDotnetToFacts: vi.fn(async () => undefined),
 }))
-vi.mock('./convert-gradle-to-facts.mts', () => ({
-  convertGradleToFacts: vi.fn(async () => undefined),
-}))
-vi.mock('./convert-sbt-to-facts.mts', () => ({
-  convertSbtToFacts: vi.fn(async () => undefined),
+vi.mock('./run-manifest-facts.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('./run-manifest-facts.mts')>()),
+  runManifestFacts: vi.fn(async () => undefined),
 }))
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
@@ -34,10 +32,10 @@ vi.mock('../../utils/socket-json.mts', () => ({
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
-import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
@@ -58,7 +56,7 @@ const baseDetected = {
 describe('generateAutoManifest — bazel branch', () => {
   beforeEach(() => {
     vi.mocked(extractBazelToMaven).mockClear()
-    vi.mocked(convertGradleToFacts).mockClear()
+    vi.mocked(runManifestFacts).mockClear()
     vi.mocked(convertGradleToMaven).mockClear()
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
     vi.mocked(extractBazelToMaven).mockResolvedValue({
@@ -271,9 +269,25 @@ describe('generateAutoManifest — bazel branch', () => {
     })
     expect(extractBazelToMaven).toHaveBeenCalledTimes(1)
     // Socket facts is the default for the gradle branch.
-    expect(convertGradleToFacts).toHaveBeenCalledTimes(1)
+    expect(runManifestFacts).toHaveBeenCalledTimes(1)
     expect(convertGradleToMaven).not.toHaveBeenCalled()
   })
+
+  it.for([['--exclude-paths'], [undefined]] as const)(
+    'names the exclude-paths flag %s in remedies only when the command takes one',
+    async ({ 0: excludePathsFlag }) => {
+      await generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, maven: true, count: 1 },
+        hints: { excludePathsFlag, flags: new Set() },
+        outputKind: 'text',
+        verbose: false,
+      })
+      expect(vi.mocked(runManifestFacts).mock.calls[0]?.[0].hints).toEqual(
+        expect.objectContaining({ excludePathsFlag }),
+      )
+    },
+  )
 
   it('uses the gradle pom generator when defaults.manifest.gradle.facts is false', async () => {
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({
@@ -286,7 +300,7 @@ describe('generateAutoManifest — bazel branch', () => {
       verbose: false,
     })
     expect(convertGradleToMaven).toHaveBeenCalledTimes(1)
-    expect(convertGradleToFacts).not.toHaveBeenCalled()
+    expect(runManifestFacts).not.toHaveBeenCalled()
   })
 
   it('honors socket.json out override (user-supplied .socket-auto-manifest dir)', async () => {
@@ -308,6 +322,93 @@ describe('generateAutoManifest — bazel branch', () => {
       }),
     )
   })
+})
+
+function callFor(ecosystem: string) {
+  return vi
+    .mocked(runManifestFacts)
+    .mock.calls.find(([opts]) => opts.ecosystem === ecosystem)?.[0]
+}
+
+describe('generateAutoManifest — JVM facts', () => {
+  beforeEach(() => {
+    vi.mocked(runManifestFacts).mockReset()
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
+  })
+
+  it('runs Maven where the scan starts, leaving it to find its POM', async () => {
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, gradle: true, maven: true, count: 2 },
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(callFor('maven')).toMatchObject({ buildOpts: [], cwd: '/tmp/repo' })
+    expect(callFor('maven')?.entryFile).toBeUndefined()
+    expect(callFor('gradle')).toMatchObject({ cwd: '/tmp/repo' })
+  })
+
+  it('takes each JVM build tool its socket.json section as the walk does', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          gradle: {
+            excludeConfigs: 'test*',
+            gradleOpts: '--offline',
+            ignoreUnresolved: true,
+            javaHome: '$GRADLE_JDK',
+          },
+          maven: { bin: 'mvn', includeConfigs: 'compile', verbose: true },
+          sbt: { sbtOpts: '-Dx=1' },
+        },
+      },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, gradle: true, maven: true, sbt: true },
+      excludePaths: ['docs/**'],
+      outputKind: 'text',
+      verbose: false,
+    })
+    expect(callFor('gradle')).toMatchObject({
+      buildOpts: ['--offline'],
+      excludeBase: '/tmp/repo',
+      excludeConfigs: 'test*',
+      excludePaths: ['docs/**'],
+      ignoreUnresolved: true,
+      javaHome: '$GRADLE_JDK',
+    })
+    expect(callFor('maven')).toMatchObject({
+      bin: 'mvn',
+      includeConfigs: 'compile',
+      verbose: true,
+    })
+    expect(callFor('sbt')).toMatchObject({ bin: 'sbt', buildOpts: ['-Dx=1'] })
+  })
+
+  // Maven resolves `--settings` from where it starts, and reports a `--file`
+  // without its argument.
+  it.for(['-f sub/pom.xml -s settings.xml', '-Pci --file'])(
+    'passes mavenOpts `%s` to Maven as written, from the scan root',
+    async mavenOpts => {
+      vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+        defaults: { manifest: { maven: { bin: './mvnw', mavenOpts } } },
+      } as SocketJson)
+      await generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, maven: true, count: 1 },
+        outputKind: 'text',
+        verbose: false,
+      })
+      expect(callFor('maven')).toMatchObject({
+        bin: './mvnw',
+        buildOpts: mavenOpts.split(' '),
+        cwd: '/tmp/repo',
+        excludeBase: '/tmp/repo',
+      })
+      expect(callFor('maven')?.entryFile).toBeUndefined()
+    },
+  )
 })
 
 describe('generateAutoManifest — conda branch', () => {
@@ -393,7 +494,7 @@ describe('generateAutoManifest — conda branch', () => {
 
   it('aborts on a failed facts generator even when the exit code was already set', async () => {
     process.exitCode = 1
-    vi.mocked(convertGradleToFacts).mockResolvedValueOnce(null)
+    vi.mocked(runManifestFacts).mockResolvedValueOnce(null)
     await expect(
       generateAutoManifest({
         cwd: '/tmp/repo',

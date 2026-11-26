@@ -1,4 +1,4 @@
-import { unlink } from 'node:fs/promises'
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import micromatch from 'micromatch'
@@ -31,8 +31,11 @@ import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { pluralize } from '../../utils/words.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
+import {
+  createSocketFactsWorkDir,
+  socketFactsSidecar,
+} from '../manifest/run-manifest-facts.mts'
 import { buildToolsFor } from '../manifest/scripts/build-tool.mts'
-import { mergeResolvedPathsSidecars } from '../manifest/scripts/sidecar.mts'
 
 import type { ReachabilityFallback } from './output-create-new-scan.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
@@ -40,7 +43,10 @@ import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { Remap } from '../../utils/objects.mts'
-import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
+import type {
+  CommandHints,
+  SocketFactsContext,
+} from '../manifest/run-manifest-facts.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Supported-files response keys whose files count as pre-generated SBOMs:
@@ -93,6 +99,9 @@ export type HandleCreateNewScanConfig = {
   defaultBranch: boolean
   // Supplies the complete scan input and replaces manifest discovery.
   generateScanFiles?: (() => Promise<GeneratedScanFiles>) | undefined
+  // The flags the invoking command takes that facts generation's remedies may
+  // name; none by default.
+  hints?: CommandHints | undefined
   interactive: boolean
   orgSlug: string
   pendingHead: boolean
@@ -122,6 +131,7 @@ async function createNewScan(
     committers,
     cwd,
     defaultBranch,
+    hints = { flags: new Set() },
     interactive,
     orgSlug,
     outputKind,
@@ -160,17 +170,22 @@ async function createNewScan(
     workspace,
   })
 
-  // Sidecar forwarded to reachability; populated only when reach runs.
-  let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
   let factsOnlyTypes: FactsOnlyTypes | undefined
   let discardedFactsPaths: string[] | undefined
 
-  // sbt provisions its Scala toolchain under the directory passed as its
-  // isolated global base; reach's artifactPaths point into it, so it must
-  // stay on disk until the reachability analysis below has consumed those
-  // paths. Always allocated (even when unused) to keep this uniform rather
-  // than conditional on autoManifest/reach.
+  // Coana's reachability run reads what facts generation keeps in the work
+  // dir, so it lives until the analysis below is done.
   await withTmpDir('socket-auto-manifest-', async manifestTmpDir => {
+    const factsContext: SocketFactsContext = {
+      coanaVersion: reach.reachVersion,
+      orgSlug,
+      workDir: reach.runReachabilityAnalysis
+        ? await createSocketFactsWorkDir(
+            path.join(manifestTmpDir, 'socket-facts-work'),
+            'reachability',
+          )
+        : undefined,
+    }
     if (autoManifest || reach.dynamicSbomInference) {
       logger.info('Auto-generating manifest files ...')
       debugFn('notice', 'Manifest auto-generation enabled')
@@ -181,21 +196,15 @@ async function createNewScan(
         // one at cwd. This runs on its own, so nothing outside those
         // ecosystems is generated unless --auto-manifest also asked for it.
         const dynamicResult = await runDynamicSbomInference({
-          consumer: reach.runReachabilityAnalysis ? 'reach' : 'upload',
+          context: factsContext,
           cwd,
           excludePaths: reach.excludePaths,
+          hints,
           purlTypes: reach.dynamicSbomInference,
-          // sbt's Scala toolchain lives under its shared global base;
-          // reach's artifactPaths point into it, so when reachability
-          // will consume them afterward, reuse manifestTmpDir (kept alive
-          // until reach finishes below) instead of letting the call clean
-          // its own ephemeral base up before reach ever reads those paths.
-          sbtTmpDir: manifestTmpDir,
         })
         scanTargets = Array.from(
           new Set([...scanTargets, ...dynamicResult.factsPaths]),
         )
-        resolvedPathsSidecar = dynamicResult.resolvedPathsSidecar
         factsOnlyTypes = dynamicResult.factsOnlyTypes
         discardedFactsPaths = dynamicResult.discardedFactsPaths
       }
@@ -214,22 +223,14 @@ async function createNewScan(
         }
 
         const autoManifestResult = await generateAutoManifest({
-          computeArtifactsSidecar: reach.runReachabilityAnalysis,
+          context: factsContext,
           cwd,
           detected,
           excludePaths: reach.excludePaths,
+          hints,
           outputKind,
-          tmpDir: manifestTmpDir,
           verbose: false,
         })
-        if (autoManifestResult.resolvedPathsSidecar) {
-          resolvedPathsSidecar = resolvedPathsSidecar
-            ? mergeResolvedPathsSidecars(
-                resolvedPathsSidecar,
-                autoManifestResult.resolvedPathsSidecar,
-              )
-            : autoManifestResult.resolvedPathsSidecar
-        }
         if (autoManifestResult.generatedFiles.length) {
           scanTargets = Array.from(
             new Set([...scanTargets, ...autoManifestResult.generatedFiles]),
@@ -343,7 +344,8 @@ async function createNewScan(
         packagePaths,
         reachabilityOptions: mergedReachabilityOptions,
         repoName,
-        resolvedPathsSidecar,
+        socketFactsSidecar:
+          factsContext.workDir && socketFactsSidecar(factsContext.workDir),
         spinner,
         target: targets[0]!,
       })
@@ -459,7 +461,7 @@ async function createNewScan(
       !reach.reachRetainFactsFile
     ) {
       try {
-        await unlink(path.resolve(cwd, reachabilityReport))
+        await fs.unlink(path.resolve(cwd, reachabilityReport))
         debugFn(
           'notice',
           `[socket-facts] removed coana output after successful scan: ${reachabilityReport}`,

@@ -7,29 +7,24 @@ import { realpathOrResolved } from '../../utils/fs.mts'
 import { logger } from '../../utils/logger.mts'
 import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import {
+  DSI_SETUP_COMMAND,
+  coanaReadsFacts,
+} from '../manifest/run-manifest-facts.mts'
+import {
   PURL_TYPE_BY_TOOL,
   buildToolLabelsFor,
 } from '../manifest/scripts/build-tool.mts'
-import { DSI_SETUP_COMMAND } from '../manifest/scripts/resolution-report-render.mts'
-import {
-  hasSidecarEntries,
-  serializeSidecar,
-} from '../manifest/scripts/sidecar.mts'
 
 import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { RecursiveManifestOutcome } from '../manifest/generate-recursive-manifests.mts'
 import type {
-  ResolvedPathsSidecar,
-  SidecarAccumulator,
-} from '../manifest/scripts/sidecar.mts'
+  CommandHints,
+  SocketFactsContext,
+} from '../manifest/run-manifest-facts.mts'
 
 const DSI_SETTINGS_DOCS_URL =
   'https://github.com/SocketDev/socket-cli/blob/v1.x/docs/dynamic-sbom-inference-settings.md'
-
-// Who consumes the facts: Coana for `fix` and `reach` (which also resolves
-// artifact paths), or only the scan upload.
-export type FactsConsumer = 'fix' | 'reach' | 'upload'
 
 export type DynamicSbomInferenceResult = {
   // Facts files of dropped runs, which the scan must not collect.
@@ -38,19 +33,18 @@ export type DynamicSbomInferenceResult = {
   // these types' artifacts only from facts files.
   factsOnlyTypes: FactsOnlyTypes
   factsPaths: string[]
-  resolvedPathsSidecar: ResolvedPathsSidecar | undefined
 }
 
 // Coana takes the discovered ecosystems' artifacts only from facts files, so a
 // build root without them is one it leaves out.
 function checkFactsForCoana(
   outcomes: RecursiveManifestOutcome[],
-  consumer: Exclude<FactsConsumer, 'upload'>,
+  forReachability: boolean,
   hasFacts: boolean,
 ): void {
   const hasDisabled = outcomes.some(o => o.status === 'skippedDisabled')
   // Coana (15.14.1) refuses a facts-only reachability run without any facts.
-  if (consumer === 'reach' && !hasFacts) {
+  if (forReachability && !hasFacts) {
     throw new InputError(
       [
         'No build root produced Socket facts, which reachability analysis with --dynamic-sbom-inference needs.',
@@ -73,38 +67,28 @@ function checkFactsForCoana(
 }
 
 // Recursively discovers and generates Socket facts for every independent
-// build root of the selected ecosystems under `cwd`, returning the generated
-// facts paths plus the resolved-paths sidecar that reachability forwards to
-// Coana.
+// build root of the selected ecosystems under `cwd`. Without a work dir, the
+// facts are only uploaded.
 export async function runDynamicSbomInference({
-  consumer,
+  context,
   cwd,
   excludePaths,
+  hints,
   purlTypes,
-  sbtTmpDir,
 }: {
-  consumer: FactsConsumer
+  context: SocketFactsContext
   cwd: string
   excludePaths: string[]
+  hints: CommandHints
   purlTypes: readonly PURL_Type[]
-  // sbt provisions its Scala toolchain under this directory and reach's
-  // artifactPaths point into it, so it must outlive whoever consumes them.
-  // Only meaningful for `reach`.
-  sbtTmpDir: string | undefined
 }): Promise<DynamicSbomInferenceResult> {
-  const withFiles = consumer === 'reach'
-  const coanaReadsFacts = consumer === 'fix' || consumer === 'reach'
-  const sidecarAcc: SidecarAccumulator | undefined = coanaReadsFacts
-    ? new Map()
-    : undefined
   const outcomes = await generateRecursiveManifests({
+    context,
     cwd,
     excludePaths,
+    hints,
     purlTypes,
-    sbtTmpDir: withFiles ? sbtTmpDir : undefined,
-    sidecarAcc,
     verbose: false,
-    withFiles,
   })
   const factsOnlyTypes = [
     ...new Set(outcomes.map(o => PURL_TYPE_BY_TOOL[o.ecosystem])),
@@ -137,8 +121,12 @@ export async function runDynamicSbomInference({
   const factsPaths = outcomes
     .filter(o => o.status === 'generated')
     .map(o => o.factsPath!)
-  if (coanaReadsFacts) {
-    checkFactsForCoana(outcomes, consumer, !!factsPaths.length)
+  if (coanaReadsFacts(context)) {
+    checkFactsForCoana(
+      outcomes,
+      context.workDir?.purpose === 'reachability',
+      !!factsPaths.length,
+    )
   }
   return {
     discardedFactsPaths: outcomes.flatMap(o =>
@@ -146,15 +134,11 @@ export async function runDynamicSbomInference({
     ),
     factsOnlyTypes,
     factsPaths,
-    resolvedPathsSidecar:
-      sidecarAcc && hasSidecarEntries(sidecarAcc)
-        ? serializeSidecar(sidecarAcc)
-        : undefined,
   }
 }
 
 // `paths` without the facts files discovery discarded: each holds what was
-// there before the scan, or a dropped run's facts, not a kept build's.
+// there before the scan, not a kept build's.
 export async function withoutDiscardedFacts(
   paths: string[],
   discarded: readonly string[] | undefined,

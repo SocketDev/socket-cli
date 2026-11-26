@@ -1,5 +1,6 @@
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { outputManifestDynamicSbomInference } from './output-manifest-dynamic-sbom-inference.mts'
+import { EXCLUDE_PATHS_FLAG } from './run-manifest-facts.mts'
 
 import type { RecursiveManifestOutcome } from './generate-recursive-manifests.mts'
 import type { CResult, OutputKind } from '../../types.mts'
@@ -21,7 +22,10 @@ export async function handleManifestDynamicSbomInference({
     cwd,
     excludePaths,
     ignoreUnresolved,
-    optionFlags: new Set(['ignoreUnresolved', 'verbose']),
+    hints: {
+      excludePathsFlag: EXCLUDE_PATHS_FLAG,
+      flags: new Set(['ignoreUnresolved', 'verbose']),
+    },
     verbose,
   })
 
