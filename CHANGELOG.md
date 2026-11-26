@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Socket facts for a self-contained .NET build include its runtime packs.
 
 ### Changed
-- Updated the Coana CLI to v `15.15.4`.
+- Updated the Coana CLI to v `15.15.5`.
 - The Coana CLI now generates Socket facts for Gradle, Maven, sbt and .NET builds, so generating them downloads the Coana CLI and needs network access and a Socket API token.
 - `--reach-version` and `--fix-version` also select the Coana CLI that generates Socket facts, which must be 15.15.4 or newer.
 - With `--dynamic-sbom-inference`, reachability analyzes each JVM project on the classpath its build resolved, and `socket fix` restores a build's files when an upgrade does not take.
