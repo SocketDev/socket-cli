@@ -111,37 +111,6 @@ function getSkipReason(
   return undefined
 }
 
-// Maven 3's options starting with `f`; its GnuParser takes a long name after
-// one dash too, and splits `-fX` and `-f=X` into `-f X`.
-const MAVEN_FILE_OPTS = new Set(['f', 'file'])
-const MAVEN_OTHER_F_OPTS = new Set([
-  'fae',
-  'fail-at-end',
-  'fail-fast',
-  'fail-never',
-  'ff',
-  'fn',
-])
-
-function withoutMavenFileOpts(opts: string[]): string[] {
-  const kept: string[] = []
-  for (let i = 0, { length } = opts; i < length; i += 1) {
-    const opt = opts[i]!
-    const name = opt.replace(/^--?/, '')
-    if (opt === name || MAVEN_OTHER_F_OPTS.has(name)) {
-      kept.push(opt)
-    } else if (MAVEN_FILE_OPTS.has(name)) {
-      i += 1
-    } else if (
-      !MAVEN_FILE_OPTS.has(name.split('=')[0]!) &&
-      !(opt.startsWith('-f') && !opt.startsWith('--'))
-    ) {
-      kept.push(opt)
-    }
-  }
-  return kept
-}
-
 type Candidate = {
   index: number
   // A build of its own (see hasRootMarker): covered only by the builds that
@@ -297,7 +266,7 @@ async function walkTool(
     const { dir } = candidate.root
     // Builds sharing a directory and its settings resolve them once.
     return getOrInsert(configs, `${dir}\0${entryKey ?? ''}`, () =>
-      resolveWalkConfig(ecosystem, dir, sockJson),
+      resolveEcosystemConfig(ecosystem, dir, sockJson),
     )
   }
 
@@ -906,24 +875,4 @@ export function resolveEcosystemConfig(
     skipReason: getSkipReason(ecosystem, config?.disabled),
     verbose: Boolean(config?.verbose),
   }
-}
-
-// A walk builds each POM by its own file, so a `--file` in mavenOpts is
-// ignored.
-export function resolveWalkConfig(
-  ecosystem: BuildTool,
-  dir: string,
-  sockJson: SocketJson,
-): EcosystemBuildConfig {
-  const config = resolveEcosystemConfig(ecosystem, dir, sockJson)
-  if (ecosystem !== 'maven') {
-    return config
-  }
-  const buildOpts = withoutMavenFileOpts(config.buildOpts)
-  if (buildOpts.length !== config.buildOpts.length) {
-    logger.warn(
-      `Ignoring --file in mavenOpts for ${dir}: each POM there is built by its own file.`,
-    )
-  }
-  return { ...config, buildOpts }
 }

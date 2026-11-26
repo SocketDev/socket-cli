@@ -1324,7 +1324,7 @@ describe('generateRecursiveManifests', () => {
     expect(statusOf('bare/pom')).toBe('skippedCovered')
   })
 
-  it('resolves settings once per directory and drops a --file in mavenOpts with a warning', async () => {
+  it('resolves settings once per directory and passes mavenOpts as written', async () => {
     mockCascade(() => ({
       defaults: {
         manifest: {
@@ -1352,13 +1352,22 @@ describe('generateRecursiveManifests', () => {
       expect(cascadeDirs).toEqual([...new Set(cascadeDirs)])
       expect(
         warnSpy.mock.calls.filter(c => messageText(c[0]).includes('--file')),
-      ).toHaveLength(cascadeDirs.length)
+      ).toHaveLength(0)
       expect(
         vi.mocked(runManifestFacts).mock.calls.map(([o]) => o.buildOpts),
       ).toEqual(
         vi
           .mocked(runManifestFacts)
-          .mock.calls.map(() => ['-P', 'ci', '-fae', '-fail-fast']),
+          .mock.calls.map(() => [
+            '--file',
+            'other.xml',
+            '-P',
+            'ci',
+            '-fae',
+            '-fother.xml',
+            '-fail-fast',
+            '-file=x.xml',
+          ]),
       )
     } finally {
       warnSpy.mockRestore()

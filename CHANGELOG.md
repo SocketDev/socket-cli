@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `--reach-version` and `--fix-version` also select the Coana that generates Socket facts, which must be 15.15.4 or newer.
 - With `--dynamic-sbom-inference`, reachability analyzes each JVM project on the classpath its build resolved, and `socket fix` restores a build's files when an upgrade does not take.
 - `--ignore-unresolved` no longer lets through a build whose resolution did not run, or a failure that names no project.
-- `--dynamic-sbom-inference` builds each POM by its own file, so it ignores a `--file` in `mavenOpts`, with a warning.
+- `--dynamic-sbom-inference` passes `mavenOpts` to Maven as written, without warning about a `--file` in them: each POM is still built by its own file.
 
 ## [1.16.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.16.1) - 2026-11-24
 

@@ -19,7 +19,7 @@ import {
 } from './discover-manifest-roots.mts'
 import {
   buildToolScriptOptions,
-  resolveWalkConfig,
+  resolveEcosystemConfig,
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { loadBuild, withModules } from './load-build.mts'
@@ -401,7 +401,7 @@ function membershipFor(
 }
 
 function buildConfig(walk: Walk, { ecosystem, root }: WalkBuild) {
-  return resolveWalkConfig(
+  return resolveEcosystemConfig(
     ecosystem,
     root.dir,
     resolveDraftSettings(walk.draft, ecosystem, root).sockJson,
