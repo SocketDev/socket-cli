@@ -14,7 +14,6 @@ import {
   listDotnetSolutionMembers,
   runManifestFacts,
 } from './run-manifest-facts.mts'
-import { COANA_CLI_VERSION } from '../../constants.mts'
 import { spawnCoana } from '../../utils/coana/release.mts'
 import { logger } from '../../utils/logger.mts'
 
@@ -123,7 +122,7 @@ describe('runManifestFacts', () => {
     expect(vi.mocked(spawnCoana).mock.calls[0]![1]).toBe('acme')
     expect(vi.mocked(spawnCoana).mock.calls[0]![2]).toMatchObject({
       coanaVersion: '1.2.3',
-      minimumVersion: COANA_CLI_VERSION,
+      minimumVersion: '15.15.4',
     })
   })
 

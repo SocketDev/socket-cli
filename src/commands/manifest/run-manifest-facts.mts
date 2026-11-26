@@ -6,7 +6,7 @@ import {
   looksLikeSbtBuild,
   resolveBuildToolBin,
 } from './scripts/build-tool.mts'
-import { COANA_CLI_VERSION, SOCKET_JSON } from '../../constants.mts'
+import { SOCKET_JSON } from '../../constants.mts'
 import { isSea } from '../../sea/runtime.mts'
 import { spawnCoana } from '../../utils/coana/release.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
@@ -34,6 +34,9 @@ export type BuildOptionHints = {
   setupCommand: string
   socketJson: string
 }
+
+// The first Coana release with `generate-socket-facts`.
+const SOCKET_FACTS_MIN_COANA_VERSION = '15.15.4'
 
 export const DSI_SETUP_COMMAND =
   'socket manifest setup --dynamic-sbom-inference'
@@ -173,7 +176,7 @@ async function runGenerateSocketFacts<T>(
       context.orgSlug,
       {
         coanaVersion: context.coanaVersion,
-        minimumVersion: COANA_CLI_VERSION,
+        minimumVersion: SOCKET_FACTS_MIN_COANA_VERSION,
         // Redirect Coana's logs to stderr to keep the command's stdout
         // machine-readable.
         stdio: ['inherit', 2, 'inherit'],
