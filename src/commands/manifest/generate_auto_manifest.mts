@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
@@ -9,13 +7,11 @@ import {
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import {
   REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG,
   keepFacts,
   runManifestFacts,
 } from './run-manifest-facts.mts'
-import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import {
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
@@ -26,7 +22,6 @@ import { logger } from '../../utils/logger.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
-import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
 import type {
   BuildOptionHints,
@@ -106,13 +101,15 @@ export async function generateAutoManifest({
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
   }
 
+  const configOf = (tool: BuildTool) =>
+    resolveEcosystemConfig(tool, cwd, sockJson)
+
   const generateFacts = async (
     tool: BuildTool,
-    root: BuildRoot,
     config: EcosystemBuildConfig,
   ) => {
     const outcome = await runManifestFacts(
-      socketFactsRunOptions(tool, root, config, {
+      socketFactsRunOptions(tool, { dir: cwd }, config, {
         context,
         excludeBase: cwd,
         excludePaths,
@@ -126,59 +123,45 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
+    const config = configOf('sbt')
     // Socket facts is the default; opt into pom generation with
     // `defaults.manifest.sbt.facts: false` in socket.json.
     if (sockJson.defaults?.manifest?.sbt?.facts !== false) {
       logger.log('Detected a Scala sbt build, generating Socket facts...')
-      await generateFacts(
-        'sbt',
-        { dir: cwd },
-        resolveEcosystemConfig('sbt', cwd, sockJson),
-      )
+      await generateFacts('sbt', config)
     } else {
       logger.log('Detected a Scala sbt build, generating pom files with sbt...')
       const beforeExitCode = process.exitCode
       await convertSbtToMaven({
-        // Note: `sbt` is more likely to be resolved against PATH env.
-        bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
+        bin: config.bin,
         cwd,
         out: sockJson.defaults?.manifest?.sbt?.outfile ?? './pom.xml',
-        sbtOpts: parseBuildToolOpts(
-          sockJson.defaults?.manifest?.sbt?.sbtOpts ?? undefined,
-        ),
-        verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
+        sbtOpts: config.buildOpts,
+        verbose: config.verbose,
       })
       abortManifestRunIfFailed('sbt', beforeExitCode)
     }
   }
 
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
+    const config = configOf('gradle')
     // Socket facts is the default; opt into pom generation with
     // `defaults.manifest.gradle.facts: false` in socket.json.
     if (sockJson.defaults?.manifest?.gradle?.facts !== false) {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
       )
-      await generateFacts(
-        'gradle',
-        { dir: cwd },
-        resolveEcosystemConfig('gradle', cwd, sockJson),
-      )
+      await generateFacts('gradle', config)
     } else {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
       )
       const beforeExitCode = process.exitCode
       await convertGradleToMaven({
-        // Configured bin wins; else prefer ./gradlew, else gradle on PATH.
-        bin: sockJson.defaults?.manifest?.gradle?.bin
-          ? path.resolve(cwd, sockJson.defaults.manifest.gradle.bin)
-          : resolveBuildToolBin('gradle', cwd),
+        bin: config.bin,
         cwd,
-        verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
-        gradleOpts: parseBuildToolOpts(
-          sockJson.defaults?.manifest?.gradle?.gradleOpts ?? undefined,
-        ),
+        gradleOpts: config.buildOpts,
+        verbose: config.verbose,
       })
       abortManifestRunIfFailed('gradle', beforeExitCode)
     }
@@ -188,11 +171,7 @@ export async function generateAutoManifest({
     logger.log('Detected a Maven pom.xml build, generating Socket facts...')
     // Maven resolves relative arguments such as `--file` and `--settings`
     // from where it starts, so it starts here with mavenOpts as written.
-    await generateFacts(
-      'maven',
-      { dir: cwd },
-      resolveEcosystemConfig('maven', cwd, sockJson),
-    )
+    await generateFacts('maven', configOf('maven'))
   }
 
   if (!sockJson?.defaults?.manifest?.dotnet?.disabled && detected.dotnet) {
@@ -200,7 +179,7 @@ export async function generateAutoManifest({
       'Detected a .NET solution or project, generating Socket facts...',
     )
     const outcome = await convertDotnetToFacts({
-      config: resolveEcosystemConfig('dotnet', cwd, sockJson),
+      config: configOf('dotnet'),
       context,
       cwd,
       excludePaths,
