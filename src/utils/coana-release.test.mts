@@ -94,17 +94,19 @@ describe('spawnCoana', () => {
       await fs.mkdtemp(path.join(os.tmpdir(), 'socket-coana-release-')),
     )
     process.env['XDG_CACHE_HOME'] = path.join(tmpDir, 'cache')
-    const extracted = path.join(tmpDir, 'extracted')
-    await fs.mkdir(extracted)
-    await fs.writeFile(coanaCliWrapperPath(extracted), FAKE_CLI_WRAPPER)
-    for (const version of [VERSION, COANA_CLI_VERSION]) {
-      // eslint-disable-next-line no-await-in-loop
-      await spawn(
-        'node',
-        [CACHE_SCRIPT, 'install', version, 'cli', 'a'.repeat(64), extracted],
-        { stdio: 'pipe' },
-      )
-    }
+    // An install moves the files out of its extracted dir.
+    await Promise.all(
+      [VERSION, COANA_CLI_VERSION].map(async version => {
+        const extracted = path.join(tmpDir, `extracted-${version}`)
+        await fs.mkdir(extracted)
+        await fs.writeFile(coanaCliWrapperPath(extracted), FAKE_CLI_WRAPPER)
+        await spawn(
+          'node',
+          [CACHE_SCRIPT, 'install', version, 'cli', 'a'.repeat(64), extracted],
+          { stdio: 'pipe' },
+        )
+      }),
+    )
   })
 
   afterEach(() => {
