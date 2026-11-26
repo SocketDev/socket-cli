@@ -1,4 +1,4 @@
-import { unlink } from 'node:fs/promises'
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import micromatch from 'micromatch'
@@ -198,8 +198,8 @@ async function createNewScan(
         const dynamicResult = await runDynamicSbomInference({
           context: factsContext,
           cwd,
-          hints: buildOptionHints,
           excludePaths: reach.excludePaths,
+          hints: buildOptionHints,
           purlTypes: reach.dynamicSbomInference,
         })
         scanTargets = Array.from(
@@ -461,7 +461,7 @@ async function createNewScan(
       !reach.reachRetainFactsFile
     ) {
       try {
-        await unlink(path.resolve(cwd, reachabilityReport))
+        await fs.unlink(path.resolve(cwd, reachabilityReport))
         debugFn(
           'notice',
           `[socket-facts] removed coana output after successful scan: ${reachabilityReport}`,

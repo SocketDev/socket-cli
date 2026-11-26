@@ -46,8 +46,8 @@ export const EXCLUDE_PATHS_FLAG = '--exclude-paths'
 const REACH_CONTINUE_ON_INSTALL_ERRORS_FLAG =
   '--reach-continue-on-install-errors'
 
-// The scan and fix commands take `--exclude-paths`; users set the other build
-// options in socket.json.
+// For a command that takes `--exclude-paths` and reads its other build options
+// from socket.json.
 export const EXCLUDE_PATHS_HINTS: CommandHints = {
   excludePathsFlag: EXCLUDE_PATHS_FLAG,
   flags: new Set(),
@@ -306,13 +306,6 @@ export async function createSocketFactsWorkDir(
   return { dir, entries: new Map(), purpose }
 }
 
-// What `--socket-facts-sidecar` reads for the kept build roots.
-export function socketFactsSidecar(
-  workDir: SocketFactsWorkDir,
-): SocketFactsSidecarEntry[] {
-  return [...workDir.entries.values()]
-}
-
 // Puts a kept build root's facts where they belong, and keeps its sidecar
 // entry for the Coana run that reads `workDir`.
 export async function keepFacts(
@@ -455,4 +448,11 @@ export async function runManifestFacts({
     await keepFacts(workDir, facts)
   }
   return facts
+}
+
+// What `--socket-facts-sidecar` reads for the kept build roots.
+export function socketFactsSidecar(
+  workDir: SocketFactsWorkDir,
+): SocketFactsSidecarEntry[] {
+  return [...workDir.entries.values()]
 }

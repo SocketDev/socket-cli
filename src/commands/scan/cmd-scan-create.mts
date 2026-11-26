@@ -677,12 +677,12 @@ async function run(
   await handleCreateNewScan({
     autoManifest: Boolean(autoManifest),
     branchName: branchName as string,
+    buildOptionHints: EXCLUDE_PATHS_HINTS,
     commitHash: (commitHash && String(commitHash)) || '',
     commitMessage: (commitMessage && String(commitMessage)) || '',
     committers: (committers && String(committers)) || '',
     cwd,
     defaultBranch: Boolean(defaultBranch),
-    buildOptionHints: EXCLUDE_PATHS_HINTS,
     generateScanFiles: uvMemberDirs
       ? () => generateUvMemberSboms(uvMemberDirs)
       : undefined,
