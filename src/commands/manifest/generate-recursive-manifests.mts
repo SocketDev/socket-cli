@@ -26,6 +26,7 @@ import {
   DSI_SETUP_COMMAND,
   createSocketFactsWorkDir,
   keepFacts,
+  readsReachabilitySettings,
   runManifestFacts,
 } from './run-manifest-facts.mts'
 import {
@@ -660,10 +661,9 @@ async function runCandidate(
   candidate: Candidate,
   options: SocketFactsRunOptions,
 ): Promise<Run | undefined> {
-  const reachability =
-    ctx.context.workDir.purpose === 'reachability'
-      ? ctx.resolveSettings(options.ecosystem, candidate.root).reachability()
-      : undefined
+  const reachability = readsReachabilitySettings(ctx.context)
+    ? ctx.resolveSettings(options.ecosystem, candidate.root).reachability()
+    : undefined
   // A run a later build turns out to cover is dropped before its facts are
   // placed.
   const result = await runManifestFacts({
@@ -770,7 +770,7 @@ export async function generateRecursiveManifests({
     for (const root of roots) {
       const settings = resolveSettings(tool, root)
       if (
-        context.workDir?.purpose === 'reachability' &&
+        readsReachabilitySettings(context) &&
         !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
       ) {
         settings.reachability()

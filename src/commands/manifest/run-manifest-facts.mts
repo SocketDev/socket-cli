@@ -164,6 +164,13 @@ export function coanaReadsFacts(context: SocketFactsContext): boolean {
   return purposeOf(context) !== 'upload'
 }
 
+// Only a reachability scan reads the builds' socket.json reachability settings.
+export function readsReachabilitySettings(
+  context: SocketFactsContext | undefined,
+): boolean {
+  return context !== undefined && purposeOf(context) === 'reachability'
+}
+
 async function readResult<T>(
   resultFile: string,
 ): Promise<{ error?: string | undefined; result: T | undefined }> {

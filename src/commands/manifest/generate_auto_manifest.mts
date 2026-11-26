@@ -9,7 +9,10 @@ import {
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import { runManifestFacts } from './run-manifest-facts.mts'
+import {
+  readsReachabilitySettings,
+  runManifestFacts,
+} from './run-manifest-facts.mts'
 import { BUILD_TOOLS } from './scripts/build-tool.mts'
 import {
   ENVIRONMENT_YML,
@@ -103,10 +106,9 @@ export async function generateAutoManifest({
   // checked only for those, and before any build runs.
   const generatesFacts = (tool: BuildTool) =>
     detected[tool] && !getSkipReason(tool, sockJson.defaults?.manifest?.[tool])
-  const reachabilityChain =
-    context?.workDir?.purpose === 'reachability'
-      ? readSocketJsonChain(cwd)
-      : undefined
+  const reachabilityChain = readsReachabilitySettings(context)
+    ? readSocketJsonChain(cwd)
+    : undefined
   const reachabilityByTool = new Map(
     reachabilityChain
       ? BUILD_TOOLS.filter(generatesFacts).map(tool => [
