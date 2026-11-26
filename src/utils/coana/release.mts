@@ -286,7 +286,7 @@ async function getCoanaCliDir(
     }
   }
 
-  /** The cached directory or a failure; `undefined` when the cache lacks it. */
+  /** The cached directory of exact `version` or a failure; `undefined` when the cache lacks it. */
   async function lookup(
     version: string,
   ): Promise<CResult<CoanaCliDir> | undefined> {
