@@ -75,7 +75,7 @@ export type SocketFactsWorkDir = {
   purpose: SocketFactsPurpose
 }
 
-export type SocketFactsPurpose = 'upload' | 'fix' | 'reachability'
+type SocketFactsPurpose = 'upload' | 'fix' | 'reachability'
 
 export type SocketFactsContext = {
   // The Coana that reads `workDir` must be the one that wrote it.
@@ -149,10 +149,6 @@ async function readResult<T>(
       result: undefined,
     }
   }
-}
-
-function toRequestHints(hints: BuildOptionHints): SocketFactsRequest['hints'] {
-  return { ...hints, flags: [...hints.flags].sort() }
 }
 
 async function runGenerateSocketFacts<T>(
@@ -266,7 +262,7 @@ function toSocketFactsRequest({
       },
       excludeBase: path.resolve(excludeBase ?? cwd),
       ...(excludePaths?.length ? { excludePaths } : {}),
-      hints: toRequestHints(hints),
+      hints: { ...hints, flags: [...hints.flags].sort() },
       root: { dir: path.resolve(cwd), ...(entryFile ? { entryFile } : {}) },
       tool: ecosystem,
     },
