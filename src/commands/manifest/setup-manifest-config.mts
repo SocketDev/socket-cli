@@ -8,15 +8,12 @@ import {
   reachabilityFieldsOf,
 } from './build-root-config.mts'
 import { detectManifestActions } from './detect-manifest-actions.mts'
-import { BUILD_TOOLS } from './scripts/build-tool.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { debugDir } from '../../utils/debug.mts'
 import { logger } from '../../utils/logger.mts'
 import { isRecord } from '../../utils/objects.mts'
 import { input, select } from '../../utils/prompts.mts'
 import {
-  mergeSocketJsonChain,
-  readSocketJsonChain,
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
@@ -29,11 +26,6 @@ import type {
   ReachabilityDefaults,
   ReachabilityField,
 } from '../../utils/socket-json.mts'
-
-type ReachabilityStepOptions = {
-  // What the project inherits from ancestor socket.json files, as written.
-  inheritedReachability?: unknown
-}
 
 type ValuePrompts = {
   ask: (current: string) => Promise<string | undefined>
@@ -66,15 +58,6 @@ const REACHABILITY_VALUE_PROMPTS = {
   Exclude<ReachabilityField, 'build'>,
   ValuePrompts
 >
-
-// As written. The wizard leaves invalid inherited values out of its defaults
-// and replaces invalid values only in this directory's socket.json.
-function inheritedReachabilityOf(cwd: string, tool: BuildTool): unknown {
-  const dir = path.resolve(cwd)
-  return mergeSocketJsonChain(
-    readSocketJsonChain(dir).filter(file => file.dir !== dir),
-  ).defaults?.manifest?.[tool]?.reachability
-}
 
 // Whether the prompt was canceled. A blank answer clears a value set before
 // with null rather than deleting the key, so it doesn't silently start
@@ -241,11 +224,6 @@ export async function setupManifestConfig(
     sockJson.defaults.manifest = {}
   }
 
-  const tool = BUILD_TOOLS.find(t => t === targetEco)
-  const inheritedReachability = tool
-    ? inheritedReachabilityOf(cwd, tool)
-    : undefined
-
   let result: CResult<{ canceled: boolean }>
   switch (targetEco) {
     case 'conda': {
@@ -259,36 +237,28 @@ export async function setupManifestConfig(
       if (!sockJson.defaults.manifest.dotnet) {
         sockJson.defaults.manifest.dotnet = {}
       }
-      result = await setupDotnet(sockJson.defaults.manifest.dotnet, {
-        inheritedReachability,
-      })
+      result = await setupDotnet(sockJson.defaults.manifest.dotnet)
       break
     }
     case 'gradle': {
       if (!sockJson.defaults.manifest.gradle) {
         sockJson.defaults.manifest.gradle = {}
       }
-      result = await setupGradle(sockJson.defaults.manifest.gradle, {
-        inheritedReachability,
-      })
+      result = await setupGradle(sockJson.defaults.manifest.gradle)
       break
     }
     case 'maven': {
       if (!sockJson.defaults.manifest.maven) {
         sockJson.defaults.manifest.maven = {}
       }
-      result = await setupMaven(sockJson.defaults.manifest.maven, {
-        inheritedReachability,
-      })
+      result = await setupMaven(sockJson.defaults.manifest.maven)
       break
     }
     case 'sbt': {
       if (!sockJson.defaults.manifest.sbt) {
         sockJson.defaults.manifest.sbt = {}
       }
-      result = await setupSbt(sockJson.defaults.manifest.sbt, {
-        inheritedReachability,
-      })
+      result = await setupSbt(sockJson.defaults.manifest.sbt)
       break
     }
     default: {
@@ -389,7 +359,6 @@ async function setupConda(
 
 export async function setupDotnet(
   config: ManifestDefaults<'dotnet'>,
-  { inheritedReachability }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'dotnet'))) {
     return canceledByUser()
@@ -419,17 +388,14 @@ export async function setupDotnet(
     return canceledByUser()
   }
 
-  return await setupReachability('dotnet', config, inheritedReachability)
+  return notCanceled()
 }
 
 export async function setupGradle(
   config: ManifestDefaults<'gradle'>,
   // Set by the recursive dynamic-sbom-inference wizard, which has no
   // pom-mode equivalent - skips the facts/pom question entirely.
-  {
-    factsOnly = false,
-    inheritedReachability,
-  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
+  { factsOnly = false }: { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (
     applyAnswer(config, 'bin', await askForBin(config.bin || '', './gradlew'))
@@ -463,11 +429,10 @@ export async function setupGradle(
       return canceledByUser()
     }
   }
-  const generatesFacts = factsOnly || config.facts !== false
 
   // The config filters and --ignore-unresolved only apply to facts generation
   // (the default); skip them when pom generation (--pom) is selected.
-  if (generatesFacts) {
+  if (factsOnly || config.facts !== false) {
     const factsOptions = await setupFactsOptions(config)
     if (!factsOptions.ok || factsOptions.data.canceled) {
       return factsOptions
@@ -478,16 +443,11 @@ export async function setupGradle(
     return canceledByUser()
   }
 
-  if (generatesFacts) {
-    return await setupReachability('gradle', config, inheritedReachability)
-  }
-
   return notCanceled()
 }
 
 export async function setupMaven(
   config: ManifestDefaults<'maven'>,
-  { inheritedReachability }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'mvn'))) {
     return canceledByUser()
@@ -524,16 +484,13 @@ export async function setupMaven(
     return canceledByUser()
   }
 
-  return await setupReachability('maven', config, inheritedReachability)
+  return notCanceled()
 }
 
 export async function setupSbt(
   config: ManifestDefaults<'sbt'>,
   // See setupGradle's matching parameter for why.
-  {
-    factsOnly = false,
-    inheritedReachability,
-  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
+  { factsOnly = false }: { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'sbt'))) {
     return canceledByUser()
@@ -565,12 +522,11 @@ export async function setupSbt(
       return canceledByUser()
     }
   }
-  const generatesFacts = factsOnly || config.facts !== false
 
   // Socket facts is the default. The pom output questions (stdout/outfile)
   // only apply when pom generation (--pom) is explicitly selected; otherwise
   // ask the facts-only options.
-  if (!generatesFacts) {
+  if (!factsOnly && config.facts === false) {
     const stdout = await askForStdout(config.stdout)
     if (stdout === undefined) {
       return canceledByUser()
@@ -606,10 +562,6 @@ export async function setupSbt(
 
   if (applyYesNo(config, 'verbose', await askForVerboseFlag(config.verbose))) {
     return canceledByUser()
-  }
-
-  if (generatesFacts) {
-    return await setupReachability('sbt', config, inheritedReachability)
   }
 
   return notCanceled()
@@ -827,8 +779,8 @@ async function askForIgnoreUnresolvedFlag(
   })
 }
 
-// The wizard replaces invalid local values with the answers. Invalid
-// inherited values need to be fixed in the socket.json that sets them.
+// The wizard replaces invalid values with the answers, except one the build
+// inherits: that one needs fixing in the socket.json that sets it.
 function warnInvalidReachability(
   tool: BuildTool,
   problems: readonly ReachabilityProblem[],
@@ -836,23 +788,29 @@ function warnInvalidReachability(
 ): void {
   for (const { field, value } of problems) {
     let parent: unknown
-    let message: string
+    let setting: string
+    let reason: string
     if (field === undefined) {
       parent = inherited
-      message = `Replacing \`reachability\` (${JSON.stringify(value)}), which is not an object.`
+      setting = 'reachability'
+      reason = 'is not an object'
     } else {
       parent = isRecord(inherited) ? inherited[field] : undefined
-      message = `Replacing \`reachability.${field}\` (${JSON.stringify(value)}), which ${tool} builds cannot take.`
+      setting = `reachability.${field}`
+      reason = `is not a value ${tool} builds take`
     }
-    if (!isDeepStrictEqual(value, parent)) {
-      logger.warn(message)
-    }
+    const shown = `\`${setting}\` (${JSON.stringify(value)})`
+    logger.warn(
+      isDeepStrictEqual(value, parent)
+        ? `${shown}, which this build inherits, ${reason}; fix it in the socket.json that sets it, or reachability scans fail.`
+        : `Replacing ${shown}, which ${reason}.`,
+    )
   }
 }
 
-// Answering no to a value prompt keeps the effective value.
-// The wizard writes "none" to override an inherited "compile".
-async function setupReachability(
+// Answering no keeps the value in effect; "none" overrides an inherited
+// "compile".
+export async function setupReachability(
   tool: BuildTool,
   config: { reachability?: ReachabilityDefaults | undefined },
   inheritedReachability: unknown,
@@ -863,7 +821,7 @@ async function setupReachability(
   )
   warnInvalidReachability(tool, problems, inheritedReachability)
   const { settings: inherited } = parseReachability(tool, inheritedReachability)
-  // As a scan merges them.
+  // An invalid value of its own leaves the inherited one in effect.
   const effective = { ...inherited, ...reachability }
 
   const wantsBuild = await select({
@@ -907,7 +865,7 @@ async function setupReachability(
           name: 'no',
           value: false,
           description: current
-            ? `Keep ${current} ${prompts.keep}${Object.hasOwn(reachability, field) ? '' : ', as a parent socket.json sets it'}`
+            ? `Keep ${current} ${prompts.keep}${current === inherited[field] ? ', which it inherits' : ''}`
             : prompts.unset,
         },
         {
@@ -930,7 +888,7 @@ async function setupReachability(
     }
     if (answer) {
       reachability[field] = answer
-    } else if (reachability[field] || inherited[field]) {
+    } else if (inherited[field]) {
       // Clears the value rather than inheriting it again.
       reachability[field] = null
     } else {

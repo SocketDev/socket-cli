@@ -24,18 +24,23 @@ vi.mock('./setup-manifest-config.mts', () => ({
   setupDotnet: vi.fn(),
   setupGradle: vi.fn(),
   setupMaven: vi.fn(),
+  setupReachability: vi.fn(),
   setupSbt: vi.fn(),
 }))
 
 import { findBuildToolCandidates } from './discover-manifest-roots.mts'
 import { listBuildProjects } from './run-manifest-facts.mts'
-import { setupMaven } from './setup-manifest-config.mts'
+import { setupMaven, setupReachability } from './setup-manifest-config.mts'
 import {
   discoverBuildRoots,
   scanBuildRoots,
   setupRecursiveManifestConfig,
 } from './setup-recursive-manifest-config.mts'
-import { BUILD_QUESTION, answerPrompts } from '../../../test/setup-prompts.mts'
+import {
+  BUILD_QUESTION,
+  JDK_QUESTION,
+  answerPrompts,
+} from '../../../test/setup-prompts.mts'
 import { mavenProject } from '../../../test/socket-facts-projects.mts'
 import { logger } from '../../utils/logger.mts'
 import { input, select } from '../../utils/prompts.mts'
@@ -161,13 +166,16 @@ type Answers = Array<[string, unknown]>
 type Choice = { description?: string; name: string; value: string }
 
 // Runs the real Maven wizard, answering the prompts `answers` matches and
-// every other one with its default. Returns every prompt's message.
-async function useRealMavenWizard(answers: Answers): Promise<string[]> {
+// every other one with its default. Returns what answerPrompts records.
+async function useRealMavenWizard(
+  answers: Answers,
+): Promise<ReturnType<typeof answerPrompts>> {
   const actual = await vi.importActual<
     typeof import('./setup-manifest-config.mts')
   >('./setup-manifest-config.mts')
   vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
-  return answerPrompts(Object.fromEntries(answers)).messages
+  vi.mocked(setupReachability).mockImplementation(actual.setupReachability)
+  return answerPrompts(Object.fromEntries(answers))
 }
 
 describe('setupRecursiveManifestConfig', () => {
@@ -236,6 +244,11 @@ describe('setupRecursiveManifestConfig', () => {
     }
     vi.mocked(listBuildProjects).mockReset()
     vi.mocked(setupMaven).mockReset()
+    vi.mocked(setupReachability).mockReset()
+    vi.mocked(setupReachability).mockResolvedValue({
+      ok: true,
+      data: { canceled: false },
+    })
     vi.spyOn(logger, 'log').mockImplementation(() => logger)
     vi.spyOn(logger, 'info').mockImplementation(() => logger)
     vi.spyOn(logger, 'success').mockImplementation(() => logger)
@@ -624,6 +637,28 @@ describe('setupRecursiveManifestConfig', () => {
     })
   })
 
+  it('labels a JDK the build inherits as inherited', async () => {
+    await writeSettings('.', {
+      maven: { reachability: { javaHome: '/opt/jdk-17' } },
+    })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    const { noChoice } = await useRealMavenWizard([
+      [JDK_QUESTION, false],
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    await setupRecursiveManifestConfig(repo, false)
+
+    expect(noChoice(JDK_QUESTION)).toEqual([
+      'Keep /opt/jdk-17 as the JDK for reachability analysis, which it inherits',
+    ])
+    expect(existsSync(file('legacy/socket.json'))).toBe(false)
+  })
+
   it('loads and configures a build whose socket.json sets an invalid reachability value, replacing it', async () => {
     vi.spyOn(logger, 'warn').mockImplementation(() => logger)
     await writeSettings('legacy', {
@@ -659,7 +694,7 @@ describe('setupRecursiveManifestConfig', () => {
       maven: { reachability: { build: 'compile', javaHome: '/opt/jdk-17' } },
     })
     loads({})
-    const messages = await useRealMavenWizard([
+    const { messages } = await useRealMavenWizard([
       ['Configure Maven defaults for any nested projects?', true],
       ['old (maven)', 'inherit'],
       ['tool (maven)', 'inherit'],
@@ -701,7 +736,7 @@ describe('setupRecursiveManifestConfig', () => {
       parentBuild ? { maven: { reachability: { build: parentBuild } } } : {},
     )
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
-    const messages = await useRealMavenWizard([
+    const { messages } = await useRealMavenWizard([
       [BUILD_QUESTION, false],
       ['This project (maven)', 'inherit'],
       ['Review the', true],

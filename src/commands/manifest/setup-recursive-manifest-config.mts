@@ -37,6 +37,7 @@ import {
   setupDotnet,
   setupGradle,
   setupMaven,
+  setupReachability,
   setupSbt,
 } from './setup-manifest-config.mts'
 import { SOCKET_JSON } from '../../constants.mts'
@@ -843,31 +844,31 @@ async function reviewBuild(
 // just skips a project resolved to `facts: false` (see
 // generateRecursiveManifests' skipReason), so offering that choice here
 // would be misleading.
+// `config` is the section in effect, `inheritedReachability` the
+// `reachability` it inherits.
 async function runEcosystemWizard(
   ecosystem: BuildTool,
   config: Record<string, unknown>,
   inheritedReachability: unknown,
 ): Promise<CResult<{ canceled: boolean }>> {
+  let result: CResult<{ canceled: boolean }>
   if (ecosystem === 'dotnet') {
-    return await setupDotnet(config as ManifestDefaults<'dotnet'>, {
-      inheritedReachability,
-    })
-  }
-  if (ecosystem === 'gradle') {
-    return await setupGradle(config as ManifestDefaults<'gradle'>, {
+    result = await setupDotnet(config as ManifestDefaults<'dotnet'>)
+  } else if (ecosystem === 'gradle') {
+    result = await setupGradle(config as ManifestDefaults<'gradle'>, {
       factsOnly: true,
-      inheritedReachability,
+    })
+  } else if (ecosystem === 'maven') {
+    result = await setupMaven(config as ManifestDefaults<'maven'>)
+  } else {
+    result = await setupSbt(config as ManifestDefaults<'sbt'>, {
+      factsOnly: true,
     })
   }
-  if (ecosystem === 'maven') {
-    return await setupMaven(config as ManifestDefaults<'maven'>, {
-      inheritedReachability,
-    })
+  if (!result.ok || result.data.canceled) {
+    return result
   }
-  return await setupSbt(config as ManifestDefaults<'sbt'>, {
-    factsOnly: true,
-    inheritedReachability,
-  })
+  return await setupReachability(ecosystem, config, inheritedReachability)
 }
 
 async function askYesNo(message: string): Promise<boolean | null> {
@@ -935,7 +936,9 @@ async function setupRootDefaults(
     const own = draftSettings(draft, cwd)
     const manifest = manifestOf(own)
     const before = getEcosystemSection(own, ecosystem)
-    const section = { ...before }
+    const section = {
+      ...getEcosystemSection(draftCascade(draft, cwd), ecosystem),
+    }
     const inherited = getEcosystemSection(
       draftParentCascade(draft, cwd),
       ecosystem,

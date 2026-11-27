@@ -5,16 +5,14 @@ import { input, select } from '../src/utils/prompts.mts'
 // Wizard prompts, as far as answerPrompts matches them.
 export const BUILD_QUESTION =
   'Build project before reachability analysis? Note: A failed build fails the scan.'
-export const ECOSYSTEM_QUESTION =
-  'Select ecosystem manifest generator to configure'
 export const JDK_PROMPT = 'What JDK should reachability analysis use?'
 export const JDK_QUESTION = 'Use a different Java for reachability analysis?'
 export const RUNTIME_PROMPT = 'Which .NET runtime?'
 export const RUNTIME_QUESTION =
   'Start the reachability analysis of a framework-dependent .NET build on a given runtime?'
-export const WRITE_QUESTION = 'Do you want to write the new config'
 
 type Prompt = {
+  choices?: ReadonlyArray<{ description?: unknown; name?: unknown }> | undefined
   default?: unknown
   message: string
   validate?: ((value: string) => unknown) | undefined
@@ -28,6 +26,8 @@ export function answerPrompts(answers: Record<string, unknown> = {}): {
   asked: Record<string, Prompt[]>
   messages: string[]
   // The defaults the prompts answered under `key` showed.
+  // The description of the "no" choice of each prompt answered under `key`.
+  noChoice: (key: string) => unknown[]
   shown: (key: string) => unknown[]
 } {
   const asked: Record<string, Prompt[]> = {}
@@ -46,6 +46,11 @@ export function answerPrompts(answers: Record<string, unknown> = {}): {
   return {
     asked,
     messages,
+    noChoice: key =>
+      (asked[key] ?? []).map(
+        prompt =>
+          prompt.choices?.find(choice => choice.name === 'no')?.description,
+      ),
     shown: key => (asked[key] ?? []).map(prompt => prompt.default),
   }
 }
