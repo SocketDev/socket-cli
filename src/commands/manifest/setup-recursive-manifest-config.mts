@@ -48,6 +48,7 @@ import { logger } from '../../utils/logger.mts'
 import { isRecord } from '../../utils/objects.mts'
 import { select } from '../../utils/prompts.mts'
 import {
+  getDefaultSocketJson,
   mergeSocketJsonChain,
   readOrDefaultSocketJson,
   readSocketJsonChain,
@@ -339,6 +340,13 @@ function draftCascade(draft: SettingsDraft, dir: string): SocketJson {
   return mergeSocketJsonChain(draftChain(draft, dir))
 }
 
+// What `dir`'s own socket.json inherits; nothing at the filesystem root, the
+// parent of itself.
+function draftParentCascade(draft: SettingsDraft, dir: string): SocketJson {
+  const parent = path.dirname(dir)
+  return parent === dir ? getDefaultSocketJson() : draftCascade(draft, parent)
+}
+
 function resolveDraftSettings(
   draft: SettingsDraft,
   ecosystem: BuildTool,
@@ -472,7 +480,9 @@ async function configureBuild(
     ? { ...builds[key] }
     : { ...getEcosystemSection(own, ecosystem) }
   const inherited = getEcosystemSection(
-    draftCascade(draft, intoEntry ? root.dir : path.dirname(root.dir)),
+    intoEntry
+      ? draftCascade(draft, root.dir)
+      : draftParentCascade(draft, root.dir),
     ecosystem,
   )
   const seed: Record<string, unknown> = {
@@ -927,7 +937,7 @@ async function setupRootDefaults(
     const before = getEcosystemSection(own, ecosystem)
     const section = { ...before }
     const inherited = getEcosystemSection(
-      draftCascade(draft, path.dirname(cwd)),
+      draftParentCascade(draft, cwd),
       ecosystem,
     )
     // eslint-disable-next-line no-await-in-loop
