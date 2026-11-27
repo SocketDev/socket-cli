@@ -21,6 +21,16 @@ import {
   setupMaven,
   setupSbt,
 } from './setup-manifest-config.mts'
+import {
+  BUILD_QUESTION,
+  ECOSYSTEM_QUESTION,
+  JDK_PROMPT,
+  JDK_QUESTION,
+  RUNTIME_PROMPT,
+  RUNTIME_QUESTION,
+  WRITE_QUESTION,
+  answerPrompts,
+} from '../../../test/setup-prompts.mts'
 import { logger } from '../../utils/logger.mts'
 import { input, select } from '../../utils/prompts.mts'
 import {
@@ -28,51 +38,6 @@ import {
   readSocketJsonChain,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
-
-const BUILD_QUESTION =
-  'Build project before reachability analysis? Note: A failed build fails the scan.'
-const ECOSYSTEM_QUESTION = 'Select ecosystem manifest generator to configure'
-const JDK_PROMPT = 'What JDK should reachability analysis use?'
-const JDK_QUESTION = 'Use a different Java for reachability analysis?'
-const RUNTIME_PROMPT = 'Which .NET runtime?'
-const RUNTIME_QUESTION =
-  'Start the reachability analysis of a framework-dependent .NET build on a given runtime?'
-const WRITE_QUESTION = 'Do you want to write the new config'
-
-type Prompt = {
-  default?: unknown
-  message: string
-  validate?: ((value: string) => unknown) | undefined
-}
-
-// Answers each prompt whose message starts with a key of `answers` with its
-// value, and every other prompt with its default. Records every prompt's
-// message, and each answered prompt under its key.
-function answerPrompts(answers: Record<string, unknown> = {}): {
-  asked: Record<string, Prompt[]>
-  messages: string[]
-  // The defaults the prompts answered under `key` showed.
-  shown: (key: string) => unknown[]
-} {
-  const asked: Record<string, Prompt[]> = {}
-  const messages: string[] = []
-  const answer = (prompt: Prompt): any => {
-    messages.push(prompt.message)
-    const key = Object.keys(answers).find(k => prompt.message.startsWith(k))
-    if (key === undefined) {
-      return prompt.default ?? ''
-    }
-    ;(asked[key] ??= []).push(prompt)
-    return answers[key]
-  }
-  vi.mocked(input).mockImplementation(async prompt => answer(prompt))
-  vi.mocked(select).mockImplementation(async prompt => answer(prompt))
-  return {
-    asked,
-    messages,
-    shown: key => (asked[key] ?? []).map(prompt => prompt.default),
-  }
-}
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -237,18 +202,18 @@ describe('reachability step', () => {
       name: 'the shown value',
       config: { reachability: { javaHome: '/opt/jdk-17' } },
       inheritedReachability: undefined,
-      shown: '/opt/jdk-17',
+      offered: '/opt/jdk-17',
     },
     {
       name: 'an inherited JDK',
       config: {},
       inheritedReachability: { javaHome: '/opt/jdk-11' },
-      shown: '/opt/jdk-11',
+      offered: '/opt/jdk-11',
     },
   ])(
     'offers $name as the default and clears it on a blank answer',
-    async ({ config, inheritedReachability, shown }) => {
-      const { asked } = answerPrompts({
+    async ({ config, inheritedReachability, offered }) => {
+      const { shown } = answerPrompts({
         [JDK_PROMPT]: '',
         [JDK_QUESTION]: true,
       })
@@ -256,7 +221,7 @@ describe('reachability step', () => {
 
       await setupMaven(written, { inheritedReachability })
 
-      expect(asked[JDK_PROMPT]?.map(p => p.default)).toEqual([shown])
+      expect(shown(JDK_PROMPT)).toEqual([offered])
       expect(written['reachability']).toEqual({ javaHome: null })
     },
   )

@@ -35,6 +35,7 @@ import {
   scanBuildRoots,
   setupRecursiveManifestConfig,
 } from './setup-recursive-manifest-config.mts'
+import { BUILD_QUESTION, answerPrompts } from '../../../test/setup-prompts.mts'
 import { mavenProject } from '../../../test/socket-facts-projects.mts'
 import { logger } from '../../utils/logger.mts'
 import { input, select } from '../../utils/prompts.mts'
@@ -159,6 +160,16 @@ type Answers = Array<[string, unknown]>
 
 type Choice = { description?: string; name: string; value: string }
 
+// Runs the real Maven wizard, answering the prompts `answers` matches and
+// every other one with its default. Returns every prompt's message.
+async function useRealMavenWizard(answers: Answers): Promise<string[]> {
+  const actual = await vi.importActual<
+    typeof import('./setup-manifest-config.mts')
+  >('./setup-manifest-config.mts')
+  vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
+  return answerPrompts(Object.fromEntries(answers)).messages
+}
+
 describe('setupRecursiveManifestConfig', () => {
   let repo = ''
   let asked: string[] = []
@@ -205,21 +216,6 @@ describe('setupRecursiveManifestConfig', () => {
       }
       return rule[1] as never
     })
-  // Runs the real Maven wizard, answering the prompts `answers` matches and
-  // every other one with its default.
-  const useRealMavenWizard = async (answers: Answers) => {
-    const actual = await vi.importActual<
-      typeof import('./setup-manifest-config.mts')
-    >('./setup-manifest-config.mts')
-    vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
-    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      asked.push(message)
-      const rule = answers.find(({ 0: start }) => message.startsWith(start))
-      return (rule ? rule[1] : (def ?? '')) as never
-    })
-  }
-
   beforeEach(async () => {
     repo = await fs.realpath(
       await fs.mkdtemp(path.join(tmpdir(), 'setup-recursive-')),
@@ -663,7 +659,7 @@ describe('setupRecursiveManifestConfig', () => {
       maven: { reachability: { build: 'compile', javaHome: '/opt/jdk-17' } },
     })
     loads({})
-    await useRealMavenWizard([
+    const messages = await useRealMavenWizard([
       ['Configure Maven defaults for any nested projects?', true],
       ['old (maven)', 'inherit'],
       ['tool (maven)', 'inherit'],
@@ -672,7 +668,9 @@ describe('setupRecursiveManifestConfig', () => {
 
     const result = await setupRecursiveManifestConfig(file('legacy'), false)
     expect(result).toEqual({ ok: true, data: { canceled: false } })
-    expect(asked).toContain('Configure Maven defaults for any nested projects?')
+    expect(messages).toContain(
+      'Configure Maven defaults for any nested projects?',
+    )
   }
 
   it('leaves accepted inherited values in directory defaults to the parent', async () => {
@@ -693,34 +691,31 @@ describe('setupRecursiveManifestConfig', () => {
     })
   })
 
+  // Runs the real Maven wizard for legacy under a parent with `parentBuild`,
+  // answering no to the build question and the defaults elsewhere.
+  async function configureUnder(
+    parentBuild: 'compile' | 'none' | undefined,
+  ): Promise<void> {
+    await writeSettings(
+      '.',
+      parentBuild ? { maven: { reachability: { build: parentBuild } } } : {},
+    )
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    const messages = await useRealMavenWizard([
+      [BUILD_QUESTION, false],
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    const result = await setupRecursiveManifestConfig(repo, false)
+    expect(result).toEqual({ ok: true, data: { canceled: false } })
+    expect(messages).toContain(BUILD_QUESTION)
+  }
+
   describe('after a no to building before reachability analysis', () => {
-    const BUILD_QUESTION =
-      'Build project before reachability analysis? Note: A failed build fails the scan.'
-
-    // Runs the real Maven wizard for legacy under a parent with `parentBuild`,
-    // answering no to the build question and the defaults elsewhere.
-    async function configureUnder(
-      parentBuild: 'compile' | 'none' | undefined,
-    ): Promise<void> {
-      await writeSettings(
-        '.',
-        parentBuild ? { maven: { reachability: { build: parentBuild } } } : {},
-      )
-      loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
-      await useRealMavenWizard([
-        [BUILD_QUESTION, false],
-        ['This project (maven)', 'inherit'],
-        ['Review the', true],
-        ['legacy (maven)', 'configure'],
-        ['legacy/tool (maven)', 'inherit'],
-        ['Write it?', true],
-      ])
-
-      const result = await setupRecursiveManifestConfig(repo, false)
-      expect(result).toEqual({ ok: true, data: { canceled: false } })
-      expect(asked).toContain(BUILD_QUESTION)
-    }
-
     it('writes none under a parent that sets compile', async () => {
       await configureUnder('compile')
 
