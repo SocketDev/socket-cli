@@ -110,17 +110,25 @@ function checkReachability(
   }
 }
 
-// An invalid setting raises an InputError naming the file.
-function checkSocketJsonReachability(
+// An invalid setting raises an InputError naming the file. Checks each
+// socket.json once per `checked`.
+function checkChainReachability(
   tool: BuildTool,
-  { dir, sockJson }: SocketJsonInDir,
+  chain: readonly SocketJsonInDir[],
+  checked: Set<string> = new Set(),
 ): void {
-  checkReachability(
-    tool,
-    sockJson.defaults?.manifest?.[tool]?.reachability,
-    `defaults.manifest.${tool}.reachability`,
-    socketJsonPath(dir),
-  )
+  for (const { dir, sockJson } of chain) {
+    const key = `${tool}\0${dir}`
+    if (!checked.has(key)) {
+      checkReachability(
+        tool,
+        sockJson.defaults?.manifest?.[tool]?.reachability,
+        `defaults.manifest.${tool}.reachability`,
+        socketJsonPath(dir),
+      )
+      checked.add(key)
+    }
+  }
 }
 
 // Gradle and sbt name a build by any build file of its directory.
@@ -334,19 +342,13 @@ export function createBuildRootSettingsResolver(
       disabledBy = directorySkip ? sectionDisabledBy : entryDisabledBy
     }
 
-    let reachability: { settings: ReachabilitySettings | undefined } | undefined
+    let cached: { settings: ReachabilitySettings | undefined } | undefined
     return {
       disabledBy,
       entryKey,
       reachability: () => {
-        if (!reachability) {
-          for (const file of chain) {
-            const key = `${tool}\0${file.dir}`
-            if (!reachabilityChecked.has(key)) {
-              checkSocketJsonReachability(tool, file)
-              reachabilityChecked.add(key)
-            }
-          }
+        if (!cached) {
+          checkChainReachability(tool, chain, reachabilityChecked)
           if (entryKey && entry) {
             checkReachability(
               tool,
@@ -355,13 +357,13 @@ export function createBuildRootSettingsResolver(
               socketJsonPath(root.dir),
             )
           }
-          reachability = {
+          cached = {
             settings: settingsInEffect(
               parseReachability(tool, section['reachability']).settings,
             ),
           }
         }
-        return reachability.settings
+        return cached.settings
       },
       sockJson: {
         ...merged,
@@ -405,9 +407,7 @@ export function cascadedReachability(
   tool: BuildTool,
   chain: readonly SocketJsonInDir[],
 ): ReachabilitySettings | undefined {
-  for (const file of chain) {
-    checkSocketJsonReachability(tool, file)
-  }
+  checkChainReachability(tool, chain)
   return settingsInEffect(
     parseReachability(
       tool,

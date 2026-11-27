@@ -26,6 +26,7 @@ import { formatErrorWithDetail } from './errors.mts'
 import { findUp } from './fs.mts'
 import { logger } from './logger.mts'
 import { isRecord } from './objects.mts'
+import { BUILD_TOOLS } from '../commands/manifest/scripts/build-tool.mts'
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
 import type { BuildTool } from '../commands/manifest/scripts/build-tool.mts'
@@ -271,7 +272,7 @@ function mergeManifestDefaults(
   if (overrideManifest.conda) {
     mergedManifest.conda = { ...baseManifest?.conda, ...overrideManifest.conda }
   }
-  for (const tool of ['dotnet', 'gradle', 'maven', 'sbt'] as const) {
+  for (const tool of BUILD_TOOLS) {
     if (overrideManifest[tool]) {
       Object.assign(mergedManifest, {
         [tool]: mergeBuildToolDefaults(
