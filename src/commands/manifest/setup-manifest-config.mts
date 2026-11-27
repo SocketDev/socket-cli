@@ -21,6 +21,7 @@ import {
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 
+import type { ReachabilityProblem } from './build-root-config.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
 import type {
@@ -28,6 +29,11 @@ import type {
   ReachabilityDefaults,
   ReachabilityField,
 } from '../../utils/socket-json.mts'
+
+type ReachabilityStepOptions = {
+  // What the project inherits from ancestor socket.json files, as written.
+  inheritedReachability?: unknown
+}
 
 type ValuePrompts = {
   ask: (current: string) => Promise<string | undefined>
@@ -65,12 +71,9 @@ const REACHABILITY_VALUE_PROMPTS = {
 // and replaces invalid values only in this directory's socket.json.
 function inheritedReachabilityOf(cwd: string, tool: BuildTool): unknown {
   const dir = path.resolve(cwd)
-  const parent = path.dirname(dir)
-  return parent === dir
-    ? undefined
-    : mergeSocketJsonChain(readSocketJsonChain(parent)).defaults?.manifest?.[
-        tool
-      ]?.reachability
+  return mergeSocketJsonChain(
+    readSocketJsonChain(dir).filter(file => file.dir !== dir),
+  ).defaults?.manifest?.[tool]?.reachability
 }
 
 // Whether the prompt was canceled. A blank answer clears a value set before
@@ -386,8 +389,7 @@ async function setupConda(
 
 export async function setupDotnet(
   config: ManifestDefaults<'dotnet'>,
-  // What the project inherits from ancestor socket.json files, as written.
-  { inheritedReachability }: { inheritedReachability?: unknown } = {},
+  { inheritedReachability }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'dotnet'))) {
     return canceledByUser()
@@ -427,7 +429,7 @@ export async function setupGradle(
   {
     factsOnly = false,
     inheritedReachability,
-  }: { factsOnly?: boolean; inheritedReachability?: unknown } = {},
+  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (
     applyAnswer(config, 'bin', await askForBin(config.bin || '', './gradlew'))
@@ -485,8 +487,7 @@ export async function setupGradle(
 
 export async function setupMaven(
   config: ManifestDefaults<'maven'>,
-  // See setupDotnet's matching parameter.
-  { inheritedReachability }: { inheritedReachability?: unknown } = {},
+  { inheritedReachability }: ReachabilityStepOptions = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'mvn'))) {
     return canceledByUser()
@@ -532,7 +533,7 @@ export async function setupSbt(
   {
     factsOnly = false,
     inheritedReachability,
-  }: { factsOnly?: boolean; inheritedReachability?: unknown } = {},
+  }: ReachabilityStepOptions & { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   if (applyAnswer(config, 'bin', await askForBin(config.bin || '', 'sbt'))) {
     return canceledByUser()
@@ -830,25 +831,22 @@ async function askForIgnoreUnresolvedFlag(
 // inherited values need to be fixed in the socket.json that sets them.
 function warnInvalidReachability(
   tool: BuildTool,
-  value: unknown,
+  problems: readonly ReachabilityProblem[],
   inherited: unknown,
 ): void {
-  for (const problem of parseReachability(tool, value).problems) {
-    const { field } = problem
-    const parent =
-      field === undefined
-        ? inherited
-        : isRecord(inherited)
-          ? inherited[field]
-          : undefined
-    if (isDeepStrictEqual(problem.value, parent)) {
-      continue
+  for (const { field, value } of problems) {
+    let parent: unknown
+    let message: string
+    if (field === undefined) {
+      parent = inherited
+      message = `Replacing \`reachability\` (${JSON.stringify(value)}), which is not an object.`
+    } else {
+      parent = isRecord(inherited) ? inherited[field] : undefined
+      message = `Replacing \`reachability.${field}\` (${JSON.stringify(value)}), which ${tool} builds cannot take.`
     }
-    logger.warn(
-      field === undefined
-        ? `Replacing \`reachability\` (${JSON.stringify(problem.value)}), which is not an object.`
-        : `Replacing \`reachability.${field}\` (${JSON.stringify(problem.value)}), which ${tool} builds cannot take.`,
-    )
+    if (!isDeepStrictEqual(value, parent)) {
+      logger.warn(message)
+    }
   }
 }
 
@@ -859,11 +857,11 @@ async function setupReachability(
   config: { reachability?: ReachabilityDefaults | undefined },
   inheritedReachability: unknown,
 ): Promise<CResult<{ canceled: boolean }>> {
-  warnInvalidReachability(tool, config.reachability, inheritedReachability)
-  const { settings: reachability } = parseReachability(
+  const { problems, settings: reachability } = parseReachability(
     tool,
     config.reachability,
   )
+  warnInvalidReachability(tool, problems, inheritedReachability)
   const { settings: inherited } = parseReachability(tool, inheritedReachability)
   // As a scan merges them.
   const effective = { ...inherited, ...reachability }

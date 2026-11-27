@@ -48,7 +48,6 @@ import { logger } from '../../utils/logger.mts'
 import { isRecord } from '../../utils/objects.mts'
 import { select } from '../../utils/prompts.mts'
 import {
-  getDefaultSocketJson,
   mergeSocketJsonChain,
   readOrDefaultSocketJson,
   readSocketJsonChain,
@@ -340,11 +339,12 @@ function draftCascade(draft: SettingsDraft, dir: string): SocketJson {
   return mergeSocketJsonChain(draftChain(draft, dir))
 }
 
-// What `dir`'s own socket.json inherits; nothing at the filesystem root, the
-// parent of itself.
+// What `dir`'s own socket.json inherits.
 function draftParentCascade(draft: SettingsDraft, dir: string): SocketJson {
-  const parent = path.dirname(dir)
-  return parent === dir ? getDefaultSocketJson() : draftCascade(draft, parent)
+  const own = path.resolve(dir)
+  return mergeSocketJsonChain(
+    draftChain(draft, dir).filter(file => file.dir !== own),
+  )
 }
 
 function resolveDraftSettings(
