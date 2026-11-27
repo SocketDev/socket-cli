@@ -44,10 +44,12 @@ describe('socket scan diff', async () => {
             --json              Output as JSON
             --markdown          Output as Markdown
             --org               Force override the organization slug, overrides the default org from config
+            --strict-blocking   Fail when unchanged blocking alerts are present in the scan diff
 
           Examples
             $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
-            $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json"
+            $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
+            $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --strict-blocking"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

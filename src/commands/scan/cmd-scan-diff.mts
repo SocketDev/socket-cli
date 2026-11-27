@@ -65,6 +65,12 @@ async function run(
         description:
           'Force override the organization slug, overrides the default org from config',
       },
+      strictBlocking: {
+        type: 'boolean',
+        default: false,
+        description:
+          'Fail when unchanged blocking alerts are present in the scan diff',
+      },
     },
     help: (command, config) => `
     Usage
@@ -87,6 +93,7 @@ async function run(
     Examples
       $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
       $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
+      $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --strict-blocking
   `,
   }
 
@@ -107,6 +114,7 @@ async function run(
     json,
     markdown,
     org: orgFlag,
+    strictBlocking,
   } = cli.flags as {
     depth: number
     dryRun: boolean
@@ -114,6 +122,7 @@ async function run(
     json: boolean
     markdown: boolean
     org: string
+    strictBlocking: boolean
   }
 
   const interactive = !!cli.flags['interactive']
@@ -185,5 +194,6 @@ async function run(
     orgSlug,
     outputKind,
     file,
+    strictBlocking,
   })
 }

@@ -10,6 +10,7 @@ export async function handleDiffScan({
   id2,
   orgSlug,
   outputKind,
+  strictBlocking,
 }: {
   depth: number
   file: string
@@ -17,6 +18,7 @@ export async function handleDiffScan({
   id2: string
   orgSlug: string
   outputKind: OutputKind
+  strictBlocking: boolean
 }): Promise<void> {
   const data = await fetchDiffScan({
     id1,
@@ -28,5 +30,6 @@ export async function handleDiffScan({
     depth,
     file,
     outputKind,
+    strictBlocking,
   })
 }

@@ -21,10 +21,12 @@ export async function outputDiffScan(
     depth,
     file,
     outputKind,
+    strictBlocking,
   }: {
     depth: number
     file: string
     outputKind: OutputKind
+    strictBlocking: boolean
   },
 ): Promise<void> {
   if (!result.ok) {
@@ -49,6 +51,28 @@ export async function outputDiffScan(
       )
     }
     return
+  }
+
+  const changedArtifacts = [
+    ...result.data.artifacts.added,
+    ...result.data.artifacts.updated,
+    ...result.data.artifacts.replaced,
+  ]
+  if (
+    changedArtifacts.some(artifact =>
+      artifact.alerts?.some(alert => alert.action === 'error'),
+    )
+  ) {
+    process.exitCode = 1
+  }
+
+  if (strictBlocking) {
+    const unchangedBlocking = (result.data.artifacts.unchanged ?? []).filter(
+      artifact => artifact.alerts?.some(alert => alert.action === 'error'),
+    )
+    if (unchangedBlocking.length > 0) {
+      process.exitCode = 1
+    }
   }
 
   const dashboardUrl = result.data.diff_report_url
