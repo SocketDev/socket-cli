@@ -17,26 +17,33 @@ vi.mock('./run-manifest-facts.mts', async importOriginal => ({
   listBuildProjects: vi.fn(),
 }))
 vi.mock('../../utils/prompts.mts', () => ({
+  input: vi.fn(),
   select: vi.fn(),
 }))
 vi.mock('./setup-manifest-config.mts', () => ({
   setupDotnet: vi.fn(),
   setupGradle: vi.fn(),
   setupMaven: vi.fn(),
+  setupReachability: vi.fn(),
   setupSbt: vi.fn(),
 }))
 
 import { findBuildToolCandidates } from './discover-manifest-roots.mts'
 import { listBuildProjects } from './run-manifest-facts.mts'
-import { setupMaven } from './setup-manifest-config.mts'
+import { setupMaven, setupReachability } from './setup-manifest-config.mts'
 import {
   discoverBuildRoots,
   scanBuildRoots,
   setupRecursiveManifestConfig,
 } from './setup-recursive-manifest-config.mts'
+import {
+  BUILD_QUESTION,
+  JDK_QUESTION,
+  answerPrompts,
+} from '../../../test/setup-prompts.mts'
 import { mavenProject } from '../../../test/socket-facts-projects.mts'
 import { logger } from '../../utils/logger.mts'
-import { select } from '../../utils/prompts.mts'
+import { input, select } from '../../utils/prompts.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
@@ -158,6 +165,19 @@ type Answers = Array<[string, unknown]>
 
 type Choice = { description?: string; name: string; value: string }
 
+// Runs the real Maven wizard, answering the prompts `answers` matches and
+// every other one with its default. Returns what answerPrompts records.
+async function useRealMavenWizard(
+  answers: Answers,
+): Promise<ReturnType<typeof answerPrompts>> {
+  const actual = await vi.importActual<
+    typeof import('./setup-manifest-config.mts')
+  >('./setup-manifest-config.mts')
+  vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
+  vi.mocked(setupReachability).mockImplementation(actual.setupReachability)
+  return answerPrompts(Object.fromEntries(answers))
+}
+
 describe('setupRecursiveManifestConfig', () => {
   let repo = ''
   let asked: string[] = []
@@ -204,7 +224,6 @@ describe('setupRecursiveManifestConfig', () => {
       }
       return rule[1] as never
     })
-
   beforeEach(async () => {
     repo = await fs.realpath(
       await fs.mkdtemp(path.join(tmpdir(), 'setup-recursive-')),
@@ -225,6 +244,11 @@ describe('setupRecursiveManifestConfig', () => {
     }
     vi.mocked(listBuildProjects).mockReset()
     vi.mocked(setupMaven).mockReset()
+    vi.mocked(setupReachability).mockReset()
+    vi.mocked(setupReachability).mockResolvedValue({
+      ok: true,
+      data: { canceled: false },
+    })
     vi.spyOn(logger, 'log').mockImplementation(() => logger)
     vi.spyOn(logger, 'info').mockImplementation(() => logger)
     vi.spyOn(logger, 'success').mockImplementation(() => logger)
@@ -550,6 +574,199 @@ describe('setupRecursiveManifestConfig', () => {
     await setupRecursiveManifestConfig(repo, false)
 
     expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({})
+  })
+
+  it('writes an inherited reachability setting only where it differs, field by field', async () => {
+    await writeSettings('.', {
+      maven: { reachability: { javaHome: '/opt/jdk-17' } },
+    })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    vi.mocked(setupMaven).mockResolvedValue({
+      ok: true,
+      data: { canceled: false },
+    })
+    const answers: Answers = [
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ]
+    answer(answers)
+
+    await setupRecursiveManifestConfig(repo, false)
+    expect(existsSync(file('legacy/socket.json'))).toBe(false)
+
+    vi.mocked(setupMaven).mockImplementation(async config => {
+      config.reachability = { javaHome: null }
+      return { ok: true, data: { canceled: false } }
+    })
+    answer(answers)
+
+    await setupRecursiveManifestConfig(repo, false)
+    expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+      reachability: { javaHome: null },
+    })
+  })
+
+  it('seeds reachability with both the inherited and the own fields', async () => {
+    await writeSettings('.', {
+      maven: { reachability: { javaHome: '/opt/jdk-17' } },
+    })
+    await writeSettings('legacy', { maven: { reachability: { other: 'x' } } })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    let seeded: unknown
+    vi.mocked(setupMaven).mockImplementation(async config => {
+      seeded = structuredClone(config)
+      return { ok: true, data: { canceled: false } }
+    })
+    answer([
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+    ])
+
+    await setupRecursiveManifestConfig(repo, false)
+
+    expect(seeded).toEqual({
+      reachability: { javaHome: '/opt/jdk-17', other: 'x' },
+    })
+    expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+      reachability: { other: 'x' },
+    })
+  })
+
+  it('labels a JDK the build inherits as inherited', async () => {
+    await writeSettings('.', {
+      maven: { reachability: { javaHome: '/opt/jdk-17' } },
+    })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    const { noChoice } = await useRealMavenWizard([
+      [JDK_QUESTION, false],
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    await setupRecursiveManifestConfig(repo, false)
+
+    expect(noChoice(JDK_QUESTION)).toEqual([
+      'Keep /opt/jdk-17 as the JDK for reachability analysis, which it inherits',
+    ])
+    expect(existsSync(file('legacy/socket.json'))).toBe(false)
+  })
+
+  it('loads and configures a build whose socket.json sets an invalid reachability value, replacing it', async () => {
+    vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+    await writeSettings('legacy', {
+      maven: {
+        mavenOpts: '-B',
+        reachability: { build: 'always', javaHome: 17 },
+      },
+    })
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    await useRealMavenWizard([
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    expect(await setupRecursiveManifestConfig(repo, false)).toEqual({
+      ok: true,
+      data: { canceled: false },
+    })
+
+    expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+      mavenOpts: '-B',
+    })
+  })
+
+  // Runs the real Maven wizard for the defaults of legacy, which holds only
+  // nested projects, accepting every default under a parent's reachability.
+  async function acceptDefaultsUnder(): Promise<void> {
+    await fs.rm(file('legacy/pom.xml'))
+    await writeSettings('.', {
+      maven: { reachability: { build: 'compile', javaHome: '/opt/jdk-17' } },
+    })
+    loads({})
+    const { messages } = await useRealMavenWizard([
+      ['Configure Maven defaults for any nested projects?', true],
+      ['old (maven)', 'inherit'],
+      ['tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    const result = await setupRecursiveManifestConfig(file('legacy'), false)
+    expect(result).toEqual({ ok: true, data: { canceled: false } })
+    expect(messages).toContain(
+      'Configure Maven defaults for any nested projects?',
+    )
+  }
+
+  it('leaves accepted inherited values in directory defaults to the parent', async () => {
+    await acceptDefaultsUnder()
+
+    expect(existsSync(file('legacy/socket.json'))).toBe(false)
+  })
+
+  it('keeps a directory default that differs from the inherited value', async () => {
+    await writeSettings('legacy', {
+      maven: { reachability: { build: 'none' } },
+    })
+
+    await acceptDefaultsUnder()
+
+    expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+      reachability: { build: 'none' },
+    })
+  })
+
+  // Runs the real Maven wizard for legacy under a parent with `parentBuild`,
+  // answering no to the build question and the defaults elsewhere.
+  async function configureUnder(
+    parentBuild: 'compile' | 'none' | undefined,
+  ): Promise<void> {
+    await writeSettings(
+      '.',
+      parentBuild ? { maven: { reachability: { build: parentBuild } } } : {},
+    )
+    loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
+    const { messages } = await useRealMavenWizard([
+      [BUILD_QUESTION, false],
+      ['This project (maven)', 'inherit'],
+      ['Review the', true],
+      ['legacy (maven)', 'configure'],
+      ['legacy/tool (maven)', 'inherit'],
+      ['Write it?', true],
+    ])
+
+    const result = await setupRecursiveManifestConfig(repo, false)
+    expect(result).toEqual({ ok: true, data: { canceled: false } })
+    expect(messages).toContain(BUILD_QUESTION)
+  }
+
+  describe('after a no to building before reachability analysis', () => {
+    it('writes none under a parent that sets compile', async () => {
+      await configureUnder('compile')
+
+      expect((await readSettings('legacy')).defaults?.manifest?.maven).toEqual({
+        reachability: { build: 'none' },
+      })
+    })
+
+    it.for(['none', undefined] as const)(
+      'leaves the build unset under a parent whose build is %s',
+      async parentBuild => {
+        await configureUnder(parentBuild)
+
+        expect(existsSync(file('legacy/socket.json'))).toBe(false)
+      },
+    )
   })
 
   it('loads a build left skipped under its own name, so its modules are not asked about', async () => {

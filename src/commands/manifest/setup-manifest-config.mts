@@ -1,18 +1,63 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 
+import {
+  DOTNET_RUNTIME_VERSION_FORMAT,
+  parseReachability,
+  reachabilityFieldsOf,
+} from './build-root-config.mts'
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { debugDir } from '../../utils/debug.mts'
 import { logger } from '../../utils/logger.mts'
+import { isRecord } from '../../utils/objects.mts'
 import { input, select } from '../../utils/prompts.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 
+import type { ReachabilityProblem } from './build-root-config.mts'
+import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
-import type { ManifestDefaults } from '../../utils/socket-json.mts'
+import type {
+  ManifestDefaults,
+  ReachabilityDefaults,
+  ReachabilityField,
+} from '../../utils/socket-json.mts'
+
+type ValuePrompts = {
+  ask: (current: string) => Promise<string | undefined>
+  change: string
+  keep: string
+  set: string
+  unset: string
+}
+
+const REACHABILITY_VALUE_PROMPTS = {
+  __proto__: null,
+  javaHome: {
+    ask: current =>
+      askForJavaHome(current, 'What JDK should reachability analysis use?'),
+    change: 'Use a different Java for reachability analysis?',
+    keep: 'as the JDK for reachability analysis',
+    set: 'Set the JDK reachability analysis uses',
+    unset: 'Leave the JDK for reachability analysis unset',
+  },
+  runtimeVersion: {
+    ask: askForRuntimeVersion,
+    change:
+      'Start the reachability analysis of a framework-dependent .NET build on a given runtime?',
+    keep: 'as the .NET runtime',
+    set: 'Set the runtime the analysis starts on',
+    unset:
+      "Let the analysis take the runtime the build's dotnet rolls forward to",
+  },
+} satisfies { __proto__: null } & Record<
+  Exclude<ReachabilityField, 'build'>,
+  ValuePrompts
+>
 
 // Whether the prompt was canceled. A blank answer clears a value set before
 // with null rather than deleting the key, so it doesn't silently start
@@ -624,13 +669,32 @@ async function askForBin(
   })
 }
 
-async function askForJavaHome(defaultName = ''): Promise<string | undefined> {
+async function askForJavaHome(
+  defaultName = '',
+  question = 'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME.',
+): Promise<string | undefined> {
   return await input({
     message:
-      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME. Supports $VAR/${VAR}.' +
+      `${question} Supports $VAR/\${VAR}.` +
       (defaultName ? ' (Backspace to leave default)' : ''),
     default: defaultName,
     required: false,
+  })
+}
+
+async function askForRuntimeVersion(
+  current: string,
+): Promise<string | undefined> {
+  return await input({
+    message:
+      `Which .NET runtime? Enter ${DOTNET_RUNTIME_VERSION_FORMAT}.` +
+      (current ? ' (Backspace to leave default)' : ''),
+    default: current,
+    required: false,
+    validate: (value: string) =>
+      !value ||
+      !parseReachability('dotnet', { runtimeVersion: value }).problems.length ||
+      `Enter ${DOTNET_RUNTIME_VERSION_FORMAT}.`,
   })
 }
 
@@ -713,6 +777,138 @@ async function askForIgnoreUnresolvedFlag(
     ],
     default: current === true ? 'yes' : current === false ? 'no' : '',
   })
+}
+
+// The wizard replaces invalid values with the answers, except one the build
+// inherits: that one needs fixing in the socket.json that sets it.
+function warnInvalidReachability(
+  tool: BuildTool,
+  problems: readonly ReachabilityProblem[],
+  inherited: unknown,
+): void {
+  for (const { field, value } of problems) {
+    let parent: unknown
+    let setting: string
+    let reason: string
+    if (field === undefined) {
+      parent = inherited
+      setting = 'reachability'
+      reason = 'is not an object'
+    } else {
+      parent = isRecord(inherited) ? inherited[field] : undefined
+      setting = `reachability.${field}`
+      reason = `is not a value ${tool} builds take`
+    }
+    const shown = `\`${setting}\` (${JSON.stringify(value)})`
+    logger.warn(
+      isDeepStrictEqual(value, parent)
+        ? `${shown}, which this build inherits, ${reason}; fix it in the socket.json that sets it, or reachability scans fail.`
+        : `Replacing ${shown}, which ${reason}.`,
+    )
+  }
+}
+
+// Answering no keeps the value in effect; "none" overrides an inherited
+// "compile".
+export async function setupReachability(
+  tool: BuildTool,
+  config: { reachability?: ReachabilityDefaults | undefined },
+  inheritedReachability: unknown,
+): Promise<CResult<{ canceled: boolean }>> {
+  const { problems, settings: reachability } = parseReachability(
+    tool,
+    config.reachability,
+  )
+  warnInvalidReachability(tool, problems, inheritedReachability)
+  const { settings: inherited } = parseReachability(tool, inheritedReachability)
+  // An invalid value of its own leaves the inherited one in effect.
+  const effective = { ...inherited, ...reachability }
+
+  const wantsBuild = await select({
+    message:
+      'Build project before reachability analysis? Note: A failed build fails the scan.',
+    choices: [
+      {
+        name: 'no',
+        value: false,
+        description: 'Analyze the project without building it',
+      },
+      {
+        name: 'yes',
+        value: true,
+        description: 'Compile the project before reachability analysis',
+      },
+    ],
+    default: effective.build === 'compile',
+  })
+  if (wantsBuild === undefined) {
+    return canceledByUser()
+  }
+  if (wantsBuild) {
+    reachability.build = 'compile'
+  } else if (inherited.build === 'compile') {
+    reachability.build = 'none'
+  } else {
+    delete reachability.build
+  }
+
+  // Whether the prompt was canceled.
+  const askValue = async (
+    field: Exclude<ReachabilityField, 'build'>,
+  ): Promise<boolean> => {
+    const prompts = REACHABILITY_VALUE_PROMPTS[field]
+    const current = effective[field]
+    const wantsValue = await select({
+      message: prompts.change,
+      choices: [
+        {
+          name: 'no',
+          value: false,
+          description: current
+            ? `Keep ${current} ${prompts.keep}${current === inherited[field] ? ', which it inherits' : ''}`
+            : prompts.unset,
+        },
+        {
+          name: 'yes',
+          value: true,
+          description: prompts.set,
+        },
+      ],
+      default: !!current,
+    })
+    if (wantsValue === undefined) {
+      return true
+    }
+    if (!wantsValue) {
+      return false
+    }
+    const answer = await prompts.ask(current || '')
+    if (answer === undefined) {
+      return true
+    }
+    if (answer) {
+      reachability[field] = answer
+    } else if (inherited[field]) {
+      // Clears the value rather than inheriting it again.
+      reachability[field] = null
+    } else {
+      delete reachability[field]
+    }
+    return false
+  }
+  for (const field of reachabilityFieldsOf(tool)) {
+    // eslint-disable-next-line no-await-in-loop
+    if (field !== 'build' && (await askValue(field))) {
+      return canceledByUser()
+    }
+  }
+
+  if (Object.keys(reachability).length) {
+    config.reachability = reachability
+  } else {
+    delete config.reachability
+  }
+  return notCanceled()
 }
 
 // Prompts for the facts-only options every facts generator shares: the config

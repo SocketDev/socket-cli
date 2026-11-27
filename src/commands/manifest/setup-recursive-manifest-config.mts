@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 
 import micromatch from 'micromatch'
 
@@ -36,6 +37,7 @@ import {
   setupDotnet,
   setupGradle,
   setupMaven,
+  setupReachability,
   setupSbt,
 } from './setup-manifest-config.mts'
 import { SOCKET_JSON } from '../../constants.mts'
@@ -44,6 +46,7 @@ import { loadSocketConfig } from '../../utils/config.mts'
 import { realpathOrResolved } from '../../utils/fs.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
+import { isRecord } from '../../utils/objects.mts'
 import { select } from '../../utils/prompts.mts'
 import {
   mergeSocketJsonChain,
@@ -87,6 +90,28 @@ function canceledByUser(): CResult<{ canceled: boolean }> {
 
 function notCanceled(): CResult<{ canceled: boolean }> {
   return { ok: true, data: { canceled: false } }
+}
+
+// A nested section (`reachability`) compares field by field, as the cascade
+// merges it.
+function changedFields(
+  seed: Record<string, unknown>,
+  inherited: Record<string, unknown>,
+): Record<string, unknown> {
+  const changed: Record<string, unknown> = {}
+  for (const key of Object.keys(seed)) {
+    const value = seed[key]
+    const base = inherited[key]
+    if (isRecord(value) && isRecord(base)) {
+      const nested = changedFields(value, base)
+      if (Object.keys(nested).length) {
+        changed[key] = nested
+      }
+    } else if (value !== base) {
+      changed[key] = value
+    }
+  }
+  return changed
 }
 
 function getEcosystemSection(
@@ -315,6 +340,14 @@ function draftCascade(draft: SettingsDraft, dir: string): SocketJson {
   return mergeSocketJsonChain(draftChain(draft, dir))
 }
 
+// What `dir`'s own socket.json inherits.
+function draftParentCascade(draft: SettingsDraft, dir: string): SocketJson {
+  const own = path.resolve(dir)
+  return mergeSocketJsonChain(
+    draftChain(draft, dir).filter(file => file.dir !== own),
+  )
+}
+
 function resolveDraftSettings(
   draft: SettingsDraft,
   ecosystem: BuildTool,
@@ -448,7 +481,9 @@ async function configureBuild(
     ? { ...builds[key] }
     : { ...getEcosystemSection(own, ecosystem) }
   const inherited = getEcosystemSection(
-    draftCascade(draft, intoEntry ? root.dir : path.dirname(root.dir)),
+    intoEntry
+      ? draftCascade(draft, root.dir)
+      : draftParentCascade(draft, root.dir),
     ecosystem,
   )
   const seed: Record<string, unknown> = {
@@ -459,18 +494,23 @@ async function configureBuild(
   }
 
   const seeded = Object.keys(seed)
-  const result = await runEcosystemWizard(ecosystem, seed)
+  const result = await runEcosystemWizard(
+    ecosystem,
+    seed,
+    inherited['reachability'],
+  )
   if (!result.ok || result.data.canceled) {
     return result
   }
 
   const before = JSON.stringify(target)
+  const changed = changedFields(seed, inherited)
   // An answer the wizard removed leaves the field to inheritance.
   for (const field of new Set([...seeded, ...Object.keys(seed)])) {
-    if (!Object.hasOwn(seed, field) || seed[field] === inherited[field]) {
-      delete target[field]
+    if (Object.hasOwn(changed, field)) {
+      target[field] = changed[field]
     } else {
-      target[field] = seed[field]
+      delete target[field]
     }
   }
   const label = buildLabel(cwd, build)
@@ -804,36 +844,31 @@ async function reviewBuild(
 // just skips a project resolved to `facts: false` (see
 // generateRecursiveManifests' skipReason), so offering that choice here
 // would be misleading.
+// `config` is the section in effect, `inheritedReachability` the
+// `reachability` it inherits.
 async function runEcosystemWizard(
   ecosystem: BuildTool,
   config: Record<string, unknown>,
+  inheritedReachability: unknown,
 ): Promise<CResult<{ canceled: boolean }>> {
+  let result: CResult<{ canceled: boolean }>
   if (ecosystem === 'dotnet') {
-    return await setupDotnet(config as ManifestDefaults<'dotnet'>)
-  }
-  if (ecosystem === 'gradle') {
-    return await setupGradle(config as ManifestDefaults<'gradle'>, {
+    result = await setupDotnet(config as ManifestDefaults<'dotnet'>)
+  } else if (ecosystem === 'gradle') {
+    result = await setupGradle(config as ManifestDefaults<'gradle'>, {
+      factsOnly: true,
+    })
+  } else if (ecosystem === 'maven') {
+    result = await setupMaven(config as ManifestDefaults<'maven'>)
+  } else {
+    result = await setupSbt(config as ManifestDefaults<'sbt'>, {
       factsOnly: true,
     })
   }
-  if (ecosystem === 'maven') {
-    return await setupMaven(config as ManifestDefaults<'maven'>)
+  if (!result.ok || result.data.canceled) {
+    return result
   }
-  return await setupSbt(config as ManifestDefaults<'sbt'>, { factsOnly: true })
-}
-
-// Accepting every prompt's default leaves an ecosystem's section empty (see
-// askForBin in setup-manifest-config.mts); an empty one changes nothing.
-function dropIfEmpty(
-  manifest: Record<string, unknown>,
-  ecosystem: BuildTool,
-): boolean {
-  const section = manifest[ecosystem] as Record<string, unknown> | undefined
-  if (section && Object.keys(section).length) {
-    return true
-  }
-  delete manifest[ecosystem]
-  return false
+  return await setupReachability(ecosystem, config, inheritedReachability)
 }
 
 async function askYesNo(message: string): Promise<boolean | null> {
@@ -900,16 +935,33 @@ async function setupRootDefaults(
     }
     const own = draftSettings(draft, cwd)
     const manifest = manifestOf(own)
-    const section = { ...getEcosystemSection(own, ecosystem) }
-    manifest[ecosystem] = section
+    const before = getEcosystemSection(own, ecosystem)
+    const section = {
+      ...getEcosystemSection(draftCascade(draft, cwd), ecosystem),
+    }
+    const inherited = getEcosystemSection(
+      draftParentCascade(draft, cwd),
+      ecosystem,
+    )
     // eslint-disable-next-line no-await-in-loop
-    const result = await runEcosystemWizard(ecosystem, section)
+    const result = await runEcosystemWizard(
+      ecosystem,
+      section,
+      inherited['reachability'],
+    )
     if (!result.ok || result.data.canceled) {
       return result
     }
-    if (dropIfEmpty(manifest, ecosystem)) {
-      stageSettings(draft, cwd, own, `configure ${label} defaults`)
+    const changed = changedFields(section, inherited)
+    if (isDeepStrictEqual(changed, before)) {
+      continue
     }
+    if (Object.keys(changed).length) {
+      manifest[ecosystem] = changed
+    } else {
+      delete manifest[ecosystem]
+    }
+    stageSettings(draft, cwd, own, `configure ${label} defaults`)
   }
   return notCanceled()
 }
