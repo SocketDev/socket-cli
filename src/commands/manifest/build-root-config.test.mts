@@ -5,7 +5,6 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  cascadedReachability,
   createBuildRootSettingsResolver,
   describeDisabledBy,
   displayPath,
@@ -416,25 +415,5 @@ describe('createBuildRootSettingsResolver', () => {
           ?.manifest?.maven?.mavenOpts,
       ).toBe('-B')
     })
-  })
-})
-
-describe('cascadedReachability', () => {
-  it("checks each socket.json's section for the tool alone", () => {
-    const sockJson = {
-      defaults: {
-        manifest: {
-          dotnet: { reachability: { runtimeVersion: 'latest' } },
-          gradle: { reachability: { build: 'compile' } },
-        },
-      },
-    } as any
-
-    expect(cascadedReachability('gradle', [{ dir: '/r', sockJson }])).toEqual({
-      build: 'compile',
-    })
-    expect(() =>
-      cascadedReachability('dotnet', [{ dir: '/r', sockJson }]),
-    ).toThrow(InputError)
   })
 })

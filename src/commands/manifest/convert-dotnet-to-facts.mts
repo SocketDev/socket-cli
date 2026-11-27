@@ -10,7 +10,6 @@ import type {
   RunManifestFactsOutcome,
   SocketFactsContext,
 } from './run-manifest-facts.mts'
-import type { ReachabilitySettings } from '../../utils/socket-json.mts'
 
 // Generates `<entry>.socket.facts.json` for the given solution or project
 // file, or for every solution and project at the top of `cwd`. A project a
@@ -22,7 +21,6 @@ export async function convertDotnetToFacts({
   entryFile,
   excludePaths,
   hints,
-  reachability,
 }: {
   config: EcosystemBuildConfig
   context?: SocketFactsContext | undefined
@@ -31,7 +29,6 @@ export async function convertDotnetToFacts({
   entryFile?: string | undefined
   excludePaths?: string[] | undefined
   hints?: BuildOptionHints | undefined
-  reachability?: ReachabilitySettings | undefined
 }): Promise<RunManifestFactsOutcome> {
   const entries = entryFile ? [entryFile] : findDotnetEntries(cwd)
   if (!entries.length) {
@@ -54,7 +51,6 @@ export async function convertDotnetToFacts({
       ecosystem: 'dotnet',
       excludePaths,
       hints,
-      reachability,
       root: { dir, entryFile: entry },
     })
     if (outcome === 'covered') {

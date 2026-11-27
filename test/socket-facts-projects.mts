@@ -1,10 +1,6 @@
 import path from 'node:path'
 
-import type {
-  SocketFactsProject,
-  SocketFactsRunOptions,
-} from '../src/commands/manifest/run-manifest-facts.mts'
-import type { ReachabilitySettings } from '../src/utils/socket-json.mts'
+import type { SocketFactsProject } from '../src/commands/manifest/run-manifest-facts.mts'
 
 // A project of the build at `buildRoot`, its build files relative to its own
 // directory.
@@ -23,14 +19,4 @@ export function mavenProject(
   pomFile = 'pom.xml',
 ): SocketFactsProject {
   return socketFactsProject(buildRoot, subprojectDir, [pomFile])
-}
-
-// The reachability settings each tool's runs were sent, from the calls of a
-// mocked `runManifestFacts`.
-export function reachabilityByTool(
-  calls: ReadonlyArray<readonly [SocketFactsRunOptions]>,
-): Record<string, ReachabilitySettings | undefined> {
-  return Object.fromEntries(
-    calls.map(({ 0: opts }) => [opts.ecosystem, opts.reachability]),
-  )
 }

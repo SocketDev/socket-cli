@@ -87,6 +87,8 @@ export type EcosystemBuildConfig = {
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome: string | undefined
+  // Set only by the dynamic SBOM inference walk, on a reachability scan.
+  reachability?: ReachabilitySettings | undefined
   // Set when this build root should be skipped entirely (never invoked).
   skipReason: string | undefined
   verbose: boolean
@@ -96,7 +98,7 @@ export type EcosystemBuildConfig = {
 // root here, on top of its existing root-only ecosystem-wide meaning for
 // auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
 // so it skips too.
-export function getSkipReason(
+function getSkipReason(
   ecosystem: BuildTool,
   section:
     | { disabled?: boolean | undefined; facts?: boolean | undefined }
@@ -112,6 +114,18 @@ export function getSkipReason(
     return `defaults.manifest.${ecosystem}.facts is false (pom mode)`
   }
   return undefined
+}
+
+// What a build reads: its settings on a reachability scan, unless skipped.
+function reachabilityOf(
+  context: SocketFactsContext,
+  tool: BuildTool,
+  settings: ResolvedBuildRootSettings,
+): ReachabilitySettings | undefined {
+  return readsReachabilitySettings(context) &&
+    !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
+    ? settings.reachability()
+    : undefined
 }
 
 type Candidate = {
@@ -178,13 +192,11 @@ export function socketFactsRunOptions(
     excludeBase,
     excludePaths,
     hints,
-    reachability,
   }: {
     context?: SocketFactsContext | undefined
     excludeBase: string | undefined
     excludePaths: string[] | undefined
     hints?: BuildOptionHints | undefined
-    reachability?: ReachabilitySettings | undefined
   },
 ): SocketFactsRunOptions {
   return {
@@ -201,7 +213,7 @@ export function socketFactsRunOptions(
     ignoreUnresolved: config.ignoreUnresolved,
     includeConfigs: config.includeConfigs,
     javaHome: config.javaHome,
-    reachability,
+    reachability: config.reachability,
     verbose: config.verbose,
   }
 }
@@ -262,12 +274,13 @@ async function walkTool(
     ctx.resolveSettings(ecosystem, root)
   const configs = new Map<string, EcosystemBuildConfig>()
   const configFor = (candidate: Candidate): EcosystemBuildConfig => {
-    const { entryKey, sockJson } = resolvedFor(candidate)
+    const resolved = resolvedFor(candidate)
     const { dir } = candidate.root
     // Builds sharing a directory and its settings resolve them once.
-    return getOrInsert(configs, `${dir}\0${entryKey ?? ''}`, () =>
-      resolveEcosystemConfig(ecosystem, dir, sockJson),
-    )
+    return getOrInsert(configs, `${dir}\0${resolved.entryKey ?? ''}`, () => ({
+      ...resolveEcosystemConfig(ecosystem, dir, resolved.sockJson),
+      reachability: reachabilityOf(ctx.context, ecosystem, resolved),
+    }))
   }
 
   // 'load' when the build's own entry skips it, 'skip' when a directory
@@ -663,16 +676,9 @@ async function runCandidate(
   candidate: Candidate,
   options: SocketFactsRunOptions,
 ): Promise<Run | undefined> {
-  const reachability = readsReachabilitySettings(ctx.context)
-    ? ctx.resolveSettings(options.ecosystem, candidate.root).reachability()
-    : undefined
   // A run a later build turns out to cover is dropped before its facts are
   // placed.
-  const result = await runManifestFacts({
-    ...options,
-    reachability,
-    staged: true,
-  })
+  const result = await runManifestFacts({ ...options, staged: true })
   if (result === null) {
     return undefined
   }
@@ -696,7 +702,6 @@ export async function buildUncoveredRoot({
   excludeBase,
   excludePaths,
   hints,
-  reachability,
   root,
 }: {
   config: EcosystemBuildConfig
@@ -708,7 +713,6 @@ export async function buildUncoveredRoot({
   excludeBase?: string | undefined
   excludePaths?: string[] | undefined
   hints?: BuildOptionHints | undefined
-  reachability?: ReachabilitySettings | undefined
   root: BuildRoot
 }): Promise<RunManifestFactsOutcome | 'covered'> {
   const options: SocketFactsRunOptions = {
@@ -723,7 +727,7 @@ export async function buildUncoveredRoot({
   if (await isRootCovered(covered, ecosystem, root, options)) {
     return 'covered'
   }
-  const result = await runManifestFacts({ ...options, reachability })
+  const result = await runManifestFacts(options)
   if (result) {
     addMembership(covered, await membershipOf(result.projects))
   }
@@ -770,13 +774,7 @@ export async function generateRecursiveManifests({
   // Invalid settings fail the scan before any build runs.
   for (const { 0: tool, 1: roots } of candidatesByTool) {
     for (const root of roots) {
-      const settings = resolveSettings(tool, root)
-      if (
-        readsReachabilitySettings(context) &&
-        !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
-      ) {
-        settings.reachability()
-      }
+      reachabilityOf(context, tool, resolveSettings(tool, root))
     }
   }
   // A failure another build excuses leaves the exit code it set.

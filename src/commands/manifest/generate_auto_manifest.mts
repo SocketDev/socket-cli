@@ -1,19 +1,13 @@
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
-import { cascadedReachability } from './build-root-config.mts'
 import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import {
-  getSkipReason,
   resolveEcosystemConfig,
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import {
-  readsReachabilitySettings,
-  runManifestFacts,
-} from './run-manifest-facts.mts'
-import { BUILD_TOOLS } from './scripts/build-tool.mts'
+import { runManifestFacts } from './run-manifest-facts.mts'
 import {
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
@@ -21,10 +15,7 @@ import {
 } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
 import { logger } from '../../utils/logger.mts'
-import {
-  readOrDefaultSocketJson,
-  readSocketJsonChain,
-} from '../../utils/socket-json.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
@@ -102,23 +93,6 @@ export async function generateAutoManifest({
   const configOf = (tool: BuildTool) =>
     resolveEcosystemConfig(tool, cwd, sockJson)
 
-  // Read only by a reachability scan for the tools that generate facts, so
-  // checked only for those, and before any build runs. Not `configOf`: it
-  // resolves the bin, which can fail for a tool the scan skips.
-  const generatesFacts = (tool: BuildTool) =>
-    detected[tool] && !getSkipReason(tool, sockJson.defaults?.manifest?.[tool])
-  const reachabilityChain = readsReachabilitySettings(context)
-    ? readSocketJsonChain(cwd)
-    : undefined
-  const reachabilityByTool = new Map(
-    reachabilityChain
-      ? BUILD_TOOLS.filter(generatesFacts).map(tool => [
-          tool,
-          cascadedReachability(tool, reachabilityChain),
-        ])
-      : [],
-  )
-
   const generateFacts = async (
     tool: BuildTool,
     config: EcosystemBuildConfig,
@@ -129,7 +103,6 @@ export async function generateAutoManifest({
         excludeBase: cwd,
         excludePaths,
         hints,
-        reachability: reachabilityByTool.get(tool),
       }),
     )
     abortFactsRunIfFailed(tool, outcome)
@@ -197,7 +170,6 @@ export async function generateAutoManifest({
       cwd,
       excludePaths,
       hints,
-      reachability: reachabilityByTool.get('dotnet'),
     })
     abortFactsRunIfFailed('dotnet', outcome)
   }

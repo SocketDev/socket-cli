@@ -115,7 +115,7 @@ function checkReachability(
 function checkChainReachability(
   tool: BuildTool,
   chain: readonly SocketJsonInDir[],
-  checked: Set<string> = new Set(),
+  checked: Set<string>,
 ): void {
   for (const { dir, sockJson } of chain) {
     const key = `${tool}\0${dir}`
@@ -399,19 +399,4 @@ export function displayPath(file: string): string {
 
 export function socketJsonPath(dir: string): string {
   return displayPath(path.join(dir, SOCKET_JSON))
-}
-
-// The `reachability` settings of `tool` that `chain` cascades to, checked in
-// every socket.json that sets them.
-export function cascadedReachability(
-  tool: BuildTool,
-  chain: readonly SocketJsonInDir[],
-): ReachabilitySettings | undefined {
-  checkChainReachability(tool, chain)
-  return settingsInEffect(
-    parseReachability(
-      tool,
-      mergeSocketJsonChain(chain).defaults?.manifest?.[tool]?.reachability,
-    ).settings,
-  )
 }
