@@ -423,10 +423,6 @@ jobs:
                       print(''.join(row.itertext()).rstrip())
           PYTHON
 
-      - name: Verify .NET SDK
-        shell: bash
-        run: dotnet --list-sdks | awk -F. '$1 >= 8 { found=1 } END { exit !found }'
-
       - name: Build and check the native executable
         env:
           NODE_OPTIONS: ${{ matrix.target == 'darwin-arm64' && '--max-old-space-size=4096' || '' }}

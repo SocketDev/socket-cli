@@ -916,15 +916,6 @@ async function main(): Promise<void> {
   const releaseOutputLock = await acquireBuildLock(
     path.join(out, '.socket-sea.lock'),
   )
-  let releaseDotnetLock: (() => Promise<void>) | undefined
-  try {
-    releaseDotnetLock = await acquireBuildLock(
-      path.join(REPOSITORY_ROOT, '.cache/socket-sea-dotnet.lock'),
-    )
-  } catch (error) {
-    await releaseOutputLock()
-    throw error
-  }
   let nodeRuntime: Awaited<ReturnType<typeof pinnedNode>> | undefined
   let node = ''
   let stageDirectory: string | undefined
@@ -955,10 +946,6 @@ async function main(): Promise<void> {
       )
     }
     const prepTasks = [
-      // The 1.14.x distribution includes this first-party helper. Build it
-      // before Rollup copies manifest-scripts into the private distribution.
-      // Its runtime still uses the user's .NET SDK; NuGet is build-time only.
-      run('pnpm', ['run', 'build:dotnet-tool']),
       stageSocketPatch(target, stage, socketPatchVersion, socketPatchLicense),
       (async () => {
         const cdxgenApi = await stageCdxgenApi(stage, cdxgenVersion)
@@ -967,16 +954,12 @@ async function main(): Promise<void> {
       })(),
       stageNodeRuntime(stage, target[0], node),
       stageUv(stage, target[0], target[1]),
-      // Rollup copies this helper into manifest-scripts for standalone builds.
-      run('pnpm', ['run', 'build:maven-extension']),
     ] as const
     const prepLabels = [
-      '.NET facts helper',
       'socket-patch payload',
       'cdxgen and synp payloads',
       'Node runtime',
       'uv payload',
-      'Maven manifest extension',
     ] as const
     const prepResults = await Promise.allSettled(prepTasks)
     const prepErrors = prepResults.flatMap((result, index) => {
@@ -997,23 +980,23 @@ async function main(): Promise<void> {
       )
     }
     const socketPatch = (
-      prepResults[1] as PromiseFulfilledResult<
+      prepResults[0] as PromiseFulfilledResult<
         Awaited<ReturnType<typeof stageSocketPatch>>
       >
     ).value
     const { cdxgenApi, synpPayload } = (
-      prepResults[2] as PromiseFulfilledResult<{
+      prepResults[1] as PromiseFulfilledResult<{
         cdxgenApi: Awaited<ReturnType<typeof stageCdxgenApi>>
         synpPayload: Awaited<ReturnType<typeof stageSynp>>
       }>
     ).value
     const uvPayload = (
-      prepResults[4] as PromiseFulfilledResult<
+      prepResults[3] as PromiseFulfilledResult<
         Awaited<ReturnType<typeof stageUv>>
       >
     ).value
     const nodePayload = (
-      prepResults[3] as PromiseFulfilledResult<
+      prepResults[2] as PromiseFulfilledResult<
         Awaited<ReturnType<typeof stageNodeRuntime>>
       >
     ).value
@@ -1025,9 +1008,6 @@ async function main(): Promise<void> {
       )
     }
 
-    // Rollup depends on the completed helper and copies it into stageDist.
-    // Keep it ordered after preparation, while the independent downloads and
-    // helper build above are allowed to overlap.
     await run(
       'pnpm',
       [
@@ -1107,20 +1087,6 @@ async function main(): Promise<void> {
           `Required SEA payload is missing or malformed: ${filename}`,
         )
       }
-    }
-    const dotnetToolDirectory = path.join(
-      stageDist,
-      'manifest-scripts/dotnet-tool',
-    )
-    const dotnetToolEntry = path.join(
-      dotnetToolDirectory,
-      'socket-facts-dotnet.dll',
-    )
-    const dotnetToolStat = await fs.stat(dotnetToolEntry).catch(() => undefined)
-    if (!dotnetToolStat?.isFile() || dotnetToolStat.size === 0) {
-      throw new Error(
-        'The .NET facts helper was not copied into the SEA distribution',
-      )
     }
     const capabilities = createSeaCapabilities({
       triple,
@@ -1231,14 +1197,6 @@ async function main(): Promise<void> {
         version: appVersion,
         file: 'dist/',
         sha256: await digestTree(path.join(stage, 'dist')),
-      },
-      {
-        id: 'socket-dotnet-facts-helper',
-        version: appVersion,
-        file: 'dist/manifest-scripts/dotnet-tool/',
-        sha256: await digestTree(
-          path.join(stage, 'dist/manifest-scripts/dotnet-tool'),
-        ),
       },
       {
         id: 'external-dependencies',
@@ -1378,11 +1336,37 @@ async function main(): Promise<void> {
       },
       runtimeRequirements: [
         {
-          capability: 'manifest-dotnet-facts',
-          executable: 'dotnet',
-          resolution: 'socket manifest dotnet --bin or PATH',
+          capability: 'coana',
+          executable: 'java',
+          resolution:
+            'SOCKET_REACH_BUILD_JAVA_HOME, socket.json javaHome, sbt --java-home, JAVA_HOME or PATH',
           requirement:
-            'A .NET SDK compatible with the selected project; the Socket facts helper DLL is embedded, but the SDK/runtime is user-provided.',
+            'A Java runtime for the build tool, to generate Socket facts for JVM projects.',
+        },
+        {
+          capability: 'coana',
+          executable: 'mvn',
+          resolution: 'SOCKET_CLI_MAVEN_PATH',
+          requirement: 'Maven, to generate Socket facts for Maven projects.',
+        },
+        {
+          capability: 'coana',
+          executable: 'gradle',
+          resolution: 'SOCKET_CLI_GRADLE_PATH',
+          requirement: 'Gradle, to generate Socket facts for Gradle projects.',
+        },
+        {
+          capability: 'coana',
+          executable: 'sbt',
+          resolution: 'SOCKET_CLI_SBT_PATH',
+          requirement: 'sbt, to generate Socket facts for sbt projects.',
+        },
+        {
+          capability: 'coana',
+          executable: 'dotnet',
+          resolution: 'socket manifest dotnet --bin, socket.json bin or PATH',
+          requirement:
+            'A .NET SDK compatible with the selected project, to generate Socket facts for .NET projects.',
         },
       ],
       capabilities,
@@ -1414,11 +1398,7 @@ async function main(): Promise<void> {
         })
       }
     } finally {
-      try {
-        await releaseDotnetLock()
-      } finally {
-        await releaseOutputLock()
-      }
+      await releaseOutputLock()
     }
   }
 }
