@@ -24,6 +24,7 @@ import {
 import { handleApiCall } from '../../utils/api.mts'
 import { joinAnd } from '../../utils/arrays.mts'
 import { spawnCoana } from '../../utils/coana/release.mts'
+import { useOnlySocketFactsArtifactsFlags } from '../../utils/coana.mts'
 import {
   isReachabilityReportPath,
   isSocketFactsFile,
@@ -417,7 +418,9 @@ async function coanaFixWithFacts(
   const sidecarFile = factsSlot?.generated?.sidecarFile
   // Discovery reads the artifacts resolved by the facts files.
   // Applying a fix also reads the saved state for each build root.
-  const discoveryFlags = factsSlot?.generated?.artifactsFlags ?? []
+  const discoveryFlags = factsSlot?.generated
+    ? useOnlySocketFactsArtifactsFlags(factsSlot.generated.factsOnlyTypes)
+    : []
   const factsFlags = [
     ...discoveryFlags,
     ...(sidecarFile ? ['--socket-facts-sidecar', sidecarFile] : []),

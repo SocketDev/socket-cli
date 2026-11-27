@@ -1,7 +1,6 @@
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { useOnlySocketFactsArtifactsFlags } from '../../utils/coana.mts'
 import {
   EXCLUDE_PATHS_HINTS,
   createSocketFactsWorkDir,
@@ -9,14 +8,15 @@ import {
 } from '../manifest/run-manifest-facts.mts'
 import { runDynamicSbomInference } from '../scan/run-dynamic-sbom-inference.mts'
 
+import type { FactsOnlyTypes } from '../../utils/coana.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { SocketFactsContext } from '../manifest/run-manifest-facts.mts'
 
 export type GeneratedSocketFacts = {
-  // Coana's flags selecting what the facts files resolve.
-  artifactsFlags: string[]
   // Facts files of dropped runs, which Coana must not read.
   discardedPaths: string[]
+  // The purl types whose artifacts Coana takes from the facts files alone.
+  factsOnlyTypes: FactsOnlyTypes
   paths: string[]
   // Records each build root's saved state for `--socket-facts-sidecar`.
   // The file lives outside the repository.
@@ -70,8 +70,8 @@ export async function generateSocketFactsForFix({
     )
     await restoreAll(originals)
   }
-  let artifactsFlags: string[]
   let discardedPaths: string[]
+  let factsOnlyTypes: FactsOnlyTypes
   let paths: string[]
   const sidecarFile = path.join(tmpDir, 'sidecar.json')
   const workDir = await createSocketFactsWorkDir(
@@ -79,17 +79,16 @@ export async function generateSocketFactsForFix({
     'fix',
   )
   try {
-    const { discardedFactsPaths, factsOnlyTypes, factsPaths } =
-      await runDynamicSbomInference({
-        context: { ...context, workDir },
-        cwd,
-        excludePaths,
-        hints: EXCLUDE_PATHS_HINTS,
-        purlTypes,
-      })
-    artifactsFlags = useOnlySocketFactsArtifactsFlags(factsOnlyTypes)
-    discardedPaths = discardedFactsPaths
-    paths = factsPaths.map(p => path.resolve(cwd, p))
+    const inferred = await runDynamicSbomInference({
+      context: { ...context, workDir },
+      cwd,
+      excludePaths,
+      hints: EXCLUDE_PATHS_HINTS,
+      purlTypes,
+    })
+    discardedPaths = inferred.discardedFactsPaths
+    factsOnlyTypes = inferred.factsOnlyTypes
+    paths = inferred.factsPaths.map(p => path.resolve(cwd, p))
     // Written even when empty, as for reach; applying fixes looks each facts
     // file up in it, so an empty one is the same as none.
     await writeFile(sidecarFile, JSON.stringify(socketFactsSidecar(workDir)))
@@ -104,8 +103,8 @@ export async function generateSocketFactsForFix({
     ...(await backUp(paths, path.join(tmpDir, 'generated'))),
   ]
   return {
-    artifactsFlags,
     discardedPaths,
+    factsOnlyTypes,
     paths,
     sidecarFile,
     remove: () => reset(paths),

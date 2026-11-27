@@ -82,7 +82,7 @@ describe('generateSocketFactsForFix', () => {
       }
     })
 
-    const { artifactsFlags, sidecarFile } = await generate()
+    const { factsOnlyTypes, sidecarFile } = await generate()
 
     expect(workDirExisted).toBe(true)
     expect(mockRunDynamicSbomInference).toHaveBeenCalledWith(
@@ -99,10 +99,7 @@ describe('generateSocketFactsForFix', () => {
         purlTypes: ['maven'],
       }),
     )
-    expect(artifactsFlags).toEqual([
-      '--use-only-socket-facts-artifacts',
-      'maven,nuget',
-    ])
+    expect(factsOnlyTypes).toEqual(['maven', 'nuget'])
     expect(path.dirname(sidecarFile)).toBe(tmpDir)
     expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual([entry])
   })
@@ -114,9 +111,9 @@ describe('generateSocketFactsForFix', () => {
       factsPaths: [],
     })
 
-    const { artifactsFlags, sidecarFile } = await generate()
+    const { factsOnlyTypes, sidecarFile } = await generate()
 
-    expect(artifactsFlags).toEqual(['--maven-use-only-socket-facts'])
+    expect(factsOnlyTypes).toEqual(['maven'])
     expect(JSON.parse(await fs.readFile(sidecarFile, 'utf8'))).toEqual([])
   })
 

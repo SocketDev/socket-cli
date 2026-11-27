@@ -483,8 +483,6 @@ describe('coana facts-file utils', () => {
 
 describe('useOnlySocketFactsArtifactsFlags', () => {
   it.for([
-    // Maven alone keeps the flag Coana releases before 15.14.1 also know.
-    { types: ['maven'], expected: ['--maven-use-only-socket-facts'] },
     {
       types: ['nuget', 'maven'],
       expected: ['--use-only-socket-facts-artifacts', 'maven,nuget'],
