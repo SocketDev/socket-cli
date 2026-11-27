@@ -17,6 +17,7 @@ import { logger } from '../../utils/logger.mts'
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
+import type { ReachabilitySettings } from '../../utils/socket-json.mts'
 
 export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 
@@ -118,6 +119,7 @@ type SocketFactsRequest = {
     ignoreUnresolved: boolean
     includeConfigs?: string | undefined
     javaHome?: string | undefined
+    reachability?: ReachabilitySettings | undefined
     verbose: boolean
   }
   excludeBase: string
@@ -153,6 +155,13 @@ function purposeOf({ workDir }: SocketFactsContext): SocketFactsPurpose {
 
 export function coanaReadsFacts(context: SocketFactsContext): boolean {
   return purposeOf(context) !== 'upload'
+}
+
+// Only a reachability scan reads the builds' socket.json reachability settings.
+export function readsReachabilitySettings(
+  context: SocketFactsContext | undefined,
+): boolean {
+  return context !== undefined && purposeOf(context) === 'reachability'
 }
 
 async function readResult<T>(
@@ -227,6 +236,7 @@ export type SocketFactsRequestOptions = {
   includeConfigs?: string | undefined
   // As written: Coana expands `$VAR` references itself.
   javaHome?: string | undefined
+  reachability?: ReachabilitySettings | undefined
   verbose?: boolean | undefined
 }
 
@@ -251,6 +261,7 @@ function toSocketFactsRequest(
     ignoreUnresolved = false,
     includeConfigs,
     javaHome,
+    reachability,
     verbose = false,
   }: SocketFactsRequestOptions,
   context: SocketFactsContext,
@@ -281,6 +292,7 @@ function toSocketFactsRequest(
         ignoreUnresolved,
         ...(includeConfigs ? { includeConfigs } : {}),
         ...(javaHome && ecosystem !== 'dotnet' ? { javaHome } : {}),
+        ...(reachability ? { reachability } : {}),
         verbose,
       },
       excludeBase: path.resolve(excludeBase ?? cwd),

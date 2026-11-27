@@ -8,20 +8,27 @@ import {
   buildRootPath,
 } from './scripts/build-tool.mts'
 import { SOCKET_JSON } from '../../constants.mts'
+import { joinAnd, joinOr } from '../../utils/arrays.mts'
 import { InputError } from '../../utils/errors.mts'
 import { getOrInsert } from '../../utils/get-or-insert.mts'
 import { logger } from '../../utils/logger.mts'
 import { isRecord } from '../../utils/objects.mts'
 import {
+  REACHABILITY_BUILDS,
+  REACHABILITY_FIELDS_BY_TOOL,
+  mergeBuildToolDefaults,
   mergeSocketJsonChain,
   readSocketJsonChain,
 } from '../../utils/socket-json.mts'
+import { isNonEmptyString } from '../../utils/strings.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type {
+  ReachabilityDefaults,
+  ReachabilityField,
+  ReachabilitySettings,
   SocketJson,
-  SocketJsonBuildEntry,
   SocketJsonInDir,
 } from '../../utils/socket-json.mts'
 
@@ -37,8 +44,91 @@ export type ResolvedBuildRootSettings = {
   disabledBy: DisabledBy | undefined
   // The key of the build's own `defaults.manifest.builds` entry.
   entryKey: string | undefined
+  // Checks reachability settings in every socket.json that supplies them.
+  // An invalid setting raises an InputError naming the file and field.
+  reachability: () => ReachabilitySettings | undefined
   // The cascaded settings, the build's own entries applied last.
   sockJson: SocketJson
+}
+
+// major.minor, or major.minor.patch[-prerelease] as `RuntimeFrameworkVersion`
+// takes a .NET runtime, written as SemVer 2.0.0 items 2 and 9 say.
+const NUMBER = '(?:0|[1-9][0-9]*)'
+const PRERELEASE_IDENTIFIER = `(?:${NUMBER}|[0-9]*[A-Za-z-][0-9A-Za-z-]*)`
+const DOTNET_RUNTIME_VERSION = new RegExp(
+  `^${NUMBER}\\.${NUMBER}(?:\\.${NUMBER}(?:-${PRERELEASE_IDENTIFIER}(?:\\.${PRERELEASE_IDENTIFIER})*)?)?$`,
+)
+
+const DOTNET_RUNTIME_VERSION_FORMAT =
+  'major.minor, such as "8.0", for its latest installed patch, or major.minor.patch[-prerelease], such as "8.0.11", for exactly that runtime'
+
+const REACHABILITY_FIELDS = {
+  __proto__: null,
+  build: {
+    expected: joinOr(REACHABILITY_BUILDS.map(b => `"${b}"`)),
+    takes: (value: unknown) =>
+      (REACHABILITY_BUILDS as readonly unknown[]).includes(value),
+  },
+  javaHome: {
+    expected: 'a JDK path',
+    takes: isNonEmptyString,
+  },
+  runtimeVersion: {
+    expected: `a .NET runtime version: ${DOTNET_RUNTIME_VERSION_FORMAT}`,
+    takes: (value: unknown) =>
+      typeof value === 'string' && DOTNET_RUNTIME_VERSION.test(value),
+  },
+} satisfies { __proto__: null } & Record<
+  ReachabilityField,
+  {
+    // What a valid value is, as "set it to …" names it.
+    expected: string
+    takes: (value: unknown) => boolean
+  }
+>
+
+type ReachabilityProblem = {
+  // Undefined when the value is not an object.
+  field: string | undefined
+  // Why the tool rejects it, and the remedy.
+  problem: string
+}
+
+function checkReachability(
+  tool: BuildTool,
+  value: unknown,
+  setting: string,
+  socketJson: string,
+): void {
+  const {
+    problems: { 0: first },
+  } = parseReachability(tool, value)
+  if (first) {
+    const key =
+      first.field === undefined ? setting : `${setting}.${first.field}`
+    throw new InputError(`\`${key}\` in ${socketJson} ${first.problem}`)
+  }
+}
+
+// An invalid setting raises an InputError naming the file. Checks each
+// socket.json once per `checked`.
+function checkChainReachability(
+  tool: BuildTool,
+  chain: readonly SocketJsonInDir[],
+  checked: Set<string>,
+): void {
+  for (const { dir, sockJson } of chain) {
+    const key = `${tool}\0${dir}`
+    if (!checked.has(key)) {
+      checkReachability(
+        tool,
+        sockJson.defaults?.manifest?.[tool]?.reachability,
+        `defaults.manifest.${tool}.reachability`,
+        socketJsonPath(dir),
+      )
+      checked.add(key)
+    }
+  }
 }
 
 // Gradle and sbt name a build by any build file of its directory.
@@ -64,6 +154,62 @@ function ownEntryKeys(
   return files.names.filter(
     name => Object.hasOwn(builds, name) && existsSync(path.join(dir, name)),
   )
+}
+
+// The valid fields of `value`, nulls kept, and the problem with each other one.
+function parseReachability(
+  tool: BuildTool,
+  value: unknown,
+): { problems: ReachabilityProblem[]; settings: ReachabilityDefaults } {
+  const settings: ReachabilityDefaults = {}
+  if (value === undefined) {
+    return { problems: [], settings }
+  }
+  if (!isRecord(value)) {
+    return {
+      problems: [
+        {
+          field: undefined,
+          problem: `is ${JSON.stringify(value)}; set it to an object, or remove it.`,
+        },
+      ],
+      settings,
+    }
+  }
+  const fields = REACHABILITY_FIELDS_BY_TOOL[tool]
+  const problems: ReachabilityProblem[] = []
+  for (const { 0: name, 1: fieldValue } of Object.entries(value)) {
+    const field = fields.find(f => f === name)
+    if (!field) {
+      problems.push({
+        field: name,
+        problem: `is not a reachability setting of ${tool} builds, which take ${joinAnd(fields)}; remove it.`,
+      })
+    } else if (
+      fieldValue === null ||
+      REACHABILITY_FIELDS[field].takes(fieldValue)
+    ) {
+      Object.assign(settings, { [field]: fieldValue })
+    } else {
+      problems.push({
+        field,
+        problem: `is ${JSON.stringify(fieldValue)}; set it to ${REACHABILITY_FIELDS[field].expected}, to null to clear an inherited value, or remove it.`,
+      })
+    }
+  }
+  return { problems, settings }
+}
+
+// Without the fields a socket.json cleared with null.
+function settingsInEffect(
+  settings: ReachabilityDefaults,
+): ReachabilitySettings | undefined {
+  const entries = Object.entries(settings).filter(
+    ({ 1: setting }) => setting !== null && setting !== undefined,
+  )
+  return entries.length
+    ? (Object.fromEntries(entries) as ReachabilitySettings)
+    : undefined
 }
 
 function validateBuilds({ dir, sockJson }: SocketJsonInDir): void {
@@ -136,6 +282,7 @@ export function createBuildRootSettingsResolver(
   const chains = new Map<string, SocketJsonInDir[]>()
   const resolved = new Map<string, ResolvedBuildRootSettings>()
   const validated = new Set<string>()
+  const reachabilityChecked = new Set<string>()
 
   const chainFor = (dir: string): SocketJsonInDir[] => {
     let chain = chains.get(dir)
@@ -159,7 +306,7 @@ export function createBuildRootSettingsResolver(
   ): ResolvedBuildRootSettings => {
     const chain = chainFor(root.dir)
     const merged = mergeSocketJsonChain(chain)
-    const section: Record<string, unknown> = {
+    let section: Record<string, unknown> = {
       ...merged.defaults?.manifest?.[tool],
     }
     let sectionDisabledBy: DisabledBy | undefined
@@ -180,9 +327,9 @@ export function createBuildRootSettingsResolver(
       ? ownEntryKeys(tool, root.dir, builds, root.entryFile)[0]
       : undefined
     let entryDisabledBy: DisabledBy | undefined
-    if (entryKey) {
-      const entry = builds![entryKey] as SocketJsonBuildEntry
-      Object.assign(section, entry)
+    const entry = entryKey ? builds?.[entryKey] : undefined
+    if (entry) {
+      section = mergeBuildToolDefaults(section, entry)
       if (entry.disabled !== undefined) {
         entryDisabledBy = { dir: root.dir, key: entryKey }
       }
@@ -195,9 +342,29 @@ export function createBuildRootSettingsResolver(
       disabledBy = directorySkip ? sectionDisabledBy : entryDisabledBy
     }
 
+    let cached: { settings: ReachabilitySettings | undefined } | undefined
     return {
       disabledBy,
       entryKey,
+      reachability: () => {
+        if (!cached) {
+          checkChainReachability(tool, chain, reachabilityChecked)
+          if (entryKey && entry) {
+            checkReachability(
+              tool,
+              entry['reachability'],
+              `${buildsSetting(entryKey)}.reachability`,
+              socketJsonPath(root.dir),
+            )
+          }
+          cached = {
+            settings: settingsInEffect(
+              parseReachability(tool, section['reachability']).settings,
+            ),
+          }
+        }
+        return cached.settings
+      },
       sockJson: {
         ...merged,
         defaults: {

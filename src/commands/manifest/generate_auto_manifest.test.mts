@@ -26,7 +26,8 @@ vi.mock('./run-manifest-facts.mts', async importOriginal => ({
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
 }))
-vi.mock('../../utils/socket-json.mts', () => ({
+vi.mock('../../utils/socket-json.mts', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../utils/socket-json.mts')>()),
   readOrDefaultSocketJson: vi.fn(() => ({})),
 }))
 
@@ -409,6 +410,33 @@ describe('generateAutoManifest — JVM facts', () => {
       expect(callFor('maven')?.entryFile).toBeUndefined()
     },
   )
+
+  it('neither sends nor checks the reachability settings, which only dynamic SBOM inference reads', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: {
+          dotnet: { reachability: { runtimeVersion: 'latest' } },
+          maven: { reachability: { build: 'compile' } },
+        },
+      },
+    } as SocketJson)
+    vi.mocked(convertDotnetToFacts).mockClear()
+
+    await generateAutoManifest({
+      context: {
+        workDir: { dir: '/w', entries: new Map(), purpose: 'reachability' },
+      },
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, dotnet: true, maven: true, count: 2 },
+      outputKind: 'text',
+      verbose: false,
+    })
+
+    expect(callFor('maven')?.reachability).toBeUndefined()
+    expect(
+      vi.mocked(convertDotnetToFacts).mock.calls[0]?.[0].config,
+    ).not.toHaveProperty('reachability')
+  })
 })
 
 describe('generateAutoManifest — conda branch', () => {

@@ -26,6 +26,7 @@ import {
   DSI_SETUP_COMMAND,
   createSocketFactsWorkDir,
   keepFacts,
+  readsReachabilitySettings,
   runManifestFacts,
 } from './run-manifest-facts.mts'
 import {
@@ -53,7 +54,10 @@ import type {
 } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type {
+  ReachabilitySettings,
+  SocketJson,
+} from '../../utils/socket-json.mts'
 
 function normalizePathKey(value: string): string {
   return value.replaceAll('\\', '/')
@@ -83,6 +87,8 @@ export type EcosystemBuildConfig = {
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome: string | undefined
+  // Set only by the dynamic SBOM inference walk, on a reachability scan.
+  reachability?: ReachabilitySettings | undefined
   // Set when this build root should be skipped entirely (never invoked).
   skipReason: string | undefined
   verbose: boolean
@@ -94,16 +100,32 @@ export type EcosystemBuildConfig = {
 // so it skips too.
 function getSkipReason(
   ecosystem: BuildTool,
-  disabled: boolean | undefined,
-  facts?: boolean | undefined,
+  section:
+    | { disabled?: boolean | undefined; facts?: boolean | undefined }
+    | undefined,
 ): string | undefined {
-  if (disabled) {
+  if (section?.disabled) {
     return `defaults.manifest.${ecosystem}.disabled is true`
   }
-  if (facts === false) {
+  if (
+    (ecosystem === 'gradle' || ecosystem === 'sbt') &&
+    section?.facts === false
+  ) {
     return `defaults.manifest.${ecosystem}.facts is false (pom mode)`
   }
   return undefined
+}
+
+// What a build reads: its settings on a reachability scan, unless skipped.
+function reachabilityOf(
+  context: SocketFactsContext,
+  tool: BuildTool,
+  settings: ResolvedBuildRootSettings,
+): ReachabilitySettings | undefined {
+  return readsReachabilitySettings(context) &&
+    !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
+    ? settings.reachability()
+    : undefined
 }
 
 type Candidate = {
@@ -191,6 +213,7 @@ export function socketFactsRunOptions(
     ignoreUnresolved: config.ignoreUnresolved,
     includeConfigs: config.includeConfigs,
     javaHome: config.javaHome,
+    reachability: config.reachability,
     verbose: config.verbose,
   }
 }
@@ -251,12 +274,13 @@ async function walkTool(
     ctx.resolveSettings(ecosystem, root)
   const configs = new Map<string, EcosystemBuildConfig>()
   const configFor = (candidate: Candidate): EcosystemBuildConfig => {
-    const { entryKey, sockJson } = resolvedFor(candidate)
+    const resolved = resolvedFor(candidate)
     const { dir } = candidate.root
     // Builds sharing a directory and its settings resolve them once.
-    return getOrInsert(configs, `${dir}\0${entryKey ?? ''}`, () =>
-      resolveEcosystemConfig(ecosystem, dir, sockJson),
-    )
+    return getOrInsert(configs, `${dir}\0${resolved.entryKey ?? ''}`, () => ({
+      ...resolveEcosystemConfig(ecosystem, dir, resolved.sockJson),
+      reachability: reachabilityOf(ctx.context, ecosystem, resolved),
+    }))
   }
 
   // 'load' when the build's own entry skips it, 'skip' when a directory
@@ -750,7 +774,7 @@ export async function generateRecursiveManifests({
   // Invalid settings fail the scan before any build runs.
   for (const { 0: tool, 1: roots } of candidatesByTool) {
     for (const root of roots) {
-      resolveSettings(tool, root)
+      reachabilityOf(context, tool, resolveSettings(tool, root))
     }
   }
   // A failure another build excuses leaves the exit code it set.
@@ -808,7 +832,7 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: undefined,
-      skipReason: getSkipReason(ecosystem, config?.disabled),
+      skipReason: getSkipReason(ecosystem, config),
       verbose: Boolean(config?.verbose),
     }
   }
@@ -822,7 +846,7 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
+      skipReason: getSkipReason(ecosystem, config),
       verbose: Boolean(config?.verbose),
     }
   }
@@ -836,7 +860,7 @@ export function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome ?? undefined,
-      skipReason: getSkipReason(ecosystem, config?.disabled, config?.facts),
+      skipReason: getSkipReason(ecosystem, config),
       verbose: Boolean(config?.verbose),
     }
   }
@@ -849,7 +873,7 @@ export function resolveEcosystemConfig(
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome ?? undefined,
-    skipReason: getSkipReason(ecosystem, config?.disabled),
+    skipReason: getSkipReason(ecosystem, config),
     verbose: Boolean(config?.verbose),
   }
 }

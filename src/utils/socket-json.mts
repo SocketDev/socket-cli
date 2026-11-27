@@ -25,9 +25,54 @@ import { debugDir, debugFn } from './debug.mts'
 import { formatErrorWithDetail } from './errors.mts'
 import { findUp } from './fs.mts'
 import { logger } from './logger.mts'
+import { isRecord } from './objects.mts'
+import { BUILD_TOOLS } from '../commands/manifest/scripts/build-tool.mts'
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
+import type { BuildTool } from '../commands/manifest/scripts/build-tool.mts'
 import type { CResult } from '../types.mts'
+
+export const REACHABILITY_BUILDS = ['compile', 'none'] as const
+
+// Controls whether reachability analysis builds the project first.
+// Defaults to "none".
+export type ReachabilityBuild = (typeof REACHABILITY_BUILDS)[number]
+
+// Only reachability scans read these settings.
+type ReachabilityValues = {
+  build: ReachabilityBuild
+  // JDK the analysis takes the program to run on, as written.
+  javaHome: string
+  // The .NET runtime a framework-dependent build's analysis starts on:
+  // major.minor, or a full version as `RuntimeFrameworkVersion` takes one.
+  runtimeVersion: string
+}
+
+export type ReachabilityField = keyof ReachabilityValues
+
+export const REACHABILITY_FIELDS_BY_TOOL = {
+  __proto__: null,
+  dotnet: ['build', 'runtimeVersion'],
+  gradle: ['build', 'javaHome'],
+  maven: ['build', 'javaHome'],
+  sbt: ['build', 'javaHome'],
+} as const satisfies { __proto__: null } & Record<
+  BuildTool,
+  readonly ReachabilityField[]
+>
+
+// A null field clears its inherited value.
+export type ReachabilityDefaults<Tool extends BuildTool = BuildTool> = {
+  [F in (typeof REACHABILITY_FIELDS_BY_TOOL)[Tool][number]]?:
+    | ReachabilityValues[F]
+    | undefined
+    | null
+}
+
+// The settings in effect for a build, which a reachability scan sends Coana.
+export type ReachabilitySettings = {
+  [F in ReachabilityField]?: ReachabilityValues[F] | undefined
+}
 
 export interface SocketJson {
   ' _____         _       _     ': string
@@ -75,6 +120,7 @@ export interface SocketJson {
         excludeConfigs?: string | undefined | null
         includeConfigs?: string | undefined | null
         ignoreUnresolved?: boolean | undefined
+        reachability?: ReachabilityDefaults<'dotnet'> | undefined
         verbose?: boolean | undefined
       }
       gradle?: {
@@ -93,6 +139,7 @@ export interface SocketJson {
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
+        reachability?: ReachabilityDefaults<'gradle'> | undefined
         verbose?: boolean | undefined
       }
       maven?: {
@@ -108,6 +155,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         mavenOpts?: string | undefined | null
+        reachability?: ReachabilityDefaults<'maven'> | undefined
         verbose?: boolean | undefined
       }
       sbt?: {
@@ -126,6 +174,7 @@ export interface SocketJson {
         // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined | null
         outfile?: string | undefined | null
+        reachability?: ReachabilityDefaults<'sbt'> | undefined
         sbtOpts?: string | undefined | null
         stdout?: boolean | undefined
         verbose?: boolean | undefined
@@ -186,7 +235,23 @@ export async function readOrDefaultSocketJsonUp(
   return getDefaultSocketJson()
 }
 
-// Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields set in
+// A build tool's section merges field by field, and so does each of its
+// object-valued fields (`reachability`).
+export function mergeBuildToolDefaults<T extends Record<string, unknown>>(
+  base: T | undefined,
+  override: T,
+): T {
+  const merged: Record<string, unknown> = { ...base, ...override }
+  for (const { 0: key, 1: value } of Object.entries(override)) {
+    const inherited = base?.[key]
+    if (isRecord(inherited) && isRecord(value)) {
+      merged[key] = { ...inherited, ...value }
+    }
+  }
+  return merged as T
+}
+
+// Merges `defaults.manifest.<ecosystem>` per ecosystem: fields set in
 // `override` win, others fall through to `base`. Only this section cascades;
 // everything else in `defaults` comes from `base` only.
 function mergeManifestDefaults(
@@ -207,23 +272,15 @@ function mergeManifestDefaults(
   if (overrideManifest.conda) {
     mergedManifest.conda = { ...baseManifest?.conda, ...overrideManifest.conda }
   }
-  if (overrideManifest.dotnet) {
-    mergedManifest.dotnet = {
-      ...baseManifest?.dotnet,
-      ...overrideManifest.dotnet,
+  for (const tool of BUILD_TOOLS) {
+    if (overrideManifest[tool]) {
+      Object.assign(mergedManifest, {
+        [tool]: mergeBuildToolDefaults(
+          baseManifest?.[tool],
+          overrideManifest[tool],
+        ),
+      })
     }
-  }
-  if (overrideManifest.gradle) {
-    mergedManifest.gradle = {
-      ...baseManifest?.gradle,
-      ...overrideManifest.gradle,
-    }
-  }
-  if (overrideManifest.maven) {
-    mergedManifest.maven = { ...baseManifest?.maven, ...overrideManifest.maven }
-  }
-  if (overrideManifest.sbt) {
-    mergedManifest.sbt = { ...baseManifest?.sbt, ...overrideManifest.sbt }
   }
   return {
     ...base,
