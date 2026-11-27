@@ -59,7 +59,7 @@ const DOTNET_RUNTIME_VERSION = new RegExp(
   `^${NUMBER}\\.${NUMBER}(?:\\.${NUMBER}(?:-${PRERELEASE_IDENTIFIER}(?:\\.${PRERELEASE_IDENTIFIER})*)?)?$`,
 )
 
-const DOTNET_RUNTIME_VERSION_FORMAT =
+export const DOTNET_RUNTIME_VERSION_FORMAT =
   'major.minor, such as "8.0", for its latest installed patch, or major.minor.patch[-prerelease], such as "8.0.11", for exactly that runtime'
 
 const REACHABILITY_FIELDS = {
@@ -87,11 +87,12 @@ const REACHABILITY_FIELDS = {
   }
 >
 
-type ReachabilityProblem = {
+export type ReachabilityProblem = {
   // Undefined when the value is not an object.
   field: string | undefined
   // Why the tool rejects it, and the remedy.
   problem: string
+  value: unknown
 }
 
 function checkReachability(
@@ -154,50 +155,6 @@ function ownEntryKeys(
   return files.names.filter(
     name => Object.hasOwn(builds, name) && existsSync(path.join(dir, name)),
   )
-}
-
-// The valid fields of `value`, nulls kept, and the problem with each other one.
-function parseReachability(
-  tool: BuildTool,
-  value: unknown,
-): { problems: ReachabilityProblem[]; settings: ReachabilityDefaults } {
-  const settings: ReachabilityDefaults = {}
-  if (value === undefined) {
-    return { problems: [], settings }
-  }
-  if (!isRecord(value)) {
-    return {
-      problems: [
-        {
-          field: undefined,
-          problem: `is ${JSON.stringify(value)}; set it to an object, or remove it.`,
-        },
-      ],
-      settings,
-    }
-  }
-  const fields = REACHABILITY_FIELDS_BY_TOOL[tool]
-  const problems: ReachabilityProblem[] = []
-  for (const { 0: name, 1: fieldValue } of Object.entries(value)) {
-    const field = fields.find(f => f === name)
-    if (!field) {
-      problems.push({
-        field: name,
-        problem: `is not a reachability setting of ${tool} builds, which take ${joinAnd(fields)}; remove it.`,
-      })
-    } else if (
-      fieldValue === null ||
-      REACHABILITY_FIELDS[field].takes(fieldValue)
-    ) {
-      Object.assign(settings, { [field]: fieldValue })
-    } else {
-      problems.push({
-        field,
-        problem: `is ${JSON.stringify(fieldValue)}; set it to ${REACHABILITY_FIELDS[field].expected}, to null to clear an inherited value, or remove it.`,
-      })
-    }
-  }
-  return { problems, settings }
 }
 
 // Without the fields a socket.json cleared with null.
@@ -395,6 +352,59 @@ export function describeDisabledBy(
 export function displayPath(file: string): string {
   const rel = path.relative(process.cwd(), file)
   return rel.startsWith('..') || path.isAbsolute(rel) ? file : rel || '.'
+}
+
+// The valid fields of `value`, nulls kept, and the problem with each other one.
+export function parseReachability(
+  tool: BuildTool,
+  value: unknown,
+): { problems: ReachabilityProblem[]; settings: ReachabilityDefaults } {
+  const settings: ReachabilityDefaults = {}
+  if (value === undefined) {
+    return { problems: [], settings }
+  }
+  if (!isRecord(value)) {
+    return {
+      problems: [
+        {
+          field: undefined,
+          problem: `is ${JSON.stringify(value)}; set it to an object, or remove it.`,
+          value,
+        },
+      ],
+      settings,
+    }
+  }
+  const fields = reachabilityFieldsOf(tool)
+  const problems: ReachabilityProblem[] = []
+  for (const { 0: name, 1: fieldValue } of Object.entries(value)) {
+    const field = fields.find(f => f === name)
+    if (!field) {
+      problems.push({
+        field: name,
+        problem: `is not a reachability setting of ${tool} builds, which take ${joinAnd(fields)}; remove it.`,
+        value: fieldValue,
+      })
+    } else if (
+      fieldValue === null ||
+      REACHABILITY_FIELDS[field].takes(fieldValue)
+    ) {
+      Object.assign(settings, { [field]: fieldValue })
+    } else {
+      problems.push({
+        field,
+        problem: `is ${JSON.stringify(fieldValue)}; set it to ${REACHABILITY_FIELDS[field].expected}, to null to clear an inherited value, or remove it.`,
+        value: fieldValue,
+      })
+    }
+  }
+  return { problems, settings }
+}
+
+export function reachabilityFieldsOf(
+  tool: BuildTool,
+): readonly ReachabilityField[] {
+  return REACHABILITY_FIELDS_BY_TOOL[tool]
 }
 
 export function socketJsonPath(dir: string): string {

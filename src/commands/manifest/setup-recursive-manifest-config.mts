@@ -64,7 +64,6 @@ import type {
 import type { BuildRoot, Membership } from './discover-manifest-roots.mts'
 import type { LoadedBuild } from './load-build.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
-import type { ReachabilityStepOptions } from './setup-manifest-config.mts'
 import type { CResult } from '../../types.mts'
 import type {
   ManifestDefaults,
@@ -484,9 +483,11 @@ async function configureBuild(
   }
 
   const seeded = Object.keys(seed)
-  const result = await runEcosystemWizard(ecosystem, seed, {
-    inheritedReachability: inherited['reachability'],
-  })
+  const result = await runEcosystemWizard(
+    ecosystem,
+    seed,
+    inherited['reachability'],
+  )
   if (!result.ok || result.data.canceled) {
     return result
   }
@@ -835,23 +836,27 @@ async function reviewBuild(
 async function runEcosystemWizard(
   ecosystem: BuildTool,
   config: Record<string, unknown>,
-  options: ReachabilityStepOptions = {},
+  inheritedReachability: unknown,
 ): Promise<CResult<{ canceled: boolean }>> {
   if (ecosystem === 'dotnet') {
-    return await setupDotnet(config as ManifestDefaults<'dotnet'>, options)
+    return await setupDotnet(config as ManifestDefaults<'dotnet'>, {
+      inheritedReachability,
+    })
   }
   if (ecosystem === 'gradle') {
     return await setupGradle(config as ManifestDefaults<'gradle'>, {
-      ...options,
       factsOnly: true,
+      inheritedReachability,
     })
   }
   if (ecosystem === 'maven') {
-    return await setupMaven(config as ManifestDefaults<'maven'>, options)
+    return await setupMaven(config as ManifestDefaults<'maven'>, {
+      inheritedReachability,
+    })
   }
   return await setupSbt(config as ManifestDefaults<'sbt'>, {
-    ...options,
     factsOnly: true,
+    inheritedReachability,
   })
 }
 
@@ -926,9 +931,11 @@ async function setupRootDefaults(
       ecosystem,
     )
     // eslint-disable-next-line no-await-in-loop
-    const result = await runEcosystemWizard(ecosystem, section, {
-      inheritedReachability: inherited['reachability'],
-    })
+    const result = await runEcosystemWizard(
+      ecosystem,
+      section,
+      inherited['reachability'],
+    )
     if (!result.ok || result.data.canceled) {
       return result
     }
