@@ -27,6 +27,7 @@ import {
 import { buildRootPath } from './scripts/build-tool.mts'
 import {
   mavenProject,
+  reachabilityByTool,
   socketFactsProject,
 } from '../../../test/socket-facts-projects.mts'
 import { testPath } from '../../../test/utils.mts'
@@ -139,11 +140,7 @@ function relOf(dir: string): string {
 }
 
 function sentReachability() {
-  return Object.fromEntries(
-    vi
-      .mocked(runManifestFacts)
-      .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
-  )
+  return reachabilityByTool(vi.mocked(runManifestFacts).mock.calls)
 }
 
 describe('generateRecursiveManifests', () => {

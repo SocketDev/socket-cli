@@ -38,12 +38,14 @@ import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
+import { reachabilityByTool } from '../../../test/socket-facts-projects.mts'
 import { logger } from '../../utils/logger.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonChain,
 } from '../../utils/socket-json.mts'
 
+import type { SocketFactsContext } from './run-manifest-facts.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 // What both of auto-manifest's socket.json reads see: cwd's own file, and
@@ -71,14 +73,16 @@ const baseDetected = {
   sbt: false,
 }
 
+const REACHABILITY_SCAN: SocketFactsContext = {
+  workDir: { dir: '/w', entries: new Map(), purpose: 'reachability' },
+}
+
 // The reachability settings a reachability scan of a Maven build at
 // /tmp/repo sends.
 async function mavenReachabilitySent(): Promise<unknown> {
   vi.mocked(runManifestFacts).mockClear()
   await generateAutoManifest({
-    context: {
-      workDir: { dir: '/w', entries: new Map(), purpose: 'reachability' },
-    },
+    context: REACHABILITY_SCAN,
     cwd: '/tmp/repo',
     detected: { ...baseDetected, maven: true, count: 1 },
     outputKind: 'text',
@@ -462,25 +466,14 @@ describe('generateAutoManifest — JVM facts', () => {
       maven: true,
       sbt: true,
     }
-    const workDir = {
-      dir: '/w',
-      entries: new Map(),
-      purpose: 'reachability' as const,
-    }
     await generateAutoManifest({
-      context: { workDir },
+      context: REACHABILITY_SCAN,
       cwd: '/tmp/repo',
       detected,
       outputKind: 'text',
       verbose: false,
     })
-    expect(
-      Object.fromEntries(
-        vi
-          .mocked(runManifestFacts)
-          .mock.calls.map(([opts]) => [opts.ecosystem, opts.reachability]),
-      ),
-    ).toEqual({
+    expect(reachabilityByTool(vi.mocked(runManifestFacts).mock.calls)).toEqual({
       gradle: { build: 'compile' },
       maven: { javaHome: '$MAVEN_JDK' },
       sbt: { build: 'none' },
@@ -507,15 +500,8 @@ describe('generateAutoManifest — JVM facts', () => {
         manifest: { dotnet: { reachability: { javaHome: '/jdk' } } },
       },
     } as SocketJson)
-    const context = {
-      workDir: {
-        dir: '/w',
-        entries: new Map(),
-        purpose: 'reachability' as const,
-      },
-    }
     await generateAutoManifest({
-      context,
+      context: REACHABILITY_SCAN,
       cwd: '/tmp/repo',
       detected: { ...baseDetected, gradle: true, count: 1 },
       outputKind: 'text',
@@ -524,7 +510,7 @@ describe('generateAutoManifest — JVM facts', () => {
     vi.mocked(runManifestFacts).mockClear()
     await expect(
       generateAutoManifest({
-        context,
+        context: REACHABILITY_SCAN,
         cwd: '/tmp/repo',
         detected: { ...baseDetected, dotnet: true, gradle: true, count: 2 },
         outputKind: 'text',
@@ -547,13 +533,7 @@ describe('generateAutoManifest — JVM facts', () => {
 
     await expect(
       generateAutoManifest({
-        context: {
-          workDir: {
-            dir: '/w',
-            entries: new Map(),
-            purpose: 'reachability' as const,
-          },
-        },
+        context: REACHABILITY_SCAN,
         cwd: '/tmp/repo',
         detected: { ...baseDetected, gradle: true, count: 1 },
         outputKind: 'text',
