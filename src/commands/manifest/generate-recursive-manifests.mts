@@ -96,7 +96,7 @@ export type EcosystemBuildConfig = {
 // root here, on top of its existing root-only ecosystem-wide meaning for
 // auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
 // so it skips too.
-function getSkipReason(
+export function getSkipReason(
   ecosystem: BuildTool,
   section:
     | { disabled?: boolean | undefined; facts?: boolean | undefined }
@@ -773,7 +773,7 @@ export async function generateRecursiveManifests({
       const settings = resolveSettings(tool, root)
       if (
         readsReachabilitySettings(context) &&
-        !resolveEcosystemConfig(tool, root.dir, settings.sockJson).skipReason
+        !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
       ) {
         settings.reachability()
       }

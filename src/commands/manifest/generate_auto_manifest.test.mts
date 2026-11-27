@@ -542,6 +542,27 @@ describe('generateAutoManifest — JVM facts', () => {
     ).resolves.toBeDefined()
   })
 
+  it('does not resolve the bin of a tool the scan skips', async () => {
+    vi.stubEnv('SOCKET_CLI_MAVEN_PATH', '/no/such/mvn')
+    useSettings({
+      defaults: { manifest: { maven: { disabled: true } } },
+    } as SocketJson)
+
+    try {
+      await expect(
+        generateAutoManifest({
+          context: REACHABILITY_SCAN,
+          cwd: '/tmp/repo',
+          detected: { ...baseDetected, maven: true, count: 1 },
+          outputKind: 'text',
+          verbose: false,
+        }),
+      ).resolves.toBeDefined()
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
   it('sends the reachability settings a parent socket.json cascades to, unless cwd clears them', async () => {
     const parent = {
       dir: '/tmp',
