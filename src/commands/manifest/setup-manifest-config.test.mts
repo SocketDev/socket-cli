@@ -29,6 +29,58 @@ import {
   writeSocketJson,
 } from '../../utils/socket-json.mts'
 
+const BUILD_QUESTION =
+  'Build project before reachability analysis? Note: A failed build fails the scan.'
+const ECOSYSTEM_QUESTION = 'Select ecosystem manifest generator to configure'
+const JDK_PROMPT = 'What JDK should reachability analysis use?'
+const JDK_QUESTION = 'Use a different Java for reachability analysis?'
+const RUNTIME_PROMPT = 'Which .NET runtime?'
+const RUNTIME_QUESTION =
+  'Start the reachability analysis of a framework-dependent .NET build on a given runtime?'
+const WRITE_QUESTION = 'Do you want to write the new config'
+
+type Prompt = {
+  default?: unknown
+  message: string
+  validate?: ((value: string) => unknown) | undefined
+}
+
+// Answers each prompt whose message starts with a key of `answers` with its
+// value, and every other prompt with its default. Records every prompt's
+// message, and each answered prompt under its key.
+function answerPrompts(answers: Record<string, unknown> = {}): {
+  asked: Record<string, Prompt[]>
+  messages: string[]
+  // The defaults the prompts answered under `key` showed.
+  shown: (key: string) => unknown[]
+} {
+  const asked: Record<string, Prompt[]> = {}
+  const messages: string[] = []
+  const answer = (prompt: Prompt): any => {
+    messages.push(prompt.message)
+    const key = Object.keys(answers).find(k => prompt.message.startsWith(k))
+    if (key === undefined) {
+      return prompt.default ?? ''
+    }
+    ;(asked[key] ??= []).push(prompt)
+    return answers[key]
+  }
+  vi.mocked(input).mockImplementation(async prompt => answer(prompt))
+  vi.mocked(select).mockImplementation(async prompt => answer(prompt))
+  return {
+    asked,
+    messages,
+    shown: key => (asked[key] ?? []).map(prompt => prompt.default),
+  }
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  answerPrompts()
+  vi.mocked(input).mockClear()
+  vi.mocked(select).mockClear()
+})
+
 describe('setup wizards', () => {
   it.for([
     ['dotnet', setupDotnet],
@@ -72,11 +124,7 @@ describe('setupGradle/setupMaven/setupSbt', () => {
   })
 
   it('asks the facts/pom question by default', async () => {
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      messages.push(message)
-      return def ?? ''
-    })
+    const { messages } = answerPrompts()
 
     await setupGradle({})
     await setupSbt({})
@@ -85,11 +133,7 @@ describe('setupGradle/setupMaven/setupSbt', () => {
   })
 
   it('skips the facts/pom question entirely when factsOnly is set, going straight to facts-only options', async () => {
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      messages.push(message)
-      return def ?? ''
-    })
+    const { messages } = answerPrompts()
 
     await setupGradle({}, { factsOnly: true })
     await setupSbt({}, { factsOnly: true })
@@ -102,29 +146,6 @@ describe('setupGradle/setupMaven/setupSbt', () => {
 })
 
 describe('reachability step', () => {
-  const REACHABILITY_QUESTION =
-    'Use a different Java for reachability analysis?'
-
-  // Answers the JDK choice with `wantsJavaHome` and the path prompt with `javaHome`.
-  // Other prompts keep their defaults.
-  function answerReachability(wantsJavaHome: boolean, javaHome = ''): void {
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
-      message === REACHABILITY_QUESTION ? wantsJavaHome : (def ?? ''),
-    )
-    vi.mocked(input).mockImplementation(async ({ default: def, message }) =>
-      message.startsWith('What JDK should reachability analysis use?')
-        ? javaHome
-        : (def ?? ''),
-    )
-  }
-
-  afterEach(() => {
-    vi.mocked(input).mockReset()
-    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
-    vi.mocked(select).mockReset()
-    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
-  })
-
   it.for([
     ['gradle', setupGradle],
     ['maven', setupMaven],
@@ -132,7 +153,7 @@ describe('reachability step', () => {
   ] as const)(
     '%s writes the JDK named after a yes to reachability.javaHome',
     async ({ 1: setup }) => {
-      answerReachability(true, '$JAVA17_HOME')
+      answerPrompts({ [JDK_PROMPT]: '$JAVA17_HOME', [JDK_QUESTION]: true })
       const config: Record<string, unknown> = { javaHome: '/opt/jdk-11' }
 
       const result = await setup(config)
@@ -146,21 +167,20 @@ describe('reachability step', () => {
   )
 
   it('writes nothing on a no and never asks for the JDK', async () => {
-    answerReachability(false, '/never-asked')
+    const { asked } = answerPrompts({
+      [JDK_PROMPT]: '/never-asked',
+      [JDK_QUESTION]: false,
+    })
     const config: Record<string, unknown> = {}
 
     await setupMaven(config)
 
     expect(config).toEqual({})
-    expect(
-      vi
-        .mocked(input)
-        .mock.calls.some(([{ message }]) => message.includes('reachability')),
-    ).toBe(false)
+    expect(asked[JDK_PROMPT]).toBeUndefined()
   })
 
   it('leaves a value it shows as is on a no, neither clearing nor restating it', async () => {
-    answerReachability(false)
+    answerPrompts({ [JDK_QUESTION]: false })
     const config: Record<string, unknown> = {
       reachability: { javaHome: '/opt/jdk-17' },
     }
@@ -195,105 +215,64 @@ describe('reachability step', () => {
   ] as const)(
     'labels the no to the JDK %j, inheriting %j, by what it does',
     async ({ 0: reachability, 1: inherited, 2: label }) => {
-      answerReachability(false)
+      const { asked } = answerPrompts({ [JDK_QUESTION]: false })
 
       await setupMaven(
         { reachability: { ...reachability } },
         { inheritedReachability: inherited },
       )
 
-      const asked = vi
-        .mocked(select)
-        .mock.calls.find(([{ message }]) => message === REACHABILITY_QUESTION)
-      expect(
-        asked?.[0].choices.find(
-          choice => typeof choice === 'object' && choice.name === 'no',
-        ),
-      ).toMatchObject({ description: label })
+      expect(asked[JDK_QUESTION]).toEqual([
+        expect.objectContaining({
+          choices: expect.arrayContaining([
+            expect.objectContaining({ description: label, name: 'no' }),
+          ]),
+        }),
+      ])
     },
   )
 
-  it('offers the shown value as the default and clears it on a blank answer', async () => {
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
-      message === REACHABILITY_QUESTION ? true : (def ?? ''),
-    )
-    const shown: unknown[] = []
-    vi.mocked(input).mockImplementation(async ({ default: def, message }) => {
-      if (message.startsWith('What JDK should reachability analysis use?')) {
-        shown.push(def)
-        return ''
-      }
-      return def ?? ''
-    })
-    const config: Record<string, unknown> = {
-      reachability: { javaHome: '/opt/jdk-17' },
-    }
-
-    await setupGradle(config, { factsOnly: true })
-
-    expect(shown).toEqual(['/opt/jdk-17'])
-    expect(config['reachability']).toEqual({ javaHome: null })
-  })
-
-  it('offers an inherited JDK as the default and clears it on a blank answer', async () => {
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
-      message === REACHABILITY_QUESTION ? true : (def ?? ''),
-    )
-    const shown: unknown[] = []
-    vi.mocked(input).mockImplementation(async ({ default: def, message }) => {
-      if (message.startsWith('What JDK should reachability analysis use?')) {
-        shown.push(def)
-        return ''
-      }
-      return def ?? ''
-    })
-    const config: Record<string, unknown> = {}
-
-    await setupMaven(config, {
+  it.for([
+    {
+      name: 'the shown value',
+      config: { reachability: { javaHome: '/opt/jdk-17' } },
+      inheritedReachability: undefined,
+      shown: '/opt/jdk-17',
+    },
+    {
+      name: 'an inherited JDK',
+      config: {},
       inheritedReachability: { javaHome: '/opt/jdk-11' },
-    })
+      shown: '/opt/jdk-11',
+    },
+  ])(
+    'offers $name as the default and clears it on a blank answer',
+    async ({ config, inheritedReachability, shown }) => {
+      const { asked } = answerPrompts({
+        [JDK_PROMPT]: '',
+        [JDK_QUESTION]: true,
+      })
+      const written: Record<string, unknown> = structuredClone(config)
 
-    expect(shown).toEqual(['/opt/jdk-11'])
-    expect(config['reachability']).toEqual({ javaHome: null })
-  })
+      await setupMaven(written, { inheritedReachability })
+
+      expect(asked[JDK_PROMPT]?.map(p => p.default)).toEqual([shown])
+      expect(written['reachability']).toEqual({ javaHome: null })
+    },
+  )
 
   it('does not ask in pom mode, where no facts reach a reachability run', async () => {
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      messages.push(message)
-      return def ?? ''
-    })
+    const { messages } = answerPrompts()
 
     await setupGradle({ facts: false })
     await setupSbt({ facts: false })
 
-    expect(messages).not.toContain(REACHABILITY_QUESTION)
+    expect(messages).not.toContain(BUILD_QUESTION)
+    expect(messages).not.toContain(JDK_QUESTION)
   })
 })
 
 describe('reachability build step', () => {
-  const BUILD_QUESTION =
-    'Build project before reachability analysis? Note: A failed build fails the scan.'
-
-  // Answers the build prompt with `wantsBuild` and accepts the other defaults.
-  // Returns the build prompt's displayed default for each call.
-  function answerBuild(wantsBuild: boolean): unknown[] {
-    const shown: unknown[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      if (message === BUILD_QUESTION) {
-        shown.push(def)
-        return wantsBuild
-      }
-      return def ?? ''
-    })
-    return shown
-  }
-
-  afterEach(() => {
-    vi.mocked(select).mockReset()
-    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
-  })
-
   it.for([
     ['dotnet', setupDotnet],
     ['gradle', setupGradle],
@@ -302,7 +281,7 @@ describe('reachability build step', () => {
   ] as const)(
     '%s writes compile to reachability.build after a yes',
     async ({ 1: setup }) => {
-      answerBuild(true)
+      answerPrompts({ [BUILD_QUESTION]: true })
       const config: Record<string, unknown> = {}
 
       const result = await setup(config)
@@ -320,7 +299,7 @@ describe('reachability build step', () => {
   ] as const)(
     '%s leaves reachability.build unset after a no at the top level, never writing none',
     async ({ 1: setup }) => {
-      answerBuild(false)
+      answerPrompts({ [BUILD_QUESTION]: false })
       const config: Record<string, unknown> = {}
 
       await setup(config)
@@ -337,20 +316,20 @@ describe('reachability build step', () => {
   ] as const)(
     '%s writes none after a no when the project inherits compile',
     async ({ 1: setup }) => {
-      const shown = answerBuild(false)
+      const { shown } = answerPrompts({ [BUILD_QUESTION]: false })
       const config: Record<string, unknown> = {
         reachability: { build: 'compile' },
       }
 
       await setup(config, { inheritedReachability: { build: 'compile' } })
 
-      expect(shown).toEqual([true])
+      expect(shown(BUILD_QUESTION)).toEqual([true])
       expect(config).toEqual({ reachability: { build: 'none' } })
     },
   )
 
   it('leaves the build unset after a no when the project inherits none', async () => {
-    answerBuild(false)
+    answerPrompts({ [BUILD_QUESTION]: false })
     const config: Record<string, unknown> = { reachability: { build: 'none' } }
 
     await setupGradle(config, { inheritedReachability: { build: 'none' } })
@@ -359,33 +338,29 @@ describe('reachability build step', () => {
   })
 
   it('unsets a build it shows as the default after a no, keeping the JDK', async () => {
-    const shown = answerBuild(false)
+    const { shown } = answerPrompts({ [BUILD_QUESTION]: false })
     const config: Record<string, unknown> = {
       reachability: { build: 'compile', javaHome: '/opt/jdk-17' },
     }
 
     await setupMaven(config)
 
-    expect(shown).toEqual([true])
+    expect(shown(BUILD_QUESTION)).toEqual([true])
     expect(config['reachability']).toEqual({ javaHome: '/opt/jdk-17' })
   })
 
   it('removes a written none after a no', async () => {
-    const shown = answerBuild(false)
+    const { shown } = answerPrompts({ [BUILD_QUESTION]: false })
     const config: Record<string, unknown> = { reachability: { build: 'none' } }
 
     await setupDotnet(config)
 
-    expect(shown).toEqual([false])
+    expect(shown(BUILD_QUESTION)).toEqual([false])
     expect(config).toEqual({})
   })
 
   it('never asks dotnet for a reachability JDK', async () => {
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      messages.push(message)
-      return message === BUILD_QUESTION ? true : (def ?? '')
-    })
+    const { messages } = answerPrompts({ [BUILD_QUESTION]: true })
     const config: Record<string, unknown> = {}
 
     await setupDotnet(config)
@@ -394,51 +369,11 @@ describe('reachability build step', () => {
     expect(messages.some(m => m.includes('Java'))).toBe(false)
     expect(config).toEqual({ reachability: { build: 'compile' } })
   })
-
-  it('does not ask in pom mode, where no facts reach a reachability run', async () => {
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      messages.push(message)
-      return def ?? ''
-    })
-
-    await setupGradle({ facts: false })
-    await setupSbt({ facts: false })
-
-    expect(messages).not.toContain(BUILD_QUESTION)
-  })
 })
 
 describe('reachability runtime step', () => {
-  const RUNTIME_QUESTION =
-    'Start the reachability analysis of a framework-dependent .NET build on a given runtime?'
-
-  // Answers the runtime choice with `wantsRuntime` and the version prompt with `runtimeVersion`.
-  // Records each runtime prompt.
-  function answerRuntime(wantsRuntime: boolean, runtimeVersion = '') {
-    const asked: Array<Parameters<typeof input>[0]> = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
-      message === RUNTIME_QUESTION ? wantsRuntime : (def ?? ''),
-    )
-    vi.mocked(input).mockImplementation(async config => {
-      if (config.message.startsWith('Which .NET runtime?')) {
-        asked.push(config)
-        return runtimeVersion
-      }
-      return config.default ?? ''
-    })
-    return asked
-  }
-
-  afterEach(() => {
-    vi.mocked(input).mockReset()
-    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
-    vi.mocked(select).mockReset()
-    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
-  })
-
   it('writes the runtime named after a yes to reachability.runtimeVersion', async () => {
-    answerRuntime(true, '8.0')
+    answerPrompts({ [RUNTIME_PROMPT]: '8.0', [RUNTIME_QUESTION]: true })
     const config: Record<string, unknown> = {}
 
     expect(await setupDotnet(config)).toEqual({
@@ -455,11 +390,14 @@ describe('reachability runtime step', () => {
     ['net8.0', false],
     ['8', false],
   ] as const)('takes %j as an answer: %j', async ({ 0: answer, 1: valid }) => {
-    const asked = answerRuntime(true, '8.0')
+    const { asked } = answerPrompts({
+      [RUNTIME_PROMPT]: '8.0',
+      [RUNTIME_QUESTION]: true,
+    })
 
     await setupDotnet({})
 
-    const result = await asked[0]!.validate!(answer)
+    const result = await asked[RUNTIME_PROMPT]?.[0]?.validate?.(answer)
     if (valid) {
       expect(result).toBe(true)
     } else {
@@ -468,23 +406,22 @@ describe('reachability runtime step', () => {
   })
 
   it('offers an inherited runtime as the default and clears it on a blank answer', async () => {
-    const asked = answerRuntime(true, '')
+    const { shown } = answerPrompts({
+      [RUNTIME_PROMPT]: '',
+      [RUNTIME_QUESTION]: true,
+    })
     const config: Record<string, unknown> = {}
 
     await setupDotnet(config, {
       inheritedReachability: { runtimeVersion: '9.0' },
     })
 
-    expect(asked.map(({ default: def }) => def)).toEqual(['9.0'])
+    expect(shown(RUNTIME_PROMPT)).toEqual(['9.0'])
     expect(config).toEqual({ reachability: { runtimeVersion: null } })
   })
 
   it('never asks a JVM build tool for a .NET runtime', async () => {
-    const messages: string[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      messages.push(message)
-      return def ?? ''
-    })
+    const { messages } = answerPrompts()
 
     await setupMaven({})
 
@@ -493,12 +430,6 @@ describe('reachability runtime step', () => {
 })
 
 describe('reachability settings written invalid', () => {
-  afterEach(() => {
-    vi.mocked(select).mockReset()
-    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
-    vi.restoreAllMocks()
-  })
-
   it.for([
     [
       'maven',
@@ -537,20 +468,14 @@ describe('reachability settings written invalid', () => {
   )
 
   it('ignores an invalid inherited value for its defaults', async () => {
-    const shown: unknown[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      if (message.startsWith('Build project before reachability analysis?')) {
-        shown.push(def)
-      }
-      return def ?? ''
-    })
+    const { shown } = answerPrompts({ [BUILD_QUESTION]: false })
     const config: Record<string, unknown> = {}
 
     await setupGradle(config, {
       inheritedReachability: { build: 'always', javaHome: 17 },
     })
 
-    expect(shown).toEqual([false])
+    expect(shown(BUILD_QUESTION)).toEqual([false])
     expect(config).toEqual({})
   })
 
@@ -570,8 +495,6 @@ describe('reachability settings written invalid', () => {
 })
 
 describe('setupManifestConfig', () => {
-  const BUILD_QUESTION =
-    'Build project before reachability analysis? Note: A failed build fails the scan.'
   let parent = ''
 
   beforeEach(async () => {
@@ -580,10 +503,6 @@ describe('setupManifestConfig', () => {
     )
   })
   afterEach(async () => {
-    vi.mocked(select).mockReset()
-    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
-    vi.mocked(input).mockReset()
-    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
     await fs.rm(parent, { recursive: true, force: true })
   })
 
@@ -594,19 +513,10 @@ describe('setupManifestConfig', () => {
     })
     const cwd = path.join(parent, 'app')
     await fs.mkdir(cwd)
-    const shown: unknown[] = []
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      if (message === 'Select ecosystem manifest generator to configure') {
-        return 'maven'
-      }
-      if (message === BUILD_QUESTION) {
-        shown.push(def)
-        return false
-      }
-      if (message.startsWith('Do you want to write the new config')) {
-        return true
-      }
-      return def ?? ''
+    const { shown } = answerPrompts({
+      [BUILD_QUESTION]: false,
+      [ECOSYSTEM_QUESTION]: 'maven',
+      [WRITE_QUESTION]: true,
     })
     vi.spyOn(logger, 'log').mockImplementation(() => logger)
     vi.spyOn(logger, 'info').mockImplementation(() => logger)
@@ -616,7 +526,7 @@ describe('setupManifestConfig', () => {
       data: undefined,
     })
 
-    expect(shown).toEqual([true])
+    expect(shown(BUILD_QUESTION)).toEqual([true])
     const written = JSON.parse(
       await fs.readFile(path.join(cwd, 'socket.json'), 'utf8'),
     )
@@ -647,23 +557,12 @@ describe('setupManifestConfig', () => {
     })
     const cwd = path.join(parent, 'app')
     await fs.mkdir(cwd)
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      if (message === 'Select ecosystem manifest generator to configure') {
-        return 'maven'
-      }
-      if (message === 'Use a different Java for reachability analysis?') {
-        return wantsJavaHome
-      }
-      if (message.startsWith('Do you want to write the new config')) {
-        return true
-      }
-      return def ?? ''
+    answerPrompts({
+      [ECOSYSTEM_QUESTION]: 'maven',
+      [JDK_PROMPT]: '',
+      [JDK_QUESTION]: wantsJavaHome,
+      [WRITE_QUESTION]: true,
     })
-    vi.mocked(input).mockImplementation(async ({ default: def, message }) =>
-      message.startsWith('What JDK should reachability analysis use?')
-        ? ''
-        : (def ?? ''),
-    )
     vi.spyOn(logger, 'log').mockImplementation(() => logger)
     vi.spyOn(logger, 'info').mockImplementation(() => logger)
 
@@ -691,8 +590,6 @@ describe('setupManifestConfig with an invalid ancestor socket.json', () => {
     )
   })
   afterEach(async () => {
-    vi.mocked(select).mockReset()
-    vi.mocked(select).mockImplementation(async ({ default: def }) => def ?? '')
     await fs.rm(parent, { recursive: true, force: true })
   })
 
@@ -708,15 +605,7 @@ describe('setupManifestConfig with an invalid ancestor socket.json', () => {
         },
       }),
     )
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      if (message === 'Select ecosystem manifest generator to configure') {
-        return 'maven'
-      }
-      if (message.startsWith('Do you want to write the new config')) {
-        return true
-      }
-      return def ?? ''
-    })
+    answerPrompts({ [ECOSYSTEM_QUESTION]: 'maven', [WRITE_QUESTION]: true })
     vi.spyOn(logger, 'log').mockImplementation(() => logger)
     vi.spyOn(logger, 'info').mockImplementation(() => logger)
     vi.spyOn(logger, 'warn').mockImplementation(() => logger)
@@ -735,11 +624,7 @@ describe('setupManifestConfig with an invalid ancestor socket.json', () => {
   it('exits without reading it when no build tool is chosen', async () => {
     const cwd = path.join(parent, 'app')
     await fs.mkdir(cwd)
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) =>
-      message === 'Select ecosystem manifest generator to configure'
-        ? ''
-        : (def ?? ''),
-    )
+    answerPrompts({ [ECOSYSTEM_QUESTION]: '' })
     vi.spyOn(logger, 'log').mockImplementation(() => logger)
     vi.spyOn(logger, 'info').mockImplementation(() => logger)
 

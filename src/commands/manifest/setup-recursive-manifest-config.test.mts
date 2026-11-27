@@ -205,6 +205,20 @@ describe('setupRecursiveManifestConfig', () => {
       }
       return rule[1] as never
     })
+  // Runs the real Maven wizard, answering the prompts `answers` matches and
+  // every other one with its default.
+  const useRealMavenWizard = async (answers: Answers) => {
+    const actual = await vi.importActual<
+      typeof import('./setup-manifest-config.mts')
+    >('./setup-manifest-config.mts')
+    vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
+    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
+    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
+      asked.push(message)
+      const rule = answers.find(({ 0: start }) => message.startsWith(start))
+      return (rule ? rule[1] : (def ?? '')) as never
+    })
+  }
 
   beforeEach(async () => {
     repo = await fs.realpath(
@@ -615,11 +629,6 @@ describe('setupRecursiveManifestConfig', () => {
   })
 
   it('loads and configures a build whose socket.json sets an invalid reachability value, replacing it', async () => {
-    const actual = await vi.importActual<
-      typeof import('./setup-manifest-config.mts')
-    >('./setup-manifest-config.mts')
-    vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
-    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
     vi.spyOn(logger, 'warn').mockImplementation(() => logger)
     await writeSettings('legacy', {
       maven: {
@@ -628,17 +637,13 @@ describe('setupRecursiveManifestConfig', () => {
       },
     })
     loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
-    const rules: Answers = [
+    await useRealMavenWizard([
       ['This project (maven)', 'inherit'],
       ['Review the', true],
       ['legacy (maven)', 'configure'],
       ['legacy/tool (maven)', 'inherit'],
       ['Write it?', true],
-    ]
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      const rule = rules.find(({ 0: start }) => message.startsWith(start))
-      return (rule ? rule[1] : (def ?? '')) as never
-    })
+    ])
 
     expect(await setupRecursiveManifestConfig(repo, false)).toEqual({
       ok: true,
@@ -653,27 +658,17 @@ describe('setupRecursiveManifestConfig', () => {
   // Runs the real Maven wizard for the defaults of legacy, which holds only
   // nested projects, accepting every default under a parent's reachability.
   async function acceptDefaultsUnder(): Promise<void> {
-    const actual = await vi.importActual<
-      typeof import('./setup-manifest-config.mts')
-    >('./setup-manifest-config.mts')
-    vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
-    vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
     await fs.rm(file('legacy/pom.xml'))
     await writeSettings('.', {
       maven: { reachability: { build: 'compile', javaHome: '/opt/jdk-17' } },
     })
     loads({})
-    const rules: Answers = [
+    await useRealMavenWizard([
       ['Configure Maven defaults for any nested projects?', true],
       ['old (maven)', 'inherit'],
       ['tool (maven)', 'inherit'],
       ['Write it?', true],
-    ]
-    vi.mocked(select).mockImplementation(async ({ default: def, message }) => {
-      asked.push(message)
-      const rule = rules.find(({ 0: start }) => message.startsWith(start))
-      return (rule ? rule[1] : (def ?? '')) as never
-    })
+    ])
 
     const result = await setupRecursiveManifestConfig(file('legacy'), false)
     expect(result).toEqual({ ok: true, data: { canceled: false } })
@@ -707,33 +702,19 @@ describe('setupRecursiveManifestConfig', () => {
     async function configureUnder(
       parentBuild: 'compile' | 'none' | undefined,
     ): Promise<void> {
-      const actual = await vi.importActual<
-        typeof import('./setup-manifest-config.mts')
-      >('./setup-manifest-config.mts')
-      vi.mocked(setupMaven).mockImplementation(actual.setupMaven)
-      vi.mocked(input).mockImplementation(async ({ default: def }) => def ?? '')
       await writeSettings(
         '.',
         parentBuild ? { maven: { reachability: { build: parentBuild } } } : {},
       )
       loads({ 'pom.xml': ['api'], 'legacy/pom.xml': ['old'] })
-      const rules: Answers = [
+      await useRealMavenWizard([
+        [BUILD_QUESTION, false],
         ['This project (maven)', 'inherit'],
         ['Review the', true],
         ['legacy (maven)', 'configure'],
         ['legacy/tool (maven)', 'inherit'],
         ['Write it?', true],
-      ]
-      vi.mocked(select).mockImplementation(
-        async ({ default: def, message }) => {
-          asked.push(message)
-          if (message === BUILD_QUESTION) {
-            return false as never
-          }
-          const rule = rules.find(({ 0: start }) => message.startsWith(start))
-          return (rule ? rule[1] : (def ?? '')) as never
-        },
-      )
+      ])
 
       const result = await setupRecursiveManifestConfig(repo, false)
       expect(result).toEqual({ ok: true, data: { canceled: false } })
