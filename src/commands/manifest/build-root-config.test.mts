@@ -5,10 +5,10 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  cascadedReachability,
   createBuildRootSettingsResolver,
   describeDisabledBy,
   displayPath,
-  socketJsonReachability,
 } from './build-root-config.mts'
 import { InputError } from '../../utils/errors.mts'
 import { escapeRegExp } from '../../utils/escape-regexp.mts'
@@ -419,8 +419,8 @@ describe('createBuildRootSettingsResolver', () => {
   })
 })
 
-describe('socketJsonReachability', () => {
-  it("checks one socket.json's section for the tool alone", () => {
+describe('cascadedReachability', () => {
+  it("checks each socket.json's section for the tool alone", () => {
     const sockJson = {
       defaults: {
         manifest: {
@@ -430,11 +430,11 @@ describe('socketJsonReachability', () => {
       },
     } as any
 
-    expect(socketJsonReachability('gradle', { dir: '/r', sockJson })).toEqual({
+    expect(cascadedReachability('gradle', [{ dir: '/r', sockJson }])).toEqual({
       build: 'compile',
     })
     expect(() =>
-      socketJsonReachability('dotnet', { dir: '/r', sockJson }),
+      cascadedReachability('dotnet', [{ dir: '/r', sockJson }]),
     ).toThrow(InputError)
   })
 })

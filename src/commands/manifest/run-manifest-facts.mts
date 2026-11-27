@@ -17,7 +17,7 @@ import { logger } from '../../utils/logger.mts'
 import type { BuildRoot } from './discover-manifest-roots.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
-import type { ReachabilityBuild } from '../../utils/socket-json.mts'
+import type { ReachabilitySettings } from '../../utils/socket-json.mts'
 
 export type BuildOption = 'excludeConfigs' | 'ignoreUnresolved' | 'verbose'
 
@@ -90,13 +90,6 @@ export type SocketFactsContext = {
   coanaVersion?: string | undefined
   orgSlug?: string | undefined
   workDir?: SocketFactsWorkDir | undefined
-}
-
-// A reachability scan sends Coana only the settings configured for this build.
-export type ReachabilitySettings = {
-  build?: ReachabilityBuild | undefined
-  javaHome?: string | undefined
-  runtimeVersion?: string | undefined
 }
 
 // A project the build loaded, with absolute paths. Gradle reports a project's

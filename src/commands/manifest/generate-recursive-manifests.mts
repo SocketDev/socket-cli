@@ -46,7 +46,6 @@ import type { LoadedBuild } from './load-build.mts'
 import type {
   BuildOptionHints,
   CommandHints,
-  ReachabilitySettings,
   RunManifestFactsOutcome,
   RunManifestFactsResult,
   SocketFactsContext,
@@ -55,7 +54,10 @@ import type {
 } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
-import type { SocketJson } from '../../utils/socket-json.mts'
+import type {
+  ReachabilitySettings,
+  SocketJson,
+} from '../../utils/socket-json.mts'
 
 function normalizePathKey(value: string): string {
   return value.replaceAll('\\', '/')
@@ -94,7 +96,7 @@ export type EcosystemBuildConfig = {
 // root here, on top of its existing root-only ecosystem-wide meaning for
 // auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
 // so it skips too.
-export function getSkipReason(
+function getSkipReason(
   ecosystem: BuildTool,
   section:
     | { disabled?: boolean | undefined; facts?: boolean | undefined }
@@ -771,7 +773,7 @@ export async function generateRecursiveManifests({
       const settings = resolveSettings(tool, root)
       if (
         readsReachabilitySettings(context) &&
-        !getSkipReason(tool, settings.sockJson.defaults?.manifest?.[tool])
+        !resolveEcosystemConfig(tool, root.dir, settings.sockJson).skipReason
       ) {
         settings.reachability()
       }

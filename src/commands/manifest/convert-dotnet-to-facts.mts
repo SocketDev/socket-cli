@@ -7,10 +7,10 @@ import { logger } from '../../utils/logger.mts'
 import type { EcosystemBuildConfig } from './generate-recursive-manifests.mts'
 import type {
   BuildOptionHints,
-  ReachabilitySettings,
   RunManifestFactsOutcome,
   SocketFactsContext,
 } from './run-manifest-facts.mts'
+import type { ReachabilitySettings } from '../../utils/socket-json.mts'
 
 // Generates `<entry>.socket.facts.json` for the given solution or project
 // file, or for every solution and project at the top of `cwd`. A project a

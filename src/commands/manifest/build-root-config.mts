@@ -15,17 +15,20 @@ import { logger } from '../../utils/logger.mts'
 import { isRecord } from '../../utils/objects.mts'
 import {
   REACHABILITY_BUILDS,
+  REACHABILITY_FIELDS_BY_TOOL,
   mergeBuildToolDefaults,
   mergeSocketJsonChain,
   readSocketJsonChain,
 } from '../../utils/socket-json.mts'
+import { isNonEmptyString } from '../../utils/strings.mts'
 
 import type { BuildRoot } from './discover-manifest-roots.mts'
-import type { ReachabilitySettings } from './run-manifest-facts.mts'
 import type { BuildTool } from './scripts/build-tool.mts'
 import type {
+  ReachabilityDefaults,
+  ReachabilityField,
+  ReachabilitySettings,
   SocketJson,
-  SocketJsonBuildEntry,
   SocketJsonInDir,
 } from '../../utils/socket-json.mts'
 
@@ -56,37 +59,40 @@ const DOTNET_RUNTIME_VERSION = new RegExp(
   `^${NUMBER}\\.${NUMBER}(?:\\.${NUMBER}(?:-${PRERELEASE_IDENTIFIER}(?:\\.${PRERELEASE_IDENTIFIER})*)?)?$`,
 )
 
-type ReachabilityField = {
-  // What a valid value is, as "set it to …" names it.
-  expected: string
-  takes: (value: unknown) => boolean
-  tools: readonly BuildTool[]
-}
+const DOTNET_RUNTIME_VERSION_FORMAT =
+  'major.minor, such as "8.0", for its latest installed patch, or major.minor.patch[-prerelease], such as "8.0.11", for exactly that runtime'
 
-const REACHABILITY_FIELDS: Record<
-  keyof ReachabilitySettings,
-  ReachabilityField
-> = {
+const REACHABILITY_FIELDS = {
   __proto__: null,
   build: {
     expected: joinOr(REACHABILITY_BUILDS.map(b => `"${b}"`)),
     takes: (value: unknown) =>
       (REACHABILITY_BUILDS as readonly unknown[]).includes(value),
-    tools: BUILD_TOOLS,
   },
   javaHome: {
     expected: 'a JDK path',
-    takes: (value: unknown) => typeof value === 'string' && !!value,
-    tools: ['gradle', 'maven', 'sbt'],
+    takes: isNonEmptyString,
   },
   runtimeVersion: {
-    expected:
-      'a .NET runtime version: major.minor, such as "8.0", for its latest installed patch, or major.minor.patch[-prerelease], such as "8.0.11", for exactly that runtime',
+    expected: `a .NET runtime version: ${DOTNET_RUNTIME_VERSION_FORMAT}`,
     takes: (value: unknown) =>
       typeof value === 'string' && DOTNET_RUNTIME_VERSION.test(value),
-    tools: ['dotnet'],
   },
-} as unknown as Record<keyof ReachabilitySettings, ReachabilityField>
+} satisfies { __proto__: null } & Record<
+  ReachabilityField,
+  {
+    // What a valid value is, as "set it to …" names it.
+    expected: string
+    takes: (value: unknown) => boolean
+  }
+>
+
+type ReachabilityProblem = {
+  // Undefined when the value is not an object.
+  field: string | undefined
+  // Why the tool rejects it, and the remedy.
+  problem: string
+}
 
 function checkReachability(
   tool: BuildTool,
@@ -94,22 +100,27 @@ function checkReachability(
   setting: string,
   socketJson: string,
 ): void {
-  if (value === undefined) {
-    return
+  const {
+    problems: { 0: first },
+  } = parseReachability(tool, value)
+  if (first) {
+    const key =
+      first.field === undefined ? setting : `${setting}.${first.field}`
+    throw new InputError(`\`${key}\` in ${socketJson} ${first.problem}`)
   }
-  if (!isRecord(value)) {
-    throw new InputError(
-      `\`${setting}\` in ${socketJson} is ${JSON.stringify(value)}; set it to an object, or remove it.`,
-    )
-  }
-  for (const { 0: field, 1: fieldValue } of Object.entries(value)) {
-    const problem = reachabilityProblem(tool, field, fieldValue)
-    if (problem) {
-      throw new InputError(
-        `\`${setting}.${field}\` in ${socketJson} ${problem}`,
-      )
-    }
-  }
+}
+
+// An invalid setting raises an InputError naming the file.
+function checkSocketJsonReachability(
+  tool: BuildTool,
+  { dir, sockJson }: SocketJsonInDir,
+): void {
+  checkReachability(
+    tool,
+    sockJson.defaults?.manifest?.[tool]?.reachability,
+    `defaults.manifest.${tool}.reachability`,
+    socketJsonPath(dir),
+  )
 }
 
 // Gradle and sbt name a build by any build file of its directory.
@@ -137,24 +148,59 @@ function ownEntryKeys(
   )
 }
 
-function reachabilityKey(tool: BuildTool): string {
-  return `defaults.manifest.${tool}.reachability`
+// The valid fields of `value`, nulls kept, and the problem with each other one.
+function parseReachability(
+  tool: BuildTool,
+  value: unknown,
+): { problems: ReachabilityProblem[]; settings: ReachabilityDefaults } {
+  const settings: ReachabilityDefaults = {}
+  if (value === undefined) {
+    return { problems: [], settings }
+  }
+  if (!isRecord(value)) {
+    return {
+      problems: [
+        {
+          field: undefined,
+          problem: `is ${JSON.stringify(value)}; set it to an object, or remove it.`,
+        },
+      ],
+      settings,
+    }
+  }
+  const fields = REACHABILITY_FIELDS_BY_TOOL[tool]
+  const problems: ReachabilityProblem[] = []
+  for (const { 0: name, 1: fieldValue } of Object.entries(value)) {
+    const field = fields.find(f => f === name)
+    if (!field) {
+      problems.push({
+        field: name,
+        problem: `is not a reachability setting of ${tool} builds, which take ${joinAnd(fields)}; remove it.`,
+      })
+    } else if (
+      fieldValue === null ||
+      REACHABILITY_FIELDS[field].takes(fieldValue)
+    ) {
+      Object.assign(settings, { [field]: fieldValue })
+    } else {
+      problems.push({
+        field,
+        problem: `is ${JSON.stringify(fieldValue)}; set it to ${REACHABILITY_FIELDS[field].expected}, to null to clear an inherited value, or remove it.`,
+      })
+    }
+  }
+  return { problems, settings }
 }
 
 // Without the fields a socket.json cleared with null.
-function reachabilitySettings(
-  value: unknown,
+function settingsInEffect(
+  settings: ReachabilityDefaults,
 ): ReachabilitySettings | undefined {
-  if (!isRecord(value)) {
-    return undefined
-  }
-  const settings = Object.fromEntries(
-    Object.entries(value).filter(
-      ({ 1: setting }) => setting !== null && setting !== undefined,
-    ),
+  const entries = Object.entries(settings).filter(
+    ({ 1: setting }) => setting !== null && setting !== undefined,
   )
-  return Object.keys(settings).length
-    ? (settings as ReachabilitySettings)
+  return entries.length
+    ? (Object.fromEntries(entries) as ReachabilitySettings)
     : undefined
 }
 
@@ -228,6 +274,7 @@ export function createBuildRootSettingsResolver(
   const chains = new Map<string, SocketJsonInDir[]>()
   const resolved = new Map<string, ResolvedBuildRootSettings>()
   const validated = new Set<string>()
+  const reachabilityChecked = new Set<string>()
 
   const chainFor = (dir: string): SocketJsonInDir[] => {
     let chain = chains.get(dir)
@@ -251,7 +298,7 @@ export function createBuildRootSettingsResolver(
   ): ResolvedBuildRootSettings => {
     const chain = chainFor(root.dir)
     const merged = mergeSocketJsonChain(chain)
-    const section: Record<string, unknown> = {
+    let section: Record<string, unknown> = {
       ...merged.defaults?.manifest?.[tool],
     }
     let sectionDisabledBy: DisabledBy | undefined
@@ -272,11 +319,9 @@ export function createBuildRootSettingsResolver(
       ? ownEntryKeys(tool, root.dir, builds, root.entryFile)[0]
       : undefined
     let entryDisabledBy: DisabledBy | undefined
-    const entry = entryKey
-      ? (builds![entryKey] as SocketJsonBuildEntry)
-      : undefined
-    if (entryKey && entry) {
-      Object.assign(section, mergeBuildToolDefaults(section, entry))
+    const entry = entryKey ? builds?.[entryKey] : undefined
+    if (entry) {
+      section = mergeBuildToolDefaults(section, entry)
       if (entry.disabled !== undefined) {
         entryDisabledBy = { dir: root.dir, key: entryKey }
       }
@@ -289,21 +334,34 @@ export function createBuildRootSettingsResolver(
       disabledBy = directorySkip ? sectionDisabledBy : entryDisabledBy
     }
 
+    let reachability: { settings: ReachabilitySettings | undefined } | undefined
     return {
       disabledBy,
       entryKey,
       reachability: () => {
-        const cascaded = cascadedReachability(tool, chain)
-        if (!entryKey || !entry) {
-          return cascaded
+        if (!reachability) {
+          for (const file of chain) {
+            const key = `${tool}\0${file.dir}`
+            if (!reachabilityChecked.has(key)) {
+              checkSocketJsonReachability(tool, file)
+              reachabilityChecked.add(key)
+            }
+          }
+          if (entryKey && entry) {
+            checkReachability(
+              tool,
+              entry['reachability'],
+              `${buildsSetting(entryKey)}.reachability`,
+              socketJsonPath(root.dir),
+            )
+          }
+          reachability = {
+            settings: settingsInEffect(
+              parseReachability(tool, section['reachability']).settings,
+            ),
+          }
         }
-        checkReachability(
-          tool,
-          entry['reachability'],
-          `${buildsSetting(entryKey)}.reachability`,
-          socketJsonPath(root.dir),
-        )
-        return reachabilitySettings(section['reachability'])
+        return reachability.settings
       },
       sockJson: {
         ...merged,
@@ -337,30 +395,6 @@ export function displayPath(file: string): string {
   return rel.startsWith('..') || path.isAbsolute(rel) ? file : rel || '.'
 }
 
-// Returns a phrase explaining why the tool rejects this field value.
-// Returns undefined for a valid value.
-export function reachabilityProblem(
-  tool: BuildTool,
-  field: string,
-  value: unknown,
-): string | undefined {
-  const spec = REACHABILITY_FIELDS[field as keyof ReachabilitySettings] as
-    | ReachabilityField
-    | undefined
-  if (!spec?.tools.includes(tool)) {
-    const fields = Object.keys(REACHABILITY_FIELDS).filter(name =>
-      REACHABILITY_FIELDS[name as keyof ReachabilitySettings].tools.includes(
-        tool,
-      ),
-    )
-    return `is not a reachability setting of ${tool} builds, which take ${joinAnd(fields)}; remove it.`
-  }
-  if (value === null || spec.takes(value)) {
-    return undefined
-  }
-  return `is ${JSON.stringify(value)}; set it to ${spec.expected}, to null to clear an inherited value, or remove it.`
-}
-
 export function socketJsonPath(dir: string): string {
   return displayPath(path.join(dir, SOCKET_JSON))
 }
@@ -372,19 +406,12 @@ export function cascadedReachability(
   chain: readonly SocketJsonInDir[],
 ): ReachabilitySettings | undefined {
   for (const file of chain) {
-    socketJsonReachability(tool, file)
+    checkSocketJsonReachability(tool, file)
   }
-  return reachabilitySettings(
-    mergeSocketJsonChain(chain).defaults?.manifest?.[tool]?.reachability,
+  return settingsInEffect(
+    parseReachability(
+      tool,
+      mergeSocketJsonChain(chain).defaults?.manifest?.[tool]?.reachability,
+    ).settings,
   )
-}
-
-// An invalid setting raises an InputError naming the file.
-export function socketJsonReachability(
-  tool: BuildTool,
-  { dir, sockJson }: SocketJsonInDir,
-): ReachabilitySettings | undefined {
-  const value = sockJson.defaults?.manifest?.[tool]?.reachability
-  checkReachability(tool, value, reachabilityKey(tool), socketJsonPath(dir))
-  return reachabilitySettings(value)
 }

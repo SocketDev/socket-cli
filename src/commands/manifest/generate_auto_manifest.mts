@@ -4,7 +4,6 @@ import { convertDotnetToFacts } from './convert-dotnet-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import {
-  getSkipReason,
   resolveEcosystemConfig,
   socketFactsRunOptions,
 } from './generate-recursive-manifests.mts'
@@ -105,7 +104,7 @@ export async function generateAutoManifest({
   // Read only by a reachability scan for the tools that generate facts, so
   // checked only for those, and before any build runs.
   const generatesFacts = (tool: BuildTool) =>
-    detected[tool] && !getSkipReason(tool, sockJson.defaults?.manifest?.[tool])
+    detected[tool] && !configOf(tool).skipReason
   const reachabilityChain = readsReachabilitySettings(context)
     ? readSocketJsonChain(cwd)
     : undefined
