@@ -538,6 +538,37 @@ describe('handleCreateNewScan excludePaths', () => {
     )
   })
 
+  it.each([
+    { runReachabilityAnalysis: true, expected: true },
+    { runReachabilityAnalysis: false, expected: false },
+  ])(
+    'generates facts without downloads when a reachability scan disables them (reachability: $runReachabilityAnalysis)',
+    async ({ expected, runReachabilityAnalysis }) => {
+      mockGenerateRecursiveManifests.mockResolvedValueOnce([
+        {
+          dir: '/repo/service-a',
+          ecosystem: 'maven',
+          factsPath: '/repo/service-a/.socket.facts.json',
+          status: 'generated',
+        },
+      ])
+      const config = createConfig({ autoManifest: false, targets: ['/repo'] })
+      config.reach.dynamicSbomInference = ['maven']
+      config.reach.runReachabilityAnalysis = runReachabilityAnalysis
+      config.reach.reachDisableDependencyDownloads = true
+
+      await handleCreateNewScan(config)
+
+      expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
+        expect.objectContaining({
+          context: expect.objectContaining({
+            disableDependencyDownloads: expected,
+          }),
+        }),
+      )
+    },
+  )
+
   it('aborts before scan creation when auto-manifest generation fails', async () => {
     mockGenerateAutoManifest.mockRejectedValueOnce(
       new Error('Bazel auto-manifest generation failed'),
