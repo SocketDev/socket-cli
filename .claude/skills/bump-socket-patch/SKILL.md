@@ -24,7 +24,7 @@ Take the exact released version as `$ARGUMENTS`. Ask for it if missing. Read
 
    ```sh
    node scripts/release/add-unreleased.mts \
-     --replace '^Updated @socketsecurity/socket-patch to v' \
+     --replace-prefix 'Updated @socketsecurity/socket-patch to v' \
      "Updated @socketsecurity/socket-patch to v $ARGUMENTS."
    ```
 

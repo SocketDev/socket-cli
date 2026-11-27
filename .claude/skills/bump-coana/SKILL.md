@@ -28,7 +28,7 @@ missing. Read [the pin and snapshot notes](references/pin-and-snapshots.md).
 
    ```sh
    node scripts/release/add-unreleased.mts \
-     --replace '^Updated the Coana CLI to v ' \
+     --replace-prefix 'Updated the Coana CLI to v ' \
      "Updated the Coana CLI to v \`$ARGUMENTS\`."
    ```
 

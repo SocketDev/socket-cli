@@ -273,15 +273,14 @@ function sectionRank(section: string): number {
 
 /**
  * Write `bullet` into `body`'s `### <section>` block, creating that section in
- * `SECTION_ORDER` position when it is missing. When `replace` matches the text
- * of a bullet already in the section, that bullet is rewritten in place rather
- * than a second one appended.
+ * `SECTION_ORDER` position when it is missing. Rewrite the first bullet in
+ * the section whose text starts with `replacePrefix`.
  */
 function writeSectionEntry(
   body: readonly string[],
   section: string,
   bullet: string,
-  replace: RegExp | undefined,
+  replacePrefix: string | undefined,
 ): string[] {
   const lines = [...body]
   const h3s = headingLineIndexes(lines.join('\n'), 3)
@@ -304,19 +303,13 @@ function writeSectionEntry(
     return lines
   }
   const next = h3s.find(index => index > at) ?? lines.length
-  if (replace) {
-    // A global or sticky regex carries lastIndex between calls, so a caller's
-    // /g would make every other test fail. Match with a stateless copy.
-    const matcher =
-      replace.global || replace.sticky
-        ? new RegExp(replace.source, replace.flags.replace(/[gy]/gu, ''))
-        : replace
+  if (replacePrefix) {
     for (let i = at + 1; i < next; i += 1) {
       const line = lines[i]!
       const text = /^\s*-\s+/.exec(line)
         ? line.replace(/^\s*-\s+/, '')
         : undefined
-      if (text !== undefined && matcher.test(text)) {
+      if (text?.startsWith(replacePrefix)) {
         lines[i] = bullet
         return lines
       }
@@ -334,10 +327,8 @@ export interface AddUnreleasedEntryConfig {
   readonly changelog: string
   // The bullet's text, without the leading `- `.
   readonly entry: string
-  // Tested against the TEXT of each bullet already in the section (the `- ` is
-  // stripped first). The first match is rewritten instead of a second bullet
-  // being appended, so a repeated bump updates its own line.
-  readonly replace?: RegExp | undefined
+  // Literal prefix of the bullet text after stripping the leading `- `.
+  readonly replacePrefix?: string | undefined
   // Keep a Changelog section the entry belongs under. Defaults to `Changed`.
   readonly section?: string | undefined
 }
@@ -377,7 +368,7 @@ export function addUnreleasedEntry(config: AddUnreleasedEntryConfig): string {
     lines.slice(range.start + 1, range.end),
     cfg.section ?? 'Changed',
     `- ${cfg.entry}`,
-    cfg.replace,
+    cfg.replacePrefix,
   )
   const head = lines.slice(0, range.start)
   const tail = lines.slice(range.end)
