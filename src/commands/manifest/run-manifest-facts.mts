@@ -88,6 +88,9 @@ type SocketFactsPurpose = 'upload' | 'fix' | 'reachability'
 export type SocketFactsContext = {
   // The Coana that reads `workDir` must be the one that wrote it.
   coanaVersion?: string | undefined
+  // Resolve from the build tools' own caches only, as the reachability run
+  // that reads the facts analyses only what is installed.
+  disableDependencyDownloads?: boolean | undefined
   orgSlug?: string | undefined
   workDir?: SocketFactsWorkDir | undefined
 }
@@ -197,6 +200,9 @@ async function runGenerateSocketFacts<T>(
         '--output-file',
         resultFile,
         ...flags,
+        ...(context.disableDependencyDownloads
+          ? ['--disable-dependency-downloads']
+          : []),
       ],
       context.orgSlug,
       {

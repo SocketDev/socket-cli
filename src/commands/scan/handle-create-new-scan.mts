@@ -178,6 +178,8 @@ async function createNewScan(
   await withTmpDir('socket-auto-manifest-', async manifestTmpDir => {
     const factsContext: SocketFactsContext = {
       coanaVersion: reach.reachVersion,
+      disableDependencyDownloads:
+        reach.runReachabilityAnalysis && reach.reachDisableDependencyDownloads,
       orgSlug,
       workDir: reach.runReachabilityAnalysis
         ? await createSocketFactsWorkDir(

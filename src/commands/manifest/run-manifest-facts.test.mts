@@ -504,6 +504,36 @@ describe('listBuildProjects', () => {
     })
   })
 
+  it.each([true, false])(
+    'lists and generates with --disable-dependency-downloads only when its context disables downloads (%s)',
+    async disableDependencyDownloads => {
+      coanaAnswers({ projects: [], status: 'listed' })
+      await listBuildProjects({
+        ...listArgs,
+        context: { disableDependencyDownloads },
+        cwd,
+      })
+      coanaAnswers({
+        factsPath: '/r/f',
+        projects: [],
+        status: 'generated',
+        targetPath: '/r/f',
+      })
+      await runManifestFacts({
+        ...baseArgs,
+        context: { disableDependencyDownloads },
+        cwd,
+        staged: true,
+      })
+      for (const { args } of calls) {
+        expect(args.includes('--disable-dependency-downloads')).toBe(
+          disableDependencyDownloads,
+        )
+      }
+      expect(calls).toHaveLength(2)
+    },
+  )
+
   it('lists with the Coana version and org of its context', async () => {
     coanaAnswers({ projects: [], status: 'listed' })
     await listBuildProjects({
