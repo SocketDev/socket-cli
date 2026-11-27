@@ -7,6 +7,7 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 
 import { rootAliases, rootCommands } from './commands.mts'
 import constants from './constants.mts'
+import { hasCiExitCodePolicy, setCiExitCode } from './utils/ci-exit-code.mts'
 import { debugDir, debugFn } from './utils/debug.mts'
 import { AuthError, InputError, captureException } from './utils/errors.mts'
 import { failMsgWithBadge } from './utils/fail-msg-with-badge.mts'
@@ -47,10 +48,20 @@ void (async () => {
       { aliases: rootAliases },
     )
 
+    if (constants.abortSignal.aborted && hasCiExitCodePolicy()) {
+      setCiExitCode('interrupted')
+    }
+
     // Track successful CLI completion.
     await trackCliComplete(process.argv, cliStartTime, process.exitCode)
   } catch (e) {
-    process.exitCode = 1
+    setCiExitCode(
+      e instanceof InputError
+        ? 'usage'
+        : constants.abortSignal.aborted
+          ? 'interrupted'
+          : 'infrastructure',
+    )
 
     // Track CLI error for telemetry.
     await trackCliError(process.argv, cliStartTime, e, process.exitCode)

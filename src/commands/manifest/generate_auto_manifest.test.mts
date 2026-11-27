@@ -488,7 +488,14 @@ describe('generateAutoManifest — conda branch', () => {
         outputKind: 'text',
         verbose: false,
       }),
-    ).rejects.toThrow(/Auto-manifest generation failed for the conda project/)
+    ).rejects.toThrowError(
+      expect.objectContaining({
+        message: expect.stringContaining(
+          'Auto-manifest generation failed for the conda project',
+        ),
+        name: 'Error',
+      }),
+    )
     process.exitCode = undefined
   })
 

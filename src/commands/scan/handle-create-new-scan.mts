@@ -250,6 +250,7 @@ async function createNewScan(
       debugFn('warn', 'Failed to fetch supported scan file names')
       debugDir('inspect', { supportedFilesCResult })
       await outputCreateNewScan(supportedFilesCResult, {
+        failureKind: 'api',
         interactive,
         outputKind,
       })
@@ -492,6 +493,7 @@ async function createNewScan(
             data: fullScanCResult.data,
           },
           {
+            failureKind: 'api',
             interactive,
             outputKind,
             reachabilityFallback,
@@ -502,6 +504,7 @@ async function createNewScan(
       spinner.stop()
 
       await outputCreateNewScan(fullScanCResult, {
+        failureKind: 'api',
         interactive,
         outputKind,
         reachabilityFallback,

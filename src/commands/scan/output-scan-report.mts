@@ -9,6 +9,7 @@ import constants, {
   REPORT_LEVEL_DEFER,
 } from '../../constants.mts'
 import { joinAnd } from '../../utils/arrays.mts'
+import { setCiExitCode } from '../../utils/ci-exit-code.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { logger } from '../../utils/logger.mts'
 import { mapToObject } from '../../utils/map-to-object.mts'
@@ -120,7 +121,7 @@ export async function outputScanReport(
   }: OutputScanReportConfig,
 ): Promise<void> {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1
+    setCiExitCode('api', result.code ?? 1)
   }
 
   if (!result.ok) {
@@ -143,7 +144,7 @@ export async function outputScanReport(
 
   if (!scanReport.ok) {
     // Note: This means generation failed, it does not reflect the healthy state.
-    process.exitCode = scanReport.code ?? 1
+    setCiExitCode('infrastructure', scanReport.code ?? 1)
 
     // If report generation somehow failed then .data should not be set.
     if (outputKind === OUTPUT_JSON) {
@@ -156,7 +157,7 @@ export async function outputScanReport(
 
   if (!scanReport.data.healthy) {
     // When report contains healthy: false, process should exit with non-zero code.
-    process.exitCode = 1
+    setCiExitCode('blocking')
   }
 
   // I don't think we emit the default error message with banner for an unhealthy report, do we?

@@ -6,6 +6,7 @@ import {
   toMarkdownReport,
 } from './output-scan-report.mts'
 import { SOCKET_WEBSITE_URL } from '../../constants.mjs'
+import { setCiExitCodePolicy } from '../../utils/ci-exit-code.mts'
 
 import type { ScanReport } from './generate-report.mts'
 
@@ -157,6 +158,7 @@ describe('output-scan-report', () => {
     })
 
     afterEach(() => {
+      setCiExitCodePolicy(undefined)
       process.exitCode = originalExitCode
     })
 
@@ -210,6 +212,56 @@ describe('output-scan-report', () => {
       )
 
       expect(process.exitCode).toBeUndefined()
+    })
+
+    it('lets --disable-blocking make an unhealthy report non-blocking', async () => {
+      setCiExitCodePolicy({ disableBlocking: true })
+      mockGenerateReport.mockReturnValue({
+        ok: true,
+        data: getUnhealthyReport(),
+      })
+
+      await outputScanReport(
+        {
+          ok: true,
+          data: { scan: [] },
+        } as any,
+        {
+          orgSlug: 'test-org',
+          scanId: 'test-scan',
+          includeLicensePolicy: false,
+          outputKind: 'json',
+          filepath: '-',
+          fold: 'none',
+          reportLevel: 'error',
+          short: false,
+        },
+      )
+
+      expect(process.exitCode).toBe(0)
+    })
+
+    it('remaps API failures to the configured code', async () => {
+      setCiExitCodePolicy({
+        disableBlocking: false,
+        exitCodeOnApiError: 42,
+      })
+
+      await outputScanReport(
+        { ok: false, message: 'API failure' },
+        {
+          orgSlug: 'test-org',
+          scanId: 'test-scan',
+          includeLicensePolicy: false,
+          outputKind: 'json',
+          filepath: '-',
+          fold: 'none',
+          reportLevel: 'error',
+          short: false,
+        },
+      )
+
+      expect(process.exitCode).toBe(42)
     })
   })
 })
