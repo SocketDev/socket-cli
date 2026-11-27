@@ -267,7 +267,7 @@ async function coanaArgsFor(
 
 function factsOnlyArgs(args: string[]): string[] {
   return args.flatMap((arg, i) =>
-    arg.includes('use-only-socket-facts') ? [arg, args[i + 1]!] : [],
+    arg === '--use-only-socket-facts-artifacts' ? [arg, args[i + 1]!] : [],
   )
 }
 
@@ -366,7 +366,7 @@ describe('performReachabilityAnalysis --use-only-socket-facts-artifacts gating',
       expectedSidecar: sidecar,
     },
     {
-      name: 'names Maven alone the same way, with an empty sidecar',
+      name: 'writes an empty sidecar when facts-only types come without entries',
       factsOnlyTypes: ['maven'],
       socketFactsSidecar: undefined,
       expected: ['--use-only-socket-facts-artifacts', 'maven'],

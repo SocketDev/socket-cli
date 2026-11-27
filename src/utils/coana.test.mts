@@ -484,10 +484,6 @@ describe('coana facts-file utils', () => {
 describe('useOnlySocketFactsArtifactsFlags', () => {
   it.for([
     {
-      types: ['maven'],
-      expected: ['--use-only-socket-facts-artifacts', 'maven'],
-    },
-    {
       types: ['nuget', 'maven'],
       expected: ['--use-only-socket-facts-artifacts', 'maven,nuget'],
     },
