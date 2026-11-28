@@ -1,49 +1,92 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { detectCiPullRequestNumber } from './handle-ci.mts'
+import { detectCiPullRequestContext } from './detect-ci-pull-request-context.mts'
 
-let originalGithubRef: string | undefined
+const githubEnvironmentKeys = [
+  'GITHUB_BASE_REF',
+  'GITHUB_BASE_SHA',
+  'GITHUB_EVENT_PATH',
+  'GITHUB_REF',
+] as const
 
-describe('detectCiPullRequestNumber', () => {
+let originalGithubEnvironment: Map<string, string | undefined>
+
+describe('detectCiPullRequestContext', () => {
   beforeEach(() => {
-    originalGithubRef = process.env['GITHUB_REF']
-    delete process.env['GITHUB_REF']
-  })
-
-  afterEach(() => {
-    if (originalGithubRef === undefined) {
-      delete process.env['GITHUB_REF']
-    } else {
-      process.env['GITHUB_REF'] = originalGithubRef
+    originalGithubEnvironment = new Map(
+      githubEnvironmentKeys.map(key => [key, process.env[key]]),
+    )
+    for (const key of githubEnvironmentKeys) {
+      delete process.env[key]
     }
   })
 
-  it('derives the number from a pull request merge ref', () => {
+  afterEach(() => {
+    for (const [key, value] of originalGithubEnvironment) {
+      if (value === undefined) {
+        delete process.env[key]
+      } else {
+        process.env[key] = value
+      }
+    }
+  })
+
+  it('derives the number from a pull request merge ref', async () => {
     process.env['GITHUB_REF'] = 'refs/pull/482/merge'
-    expect(detectCiPullRequestNumber()).toBe(482)
+    await expect(detectCiPullRequestContext()).resolves.toEqual({
+      baseBranch: undefined,
+      baseCommitHash: undefined,
+      number: 482,
+      provider: 'github',
+    })
   })
 
-  it('derives the number from a pull request head ref', () => {
+  it('derives the number from a pull request head ref', async () => {
     process.env['GITHUB_REF'] = 'refs/pull/482/head'
-    expect(detectCiPullRequestNumber()).toBe(482)
+    await expect(detectCiPullRequestContext()).resolves.toEqual({
+      baseBranch: undefined,
+      baseCommitHash: undefined,
+      number: 482,
+      provider: 'github',
+    })
   })
 
-  it('returns 0 for a branch push', () => {
+  it('returns 0 for a branch push', async () => {
     process.env['GITHUB_REF'] = 'refs/heads/feature-branch'
-    expect(detectCiPullRequestNumber()).toBe(0)
+    await expect(detectCiPullRequestContext()).resolves.toEqual({
+      baseBranch: undefined,
+      baseCommitHash: undefined,
+      number: 0,
+      provider: undefined,
+    })
   })
 
-  it('returns 0 for a tag push', () => {
+  it('returns 0 for a tag push', async () => {
     process.env['GITHUB_REF'] = 'refs/tags/v1.2.3'
-    expect(detectCiPullRequestNumber()).toBe(0)
+    await expect(detectCiPullRequestContext()).resolves.toEqual({
+      baseBranch: undefined,
+      baseCommitHash: undefined,
+      number: 0,
+      provider: undefined,
+    })
   })
 
-  it('returns 0 when GITHUB_REF is not a numbered pull ref', () => {
+  it('returns 0 when GITHUB_REF is not a numbered pull ref', async () => {
     process.env['GITHUB_REF'] = 'refs/pull/not-a-number/merge'
-    expect(detectCiPullRequestNumber()).toBe(0)
+    await expect(detectCiPullRequestContext()).resolves.toEqual({
+      baseBranch: undefined,
+      baseCommitHash: undefined,
+      number: 0,
+      provider: undefined,
+    })
   })
 
-  it('returns 0 outside GitHub Actions', () => {
-    expect(detectCiPullRequestNumber()).toBe(0)
+  it('returns 0 outside GitHub Actions', async () => {
+    await expect(detectCiPullRequestContext()).resolves.toEqual({
+      baseBranch: undefined,
+      baseCommitHash: undefined,
+      number: 0,
+      provider: undefined,
+    })
   })
 })
